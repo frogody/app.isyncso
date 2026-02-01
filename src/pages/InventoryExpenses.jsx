@@ -483,7 +483,7 @@ function ExpenseCard({ expense, onReview, onRetry, ft }) {
                 e.stopPropagation();
                 onRetry(expense);
               }}
-              className="bg-amber-600 hover:bg-amber-700"
+              className="bg-blue-600 hover:bg-blue-700"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Retry Processing

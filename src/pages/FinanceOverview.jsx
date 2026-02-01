@@ -202,20 +202,20 @@ export default function FinanceOverview() {
 
   const getColorClasses = (color) => {
     const colors = {
-      amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+      blue: 'bg-blue-500/10 text-blue-400 border-blue-500/20'
     };
-    return colors[color] || colors.amber;
+    return colors[color] || colors.blue;
   };
 
   const getCategoryColor = (category) => {
     const colors = {
-      software: 'bg-amber-500',
-      marketing: 'bg-amber-400',
-      office: 'bg-amber-500',
-      travel: 'bg-amber-500',
-      salary: 'bg-amber-500',
-      contractors: 'bg-amber-600',
-      utilities: 'bg-amber-500',
+      software: 'bg-blue-500',
+      marketing: 'bg-blue-400',
+      office: 'bg-blue-500',
+      travel: 'bg-blue-500',
+      salary: 'bg-blue-500',
+      contractors: 'bg-blue-600',
+      utilities: 'bg-blue-500',
       other: 'bg-zinc-500'
     };
     return colors[category] || colors.other;
@@ -271,7 +271,7 @@ export default function FinanceOverview() {
   if (loading || permLoading) {
     return (
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
       </div>
     );
   }
@@ -298,7 +298,7 @@ export default function FinanceOverview() {
                 icon={Euro}
                 title="Finance Overview"
                 subtitle="Track revenue, expenses, and financial health"
-                color="amber"
+                color="blue"
                 actions={
                   <div className="flex gap-3">
                     <Button variant="outline" className={`${ft('border-slate-200', 'border-zinc-700')} ${ft('text-slate-600', 'text-zinc-300')} ${ft('hover:bg-slate-100', 'hover:bg-zinc-800')}`} onClick={handleExportReport}>
@@ -321,10 +321,10 @@ export default function FinanceOverview() {
           {/* Key Metrics Grid */}
           <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
-              { title: 'Total Revenue', value: metrics.totalRevenue, displayValue: `€${metrics.totalRevenue.toLocaleString()}`, change: '+12.5%', trend: 'up', icon: Euro, color: 'amber' },
-              { title: 'Total Expenses', value: metrics.totalExpenses, displayValue: `€${metrics.totalExpenses.toLocaleString()}`, change: '-3.2%', trend: 'down', icon: CreditCard, color: 'amber' },
-              { title: 'Pending Invoices', value: metrics.pendingInvoices, displayValue: `€${metrics.pendingInvoices.toLocaleString()}`, change: `${metrics.pendingCount} invoices`, trend: 'neutral', icon: Receipt, color: 'amber' },
-              { title: 'Monthly Recurring', value: metrics.monthlyRecurring, displayValue: `€${metrics.monthlyRecurring.toLocaleString()}`, change: `${metrics.activeSubscriptions} active`, trend: 'up', icon: TrendingUp, color: 'amber' }
+              { title: 'Total Revenue', value: metrics.totalRevenue, displayValue: `€${metrics.totalRevenue.toLocaleString()}`, change: '+12.5%', trend: 'up', icon: Euro, color: 'blue' },
+              { title: 'Total Expenses', value: metrics.totalExpenses, displayValue: `€${metrics.totalExpenses.toLocaleString()}`, change: '-3.2%', trend: 'down', icon: CreditCard, color: 'blue' },
+              { title: 'Pending Invoices', value: metrics.pendingInvoices, displayValue: `€${metrics.pendingInvoices.toLocaleString()}`, change: `${metrics.pendingCount} invoices`, trend: 'neutral', icon: Receipt, color: 'blue' },
+              { title: 'Monthly Recurring', value: metrics.monthlyRecurring, displayValue: `€${metrics.monthlyRecurring.toLocaleString()}`, change: `${metrics.activeSubscriptions} active`, trend: 'up', icon: TrendingUp, color: 'blue' }
             ].map((metric, index) => (
               <div key={metric.title} className="stat-card">
                 <Card className={`${ft('bg-white', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-zinc-800')} ${ft('hover:border-slate-300', 'hover:border-zinc-700')} transition-colors`}>
@@ -334,13 +334,13 @@ export default function FinanceOverview() {
                         <metric.icon className="w-4 h-4" />
                       </div>
                       {metric.trend === 'up' && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-px text-amber-400 border-amber-500/30 bg-amber-500/10">
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-px text-blue-400 border-blue-500/30 bg-blue-500/10">
                           <ArrowUpRight className="w-2.5 h-2.5 mr-0.5" />
                           {metric.change}
                         </Badge>
                       )}
                       {metric.trend === 'down' && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-px text-amber-400 border-amber-500/30 bg-amber-500/10">
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-px text-blue-400 border-blue-500/30 bg-blue-500/10">
                           <ArrowDownRight className="w-2.5 h-2.5 mr-0.5" />
                           {metric.change}
                         </Badge>
@@ -360,18 +360,18 @@ export default function FinanceOverview() {
           </div>
 
           {/* Profit Overview */}
-          <Card className="bg-gradient-to-r from-amber-950/30 to-amber-950/30 border-amber-500/20">
+          <Card className="bg-gradient-to-r from-blue-950/30 to-blue-950/30 border-blue-500/20">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className={`${ft('text-slate-500', 'text-zinc-400')} text-xs mb-0.5`}>Net Income</p>
-                  <p className={`text-xl font-bold ${metrics.netIncome >= 0 ? 'text-amber-400' : 'text-red-400'}`}>
+                  <p className={`text-xl font-bold ${metrics.netIncome >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
                     {metrics.netIncome >= 0 ? '+' : ''}{metrics.netIncome.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' })}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className={`${ft('text-slate-500', 'text-zinc-400')} text-xs mb-0.5`}>Profit Margin</p>
-                  <p className={`text-lg font-bold ${metrics.profitMargin >= 0 ? 'text-amber-400' : 'text-red-400'}`}>
+                  <p className={`text-lg font-bold ${metrics.profitMargin >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
                     {metrics.profitMargin}%
                   </p>
                 </div>
@@ -380,7 +380,7 @@ export default function FinanceOverview() {
                 <Progress
                   value={Math.max(0, Math.min(100, Number(metrics.profitMargin)))}
                   className={`h-1.5 ${ft('bg-slate-200', 'bg-zinc-800')}`}
-                  indicatorClassName="bg-amber-500"
+                  indicatorClassName="bg-blue-500"
                 />
               </div>
             </CardContent>
@@ -391,7 +391,7 @@ export default function FinanceOverview() {
             <Card className={`${ft('bg-white', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-zinc-800')} lg:col-span-1`}>
               <CardHeader>
                 <CardTitle className={`${ft('text-slate-900', 'text-white')} flex items-center gap-2`}>
-                  <PieChart className="w-5 h-5 text-amber-400" />
+                  <PieChart className="w-5 h-5 text-blue-400" />
                   Expense Breakdown
                 </CardTitle>
                 <CardDescription>By category</CardDescription>
@@ -415,7 +415,7 @@ export default function FinanceOverview() {
                           <Progress
                             value={(cat.amount / metrics.totalExpenses) * 100}
                             className={`h-1.5 mt-1 ${ft('bg-slate-200', 'bg-zinc-800')}`}
-                            indicatorClassName="bg-amber-500"
+                            indicatorClassName="bg-blue-500"
                           />
                         </div>
                       </div>
@@ -423,7 +423,7 @@ export default function FinanceOverview() {
                   </div>
                 )}
                 <Link to={createPageUrl('FinanceExpenses')}>
-                  <Button variant="ghost" className="w-full mt-4 text-amber-400 hover:bg-amber-500/10">
+                  <Button variant="ghost" className="w-full mt-4 text-blue-400 hover:bg-blue-500/10">
                     View All Expenses
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
@@ -435,7 +435,7 @@ export default function FinanceOverview() {
             <Card className={`${ft('bg-white', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-zinc-800')} lg:col-span-2`}>
               <CardHeader>
                 <CardTitle className={`${ft('text-slate-900', 'text-white')} flex items-center gap-2`}>
-                  <Wallet className="w-5 h-5 text-amber-400" />
+                  <Wallet className="w-5 h-5 text-blue-400" />
                   Recent Transactions
                 </CardTitle>
                 <CardDescription>Latest financial activity</CardDescription>
@@ -451,11 +451,11 @@ export default function FinanceOverview() {
                     {recentTransactions.map((transaction, index) => (
                       <div key={`${transaction.type}-${transaction.id}`} className={`flex items-center justify-between p-3 ${ft('bg-slate-100', 'bg-zinc-800/30')} rounded-lg ${ft('hover:bg-slate-200', 'hover:bg-zinc-800/50')} transition-colors`}>
                         <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${transaction.type === 'invoice' ? 'bg-amber-500/10' : 'bg-amber-500/10'}`}>
+                          <div className={`p-2 rounded-lg ${transaction.type === 'invoice' ? 'bg-blue-500/10' : 'bg-blue-500/10'}`}>
                             {transaction.type === 'invoice' ? (
-                              <FileText className="w-4 h-4 text-amber-400" />
+                              <FileText className="w-4 h-4 text-blue-400" />
                             ) : (
-                              <CreditCard className="w-4 h-4 text-amber-400" />
+                              <CreditCard className="w-4 h-4 text-blue-400" />
                             )}
                           </div>
                           <div>
@@ -469,7 +469,7 @@ export default function FinanceOverview() {
                             </p>
                           </div>
                         </div>
-                        <p className={`font-medium ${transaction.type === 'invoice' ? 'text-amber-400' : 'text-amber-400'}`}>
+                        <p className={`font-medium ${transaction.type === 'invoice' ? 'text-blue-400' : 'text-blue-400'}`}>
                           {transaction.type === 'invoice' ? '+' : '-'}€{(transaction.total || transaction.amount || 0).toLocaleString()}
                         </p>
                       </div>
@@ -483,46 +483,46 @@ export default function FinanceOverview() {
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Link to={createPageUrl('FinanceInvoices')}>
-              <Card className={`${ft('bg-white', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-zinc-800')} hover:border-amber-500/30 transition-colors cursor-pointer group`}>
+              <Card className={`${ft('bg-white', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-zinc-800')} hover:border-blue-500/30 transition-colors cursor-pointer group`}>
                 <CardContent className="p-6 flex items-center gap-4">
-                  <div className="p-3 rounded-xl bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
-                    <Receipt className="w-6 h-6 text-amber-400" />
+                  <div className="p-3 rounded-xl bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                    <Receipt className="w-6 h-6 text-blue-400" />
                   </div>
                   <div className="flex-1">
                     <h3 className={`${ft('text-slate-900', 'text-white')} font-medium`}>Invoices</h3>
                     <p className={`text-sm ${ft('text-slate-400', 'text-zinc-500')}`}>{invoices.length} total</p>
                   </div>
-                  <ChevronRight className={`w-5 h-5 ${ft('text-slate-400', 'text-zinc-500')} group-hover:text-amber-400 transition-colors`} />
+                  <ChevronRight className={`w-5 h-5 ${ft('text-slate-400', 'text-zinc-500')} group-hover:text-blue-400 transition-colors`} />
                 </CardContent>
               </Card>
             </Link>
 
             <Link to={createPageUrl('FinanceExpenses')}>
-              <Card className={`${ft('bg-white', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-zinc-800')} hover:border-amber-500/30 transition-colors cursor-pointer group`}>
+              <Card className={`${ft('bg-white', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-zinc-800')} hover:border-blue-500/30 transition-colors cursor-pointer group`}>
                 <CardContent className="p-6 flex items-center gap-4">
-                  <div className="p-3 rounded-xl bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
-                    <CreditCard className="w-6 h-6 text-amber-400" />
+                  <div className="p-3 rounded-xl bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                    <CreditCard className="w-6 h-6 text-blue-400" />
                   </div>
                   <div className="flex-1">
                     <h3 className={`${ft('text-slate-900', 'text-white')} font-medium`}>Expenses</h3>
                     <p className={`text-sm ${ft('text-slate-400', 'text-zinc-500')}`}>{expenses.length} recorded</p>
                   </div>
-                  <ChevronRight className={`w-5 h-5 ${ft('text-slate-400', 'text-zinc-500')} group-hover:text-amber-400 transition-colors`} />
+                  <ChevronRight className={`w-5 h-5 ${ft('text-slate-400', 'text-zinc-500')} group-hover:text-blue-400 transition-colors`} />
                 </CardContent>
               </Card>
             </Link>
 
             <Link to={createPageUrl('FinanceSubscriptions')}>
-              <Card className={`${ft('bg-white', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-zinc-800')} hover:border-amber-500/30 transition-colors cursor-pointer group`}>
+              <Card className={`${ft('bg-white', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-zinc-800')} hover:border-blue-500/30 transition-colors cursor-pointer group`}>
                 <CardContent className="p-6 flex items-center gap-4">
-                  <div className="p-3 rounded-xl bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
-                    <BadgeEuro className="w-6 h-6 text-amber-400" />
+                  <div className="p-3 rounded-xl bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                    <BadgeEuro className="w-6 h-6 text-blue-400" />
                   </div>
                   <div className="flex-1">
                     <h3 className={`${ft('text-slate-900', 'text-white')} font-medium`}>Subscriptions</h3>
                     <p className={`text-sm ${ft('text-slate-400', 'text-zinc-500')}`}>{metrics.activeSubscriptions} active</p>
                   </div>
-                  <ChevronRight className={`w-5 h-5 ${ft('text-slate-400', 'text-zinc-500')} group-hover:text-amber-400 transition-colors`} />
+                  <ChevronRight className={`w-5 h-5 ${ft('text-slate-400', 'text-zinc-500')} group-hover:text-blue-400 transition-colors`} />
                 </CardContent>
               </Card>
             </Link>

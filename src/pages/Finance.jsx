@@ -198,7 +198,7 @@ export default function Finance() {
         change: '+12.5%',
         trend: 'up',
         icon: Euro,
-        color: 'amber'
+        color: 'blue'
       },
       {
         title: 'Total Expenses',
@@ -206,7 +206,7 @@ export default function Finance() {
         change: '-3.2%',
         trend: 'down',
         icon: CreditCard,
-        color: 'amber'
+        color: 'blue'
       },
       {
         title: 'Pending Invoices',
@@ -214,7 +214,7 @@ export default function Finance() {
         change: `${invoices.filter(i => i.status === 'pending').length} invoices`,
         trend: 'neutral',
         icon: Receipt,
-        color: 'amber'
+        color: 'blue'
       },
       {
         title: 'Monthly Recurring',
@@ -222,7 +222,7 @@ export default function Finance() {
         change: `${subscriptions.filter(s => s.status === 'active').length} active`,
         trend: 'up',
         icon: TrendingUp,
-        color: 'amber'
+        color: 'blue'
       }
     ];
 
@@ -231,9 +231,9 @@ export default function Finance() {
 
   const getColorClasses = (color) => {
     const colors = {
-      amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+      blue: 'bg-blue-500/10 text-blue-400 border-blue-500/20'
     };
-    return colors[color] || colors.amber;
+    return colors[color] || colors.blue;
   };
 
   // Memoize permission checks - only compute when permissions are loaded
@@ -252,7 +252,7 @@ export default function Finance() {
   if (loading || permLoading) {
     return (
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
       </div>
     );
   }
@@ -282,7 +282,7 @@ export default function Finance() {
             icon={Euro}
             title="Finance"
             subtitle="Track revenue, expenses, and financial metrics"
-            color="amber"
+            color="blue"
             actions={
               <div className="flex gap-3">
                 <button onClick={toggleTheme} className={`p-2 rounded-lg ${ft('bg-slate-100 hover:bg-slate-200 text-slate-600', 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400')} transition-colors`}>
@@ -295,7 +295,7 @@ export default function Finance() {
                   </Button>
                 )}
                 {canCreate && (
-                  <Button className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30" onClick={() => setShowInvoiceModal(true)}>
+                  <Button className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30" onClick={() => setShowInvoiceModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     New Transaction
                   </Button>
@@ -321,13 +321,13 @@ export default function Finance() {
                     <metric.icon className="w-4 h-4" />
                   </div>
                   {metric.trend === 'up' && (
-                    <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
+                    <Badge variant="outline" className="text-blue-400 border-blue-500/30 bg-blue-500/10">
                       <ArrowUpRight className="w-3 h-3 mr-1" />
                       {metric.change}
                     </Badge>
                   )}
                   {metric.trend === 'down' && (
-                    <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
+                    <Badge variant="outline" className="text-blue-400 border-blue-500/30 bg-blue-500/10">
                       <ArrowDownRight className="w-3 h-3 mr-1" />
                       {metric.change}
                     </Badge>
@@ -413,7 +413,7 @@ export default function Finance() {
                   <CardTitle className={ft('text-slate-900', 'text-white')}>Invoices</CardTitle>
                   <CardDescription>{invoices.length} total invoices</CardDescription>
                 </div>
-                <Button size="sm" className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowInvoiceModal(true)}>
+                <Button size="sm" className="bg-blue-500 hover:bg-blue-600" onClick={() => setShowInvoiceModal(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   New Invoice
                 </Button>
@@ -425,7 +425,7 @@ export default function Finance() {
                   <Receipt className={`w-10 h-10 ${ft('text-slate-300', 'text-zinc-600')} mx-auto mb-3`} />
                   <h3 className={`text-base font-medium ${ft('text-slate-900', 'text-white')} mb-2`}>No invoices yet</h3>
                   <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')} mb-3`}>Create your first invoice to start tracking revenue</p>
-                  <Button className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowInvoiceModal(true)}>
+                  <Button className="bg-blue-500 hover:bg-blue-600" onClick={() => setShowInvoiceModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Create Invoice
                   </Button>
@@ -435,8 +435,8 @@ export default function Finance() {
                   {invoices.map((invoice) => (
                     <div key={invoice.id} className={`flex items-center justify-between p-3 ${ft('bg-slate-100', 'bg-zinc-800/50')} rounded-lg`}>
                       <div className="flex items-center gap-3">
-                        <div className="p-1.5 bg-amber-500/10 rounded-lg">
-                          <FileText className="w-4 h-4 text-amber-400" />
+                        <div className="p-1.5 bg-blue-500/10 rounded-lg">
+                          <FileText className="w-4 h-4 text-blue-400" />
                         </div>
                         <div>
                           <p className={`text-sm font-medium ${ft('text-slate-900', 'text-white')}`}>{invoice.invoice_number || `INV-${invoice.id?.slice(0, 8)}`}</p>
@@ -446,9 +446,9 @@ export default function Finance() {
                       <div className="text-right">
                         <p className={`text-sm font-medium ${ft('text-slate-900', 'text-white')}`}>€{(invoice.total || 0).toLocaleString()}</p>
                         <Badge variant="outline" className={
-                          invoice.status === 'paid' ? 'text-amber-400 border-amber-500/30' :
+                          invoice.status === 'paid' ? 'text-blue-400 border-blue-500/30' :
                           invoice.status === 'overdue' ? 'text-red-400 border-red-500/30' :
-                          'text-amber-400 border-amber-500/30'
+                          'text-blue-400 border-blue-500/30'
                         }>
                           {invoice.status || 'pending'}
                         </Badge>
@@ -469,7 +469,7 @@ export default function Finance() {
                   <CardTitle className={ft('text-slate-900', 'text-white')}>Expenses</CardTitle>
                   <CardDescription>{expenses.length} total expenses</CardDescription>
                 </div>
-                <Button size="sm" className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowExpenseModal(true)}>
+                <Button size="sm" className="bg-blue-500 hover:bg-blue-600" onClick={() => setShowExpenseModal(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Expense
                 </Button>
@@ -481,7 +481,7 @@ export default function Finance() {
                   <CreditCard className={`w-10 h-10 ${ft('text-slate-300', 'text-zinc-600')} mx-auto mb-3`} />
                   <h3 className={`text-base font-medium ${ft('text-slate-900', 'text-white')} mb-2`}>No expenses recorded</h3>
                   <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')} mb-3`}>Track your business expenses here</p>
-                  <Button className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowExpenseModal(true)}>
+                  <Button className="bg-blue-500 hover:bg-blue-600" onClick={() => setShowExpenseModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Expense
                   </Button>
@@ -491,8 +491,8 @@ export default function Finance() {
                   {expenses.map((expense) => (
                     <div key={expense.id} className={`flex items-center justify-between p-3 ${ft('bg-slate-100', 'bg-zinc-800/50')} rounded-lg`}>
                       <div className="flex items-center gap-3">
-                        <div className="p-1.5 bg-amber-500/10 rounded-lg">
-                          <CreditCard className="w-4 h-4 text-amber-400" />
+                        <div className="p-1.5 bg-blue-500/10 rounded-lg">
+                          <CreditCard className="w-4 h-4 text-blue-400" />
                         </div>
                         <div>
                           <p className={`text-sm font-medium ${ft('text-slate-900', 'text-white')}`}>{expense.description || 'Expense'}</p>
@@ -500,7 +500,7 @@ export default function Finance() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-amber-400">-€{(expense.amount || 0).toLocaleString()}</p>
+                        <p className="text-sm font-medium text-blue-400">-€{(expense.amount || 0).toLocaleString()}</p>
                         <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>{expense.date || 'No date'}</p>
                       </div>
                     </div>
@@ -519,7 +519,7 @@ export default function Finance() {
                   <CardTitle className={ft('text-slate-900', 'text-white')}>Subscriptions</CardTitle>
                   <CardDescription>{subscriptions.length} active subscriptions</CardDescription>
                 </div>
-                <Button size="sm" className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowSubscriptionModal(true)}>
+                <Button size="sm" className="bg-blue-500 hover:bg-blue-600" onClick={() => setShowSubscriptionModal(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Subscription
                 </Button>
@@ -531,7 +531,7 @@ export default function Finance() {
                   <BadgeEuro className={`w-10 h-10 ${ft('text-slate-300', 'text-zinc-600')} mx-auto mb-3`} />
                   <h3 className={`text-base font-medium ${ft('text-slate-900', 'text-white')} mb-2`}>No subscriptions</h3>
                   <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')} mb-3`}>Track recurring revenue from subscriptions</p>
-                  <Button className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowSubscriptionModal(true)}>
+                  <Button className="bg-blue-500 hover:bg-blue-600" onClick={() => setShowSubscriptionModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Subscription
                   </Button>
@@ -541,8 +541,8 @@ export default function Finance() {
                   {subscriptions.map((sub) => (
                     <div key={sub.id} className={`flex items-center justify-between p-3 ${ft('bg-slate-100', 'bg-zinc-800/50')} rounded-lg`}>
                       <div className="flex items-center gap-3">
-                        <div className="p-1.5 bg-amber-500/10 rounded-lg">
-                          <BadgeEuro className="w-4 h-4 text-amber-400" />
+                        <div className="p-1.5 bg-blue-500/10 rounded-lg">
+                          <BadgeEuro className="w-4 h-4 text-blue-400" />
                         </div>
                         <div>
                           <p className={`text-sm font-medium ${ft('text-slate-900', 'text-white')}`}>{sub.name || 'Subscription'}</p>
@@ -550,9 +550,9 @@ export default function Finance() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-amber-400">€{(sub.amount || 0).toLocaleString()}/mo</p>
+                        <p className="text-sm font-medium text-blue-400">€{(sub.amount || 0).toLocaleString()}/mo</p>
                         <Badge variant="outline" className={
-                          sub.status === 'active' ? 'text-amber-400 border-amber-500/30' :
+                          sub.status === 'active' ? 'text-blue-400 border-blue-500/30' :
                           ft('text-slate-500 border-slate-300', 'text-zinc-400 border-zinc-500/30')
                         }>
                           {sub.status || 'active'}
@@ -625,7 +625,7 @@ export default function Finance() {
             <Button type="button" variant="outline" onClick={() => setShowInvoiceModal(false)} className={`flex-1 ${ft('border-slate-200', 'border-zinc-700')}`}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving} className="flex-1 bg-amber-500 hover:bg-amber-600">
+            <Button type="submit" disabled={saving} className="flex-1 bg-blue-500 hover:bg-blue-600">
               {saving ? 'Creating...' : 'Create Invoice'}
             </Button>
           </div>
@@ -697,7 +697,7 @@ export default function Finance() {
             <Button type="button" variant="outline" onClick={() => setShowExpenseModal(false)} className={`flex-1 ${ft('border-slate-200', 'border-zinc-700')}`}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving} className="flex-1 bg-amber-500 hover:bg-amber-600">
+            <Button type="submit" disabled={saving} className="flex-1 bg-blue-500 hover:bg-blue-600">
               {saving ? 'Adding...' : 'Add Expense'}
             </Button>
           </div>
@@ -764,7 +764,7 @@ export default function Finance() {
             <Button type="button" variant="outline" onClick={() => setShowSubscriptionModal(false)} className={`flex-1 ${ft('border-slate-200', 'border-zinc-700')}`}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving} className="flex-1 bg-amber-500 hover:bg-amber-600">
+            <Button type="submit" disabled={saving} className="flex-1 bg-blue-500 hover:bg-blue-600">
               {saving ? 'Adding...' : 'Add Subscription'}
             </Button>
           </div>

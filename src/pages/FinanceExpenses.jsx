@@ -29,15 +29,15 @@ import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 
 const EXPENSE_CATEGORIES = [
-  { value: 'software', label: 'Software & Tools', color: 'amber', icon: '💻' },
-  { value: 'marketing', label: 'Marketing', color: 'amber', icon: '📣' },
-  { value: 'office', label: 'Office & Equipment', color: 'amber', icon: '🏢' },
-  { value: 'travel', label: 'Travel', color: 'amber', icon: '✈️' },
-  { value: 'salary', label: 'Salaries', color: 'amber', icon: '👥' },
-  { value: 'contractors', label: 'Contractors', color: 'amber', icon: '🤝' },
-  { value: 'utilities', label: 'Utilities', color: 'amber', icon: '⚡' },
-  { value: 'insurance', label: 'Insurance', color: 'amber', icon: '🛡️' },
-  { value: 'legal', label: 'Legal & Professional', color: 'amber', icon: '⚖️' },
+  { value: 'software', label: 'Software & Tools', color: 'blue', icon: '💻' },
+  { value: 'marketing', label: 'Marketing', color: 'blue', icon: '📣' },
+  { value: 'office', label: 'Office & Equipment', color: 'blue', icon: '🏢' },
+  { value: 'travel', label: 'Travel', color: 'blue', icon: '✈️' },
+  { value: 'salary', label: 'Salaries', color: 'blue', icon: '👥' },
+  { value: 'contractors', label: 'Contractors', color: 'blue', icon: '🤝' },
+  { value: 'utilities', label: 'Utilities', color: 'blue', icon: '⚡' },
+  { value: 'insurance', label: 'Insurance', color: 'blue', icon: '🛡️' },
+  { value: 'legal', label: 'Legal & Professional', color: 'blue', icon: '⚖️' },
   { value: 'other', label: 'Other', color: 'zinc', icon: '📦' }
 ];
 
@@ -294,7 +294,7 @@ export default function FinanceExpenses() {
   if (loading || permLoading) {
     return (
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
       </div>
     );
   }
@@ -311,7 +311,7 @@ export default function FinanceExpenses() {
                 icon={CreditCard}
                 title="Expenses"
                 subtitle="Track and categorize your business expenses"
-                color="amber"
+                color="blue"
                 actions={
                   <div className="flex gap-3">
                     <Button
@@ -328,7 +328,7 @@ export default function FinanceExpenses() {
                     </Button>
                     {canCreate && (
                       <Button
-                        className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                        className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30"
                         onClick={() => { resetForm(); setShowCreateModal(true); }}
                       >
                         <Plus className="w-4 h-4 mr-2" />
@@ -347,7 +347,7 @@ export default function FinanceExpenses() {
               <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-1">
                   <span className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>Total Expenses</span>
-                  <Wallet className="w-3.5 h-3.5 text-amber-400" />
+                  <Wallet className="w-3.5 h-3.5 text-blue-400" />
                 </div>
                 <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>${stats.total.toLocaleString()}</p>
                 <p className={`text-[10px] ${ft('text-slate-400', 'text-zinc-500')}`}>{stats.count} expenses</p>
@@ -359,13 +359,13 @@ export default function FinanceExpenses() {
                 <div className="flex items-center justify-between mb-1">
                   <span className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>This Month</span>
                   {monthlyTrend === 'up' ? (
-                    <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
+                    <TrendingUp className="w-3.5 h-3.5 text-blue-400" />
                   ) : (
-                    <TrendingDown className="w-3.5 h-3.5 text-amber-400" />
+                    <TrendingDown className="w-3.5 h-3.5 text-blue-400" />
                   )}
                 </div>
                 <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>${stats.thisMonth.toLocaleString()}</p>
-                <p className={`text-[10px] text-amber-400`}>
+                <p className={`text-[10px] text-blue-400`}>
                   {stats.percentChange > 0 ? '+' : ''}{stats.percentChange}% vs last month
                 </p>
               </CardContent>
@@ -385,7 +385,7 @@ export default function FinanceExpenses() {
                         <span className={`text-[10px] ${ft('text-slate-500', 'text-zinc-400')} capitalize`}>{cat.config.label}</span>
                       </div>
                       <p className={`text-xs font-medium ${ft('text-slate-900', 'text-white')}`}>${cat.amount.toLocaleString()}</p>
-                      <Progress value={parseFloat(cat.percentage)} className={`h-0.5 mt-1 ${ft('bg-slate-200', 'bg-zinc-800')}`} indicatorClassName="bg-amber-500" />
+                      <Progress value={parseFloat(cat.percentage)} className={`h-0.5 mt-1 ${ft('bg-slate-200', 'bg-zinc-800')}`} indicatorClassName="bg-blue-500" />
                     </div>
                   ))}
                 </div>
@@ -513,7 +513,7 @@ export default function FinanceExpenses() {
                   </p>
                   {canCreate && !searchQuery && categoryFilter === 'all' && (
                     <Button
-                      className="bg-amber-500 hover:bg-amber-600"
+                      className="bg-blue-500 hover:bg-blue-600"
                       onClick={() => { resetForm(); setShowCreateModal(true); }}
                     >
                       <Plus className="w-4 h-4 mr-2" />
@@ -544,7 +544,7 @@ export default function FinanceExpenses() {
                                   {catConfig.label}
                                 </Badge>
                                 {expense.tax_deductible && (
-                                  <Badge variant="outline" size="xs" className="text-amber-400 border-amber-500/30">
+                                  <Badge variant="outline" size="xs" className="text-blue-400 border-blue-500/30">
                                     Tax Deductible
                                   </Badge>
                                 )}
@@ -565,7 +565,7 @@ export default function FinanceExpenses() {
                           </div>
 
                           <div className="flex items-center gap-3">
-                            <p className="text-sm font-semibold text-amber-400">
+                            <p className="text-sm font-semibold text-blue-400">
                               -${(expense.amount || 0).toLocaleString()}
                             </p>
 
@@ -702,7 +702,7 @@ export default function FinanceExpenses() {
                     type="checkbox"
                     checked={formData.tax_deductible}
                     onChange={(e) => setFormData(prev => ({ ...prev, tax_deductible: e.target.checked }))}
-                    className={`rounded ${ft('border-slate-300 bg-slate-100', 'border-zinc-600 bg-zinc-800')} text-amber-500`}
+                    className={`rounded ${ft('border-slate-300 bg-slate-100', 'border-zinc-600 bg-zinc-800')} text-blue-500`}
                   />
                   <span className={`text-sm ${ft('text-slate-600', 'text-zinc-300')}`}>Tax Deductible</span>
                 </label>
@@ -712,7 +712,7 @@ export default function FinanceExpenses() {
                     type="checkbox"
                     checked={formData.is_recurring}
                     onChange={(e) => setFormData(prev => ({ ...prev, is_recurring: e.target.checked }))}
-                    className={`rounded ${ft('border-slate-300 bg-slate-100', 'border-zinc-600 bg-zinc-800')} text-amber-500`}
+                    className={`rounded ${ft('border-slate-300 bg-slate-100', 'border-zinc-600 bg-zinc-800')} text-blue-500`}
                   />
                   <span className={`text-sm ${ft('text-slate-600', 'text-zinc-300')}`}>Recurring Expense</span>
                 </label>
@@ -730,7 +730,7 @@ export default function FinanceExpenses() {
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="bg-amber-500 hover:bg-amber-600"
+                  className="bg-blue-500 hover:bg-blue-600"
                 >
                   {saving ? 'Saving...' : (editMode ? 'Update Expense' : 'Add Expense')}
                 </Button>

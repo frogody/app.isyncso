@@ -1984,6 +1984,26 @@ export default function Layout({ children, currentPageName }) {
           [data-finance-light] .bg-blue-500\\/20 { background: rgba(59,130,246,0.15) !important; }
           [data-finance-light] .border-blue-500\\/30 { border-color: rgba(59,130,246,0.35) !important; }
 
+          /* Amber → Blue accent remap for Finance light mode */
+          [data-finance-light] .text-amber-400 { color: #2563EB !important; }
+          [data-finance-light] .text-amber-500 { color: #2563EB !important; }
+          [data-finance-light] .bg-amber-500 { background: #3B82F6 !important; }
+          [data-finance-light] .bg-amber-400 { background: #60A5FA !important; }
+          [data-finance-light] .bg-amber-500\\/10 { background: rgba(59,130,246,0.1) !important; }
+          [data-finance-light] .bg-amber-500\\/20 { background: rgba(59,130,246,0.15) !important; }
+          [data-finance-light] .bg-amber-950\\/30 { background: rgba(59,130,246,0.06) !important; }
+          [data-finance-light] .border-amber-500\\/20 { border-color: rgba(59,130,246,0.25) !important; }
+          [data-finance-light] .border-amber-500\\/30 { border-color: rgba(59,130,246,0.3) !important; }
+          [data-finance-light] .hover\\:bg-amber-500\\/10:hover { background: rgba(59,130,246,0.1) !important; }
+          [data-finance-light] .hover\\:bg-amber-500\\/20:hover { background: rgba(59,130,246,0.15) !important; }
+          [data-finance-light] .hover\\:bg-amber-600:hover { background: #2563EB !important; }
+          [data-finance-light] .hover\\:border-amber-500\\/30:hover { border-color: rgba(59,130,246,0.3) !important; }
+          [data-finance-light] .group-hover\\:text-amber-400 { color: #2563EB !important; }
+          [data-finance-light] .group-hover\\:bg-amber-500\\/20 { background: rgba(59,130,246,0.15) !important; }
+          [data-finance-light] .data-\\[state\\=active\\]\\:bg-amber-500[data-state="active"] { background: #3B82F6 !important; color: #FFFFFF !important; }
+          [data-finance-light] .bg-gradient-to-r.from-amber-950\\/30 { background: rgba(59,130,246,0.06) !important; }
+          [data-finance-light] .indicatorClassName.bg-amber-500, [data-finance-light] [class*="bg-amber-500"][role="progressbar"] { background: #3B82F6 !important; }
+
           /* Shadow overrides */
           [data-finance-light] .shadow-lg { box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04) !important; }
           [data-finance-light] .shadow-xl { box-shadow: 0 8px 24px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.04) !important; }
@@ -2008,8 +2028,22 @@ export default function Layout({ children, currentPageName }) {
           [data-finance-light] .focus\\:bg-zinc-800:focus { background: #F1F5F9 !important; }
           [data-finance-light] .data-\\[state\\=active\\]\\:bg-zinc-800[data-state="active"] { background: #FFFFFF !important; box-shadow: 0 1px 2px rgba(0,0,0,0.08) !important; }
 
-          /* Glass card */
+          /* Glass card + shadcn Card overrides */
           [data-finance-light] .glass-card { background: #FFFFFF !important; border: 1px solid #E2E8F0 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important; }
+          [data-finance-light] .bg-card { background: #FFFFFF !important; }
+          [data-finance-light] .text-card-foreground { color: #0F172A !important; }
+          [data-finance-light] .text-muted-foreground { color: #64748B !important; }
+          [data-finance-light] .border { border-color: #E2E8F0 !important; }
+          [data-finance-light] .bg-muted { background: #F1F5F9 !important; }
+          [data-finance-light] .bg-muted\\/50 { background: #F8FAFC !important; }
+          [data-finance-light] .bg-popover { background: #FFFFFF !important; }
+          [data-finance-light] .text-popover-foreground { color: #0F172A !important; }
+          [data-finance-light] .bg-accent { background: #F1F5F9 !important; }
+          [data-finance-light] .text-accent-foreground { color: #0F172A !important; }
+          [data-finance-light] .bg-primary { background: #3B82F6 !important; }
+          [data-finance-light] .text-primary-foreground { color: #FFFFFF !important; }
+          [data-finance-light] .bg-secondary { background: #F1F5F9 !important; }
+          [data-finance-light] .text-secondary-foreground { color: #0F172A !important; }
 
           /* ── Finance Light: Sidebar & Submenus ──────────────── */
           html[data-finance-light] .sidebar-shell {
