@@ -1660,6 +1660,27 @@ export default function Layout({ children, currentPageName }) {
             --ring: 24 95% 53% !important;
           }
 
+          /* Shadcn utility class overrides — bypass CSS variables entirely */
+          [data-raise-light] .bg-card { background-color: #FFFFFF !important; }
+          [data-raise-light] .text-card-foreground { color: #0F172A !important; }
+          [data-raise-light] .bg-popover { background-color: #FFFFFF !important; }
+          [data-raise-light] .text-popover-foreground { color: #0F172A !important; }
+          [data-raise-light] .bg-muted { background-color: #F1F5F9 !important; }
+          [data-raise-light] .text-muted-foreground { color: #64748B !important; }
+          [data-raise-light] .bg-accent { background-color: #F1F5F9 !important; }
+          [data-raise-light] .text-accent-foreground { color: #1E293B !important; }
+          [data-raise-light] .bg-secondary { background-color: #F1F5F9 !important; }
+          [data-raise-light] .text-secondary-foreground { color: #1E293B !important; }
+          [data-raise-light] .bg-background { background-color: #F8FAFC !important; }
+          [data-raise-light] .text-foreground { color: #0F172A !important; }
+          [data-raise-light] .bg-primary { background-color: #EA580C !important; }
+          [data-raise-light] .text-primary-foreground { color: #FFFFFF !important; }
+          [data-raise-light] .text-primary { color: #EA580C !important; }
+          [data-raise-light] .border-border { border-color: #E2E8F0 !important; }
+          [data-raise-light] .border-input { border-color: #E2E8F0 !important; }
+          [data-raise-light] .ring-ring { --tw-ring-color: #EA580C !important; }
+          [data-raise-light] .border { border-color: #E2E8F0 !important; }
+
           /* Page & body */
           html[data-raise-light] body { background: #F8FAFC !important; color: #0F172A !important; }
           html[data-raise-light] .min-h-screen.bg-black,
