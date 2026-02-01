@@ -2,11 +2,23 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo } 
 
 type Theme = 'dark' | 'light';
 
+type ThemeHelper = (lightClasses: string, darkClasses: string) => string;
+
 interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
   /** Helper: returns lightClasses when light, darkClasses when dark */
-  t: (lightClasses: string, darkClasses: string) => string;
+  t: ThemeHelper;
+  // Module-specific aliases (all point to the same function)
+  st: ThemeHelper;   // Settings / Sentinel
+  pt: ThemeHelper;   // Projects
+  gt: ThemeHelper;   // Growth
+  ct: ThemeHelper;   // Create
+  ft: ThemeHelper;   // Finance
+  rt: ThemeHelper;   // Raise
+  lt: ThemeHelper;   // Learn
+  crt: ThemeHelper;  // CRM
+  syt: ThemeHelper;  // Sync
 }
 
 const STORAGE_KEY = 'app-theme';
@@ -50,7 +62,20 @@ export function GlobalThemeProvider({ children }: { children: React.ReactNode })
     [theme],
   );
 
-  const value = useMemo(() => ({ theme, toggleTheme, t }), [theme, toggleTheme, t]);
+  const value = useMemo(() => ({
+    theme,
+    toggleTheme,
+    t,
+    st: t,
+    pt: t,
+    gt: t,
+    ct: t,
+    ft: t,
+    rt: t,
+    lt: t,
+    crt: t,
+    syt: t,
+  }), [theme, toggleTheme, t]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
