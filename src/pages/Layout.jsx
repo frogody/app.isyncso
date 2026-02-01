@@ -1793,9 +1793,15 @@ export default function Layout({ children, currentPageName }) {
             border-right: 1px solid #E2E8F0 !important;
           }
           [data-raise-light] .bg-gradient-to-t.from-black { background: #FFFFFF !important; }
-          [data-raise-light] .hover\:text-white:hover { color: #0F172A !important; }
-          [data-raise-light] .active\:bg-white\/10:active { background: rgba(0,0,0,0.06) !important; }
+          /* Submenu flyout overrides */
+          [data-raise-light] .border-white\/5 { border-color: #E2E8F0 !important; }
+          [data-raise-light] .bg-gray-900 { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
           [data-raise-light] .text-gray-400 { color: #64748B !important; }
+          [data-raise-light] .text-gray-300 { color: #64748B !important; }
+          [data-raise-light] .hover\:text-white:hover { color: #0F172A !important; }
+          [data-raise-light] .group-hover\:text-white:hover { color: #0F172A !important; }
+          [data-raise-light] .active\:bg-white\/10:active { background: rgba(0,0,0,0.06) !important; }
+          [data-raise-light] .animate-in { border-color: #E2E8F0 !important; }
 
           /* Surfaces */
           .glass-card {
