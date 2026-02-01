@@ -5,7 +5,7 @@ import {
   CreditCard, Plus, Search, Filter, Download, Calendar, Tag, Building,
   MoreVertical, Edit2, Trash2, X, ChevronDown, ArrowUpDown, Receipt,
   TrendingUp, TrendingDown, Wallet, PieChart, FileText, Upload, Check,
-  Sun, Moon
+  Sun, Moon, Monitor, Megaphone, Briefcase, Plane, Users, Handshake, Zap, Shield, Scale, Package
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,16 +29,16 @@ import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 
 const EXPENSE_CATEGORIES = [
-  { value: 'software', label: 'Software & Tools', color: 'blue', icon: '💻' },
-  { value: 'marketing', label: 'Marketing', color: 'blue', icon: '📣' },
-  { value: 'office', label: 'Office & Equipment', color: 'blue', icon: '🏢' },
-  { value: 'travel', label: 'Travel', color: 'blue', icon: '✈️' },
-  { value: 'salary', label: 'Salaries', color: 'blue', icon: '👥' },
-  { value: 'contractors', label: 'Contractors', color: 'blue', icon: '🤝' },
-  { value: 'utilities', label: 'Utilities', color: 'blue', icon: '⚡' },
-  { value: 'insurance', label: 'Insurance', color: 'blue', icon: '🛡️' },
-  { value: 'legal', label: 'Legal & Professional', color: 'blue', icon: '⚖️' },
-  { value: 'other', label: 'Other', color: 'zinc', icon: '📦' }
+  { value: 'software', label: 'Software & Tools', color: 'blue', icon: Monitor },
+  { value: 'marketing', label: 'Marketing', color: 'blue', icon: Megaphone },
+  { value: 'office', label: 'Office & Equipment', color: 'blue', icon: Briefcase },
+  { value: 'travel', label: 'Travel', color: 'blue', icon: Plane },
+  { value: 'salary', label: 'Salaries', color: 'blue', icon: Users },
+  { value: 'contractors', label: 'Contractors', color: 'blue', icon: Handshake },
+  { value: 'utilities', label: 'Utilities', color: 'blue', icon: Zap },
+  { value: 'insurance', label: 'Insurance', color: 'blue', icon: Shield },
+  { value: 'legal', label: 'Legal & Professional', color: 'blue', icon: Scale },
+  { value: 'other', label: 'Other', color: 'zinc', icon: Package }
 ];
 
 export default function FinanceExpenses() {
@@ -349,7 +349,7 @@ export default function FinanceExpenses() {
                   <span className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>Total Expenses</span>
                   <Wallet className="w-3.5 h-3.5 text-blue-400" />
                 </div>
-                <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>${stats.total.toLocaleString()}</p>
+                <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>€{stats.total.toLocaleString()}</p>
                 <p className={`text-[10px] ${ft('text-slate-400', 'text-zinc-500')}`}>{stats.count} expenses</p>
               </CardContent>
             </Card>
@@ -364,7 +364,7 @@ export default function FinanceExpenses() {
                     <TrendingDown className="w-3.5 h-3.5 text-blue-400" />
                   )}
                 </div>
-                <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>${stats.thisMonth.toLocaleString()}</p>
+                <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>€{stats.thisMonth.toLocaleString()}</p>
                 <p className={`text-[10px] text-blue-400`}>
                   {stats.percentChange > 0 ? '+' : ''}{stats.percentChange}% vs last month
                 </p>
@@ -381,10 +381,10 @@ export default function FinanceExpenses() {
                   {categoryBreakdown.slice(0, 3).map((cat) => (
                     <div key={cat.category} className="flex-1">
                       <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="text-sm">{cat.config.icon}</span>
+                        {cat.config.icon && <cat.config.icon className="w-3.5 h-3.5 text-blue-400" />}
                         <span className={`text-[10px] ${ft('text-slate-500', 'text-zinc-400')} capitalize`}>{cat.config.label}</span>
                       </div>
-                      <p className={`text-xs font-medium ${ft('text-slate-900', 'text-white')}`}>${cat.amount.toLocaleString()}</p>
+                      <p className={`text-xs font-medium ${ft('text-slate-900', 'text-white')}`}>€{cat.amount.toLocaleString()}</p>
                       <Progress value={parseFloat(cat.percentage)} className={`h-0.5 mt-1 ${ft('bg-slate-200', 'bg-zinc-800')}`} indicatorClassName="bg-blue-500" />
                     </div>
                   ))}
@@ -429,7 +429,7 @@ export default function FinanceExpenses() {
                         onClick={() => setCategoryFilter(cat.value)}
                         className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800')}
                       >
-                        <span className="mr-2">{cat.icon}</span>
+                        {cat.icon && <cat.icon className="w-4 h-4 mr-2 inline-block" />}
                         {cat.label}
                       </DropdownMenuItem>
                     ))}
@@ -533,7 +533,7 @@ export default function FinanceExpenses() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 flex-1">
                             <div className={`p-1.5 rounded-lg bg-${catConfig.color}-500/10`}>
-                              <span className="text-base">{catConfig.icon}</span>
+                              {catConfig.icon && <catConfig.icon className="w-4 h-4 text-blue-400" />}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
@@ -565,8 +565,8 @@ export default function FinanceExpenses() {
                           </div>
 
                           <div className="flex items-center gap-3">
-                            <p className="text-sm font-semibold text-blue-400">
-                              -${(expense.amount || 0).toLocaleString()}
+                            <p className="text-sm font-semibold text-red-400">
+                              -€{(expense.amount || 0).toLocaleString()}
                             </p>
 
                             <DropdownMenu>
@@ -669,7 +669,7 @@ export default function FinanceExpenses() {
                 >
                   {EXPENSE_CATEGORIES.map((cat) => (
                     <option key={cat.value} value={cat.value}>
-                      {cat.icon} {cat.label}
+                      {cat.label}
                     </option>
                   ))}
                 </select>

@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import {
   CreditCard, Plus, Search, Filter, MoreVertical, Calendar, Euro,
   RefreshCw, Edit, Trash2, Pause, Play, Clock, AlertCircle, CheckCircle2,
-  XCircle, RotateCcw, ExternalLink, Download, ArrowUpDown, Sun, Moon
+  XCircle, RotateCcw, ExternalLink, Download, ArrowUpDown, Sun, Moon,
+  Monitor, Server, Megaphone, MessageSquare, Zap, BarChart3, Shield, Users, Wallet, Package
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,16 +34,16 @@ const BILLING_CYCLES = [
 ];
 
 const CATEGORIES = [
-  { value: 'software', label: 'Software & SaaS', icon: '💻' },
-  { value: 'infrastructure', label: 'Infrastructure', icon: '🏗️' },
-  { value: 'marketing', label: 'Marketing', icon: '📢' },
-  { value: 'communication', label: 'Communication', icon: '💬' },
-  { value: 'productivity', label: 'Productivity', icon: '⚡' },
-  { value: 'analytics', label: 'Analytics', icon: '📊' },
-  { value: 'security', label: 'Security', icon: '🔒' },
-  { value: 'hr', label: 'HR & Payroll', icon: '👥' },
-  { value: 'finance', label: 'Finance', icon: '💰' },
-  { value: 'other', label: 'Other', icon: '📦' }
+  { value: 'software', label: 'Software & SaaS', icon: Monitor },
+  { value: 'infrastructure', label: 'Infrastructure', icon: Server },
+  { value: 'marketing', label: 'Marketing', icon: Megaphone },
+  { value: 'communication', label: 'Communication', icon: MessageSquare },
+  { value: 'productivity', label: 'Productivity', icon: Zap },
+  { value: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { value: 'security', label: 'Security', icon: Shield },
+  { value: 'hr', label: 'HR & Payroll', icon: Users },
+  { value: 'finance', label: 'Finance', icon: Wallet },
+  { value: 'other', label: 'Other', icon: Package }
 ];
 
 export default function FinanceSubscriptions() {
@@ -559,7 +560,7 @@ export default function FinanceSubscriptions() {
                       className={`w-full ${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} border rounded-md px-3 py-2 mt-1`}
                     >
                       {CATEGORIES.map(c => (
-                        <option key={c.value} value={c.value}>{c.icon} {c.label}</option>
+                        <option key={c.value} value={c.value}>{c.label}</option>
                       ))}
                     </select>
                   </div>

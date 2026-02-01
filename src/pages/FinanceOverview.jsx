@@ -365,13 +365,13 @@ export default function FinanceOverview() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className={`${ft('text-slate-500', 'text-zinc-400')} text-xs mb-0.5`}>Net Income</p>
-                  <p className={`text-xl font-bold ${metrics.netIncome >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
+                  <p className={`text-xl font-bold ${metrics.netIncome >= 0 ? 'text-emerald-500' : 'text-red-400'}`}>
                     {metrics.netIncome >= 0 ? '+' : ''}{metrics.netIncome.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' })}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className={`${ft('text-slate-500', 'text-zinc-400')} text-xs mb-0.5`}>Profit Margin</p>
-                  <p className={`text-lg font-bold ${metrics.profitMargin >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
+                  <p className={`text-lg font-bold ${metrics.profitMargin >= 0 ? 'text-emerald-500' : 'text-red-400'}`}>
                     {metrics.profitMargin}%
                   </p>
                 </div>
@@ -410,7 +410,7 @@ export default function FinanceOverview() {
                         <div className="flex-1">
                           <div className="flex justify-between text-sm">
                             <span className={`${ft('text-slate-600', 'text-zinc-300')} capitalize`}>{cat.name}</span>
-                            <span className={`${ft('text-slate-900', 'text-white')} font-medium`}>€${cat.amount.toLocaleString()}</span>
+                            <span className={`${ft('text-slate-900', 'text-white')} font-medium`}>€{cat.amount.toLocaleString()}</span>
                           </div>
                           <Progress
                             value={(cat.amount / metrics.totalExpenses) * 100}
@@ -469,7 +469,7 @@ export default function FinanceOverview() {
                             </p>
                           </div>
                         </div>
-                        <p className={`font-medium ${transaction.type === 'invoice' ? 'text-blue-400' : 'text-blue-400'}`}>
+                        <p className={`font-medium ${transaction.type === 'invoice' ? 'text-emerald-500' : 'text-red-400'}`}>
                           {transaction.type === 'invoice' ? '+' : '-'}€{(transaction.total || transaction.amount || 0).toLocaleString()}
                         </p>
                       </div>
