@@ -18,7 +18,7 @@ import DeclarationOfConformity from '@/components/sentinel/DeclarationOfConformi
 import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
 import type { AISystemRecord } from '@/tokens/sentinel';
 import { ThemeToggle } from '@/components/sentinel/ThemeToggle';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { cn } from '@/lib/utils';
 
 const DOC_TYPES = [
@@ -43,7 +43,7 @@ const DOC_TYPES = [
 ];
 
 function StepIndicator({ step }: { step: number }) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
   return (
     <div className="flex items-center gap-2 mb-4">
       {[1, 2, 3].map(s => (
@@ -67,7 +67,7 @@ function SystemSelectionCard({
 }: {
   system: AISystemRecord; isSelected: boolean; onClick: () => void; index: number;
 }) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -119,7 +119,7 @@ function SystemSelectionCard({
 }
 
 function DocTypeCard({ docType, onClick, index }: { docType: typeof DOC_TYPES[0]; onClick: () => void; index: number }) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
   const Icon = docType.icon;
   const isTechnical = docType.id === 'technical';
   return (
@@ -193,7 +193,7 @@ export default function DocumentGenerator() {
     setSelectedSystem, setDocType, setSearchTerm, goBack,
   } = useDocumentGenerator() as any;
 
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
 
   // Derive current step
   const step = docType && selectedSystem ? 3 : selectedSystem ? 2 : 1;

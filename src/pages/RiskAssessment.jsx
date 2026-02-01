@@ -7,7 +7,7 @@ import { ArrowLeft, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import RiskAssessmentWizard from "@/components/sentinel/RiskAssessmentWizard";
-import { useSentinelTheme } from "@/contexts/SentinelThemeContext";
+import { useTheme } from "@/contexts/GlobalThemeContext";
 import { cn } from "@/lib/utils";
 
 export default function RiskAssessment() {
@@ -16,7 +16,7 @@ export default function RiskAssessment() {
   const systemId = searchParams.get("systemId");
   const [system, setSystem] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
 
   const loadSystem = React.useCallback(async () => {
     if (!systemId) {

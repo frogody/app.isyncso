@@ -7,7 +7,7 @@ import { AlertTriangle, CheckCircle, Shield, ArrowRight, ArrowLeft, Info, Sparkl
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSentinelTheme } from "@/contexts/SentinelThemeContext";
+import { useTheme } from "@/contexts/GlobalThemeContext";
 import { cn } from "@/lib/utils";
 
 /**
@@ -156,7 +156,7 @@ const WIZARD_STEPS = [
 ];
 
 export default function RiskAssessmentWizard({ systemId, onComplete }) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
 
   const [step, setStep] = useState(0); // Start at URL input step
   const [urls, setUrls] = useState({ website: '', product: '' });

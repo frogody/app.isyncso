@@ -8,7 +8,7 @@ import {
   Bell, Send, BarChart3, Plus, Users, Clock, Zap, Search, UserPlus, Layers,
   Sun, Moon
 } from "lucide-react";
-import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { GrowthPageTransition } from '@/components/growth/ui';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,7 @@ import {
 import { toast } from "sonner";
 
 export default function Growth() {
-  const { theme, toggleTheme, gt } = useGrowthTheme();
+  const { theme, toggleTheme, gt } = useTheme();
   const { user } = useUser();
   const [opportunities, setOpportunities] = useState([]);
   const [campaigns, setCampaigns] = useState([]);

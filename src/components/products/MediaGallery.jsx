@@ -6,6 +6,7 @@ import {
   ChevronLeft, ChevronRight, X, Play, Maximize2, Image as ImageIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export default function MediaGallery({
   images = [],
@@ -13,11 +14,11 @@ export default function MediaGallery({
   featuredImage = null,
   className,
 }) {
+  const { t } = useTheme();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('images');
 
-  // Combine featured with gallery images
   const allImages = [
     ...(featuredImage ? [featuredImage] : []),
     ...images
@@ -44,11 +45,11 @@ export default function MediaGallery({
 
   if (allImages.length === 0 && videos.length === 0) {
     return (
-      <div className={cn("rounded-2xl bg-zinc-900/50 border border-white/5 p-12 text-center", className)}>
-        <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center mx-auto mb-4">
-          <ImageIcon className="w-8 h-8 text-zinc-600" />
+      <div className={cn(`rounded-2xl ${t('bg-white shadow-sm', 'bg-zinc-900/50')} border ${t('border-slate-200', 'border-white/5')} p-12 text-center`, className)}>
+        <div className={`w-16 h-16 rounded-full ${t('bg-slate-100', 'bg-zinc-800')} flex items-center justify-center mx-auto mb-4`}>
+          <ImageIcon className={`w-8 h-8 ${t('text-slate-400', 'text-zinc-600')}`} />
         </div>
-        <p className="text-zinc-500">No media available</p>
+        <p className={t('text-slate-500', 'text-zinc-500')}>No media available</p>
       </div>
     );
   }
@@ -58,9 +59,8 @@ export default function MediaGallery({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Tabs (if videos exist) */}
       {videos.length > 0 && (
-        <div className="flex items-center gap-2 p-1 rounded-lg bg-zinc-800/50 border border-white/5 w-fit">
+        <div className={`flex items-center gap-2 p-1 rounded-lg ${t('bg-slate-100', 'bg-zinc-800/50')} border ${t('border-slate-200', 'border-white/5')} w-fit`}>
           <Button
             variant="ghost"
             size="sm"
@@ -69,7 +69,7 @@ export default function MediaGallery({
               "px-4",
               activeTab === 'images'
                 ? "bg-cyan-500/20 text-cyan-400"
-                : "text-zinc-400 hover:text-white"
+                : `${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')}`
             )}
           >
             <ImageIcon className="w-4 h-4 mr-2" />
@@ -83,7 +83,7 @@ export default function MediaGallery({
               "px-4",
               activeTab === 'videos'
                 ? "bg-cyan-500/20 text-cyan-400"
-                : "text-zinc-400 hover:text-white"
+                : `${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')}`
             )}
           >
             <Play className="w-4 h-4 mr-2" />
@@ -92,8 +92,7 @@ export default function MediaGallery({
         </div>
       )}
 
-      {/* Main Display */}
-      <div className="relative rounded-2xl overflow-hidden bg-zinc-900/50 border border-white/5">
+      <div className={`relative rounded-2xl overflow-hidden ${t('bg-white shadow-sm', 'bg-zinc-900/50')} border ${t('border-slate-200', 'border-white/5')}`}>
         <div className="aspect-video relative">
           <AnimatePresence mode="wait">
             <motion.div
@@ -120,8 +119,8 @@ export default function MediaGallery({
                     allowFullScreen
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-zinc-900">
-                    <Play className="w-16 h-16 text-zinc-600" />
+                  <div className={`w-full h-full flex items-center justify-center ${t('bg-slate-100', 'bg-zinc-900')}`}>
+                    <Play className={`w-16 h-16 ${t('text-slate-400', 'text-zinc-600')}`} />
                   </div>
                 )
               ) : (
@@ -133,15 +132,14 @@ export default function MediaGallery({
                     onClick={() => openLightbox(selectedIndex)}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-zinc-900">
-                    <ImageIcon className="w-16 h-16 text-zinc-600" />
+                  <div className={`w-full h-full flex items-center justify-center ${t('bg-slate-100', 'bg-zinc-900')}`}>
+                    <ImageIcon className={`w-16 h-16 ${t('text-slate-400', 'text-zinc-600')}`} />
                   </div>
                 )
               )}
             </motion.div>
           </AnimatePresence>
 
-          {/* Navigation Arrows */}
           {allMedia.length > 1 && (
             <>
               <button
@@ -159,7 +157,6 @@ export default function MediaGallery({
             </>
           )}
 
-          {/* Fullscreen Button (for images) */}
           {!isVideo && currentMedia?.url && (
             <button
               onClick={() => openLightbox(selectedIndex)}
@@ -169,7 +166,6 @@ export default function MediaGallery({
             </button>
           )}
 
-          {/* Counter */}
           {allMedia.length > 1 && (
             <div className="absolute bottom-4 left-4 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white text-sm">
               {selectedIndex + 1} / {allMedia.length}
@@ -178,9 +174,8 @@ export default function MediaGallery({
         </div>
       </div>
 
-      {/* Thumbnails */}
       {allMedia.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-zinc-700">
+        <div className={`flex gap-2 overflow-x-auto pb-2 ${t('scrollbar-thin scrollbar-thumb-slate-300', 'scrollbar-thin scrollbar-thumb-zinc-700')}`}>
           {allMedia.map((media, index) => (
             <button
               key={index}
@@ -189,11 +184,11 @@ export default function MediaGallery({
                 "flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all",
                 selectedIndex === index
                   ? "border-cyan-500 ring-2 ring-cyan-500/30"
-                  : "border-white/10 hover:border-white/30"
+                  : `${t('border-slate-200', 'border-white/10')} ${t('hover:border-slate-400', 'hover:border-white/30')}`
               )}
             >
               {isVideo ? (
-                <div className="w-full h-full bg-zinc-800 flex items-center justify-center relative">
+                <div className={`w-full h-full ${t('bg-slate-100', 'bg-zinc-800')} flex items-center justify-center relative`}>
                   {media.thumbnail ? (
                     <img
                       src={media.thumbnail}
@@ -217,7 +212,6 @@ export default function MediaGallery({
         </div>
       )}
 
-      {/* Lightbox */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
         <DialogContent className="bg-black border-none max-w-[95vw] max-h-[95vh] p-0 overflow-hidden">
           <div className="relative w-full h-[90vh] flex items-center justify-center">
@@ -253,7 +247,6 @@ export default function MediaGallery({
               />
             )}
 
-            {/* Caption */}
             {currentMedia?.caption && (
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-black/70 backdrop-blur-sm text-white text-sm max-w-lg text-center">
                 {currentMedia.caption}

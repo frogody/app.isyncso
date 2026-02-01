@@ -5,7 +5,7 @@ import { Plus, Calendar, FileText, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SentinelCard } from './ui/SentinelCard';
 import type { AISystemRecord } from '@/tokens/sentinel';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 interface QuickActionsProps {
   systems?: AISystemRecord[];
@@ -52,7 +52,7 @@ export default function QuickActions({ systems = [], taskCount = 0 }: QuickActio
     },
   ];
 
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

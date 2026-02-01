@@ -8,7 +8,7 @@ import {
   Building2, Users, Euro, Briefcase, Cpu, ChevronRight, Sparkles,
   Clock, Eye, EyeOff, ArrowRight, X, Sun, Moon
 } from "lucide-react";
-import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { GrowthPageTransition } from '@/components/growth/ui';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -254,7 +254,7 @@ function SignalCard({ signal, onAction, onDismiss, index, gt }) {
 }
 
 export default function GrowthSignals() {
-  const { theme, toggleTheme, gt } = useGrowthTheme();
+  const { theme, toggleTheme, gt } = useTheme();
   const [signals, setSignals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('all');

@@ -7,10 +7,10 @@ import {
   ListPlus, BarChart3, Filter, FileText, Send
 } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
-import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 const ClayCampaignBuilder = () => {
-  const { gt } = useGrowthTheme();
+  const { gt } = useTheme();
 
   const Chip = ({ selected, onClick, children }) => (
     <button onClick={onClick} className={`px-2.5 py-1 rounded text-xs transition-all ${selected ? 'bg-indigo-500 text-white' : `${gt('bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200', 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10')}`}`}>

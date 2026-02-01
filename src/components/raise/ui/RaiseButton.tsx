@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
-import { useRaiseTheme } from '@/contexts/RaiseThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 interface RaiseButtonProps
   extends Omit<
@@ -29,7 +29,7 @@ export const RaiseButton = forwardRef<HTMLButtonElement, RaiseButtonProps>(
     },
     ref,
   ) {
-    const { rt } = useRaiseTheme();
+    const { rt } = useTheme();
 
     return (
       <motion.button

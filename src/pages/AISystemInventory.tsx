@@ -28,7 +28,7 @@ import RiskClassificationBadge from '@/components/sentinel/RiskClassificationBad
 import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
 import type { AISystemRecord, RiskClassification, ComplianceStatus } from '@/tokens/sentinel';
 import { ThemeToggle } from '@/components/sentinel/ThemeToggle';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { cn } from '@/lib/utils';
 
 const AISystemModal = lazy(() => import('@/components/sentinel/AISystemModal'));
@@ -58,7 +58,7 @@ interface SystemCardProps {
 }
 
 function SystemCard({ system, onEdit, onDelete, onAssess, index }: SystemCardProps) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
   const statusConfig = STATUS_PROGRESS[system.compliance_status] || STATUS_PROGRESS['not-started'];
   const daysRegistered = Math.floor(
     (Date.now() - new Date(system.created_date).getTime()) / (1000 * 60 * 60 * 24),
@@ -226,7 +226,7 @@ export default function AISystemInventory() {
     navigate(`${createPageUrl('RiskAssessment')}?systemId=${systemId}`);
   }, [navigate]);
 
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
 
   if (loading) {
     return (

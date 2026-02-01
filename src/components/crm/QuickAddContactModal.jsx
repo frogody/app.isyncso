@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useCRMTheme } from '@/contexts/CRMThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Dialog,
@@ -31,7 +31,7 @@ import { usePermissions } from '@/components/context/PermissionContext';
 import { toast } from 'sonner';
 
 export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable = 'contacts' }) {
-  const { crt } = useCRMTheme();
+  const { crt } = useTheme();
   const { user } = useUser();
   const { hasPermission } = usePermissions();
   const canCreate = hasPermission('users.create');

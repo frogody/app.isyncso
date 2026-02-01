@@ -6,57 +6,38 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 /**
  * BarcodeDisplay - Automatically generates and displays barcodes from SKU/EAN/UPC codes
- *
- * Supports:
- * - EAN-13 (13-digit European Article Number)
- * - EAN-8 (8-digit short EAN)
- * - UPC-A (12-digit Universal Product Code)
- * - CODE128 (variable length, for SKUs)
- *
- * Auto-detects format based on code length and content
  */
 export default function BarcodeDisplay({
   code,
-  type = 'auto', // 'auto', 'ean13', 'ean8', 'upca', 'code128'
+  type = 'auto',
   label,
   showLabel = true,
   showControls = true,
   height = 60,
   width = 2,
   className,
-  displayMode = 'inline', // 'inline', 'card', 'compact'
+  displayMode = 'inline',
 }) {
+  const { t } = useTheme();
   const svgRef = useRef(null);
   const [copied, setCopied] = useState(false);
   const [barcodeValid, setBarcodeValid] = useState(false);
   const [detectedFormat, setDetectedFormat] = useState(null);
 
-  // Auto-detect barcode format based on code characteristics
   const detectFormat = (code) => {
     if (!code) return null;
-
     const cleanCode = code.replace(/[^0-9]/g, '');
-
-    // EAN-13: 13 digits (European Article Number)
     if (/^\d{13}$/.test(cleanCode)) return 'ean13';
-
-    // EAN-8: 8 digits (short form)
     if (/^\d{8}$/.test(cleanCode)) return 'ean8';
-
-    // UPC-A: 12 digits (US/Canada)
     if (/^\d{12}$/.test(cleanCode)) return 'upca';
-
-    // UPC-E: 6 digits (compressed UPC)
     if (/^\d{6}$/.test(cleanCode)) return 'upce';
-
-    // For alphanumeric or other lengths, use Code128
     return 'code128';
   };
 
-  // Generate barcode
   useEffect(() => {
     if (!code || !svgRef.current) {
       setBarcodeValid(false);
@@ -66,7 +47,6 @@ export default function BarcodeDisplay({
     const format = type === 'auto' ? detectFormat(code) : type;
     setDetectedFormat(format);
 
-    // Map our format names to JsBarcode format names
     const formatMap = {
       'ean13': 'EAN13',
       'ean8': 'EAN8',
@@ -118,12 +98,9 @@ export default function BarcodeDisplay({
 
   const handleDownload = () => {
     if (!svgRef.current) return;
-
-    // Get SVG data
     const svgData = new XMLSerializer().serializeToString(svgRef.current);
     const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(svgBlob);
-
     const link = document.createElement('a');
     link.href = url;
     link.download = `barcode-${code}.svg`;
@@ -131,13 +108,11 @@ export default function BarcodeDisplay({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-
     toast.success('Barcode downloaded');
   };
 
   const handlePrint = () => {
     if (!svgRef.current) return;
-
     const svgData = new XMLSerializer().serializeToString(svgRef.current);
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
@@ -164,7 +139,6 @@ export default function BarcodeDisplay({
         <body>
           ${svgData}
           <script>
-            // Invert colors for printing
             document.querySelectorAll('svg rect').forEach(r => r.setAttribute('fill', 'white'));
             document.querySelectorAll('svg path').forEach(p => p.setAttribute('fill', 'black'));
             document.querySelectorAll('svg text').forEach(t => t.setAttribute('fill', 'black'));
@@ -179,16 +153,15 @@ export default function BarcodeDisplay({
   if (!code) {
     return (
       <div className={cn(
-        "flex items-center justify-center p-4 rounded-lg bg-zinc-800/50 border border-white/5",
+        `flex items-center justify-center p-4 rounded-lg ${t('bg-slate-100', 'bg-zinc-800/50')} border ${t('border-slate-200', 'border-white/5')}`,
         className
       )}>
-        <Barcode className="w-8 h-8 text-zinc-600" />
-        <span className="ml-2 text-zinc-500 text-sm">No barcode data</span>
+        <Barcode className={`w-8 h-8 ${t('text-slate-400', 'text-zinc-600')}`} />
+        <span className={`ml-2 ${t('text-slate-500', 'text-zinc-500')} text-sm`}>No barcode data</span>
       </div>
     );
   }
 
-  // Compact mode - just the barcode inline
   if (displayMode === 'compact') {
     return (
       <div className={cn("inline-flex items-center gap-3", className)}>
@@ -200,7 +173,7 @@ export default function BarcodeDisplay({
             variant="ghost"
             size="sm"
             onClick={handleCopy}
-            className="h-7 w-7 p-0 text-zinc-400 hover:text-white"
+            className={`h-7 w-7 p-0 ${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')}`}
           >
             {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
           </Button>
@@ -209,7 +182,6 @@ export default function BarcodeDisplay({
     );
   }
 
-  // Inline mode - barcode with minimal styling
   if (displayMode === 'inline') {
     return (
       <div className={cn("flex items-center gap-4", className)}>
@@ -222,7 +194,7 @@ export default function BarcodeDisplay({
               variant="ghost"
               size="icon"
               onClick={handleCopy}
-              className="h-8 w-8 text-zinc-400 hover:text-white"
+              className={`h-8 w-8 ${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')}`}
               title="Copy code"
             >
               {copied ? <Check className="w-4 h-4 text-cyan-400" /> : <Copy className="w-4 h-4" />}
@@ -231,7 +203,7 @@ export default function BarcodeDisplay({
               variant="ghost"
               size="icon"
               onClick={handleDownload}
-              className="h-8 w-8 text-zinc-400 hover:text-white"
+              className={`h-8 w-8 ${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')}`}
               title="Download SVG"
             >
               <Download className="w-4 h-4" />
@@ -240,7 +212,7 @@ export default function BarcodeDisplay({
               variant="ghost"
               size="icon"
               onClick={handlePrint}
-              className="h-8 w-8 text-zinc-400 hover:text-white"
+              className={`h-8 w-8 ${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')}`}
               title="Print"
             >
               <Printer className="w-4 h-4" />
@@ -251,17 +223,16 @@ export default function BarcodeDisplay({
     );
   }
 
-  // Card mode - full featured display
+  // Card mode
   return (
     <div className={cn(
-      "rounded-xl bg-zinc-900/50 border border-white/5 overflow-hidden",
+      `rounded-xl ${t('bg-white shadow-sm', 'bg-zinc-900/50')} border ${t('border-slate-200', 'border-white/5')} overflow-hidden`,
       className
     )}>
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
+      <div className={`px-4 py-3 border-b ${t('border-slate-200', 'border-white/5')} flex items-center justify-between`}>
         <div className="flex items-center gap-2">
           <Barcode className="w-4 h-4 text-cyan-400" />
-          <span className="text-sm font-medium text-white">
+          <span className={`text-sm font-medium ${t('text-slate-900', 'text-white')}`}>
             {detectedFormat?.toUpperCase() || 'Barcode'}
           </span>
         </div>
@@ -270,21 +241,19 @@ export default function BarcodeDisplay({
         )}
       </div>
 
-      {/* Barcode */}
       <div className="p-4 flex justify-center bg-white">
         <svg ref={svgRef} style={{ maxWidth: '100%' }} />
       </div>
 
-      {/* Controls */}
       {showControls && (
-        <div className="px-4 py-3 border-t border-white/5 flex items-center justify-between">
-          <span className="text-sm text-zinc-400 font-mono">{code}</span>
+        <div className={`px-4 py-3 border-t ${t('border-slate-200', 'border-white/5')} flex items-center justify-between`}>
+          <span className={`text-sm ${t('text-slate-500', 'text-zinc-400')} font-mono`}>{code}</span>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleCopy}
-              className="h-8 px-3 text-zinc-400 hover:text-white"
+              className={`h-8 px-3 ${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')}`}
             >
               {copied ? (
                 <><Check className="w-4 h-4 mr-1 text-cyan-400" /> Copied</>
@@ -296,7 +265,7 @@ export default function BarcodeDisplay({
               variant="ghost"
               size="sm"
               onClick={handleDownload}
-              className="h-8 px-3 text-zinc-400 hover:text-white"
+              className={`h-8 px-3 ${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')}`}
             >
               <Download className="w-4 h-4 mr-1" /> SVG
             </Button>
@@ -304,7 +273,7 @@ export default function BarcodeDisplay({
               variant="ghost"
               size="sm"
               onClick={handlePrint}
-              className="h-8 px-3 text-zinc-400 hover:text-white"
+              className={`h-8 px-3 ${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')}`}
             >
               <Printer className="w-4 h-4 mr-1" /> Print
             </Button>

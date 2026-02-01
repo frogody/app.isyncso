@@ -7,6 +7,9 @@ import {
   Eye, Edit2,
   Settings, Loader2
 } from "lucide-react";
+import { Sun, Moon } from 'lucide-react';
+import { useTheme } from '@/contexts/GlobalThemeContext';
+import { ProductsPageTransition } from '@/components/products/ui';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -16,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
 import { Product, ProductCategory } from "@/api/entities";
 import { db } from "@/api/supabaseClient";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -50,12 +54,13 @@ const TYPE_ICONS = {
 };
 
 function ProductCard({ product }) {
+  const { t } = useTheme();
   const Icon = TYPE_ICONS[product.type] || Package;
   const status = STATUS_COLORS[product.status] || STATUS_COLORS.draft;
 
   return (
     <Link to={createPageUrl(`ProductDetail?type=${product.type}&slug=${product.slug}`)}>
-      <div className="group p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60 hover:border-cyan-500/30 transition-all cursor-pointer">
+      <div className={cn("group p-4 rounded-xl border transition-all cursor-pointer", t('bg-white shadow-sm', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'), "hover:border-cyan-500/30")}>
         <div className="flex items-start gap-4">
           {/* Product Image or Icon */}
           <div className="w-16 h-16 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -73,10 +78,10 @@ function ProductCard({ product }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h3 className="font-medium text-white truncate group-hover:text-cyan-400 transition-colors">
+                <h3 className={cn("font-medium truncate group-hover:text-cyan-400 transition-colors", t('text-slate-900', 'text-white'))}>
                   {product.name}
                 </h3>
-                <p className="text-sm text-zinc-500 mt-0.5 line-clamp-1">
+                <p className={cn("text-sm mt-0.5 line-clamp-1", t('text-slate-400', 'text-zinc-500'))}>
                   {product.tagline || product.short_description || 'No description'}
                 </p>
               </div>
@@ -91,7 +96,7 @@ function ProductCard({ product }) {
                 {product.type}
               </span>
               {product.category && (
-                <span className="text-xs text-zinc-500">
+                <span className={cn("text-xs", t('text-slate-400', 'text-zinc-500'))}>
                   {product.category}
                 </span>
               )}
@@ -109,6 +114,7 @@ const PRODUCTS_SETTINGS_KEY = 'isyncso_products_settings';
 
 export default function Products() {
   const { user, companyId } = useUser();
+  const { theme, toggleTheme, t } = useTheme();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -339,58 +345,68 @@ export default function Products() {
 
 
   return (
-    <div className="min-h-screen bg-black">
+    <ProductsPageTransition className={cn("min-h-screen", t('bg-slate-50', 'bg-black'))}>
       <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
           <div>
-            <h1 className="text-lg font-bold text-white">Products</h1>
-            <p className="text-xs text-zinc-400">{stats.total} total products</p>
+            <h1 className={cn("text-lg font-bold", t('text-slate-900', 'text-white'))}>Products</h1>
+            <p className={cn("text-xs", t('text-slate-500', 'text-zinc-400'))}>{stats.total} total products</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {/* Theme Toggle */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleTheme}
+              className={cn("border", t('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700'))}
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+
             {/* Settings Popover */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700"
+                  className={cn("border", t('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700'))}
                 >
                   <Settings className="w-4 h-4 mr-1" /> Settings
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-72 bg-zinc-900 border-zinc-800 p-4" align="end">
+              <PopoverContent className={cn("w-72 border p-4", t('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800'))} align="end">
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-medium text-white mb-1">Product Types</h4>
-                    <p className="text-xs text-zinc-500">Enable or disable product categories</p>
+                    <h4 className={cn("font-medium mb-1", t('text-slate-900', 'text-white'))}>Product Types</h4>
+                    <p className={cn("text-xs", t('text-slate-400', 'text-zinc-500'))}>Enable or disable product categories</p>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50">
+                  <div className={cn("flex items-center justify-between p-3 rounded-lg border", t('bg-slate-100 border-slate-200', 'bg-zinc-800/50 border-zinc-700/50'))}>
                     <div className="flex items-center gap-3">
                       <Cloud className="w-4 h-4 text-cyan-400" />
                       <div>
-                        <div className="text-sm font-medium text-white">Digital</div>
-                        <div className="text-xs text-zinc-500">SaaS, software, courses</div>
+                        <div className={cn("text-sm font-medium", t('text-slate-900', 'text-white'))}>Digital</div>
+                        <div className={cn("text-xs", t('text-slate-400', 'text-zinc-500'))}>SaaS, software, courses</div>
                       </div>
                     </div>
                     <Switch checked={digitalEnabled} onCheckedChange={handleDigitalToggle} disabled={settingsSaving} />
                   </div>
 
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50">
+                  <div className={cn("flex items-center justify-between p-3 rounded-lg border", t('bg-slate-100 border-slate-200', 'bg-zinc-800/50 border-zinc-700/50'))}>
                     <div className="flex items-center gap-3">
                       <Box className="w-4 h-4 text-cyan-400" />
                       <div>
-                        <div className="text-sm font-medium text-white">Physical</div>
-                        <div className="text-xs text-zinc-500">Hardware, goods, inventory</div>
+                        <div className={cn("text-sm font-medium", t('text-slate-900', 'text-white'))}>Physical</div>
+                        <div className={cn("text-xs", t('text-slate-400', 'text-zinc-500'))}>Hardware, goods, inventory</div>
                       </div>
                     </div>
                     <Switch checked={physicalEnabled} onCheckedChange={handlePhysicalToggle} disabled={settingsSaving} />
                   </div>
 
                   {settingsSaving && (
-                    <div className="text-xs text-center text-zinc-500">Saving...</div>
+                    <div className={cn("text-xs text-center", t('text-slate-400', 'text-zinc-500'))}>Saving...</div>
                   )}
                 </div>
               </PopoverContent>
@@ -417,12 +433,12 @@ export default function Products() {
           ].map((stat) => {
             const StatIcon = stat.icon;
             return (
-              <div key={stat.label} className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+              <div key={stat.label} className={cn("border rounded-xl p-3", t('bg-white shadow-sm', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
                 <div className="flex items-center justify-between mb-2">
                   <StatIcon className="w-4 h-4 text-cyan-400/70" />
                 </div>
-                <div className="text-lg font-bold text-white">{stat.value}</div>
-                <div className="text-[10px] text-zinc-500">{stat.label}</div>
+                <div className={cn("text-lg font-bold", t('text-slate-900', 'text-white'))}>{stat.value}</div>
+                <div className={cn("text-[10px]", t('text-slate-400', 'text-zinc-500'))}>{stat.label}</div>
               </div>
             );
           })}
@@ -432,22 +448,22 @@ export default function Products() {
         <div className={`grid gap-4 ${digitalEnabled && physicalEnabled ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
           {digitalEnabled && (
             <Link to={createPageUrl('ProductsDigital')}>
-              <div className="group p-4 bg-zinc-900/50 border border-zinc-800/60 rounded-xl hover:border-cyan-500/30 transition-all cursor-pointer">
+              <div className={cn("group p-4 border rounded-xl hover:border-cyan-500/30 transition-all cursor-pointer", t('bg-white shadow-sm', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
                     <Cloud className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-base font-semibold text-white group-hover:text-cyan-400 transition-colors">
+                    <h3 className={cn("text-base font-semibold group-hover:text-cyan-400 transition-colors", t('text-slate-900', 'text-white'))}>
                       Digital Products
                     </h3>
-                    <p className="text-xs text-zinc-400 mt-1">
+                    <p className={cn("text-xs mt-1", t('text-slate-500', 'text-zinc-400'))}>
                       Software, SaaS, courses, subscriptions, and downloadable content
                     </p>
                     <div className="flex items-center gap-3 mt-3">
                       <span className="text-lg font-bold text-cyan-400">{stats.digital}</span>
-                      <span className="text-xs text-zinc-500">products</span>
-                      <ArrowRight className="w-4 h-4 text-zinc-500 ml-auto group-hover:text-cyan-400 transition-colors" />
+                      <span className={cn("text-xs", t('text-slate-400', 'text-zinc-500'))}>products</span>
+                      <ArrowRight className={cn("w-4 h-4 ml-auto group-hover:text-cyan-400 transition-colors", t('text-slate-400', 'text-zinc-500'))} />
                     </div>
                   </div>
                 </div>
@@ -457,22 +473,22 @@ export default function Products() {
 
           {physicalEnabled && (
             <Link to={createPageUrl('ProductsPhysical')}>
-              <div className="group p-4 bg-zinc-900/50 border border-zinc-800/60 rounded-xl hover:border-cyan-500/30 transition-all cursor-pointer">
+              <div className={cn("group p-4 border rounded-xl hover:border-cyan-500/30 transition-all cursor-pointer", t('bg-white shadow-sm', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
                     <Box className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-base font-semibold text-white group-hover:text-cyan-400 transition-colors">
+                    <h3 className={cn("text-base font-semibold group-hover:text-cyan-400 transition-colors", t('text-slate-900', 'text-white'))}>
                       Physical Products
                     </h3>
-                    <p className="text-xs text-zinc-400 mt-1">
+                    <p className={cn("text-xs mt-1", t('text-slate-500', 'text-zinc-400'))}>
                       Hardware, merchandise, equipment, and tangible goods
                     </p>
                     <div className="flex items-center gap-3 mt-3">
                       <span className="text-lg font-bold text-cyan-400">{stats.physical}</span>
-                      <span className="text-xs text-zinc-500">products</span>
-                      <ArrowRight className="w-4 h-4 text-zinc-500 ml-auto group-hover:text-cyan-400 transition-colors" />
+                      <span className={cn("text-xs", t('text-slate-400', 'text-zinc-500'))}>products</span>
+                      <ArrowRight className={cn("w-4 h-4 ml-auto group-hover:text-cyan-400 transition-colors", t('text-slate-400', 'text-zinc-500'))} />
                     </div>
                   </div>
                 </div>
@@ -483,12 +499,12 @@ export default function Products() {
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+          <Search className={cn("absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4", t('text-slate-400', 'text-zinc-500'))} />
           <Input
             placeholder="Search products..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 bg-zinc-900/50 border-zinc-800/60 text-white placeholder:text-zinc-500"
+            className={cn("pl-9", t('bg-white border-slate-200 text-slate-900 placeholder:text-slate-400', 'bg-zinc-900/50 border-zinc-800/60 text-white placeholder:text-zinc-500'))}
           />
         </div>
 
@@ -496,7 +512,7 @@ export default function Products() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-20 bg-zinc-800/50" />
+              <Skeleton key={i} className={cn("h-20", t('bg-slate-200', 'bg-zinc-800/50'))} />
             ))}
           </div>
         ) : filteredProducts.length > 0 ? (
@@ -507,11 +523,11 @@ export default function Products() {
           </div>
         ) : (
           <div className="text-center py-16">
-            <div className="w-14 h-14 rounded-2xl bg-zinc-800/50 flex items-center justify-center mx-auto mb-4">
+            <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4", t('bg-slate-100', 'bg-zinc-800/50'))}>
               <Package className="w-7 h-7 text-zinc-600" />
             </div>
-            <p className="text-white font-medium">No products yet</p>
-            <p className="text-sm text-zinc-500 mt-1 max-w-xs mx-auto">
+            <p className={cn("font-medium", t('text-slate-900', 'text-white'))}>No products yet</p>
+            <p className={cn("text-sm mt-1 max-w-xs mx-auto", t('text-slate-400', 'text-zinc-500'))}>
               {searchQuery ? 'No products match your search' : 'Get started by adding your first product'}
             </p>
             {!searchQuery && (
@@ -525,7 +541,7 @@ export default function Products() {
         {filteredProducts.length > 0 && (
           <div className="flex justify-center">
             <Link to={createPageUrl(digitalEnabled ? 'ProductsDigital' : 'ProductsPhysical')}>
-              <Button variant="outline" className="border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800">
+              <Button variant="outline" className={cn("border", t('border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100', 'border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800'))}>
                 View All Products <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
@@ -534,16 +550,16 @@ export default function Products() {
 
         {/* Categories */}
         {categories.length > 0 && (
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-white mb-3">Categories</h3>
+          <div className={cn("border rounded-xl p-4", t('bg-white shadow-sm', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
+            <h3 className={cn("text-sm font-semibold mb-3", t('text-slate-900', 'text-white'))}>Categories</h3>
             <div className="flex flex-wrap gap-2">
               {categories.map((category) => (
                 <Badge
                   key={category.id}
-                  className="bg-zinc-800/50 border border-zinc-700/50 text-zinc-300 hover:border-cyan-500/30 hover:text-cyan-400 cursor-pointer transition-colors"
+                  className={cn("border hover:border-cyan-500/30 hover:text-cyan-400 cursor-pointer transition-colors", t('bg-slate-100 border-slate-200 text-slate-600', 'bg-zinc-800/50 border-zinc-700/50 text-zinc-300'))}
                 >
                   {category.name}
-                  <span className="ml-2 text-[10px] text-zinc-500">
+                  <span className={cn("ml-2 text-[10px]", t('text-slate-400', 'text-zinc-500'))}>
                     {products.filter(p => p.category_id === category.id).length}
                   </span>
                 </Badge>
@@ -555,44 +571,44 @@ export default function Products() {
 
       {/* Create Product Modal */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-md">
+        <DialogContent className={cn("border max-w-md", t('bg-white border-slate-200 text-slate-900', 'bg-zinc-900 border-zinc-800 text-white'))}>
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">Create New Product</DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogDescription className={t('text-slate-500', 'text-zinc-400')}>
               Enter basic details to create a product. You can add more details after.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="product-name" className="text-zinc-300">Product Name</Label>
+              <Label htmlFor="product-name" className={t('text-slate-600', 'text-zinc-300')}>Product Name</Label>
               <Input
                 id="product-name"
                 placeholder="Enter product name..."
                 value={newProductData.name}
                 onChange={(e) => setNewProductData(prev => ({ ...prev, name: e.target.value }))}
-                className="bg-zinc-800/50 border-zinc-700 text-white placeholder:text-zinc-500"
+                className={cn(t('bg-slate-100 border-slate-200 text-slate-900 placeholder:text-slate-400', 'bg-zinc-800/50 border-zinc-700 text-white placeholder:text-zinc-500'))}
                 autoFocus
               />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-zinc-300">Product Type</Label>
+              <Label className={t('text-slate-600', 'text-zinc-300')}>Product Type</Label>
               <Select
                 value={newProductData.type}
                 onValueChange={(value) => setNewProductData(prev => ({ ...prev, type: value }))}
               >
-                <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                <SelectTrigger className={cn(t('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800/50 border-zinc-700 text-white'))}>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-800 border-zinc-700">
-                  <SelectItem value="digital" className="text-white hover:bg-zinc-700">
+                <SelectContent className={cn(t('bg-white border-slate-200', 'bg-zinc-800 border-zinc-700'))}>
+                  <SelectItem value="digital" className={cn(t('text-slate-900 hover:bg-slate-100', 'text-white hover:bg-zinc-700'))}>
                     <div className="flex items-center gap-2">
                       <Cloud className="w-4 h-4 text-cyan-400" />
                       Digital Product
                     </div>
                   </SelectItem>
-                  <SelectItem value="physical" className="text-white hover:bg-zinc-700">
+                  <SelectItem value="physical" className={cn(t('text-slate-900 hover:bg-slate-100', 'text-white hover:bg-zinc-700'))}>
                     <div className="flex items-center gap-2">
                       <Box className="w-4 h-4 text-cyan-400" />
                       Physical Product
@@ -603,17 +619,17 @@ export default function Products() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-zinc-300">Initial Status</Label>
+              <Label className={t('text-slate-600', 'text-zinc-300')}>Initial Status</Label>
               <Select
                 value={newProductData.status}
                 onValueChange={(value) => setNewProductData(prev => ({ ...prev, status: value }))}
               >
-                <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                <SelectTrigger className={cn(t('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800/50 border-zinc-700 text-white'))}>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-800 border-zinc-700">
-                  <SelectItem value="draft" className="text-white hover:bg-zinc-700">Draft</SelectItem>
-                  <SelectItem value="published" className="text-white hover:bg-zinc-700">Published</SelectItem>
+                <SelectContent className={cn(t('bg-white border-slate-200', 'bg-zinc-800 border-zinc-700'))}>
+                  <SelectItem value="draft" className={cn(t('text-slate-900 hover:bg-slate-100', 'text-white hover:bg-zinc-700'))}>Draft</SelectItem>
+                  <SelectItem value="published" className={cn(t('text-slate-900 hover:bg-slate-100', 'text-white hover:bg-zinc-700'))}>Published</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -623,7 +639,7 @@ export default function Products() {
             <Button
               variant="outline"
               onClick={() => setShowCreateModal(false)}
-              className="border-zinc-700 text-zinc-300 hover:text-white"
+              className={cn("border", t('border-slate-200 text-slate-600 hover:text-slate-900', 'border-zinc-700 text-zinc-300 hover:text-white'))}
             >
               Cancel
             </Button>
@@ -647,6 +663,6 @@ export default function Products() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </ProductsPageTransition>
   );
 }

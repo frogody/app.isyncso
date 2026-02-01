@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { useRaiseTheme } from '@/contexts/RaiseThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import {
   RaiseCard,
@@ -64,7 +64,7 @@ export function RaiseStatCard({
   accentColor = 'orange',
   className,
 }: RaiseStatCardProps) {
-  const { rt } = useRaiseTheme();
+  const { rt } = useTheme();
 
   if (loading) {
     return <RaiseCardSkeleton className={cn('h-[120px]', className)} />;

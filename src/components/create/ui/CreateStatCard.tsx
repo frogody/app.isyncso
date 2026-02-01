@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CreateCard } from './CreateCard';
-import { useCreateTheme } from '@/contexts/CreateThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 interface CreateStatCardProps {
   label: string;
@@ -15,7 +15,7 @@ interface CreateStatCardProps {
 }
 
 export function CreateStatCard({ label, value, subtitle, icon: Icon, trend, loading, delay = 0 }: CreateStatCardProps) {
-  const { ct } = useCreateTheme();
+  const { ct } = useTheme();
 
   if (loading) {
     return <CreateStatCardSkeleton />;
@@ -56,7 +56,7 @@ export function CreateStatCard({ label, value, subtitle, icon: Icon, trend, load
 }
 
 function CreateStatCardSkeleton() {
-  const { ct } = useCreateTheme();
+  const { ct } = useTheme();
   return (
     <CreateCard padding="md" className="min-w-0">
       <div className="flex items-center justify-between mb-2">

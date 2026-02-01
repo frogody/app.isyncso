@@ -13,7 +13,7 @@ import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import { useSyncState } from '@/components/context/SyncStateContext';
 import SyncAvatarMini from '@/components/icons/SyncAvatarMini';
-import { useSyncTheme } from '@/contexts/SyncThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 // Generate unique session ID
 const generateSessionId = () => `floating-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -21,7 +21,7 @@ const generateSessionId = () => `floating-${Date.now()}-${Math.random().toString
 export default function SyncFloatingChat({ isOpen, onClose, onExpandToFullPage, onStartVoice }) {
   const { user } = useUser();
   const syncState = useSyncState();
-  const { syt } = useSyncTheme();
+  const { syt } = useTheme();
   const [messages, setMessages] = useState([
     { role: 'assistant', text: "Hey! How can I help?", ts: Date.now() }
   ]);

@@ -5,6 +5,7 @@ import {
   CheckCircle, AlertTriangle, Plus, Minus, FileText, User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 const ACTIVITY_ICONS = {
   created: Plus,
@@ -34,13 +35,12 @@ const ACTIVITY_COLORS = {
   default: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
 };
 
-function ActivityItem({ activity }) {
+function ActivityItem({ activity, t }) {
   const Icon = ACTIVITY_ICONS[activity.type] || ACTIVITY_ICONS.default;
   const colorClass = ACTIVITY_COLORS[activity.type] || ACTIVITY_COLORS.default;
 
   return (
     <div className="flex gap-3 group">
-      {/* Icon */}
       <div className={cn(
         "flex-shrink-0 w-8 h-8 rounded-full border flex items-center justify-center",
         colorClass
@@ -48,37 +48,34 @@ function ActivityItem({ activity }) {
         <Icon className="w-4 h-4" />
       </div>
 
-      {/* Content */}
       <div className="flex-1 min-w-0 pb-4">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <p className="text-sm text-white font-medium">{activity.title}</p>
+            <p className={`text-sm ${t('text-slate-900', 'text-white')} font-medium`}>{activity.title}</p>
             {activity.description && (
-              <p className="text-xs text-zinc-500 mt-0.5">{activity.description}</p>
+              <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')} mt-0.5`}>{activity.description}</p>
             )}
           </div>
-          <span className="text-xs text-zinc-600 whitespace-nowrap">
+          <span className={`text-xs ${t('text-slate-400', 'text-zinc-600')} whitespace-nowrap`}>
             {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
           </span>
         </div>
 
-        {/* User info */}
         {activity.user && (
           <div className="flex items-center gap-1.5 mt-1.5">
-            <User className="w-3 h-3 text-zinc-600" />
-            <span className="text-xs text-zinc-600">{activity.user}</span>
+            <User className={`w-3 h-3 ${t('text-slate-400', 'text-zinc-600')}`} />
+            <span className={`text-xs ${t('text-slate-400', 'text-zinc-600')}`}>{activity.user}</span>
           </div>
         )}
 
-        {/* Change details */}
         {activity.changes && (
-          <div className="mt-2 p-2 rounded-lg bg-zinc-900/50 border border-white/5">
+          <div className={`mt-2 p-2 rounded-lg ${t('bg-slate-50', 'bg-zinc-900/50')} border ${t('border-slate-200', 'border-white/5')}`}>
             {Object.entries(activity.changes).map(([field, change]) => (
               <div key={field} className="flex items-center gap-2 text-xs">
-                <span className="text-zinc-500">{field}:</span>
-                <span className="text-zinc-600 line-through">{change.old}</span>
-                <span className="text-zinc-400">→</span>
-                <span className="text-white">{change.new}</span>
+                <span className={t('text-slate-500', 'text-zinc-500')}>{field}:</span>
+                <span className={`${t('text-slate-400', 'text-zinc-600')} line-through`}>{change.old}</span>
+                <span className={t('text-slate-400', 'text-zinc-400')}>→</span>
+                <span className={t('text-slate-900', 'text-white')}>{change.new}</span>
               </div>
             ))}
           </div>
@@ -94,34 +91,33 @@ export default function ActivityTimeline({
   showEmpty = true,
   className
 }) {
+  const { t } = useTheme();
   const displayActivities = activities.slice(0, maxItems);
 
   if (displayActivities.length === 0 && showEmpty) {
     return (
       <div className={cn("text-center py-8", className)}>
-        <div className="w-12 h-12 rounded-full bg-zinc-800 border border-white/5 flex items-center justify-center mx-auto mb-3">
-          <FileText className="w-6 h-6 text-zinc-600" />
+        <div className={`w-12 h-12 rounded-full ${t('bg-slate-100', 'bg-zinc-800')} border ${t('border-slate-200', 'border-white/5')} flex items-center justify-center mx-auto mb-3`}>
+          <FileText className={`w-6 h-6 ${t('text-slate-400', 'text-zinc-600')}`} />
         </div>
-        <p className="text-sm text-zinc-500">No activity yet</p>
-        <p className="text-xs text-zinc-600 mt-1">Changes to this product will appear here</p>
+        <p className={`text-sm ${t('text-slate-500', 'text-zinc-500')}`}>No activity yet</p>
+        <p className={`text-xs ${t('text-slate-400', 'text-zinc-600')} mt-1`}>Changes to this product will appear here</p>
       </div>
     );
   }
 
   return (
     <div className={cn("relative", className)}>
-      {/* Timeline line */}
-      <div className="absolute left-4 top-8 bottom-0 w-px bg-gradient-to-b from-white/10 to-transparent" />
+      <div className={`absolute left-4 top-8 bottom-0 w-px bg-gradient-to-b ${t('from-slate-200', 'from-white/10')} to-transparent`} />
 
-      {/* Activities */}
       <div className="space-y-0">
         {displayActivities.map((activity, index) => (
-          <ActivityItem key={activity.id || index} activity={activity} />
+          <ActivityItem key={activity.id || index} activity={activity} t={t} />
         ))}
       </div>
 
       {activities.length > maxItems && (
-        <div className="pl-11 text-xs text-zinc-500">
+        <div className={`pl-11 text-xs ${t('text-slate-500', 'text-zinc-500')}`}>
           +{activities.length - maxItems} more activities
         </div>
       )}
@@ -134,7 +130,6 @@ export function generateMockActivities(product, details) {
   const activities = [];
   const now = new Date();
 
-  // Product created
   if (product?.created_at) {
     activities.push({
       id: 'created',
@@ -144,7 +139,6 @@ export function generateMockActivities(product, details) {
     });
   }
 
-  // Last updated
   if (product?.updated_at && product.updated_at !== product.created_at) {
     activities.push({
       id: 'updated',
@@ -154,7 +148,6 @@ export function generateMockActivities(product, details) {
     });
   }
 
-  // Published
   if (product?.published_at) {
     activities.push({
       id: 'published',
@@ -164,17 +157,15 @@ export function generateMockActivities(product, details) {
     });
   }
 
-  // Low stock warning
   if (details?.inventory?.quantity <= (details?.inventory?.low_stock_threshold || 10)) {
     activities.push({
       id: 'low_stock',
       type: 'low_stock',
       title: 'Low stock warning',
       description: `Only ${details.inventory.quantity} units remaining`,
-      timestamp: new Date(now - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
+      timestamp: new Date(now - 1000 * 60 * 60 * 24).toISOString(),
     });
   }
 
-  // Sort by timestamp descending
   return activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 }

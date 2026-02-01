@@ -8,7 +8,7 @@ import {
   Building, Percent, ExternalLink, Image, FileUp, Loader2,
   Sun, Moon
 } from "lucide-react";
-import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -910,7 +910,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
 
 export default function InventoryExpenses() {
   const { user } = useUser();
-  const { theme, toggleTheme, ft } = useFinanceTheme();
+  const { theme, toggleTheme, ft } = useTheme();
   const [expenses, setExpenses] = useState([]);
   const [reviewQueue, setReviewQueue] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

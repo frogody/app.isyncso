@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { useUser } from '@/components/context/UserContext';
 import { usePermissions } from '@/components/context/PermissionContext';
 import { supabase } from '@/api/supabaseClient';
-import { useCRMTheme } from '@/contexts/CRMThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { CRMPageTransition } from '@/components/crm/ui';
 
 import { FileUploader } from '@/components/import/FileUploader';
@@ -66,7 +66,7 @@ export default function ContactsImport() {
   const { hasPermission } = usePermissions();
   const canCreate = hasPermission('users.create');
   const navigate = useNavigate();
-  const { theme, toggleTheme, crt } = useCRMTheme();
+  const { theme, toggleTheme, crt } = useTheme();
 
   // All hooks must be called unconditionally at the top
   // Wizard state

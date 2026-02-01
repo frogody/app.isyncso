@@ -5,7 +5,7 @@ import { Shield, FileText, AlertTriangle, CheckCircle } from 'lucide-react';
 import { ChatInterface } from '@/components/ui/ChatInterface';
 import { SentinelCardSkeleton } from '@/components/sentinel/ui/SentinelCard';
 import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { cn } from '@/lib/utils';
 
 interface Message {
@@ -28,7 +28,7 @@ const QUICK_ACTIONS: QuickAction[] = [
 
 export default function SentinelChat() {
   const { user, isLoading: userLoading } = useUser();
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);

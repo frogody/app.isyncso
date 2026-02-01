@@ -20,7 +20,7 @@ import { SentinelEmptyState } from '@/components/sentinel/ui/SentinelErrorBounda
 import { StatCard } from '@/components/sentinel/ui/StatCard';
 import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
 import { ThemeToggle } from '@/components/sentinel/ThemeToggle';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { cn } from '@/lib/utils';
 
 interface AIPlan {
@@ -58,7 +58,7 @@ const ENFORCEMENT_MILESTONES = [
 ];
 
 function MilestoneCard({ milestone, index }: { milestone: typeof ENFORCEMENT_MILESTONES[0]; index: number }) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
   const isPast = new Date(milestone.date) < new Date();
   const daysUntil = Math.ceil((new Date(milestone.date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   const Icon = milestone.icon;
@@ -178,7 +178,7 @@ function CircularProgress({ value, size = 32 }: { value: number; size?: number }
 }
 
 function SystemProgressCard({ item, index }: { item: any; index: number }) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
 
   const riskBorderColor = (() => {
     const risk = item.system.risk_classification?.toLowerCase();
@@ -231,7 +231,7 @@ function SystemProgressCard({ item, index }: { item: any; index: number }) {
 }
 
 function UrgentTaskCard({ task, index }: { task: any; index: number }) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
       <SentinelCard padding="md" className={task.daysRemaining < 0 ? 'border-red-500/30' : ''}>
@@ -290,7 +290,7 @@ export default function ComplianceRoadmap() {
     }
   }, [systems, stats]);
 
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
 
   if (loading) {
     return (

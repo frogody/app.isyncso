@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { X, Sparkles, Globe, Building2, Box, Database, Check } from "lucide-react";
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSentinelTheme } from "@/contexts/SentinelThemeContext";
+import { useTheme } from "@/contexts/GlobalThemeContext";
 import { cn } from "@/lib/utils";
 
 /**
@@ -34,7 +34,7 @@ import { cn } from "@/lib/utils";
  * @param {Function} props.onCreateAndAssess - Optional callback to go directly to assessment
  */
 export default function AISystemModal({ system, onClose, onSave, onCreateAndAssess }) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
 
   const [formData, setFormData] = useState({
     name: system?.name || "",

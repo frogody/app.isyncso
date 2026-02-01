@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export default function QuickActions({
   product,
@@ -37,6 +38,7 @@ export default function QuickActions({
   isPhysical = true,
   className
 }) {
+  const { t } = useTheme();
   const [stockDialogOpen, setStockDialogOpen] = useState(false);
   const [stockAdjustment, setStockAdjustment] = useState(0);
   const [stockReason, setStockReason] = useState('');
@@ -82,7 +84,7 @@ export default function QuickActions({
           <Button
             variant="outline"
             size="sm"
-            className="border-white/10 text-zinc-300 hover:text-white"
+            className={`${t('border-slate-200', 'border-white/10')} ${t('text-slate-700', 'text-zinc-300')} ${t('hover:text-slate-900', 'hover:text-white')}`}
             onClick={() => setStockDialogOpen(true)}
           >
             <Package className="w-4 h-4 mr-2" />
@@ -105,7 +107,7 @@ export default function QuickActions({
         <Button
           variant="outline"
           size="sm"
-          className="border-white/10 text-zinc-300 hover:text-white"
+          className={`${t('border-slate-200', 'border-white/10')} ${t('text-slate-700', 'text-zinc-300')} ${t('hover:text-slate-900', 'hover:text-white')}`}
           onClick={handleCopyLink}
         >
           <Share2 className="w-4 h-4 mr-2" />
@@ -118,14 +120,14 @@ export default function QuickActions({
             <Button
               variant="outline"
               size="sm"
-              className="border-white/10 text-zinc-300 hover:text-white"
+              className={`${t('border-slate-200', 'border-white/10')} ${t('text-slate-700', 'text-zinc-300')} ${t('hover:text-slate-900', 'hover:text-white')}`}
             >
               <MoreHorizontal className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 bg-zinc-900 border-zinc-800">
+          <DropdownMenuContent align="end" className={`w-48 ${t('bg-white', 'bg-zinc-900')} ${t('border-slate-200', 'border-zinc-800')}`}>
             <DropdownMenuItem
-              className="text-zinc-300 hover:text-white focus:text-white cursor-pointer"
+              className={`${t('text-slate-700', 'text-zinc-300')} ${t('hover:text-slate-900', 'hover:text-white')} focus:text-white cursor-pointer`}
               onClick={() => onDuplicate?.()}
             >
               <Copy className="w-4 h-4 mr-2" />
@@ -133,14 +135,14 @@ export default function QuickActions({
             </DropdownMenuItem>
 
             <DropdownMenuItem
-              className="text-zinc-300 hover:text-white focus:text-white cursor-pointer"
+              className={`${t('text-slate-700', 'text-zinc-300')} ${t('hover:text-slate-900', 'hover:text-white')} focus:text-white cursor-pointer`}
               onClick={handleCopyId}
             >
               <QrCode className="w-4 h-4 mr-2" />
               Copy ID
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator className="bg-zinc-800" />
+            <DropdownMenuSeparator className={t('bg-slate-200', 'bg-zinc-800')} />
 
             {!isPublished && !isArchived && (
               <DropdownMenuItem
@@ -162,10 +164,10 @@ export default function QuickActions({
               </DropdownMenuItem>
             )}
 
-            <DropdownMenuSeparator className="bg-zinc-800" />
+            <DropdownMenuSeparator className={t('bg-slate-200', 'bg-zinc-800')} />
 
             <DropdownMenuItem
-              className="text-zinc-300 hover:text-white focus:text-white cursor-pointer"
+              className={`${t('text-slate-700', 'text-zinc-300')} ${t('hover:text-slate-900', 'hover:text-white')} focus:text-white cursor-pointer`}
               onClick={handlePrint}
             >
               <Printer className="w-4 h-4 mr-2" />
@@ -173,14 +175,14 @@ export default function QuickActions({
             </DropdownMenuItem>
 
             <DropdownMenuItem
-              className="text-zinc-300 hover:text-white focus:text-white cursor-pointer"
+              className={`${t('text-slate-700', 'text-zinc-300')} ${t('hover:text-slate-900', 'hover:text-white')} focus:text-white cursor-pointer`}
               onClick={handleExportPDF}
             >
               <Download className="w-4 h-4 mr-2" />
               Export PDF
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator className="bg-zinc-800" />
+            <DropdownMenuSeparator className={t('bg-slate-200', 'bg-zinc-800')} />
 
             {!isArchived ? (
               <DropdownMenuItem
@@ -205,17 +207,17 @@ export default function QuickActions({
 
       {/* Stock Adjustment Dialog */}
       <Dialog open={stockDialogOpen} onOpenChange={setStockDialogOpen}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 text-white sm:max-w-md">
+        <DialogContent className={`${t('bg-white', 'bg-zinc-900')} ${t('border-slate-200', 'border-zinc-800')} ${t('text-slate-900', 'text-white')} sm:max-w-md`}>
           <DialogHeader>
             <DialogTitle>Adjust Stock</DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogDescription className={t('text-slate-500', 'text-zinc-400')}>
               Current stock: {details?.inventory?.quantity || 0} units
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label className="text-zinc-300">Adjustment</Label>
+              <Label className={t('text-slate-700', 'text-zinc-300')}>Adjustment</Label>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -229,7 +231,7 @@ export default function QuickActions({
                   type="number"
                   value={stockAdjustment}
                   onChange={(e) => setStockAdjustment(parseInt(e.target.value) || 0)}
-                  className="w-24 text-center bg-zinc-800 border-zinc-700"
+                  className={`w-24 text-center ${t('bg-slate-50', 'bg-zinc-800')} ${t('border-slate-300', 'border-zinc-700')}`}
                 />
                 <Button
                   variant="outline"
@@ -240,18 +242,18 @@ export default function QuickActions({
                   +
                 </Button>
               </div>
-              <p className="text-xs text-zinc-500">
+              <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>
                 New quantity: {(details?.inventory?.quantity || 0) + stockAdjustment}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-zinc-300">Reason (optional)</Label>
+              <Label className={t('text-slate-700', 'text-zinc-300')}>Reason (optional)</Label>
               <Input
                 value={stockReason}
                 onChange={(e) => setStockReason(e.target.value)}
                 placeholder="e.g., Physical count adjustment"
-                className="bg-zinc-800 border-zinc-700"
+                className={`${t('bg-slate-50', 'bg-zinc-800')} ${t('border-slate-300', 'border-zinc-700')}`}
               />
             </div>
           </div>
@@ -260,7 +262,7 @@ export default function QuickActions({
             <Button
               variant="outline"
               onClick={() => setStockDialogOpen(false)}
-              className="border-zinc-700 text-zinc-300"
+              className={`${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-700', 'text-zinc-300')}`}
             >
               Cancel
             </Button>

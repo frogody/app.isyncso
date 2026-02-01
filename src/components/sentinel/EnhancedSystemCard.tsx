@@ -18,7 +18,7 @@ import { SentinelCard } from './ui/SentinelCard';
 import { SentinelButton } from './ui/SentinelButton';
 import RiskClassificationBadge from './RiskClassificationBadge';
 import type { RiskClassification } from '@/tokens/sentinel';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 interface Obligation {
   id: string;
@@ -49,7 +49,7 @@ interface EnhancedSystemCardProps {
 }
 
 export default function EnhancedSystemCard({ system, onEdit }: EnhancedSystemCardProps) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
   const [obligations, setObligations] = useState<Obligation[]>([]);
   const [loadingObligations, setLoadingObligations] = useState(true);
 

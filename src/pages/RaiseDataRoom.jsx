@@ -28,10 +28,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { RaisePageTransition } from '@/components/raise/RaisePageTransition';
-import { useRaiseTheme } from '@/contexts/RaiseThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export default function RaiseDataRoom() {
-  const { theme, toggleTheme, rt } = useRaiseTheme();
+  const { theme, toggleTheme, rt } = useTheme();
   const [loading, setLoading] = useState(true);
   const [dataRooms, setDataRooms] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');

@@ -11,7 +11,7 @@ import {
   TrendingUp, ArrowRight, MoreHorizontal, Mail, Phone, ExternalLink, Trash2,
   Sparkles, Filter, ChevronDown, AlertCircle, CheckCircle2, Zap, Sun, Moon
 } from "lucide-react";
-import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { GrowthPageTransition } from '@/components/growth/ui';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,7 +49,7 @@ const emptyForm = {
 };
 
 function DealCard({ opp, onEdit, onDelete, stageConfig, index }) {
-  const { gt } = useGrowthTheme();
+  const { gt } = useTheme();
   const getDaysInStage = () => {
     const created = new Date(opp.updated_date || opp.created_date);
     return Math.floor((Date.now() - created) / (1000 * 60 * 60 * 24));
@@ -174,7 +174,7 @@ function DealCard({ opp, onEdit, onDelete, stageConfig, index }) {
 }
 
 function StageColumn({ stage, opportunities, onEdit, onDelete, onAddDeal }) {
-  const { gt } = useGrowthTheme();
+  const { gt } = useTheme();
   const stageValue = opportunities.reduce((sum, o) => sum + (o.deal_value || 0), 0);
   const weightedValue = opportunities.reduce((sum, o) => {
     const prob = o.probability || stage.probability;
@@ -261,7 +261,7 @@ function StageColumn({ stage, opportunities, onEdit, onDelete, onAddDeal }) {
 }
 
 export default function GrowthPipeline() {
-  const { theme, toggleTheme, gt } = useGrowthTheme();
+  const { theme, toggleTheme, gt } = useTheme();
   const { user } = useUser();
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);

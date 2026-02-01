@@ -13,7 +13,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mic, MicOff, Volume2, VolumeX, MessageSquare, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useSyncTheme } from '@/contexts/SyncThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { useUser } from '@/components/context/UserContext';
 import { useSyncState } from '@/components/context/SyncStateContext';
 import SyncAvatarMini from '@/components/icons/SyncAvatarMini';
@@ -41,7 +41,7 @@ const VOICE_STATES = {
 
 export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
   const { user } = useUser();
-  const { syt } = useSyncTheme();
+  const { syt } = useTheme();
   const syncState = useSyncState();
 
   // Core state

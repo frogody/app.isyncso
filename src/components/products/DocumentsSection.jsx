@@ -14,28 +14,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 const FILE_ICONS = {
-  pdf: FileText,
-  doc: FileText,
-  docx: FileText,
-  xls: FileSpreadsheet,
-  xlsx: FileSpreadsheet,
-  csv: FileSpreadsheet,
-  jpg: FileImage,
-  jpeg: FileImage,
-  png: FileImage,
-  gif: FileImage,
-  webp: FileImage,
-  svg: FileImage,
-  mp4: Film,
-  mov: Film,
-  avi: Film,
-  mp3: Music,
-  wav: Music,
-  zip: FileArchive,
-  rar: FileArchive,
-  '7z': FileArchive,
+  pdf: FileText, doc: FileText, docx: FileText,
+  xls: FileSpreadsheet, xlsx: FileSpreadsheet, csv: FileSpreadsheet,
+  jpg: FileImage, jpeg: FileImage, png: FileImage, gif: FileImage, webp: FileImage, svg: FileImage,
+  mp4: Film, mov: Film, avi: Film,
+  mp3: Music, wav: Music,
+  zip: FileArchive, rar: FileArchive, '7z': FileArchive,
 };
 
 const CATEGORY_COLORS = {
@@ -59,23 +46,21 @@ function formatFileSize(bytes) {
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
-function DocumentCard({ document, onDelete, onDownload, onPreview }) {
+function DocumentCard({ document, onDelete, onDownload, onPreview, t }) {
   const FileIcon = getFileIcon(document.name);
   const categoryColor = CATEGORY_COLORS[document.category] || CATEGORY_COLORS.other;
 
   return (
-    <div className="group p-3 rounded-lg bg-zinc-900/50 border border-white/5 hover:border-white/10 transition-all">
+    <div className={`group p-3 rounded-lg ${t('bg-white shadow-sm', 'bg-zinc-900/50')} border ${t('border-slate-200', 'border-white/5')} ${t('hover:border-slate-300', 'hover:border-white/10')} transition-all`}>
       <div className="flex items-start gap-3">
-        {/* Icon */}
-        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-zinc-800 border border-white/5 flex items-center justify-center">
-          <FileIcon className="w-5 h-5 text-zinc-400" />
+        <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${t('bg-slate-100', 'bg-zinc-800')} border ${t('border-slate-200', 'border-white/5')} flex items-center justify-center`}>
+          <FileIcon className={`w-5 h-5 ${t('text-slate-500', 'text-zinc-400')}`} />
         </div>
 
-        {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-white truncate">{document.name}</p>
+              <p className={`text-sm font-medium ${t('text-slate-900', 'text-white')} truncate`}>{document.name}</p>
               <div className="flex items-center gap-2 mt-1">
                 {document.category && (
                   <Badge variant="outline" className={cn("text-xs py-0", categoryColor)}>
@@ -83,12 +68,11 @@ function DocumentCard({ document, onDelete, onDownload, onPreview }) {
                   </Badge>
                 )}
                 {document.size && (
-                  <span className="text-xs text-zinc-600">{formatFileSize(document.size)}</span>
+                  <span className={`text-xs ${t('text-slate-400', 'text-zinc-600')}`}>{formatFileSize(document.size)}</span>
                 )}
               </div>
             </div>
 
-            {/* Actions */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -96,19 +80,19 @@ function DocumentCard({ document, onDelete, onDownload, onPreview }) {
                   size="icon"
                   className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <MoreVertical className="w-4 h-4 text-zinc-400" />
+                  <MoreVertical className={`w-4 h-4 ${t('text-slate-500', 'text-zinc-400')}`} />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
+              <DropdownMenuContent align="end" className={`${t('bg-white', 'bg-zinc-900')} ${t('border-slate-200', 'border-zinc-800')}`}>
                 <DropdownMenuItem
-                  className="text-zinc-300 cursor-pointer"
+                  className={`${t('text-slate-700', 'text-zinc-300')} cursor-pointer`}
                   onClick={() => onPreview?.(document)}
                 >
                   <Eye className="w-4 h-4 mr-2" />
                   Preview
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="text-zinc-300 cursor-pointer"
+                  className={`${t('text-slate-700', 'text-zinc-300')} cursor-pointer`}
                   onClick={() => onDownload?.(document)}
                 >
                   <Download className="w-4 h-4 mr-2" />
@@ -126,7 +110,7 @@ function DocumentCard({ document, onDelete, onDownload, onPreview }) {
           </div>
 
           {document.description && (
-            <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{document.description}</p>
+            <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')} mt-1 line-clamp-2`}>{document.description}</p>
           )}
         </div>
       </div>
@@ -141,6 +125,7 @@ export default function DocumentsSection({
   onDownload,
   className
 }) {
+  const { t } = useTheme();
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
 
@@ -181,7 +166,6 @@ export default function DocumentsSection({
     onDownload?.(doc);
   };
 
-  // Group documents by category
   const groupedDocs = documents.reduce((acc, doc) => {
     const category = doc.category || 'other';
     if (!acc[category]) acc[category] = [];
@@ -193,13 +177,12 @@ export default function DocumentsSection({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FolderOpen className="w-5 h-5 text-cyan-400" />
-          <span className="font-medium text-white">Documents & Files</span>
+          <span className={`font-medium ${t('text-slate-900', 'text-white')}`}>Documents & Files</span>
           {documents.length > 0 && (
-            <Badge variant="outline" className="border-white/10 text-zinc-400">
+            <Badge variant="outline" className={`${t('border-slate-200', 'border-white/10')} ${t('text-slate-500', 'text-zinc-400')}`}>
               {documents.length}
             </Badge>
           )}
@@ -208,7 +191,7 @@ export default function DocumentsSection({
         <Button
           size="sm"
           variant="outline"
-          className="border-white/10 text-zinc-300 hover:text-white"
+          className={`${t('border-slate-200', 'border-white/10')} ${t('text-slate-700', 'text-zinc-300')} ${t('hover:text-slate-900', 'hover:text-white')}`}
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
         >
@@ -226,27 +209,25 @@ export default function DocumentsSection({
         />
       </div>
 
-      {/* Empty State */}
       {documents.length === 0 && (
         <div
-          className="border-2 border-dashed border-white/10 rounded-lg p-8 text-center cursor-pointer hover:border-cyan-500/30 transition-colors"
+          className={`border-2 border-dashed ${t('border-slate-200', 'border-white/10')} rounded-lg p-8 text-center cursor-pointer hover:border-cyan-500/30 transition-colors`}
           onClick={() => fileInputRef.current?.click()}
         >
-          <Upload className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
-          <p className="text-sm text-zinc-400">Drop files here or click to upload</p>
-          <p className="text-xs text-zinc-600 mt-1">
+          <Upload className={`w-8 h-8 ${t('text-slate-400', 'text-zinc-600')} mx-auto mb-3`} />
+          <p className={`text-sm ${t('text-slate-500', 'text-zinc-400')}`}>Drop files here or click to upload</p>
+          <p className={`text-xs ${t('text-slate-400', 'text-zinc-600')} mt-1`}>
             Specs, certificates, manuals, marketing materials
           </p>
         </div>
       )}
 
-      {/* Document List */}
       {categories.length > 0 && (
         <div className="space-y-4">
           {categories.map((category) => (
             <div key={category}>
               {categories.length > 1 && (
-                <div className="text-xs text-zinc-500 uppercase tracking-wider mb-2">
+                <div className={`text-xs ${t('text-slate-500', 'text-zinc-500')} uppercase tracking-wider mb-2`}>
                   {category}
                 </div>
               )}
@@ -258,6 +239,7 @@ export default function DocumentsSection({
                     onDelete={onDelete}
                     onDownload={handleDownload}
                     onPreview={handlePreview}
+                    t={t}
                   />
                 ))}
               </div>

@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { CheckCircle, AlertTriangle } from 'lucide-react';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 interface ComplianceScoreGaugeProps {
   score: number;
@@ -25,7 +25,7 @@ function getRiskLevel(score: number) {
 const TICK_COLORS = ['#EF4444','#EF4444','#F97316','#F97316','#EAB308','#EAB308','#86EFAC','#86EFAC','#86EFAC','#86EFAC'];
 
 export function ComplianceScoreGauge({ score = 0, size = 'md' }: ComplianceScoreGaugeProps) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
   const config = SIZE_CONFIG[size];
   const svgWidth = config.width;
   const strokeWidth = config.strokeWidth;

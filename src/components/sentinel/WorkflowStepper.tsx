@@ -5,7 +5,7 @@ import { createPageUrl } from '@/utils';
 import { CheckCircle, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AISystemRecord } from '@/tokens/sentinel';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 interface WorkflowStep {
   id: number;
@@ -68,7 +68,7 @@ export default function WorkflowStepper({ systems = [] }: WorkflowStepperProps) 
     },
   ];
 
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
 
   const completedCount = steps.filter(s => s.isComplete).length;
   const progressPct = (completedCount / steps.length) * 100;

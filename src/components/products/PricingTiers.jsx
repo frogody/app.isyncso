@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 function formatPrice(price, currency = 'EUR') {
   if (!price && price !== 0) return '-';
@@ -17,7 +18,7 @@ function formatPrice(price, currency = 'EUR') {
   }).format(price);
 }
 
-function TierRow({ tier, index, basePrice, currency, onUpdate, onDelete, isEditing, setEditingIndex }) {
+function TierRow({ tier, index, basePrice, currency, onUpdate, onDelete, isEditing, setEditingIndex, t }) {
   const [localTier, setLocalTier] = useState(tier);
   const discount = basePrice > 0 ? ((basePrice - tier.price) / basePrice * 100).toFixed(1) : 0;
 
@@ -34,13 +35,13 @@ function TierRow({ tier, index, basePrice, currency, onUpdate, onDelete, isEditi
 
   if (isEditing) {
     return (
-      <tr className="border-b border-white/5">
+      <tr className={`border-b ${t('border-slate-200', 'border-white/5')}`}>
         <td className="py-3 px-4">
           <Input
             type="number"
             value={localTier.min_quantity}
             onChange={(e) => setLocalTier({ ...localTier, min_quantity: parseInt(e.target.value) || 0 })}
-            className="w-20 h-8 bg-zinc-800 border-cyan-500/50 text-white text-sm"
+            className={`w-20 h-8 ${t('bg-slate-50', 'bg-zinc-800')} border-cyan-500/50 ${t('text-slate-900', 'text-white')} text-sm`}
           />
         </td>
         <td className="py-3 px-4">
@@ -49,7 +50,7 @@ function TierRow({ tier, index, basePrice, currency, onUpdate, onDelete, isEditi
             value={localTier.max_quantity || ''}
             onChange={(e) => setLocalTier({ ...localTier, max_quantity: e.target.value ? parseInt(e.target.value) : null })}
             placeholder="∞"
-            className="w-20 h-8 bg-zinc-800 border-cyan-500/50 text-white text-sm"
+            className={`w-20 h-8 ${t('bg-slate-50', 'bg-zinc-800')} border-cyan-500/50 ${t('text-slate-900', 'text-white')} text-sm`}
           />
         </td>
         <td className="py-3 px-4">
@@ -58,7 +59,7 @@ function TierRow({ tier, index, basePrice, currency, onUpdate, onDelete, isEditi
             step="0.01"
             value={localTier.price}
             onChange={(e) => setLocalTier({ ...localTier, price: parseFloat(e.target.value) || 0 })}
-            className="w-24 h-8 bg-zinc-800 border-cyan-500/50 text-white text-sm"
+            className={`w-24 h-8 ${t('bg-slate-50', 'bg-zinc-800')} border-cyan-500/50 ${t('text-slate-900', 'text-white')} text-sm`}
           />
         </td>
         <td className="py-3 px-4 text-cyan-400 text-sm">-{discount}%</td>
@@ -67,7 +68,7 @@ function TierRow({ tier, index, basePrice, currency, onUpdate, onDelete, isEditi
             <Button size="icon" variant="ghost" className="h-7 w-7 text-cyan-400" onClick={handleSave}>
               <Check className="w-4 h-4" />
             </Button>
-            <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-400" onClick={handleCancel}>
+            <Button size="icon" variant="ghost" className={`h-7 w-7 ${t('text-slate-500', 'text-zinc-400')}`} onClick={handleCancel}>
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -77,10 +78,10 @@ function TierRow({ tier, index, basePrice, currency, onUpdate, onDelete, isEditi
   }
 
   return (
-    <tr className="border-b border-white/5 hover:bg-white/2 group">
-      <td className="py-3 px-4 text-white">{tier.min_quantity}</td>
-      <td className="py-3 px-4 text-zinc-400">{tier.max_quantity || '∞'}</td>
-      <td className="py-3 px-4 text-white font-medium">{formatPrice(tier.price, currency)}</td>
+    <tr className={`border-b ${t('border-slate-200', 'border-white/5')} hover:bg-white/2 group`}>
+      <td className={`py-3 px-4 ${t('text-slate-900', 'text-white')}`}>{tier.min_quantity}</td>
+      <td className={`py-3 px-4 ${t('text-slate-500', 'text-zinc-400')}`}>{tier.max_quantity || '∞'}</td>
+      <td className={`py-3 px-4 ${t('text-slate-900', 'text-white')} font-medium`}>{formatPrice(tier.price, currency)}</td>
       <td className="py-3 px-4">
         {discount > 0 && (
           <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
@@ -93,7 +94,7 @@ function TierRow({ tier, index, basePrice, currency, onUpdate, onDelete, isEditi
           <Button
             size="icon"
             variant="ghost"
-            className="h-7 w-7 text-zinc-400 hover:text-white"
+            className={`h-7 w-7 ${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')}`}
             onClick={() => setEditingIndex(index)}
           >
             <Edit2 className="w-3 h-3" />
@@ -101,7 +102,7 @@ function TierRow({ tier, index, basePrice, currency, onUpdate, onDelete, isEditi
           <Button
             size="icon"
             variant="ghost"
-            className="h-7 w-7 text-zinc-400 hover:text-red-400"
+            className={`h-7 w-7 ${t('text-slate-500', 'text-zinc-400')} hover:text-red-400`}
             onClick={() => onDelete(index)}
           >
             <Trash2 className="w-3 h-3" />
@@ -120,6 +121,7 @@ export default function PricingTiers({
   onTiersChange,
   className
 }) {
+  const { t } = useTheme();
   const [editingIndex, setEditingIndex] = useState(null);
 
   const handleAddTier = () => {
@@ -127,11 +129,10 @@ export default function PricingTiers({
     const newTier = {
       min_quantity: lastTier ? (lastTier.max_quantity || lastTier.min_quantity) + 1 : 1,
       max_quantity: null,
-      price: basePrice * 0.9, // Default 10% discount
+      price: basePrice * 0.9,
     };
 
     if (lastTier && !lastTier.max_quantity) {
-      // Update last tier's max_quantity
       const updatedTiers = [...tiers];
       updatedTiers[updatedTiers.length - 1] = {
         ...lastTier,
@@ -156,7 +157,6 @@ export default function PricingTiers({
     toast.success('Tier removed');
   };
 
-  // Calculate margin
   const margin = basePrice > 0 && costPrice > 0
     ? ((basePrice - costPrice) / basePrice * 100).toFixed(1)
     : null;
@@ -165,69 +165,67 @@ export default function PricingTiers({
     <div className={cn("space-y-4", className)}>
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/5">
-          <div className="flex items-center gap-2 text-zinc-500 mb-1">
+        <div className={`p-3 rounded-lg ${t('bg-white shadow-sm', 'bg-zinc-900/50')} border ${t('border-slate-200', 'border-white/5')}`}>
+          <div className={`flex items-center gap-2 ${t('text-slate-500', 'text-zinc-500')} mb-1`}>
             <Euro className="w-4 h-4" />
             <span className="text-xs">Base Price</span>
           </div>
-          <p className="text-lg font-semibold text-white">{formatPrice(basePrice, currency)}</p>
+          <p className={`text-lg font-semibold ${t('text-slate-900', 'text-white')}`}>{formatPrice(basePrice, currency)}</p>
         </div>
 
-        <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/5">
-          <div className="flex items-center gap-2 text-zinc-500 mb-1">
+        <div className={`p-3 rounded-lg ${t('bg-white shadow-sm', 'bg-zinc-900/50')} border ${t('border-slate-200', 'border-white/5')}`}>
+          <div className={`flex items-center gap-2 ${t('text-slate-500', 'text-zinc-500')} mb-1`}>
             <Calculator className="w-4 h-4" />
             <span className="text-xs">Cost</span>
           </div>
-          <p className="text-lg font-semibold text-white">{formatPrice(costPrice, currency)}</p>
+          <p className={`text-lg font-semibold ${t('text-slate-900', 'text-white')}`}>{formatPrice(costPrice, currency)}</p>
         </div>
 
-        <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/5">
-          <div className="flex items-center gap-2 text-zinc-500 mb-1">
+        <div className={`p-3 rounded-lg ${t('bg-white shadow-sm', 'bg-zinc-900/50')} border ${t('border-slate-200', 'border-white/5')}`}>
+          <div className={`flex items-center gap-2 ${t('text-slate-500', 'text-zinc-500')} mb-1`}>
             <TrendingDown className="w-4 h-4" />
             <span className="text-xs">Margin</span>
           </div>
           <p className={cn(
             "text-lg font-semibold",
-            margin > 30 ? "text-cyan-400" : margin > 15 ? "text-zinc-400" : "text-red-400"
+            margin > 30 ? "text-cyan-400" : margin > 15 ? t('text-slate-500', 'text-zinc-400') : "text-red-400"
           )}>
             {margin ? `${margin}%` : '-'}
           </p>
         </div>
 
-        <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/5">
-          <div className="flex items-center gap-2 text-zinc-500 mb-1">
+        <div className={`p-3 rounded-lg ${t('bg-white shadow-sm', 'bg-zinc-900/50')} border ${t('border-slate-200', 'border-white/5')}`}>
+          <div className={`flex items-center gap-2 ${t('text-slate-500', 'text-zinc-500')} mb-1`}>
             <Package className="w-4 h-4" />
             <span className="text-xs">Price Tiers</span>
           </div>
-          <p className="text-lg font-semibold text-white">{tiers.length}</p>
+          <p className={`text-lg font-semibold ${t('text-slate-900', 'text-white')}`}>{tiers.length}</p>
         </div>
       </div>
 
       {/* Tiers Table */}
-      <div className="rounded-lg border border-white/5 overflow-hidden">
+      <div className={`rounded-lg border ${t('border-slate-200', 'border-white/5')} overflow-hidden`}>
         <table className="w-full">
           <thead>
-            <tr className="bg-zinc-900/80 border-b border-white/5">
-              <th className="text-left py-2 px-4 text-xs font-medium text-zinc-500 uppercase">Min Qty</th>
-              <th className="text-left py-2 px-4 text-xs font-medium text-zinc-500 uppercase">Max Qty</th>
-              <th className="text-left py-2 px-4 text-xs font-medium text-zinc-500 uppercase">Unit Price</th>
-              <th className="text-left py-2 px-4 text-xs font-medium text-zinc-500 uppercase">Discount</th>
+            <tr className={`${t('bg-slate-50', 'bg-zinc-900/80')} border-b ${t('border-slate-200', 'border-white/5')}`}>
+              <th className={`text-left py-2 px-4 text-xs font-medium ${t('text-slate-500', 'text-zinc-500')} uppercase`}>Min Qty</th>
+              <th className={`text-left py-2 px-4 text-xs font-medium ${t('text-slate-500', 'text-zinc-500')} uppercase`}>Max Qty</th>
+              <th className={`text-left py-2 px-4 text-xs font-medium ${t('text-slate-500', 'text-zinc-500')} uppercase`}>Unit Price</th>
+              <th className={`text-left py-2 px-4 text-xs font-medium ${t('text-slate-500', 'text-zinc-500')} uppercase`}>Discount</th>
               <th className="py-2 px-4 w-20"></th>
             </tr>
           </thead>
           <tbody>
-            {/* Base price row */}
-            <tr className="border-b border-white/5 bg-cyan-500/5">
-              <td className="py-3 px-4 text-white">1</td>
-              <td className="py-3 px-4 text-zinc-400">{tiers.length > 0 ? tiers[0].min_quantity - 1 : '∞'}</td>
-              <td className="py-3 px-4 text-white font-medium">{formatPrice(basePrice, currency)}</td>
+            <tr className={`border-b ${t('border-slate-200', 'border-white/5')} bg-cyan-500/5`}>
+              <td className={`py-3 px-4 ${t('text-slate-900', 'text-white')}`}>1</td>
+              <td className={`py-3 px-4 ${t('text-slate-500', 'text-zinc-400')}`}>{tiers.length > 0 ? tiers[0].min_quantity - 1 : '∞'}</td>
+              <td className={`py-3 px-4 ${t('text-slate-900', 'text-white')} font-medium`}>{formatPrice(basePrice, currency)}</td>
               <td className="py-3 px-4">
                 <Badge className="bg-zinc-500/20 text-zinc-400 border-zinc-500/30">Base</Badge>
               </td>
               <td className="py-3 px-4"></td>
             </tr>
 
-            {/* Tier rows */}
             {tiers.map((tier, index) => (
               <TierRow
                 key={index}
@@ -239,17 +237,17 @@ export default function PricingTiers({
                 onDelete={handleDeleteTier}
                 isEditing={editingIndex === index}
                 setEditingIndex={setEditingIndex}
+                t={t}
               />
             ))}
           </tbody>
         </table>
 
-        {/* Add Tier Button */}
-        <div className="p-2 bg-zinc-900/50">
+        <div className={`p-2 ${t('bg-slate-50', 'bg-zinc-900/50')}`}>
           <Button
             variant="ghost"
             size="sm"
-            className="w-full text-zinc-400 hover:text-white hover:bg-white/5"
+            className={`w-full ${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')} hover:bg-white/5`}
             onClick={handleAddTier}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -258,8 +256,7 @@ export default function PricingTiers({
         </div>
       </div>
 
-      {/* Help Text */}
-      <p className="text-xs text-zinc-600">
+      <p className={`text-xs ${t('text-slate-400', 'text-zinc-600')}`}>
         Volume pricing applies automatically when order quantity meets the tier threshold.
       </p>
     </div>

@@ -6,6 +6,7 @@ import {
   Play, ExternalLink, FileText, Clock, Zap, Star, CheckCircle, ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export default function ProductHero({
   product,
@@ -14,6 +15,7 @@ export default function ProductHero({
   onStartTrial,
   className,
 }) {
+  const { t } = useTheme();
   const hero = digitalDetails?.hero || {};
   const hasVideo = hero.video_url || digitalDetails?.promo_videos?.[0]?.url;
   const rating = hero.rating || 4.8;
@@ -47,19 +49,19 @@ export default function ProductHero({
               </Badge>
             )}
             {product.category && (
-              <Badge className="bg-zinc-800 text-zinc-300 border border-white/10">
+              <Badge className={`${t('bg-slate-100', 'bg-zinc-800')} ${t('text-slate-700', 'text-zinc-300')} border ${t('border-slate-200', 'border-white/10')}`}>
                 {product.category}
               </Badge>
             )}
           </div>
 
           {/* Title */}
-          <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
+          <h1 className={`text-4xl lg:text-5xl font-bold ${t('text-slate-900', 'text-white')} leading-tight`}>
             {hero.headline || product.name}
           </h1>
 
           {/* Tagline */}
-          <p className="text-xl text-zinc-300 leading-relaxed">
+          <p className={`text-xl ${t('text-slate-600', 'text-zinc-300')} leading-relaxed`}>
             {hero.subheadline || product.tagline || product.short_description}
           </p>
 
@@ -74,13 +76,13 @@ export default function ProductHero({
                       "w-5 h-5",
                       i < Math.floor(rating)
                         ? "text-cyan-400 fill-cyan-400"
-                        : "text-zinc-600"
+                        : t('text-slate-300', 'text-zinc-600')
                     )}
                   />
                 ))}
               </div>
-              <span className="text-white font-medium">{rating}</span>
-              <span className="text-zinc-500">({reviewCount} reviews)</span>
+              <span className={`${t('text-slate-900', 'text-white')} font-medium`}>{rating}</span>
+              <span className={t('text-slate-500', 'text-zinc-500')}>({reviewCount} reviews)</span>
             </div>
           )}
 
@@ -93,7 +95,7 @@ export default function ProductHero({
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 + i * 0.1 }}
-                  className="flex items-center gap-3 text-zinc-300"
+                  className={`flex items-center gap-3 ${t('text-slate-600', 'text-zinc-300')}`}
                 >
                   <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
                     <Zap className="w-3 h-3 text-cyan-400" />
@@ -121,7 +123,7 @@ export default function ProductHero({
                 size="lg"
                 variant="outline"
                 onClick={onRequestDemo}
-                className="border-white/20 text-white hover:bg-white/10"
+                className={`${t('border-slate-300', 'border-white/20')} ${t('text-slate-900', 'text-white')} ${t('hover:bg-slate-100', 'hover:bg-white/10')}`}
               >
                 <Play className="w-4 h-4 mr-2" /> Watch Demo
               </Button>
@@ -131,7 +133,7 @@ export default function ProductHero({
                 size="lg"
                 variant="ghost"
                 asChild
-                className="text-zinc-400 hover:text-white"
+                className={`${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')}`}
               >
                 <a href={digitalDetails.documentation_url} target="_blank" rel="noopener noreferrer">
                   <FileText className="w-4 h-4 mr-2" /> Documentation
@@ -149,7 +151,7 @@ export default function ProductHero({
           transition={{ duration: 0.5, delay: 0.2 }}
           className="relative"
         >
-          <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-cyan-500/10">
+          <div className={`relative rounded-2xl overflow-hidden border ${t('border-slate-200', 'border-white/10')} shadow-2xl shadow-cyan-500/10`}>
             {product.featured_image?.url ? (
               <img
                 src={product.featured_image.url}
@@ -162,7 +164,7 @@ export default function ProductHero({
                   <div className="w-20 h-20 rounded-2xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center mx-auto mb-4">
                     <Zap className="w-10 h-10 text-cyan-400" />
                   </div>
-                  <p className="text-zinc-500">Product Preview</p>
+                  <p className={t('text-slate-500', 'text-zinc-500')}>Product Preview</p>
                 </div>
               </div>
             )}
@@ -185,17 +187,17 @@ export default function ProductHero({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="absolute -bottom-6 -left-6 p-4 rounded-xl bg-zinc-900/90 backdrop-blur-sm border border-white/10 shadow-xl"
+            className={`absolute -bottom-6 -left-6 p-4 rounded-xl ${t('bg-white/90', 'bg-zinc-900/90')} backdrop-blur-sm border ${t('border-slate-200', 'border-white/10')} shadow-xl`}
           >
             <div className="flex items-center gap-4">
               <div className="text-center">
                 <p className="text-2xl font-bold text-cyan-400">10k+</p>
-                <p className="text-xs text-zinc-500">Users</p>
+                <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>Users</p>
               </div>
-              <div className="w-px h-10 bg-white/10" />
+              <div className={`w-px h-10 ${t('bg-slate-200', 'bg-white/10')}`} />
               <div className="text-center">
                 <p className="text-2xl font-bold text-cyan-400">99.9%</p>
-                <p className="text-xs text-zinc-500">Uptime</p>
+                <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>Uptime</p>
               </div>
             </div>
           </motion.div>

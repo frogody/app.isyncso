@@ -6,7 +6,7 @@ import anime from '@/lib/anime-wrapper';
 const animate = anime;
 const stagger = anime.stagger;
 import { prefersReducedMotion } from '@/lib/animations';
-import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 import {
   Euro, TrendingUp, TrendingDown, CreditCard, Receipt,
@@ -30,7 +30,7 @@ export default function FinanceOverview() {
   const [subscriptions, setSubscriptions] = useState([]);
 
   const { hasPermission, isLoading: permLoading } = usePermissions();
-  const { theme, toggleTheme, ft } = useFinanceTheme();
+  const { theme, toggleTheme, ft } = useTheme();
 
   // Refs for anime.js animations
   const statsGridRef = useRef(null);

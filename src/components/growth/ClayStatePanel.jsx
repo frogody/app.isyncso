@@ -14,7 +14,7 @@ import {
 import { supabase } from '@/components/sync/supabaseSync';
 import { toast } from 'sonner';
 import { formatTimeAgo } from '@/utils/dateUtils';
-import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 const WORKFLOW_STAGES = {
   'not-in-table': { label: 'Not in Table', color: 'zinc', icon: Layers },
@@ -180,7 +180,7 @@ What outreach approach do you recommend?`
 // Using centralized formatTimeAgo from @/utils/dateUtils
 
 export default function ClayStatePanel({ sessionId: propSessionId, onSendPrompt }) {
-  const { gt } = useGrowthTheme();
+  const { gt } = useTheme();
   // Use prop, localStorage, or fallback for testing
   const sessionId = propSessionId
     || localStorage.getItem('sync_session_id');

@@ -1,20 +1,15 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { MOTION_VARIANTS } from '@/tokens/growth';
+import { MOTION_VARIANTS } from '@/tokens/products';
 
-interface GrowthPageTransitionProps {
+interface ProductsPageTransitionProps {
   children: React.ReactNode;
   className?: string;
 }
 
-const STORAGE_KEY = 'growth-theme';
+const STORAGE_KEY = 'products-theme';
 
-/**
- * Wraps page content with enter/exit fade+slide animation.
- * Reads theme directly from localStorage and polls for changes
- * so it stays in sync with useTheme() calls outside the provider.
- */
-export function GrowthPageTransition({ children, className }: GrowthPageTransitionProps) {
+export function ProductsPageTransition({ children, className }: ProductsPageTransitionProps) {
   const [theme, setTheme] = useState(() =>
     (typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY)) || 'dark'
   );
@@ -30,12 +25,12 @@ export function GrowthPageTransition({ children, className }: GrowthPageTransiti
   useEffect(() => {
     const html = document.documentElement;
     if (theme === 'light') {
-      html.setAttribute('data-growth-light', '');
+      html.setAttribute('data-products-light', '');
     } else {
-      html.removeAttribute('data-growth-light');
+      html.removeAttribute('data-products-light');
     }
     return () => {
-      html.removeAttribute('data-growth-light');
+      html.removeAttribute('data-products-light');
     };
   }, [theme]);
 
@@ -46,7 +41,6 @@ export function GrowthPageTransition({ children, className }: GrowthPageTransiti
       exit={MOTION_VARIANTS.page.exit}
       transition={MOTION_VARIANTS.page.transition}
       className={className}
-      data-growth-light={theme === 'light' ? '' : undefined}
     >
       {children}
     </motion.div>

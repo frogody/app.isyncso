@@ -38,11 +38,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { RaisePageTransition } from '@/components/raise/RaisePageTransition';
-import { useRaiseTheme } from '@/contexts/RaiseThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { MOTION_VARIANTS } from '@/tokens/raise';
 
 export default function RaiseCampaigns() {
-  const { theme, toggleTheme, rt } = useRaiseTheme();
+  const { theme, toggleTheme, rt } = useTheme();
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');

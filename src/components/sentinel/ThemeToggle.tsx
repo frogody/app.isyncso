@@ -1,9 +1,9 @@
 import { Moon, Sun } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export function ThemeToggle() {
-  const { theme, toggleTheme } = useSentinelTheme();
+  const { theme, toggleTheme } = useTheme();
   const isLight = theme === 'light';
 
   return (

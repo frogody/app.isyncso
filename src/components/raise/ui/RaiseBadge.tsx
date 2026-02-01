@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { useRaiseTheme } from '@/contexts/RaiseThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export type RaiseBadgeVariant =
   | 'primary'
@@ -37,7 +37,7 @@ export function RaiseBadge({
   className,
   children,
 }: RaiseBadgeProps) {
-  const { theme } = useRaiseTheme();
+  const { theme } = useTheme();
   const styles = theme === 'light' ? lightStyles : darkStyles;
 
   return (

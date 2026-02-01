@@ -3,7 +3,7 @@ import {
   Package, Scan, Check, AlertTriangle, Plus, Minus,
   Camera, Barcode, Boxes, ArrowRight, X, RefreshCw,
   Warehouse, MapPin, CheckCircle2, AlertCircle, Keyboard,
-  CameraOff, SwitchCamera
+  CameraOff, SwitchCamera, Sun, Moon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useUser } from "@/components/context/UserContext";
 import { PermissionGuard } from "@/components/guards";
+import { useTheme } from '@/contexts/GlobalThemeContext';
+import { ProductsPageTransition } from '@/components/products/ui';
 import { toast } from "sonner";
 import { scanForReceiving, receiveStock, getDashboardData } from "@/lib/services/inventory-service";
 import { listExpectedDeliveries, getReceivingHistory } from "@/lib/db/queries";
@@ -34,6 +36,7 @@ import { Html5Qrcode } from "html5-qrcode";
 
 // Barcode scanner component with camera support for mobile devices
 function BarcodeScanner({ onScan, isActive }) {
+  const { t } = useTheme();
   const inputRef = useRef(null);
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
@@ -183,13 +186,13 @@ function BarcodeScanner({ onScan, isActive }) {
     <div className="space-y-4">
       {/* Mode toggle - only show if camera is available */}
       {hasCamera && (
-        <div className="flex gap-2 p-1 bg-zinc-900/50 rounded-lg">
+        <div className={`flex gap-2 p-1 ${t('bg-gray-100', 'bg-zinc-900/50')} rounded-lg`}>
           <button
             onClick={() => handleModeSwitch("camera")}
             className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md transition-all ${
               scanMode === "camera"
                 ? "bg-cyan-600 text-white"
-                : "text-zinc-400 hover:text-white"
+                : `${t('text-gray-500 hover:text-gray-900', 'text-zinc-400 hover:text-white')}`
             }`}
           >
             <Camera className="w-4 h-4" />
@@ -200,7 +203,7 @@ function BarcodeScanner({ onScan, isActive }) {
             className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md transition-all ${
               scanMode === "manual"
                 ? "bg-cyan-600 text-white"
-                : "text-zinc-400 hover:text-white"
+                : `${t('text-gray-500 hover:text-gray-900', 'text-zinc-400 hover:text-white')}`
             }`}
           >
             <Keyboard className="w-4 h-4" />
@@ -287,7 +290,7 @@ function BarcodeScanner({ onScan, isActive }) {
           <div className="relative">
             <div className="p-6 border-2 border-dashed border-cyan-500/30 rounded-xl bg-cyan-500/5 text-center">
               <Barcode className="w-12 h-12 mx-auto text-cyan-400 mb-3" />
-              <p className="text-zinc-400 text-sm">
+              <p className={`${t('text-gray-600', 'text-zinc-400')} text-sm`}>
                 {hasCamera
                   ? "Typ EAN-code handmatig in of gebruik de camera"
                   : "Typ EAN-code of scan met een barcode scanner"
@@ -305,7 +308,7 @@ function BarcodeScanner({ onScan, isActive }) {
               value={manualEntry}
               onChange={(e) => setManualEntry(e.target.value)}
               onKeyPress={handleKeyPress}
-              className="flex-1 bg-zinc-900/50 border-white/10"
+              className={`flex-1 ${t('bg-white border-gray-200', 'bg-zinc-900/50 border-white/10')}`}
               autoFocus={isActive && scanMode === "manual"}
             />
             <Button type="submit" disabled={!manualEntry.trim()}>
@@ -321,6 +324,8 @@ function BarcodeScanner({ onScan, isActive }) {
 
 // Product card after scan
 function ScannedProductCard({ scanResult, onReceive, onCancel }) {
+  const { t } = useTheme();
+
   // Calculate initial values safely
   const initialQuantity = scanResult?.expectedDelivery
     ? (scanResult.expectedDelivery.quantity_expected - scanResult.expectedDelivery.quantity_received) || 1
@@ -350,10 +355,10 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
   };
 
   return (
-    <div className="p-4 rounded-xl bg-zinc-900/70 border border-cyan-500/30">
+    <div className={`p-4 rounded-xl ${t('bg-white/90 border-cyan-300/40', 'bg-zinc-900/70 border-cyan-500/30')} border`}>
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="text-sm font-bold text-white">
+          <h3 className={`text-sm font-bold ${t('text-gray-900', 'text-white')}`}>
             {scanResult.product.name}
           </h3>
           <div className="flex gap-2 mt-1">
@@ -381,16 +386,16 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
           </div>
           <div className="mt-2 grid grid-cols-3 gap-3 text-sm">
             <div>
-              <span className="text-zinc-500">Verwacht:</span>
-              <span className="ml-2 text-white">{expectedQty}</span>
+              <span className={`${t('text-gray-500', 'text-zinc-500')}`}>Verwacht:</span>
+              <span className={`ml-2 ${t('text-gray-900', 'text-white')}`}>{expectedQty}</span>
             </div>
             <div>
-              <span className="text-zinc-500">Ontvangen:</span>
-              <span className="ml-2 text-white">{receivedQty}</span>
+              <span className={`${t('text-gray-500', 'text-zinc-500')}`}>Ontvangen:</span>
+              <span className={`ml-2 ${t('text-gray-900', 'text-white')}`}>{receivedQty}</span>
             </div>
             <div>
-              <span className="text-zinc-500">Resterend:</span>
-              <span className="ml-2 text-white font-medium">{remainingQty}</span>
+              <span className={`${t('text-gray-500', 'text-zinc-500')}`}>Resterend:</span>
+              <span className={`ml-2 ${t('text-gray-900', 'text-white')} font-medium`}>{remainingQty}</span>
             </div>
           </div>
         </div>
@@ -400,7 +405,7 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
             <AlertCircle className="w-4 h-4" />
             <span className="text-sm font-medium">Geen verwachte levering</span>
           </div>
-          <p className="mt-1 text-xs text-zinc-400">
+          <p className={`mt-1 text-xs ${t('text-gray-500', 'text-zinc-400')}`}>
             Dit product staat niet op de verwachte leveringen lijst.
           </p>
         </div>
@@ -408,13 +413,13 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
 
       {/* Current stock */}
       {scanResult.currentStock && (
-        <div className="mb-3 p-3 rounded-lg bg-zinc-800/50 border border-white/10">
-          <span className="text-sm text-zinc-400">Huidige voorraad:</span>
-          <span className="ml-2 text-white font-medium">
+        <div className={`mb-3 p-3 rounded-lg ${t('bg-gray-100 border-gray-200', 'bg-zinc-800/50 border-white/10')} border`}>
+          <span className={`text-sm ${t('text-gray-600', 'text-zinc-400')}`}>Huidige voorraad:</span>
+          <span className={`ml-2 ${t('text-gray-900', 'text-white')} font-medium`}>
             {scanResult.currentStock.quantity_on_hand} stuks
           </span>
           {scanResult.currentStock.warehouse_location && (
-            <span className="ml-2 text-xs text-zinc-500">
+            <span className={`ml-2 text-xs ${t('text-gray-500', 'text-zinc-500')}`}>
               ({scanResult.currentStock.warehouse_location})
             </span>
           )}
@@ -438,7 +443,7 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
               min="1"
               value={quantity}
               onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-              className="w-24 text-center bg-zinc-900/50 border-white/10"
+              className={`w-24 text-center ${t('bg-white border-gray-200', 'bg-zinc-900/50 border-white/10')}`}
             />
             <Button
               variant="outline"
@@ -452,7 +457,7 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setQuantity(remainingQty)}
-                className="text-xs text-zinc-400"
+                className={`text-xs ${t('text-gray-500', 'text-zinc-400')}`}
               >
                 Max ({remainingQty})
               </Button>
@@ -464,7 +469,7 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
           <div>
             <Label>Conditie</Label>
             <Select value={condition} onValueChange={setCondition}>
-              <SelectTrigger className="mt-1 bg-zinc-900/50 border-white/10">
+              <SelectTrigger className={`mt-1 ${t('bg-white border-gray-200', 'bg-zinc-900/50 border-white/10')}`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -481,7 +486,7 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
               placeholder="A1-B2..."
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="mt-1 bg-zinc-900/50 border-white/10"
+              className={`mt-1 ${t('bg-white border-gray-200', 'bg-zinc-900/50 border-white/10')}`}
             />
           </div>
         </div>
@@ -493,7 +498,7 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
               placeholder="Beschrijf de schade..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="mt-1 bg-zinc-900/50 border-white/10"
+              className={`mt-1 ${t('bg-white border-gray-200', 'bg-zinc-900/50 border-white/10')}`}
             />
           </div>
         )}
@@ -514,18 +519,20 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
 
 // Not found card
 function NotFoundCard({ ean, onClose }) {
+  const { t } = useTheme();
+
   return (
-    <div className="p-4 rounded-xl bg-zinc-900/70 border border-red-500/30">
+    <div className={`p-4 rounded-xl ${t('bg-white/90 border-red-300/40', 'bg-zinc-900/70 border-red-500/30')} border`}>
       <div className="flex items-center gap-3 mb-3">
         <div className="p-2 rounded-full bg-red-500/10">
           <AlertTriangle className="w-5 h-5 text-red-400" />
         </div>
         <div>
-          <h3 className="text-sm font-bold text-white">Product niet gevonden</h3>
-          <p className="text-sm text-zinc-400">EAN: {ean}</p>
+          <h3 className={`text-sm font-bold ${t('text-gray-900', 'text-white')}`}>Product niet gevonden</h3>
+          <p className={`text-sm ${t('text-gray-600', 'text-zinc-400')}`}>EAN: {ean}</p>
         </div>
       </div>
-      <p className="text-sm text-zinc-400 mb-3">
+      <p className={`text-sm ${t('text-gray-600', 'text-zinc-400')} mb-3`}>
         Dit product staat niet in het systeem. Voeg het eerst toe aan de producten.
       </p>
       <div className="flex gap-2">
@@ -543,9 +550,11 @@ function NotFoundCard({ ean, onClose }) {
 
 // Recent receiving log
 function RecentReceivingList({ items }) {
+  const { t } = useTheme();
+
   if (!items || items.length === 0) {
     return (
-      <div className="text-center py-8 text-zinc-500">
+      <div className={`text-center py-8 ${t('text-gray-500', 'text-zinc-500')}`}>
         <Boxes className="w-12 h-12 mx-auto mb-2 opacity-50" />
         <p>Nog geen ontvangsten vandaag</p>
       </div>
@@ -557,7 +566,7 @@ function RecentReceivingList({ items }) {
       {items.map((item) => (
         <div
           key={item.id}
-          className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50 border border-white/5"
+          className={`flex items-center justify-between p-3 rounded-lg ${t('bg-white/80 border-gray-100', 'bg-zinc-900/50 border-white/5')} border`}
         >
           <div className="flex items-center gap-3">
             <div className={`p-1.5 rounded-full ${
@@ -572,8 +581,8 @@ function RecentReceivingList({ items }) {
               )}
             </div>
             <div>
-              <p className="text-sm text-white">{item.products?.name || 'Unknown product'}</p>
-              <p className="text-xs text-zinc-500">
+              <p className={`text-sm ${t('text-gray-900', 'text-white')}`}>{item.products?.name || 'Unknown product'}</p>
+              <p className={`text-xs ${t('text-gray-500', 'text-zinc-500')}`}>
                 {item.quantity_received}x • {new Date(item.received_at).toLocaleTimeString('nl-NL')}
               </p>
             </div>
@@ -592,6 +601,8 @@ function RecentReceivingList({ items }) {
 
 // Success confirmation card after receiving
 function ReceiveSuccessCard({ productName, quantity, isPartial, remainingQty, onClose }) {
+  const { t } = useTheme();
+
   // Auto-close after 3 seconds
   useEffect(() => {
     const timer = setTimeout(onClose, 3000);
@@ -599,16 +610,16 @@ function ReceiveSuccessCard({ productName, quantity, isPartial, remainingQty, on
   }, [onClose]);
 
   return (
-    <div className="p-4 rounded-xl bg-zinc-900/70 border border-green-500/30">
+    <div className={`p-4 rounded-xl ${t('bg-white/90 border-green-300/40', 'bg-zinc-900/70 border-green-500/30')} border`}>
       <div className="text-center">
         <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-green-500/20 flex items-center justify-center">
           <CheckCircle2 className="w-7 h-7 text-green-400" />
         </div>
-        <h3 className="text-sm font-bold text-white mb-2">
+        <h3 className={`text-sm font-bold ${t('text-gray-900', 'text-white')} mb-2`}>
           Ontvangst bevestigd!
         </h3>
-        <p className="text-zinc-400 mb-2">
-          <span className="text-white font-medium">{quantity}x</span> {productName}
+        <p className={`${t('text-gray-600', 'text-zinc-400')} mb-2`}>
+          <span className={`${t('text-gray-900', 'text-white')} font-medium`}>{quantity}x</span> {productName}
         </p>
         {isPartial && (
           <p className="text-yellow-400 text-sm">
@@ -619,7 +630,7 @@ function ReceiveSuccessCard({ productName, quantity, isPartial, remainingQty, on
           variant="ghost"
           size="sm"
           onClick={onClose}
-          className="mt-4 text-zinc-400"
+          className={`mt-4 ${t('text-gray-500', 'text-zinc-400')}`}
         >
           Volgende scan
         </Button>
@@ -630,6 +641,7 @@ function ReceiveSuccessCard({ productName, quantity, isPartial, remainingQty, on
 
 export default function InventoryReceiving() {
   const { user } = useUser();
+  const { theme, toggleTheme, t } = useTheme();
   const [scanResult, setScanResult] = useState(null);
   const [notFoundEan, setNotFoundEan] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -763,158 +775,171 @@ export default function InventoryReceiving() {
 
   return (
     <PermissionGuard permission="inventory.manage" showMessage>
-      <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
-          <div>
-            <h1 className="text-lg font-bold text-white">Receiving</h1>
-            <p className="text-xs text-zinc-400">Scan and receive incoming inventory</p>
+      <ProductsPageTransition>
+        <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+            <div>
+              <h1 className={`text-lg font-bold ${t('text-gray-900', 'text-white')}`}>Receiving</h1>
+              <p className={`text-xs ${t('text-gray-600', 'text-zinc-400')}`}>Scan and receive incoming inventory</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleTheme}
+                className={`p-2 rounded-lg transition-colors ${t(
+                  'bg-gray-100 hover:bg-gray-200 text-gray-600',
+                  'bg-zinc-800 hover:bg-zinc-700 text-zinc-400'
+                )}`}
+                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2" />
-        </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Boxes className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs text-zinc-500">Verwachte leveringen</span>
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className={`${t('bg-white/80 border-gray-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
+              <div className="flex items-center gap-2 mb-1">
+                <Boxes className="w-4 h-4 text-cyan-400" />
+                <span className={`text-xs ${t('text-gray-500', 'text-zinc-500')}`}>Verwachte leveringen</span>
+              </div>
+              <p className={`text-lg font-bold ${t('text-gray-900', 'text-white')}`}>{stats.pendingDeliveries}</p>
             </div>
-            <p className="text-lg font-bold text-white">{stats.pendingDeliveries}</p>
-          </div>
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Check className="w-4 h-4 text-green-400" />
-              <span className="text-xs text-zinc-500">Ontvangen vandaag</span>
+            <div className={`${t('bg-white/80 border-gray-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
+              <div className="flex items-center gap-2 mb-1">
+                <Check className="w-4 h-4 text-green-400" />
+                <span className={`text-xs ${t('text-gray-500', 'text-zinc-500')}`}>Ontvangen vandaag</span>
+              </div>
+              <p className={`text-lg font-bold ${t('text-gray-900', 'text-white')}`}>{stats.receivedToday} <span className={`text-xs font-normal ${t('text-gray-500', 'text-zinc-500')}`}>stuks</span></p>
             </div>
-            <p className="text-lg font-bold text-white">{stats.receivedToday} <span className="text-xs font-normal text-zinc-500">stuks</span></p>
-          </div>
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle className="w-4 h-4 text-yellow-400" />
-              <span className="text-xs text-zinc-500">Gedeeltelijke leveringen</span>
+            <div className={`${t('bg-white/80 border-gray-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
+              <div className="flex items-center gap-2 mb-1">
+                <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                <span className={`text-xs ${t('text-gray-500', 'text-zinc-500')}`}>Gedeeltelijke leveringen</span>
+              </div>
+              <p className={`text-lg font-bold ${t('text-gray-900', 'text-white')}`}>{stats.partialDeliveries}</p>
             </div>
-            <p className="text-lg font-bold text-white">{stats.partialDeliveries}</p>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Scanner section */}
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <h2 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-              <Scan className="w-5 h-5 text-cyan-400" />
-              Barcode Scanner
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Scanner section */}
+            <div className={`${t('bg-white/80 border-gray-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
+              <h2 className={`text-sm font-bold ${t('text-gray-900', 'text-white')} mb-2 flex items-center gap-2`}>
+                <Scan className="w-5 h-5 text-cyan-400" />
+                Barcode Scanner
+              </h2>
+
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
+                </div>
+              ) : (
+                <>
+                  {receiveSuccess ? (
+                    <ReceiveSuccessCard
+                      productName={receiveSuccess.productName}
+                      quantity={receiveSuccess.quantity}
+                      isPartial={receiveSuccess.isPartial}
+                      remainingQty={receiveSuccess.remainingQty}
+                      onClose={() => setReceiveSuccess(null)}
+                    />
+                  ) : scanResult ? (
+                    <ScannedProductCard
+                      scanResult={scanResult}
+                      onReceive={handleReceive}
+                      onCancel={() => setScanResult(null)}
+                    />
+                  ) : notFoundEan ? (
+                    <NotFoundCard
+                      ean={notFoundEan}
+                      onClose={() => setNotFoundEan(null)}
+                    />
+                  ) : (
+                    <BarcodeScanner
+                      onScan={handleScan}
+                      isActive={!scanResult && !notFoundEan && !receiveSuccess}
+                    />
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Recent receiving */}
+            <div className={`${t('bg-white/80 border-gray-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
+              <h2 className={`text-sm font-bold ${t('text-gray-900', 'text-white')} mb-2 flex items-center gap-2`}>
+                <Warehouse className="w-5 h-5 text-cyan-400" />
+                Recente ontvangsten
+              </h2>
+              <RecentReceivingList items={recentReceiving} />
+            </div>
+          </div>
+
+          {/* Expected deliveries */}
+          <div className={`${t('bg-white/80 border-gray-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
+            <h2 className={`text-sm font-bold ${t('text-gray-900', 'text-white')} mb-2 flex items-center gap-2`}>
+              <Package className="w-5 h-5 text-cyan-400" />
+              Verwachte leveringen ({expectedDeliveries.length})
             </h2>
 
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
+            {expectedDeliveries.length === 0 ? (
+              <div className={`text-center py-8 ${t('text-gray-500', 'text-zinc-500')}`}>
+                <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>Geen verwachte leveringen</p>
               </div>
             ) : (
-              <>
-                {receiveSuccess ? (
-                  <ReceiveSuccessCard
-                    productName={receiveSuccess.productName}
-                    quantity={receiveSuccess.quantity}
-                    isPartial={receiveSuccess.isPartial}
-                    remainingQty={receiveSuccess.remainingQty}
-                    onClose={() => setReceiveSuccess(null)}
-                  />
-                ) : scanResult ? (
-                  <ScannedProductCard
-                    scanResult={scanResult}
-                    onReceive={handleReceive}
-                    onCancel={() => setScanResult(null)}
-                  />
-                ) : notFoundEan ? (
-                  <NotFoundCard
-                    ean={notFoundEan}
-                    onClose={() => setNotFoundEan(null)}
-                  />
-                ) : (
-                  <BarcodeScanner
-                    onScan={handleScan}
-                    isActive={!scanResult && !notFoundEan && !receiveSuccess}
-                  />
-                )}
-              </>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className={`text-left text-sm ${t('text-gray-500 border-gray-200', 'text-zinc-500 border-white/10')} border-b`}>
+                      <th className="pb-3 font-medium">Product</th>
+                      <th className="pb-3 font-medium">Leverancier</th>
+                      <th className="pb-3 font-medium">Verwacht</th>
+                      <th className="pb-3 font-medium">Status</th>
+                      <th className="pb-3 font-medium">Datum</th>
+                    </tr>
+                  </thead>
+                  <tbody className={`${t('divide-gray-100', 'divide-white/5')} divide-y`}>
+                    {expectedDeliveries.map((delivery) => (
+                      <tr key={delivery.id} className="text-sm">
+                        <td className={`py-3 ${t('text-gray-900', 'text-white')}`}>
+                          {delivery.products?.name || 'Unknown'}
+                          {delivery.products?.ean && (
+                            <span className={`ml-2 text-xs ${t('text-gray-500', 'text-zinc-500')}`}>
+                              ({delivery.products.ean})
+                            </span>
+                          )}
+                        </td>
+                        <td className={`py-3 ${t('text-gray-600', 'text-zinc-400')}`}>
+                          {delivery.suppliers?.name || '-'}
+                        </td>
+                        <td className={`py-3 ${t('text-gray-900', 'text-white')}`}>
+                          {delivery.quantity_received} / {delivery.quantity_expected}
+                        </td>
+                        <td className="py-3">
+                          <Badge
+                            className={
+                              delivery.status === 'partial'
+                                ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+                                : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+                            }
+                          >
+                            {delivery.status}
+                          </Badge>
+                        </td>
+                        <td className={`py-3 ${t('text-gray-600', 'text-zinc-400')}`}>
+                          {delivery.expected_date
+                            ? new Date(delivery.expected_date).toLocaleDateString('nl-NL')
+                            : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
-
-          {/* Recent receiving */}
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <h2 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-              <Warehouse className="w-5 h-5 text-cyan-400" />
-              Recente ontvangsten
-            </h2>
-            <RecentReceivingList items={recentReceiving} />
-          </div>
         </div>
-
-        {/* Expected deliveries */}
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-          <h2 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-            <Package className="w-5 h-5 text-cyan-400" />
-            Verwachte leveringen ({expectedDeliveries.length})
-          </h2>
-
-          {expectedDeliveries.length === 0 ? (
-            <div className="text-center py-8 text-zinc-500">
-              <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>Geen verwachte leveringen</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-sm text-zinc-500 border-b border-white/10">
-                    <th className="pb-3 font-medium">Product</th>
-                    <th className="pb-3 font-medium">Leverancier</th>
-                    <th className="pb-3 font-medium">Verwacht</th>
-                    <th className="pb-3 font-medium">Status</th>
-                    <th className="pb-3 font-medium">Datum</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {expectedDeliveries.map((delivery) => (
-                    <tr key={delivery.id} className="text-sm">
-                      <td className="py-3 text-white">
-                        {delivery.products?.name || 'Unknown'}
-                        {delivery.products?.ean && (
-                          <span className="ml-2 text-xs text-zinc-500">
-                            ({delivery.products.ean})
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 text-zinc-400">
-                        {delivery.suppliers?.name || '-'}
-                      </td>
-                      <td className="py-3 text-white">
-                        {delivery.quantity_received} / {delivery.quantity_expected}
-                      </td>
-                      <td className="py-3">
-                        <Badge
-                          className={
-                            delivery.status === 'partial'
-                              ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
-                              : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
-                          }
-                        >
-                          {delivery.status}
-                        </Badge>
-                      </td>
-                      <td className="py-3 text-zinc-400">
-                        {delivery.expected_date
-                          ? new Date(delivery.expected_date).toLocaleDateString('nl-NL')
-                          : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
+      </ProductsPageTransition>
     </PermissionGuard>
   );
 }

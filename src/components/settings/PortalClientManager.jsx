@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSettingsTheme } from '@/contexts/SettingsThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import {
   Users,
   UserPlus,
@@ -32,7 +32,7 @@ const STATUS_COLORS = {
 
 export default function PortalClientManager() {
   const { user } = useUser();
-  const { st } = useSettingsTheme();
+  const { st } = useTheme();
   const [clients, setClients] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -369,7 +369,7 @@ function ClientSheet({
   onDeleteClient,
   onToggleAccess,
 }) {
-  const { st } = useSettingsTheme();
+  const { st } = useTheme();
   const isNew = !companyName;
   const [company, setCompany] = useState('');
   const [emailInput, setEmailInput] = useState('');

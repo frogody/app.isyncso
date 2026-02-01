@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/components/hooks/useLocalStorage";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { GrowthPageTransition } from '@/components/growth/ui';
 import { Sun, Moon } from 'lucide-react';
 
@@ -43,7 +43,7 @@ const INTEGRATION_COLORS = {
 
 // RAG Insight component
 function RAGInsight({ insight }) {
-  const { gt } = useGrowthTheme();
+  const { gt } = useTheme();
   const IconComponent = INTEGRATION_ICONS[insight.sourceType] || Database;
   const colorClass = INTEGRATION_COLORS[insight.sourceType] || "text-indigo-400 bg-indigo-500/10 border-indigo-500/20";
 
@@ -78,7 +78,7 @@ function RAGInsight({ insight }) {
 
 // Integration Status Card
 function IntegrationStatus({ integration, connected, lastSync, onConnect, onSync }) {
-  const { gt } = useGrowthTheme();
+  const { gt } = useTheme();
   const IconComponent = INTEGRATION_ICONS[integration] || Database;
   const colorClass = INTEGRATION_COLORS[integration] || "text-indigo-400 bg-indigo-500/10 border-indigo-500/20";
 
@@ -128,7 +128,7 @@ function IntegrationStatus({ integration, connected, lastSync, onConnect, onSync
 
 // Chat Message component
 function ChatMessage({ message, isLast }) {
-  const { gt } = useGrowthTheme();
+  const { gt } = useTheme();
   const isUser = message.role === "user";
 
   return (
@@ -196,7 +196,7 @@ function ChatMessage({ message, isLast }) {
 
 // Typing indicator
 function TypingIndicator() {
-  const { gt } = useGrowthTheme();
+  const { gt } = useTheme();
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -219,7 +219,7 @@ function TypingIndicator() {
 
 export default function GrowthAssistant() {
   const { user, isLoading: userLoading } = useUser();
-  const { theme, toggleTheme, gt } = useGrowthTheme();
+  const { theme, toggleTheme, gt } = useTheme();
   const composio = useComposio();
 
   // Chat state

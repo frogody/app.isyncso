@@ -16,13 +16,13 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
-import { useSettingsTheme } from '@/contexts/SettingsThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { toast } from 'sonner';
 import PortalClientManager from './PortalClientManager';
 
 export default function PortalBranding() {
   const { user } = useUser();
-  const { st } = useSettingsTheme();
+  const { st } = useTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState({
@@ -447,7 +447,7 @@ export default function PortalBranding() {
 }
 
 function ToggleSetting({ label, description, checked, onChange }) {
-  const { st } = useSettingsTheme();
+  const { st } = useTheme();
   return (
     <div className={`flex items-center justify-between p-4 ${st('bg-slate-100', 'bg-zinc-800/30')} rounded-xl`}>
       <div>

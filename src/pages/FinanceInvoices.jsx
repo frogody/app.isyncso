@@ -8,7 +8,7 @@ import {
   ArrowUpDown, Calendar, Euro, Building2, User, Package, RefreshCw, Zap,
   FileDown, Printer, Sun, Moon
 } from 'lucide-react';
-import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 import { downloadInvoicePDF, previewInvoicePDF } from '@/utils/generateInvoicePDF';
 import { ProductSelector } from '@/components/finance';
@@ -31,7 +31,7 @@ import { toast } from 'sonner';
 
 export default function FinanceInvoices() {
   const { user } = useUser();
-  const { theme, toggleTheme, ft } = useFinanceTheme();
+  const { theme, toggleTheme, ft } = useTheme();
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');

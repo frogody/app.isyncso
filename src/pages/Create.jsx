@@ -8,7 +8,7 @@ import {
   Camera, Clapperboard, Brush, Download, Eye, ChevronRight, Star,
   Sun, Moon,
 } from 'lucide-react';
-import { useCreateTheme } from '@/contexts/CreateThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { CreatePageTransition } from '@/components/create/ui';
 import { GeneratedContent, BrandAssets, VideoProject } from '@/api/entities';
 import { useUser } from '@/components/context/UserContext';
@@ -123,7 +123,7 @@ const TOOLS = [
 
 export default function Create() {
   const { user } = useUser();
-  const { theme, toggleTheme, ct } = useCreateTheme();
+  const { theme, toggleTheme, ct } = useTheme();
   const [content, setContent] = useState([]);
   const [brandAssets, setBrandAssets] = useState([]);
   const [videoProjects, setVideoProjects] = useState([]);

@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { Product, DigitalProduct, PhysicalProduct, ProductBundle } from '@/api/entities';
 import { useUser } from '@/components/context/UserContext';
 
@@ -498,7 +498,7 @@ export default function ProductSelector({
   currency = 'EUR',
   excludeIds = []
 }) {
-  const { ft } = useFinanceTheme();
+  const { ft } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState([]);
   const [productDetails, setProductDetails] = useState({});

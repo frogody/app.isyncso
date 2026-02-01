@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export type BadgeVariant =
   | 'primary'
@@ -54,7 +54,7 @@ export function SentinelBadge({
   className,
   children,
 }: SentinelBadgeProps) {
-  const { theme } = useSentinelTheme();
+  const { theme } = useTheme();
   const styles = theme === 'light' ? lightStyles : darkStyles;
 
   return (

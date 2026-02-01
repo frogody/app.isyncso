@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { useCreateTheme } from '@/contexts/CreateThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export type CreateBadgeVariant = 'primary' | 'success' | 'warning' | 'error' | 'neutral';
 
@@ -27,7 +27,7 @@ const lightStyles: Record<CreateBadgeVariant, string> = {
 };
 
 export function CreateBadge({ variant = 'primary', size = 'sm', children, className }: CreateBadgeProps) {
-  const { ct } = useCreateTheme();
+  const { ct } = useTheme();
 
   return (
     <span

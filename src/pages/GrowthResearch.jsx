@@ -13,7 +13,7 @@ import {
   Filter, Download, Save, Sparkles, Globe, MapPin, Briefcase,
   Euro, Loader2, ChevronDown, Sun, Moon
 } from "lucide-react";
-import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { GrowthPageTransition } from '@/components/growth/ui';
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -49,7 +49,7 @@ const COMPANY_SIZES = [
 ];
 
 export default function GrowthResearch() {
-  const { theme, toggleTheme, gt } = useGrowthTheme();
+  const { theme, toggleTheme, gt } = useTheme();
   const { user } = useUser();
   const [searchParams] = useSearchParams();
   const [currentStep, setCurrentStep] = useState(0);

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { toast } from 'sonner';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 const INQUIRY_TYPES = [
   { value: 'quote', label: 'Request Quote', description: 'Get pricing information' },
@@ -28,6 +29,7 @@ export default function ProductInquiryModal({
   productDetails,
   defaultType = 'quote'
 }) {
+  const { t } = useTheme();
   const { user } = useUser();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -47,11 +49,8 @@ export default function ProductInquiryModal({
     setSubmitting(true);
 
     try {
-      // Here you would typically send this to an API endpoint
-      // For now, we'll simulate the submission
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Log the inquiry (in production, save to database)
       console.log('Product Inquiry:', {
         product_id: product?.id,
         product_name: product?.name,
@@ -91,7 +90,7 @@ export default function ProductInquiryModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="bg-zinc-900 border border-white/10 max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className={`${t('bg-white', 'bg-zinc-900')} border ${t('border-slate-200', 'border-white/10')} max-w-lg max-h-[90vh] overflow-y-auto`}>
         <AnimatePresence mode="wait">
           {submitted ? (
             <motion.div
@@ -104,8 +103,8 @@ export default function ProductInquiryModal({
               <div className="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-cyan-400" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Inquiry Submitted!</h3>
-              <p className="text-zinc-400 mb-6 max-w-sm mx-auto">
+              <h3 className={`text-xl font-semibold ${t('text-slate-900', 'text-white')} mb-2`}>Inquiry Submitted!</h3>
+              <p className={`${t('text-slate-500', 'text-zinc-400')} mb-6 max-w-sm mx-auto`}>
                 Thank you for your interest. We'll get back to you within 24-48 hours.
               </p>
               <Button onClick={handleClose} className="bg-cyan-500 hover:bg-cyan-600 text-white">
@@ -119,22 +118,22 @@ export default function ProductInquiryModal({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <DialogHeader className="pb-4 border-b border-white/5">
-                <DialogTitle className="flex items-center gap-3 text-white">
+              <DialogHeader className={`pb-4 border-b ${t('border-slate-200', 'border-white/5')}`}>
+                <DialogTitle className={`flex items-center gap-3 ${t('text-slate-900', 'text-white')}`}>
                   <div className="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
                     <MessageCircle className="w-5 h-5 text-cyan-400" />
                   </div>
                   Product Inquiry
                 </DialogTitle>
-                <DialogDescription className="text-zinc-400">
+                <DialogDescription className={t('text-slate-500', 'text-zinc-400')}>
                   Submit an inquiry about this product
                 </DialogDescription>
               </DialogHeader>
 
               {/* Product Summary */}
-              <div className="py-4 border-b border-white/5">
+              <div className={`py-4 border-b ${t('border-slate-200', 'border-white/5')}`}>
                 <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 rounded-lg bg-zinc-800 overflow-hidden flex-shrink-0">
+                  <div className={`w-16 h-16 rounded-lg ${t('bg-slate-100', 'bg-zinc-800')} overflow-hidden flex-shrink-0`}>
                     {product?.featured_image?.url ? (
                       <img
                         src={product.featured_image.url}
@@ -143,14 +142,14 @@ export default function ProductInquiryModal({
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Package className="w-6 h-6 text-zinc-600" />
+                        <Package className={`w-6 h-6 ${t('text-slate-400', 'text-zinc-600')}`} />
                       </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-white truncate">{product?.name}</h4>
+                    <h4 className={`font-medium ${t('text-slate-900', 'text-white')} truncate`}>{product?.name}</h4>
                     {productDetails?.sku && (
-                      <p className="text-sm text-zinc-500">SKU: {productDetails.sku}</p>
+                      <p className={`text-sm ${t('text-slate-500', 'text-zinc-500')}`}>SKU: {productDetails.sku}</p>
                     )}
                     {hasPrice && (
                       <p className="text-sm text-cyan-400 font-medium mt-1">
@@ -164,7 +163,7 @@ export default function ProductInquiryModal({
               <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                 {/* Inquiry Type */}
                 <div>
-                  <Label className="text-zinc-300 mb-2 block">Inquiry Type</Label>
+                  <Label className={`${t('text-slate-700', 'text-zinc-300')} mb-2 block`}>Inquiry Type</Label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {INQUIRY_TYPES.map(type => (
                       <button
@@ -174,7 +173,7 @@ export default function ProductInquiryModal({
                         className={`p-3 rounded-lg border text-left transition-all ${
                           formData.type === type.value
                             ? 'border-cyan-500 bg-cyan-500/10 text-white'
-                            : 'border-white/10 hover:border-white/20 text-zinc-400 hover:text-white'
+                            : `${t('border-slate-200', 'border-white/10')} ${t('hover:border-slate-300', 'hover:border-white/20')} ${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')}`
                         }`}
                       >
                         <span className="text-sm font-medium block">{type.label}</span>
@@ -186,7 +185,7 @@ export default function ProductInquiryModal({
                 {/* Contact Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="name" className="text-zinc-300 mb-2 block">
+                    <Label htmlFor="name" className={`${t('text-slate-700', 'text-zinc-300')} mb-2 block`}>
                       <User className="w-4 h-4 inline mr-2" />
                       Name *
                     </Label>
@@ -196,11 +195,11 @@ export default function ProductInquiryModal({
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="Your name"
                       required
-                      className="bg-zinc-800/50 border-white/10 text-white"
+                      className={`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-200', 'border-white/10')} ${t('text-slate-900', 'text-white')}`}
                     />
                   </div>
                   <div>
-                    <Label htmlFor="email" className="text-zinc-300 mb-2 block">
+                    <Label htmlFor="email" className={`${t('text-slate-700', 'text-zinc-300')} mb-2 block`}>
                       <Mail className="w-4 h-4 inline mr-2" />
                       Email *
                     </Label>
@@ -211,14 +210,14 @@ export default function ProductInquiryModal({
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="you@company.com"
                       required
-                      className="bg-zinc-800/50 border-white/10 text-white"
+                      className={`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-200', 'border-white/10')} ${t('text-slate-900', 'text-white')}`}
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="phone" className="text-zinc-300 mb-2 block">
+                    <Label htmlFor="phone" className={`${t('text-slate-700', 'text-zinc-300')} mb-2 block`}>
                       <Phone className="w-4 h-4 inline mr-2" />
                       Phone
                     </Label>
@@ -228,11 +227,11 @@ export default function ProductInquiryModal({
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+1 (555) 000-0000"
-                      className="bg-zinc-800/50 border-white/10 text-white"
+                      className={`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-200', 'border-white/10')} ${t('text-slate-900', 'text-white')}`}
                     />
                   </div>
                   <div>
-                    <Label htmlFor="company" className="text-zinc-300 mb-2 block">
+                    <Label htmlFor="company" className={`${t('text-slate-700', 'text-zinc-300')} mb-2 block`}>
                       <Building2 className="w-4 h-4 inline mr-2" />
                       Company
                     </Label>
@@ -241,7 +240,7 @@ export default function ProductInquiryModal({
                       value={formData.company}
                       onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                       placeholder="Company name"
-                      className="bg-zinc-800/50 border-white/10 text-white"
+                      className={`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-200', 'border-white/10')} ${t('text-slate-900', 'text-white')}`}
                     />
                   </div>
                 </div>
@@ -249,7 +248,7 @@ export default function ProductInquiryModal({
                 {/* Quantity (for quote/bulk) */}
                 {(formData.type === 'quote' || formData.type === 'bulk') && (
                   <div>
-                    <Label htmlFor="quantity" className="text-zinc-300 mb-2 block">
+                    <Label htmlFor="quantity" className={`${t('text-slate-700', 'text-zinc-300')} mb-2 block`}>
                       <Package className="w-4 h-4 inline mr-2" />
                       Quantity Needed
                     </Label>
@@ -260,14 +259,14 @@ export default function ProductInquiryModal({
                       value={formData.quantity}
                       onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                       placeholder="e.g. 100"
-                      className="bg-zinc-800/50 border-white/10 text-white"
+                      className={`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-200', 'border-white/10')} ${t('text-slate-900', 'text-white')}`}
                     />
                   </div>
                 )}
 
                 {/* Message */}
                 <div>
-                  <Label htmlFor="message" className="text-zinc-300 mb-2 block">
+                  <Label htmlFor="message" className={`${t('text-slate-700', 'text-zinc-300')} mb-2 block`}>
                     <FileText className="w-4 h-4 inline mr-2" />
                     Message
                   </Label>
@@ -277,7 +276,7 @@ export default function ProductInquiryModal({
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     placeholder="Tell us more about your requirements..."
                     rows={4}
-                    className="bg-zinc-800/50 border-white/10 text-white resize-none"
+                    className={`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-200', 'border-white/10')} ${t('text-slate-900', 'text-white')} resize-none`}
                   />
                 </div>
 
@@ -288,7 +287,7 @@ export default function ProductInquiryModal({
                     variant="outline"
                     onClick={handleClose}
                     disabled={submitting}
-                    className="flex-1 border-white/10 text-zinc-300 hover:text-white"
+                    className={`flex-1 ${t('border-slate-200', 'border-white/10')} ${t('text-slate-700', 'text-zinc-300')} ${t('hover:text-slate-900', 'hover:text-white')}`}
                   >
                     Cancel
                   </Button>

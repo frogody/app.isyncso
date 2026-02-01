@@ -30,6 +30,7 @@ import {
   Users, History, Star, Calendar, Receipt, Trash2, Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import ProductImageUploader from './ProductImageUploader';
 import BarcodeDisplay from './BarcodeDisplay';
 import {
@@ -71,6 +72,7 @@ export default function ProductModal({
   onSave
 }) {
   const { user } = useUser();
+  const { t } = useTheme();
   const isEdit = !!product;
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
@@ -627,9 +629,9 @@ export default function ProductModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-zinc-900 border-zinc-700 max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className={cn(`${t('bg-white', 'bg-zinc-900')} ${t('border-slate-200', 'border-zinc-700')} max-w-3xl max-h-[90vh] overflow-hidden flex flex-col`)}>
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="text-white text-xl flex items-center gap-3">
+          <DialogTitle className={cn(`${t('text-slate-900', 'text-white')} text-xl flex items-center gap-3`)}>
             <div className={cn(
               "w-10 h-10 rounded-xl flex items-center justify-center",
               productType === 'digital'
@@ -640,38 +642,38 @@ export default function ProductModal({
             </div>
             {isEdit ? 'Edit' : 'New'} {productType === 'digital' ? 'Digital' : 'Physical'} Product
           </DialogTitle>
-          <DialogDescription className="text-zinc-400">
+          <DialogDescription className={t('text-slate-500', 'text-zinc-400')}>
             {isEdit ? 'Update your product information' : 'Add a new product to your catalog'}
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="flex-shrink-0 bg-zinc-800/50 border border-white/5 p-1">
-            <TabsTrigger value="basic" className="data-[state=active]:bg-zinc-700 text-zinc-400 data-[state=active]:text-white">
+          <TabsList className={cn(`flex-shrink-0 ${t('bg-slate-100', 'bg-zinc-800/50')} border ${t('border-slate-200', 'border-white/5')} p-1`)}>
+            <TabsTrigger value="basic" className={cn(`${t('data-[state=active]:bg-white', 'data-[state=active]:bg-zinc-700')} ${t('text-slate-500', 'text-zinc-400')} ${t('data-[state=active]:text-slate-900', 'data-[state=active]:text-white')}`)}>
               <FileText className="w-4 h-4 mr-2" /> Basic Info
             </TabsTrigger>
-            <TabsTrigger value="media" className="data-[state=active]:bg-zinc-700 text-zinc-400 data-[state=active]:text-white">
+            <TabsTrigger value="media" className={cn(`${t('data-[state=active]:bg-white', 'data-[state=active]:bg-zinc-700')} ${t('text-slate-500', 'text-zinc-400')} ${t('data-[state=active]:text-slate-900', 'data-[state=active]:text-white')}`)}>
               <ImageIcon className="w-4 h-4 mr-2" /> Media
             </TabsTrigger>
-            <TabsTrigger value="pricing" className="data-[state=active]:bg-zinc-700 text-zinc-400 data-[state=active]:text-white">
+            <TabsTrigger value="pricing" className={cn(`${t('data-[state=active]:bg-white', 'data-[state=active]:bg-zinc-700')} ${t('text-slate-500', 'text-zinc-400')} ${t('data-[state=active]:text-slate-900', 'data-[state=active]:text-white')}`)}>
               <Euro className="w-4 h-4 mr-2" /> Pricing
             </TabsTrigger>
             {productType === 'physical' && (
-              <TabsTrigger value="inventory" className="data-[state=active]:bg-zinc-700 text-zinc-400 data-[state=active]:text-white">
+              <TabsTrigger value="inventory" className={cn(`${t('data-[state=active]:bg-white', 'data-[state=active]:bg-zinc-700')} ${t('text-slate-500', 'text-zinc-400')} ${t('data-[state=active]:text-slate-900', 'data-[state=active]:text-white')}`)}>
                 <BarChart3 className="w-4 h-4 mr-2" /> Inventory
               </TabsTrigger>
             )}
             {productType === 'digital' && (
-              <TabsTrigger value="features" className="data-[state=active]:bg-zinc-700 text-zinc-400 data-[state=active]:text-white">
+              <TabsTrigger value="features" className={cn(`${t('data-[state=active]:bg-white', 'data-[state=active]:bg-zinc-700')} ${t('text-slate-500', 'text-zinc-400')} ${t('data-[state=active]:text-slate-900', 'data-[state=active]:text-white')}`)}>
                 <Settings className="w-4 h-4 mr-2" /> Features
               </TabsTrigger>
             )}
             {productType === 'digital' && (
-              <TabsTrigger value="ai-brief" className="data-[state=active]:bg-zinc-700 text-zinc-400 data-[state=active]:text-white">
+              <TabsTrigger value="ai-brief" className={cn(`${t('data-[state=active]:bg-white', 'data-[state=active]:bg-zinc-700')} ${t('text-slate-500', 'text-zinc-400')} ${t('data-[state=active]:text-slate-900', 'data-[state=active]:text-white')}`)}>
                 <Sparkles className="w-4 h-4 mr-2" /> AI Brief
               </TabsTrigger>
             )}
-            <TabsTrigger value="seo" className="data-[state=active]:bg-zinc-700 text-zinc-400 data-[state=active]:text-white">
+            <TabsTrigger value="seo" className={cn(`${t('data-[state=active]:bg-white', 'data-[state=active]:bg-zinc-700')} ${t('text-slate-500', 'text-zinc-400')} ${t('data-[state=active]:text-slate-900', 'data-[state=active]:text-white')}`)}>
               <Globe className="w-4 h-4 mr-2" /> SEO
             </TabsTrigger>
           </TabsList>
@@ -681,41 +683,41 @@ export default function ProductModal({
             <TabsContent value="basic" className="space-y-4 m-0">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <Label className="text-zinc-300 text-sm mb-2 block">
+                  <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>
                     Product Name <span className="text-red-400">*</span>
                   </Label>
                   <Input
                     value={formData.name}
                     onChange={(e) => handleNameChange(e.target.value)}
                     placeholder="Enter product name"
-                    className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                    className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                   />
                 </div>
 
                 <div>
-                  <Label className="text-zinc-300 text-sm mb-2 block">
+                  <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>
                     Slug <span className="text-red-400">*</span>
                   </Label>
                   <Input
                     value={formData.slug}
                     onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
                     placeholder="product-url-slug"
-                    className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                    className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                   />
                 </div>
 
                 <div>
-                  <Label className="text-zinc-300 text-sm mb-2 block">Status</Label>
+                  <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Status</Label>
                   <Select
                     value={formData.status}
                     onValueChange={(v) => setFormData(prev => ({ ...prev, status: v }))}
                   >
-                    <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                    <SelectTrigger className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')}`)}>
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-800 border-zinc-700">
+                    <SelectContent className={cn(`${t('bg-white', 'bg-zinc-800')} ${t('border-slate-200', 'border-zinc-700')}`)}>
                       {PRODUCT_STATUSES.map(s => (
-                        <SelectItem key={s.value} value={s.value} className="text-white">
+                        <SelectItem key={s.value} value={s.value} className={t('text-slate-900', 'text-white')}>
                           {s.label}
                         </SelectItem>
                       ))}
@@ -724,37 +726,37 @@ export default function ProductModal({
                 </div>
 
                 <div className="col-span-2">
-                  <Label className="text-zinc-300 text-sm mb-2 block">Tagline</Label>
+                  <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Tagline</Label>
                   <Input
                     value={formData.tagline}
                     onChange={(e) => setFormData(prev => ({ ...prev, tagline: e.target.value }))}
                     placeholder="A short catchy tagline"
-                    className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                    className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                   />
                 </div>
 
                 <div className="col-span-2">
-                  <Label className="text-zinc-300 text-sm mb-2 block">Short Description</Label>
+                  <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Short Description</Label>
                   <Textarea
                     value={formData.short_description}
                     onChange={(e) => setFormData(prev => ({ ...prev, short_description: e.target.value }))}
                     placeholder="Brief description for listings"
-                    className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500 min-h-[80px]"
+                    className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500 min-h-[80px]`)}
                   />
                 </div>
 
                 <div className="col-span-2">
-                  <Label className="text-zinc-300 text-sm mb-2 block">Full Description</Label>
+                  <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Full Description</Label>
                   <Textarea
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Detailed product description"
-                    className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500 min-h-[120px]"
+                    className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500 min-h-[120px]`)}
                   />
                 </div>
 
                 <div>
-                  <Label className="text-zinc-300 text-sm mb-2 block">Category</Label>
+                  <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Category</Label>
                   <Select
                     value={formData.category_id}
                     onValueChange={(v) => {
@@ -766,12 +768,12 @@ export default function ProductModal({
                       }));
                     }}
                   >
-                    <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                    <SelectTrigger className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')}`)}>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-800 border-zinc-700">
+                    <SelectContent className={cn(`${t('bg-white', 'bg-zinc-800')} ${t('border-slate-200', 'border-zinc-700')}`)}>
                       {categories.map(cat => (
-                        <SelectItem key={cat.id} value={cat.id} className="text-white">
+                        <SelectItem key={cat.id} value={cat.id} className={t('text-slate-900', 'text-white')}>
                           {cat.name}
                         </SelectItem>
                       ))}
@@ -780,21 +782,21 @@ export default function ProductModal({
                 </div>
 
                 <div>
-                  <Label className="text-zinc-300 text-sm mb-2 block">Tags</Label>
+                  <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Tags</Label>
                   <div className="flex gap-2">
                     <Input
                       value={newTag}
                       onChange={(e) => setNewTag(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
                       placeholder="Add tag"
-                      className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                      className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                     />
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
                       onClick={handleAddTag}
-                      className="border-zinc-700 text-zinc-400 hover:text-white flex-shrink-0"
+                      className={cn(`${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')} flex-shrink-0`)}
                     >
                       <Plus className="w-4 h-4" />
                     </Button>
@@ -805,7 +807,7 @@ export default function ProductModal({
                         <Badge
                           key={tag}
                           variant="secondary"
-                          className="bg-zinc-800 text-zinc-300 hover:bg-zinc-700 cursor-pointer"
+                          className={cn(`${t('bg-slate-100', 'bg-zinc-800')} ${t('text-slate-700', 'text-zinc-300')} ${t('hover:bg-slate-200', 'hover:bg-zinc-700')} cursor-pointer`)}
                           onClick={() => handleRemoveTag(tag)}
                         >
                           {tag} <X className="w-3 h-3 ml-1" />
@@ -818,23 +820,23 @@ export default function ProductModal({
                 {productType === 'physical' && (
                   <>
                     <div>
-                      <Label className="text-zinc-300 text-sm mb-2 block">
+                      <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>
                         EAN / Barcode <span className="text-red-400">*</span>
                       </Label>
                       <Input
                         value={physicalData.barcode}
                         onChange={(e) => setPhysicalData(prev => ({ ...prev, barcode: e.target.value }))}
                         placeholder="EAN (13 digits) or UPC (12 digits)"
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                        className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                       />
                     </div>
                     <div>
-                      <Label className="text-zinc-300 text-sm mb-2 block">SKU (Optional)</Label>
+                      <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>SKU (Optional)</Label>
                       <Input
                         value={physicalData.sku}
                         onChange={(e) => setPhysicalData(prev => ({ ...prev, sku: e.target.value }))}
                         placeholder="SKU-001"
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                        className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                       />
                     </div>
                     {/* Barcode Preview */}
@@ -865,7 +867,7 @@ export default function ProductModal({
                     <ImageIcon className="w-4 h-4" />
                     Product Images
                   </Label>
-                  <p className="text-xs text-zinc-500 mb-4">
+                  <p className={cn(`text-xs ${t('text-slate-500', 'text-zinc-500')} mb-4`)}>
                     Upload product images. The featured image will be shown in listings and as the main product image.
                   </p>
                   <ProductImageUploader
@@ -878,9 +880,9 @@ export default function ProductModal({
                 </div>
 
                 {/* Tips */}
-                <div className="p-4 rounded-xl bg-zinc-800/30 border border-white/5">
-                  <h4 className="text-sm font-medium text-zinc-300 mb-2">Image Tips</h4>
-                  <ul className="text-xs text-zinc-500 space-y-1.5">
+                <div className={cn(`p-4 rounded-xl ${t('bg-slate-50', 'bg-zinc-800/30')} border ${t('border-slate-200', 'border-white/5')}`)}>
+                  <h4 className={cn(`text-sm font-medium ${t('text-slate-700', 'text-zinc-300')} mb-2`)}>Image Tips</h4>
+                  <ul className={cn(`text-xs ${t('text-slate-500', 'text-zinc-500')} space-y-1.5`)}>
                     <li>• Use high-quality images (at least 1000x1000 pixels recommended)</li>
                     <li>• Show the product from multiple angles</li>
                     <li>• Use a clean, consistent background</li>
@@ -897,17 +899,17 @@ export default function ProductModal({
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-zinc-300 text-sm mb-2 block">Pricing Model</Label>
+                      <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Pricing Model</Label>
                       <Select
                         value={digitalData.pricing_model}
                         onValueChange={(v) => setDigitalData(prev => ({ ...prev, pricing_model: v }))}
                       >
-                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                        <SelectTrigger className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')}`)}>
                           <SelectValue placeholder="Select model" />
                         </SelectTrigger>
-                        <SelectContent className="bg-zinc-800 border-zinc-700">
+                        <SelectContent className={cn(`${t('bg-white', 'bg-zinc-800')} ${t('border-slate-200', 'border-zinc-700')}`)}>
                           {PRICING_MODELS.map(m => (
-                            <SelectItem key={m.value} value={m.value} className="text-white">
+                            <SelectItem key={m.value} value={m.value} className={t('text-slate-900', 'text-white')}>
                               {m.label}
                             </SelectItem>
                           ))}
@@ -916,7 +918,7 @@ export default function ProductModal({
                     </div>
 
                     <div>
-                      <Label className="text-zinc-300 text-sm mb-2 block">Billing Cycles</Label>
+                      <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Billing Cycles</Label>
                       <div className="flex flex-wrap gap-2">
                         {BILLING_CYCLES.map(cycle => (
                           <Badge
@@ -926,7 +928,7 @@ export default function ProductModal({
                               "cursor-pointer transition-colors",
                               digitalData.billing_cycles.includes(cycle.value)
                                 ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/30"
-                                : "bg-transparent text-zinc-400 border-zinc-700 hover:border-zinc-500"
+                                : `bg-transparent ${t('text-slate-500', 'text-zinc-400')} ${t('border-slate-300', 'border-zinc-700')} ${t('hover:border-slate-400', 'hover:border-zinc-500')}`
                             )}
                             onClick={() => {
                               setDigitalData(prev => ({
@@ -947,8 +949,8 @@ export default function ProductModal({
                   <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/20">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="text-white font-medium">Free Trial</h4>
-                        <p className="text-sm text-zinc-500">Offer a trial period for new users</p>
+                        <h4 className={cn(`${t('text-slate-900', 'text-white')} font-medium`)}>Free Trial</h4>
+                        <p className={cn(`text-sm ${t('text-slate-500', 'text-zinc-500')}`)}>Offer a trial period for new users</p>
                       </div>
                       <Switch
                         checked={digitalData.trial_available}
@@ -957,12 +959,12 @@ export default function ProductModal({
                     </div>
                     {digitalData.trial_available && (
                       <div className="mt-4">
-                        <Label className="text-zinc-300 text-sm mb-2 block">Trial Duration (days)</Label>
+                        <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Trial Duration (days)</Label>
                         <Input
                           type="number"
                           value={digitalData.trial_days}
                           onChange={(e) => setDigitalData(prev => ({ ...prev, trial_days: parseInt(e.target.value) || 14 }))}
-                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500 w-32"
+                          className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500 w-32`)}
                           min={1}
                           max={90}
                         />
@@ -972,21 +974,21 @@ export default function ProductModal({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-zinc-300 text-sm mb-2 block">Demo URL</Label>
+                      <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Demo URL</Label>
                       <Input
                         value={digitalData.demo_url}
                         onChange={(e) => setDigitalData(prev => ({ ...prev, demo_url: e.target.value }))}
                         placeholder="https://demo.yourproduct.com"
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                        className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                       />
                     </div>
                     <div>
-                      <Label className="text-zinc-300 text-sm mb-2 block">Documentation URL</Label>
+                      <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Documentation URL</Label>
                       <Input
                         value={digitalData.documentation_url}
                         onChange={(e) => setDigitalData(prev => ({ ...prev, documentation_url: e.target.value }))}
                         placeholder="https://docs.yourproduct.com"
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                        className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                       />
                     </div>
                   </div>
@@ -994,9 +996,9 @@ export default function ProductModal({
               ) : (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-zinc-300 text-sm mb-2 block">Base Price</Label>
+                    <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Base Price</Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">$</span>
+                      <span className={cn(`absolute left-3 top-1/2 -translate-y-1/2 ${t('text-slate-400', 'text-zinc-500')}`)}>$</span>
                       <Input
                         type="number"
                         value={physicalData.pricing.base_price}
@@ -1005,14 +1007,14 @@ export default function ProductModal({
                           pricing: { ...prev.pricing, base_price: e.target.value }
                         }))}
                         placeholder="0.00"
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500 pl-7"
+                        className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500 pl-7`)}
                       />
                     </div>
                   </div>
                   <div>
-                    <Label className="text-zinc-300 text-sm mb-2 block">Compare at Price</Label>
+                    <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Compare at Price</Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">$</span>
+                      <span className={cn(`absolute left-3 top-1/2 -translate-y-1/2 ${t('text-slate-400', 'text-zinc-500')}`)}>$</span>
                       <Input
                         type="number"
                         value={physicalData.pricing.compare_at_price}
@@ -1021,14 +1023,14 @@ export default function ProductModal({
                           pricing: { ...prev.pricing, compare_at_price: e.target.value }
                         }))}
                         placeholder="0.00"
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500 pl-7"
+                        className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500 pl-7`)}
                       />
                     </div>
                   </div>
                   <div>
-                    <Label className="text-zinc-300 text-sm mb-2 block">Cost Price</Label>
+                    <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Cost Price</Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">$</span>
+                      <span className={cn(`absolute left-3 top-1/2 -translate-y-1/2 ${t('text-slate-400', 'text-zinc-500')}`)}>$</span>
                       <Input
                         type="number"
                         value={physicalData.pricing.cost_price}
@@ -1037,12 +1039,12 @@ export default function ProductModal({
                           pricing: { ...prev.pricing, cost_price: e.target.value }
                         }))}
                         placeholder="0.00"
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500 pl-7"
+                        className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500 pl-7`)}
                       />
                     </div>
                   </div>
                   <div>
-                    <Label className="text-zinc-300 text-sm mb-2 block">Currency</Label>
+                    <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Currency</Label>
                     <Select
                       value={physicalData.pricing.currency}
                       onValueChange={(v) => setPhysicalData(prev => ({
@@ -1050,13 +1052,13 @@ export default function ProductModal({
                         pricing: { ...prev.pricing, currency: v }
                       }))}
                     >
-                      <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                      <SelectTrigger className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')}`)}>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-zinc-800 border-zinc-700">
-                        <SelectItem value="EUR" className="text-white">EUR (€)</SelectItem>
-                        <SelectItem value="USD" className="text-white">USD ($)</SelectItem>
-                        <SelectItem value="GBP" className="text-white">GBP (£)</SelectItem>
+                      <SelectContent className={cn(`${t('bg-white', 'bg-zinc-800')} ${t('border-slate-200', 'border-zinc-700')}`)}>
+                        <SelectItem value="EUR" className={t('text-slate-900', 'text-white')}>EUR (€)</SelectItem>
+                        <SelectItem value="USD" className={t('text-slate-900', 'text-white')}>USD ($)</SelectItem>
+                        <SelectItem value="GBP" className={t('text-slate-900', 'text-white')}>GBP (£)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1070,8 +1072,8 @@ export default function ProductModal({
                 <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/20">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-white font-medium">Track Inventory</h4>
-                      <p className="text-sm text-zinc-500">Manage stock levels for this product</p>
+                      <h4 className={cn(`${t('text-slate-900', 'text-white')} font-medium`)}>Track Inventory</h4>
+                      <p className={cn(`text-sm ${t('text-slate-500', 'text-zinc-500')}`)}>Manage stock levels for this product</p>
                     </div>
                     <Switch
                       checked={physicalData.inventory.track_quantity}
@@ -1086,7 +1088,7 @@ export default function ProductModal({
                 {physicalData.inventory.track_quantity && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-zinc-300 text-sm mb-2 block">Quantity in Stock</Label>
+                      <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Quantity in Stock</Label>
                       <Input
                         type="number"
                         value={physicalData.inventory.quantity}
@@ -1094,12 +1096,12 @@ export default function ProductModal({
                           ...prev,
                           inventory: { ...prev.inventory, quantity: parseInt(e.target.value) || 0 }
                         }))}
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                        className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                         min={0}
                       />
                     </div>
                     <div>
-                      <Label className="text-zinc-300 text-sm mb-2 block">Low Stock Threshold</Label>
+                      <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Low Stock Threshold</Label>
                       <Input
                         type="number"
                         value={physicalData.inventory.low_stock_threshold}
@@ -1107,20 +1109,20 @@ export default function ProductModal({
                           ...prev,
                           inventory: { ...prev.inventory, low_stock_threshold: parseInt(e.target.value) || 5 }
                         }))}
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                        className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                         min={0}
                       />
                     </div>
                   </div>
                 )}
 
-                <div className="border-t border-white/5 pt-4 mt-4">
-                  <h4 className="text-white font-medium mb-4 flex items-center gap-2">
+                <div className={cn(`border-t ${t('border-slate-200', 'border-white/5')} pt-4 mt-4`)}>
+                  <h4 className={cn(`${t('text-slate-900', 'text-white')} font-medium mb-4 flex items-center gap-2`)}>
                     <Truck className="w-4 h-4 text-cyan-400" /> Shipping
                   </h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-zinc-300 text-sm mb-2 block">Weight</Label>
+                      <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Weight</Label>
                       <div className="flex gap-2">
                         <Input
                           type="number"
@@ -1130,7 +1132,7 @@ export default function ProductModal({
                             shipping: { ...prev.shipping, weight: e.target.value }
                           }))}
                           placeholder="0"
-                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                          className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                         />
                         <Select
                           value={physicalData.shipping.weight_unit}
@@ -1139,24 +1141,24 @@ export default function ProductModal({
                             shipping: { ...prev.shipping, weight_unit: v }
                           }))}
                         >
-                          <SelectTrigger className="w-24 bg-zinc-800/50 border-zinc-700 text-white">
+                          <SelectTrigger className={cn(`w-24 ${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')}`)}>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="bg-zinc-800 border-zinc-700">
-                            <SelectItem value="kg" className="text-white">kg</SelectItem>
-                            <SelectItem value="lb" className="text-white">lb</SelectItem>
-                            <SelectItem value="oz" className="text-white">oz</SelectItem>
+                          <SelectContent className={cn(`${t('bg-white', 'bg-zinc-800')} ${t('border-slate-200', 'border-zinc-700')}`)}>
+                            <SelectItem value="kg" className={t('text-slate-900', 'text-white')}>kg</SelectItem>
+                            <SelectItem value="lb" className={t('text-slate-900', 'text-white')}>lb</SelectItem>
+                            <SelectItem value="oz" className={t('text-slate-900', 'text-white')}>oz</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
                     <div>
-                      <Label className="text-zinc-300 text-sm mb-2 block">Country of Origin</Label>
+                      <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Country of Origin</Label>
                       <Input
                         value={physicalData.country_of_origin}
                         onChange={(e) => setPhysicalData(prev => ({ ...prev, country_of_origin: e.target.value }))}
                         placeholder="US"
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                        className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                         maxLength={2}
                       />
                     </div>
@@ -1164,9 +1166,9 @@ export default function ProductModal({
                 </div>
 
                 {/* Suppliers Section */}
-                <div className="border-t border-white/5 pt-4 mt-4">
+                <div className={cn(`border-t ${t('border-slate-200', 'border-white/5')} pt-4 mt-4`)}>
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-white font-medium flex items-center gap-2">
+                    <h4 className={cn(`${t('text-slate-900', 'text-white')} font-medium flex items-center gap-2`)}>
                       <Users className="w-4 h-4 text-cyan-400" /> Suppliers
                     </h4>
                     <Button
@@ -1174,7 +1176,7 @@ export default function ProductModal({
                       variant="outline"
                       size="sm"
                       onClick={() => setShowAddSupplier(!showAddSupplier)}
-                      className="border-zinc-700 text-zinc-400 hover:text-white"
+                      className={cn(`${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')}`)}
                     >
                       <Plus className="w-4 h-4 mr-1" /> Add Supplier
                     </Button>
@@ -1187,23 +1189,23 @@ export default function ProductModal({
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="mb-4 p-3 rounded-lg bg-zinc-800/50 border border-white/5"
+                        className={cn(`mb-4 p-3 rounded-lg ${t('bg-slate-50', 'bg-zinc-800/50')} border ${t('border-slate-200', 'border-white/5')}`)}
                       >
                         <div className="flex gap-3 items-end">
                           <div className="flex-1">
-                            <Label className="text-zinc-300 text-sm mb-2 block">Select Supplier</Label>
+                            <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Select Supplier</Label>
                             <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
-                              <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                              <SelectTrigger className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')}`)}>
                                 <SelectValue placeholder="Choose a supplier..." />
                               </SelectTrigger>
-                              <SelectContent className="bg-zinc-800 border-zinc-700">
+                              <SelectContent className={cn(`${t('bg-white', 'bg-zinc-800')} ${t('border-slate-200', 'border-zinc-700')}`)}>
                                 {availableSuppliers
                                   .filter(s =>
                                     !productSuppliers.some(ps => ps.supplier_id === s.id) &&
                                     !pendingSuppliers.some(ps => ps.supplier_id === s.id)
                                   )
                                   .map(s => (
-                                    <SelectItem key={s.id} value={s.id} className="text-white">
+                                    <SelectItem key={s.id} value={s.id} className={t('text-slate-900', 'text-white')}>
                                       {s.name}
                                     </SelectItem>
                                   ))}
@@ -1226,10 +1228,10 @@ export default function ProductModal({
                   {/* Suppliers List */}
                   {suppliersLoading ? (
                     <div className="flex items-center justify-center p-4">
-                      <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+                      <Loader2 className={cn(`w-5 h-5 animate-spin ${t('text-slate-400', 'text-zinc-400')}`)} />
                     </div>
                   ) : (isEdit ? productSuppliers : pendingSuppliers).length === 0 ? (
-                    <p className="text-sm text-zinc-500 text-center py-4">
+                    <p className={cn(`text-sm ${t('text-slate-500', 'text-zinc-500')} text-center py-4`)}>
                       No suppliers linked to this product yet
                     </p>
                   ) : (
@@ -1237,11 +1239,11 @@ export default function ProductModal({
                       {(isEdit ? productSuppliers : pendingSuppliers).map(ps => (
                         <div
                           key={ps.id}
-                          className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/50 border border-white/5"
+                          className={cn(`flex items-center gap-3 p-3 rounded-lg ${t('bg-slate-50', 'bg-zinc-800/50')} border ${t('border-slate-200', 'border-white/5')}`)}
                         >
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="text-white font-medium truncate">
+                              <span className={cn(`${t('text-slate-900', 'text-white')} font-medium truncate`)}>
                                 {ps.suppliers?.name || 'Unknown Supplier'}
                               </span>
                               {ps.is_preferred && (
@@ -1250,18 +1252,18 @@ export default function ProductModal({
                                 </Badge>
                               )}
                             </div>
-                            <div className="text-sm text-zinc-400 mt-1">
+                            <div className={cn(`text-sm ${t('text-slate-500', 'text-zinc-400')} mt-1`)}>
                               {ps.last_purchase_price ? (
                                 <span>
                                   Last: €{parseFloat(ps.last_purchase_price).toFixed(2)}
                                   {ps.last_purchase_date && (
-                                    <span className="text-zinc-500 ml-2">
+                                    <span className={cn(`${t('text-slate-400', 'text-zinc-500')} ml-2`)}>
                                       ({new Date(ps.last_purchase_date).toLocaleDateString()})
                                     </span>
                                   )}
                                 </span>
                               ) : (
-                                <span className="text-zinc-500">No purchase history</span>
+                                <span className={t('text-slate-400', 'text-zinc-500')}>No purchase history</span>
                               )}
                               {ps.average_purchase_price && (
                                 <span className="ml-3">
@@ -1277,7 +1279,7 @@ export default function ProductModal({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleSetPreferred(ps.supplier_id)}
-                                className="text-zinc-500 hover:text-cyan-400 h-8 w-8 p-0"
+                                className={cn(`${t('text-slate-400', 'text-zinc-500')} hover:text-cyan-400 h-8 w-8 p-0`)}
                                 title="Set as preferred"
                               >
                                 <Star className="w-4 h-4" />
@@ -1288,7 +1290,7 @@ export default function ProductModal({
                               variant="ghost"
                               size="sm"
                               onClick={() => handleRemoveSupplier(ps.supplier_id)}
-                              className="text-zinc-500 hover:text-red-400 h-8 w-8 p-0"
+                              className={cn(`${t('text-slate-400', 'text-zinc-500')} hover:text-red-400 h-8 w-8 p-0`)}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -1301,9 +1303,9 @@ export default function ProductModal({
 
                 {/* Purchase History Section - Only for existing products */}
                 {isEdit && (
-                  <div className="border-t border-white/5 pt-4 mt-4">
+                  <div className={cn(`border-t ${t('border-slate-200', 'border-white/5')} pt-4 mt-4`)}>
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-white font-medium flex items-center gap-2">
+                      <h4 className={cn(`${t('text-slate-900', 'text-white')} font-medium flex items-center gap-2`)}>
                         <History className="w-4 h-4 text-cyan-400" /> Purchase History
                       </h4>
                       <Button
@@ -1311,7 +1313,7 @@ export default function ProductModal({
                         variant="outline"
                         size="sm"
                         onClick={() => setShowAddPurchase(!showAddPurchase)}
-                        className="border-zinc-700 text-zinc-400 hover:text-white"
+                        className={cn(`${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')}`)}
                       >
                         <Plus className="w-4 h-4 mr-1" /> Add Purchase
                       </Button>
@@ -1324,21 +1326,21 @@ export default function ProductModal({
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="mb-4 p-3 rounded-lg bg-zinc-800/50 border border-white/5"
+                          className={cn(`mb-4 p-3 rounded-lg ${t('bg-slate-50', 'bg-zinc-800/50')} border ${t('border-slate-200', 'border-white/5')}`)}
                         >
                           <div className="grid grid-cols-2 gap-3 mb-3">
                             <div>
-                              <Label className="text-zinc-300 text-sm mb-2 block">Supplier</Label>
+                              <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Supplier</Label>
                               <Select
                                 value={purchaseForm.supplier_id}
                                 onValueChange={(v) => setPurchaseForm(p => ({ ...p, supplier_id: v }))}
                               >
-                                <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                                <SelectTrigger className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')}`)}>
                                   <SelectValue placeholder="Select supplier..." />
                                 </SelectTrigger>
-                                <SelectContent className="bg-zinc-800 border-zinc-700">
+                                <SelectContent className={cn(`${t('bg-white', 'bg-zinc-800')} ${t('border-slate-200', 'border-zinc-700')}`)}>
                                   {availableSuppliers.map(s => (
-                                    <SelectItem key={s.id} value={s.id} className="text-white">
+                                    <SelectItem key={s.id} value={s.id} className={t('text-slate-900', 'text-white')}>
                                       {s.name}
                                     </SelectItem>
                                   ))}
@@ -1346,43 +1348,43 @@ export default function ProductModal({
                               </Select>
                             </div>
                             <div>
-                              <Label className="text-zinc-300 text-sm mb-2 block">Date</Label>
+                              <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Date</Label>
                               <Input
                                 type="date"
                                 value={purchaseForm.purchase_date}
                                 onChange={(e) => setPurchaseForm(p => ({ ...p, purchase_date: e.target.value }))}
-                                className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                                className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                               />
                             </div>
                             <div>
-                              <Label className="text-zinc-300 text-sm mb-2 block">Quantity</Label>
+                              <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Quantity</Label>
                               <Input
                                 type="number"
                                 value={purchaseForm.quantity}
                                 onChange={(e) => setPurchaseForm(p => ({ ...p, quantity: e.target.value }))}
                                 placeholder="0"
-                                className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                                className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                                 min={1}
                               />
                             </div>
                             <div>
-                              <Label className="text-zinc-300 text-sm mb-2 block">Unit Price (€)</Label>
+                              <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Unit Price (€)</Label>
                               <Input
                                 type="number"
                                 step="0.01"
                                 value={purchaseForm.unit_price}
                                 onChange={(e) => setPurchaseForm(p => ({ ...p, unit_price: e.target.value }))}
                                 placeholder="0.00"
-                                className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                                className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                               />
                             </div>
                             <div className="col-span-2">
-                              <Label className="text-zinc-300 text-sm mb-2 block">Invoice # (Optional)</Label>
+                              <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Invoice # (Optional)</Label>
                               <Input
                                 value={purchaseForm.invoice_number}
                                 onChange={(e) => setPurchaseForm(p => ({ ...p, invoice_number: e.target.value }))}
                                 placeholder="INV-001"
-                                className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                                className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                               />
                             </div>
                           </div>
@@ -1391,7 +1393,7 @@ export default function ProductModal({
                               type="button"
                               variant="ghost"
                               onClick={() => setShowAddPurchase(false)}
-                              className="text-zinc-400"
+                              className={t('text-slate-500', 'text-zinc-400')}
                             >
                               Cancel
                             </Button>
@@ -1409,14 +1411,14 @@ export default function ProductModal({
 
                     {/* Purchase History Table */}
                     {purchaseHistory.length === 0 ? (
-                      <p className="text-sm text-zinc-500 text-center py-4">
+                      <p className={cn(`text-sm ${t('text-slate-500', 'text-zinc-500')} text-center py-4`)}>
                         No purchase history recorded yet
                       </p>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="text-zinc-500 border-b border-white/5">
+                            <tr className={cn(`${t('text-slate-500', 'text-zinc-500')} border-b ${t('border-slate-200', 'border-white/5')}`)}>
                               <th className="text-left py-2 font-medium">Date</th>
                               <th className="text-left py-2 font-medium">Supplier</th>
                               <th className="text-right py-2 font-medium">Qty</th>
@@ -1427,10 +1429,10 @@ export default function ProductModal({
                           </thead>
                           <tbody>
                             {purchaseHistory.map(p => (
-                              <tr key={p.id} className="border-b border-white/5 text-white">
+                              <tr key={p.id} className={cn(`border-b ${t('border-slate-200', 'border-white/5')} ${t('text-slate-900', 'text-white')}`)}>
                                 <td className="py-2">
                                   <div className="flex items-center gap-2">
-                                    <Calendar className="w-3 h-3 text-zinc-500" />
+                                    <Calendar className={cn(`w-3 h-3 ${t('text-slate-400', 'text-zinc-500')}`)} />
                                     {new Date(p.purchase_date).toLocaleDateString()}
                                   </div>
                                 </td>
@@ -1440,12 +1442,12 @@ export default function ProductModal({
                                 <td className="py-2 text-right font-medium">€{parseFloat(p.total_amount).toFixed(2)}</td>
                                 <td className="py-2">
                                   {p.invoice_number ? (
-                                    <span className="flex items-center gap-1 text-zinc-400">
+                                    <span className={cn(`flex items-center gap-1 ${t('text-slate-500', 'text-zinc-400')}`)}>
                                       <Receipt className="w-3 h-3" />
                                       {p.invoice_number}
                                     </span>
                                   ) : (
-                                    <Badge className="bg-zinc-700 text-zinc-400 border-0 text-xs">
+                                    <Badge className={cn(`${t('bg-slate-200', 'bg-zinc-700')} ${t('text-slate-500', 'text-zinc-400')} border-0 text-xs`)}>
                                       {p.source_type}
                                     </Badge>
                                   )}
@@ -1465,20 +1467,20 @@ export default function ProductModal({
             {productType === 'digital' && (
               <TabsContent value="features" className="space-y-4 m-0">
                 <div>
-                  <Label className="text-zinc-300 text-sm mb-2 block">Product Features</Label>
+                  <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Product Features</Label>
                   <div className="flex gap-2">
                     <Input
                       value={newFeature}
                       onChange={(e) => setNewFeature(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddFeature())}
                       placeholder="Add a feature"
-                      className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                      className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                     />
                     <Button
                       type="button"
                       variant="outline"
                       onClick={handleAddFeature}
-                      className="border-zinc-700 text-zinc-400 hover:text-white flex-shrink-0"
+                      className={cn(`${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')} flex-shrink-0`)}
                     >
                       <Plus className="w-4 h-4 mr-2" /> Add
                     </Button>
@@ -1492,18 +1494,18 @@ export default function ProductModal({
                         key={index}
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/50 border border-white/5"
+                        className={cn(`flex items-center gap-3 p-3 rounded-lg ${t('bg-slate-50', 'bg-zinc-800/50')} border ${t('border-slate-200', 'border-white/5')}`)}
                       >
                         <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
                           <ChevronRight className="w-3 h-3 text-cyan-400" />
                         </div>
-                        <span className="text-white flex-1">{feature.title}</span>
+                        <span className={cn(`${t('text-slate-900', 'text-white')} flex-1`)}>{feature.title}</span>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveFeature(index)}
-                          className="text-zinc-500 hover:text-red-400 h-7 w-7 p-0"
+                          className={cn(`${t('text-slate-400', 'text-zinc-500')} hover:text-red-400 h-7 w-7 p-0`)}
                         >
                           <X className="w-4 h-4" />
                         </Button>
@@ -1536,7 +1538,7 @@ export default function ProductModal({
                               }
                             }}
                             placeholder={placeholder}
-                            className="flex-1 px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-cyan-500/50"
+                            className={cn(`flex-1 px-3 py-2 ${t('bg-slate-50', 'bg-white/[0.05]')} border ${t('border-slate-300', 'border-white/[0.08]')} rounded-lg ${t('text-slate-900', 'text-white')} text-sm ${t('placeholder:text-slate-400', 'placeholder:text-zinc-500')} focus:outline-none focus:border-cyan-500/50`)}
                           />
                           <button
                             type="button"
@@ -1554,7 +1556,7 @@ export default function ProductModal({
                             {tags.map(tag => (
                               <span key={tag} className="inline-flex items-center gap-1 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-full px-3 py-1 text-xs">
                                 {tag}
-                                <button type="button" onClick={() => onRemove(tag)} className="hover:text-white"><X className="w-3 h-3" /></button>
+                                <button type="button" onClick={() => onRemove(tag)} className={t('hover:text-slate-900', 'hover:text-white')}><X className="w-3 h-3" /></button>
                               </span>
                             ))}
                           </div>
@@ -1572,9 +1574,9 @@ export default function ProductModal({
                             value={item}
                             onChange={(e) => { const n = [...items]; n[i] = e.target.value; onUpdate(n); }}
                             placeholder={placeholder}
-                            className="flex-1 px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-cyan-500/50"
+                            className={cn(`flex-1 px-3 py-2 ${t('bg-slate-50', 'bg-white/[0.05]')} border ${t('border-slate-300', 'border-white/[0.08]')} rounded-lg ${t('text-slate-900', 'text-white')} text-sm ${t('placeholder:text-slate-400', 'placeholder:text-zinc-500')} focus:outline-none focus:border-cyan-500/50`)}
                           />
-                          <button type="button" onClick={() => onUpdate(items.filter((_, j) => j !== i))} className="text-zinc-500 hover:text-red-400"><X className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => onUpdate(items.filter((_, j) => j !== i))} className={cn(`${t('text-slate-400', 'text-zinc-500')} hover:text-red-400`)}><X className="w-4 h-4" /></button>
                         </div>
                       ))}
                       <button type="button" onClick={() => onUpdate([...items, ''])} className="text-cyan-400 hover:text-cyan-300 text-sm flex items-center gap-1">
@@ -1585,10 +1587,10 @@ export default function ProductModal({
 
                   // Section wrapper
                   const Section = ({ id, title, children }) => (
-                    <div className="rounded-xl border border-white/[0.06] bg-zinc-800/30">
+                    <div className={cn(`rounded-xl border ${t('border-slate-200', 'border-white/[0.06]')} ${t('bg-slate-50', 'bg-zinc-800/30')}`)}>
                       <button type="button" onClick={() => toggleSection(id)} className="w-full flex items-center justify-between px-4 py-3">
-                        <span className="text-white font-semibold text-sm">{title}</span>
-                        {expandedSections[id] ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-400" />}
+                        <span className={cn(`${t('text-slate-900', 'text-white')} font-semibold text-sm`)}>{title}</span>
+                        {expandedSections[id] ? <ChevronUp className={cn(`w-4 h-4 ${t('text-slate-400', 'text-zinc-400')}`)} /> : <ChevronDown className={cn(`w-4 h-4 ${t('text-slate-400', 'text-zinc-400')}`)} />}
                       </button>
                       {expandedSections[id] && <div className="px-4 pb-4 space-y-3">{children}</div>}
                     </div>
@@ -1605,7 +1607,7 @@ export default function ProductModal({
                     <>
                       <Section id="targetPersona" title="Target Persona">
                         <div>
-                          <label className="text-zinc-400 text-xs mb-1 block">Job Titles</label>
+                          <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Job Titles</label>
                           <TagInput
                             tags={aiContext.targetPersona.jobTitles}
                             onAdd={(t) => updateCtx('targetPersona', 'jobTitles', [...aiContext.targetPersona.jobTitles, t])}
@@ -1614,7 +1616,7 @@ export default function ProductModal({
                           />
                         </div>
                         <div>
-                          <label className="text-zinc-400 text-xs mb-1 block">Pain Points</label>
+                          <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Pain Points</label>
                           <ListInput
                             items={aiContext.targetPersona.painPoints}
                             onUpdate={(v) => updateCtx('targetPersona', 'painPoints', v)}
@@ -1622,7 +1624,7 @@ export default function ProductModal({
                           />
                         </div>
                         <div>
-                          <label className="text-zinc-400 text-xs mb-1 block">Goals</label>
+                          <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Goals</label>
                           <ListInput
                             items={aiContext.targetPersona.goals}
                             onUpdate={(v) => updateCtx('targetPersona', 'goals', v)}
@@ -1633,7 +1635,7 @@ export default function ProductModal({
 
                       <Section id="positioning" title="Positioning">
                         <div>
-                          <label className="text-zinc-400 text-xs mb-1 block">Competitors</label>
+                          <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Competitors</label>
                           <TagInput
                             tags={aiContext.positioning.competitors}
                             onAdd={(t) => updateCtx('positioning', 'competitors', [...aiContext.positioning.competitors, t])}
@@ -1642,7 +1644,7 @@ export default function ProductModal({
                           />
                         </div>
                         <div>
-                          <label className="text-zinc-400 text-xs mb-1 block">Differentiators</label>
+                          <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Differentiators</label>
                           <ListInput
                             items={aiContext.positioning.differentiators}
                             onUpdate={(v) => updateCtx('positioning', 'differentiators', v)}
@@ -1650,12 +1652,12 @@ export default function ProductModal({
                           />
                         </div>
                         <div>
-                          <label className="text-zinc-400 text-xs mb-1 block">Unique Value Proposition</label>
+                          <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Unique Value Proposition</label>
                           <textarea
                             value={aiContext.positioning.uniqueValue}
                             onChange={(e) => updateCtx('positioning', 'uniqueValue', e.target.value)}
                             placeholder="The only platform that..."
-                            className="w-full px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-cyan-500/50 min-h-[60px]"
+                            className={cn(`w-full px-3 py-2 ${t('bg-slate-50', 'bg-white/[0.05]')} border ${t('border-slate-300', 'border-white/[0.08]')} rounded-lg ${t('text-slate-900', 'text-white')} text-sm ${t('placeholder:text-slate-400', 'placeholder:text-zinc-500')} focus:outline-none focus:border-cyan-500/50 min-h-[60px]`)}
                           />
                         </div>
                       </Section>
@@ -1663,7 +1665,7 @@ export default function ProductModal({
                       <Section id="useCases" title="Use Cases">
                         <div className="space-y-3">
                           {aiContext.useCases.map((uc, i) => (
-                            <div key={i} className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.05] space-y-2">
+                            <div key={i} className={cn(`p-3 ${t('bg-slate-50', 'bg-white/[0.03]')} rounded-lg border ${t('border-slate-200', 'border-white/[0.05]')} space-y-2`)}>
                               <div className="flex gap-2">
                                 <input
                                   value={uc.title}
@@ -1672,9 +1674,9 @@ export default function ProductModal({
                                     setAiContext(prev => ({ ...prev, useCases: n }));
                                   }}
                                   placeholder="Use case title"
-                                  className="flex-1 px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-cyan-500/50"
+                                  className={cn(`flex-1 px-3 py-2 ${t('bg-slate-50', 'bg-white/[0.05]')} border ${t('border-slate-300', 'border-white/[0.08]')} rounded-lg ${t('text-slate-900', 'text-white')} text-sm ${t('placeholder:text-slate-400', 'placeholder:text-zinc-500')} focus:outline-none focus:border-cyan-500/50`)}
                                 />
-                                <button type="button" onClick={() => setAiContext(prev => ({ ...prev, useCases: prev.useCases.filter((_, j) => j !== i) }))} className="text-zinc-500 hover:text-red-400"><X className="w-4 h-4" /></button>
+                                <button type="button" onClick={() => setAiContext(prev => ({ ...prev, useCases: prev.useCases.filter((_, j) => j !== i) }))} className={cn(`${t('text-slate-400', 'text-zinc-500')} hover:text-red-400`)}><X className="w-4 h-4" /></button>
                               </div>
                               <textarea
                                 value={uc.description}
@@ -1683,7 +1685,7 @@ export default function ProductModal({
                                   setAiContext(prev => ({ ...prev, useCases: n }));
                                 }}
                                 placeholder="Description"
-                                className="w-full px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-cyan-500/50 min-h-[50px]"
+                                className={cn(`w-full px-3 py-2 ${t('bg-slate-50', 'bg-white/[0.05]')} border ${t('border-slate-300', 'border-white/[0.08]')} rounded-lg ${t('text-slate-900', 'text-white')} text-sm ${t('placeholder:text-slate-400', 'placeholder:text-zinc-500')} focus:outline-none focus:border-cyan-500/50 min-h-[50px]`)}
                               />
                             </div>
                           ))}
@@ -1695,17 +1697,17 @@ export default function ProductModal({
 
                       <Section id="socialProof" title="Social Proof">
                         <div>
-                          <label className="text-zinc-400 text-xs mb-1 block">Customer Count</label>
+                          <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Customer Count</label>
                           <input
                             type="number"
                             value={aiContext.socialProof.customerCount || ''}
                             onChange={(e) => updateCtx('socialProof', 'customerCount', e.target.value ? parseInt(e.target.value) : null)}
                             placeholder="e.g. 150"
-                            className="w-32 px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-cyan-500/50"
+                            className={cn(`w-32 px-3 py-2 ${t('bg-slate-50', 'bg-white/[0.05]')} border ${t('border-slate-300', 'border-white/[0.08]')} rounded-lg ${t('text-slate-900', 'text-white')} text-sm ${t('placeholder:text-slate-400', 'placeholder:text-zinc-500')} focus:outline-none focus:border-cyan-500/50`)}
                           />
                         </div>
                         <div>
-                          <label className="text-zinc-400 text-xs mb-1 block">Key Metrics</label>
+                          <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Key Metrics</label>
                           <TagInput
                             tags={aiContext.socialProof.keyMetrics}
                             onAdd={(t) => updateCtx('socialProof', 'keyMetrics', [...aiContext.socialProof.keyMetrics, t])}
@@ -1714,7 +1716,7 @@ export default function ProductModal({
                           />
                         </div>
                         <div>
-                          <label className="text-zinc-400 text-xs mb-1 block">Testimonial Highlights</label>
+                          <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Testimonial Highlights</label>
                           <ListInput
                             items={aiContext.socialProof.testimonialHighlights}
                             onUpdate={(v) => updateCtx('socialProof', 'testimonialHighlights', v)}
@@ -1725,19 +1727,19 @@ export default function ProductModal({
 
                       <Section id="brandVoice" title="Brand Voice">
                         <div>
-                          <label className="text-zinc-400 text-xs mb-1 block">Tone</label>
+                          <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Tone</label>
                           <select
                             value={aiContext.brandVoice.tone}
                             onChange={(e) => updateCtx('brandVoice', 'tone', e.target.value)}
-                            className="px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500/50"
+                            className={cn(`px-3 py-2 ${t('bg-slate-50', 'bg-white/[0.05]')} border ${t('border-slate-300', 'border-white/[0.08]')} rounded-lg ${t('text-slate-900', 'text-white')} text-sm focus:outline-none focus:border-cyan-500/50`)}
                           >
                             {['professional', 'casual', 'technical', 'friendly', 'authoritative', 'playful'].map(t => (
-                              <option key={t} value={t} className="bg-zinc-800">{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                              <option key={t} value={t} className={t('bg-white', 'bg-zinc-800')}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
                             ))}
                           </select>
                         </div>
                         <div>
-                          <label className="text-zinc-400 text-xs mb-1 block">Keywords</label>
+                          <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Keywords</label>
                           <TagInput
                             tags={aiContext.brandVoice.keywords}
                             onAdd={(t) => updateCtx('brandVoice', 'keywords', [...aiContext.brandVoice.keywords, t])}
@@ -1746,7 +1748,7 @@ export default function ProductModal({
                           />
                         </div>
                         <div>
-                          <label className="text-zinc-400 text-xs mb-1 block">Words to Avoid</label>
+                          <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Words to Avoid</label>
                           <TagInput
                             tags={aiContext.brandVoice.avoidWords}
                             onAdd={(t) => updateCtx('brandVoice', 'avoidWords', [...aiContext.brandVoice.avoidWords, t])}
@@ -1758,16 +1760,16 @@ export default function ProductModal({
 
                       <Section id="industry" title="Industry Context">
                         <div>
-                          <label className="text-zinc-400 text-xs mb-1 block">Vertical</label>
+                          <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Vertical</label>
                           <input
                             value={aiContext.industry.vertical}
                             onChange={(e) => updateCtx('industry', 'vertical', e.target.value)}
                             placeholder="e.g. RegTech"
-                            className="w-full px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-cyan-500/50"
+                            className={cn(`w-full px-3 py-2 ${t('bg-slate-50', 'bg-white/[0.05]')} border ${t('border-slate-300', 'border-white/[0.08]')} rounded-lg ${t('text-slate-900', 'text-white')} text-sm ${t('placeholder:text-slate-400', 'placeholder:text-zinc-500')} focus:outline-none focus:border-cyan-500/50`)}
                           />
                         </div>
                         <div>
-                          <label className="text-zinc-400 text-xs mb-1 block">Regulations</label>
+                          <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Regulations</label>
                           <TagInput
                             tags={aiContext.industry.regulations}
                             onAdd={(t) => updateCtx('industry', 'regulations', [...aiContext.industry.regulations, t])}
@@ -1776,7 +1778,7 @@ export default function ProductModal({
                           />
                         </div>
                         <div>
-                          <label className="text-zinc-400 text-xs mb-1 block">Terminology</label>
+                          <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Terminology</label>
                           <TagInput
                             tags={aiContext.industry.terminology}
                             onAdd={(t) => updateCtx('industry', 'terminology', [...aiContext.industry.terminology, t])}
@@ -1794,29 +1796,29 @@ export default function ProductModal({
             {/* SEO Tab */}
             <TabsContent value="seo" className="space-y-4 m-0">
               <div>
-                <Label className="text-zinc-300 text-sm mb-2 block">Meta Title</Label>
+                <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Meta Title</Label>
                 <Input
                   value={formData.seo_meta_title}
                   onChange={(e) => setFormData(prev => ({ ...prev, seo_meta_title: e.target.value }))}
                   placeholder="SEO title (defaults to product name)"
-                  className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
+                  className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
                 />
-                <p className="text-xs text-zinc-500 mt-1">{formData.seo_meta_title?.length || 0}/60 characters</p>
+                <p className={cn(`text-xs ${t('text-slate-400', 'text-zinc-500')} mt-1`)}>{formData.seo_meta_title?.length || 0}/60 characters</p>
               </div>
 
               <div>
-                <Label className="text-zinc-300 text-sm mb-2 block">Meta Description</Label>
+                <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Meta Description</Label>
                 <Textarea
                   value={formData.seo_meta_description}
                   onChange={(e) => setFormData(prev => ({ ...prev, seo_meta_description: e.target.value }))}
                   placeholder="SEO description for search results"
-                  className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500 min-h-[80px]"
+                  className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500 min-h-[80px]`)}
                 />
-                <p className="text-xs text-zinc-500 mt-1">{formData.seo_meta_description?.length || 0}/160 characters</p>
+                <p className={cn(`text-xs ${t('text-slate-400', 'text-zinc-500')} mt-1`)}>{formData.seo_meta_description?.length || 0}/160 characters</p>
               </div>
 
-              <div className="p-4 rounded-xl bg-zinc-800/30 border border-white/5">
-                <h4 className="text-sm font-medium text-zinc-300 mb-2">Search Preview</h4>
+              <div className={cn(`p-4 rounded-xl ${t('bg-slate-50', 'bg-zinc-800/30')} border ${t('border-slate-200', 'border-white/5')}`)}>
+                <h4 className={cn(`text-sm font-medium ${t('text-slate-700', 'text-zinc-300')} mb-2`)}>Search Preview</h4>
                 <div className="space-y-1">
                   <p className="text-cyan-400 text-sm truncate">
                     {formData.seo_meta_title || formData.name || 'Product Title'}
@@ -1824,7 +1826,7 @@ export default function ProductModal({
                   <p className="text-cyan-400 text-xs">
                     yoursite.com/products/{formData.slug || 'product-slug'}
                   </p>
-                  <p className="text-zinc-400 text-sm line-clamp-2">
+                  <p className={cn(`${t('text-slate-500', 'text-zinc-400')} text-sm line-clamp-2`)}>
                     {formData.seo_meta_description || formData.short_description || 'Product description will appear here...'}
                   </p>
                 </div>
@@ -1834,8 +1836,8 @@ export default function ProductModal({
         </Tabs>
 
         {/* Footer */}
-        <div className="flex-shrink-0 flex items-center justify-between pt-4 border-t border-white/5">
-          <Button variant="ghost" onClick={onClose} className="text-zinc-400 hover:text-white">
+        <div className={cn(`flex-shrink-0 flex items-center justify-between pt-4 border-t ${t('border-slate-200', 'border-white/5')}`)}>
+          <Button variant="ghost" onClick={onClose} className={cn(`${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')}`)}>
             Cancel
           </Button>
           <Button

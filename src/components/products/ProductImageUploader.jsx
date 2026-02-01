@@ -14,6 +14,7 @@ import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -21,16 +22,6 @@ const BUCKET_NAME = 'product-images';
 
 /**
  * ProductImageUploader - Comprehensive image upload component for products
- *
- * Features:
- * - Drag & drop upload
- * - Multiple file upload
- * - Upload progress indicators
- * - Reorder images via drag & drop
- * - Set/unset featured image
- * - Preview with lightbox
- * - Delete images
- * - Supabase Storage integration
  */
 export default function ProductImageUploader({
   images = [],
@@ -40,6 +31,7 @@ export default function ProductImageUploader({
   maxImages = 10,
   className,
 }) {
+  const { t } = useTheme();
   const { user } = useUser();
   const fileInputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -47,13 +39,11 @@ export default function ProductImageUploader({
   const [uploadProgress, setUploadProgress] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
 
-  // Combine featured and gallery for display (featured first if exists)
   const allImages = [
     ...(featuredImage ? [{ ...featuredImage, isFeatured: true }] : []),
     ...images.filter(img => img.url !== featuredImage?.url)
   ];
 
-  // Handle drag events
   const handleDragEnter = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -73,7 +63,6 @@ export default function ProductImageUploader({
     e.stopPropagation();
   }, []);
 
-  // Process and validate files
   const processFiles = (files) => {
     const validFiles = [];
     const errors = [];
@@ -101,7 +90,6 @@ export default function ProductImageUploader({
     return validFiles;
   };
 
-  // Upload a single file to Supabase Storage
   const uploadFile = async (file) => {
     const fileId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const ext = file.name.split('.').pop();
@@ -110,7 +98,6 @@ export default function ProductImageUploader({
     try {
       setUploadProgress(prev => ({ ...prev, [fileId]: 0 }));
 
-      // Simulate progress (Supabase doesn't provide real progress for small files)
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => ({
           ...prev,
@@ -123,7 +110,6 @@ export default function ProductImageUploader({
       clearInterval(progressInterval);
       setUploadProgress(prev => ({ ...prev, [fileId]: 100 }));
 
-      // Clean up progress after a moment
       setTimeout(() => {
         setUploadProgress(prev => {
           const { [fileId]: _, ...rest } = prev;
@@ -148,7 +134,6 @@ export default function ProductImageUploader({
     }
   };
 
-  // Handle file drop
   const handleDrop = useCallback(async (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -168,7 +153,6 @@ export default function ProductImageUploader({
       const newImages = [...images, ...uploadedImages];
       onImagesChange?.(newImages);
 
-      // If no featured image yet, set the first uploaded one
       if (!featuredImage && uploadedImages.length > 0) {
         onFeaturedChange?.(uploadedImages[0]);
       }
@@ -181,7 +165,6 @@ export default function ProductImageUploader({
     }
   }, [images, featuredImage, onImagesChange, onFeaturedChange]);
 
-  // Handle file input change
   const handleFileSelect = async (e) => {
     const files = Array.from(e.target.files);
     const validFiles = processFiles(files);
@@ -212,25 +195,20 @@ export default function ProductImageUploader({
     }
   };
 
-  // Handle image deletion
   const handleDelete = (imageToDelete) => {
     const newImages = images.filter(img => img.url !== imageToDelete.url);
     onImagesChange?.(newImages);
 
-    // If deleting featured image, set new featured or clear it
     if (featuredImage?.url === imageToDelete.url) {
       onFeaturedChange?.(newImages[0] || null);
     }
   };
 
-  // Handle set as featured
   const handleSetFeatured = (image) => {
     onFeaturedChange?.(image);
   };
 
-  // Handle reorder
   const handleReorder = (reorderedImages) => {
-    // Extract just the gallery images (non-featured)
     const galleryImages = reorderedImages.filter(img => !img.isFeatured);
     onImagesChange?.(galleryImages);
   };
@@ -249,7 +227,7 @@ export default function ProductImageUploader({
           "flex flex-col items-center justify-center p-8 text-center",
           isDragging
             ? "border-cyan-500 bg-cyan-500/10"
-            : "border-zinc-700 hover:border-zinc-600 bg-zinc-900/50 hover:bg-zinc-900/70",
+            : `${t('border-slate-300', 'border-zinc-700')} ${t('hover:border-slate-400', 'hover:border-zinc-600')} ${t('bg-slate-50', 'bg-zinc-900/50')} ${t('hover:bg-slate-100', 'hover:bg-zinc-900/70')}`,
           uploading && "pointer-events-none opacity-60"
         )}
       >
@@ -272,7 +250,7 @@ export default function ProductImageUploader({
               className="flex flex-col items-center"
             >
               <Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-3" />
-              <p className="text-white font-medium">Uploading...</p>
+              <p className={`${t('text-slate-900', 'text-white')} font-medium`}>Uploading...</p>
             </motion.div>
           ) : isDragging ? (
             <motion.div
@@ -295,16 +273,16 @@ export default function ProductImageUploader({
               exit={{ opacity: 0 }}
               className="flex flex-col items-center"
             >
-              <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center mb-3">
-                <ImageIcon className="w-8 h-8 text-zinc-500" />
+              <div className={`w-16 h-16 rounded-full ${t('bg-slate-200', 'bg-zinc-800')} flex items-center justify-center mb-3`}>
+                <ImageIcon className={`w-8 h-8 ${t('text-slate-400', 'text-zinc-500')}`} />
               </div>
-              <p className="text-white font-medium mb-1">
+              <p className={`${t('text-slate-900', 'text-white')} font-medium mb-1`}>
                 Drag & drop images here
               </p>
-              <p className="text-sm text-zinc-500 mb-3">
+              <p className={`text-sm ${t('text-slate-500', 'text-zinc-500')} mb-3`}>
                 or click to browse
               </p>
-              <p className="text-xs text-zinc-600">
+              <p className={`text-xs ${t('text-slate-400', 'text-zinc-600')}`}>
                 PNG, JPG, WebP or GIF. Max 10MB each. Up to {maxImages} images.
               </p>
             </motion.div>
@@ -318,7 +296,7 @@ export default function ProductImageUploader({
           {Object.entries(uploadProgress).map(([id, progress]) => (
             <div key={id} className="flex items-center gap-3">
               <Progress value={progress} className="flex-1 h-2" />
-              <span className="text-xs text-zinc-400 w-12">{progress}%</span>
+              <span className={`text-xs ${t('text-slate-500', 'text-zinc-400')} w-12`}>{progress}%</span>
             </div>
           ))}
         </div>
@@ -328,11 +306,11 @@ export default function ProductImageUploader({
       {allImages.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-zinc-300">
+            <h4 className={`text-sm font-medium ${t('text-slate-700', 'text-zinc-300')}`}>
               Product Images ({allImages.length}/{maxImages})
             </h4>
             {allImages.length > 1 && (
-              <p className="text-xs text-zinc-500">Drag to reorder</p>
+              <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>Drag to reorder</p>
             )}
           </div>
 
@@ -351,13 +329,12 @@ export default function ProductImageUploader({
                 <div
                   className={cn(
                     "relative w-28 h-28 rounded-lg overflow-hidden border-2 transition-all",
-                    "bg-zinc-800 cursor-grab active:cursor-grabbing",
+                    `${t('bg-slate-100', 'bg-zinc-800')} cursor-grab active:cursor-grabbing`,
                     image.isFeatured
                       ? "border-cyan-500 ring-2 ring-cyan-500/30"
-                      : "border-zinc-700 hover:border-zinc-600"
+                      : `${t('border-slate-300', 'border-zinc-700')} ${t('hover:border-slate-400', 'hover:border-zinc-600')}`
                   )}
                 >
-                  {/* Image */}
                   <img
                     src={image.url}
                     alt={image.alt || 'Product image'}
@@ -365,21 +342,18 @@ export default function ProductImageUploader({
                     onClick={() => setPreviewImage(image)}
                   />
 
-                  {/* Featured Badge */}
                   {image.isFeatured && (
                     <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-cyan-500 text-[10px] font-bold text-black">
                       FEATURED
                     </div>
                   )}
 
-                  {/* Drag Handle */}
                   <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="w-6 h-6 rounded bg-black/60 flex items-center justify-center">
                       <GripVertical className="w-3 h-3 text-white" />
                     </div>
                   </div>
 
-                  {/* Hover Actions */}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
                     <Button
                       variant="ghost"
@@ -460,10 +434,11 @@ export default function ProductImageUploader({
  * Compact version for use in forms
  */
 export function ProductImageInput({
-  value, // Single image object or URL
+  value,
   onChange,
   className,
 }) {
+  const { t } = useTheme();
   const [uploading, setUploading] = useState(false);
   const { user } = useUser();
   const fileInputRef = useRef(null);
@@ -520,7 +495,7 @@ export function ProductImageInput({
       />
 
       {imageUrl ? (
-        <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-zinc-700 group">
+        <div className={`relative w-32 h-32 rounded-lg overflow-hidden border ${t('border-slate-300', 'border-zinc-700')} group`}>
           <img
             src={imageUrl}
             alt="Product"
@@ -557,18 +532,18 @@ export function ProductImageInput({
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
           className={cn(
-            "w-32 h-32 rounded-lg border-2 border-dashed border-zinc-700",
+            `w-32 h-32 rounded-lg border-2 border-dashed ${t('border-slate-300', 'border-zinc-700')}`,
             "flex flex-col items-center justify-center gap-2",
-            "hover:border-zinc-600 hover:bg-zinc-900/50 transition-colors",
+            `${t('hover:border-slate-400', 'hover:border-zinc-600')} ${t('hover:bg-slate-50', 'hover:bg-zinc-900/50')} transition-colors`,
             uploading && "opacity-60 cursor-not-allowed"
           )}
         >
           {uploading ? (
-            <Loader2 className="w-6 h-6 text-zinc-500 animate-spin" />
+            <Loader2 className={`w-6 h-6 ${t('text-slate-400', 'text-zinc-500')} animate-spin`} />
           ) : (
             <>
-              <Upload className="w-6 h-6 text-zinc-500" />
-              <span className="text-xs text-zinc-500">Upload</span>
+              <Upload className={`w-6 h-6 ${t('text-slate-400', 'text-zinc-500')}`} />
+              <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>Upload</span>
             </>
           )}
         </button>

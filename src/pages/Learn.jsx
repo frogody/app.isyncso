@@ -4,7 +4,7 @@ import { db } from "@/api/supabaseClient";
 import { useDebounce } from "@/components/hooks/useDebounce";
 import { useLocalStorage } from "@/components/hooks/useLocalStorage";
 import { useUser } from "@/components/context/UserContext";
-import { useLearnTheme } from '@/contexts/LearnThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { LearnPageTransition } from '@/components/learn/ui';
 import {
   Search, Grid, List, BookOpen, GraduationCap, Clock, CheckCircle, PlayCircle,
@@ -103,7 +103,7 @@ function RecommendedCourseCard({ course, lt }) {
 
 export default function Learn() {
   const { user, isLoading: userLoading } = useUser();
-  const { theme, toggleTheme, lt } = useLearnTheme();
+  const { theme, toggleTheme, lt } = useTheme();
   const [courses, setCourses] = useState([]);
   const [userProgress, setUserProgress] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);

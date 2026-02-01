@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 /**
  * InlineEditText - Inline editable text field with pencil icon
@@ -21,6 +22,7 @@ export function InlineEditText({
   label,
   disabled = false,
 }) {
+  const { t } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || '');
   const inputRef = useRef(null);
@@ -61,9 +63,9 @@ export function InlineEditText({
   if (disabled) {
     return (
       <div className={cn("group", className)}>
-        {label && <div className="text-xs text-zinc-500 mb-1">{label}</div>}
-        <div className={cn("text-white", textClassName)}>
-          {value || <span className="text-zinc-600 italic">{placeholder}</span>}
+        {label && <div className={`text-xs ${t('text-slate-500', 'text-zinc-500')} mb-1`}>{label}</div>}
+        <div className={cn(t('text-slate-900', 'text-white'), textClassName)}>
+          {value || <span className={`${t('text-slate-400', 'text-zinc-600')} italic`}>{placeholder}</span>}
         </div>
       </div>
     );
@@ -72,7 +74,7 @@ export function InlineEditText({
   if (isEditing) {
     return (
       <div className={cn("space-y-2", className)}>
-        {label && <div className="text-xs text-zinc-500 mb-1">{label}</div>}
+        {label && <div className={`text-xs ${t('text-slate-500', 'text-zinc-500')} mb-1`}>{label}</div>}
         {multiline ? (
           <Textarea
             ref={inputRef}
@@ -81,7 +83,7 @@ export function InlineEditText({
             onKeyDown={handleKeyDown}
             rows={rows}
             className={cn(
-              "bg-zinc-800/50 border-cyan-500/50 text-white resize-none",
+              `${t('bg-slate-100', 'bg-zinc-800/50')} border-cyan-500/50 ${t('text-slate-900', 'text-white')} resize-none`,
               inputClassName
             )}
             placeholder={placeholder}
@@ -93,7 +95,7 @@ export function InlineEditText({
             onChange={(e) => setEditValue(e.target.value)}
             onKeyDown={handleKeyDown}
             className={cn(
-              "bg-zinc-800/50 border-cyan-500/50 text-white",
+              `${t('bg-slate-100', 'bg-zinc-800/50')} border-cyan-500/50 ${t('text-slate-900', 'text-white')}`,
               inputClassName
             )}
             placeholder={placeholder}
@@ -111,7 +113,7 @@ export function InlineEditText({
             size="sm"
             variant="ghost"
             onClick={handleCancel}
-            className="text-zinc-400 hover:text-white h-7 px-2"
+            className={`${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')} h-7 px-2`}
           >
             <X className="w-3 h-3 mr-1" /> Cancel
           </Button>
@@ -122,15 +124,15 @@ export function InlineEditText({
 
   return (
     <div className={cn("group cursor-pointer", className)} onClick={() => setIsEditing(true)}>
-      {label && <div className="text-xs text-zinc-500 mb-1">{label}</div>}
+      {label && <div className={`text-xs ${t('text-slate-500', 'text-zinc-500')} mb-1`}>{label}</div>}
       <div className="flex items-start gap-2">
-        <div className={cn("flex-1 text-white", textClassName)}>
-          {value || <span className="text-zinc-600 italic">{placeholder}</span>}
+        <div className={cn(`flex-1 ${t('text-slate-900', 'text-white')}`, textClassName)}>
+          {value || <span className={`${t('text-slate-400', 'text-zinc-600')} italic`}>{placeholder}</span>}
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-cyan-400"
+          className={`h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ${t('text-slate-400', 'text-zinc-400')} hover:text-cyan-400`}
           onClick={(e) => {
             e.stopPropagation();
             setIsEditing(true);
@@ -160,6 +162,7 @@ export function InlineEditNumber({
   max,
   step = 1,
 }) {
+  const { t } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value ?? '');
   const inputRef = useRef(null);
@@ -203,9 +206,9 @@ export function InlineEditNumber({
   if (disabled) {
     return (
       <div className={cn("group", className)}>
-        {label && <div className="text-xs text-zinc-500 mb-1">{label}</div>}
-        <div className={cn("text-white", textClassName)}>
-          {displayValue || <span className="text-zinc-600 italic">{placeholder}</span>}
+        {label && <div className={`text-xs ${t('text-slate-500', 'text-zinc-500')} mb-1`}>{label}</div>}
+        <div className={cn(t('text-slate-900', 'text-white'), textClassName)}>
+          {displayValue || <span className={`${t('text-slate-400', 'text-zinc-600')} italic`}>{placeholder}</span>}
         </div>
       </div>
     );
@@ -214,9 +217,9 @@ export function InlineEditNumber({
   if (isEditing) {
     return (
       <div className={cn("space-y-2", className)}>
-        {label && <div className="text-xs text-zinc-500 mb-1">{label}</div>}
+        {label && <div className={`text-xs ${t('text-slate-500', 'text-zinc-500')} mb-1`}>{label}</div>}
         <div className="flex items-center gap-2">
-          {prefix && <span className="text-zinc-400">{prefix}</span>}
+          {prefix && <span className={t('text-slate-500', 'text-zinc-400')}>{prefix}</span>}
           <Input
             ref={inputRef}
             type="number"
@@ -226,10 +229,10 @@ export function InlineEditNumber({
             min={min}
             max={max}
             step={step}
-            className="bg-zinc-800/50 border-cyan-500/50 text-white w-32"
+            className={`${t('bg-slate-100', 'bg-zinc-800/50')} border-cyan-500/50 ${t('text-slate-900', 'text-white')} w-32`}
             placeholder={placeholder}
           />
-          {suffix && <span className="text-zinc-400">{suffix}</span>}
+          {suffix && <span className={t('text-slate-500', 'text-zinc-400')}>{suffix}</span>}
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -243,7 +246,7 @@ export function InlineEditNumber({
             size="sm"
             variant="ghost"
             onClick={handleCancel}
-            className="text-zinc-400 hover:text-white h-7 px-2"
+            className={`${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')} h-7 px-2`}
           >
             <X className="w-3 h-3 mr-1" /> Cancel
           </Button>
@@ -254,15 +257,15 @@ export function InlineEditNumber({
 
   return (
     <div className={cn("group cursor-pointer", className)} onClick={() => setIsEditing(true)}>
-      {label && <div className="text-xs text-zinc-500 mb-1">{label}</div>}
+      {label && <div className={`text-xs ${t('text-slate-500', 'text-zinc-500')} mb-1`}>{label}</div>}
       <div className="flex items-center gap-2">
-        <div className={cn("text-white", textClassName)}>
-          {displayValue || <span className="text-zinc-600 italic">{placeholder}</span>}
+        <div className={cn(t('text-slate-900', 'text-white'), textClassName)}>
+          {displayValue || <span className={`${t('text-slate-400', 'text-zinc-600')} italic`}>{placeholder}</span>}
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-cyan-400"
+          className={`h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ${t('text-slate-400', 'text-zinc-400')} hover:text-cyan-400`}
           onClick={(e) => {
             e.stopPropagation();
             setIsEditing(true);
@@ -288,6 +291,7 @@ export function InlineEditSelect({
   label,
   disabled = false,
 }) {
+  const { t } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
 
   const selectedOption = options.find(opt => opt.value === value);
@@ -296,9 +300,9 @@ export function InlineEditSelect({
   if (disabled) {
     return (
       <div className={cn("group", className)}>
-        {label && <div className="text-xs text-zinc-500 mb-1">{label}</div>}
-        <div className={cn("text-white", textClassName)}>
-          {displayValue || <span className="text-zinc-600 italic">{placeholder}</span>}
+        {label && <div className={`text-xs ${t('text-slate-500', 'text-zinc-500')} mb-1`}>{label}</div>}
+        <div className={cn(t('text-slate-900', 'text-white'), textClassName)}>
+          {displayValue || <span className={`${t('text-slate-400', 'text-zinc-600')} italic`}>{placeholder}</span>}
         </div>
       </div>
     );
@@ -307,7 +311,7 @@ export function InlineEditSelect({
   if (isEditing) {
     return (
       <div className={cn("space-y-2", className)}>
-        {label && <div className="text-xs text-zinc-500 mb-1">{label}</div>}
+        {label && <div className={`text-xs ${t('text-slate-500', 'text-zinc-500')} mb-1`}>{label}</div>}
         <Select
           value={value || ''}
           onValueChange={(newValue) => {
@@ -315,12 +319,12 @@ export function InlineEditSelect({
             setIsEditing(false);
           }}
         >
-          <SelectTrigger className="w-48 bg-zinc-800/50 border-cyan-500/50 text-white">
+          <SelectTrigger className={`w-48 ${t('bg-slate-100', 'bg-zinc-800/50')} border-cyan-500/50 ${t('text-slate-900', 'text-white')}`}>
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
-          <SelectContent className="bg-zinc-900 border-zinc-700">
+          <SelectContent className={`${t('bg-white', 'bg-zinc-900')} ${t('border-slate-200', 'border-zinc-700')}`}>
             {options.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value} className="text-white hover:bg-zinc-800">
+              <SelectItem key={opt.value} value={opt.value} className={`${t('text-slate-900', 'text-white')} ${t('hover:bg-slate-100', 'hover:bg-zinc-800')}`}>
                 {opt.label}
               </SelectItem>
             ))}
@@ -330,7 +334,7 @@ export function InlineEditSelect({
           size="sm"
           variant="ghost"
           onClick={() => setIsEditing(false)}
-          className="text-zinc-400 hover:text-white h-7 px-2"
+          className={`${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-900', 'hover:text-white')} h-7 px-2`}
         >
           <X className="w-3 h-3 mr-1" /> Cancel
         </Button>
@@ -340,15 +344,15 @@ export function InlineEditSelect({
 
   return (
     <div className={cn("group cursor-pointer", className)} onClick={() => setIsEditing(true)}>
-      {label && <div className="text-xs text-zinc-500 mb-1">{label}</div>}
+      {label && <div className={`text-xs ${t('text-slate-500', 'text-zinc-500')} mb-1`}>{label}</div>}
       <div className="flex items-center gap-2">
-        <div className={cn("text-white", textClassName)}>
-          {displayValue || <span className="text-zinc-600 italic">{placeholder}</span>}
+        <div className={cn(t('text-slate-900', 'text-white'), textClassName)}>
+          {displayValue || <span className={`${t('text-slate-400', 'text-zinc-600')} italic`}>{placeholder}</span>}
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-cyan-400"
+          className={`h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ${t('text-slate-400', 'text-zinc-400')} hover:text-cyan-400`}
           onClick={(e) => {
             e.stopPropagation();
             setIsEditing(true);
@@ -372,20 +376,22 @@ export function EditableSection({
   isEditing,
   className,
 }) {
+  const { t } = useTheme();
+
   return (
     <div className={cn("relative", className)}>
       {title && (
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             {Icon && <Icon className="w-5 h-5 text-cyan-400" />}
-            <span className="font-medium text-white">{title}</span>
+            <span className={`font-medium ${t('text-slate-900', 'text-white')}`}>{title}</span>
           </div>
           {onEdit && (
             <Button
               variant="ghost"
               size="sm"
               onClick={onEdit}
-              className="text-zinc-400 hover:text-cyan-400 h-7 px-2"
+              className={`${t('text-slate-500', 'text-zinc-400')} hover:text-cyan-400 h-7 px-2`}
             >
               <Edit2 className="w-3 h-3 mr-1" />
               {isEditing ? 'Done' : 'Edit'}

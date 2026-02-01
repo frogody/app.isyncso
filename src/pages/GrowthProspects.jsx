@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { GlassCard, StatCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { GrowthPageTransition } from '@/components/growth/ui';
 import { Sun, Moon } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,7 +62,7 @@ const COMPANY_SIZES = [
 ];
 
 export default function GrowthProspects() {
-  const { theme, toggleTheme, gt } = useGrowthTheme();
+  const { theme, toggleTheme, gt } = useTheme();
   const { user } = useUser();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("lists");

@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useCRMTheme } from '@/contexts/CRMThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 // Contact type definitions with icons and colors
 const CONTACT_TYPES = [
@@ -110,7 +110,7 @@ export default function CRMSidebar({
   suppliers = [],
   className
 }) {
-  const { crt } = useCRMTheme();
+  const { crt } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [showQuickFilters, setShowQuickFilters] = useState(true);
 

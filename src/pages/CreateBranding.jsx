@@ -27,7 +27,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { CreatePageTransition } from '@/components/create/ui';
-import { useCreateTheme } from '@/contexts/CreateThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 const BRAND_BUCKET = 'brand-assets';
 
@@ -97,7 +97,7 @@ const COLOR_LABELS = {
 // --- Collapsible Section ---
 function Section({ icon: Icon, title, defaultOpen = true, children }) {
   const [open, setOpen] = useState(defaultOpen);
-  const { ct } = useCreateTheme();
+  const { ct } = useTheme();
 
   return (
     <div className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} overflow-hidden`}>
@@ -133,7 +133,7 @@ function Section({ icon: Icon, title, defaultOpen = true, children }) {
 
 // --- Logo Upload Slot ---
 function LogoSlot({ logo, logoType, label, description, onUpload, onRemove, uploading }) {
-  const { ct } = useCreateTheme();
+  const { ct } = useTheme();
   const handleDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer?.files?.[0];
@@ -182,7 +182,7 @@ function LogoSlot({ logo, logoType, label, description, onUpload, onRemove, uplo
 // --- Font Picker Popover ---
 function FontPicker({ value, onChange, label }) {
   const [open, setOpen] = useState(false);
-  const { ct } = useCreateTheme();
+  const { ct } = useTheme();
 
   return (
     <div className="space-y-2">
@@ -226,7 +226,7 @@ function FontPicker({ value, onChange, label }) {
 
 // --- Pill Select ---
 function PillSelect({ options, value, onChange }) {
-  const { ct } = useCreateTheme();
+  const { ct } = useTheme();
   return (
     <div className="flex flex-wrap gap-2">
       {options.map(opt => (
@@ -250,7 +250,7 @@ function PillSelect({ options, value, onChange }) {
 // --- Chip Input ---
 function ChipInput({ items, onAdd, onRemove, placeholder, variant = 'yellow' }) {
   const [val, setVal] = useState('');
-  const { ct } = useCreateTheme();
+  const { ct } = useTheme();
   const colors = variant === 'red'
     ? 'bg-red-500/10 text-red-400 border-red-500/20'
     : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
@@ -302,7 +302,7 @@ function ChipInput({ items, onAdd, onRemove, placeholder, variant = 'yellow' }) 
 // =====================
 export default function CreateBranding() {
   const { user } = useUser();
-  const { theme, toggleTheme, ct } = useCreateTheme();
+  const { theme, toggleTheme, ct } = useTheme();
   const [brandAsset, setBrandAsset] = useState(null);
   const [brandData, setBrandData] = useState(DEFAULT_BRAND_DATA);
   const [loading, setLoading] = useState(true);

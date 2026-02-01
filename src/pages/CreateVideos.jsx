@@ -49,7 +49,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { CreatePageTransition } from '@/components/create/ui';
-import { useCreateTheme } from '@/contexts/CreateThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { toast } from 'sonner';
 import {
   Popover,
@@ -257,7 +257,7 @@ function getTemplateProps(templateId, selectedProduct, brandAssets, digitalProdu
 
 // --- Product Selector Popover (reusable) ---
 function ProductSelector({ selectedProduct, setSelectedProduct, products, productSearch, setProductSearch, filteredProducts }) {
-  const { ct } = useCreateTheme();
+  const { ct } = useTheme();
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -312,7 +312,7 @@ function ProductSelector({ selectedProduct, setSelectedProduct, products, produc
 
 export default function CreateVideos() {
   const { user } = useUser();
-  const { theme, toggleTheme, ct } = useCreateTheme();
+  const { theme, toggleTheme, ct } = useTheme();
   const [mode, setMode] = useState('ai');
   const [prompt, setPrompt] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('cinematic');

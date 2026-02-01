@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PermissionGuard } from '@/components/guards';
 import { usePermissions } from '@/components/context/PermissionContext';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 
 // Modal Component
@@ -51,7 +51,7 @@ export default function Finance() {
   const { hasPermission, isLoading: permLoading } = usePermissions();
 
   // Theme
-  const { theme, toggleTheme, ft } = useFinanceTheme();
+  const { theme, toggleTheme, ft } = useTheme();
 
   // Modal states
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);

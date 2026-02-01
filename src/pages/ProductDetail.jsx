@@ -38,6 +38,9 @@ import {
   BundleManager,
   BundleEditor
 } from "@/components/products";
+import { Sun, Moon } from 'lucide-react';
+import { useTheme } from '@/contexts/GlobalThemeContext';
+import { ProductsPageTransition } from '@/components/products/ui';
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -131,6 +134,7 @@ function StatusBadge({ status }) {
 }
 
 function StatCard({ icon: Icon, label, value, subtext, trend, color = "cyan" }) {
+  const { t } = useTheme();
   const colors = {
     cyan: "bg-cyan-500/10 border-cyan-500/20 text-cyan-400",
     blue: "bg-blue-500/10 border-blue-500/20 text-blue-400",
@@ -138,7 +142,7 @@ function StatCard({ icon: Icon, label, value, subtext, trend, color = "cyan" }) 
   };
 
   return (
-    <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-white/5">
+    <div className={cn("stat-card p-3 rounded-xl border", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-white/5'))}>
       <div className="flex items-start justify-between mb-2">
         <div className={cn("w-8 h-8 rounded-lg border flex items-center justify-center", colors[color])}>
           <Icon className="w-4 h-4" />
@@ -152,14 +156,15 @@ function StatCard({ icon: Icon, label, value, subtext, trend, color = "cyan" }) 
           </Badge>
         )}
       </div>
-      <p className="text-lg font-bold text-white">{value}</p>
-      <p className="text-[10px] text-zinc-500 mt-1">{label}</p>
-      {subtext && <p className="text-[10px] text-zinc-600 mt-0.5">{subtext}</p>}
+      <p className={cn("text-lg font-bold", t('text-slate-900', 'text-white'))}>{value}</p>
+      <p className={cn("text-[10px] mt-1", t('text-slate-500', 'text-zinc-500'))}>{label}</p>
+      {subtext && <p className={cn("text-[10px] mt-0.5", t('text-slate-400', 'text-zinc-600'))}>{subtext}</p>}
     </div>
   );
 }
 
 function SectionNav({ activeSection, onSectionChange, isPhysical }) {
+  const { t } = useTheme();
   const items = NAV_ITEMS.filter(item => {
     if (item.physicalOnly && !isPhysical) return false;
     if (item.digitalOnly && isPhysical) return false;
@@ -167,7 +172,7 @@ function SectionNav({ activeSection, onSectionChange, isPhysical }) {
   });
 
   return (
-    <div className="flex items-center gap-1 p-1 bg-zinc-900/50 rounded-lg border border-white/5 overflow-x-auto">
+    <div className={cn("flex items-center gap-1 p-1 rounded-lg border overflow-x-auto", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-white/5'))}>
       {items.map((item) => {
         const Icon = item.icon;
         const isActive = activeSection === item.id;
@@ -179,7 +184,7 @@ function SectionNav({ activeSection, onSectionChange, isPhysical }) {
               "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap",
               isActive
                 ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
-                : "text-zinc-400 hover:text-white hover:bg-white/5"
+                : cn(t('text-slate-500', 'text-zinc-400'), t('hover:text-slate-900', 'hover:text-white'), "hover:bg-white/5")
             )}
           >
             <Icon className="w-4 h-4" />
@@ -203,6 +208,7 @@ function OverviewSection({
   saving,
   statsGridRef
 }) {
+  const { t } = useTheme();
   const [localImages, setLocalImages] = useState(product.gallery || []);
   const [localFeatured, setLocalFeatured] = useState(product.featured_image);
   const pricing = details?.pricing || {};
@@ -233,7 +239,7 @@ function OverviewSection({
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* Left Column - Images */}
       <div className="lg:col-span-1 space-y-3">
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+        <div className={cn("border rounded-xl p-3", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
           <ProductImageUploader
             images={localImages}
             featuredImage={localFeatured}
@@ -246,8 +252,8 @@ function OverviewSection({
         {/* Quick Stats */}
         {isPhysical && (
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/5">
-              <p className="text-xs text-zinc-500">Stock Level</p>
+            <div className={cn("p-3 rounded-lg border", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-white/5'))}>
+              <p className={cn("text-xs", t('text-slate-500', 'text-zinc-500'))}>Stock Level</p>
               <div className="mt-2">
                 <Progress value={stock.percent} className="h-2" />
                 <p className={cn("text-sm font-medium mt-1", stock.color)}>
@@ -255,8 +261,8 @@ function OverviewSection({
                 </p>
               </div>
             </div>
-            <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/5">
-              <p className="text-xs text-zinc-500">Margin</p>
+            <div className={cn("p-3 rounded-lg border", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-white/5'))}>
+              <p className={cn("text-xs", t('text-slate-500', 'text-zinc-500'))}>Margin</p>
               <p className={cn(
                 "text-xl font-bold mt-1",
                 margin > 30 ? "text-cyan-400" : margin > 15 ? "text-cyan-300" : "text-red-400"
@@ -271,7 +277,7 @@ function OverviewSection({
       {/* Right Column - Details */}
       <div className="lg:col-span-2 space-y-3">
         {/* Header Card */}
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+        <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
           <div className="flex items-start justify-between gap-4 mb-4">
             <div className="flex-1 space-y-3">
               <div className="flex items-center gap-3">
@@ -301,9 +307,9 @@ function OverviewSection({
           </div>
 
           {/* Price & Stock Row */}
-          <div className="flex flex-wrap items-end gap-6 pt-4 border-t border-white/5">
+          <div className={cn("flex flex-wrap items-end gap-6 pt-4 border-t", t('border-slate-200', 'border-white/5'))}>
             <div className="space-y-1">
-              <div className="text-xs text-zinc-500">Price</div>
+              <div className={cn("text-xs", t('text-slate-500', 'text-zinc-500'))}>Price</div>
               <div className="flex items-baseline gap-2">
                 <InlineEditNumber
                   value={pricing.base_price}
@@ -333,7 +339,7 @@ function OverviewSection({
 
         {/* SKU & Barcode - Physical Only */}
         {isPhysical && (
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+          <div className={cn("border rounded-xl p-3", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
             <div className="flex items-center gap-3">
               <div className="grid grid-cols-2 gap-3 flex-1">
                 <InlineEditText
@@ -364,10 +370,10 @@ function OverviewSection({
         )}
 
         {/* Description */}
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+        <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
           <div className="flex items-center gap-2 mb-4">
             <FileText className="w-5 h-5 text-cyan-400" />
-            <span className="font-medium text-white">Description</span>
+            <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>Description</span>
           </div>
           <InlineEditText
             value={product.description}
@@ -383,7 +389,7 @@ function OverviewSection({
         <div ref={statsGridRef} className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {isPhysical && (
             <>
-              <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-white/5">
+              <div className={cn("stat-card p-3 rounded-xl border", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-white/5'))}>
                 <InlineEditText
                   value={details?.country_of_origin}
                   onSave={(val) => onDetailsUpdate({ country_of_origin: val })}
@@ -392,7 +398,7 @@ function OverviewSection({
                   textClassName="text-sm"
                 />
               </div>
-              <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-white/5">
+              <div className={cn("stat-card p-3 rounded-xl border", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-white/5'))}>
                 <InlineEditText
                   value={details?.mpn}
                   onSave={(val) => onDetailsUpdate({ mpn: val })}
@@ -404,15 +410,15 @@ function OverviewSection({
             </>
           )}
           {supplier && (
-            <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-white/5">
-              <div className="flex items-center gap-2 text-zinc-500 mb-1">
+            <div className={cn("stat-card p-3 rounded-xl border", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-white/5'))}>
+              <div className={cn("flex items-center gap-2 mb-1", t('text-slate-500', 'text-zinc-500'))}>
                 <Building2 className="w-3 h-3" />
                 <span className="text-xs">Supplier</span>
               </div>
-              <p className="text-white text-sm">{supplier.name}</p>
+              <p className={cn("text-sm", t('text-slate-900', 'text-white'))}>{supplier.name}</p>
             </div>
           )}
-          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-white/5">
+          <div className={cn("stat-card p-3 rounded-xl border", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-white/5'))}>
             <InlineEditText
               value={product.category}
               onSave={(val) => onUpdate({ category: val })}
@@ -427,7 +433,7 @@ function OverviewSection({
         {product.tags && product.tags.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {product.tags.map((tag, i) => (
-              <Badge key={i} variant="outline" className="border-white/10 text-zinc-400">
+              <Badge key={i} variant="outline" className={cn(t('border-slate-200', 'border-white/10'), t('text-slate-500', 'text-zinc-400'))}>
                 <Tag className="w-3 h-3 mr-1" />
                 {tag}
               </Badge>
@@ -442,6 +448,7 @@ function OverviewSection({
 // ============= PRICING SECTION =============
 
 function PricingSection({ details, onDetailsUpdate, currency }) {
+  const { t } = useTheme();
   const pricing = details?.pricing || {};
   const tiers = pricing.volume_tiers || [];
   const [taxIncluded, setTaxIncluded] = useState(pricing.tax_included || false);
@@ -494,15 +501,15 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Pricing Details */}
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+        <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
           <div className="flex items-center gap-2 mb-6">
             <Euro className="w-5 h-5 text-cyan-400" />
-            <span className="font-medium text-white">Pricing Details</span>
+            <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>Pricing Details</span>
           </div>
 
           <div className="space-y-4">
             {/* Tax Settings - moved to top for clarity */}
-            <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/5">
+            <div className={cn("p-3 rounded-lg border", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-white/5'))}>
               <label className="flex items-center gap-3 cursor-pointer">
                 <Switch
                   checked={taxIncluded}
@@ -510,8 +517,8 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
                   className="data-[state=checked]:bg-cyan-500"
                 />
                 <div>
-                  <span className="text-sm text-white">Invoice prices include BTW</span>
-                  <p className="text-xs text-zinc-500">
+                  <span className={cn("text-sm", t('text-slate-900', 'text-white'))}>Invoice prices include BTW</span>
+                  <p className={cn("text-xs", t('text-slate-500', 'text-zinc-500'))}>
                     {taxIncluded
                       ? `€${displayCostPrice.toFixed(2)} incl BTW → €${costPrice.toFixed(2)} ex BTW`
                       : 'Prices are entered without tax'
@@ -559,10 +566,10 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
         </div>
 
         {/* Margin Analysis */}
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+        <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
           <div className="flex items-center gap-2 mb-6">
             <TrendingUp className="w-5 h-5 text-cyan-400" />
-            <span className="font-medium text-white">Margin Analysis</span>
+            <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>Margin Analysis</span>
           </div>
 
           <div className="space-y-4">
@@ -575,14 +582,14 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
 
               return (
                 <>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50">
-                    <span className="text-zinc-400">Gross Profit</span>
-                    <span className="text-lg font-bold text-white">
+                  <div className={cn("flex items-center justify-between p-3 rounded-lg", t('bg-slate-50', 'bg-zinc-900/50'))}>
+                    <span className={t('text-slate-500', 'text-zinc-400')}>Gross Profit</span>
+                    <span className={cn("text-lg font-bold", t('text-slate-900', 'text-white'))}>
                       {formatPrice(profit, currency)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50">
-                    <span className="text-zinc-400">Profit Margin</span>
+                  <div className={cn("flex items-center justify-between p-3 rounded-lg", t('bg-slate-50', 'bg-zinc-900/50'))}>
+                    <span className={t('text-slate-500', 'text-zinc-400')}>Profit Margin</span>
                     <span className={cn(
                       "text-lg font-bold",
                       margin > 30 ? "text-cyan-400" : margin > 15 ? "text-cyan-300" : "text-red-400"
@@ -590,9 +597,9 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
                       {margin}%
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50">
-                    <span className="text-zinc-400">Markup</span>
-                    <span className="text-lg font-bold text-white">{markup}%</span>
+                  <div className={cn("flex items-center justify-between p-3 rounded-lg", t('bg-slate-50', 'bg-zinc-900/50'))}>
+                    <span className={t('text-slate-500', 'text-zinc-400')}>Markup</span>
+                    <span className={cn("text-lg font-bold", t('text-slate-900', 'text-white'))}>{markup}%</span>
                   </div>
                 </>
               );
@@ -602,7 +609,7 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
       </div>
 
       {/* Volume Pricing */}
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+      <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
         <PricingTiers
           tiers={tiers}
           basePrice={pricing.base_price || 0}
@@ -618,6 +625,7 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
 // ============= DIGITAL PRICING SECTION =============
 
 function DigitalPricingSection({ details, onDetailsUpdate, currency }) {
+  const { t } = useTheme();
   const pricingConfig = details?.pricing_config || {};
 
   const handlePricingConfigChange = (newConfig) => {
@@ -626,7 +634,7 @@ function DigitalPricingSection({ details, onDetailsUpdate, currency }) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+      <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
         <DigitalPricingManager
           pricingConfig={pricingConfig}
           currency={currency}
@@ -640,6 +648,7 @@ function DigitalPricingSection({ details, onDetailsUpdate, currency }) {
 // ============= BUNDLES SECTION =============
 
 function BundlesSection({ product, details, currency }) {
+  const { t } = useTheme();
   const [bundles, setBundles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showEditor, setShowEditor] = useState(false);
@@ -775,7 +784,7 @@ function BundlesSection({ product, details, currency }) {
 
   if (showEditor) {
     return (
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+      <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
         <BundleEditor
           bundle={editingBundle}
           currency={currency}
@@ -791,7 +800,7 @@ function BundlesSection({ product, details, currency }) {
   }
 
   return (
-    <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+    <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
       <BundleManager
         bundles={bundles}
         currency={currency}
@@ -809,6 +818,7 @@ function BundlesSection({ product, details, currency }) {
 // ============= INVENTORY SECTION =============
 
 function InventorySection({ product, details, onDetailsUpdate, currency }) {
+  const { t } = useTheme();
   const { user } = useUser();
   const physicalInventory = details?.inventory || {};  // From physical_products.inventory JSONB
   const shipping = details?.shipping || {};
@@ -1059,10 +1069,10 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Stock Management */}
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+        <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
           <div className="flex items-center gap-2 mb-6">
             <Package className="w-5 h-5 text-cyan-400" />
-            <span className="font-medium text-white">Stock Management</span>
+            <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>Stock Management</span>
           </div>
 
           <div className="space-y-4">
@@ -1095,30 +1105,30 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
               min={0}
             />
 
-            <div className="pt-4 border-t border-white/5">
+            <div className={cn("pt-4 border-t", t('border-slate-200', 'border-white/5'))}>
               <label className="flex items-center gap-3 cursor-pointer">
                 <Switch
                   checked={physicalInventory.track_inventory !== false}
                   onCheckedChange={(val) => handleInventoryUpdate('track_inventory', val)}
                 />
-                <span className="text-sm text-zinc-300">Track inventory</span>
+                <span className={cn("text-sm", t('text-slate-600', 'text-zinc-300'))}>Track inventory</span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer mt-3">
                 <Switch
                   checked={physicalInventory.allow_backorder || false}
                   onCheckedChange={(val) => handleInventoryUpdate('allow_backorder', val)}
                 />
-                <span className="text-sm text-zinc-300">Allow backorders</span>
+                <span className={cn("text-sm", t('text-slate-600', 'text-zinc-300'))}>Allow backorders</span>
               </label>
             </div>
           </div>
         </div>
 
         {/* Shipping Info */}
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+        <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
           <div className="flex items-center gap-2 mb-6">
             <Truck className="w-5 h-5 text-blue-400" />
-            <span className="font-medium text-white">Shipping Details</span>
+            <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>Shipping Details</span>
           </div>
 
           <div className="space-y-4">
@@ -1166,11 +1176,11 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
       </div>
 
       {/* Suppliers Section */}
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+      <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Building2 className="w-5 h-5 text-cyan-400" />
-            <span className="font-medium text-white">Suppliers</span>
+            <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>Suppliers</span>
             {productSuppliers.length > 0 && (
               <Badge variant="secondary" className="ml-2 bg-cyan-500/20 text-cyan-300">
                 {productSuppliers.length}
@@ -1191,11 +1201,11 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
 
         {/* Add Supplier Form */}
         {showAddSupplier && (
-          <div className="mb-4 p-4 rounded-lg bg-zinc-900/50 border border-white/5 space-y-3">
-            <Label className="text-zinc-400">Select Supplier</Label>
+          <div className={cn("mb-4 p-4 rounded-lg border space-y-3", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-white/5'))}>
+            <Label className={t('text-slate-500', 'text-zinc-400')}>Select Supplier</Label>
             <div className="flex gap-2">
               <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
-                <SelectTrigger className="flex-1 bg-zinc-800/50 border-white/10">
+                <SelectTrigger className={cn("flex-1", t('bg-slate-50', 'bg-zinc-800/50'), t('border-slate-200', 'border-white/10'))}>
                   <SelectValue placeholder="Choose a supplier..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -1221,9 +1231,9 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
           </div>
         ) : productSuppliers.length === 0 ? (
           <div className="text-center py-8">
-            <Building2 className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
-            <p className="text-sm text-zinc-500">No suppliers linked yet</p>
-            <p className="text-xs text-zinc-600 mt-1">Add suppliers to track purchase pricing</p>
+            <Building2 className={cn("w-10 h-10 mx-auto mb-3", t('text-slate-300', 'text-zinc-600'))} />
+            <p className={cn("text-sm", t('text-slate-500', 'text-zinc-500'))}>No suppliers linked yet</p>
+            <p className={cn("text-xs mt-1", t('text-slate-400', 'text-zinc-600'))}>Add suppliers to track purchase pricing</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -1234,13 +1244,13 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
                   "flex items-center justify-between p-3 rounded-lg border transition-colors",
                   ps.is_preferred
                     ? "bg-cyan-500/10 border-cyan-500/30"
-                    : "bg-zinc-900/50 border-white/5 hover:bg-zinc-800/50"
+                    : cn(t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-white/5'), t('hover:bg-slate-50', 'hover:bg-zinc-800/50'))
                 )}
               >
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "w-8 h-8 rounded-lg flex items-center justify-center",
-                    ps.is_preferred ? "bg-cyan-500/20" : "bg-zinc-800"
+                    ps.is_preferred ? "bg-cyan-500/20" : t('bg-slate-100', 'bg-zinc-800')
                   )}>
                     <Building2 className={cn(
                       "w-4 h-4",
@@ -1249,7 +1259,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-white">{ps.suppliers?.name || 'Unknown'}</span>
+                      <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>{ps.suppliers?.name || 'Unknown'}</span>
                       {ps.is_preferred && (
                         <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
                           <Star className="w-3 h-3 mr-1" />
@@ -1258,10 +1268,10 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
                       )}
                     </div>
                     {ps.last_purchase_price && (
-                      <p className="text-sm text-zinc-400">
+                      <p className={cn("text-sm", t('text-slate-500', 'text-zinc-400'))}>
                         Last: {formatPrice(ps.last_purchase_price, currency)}
                         {ps.last_purchase_date && (
-                          <span className="text-zinc-500 ml-1">
+                          <span className={cn("ml-1", t('text-slate-400', 'text-zinc-500'))}>
                             ({new Date(ps.last_purchase_date).toLocaleDateString()})
                           </span>
                         )}
@@ -1275,7 +1285,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleSetPreferred(ps.supplier_id)}
-                      className="text-zinc-400 hover:text-cyan-400"
+                      className={cn(t('text-slate-500', 'text-zinc-400'), "hover:text-cyan-400")}
                       title="Set as preferred"
                     >
                       <Star className="w-4 h-4" />
@@ -1285,7 +1295,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleRemoveSupplier(ps.supplier_id)}
-                    className="text-zinc-400 hover:text-red-400"
+                    className={cn(t('text-slate-500', 'text-zinc-400'), "hover:text-red-400")}
                   >
                     <XCircle className="w-4 h-4" />
                   </Button>
@@ -1297,11 +1307,11 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
       </div>
 
       {/* Purchase History Section */}
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+      <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <History className="w-5 h-5 text-cyan-400" />
-            <span className="font-medium text-white">Purchase History</span>
+            <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>Purchase History</span>
             {purchaseHistory.length > 0 && (
               <Badge variant="secondary" className="ml-2 bg-cyan-500/20 text-cyan-300">
                 {purchaseHistory.length}
@@ -1321,15 +1331,15 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
 
         {/* Add Purchase Form */}
         {showAddPurchase && (
-          <div className="mb-4 p-4 rounded-lg bg-zinc-900/50 border border-white/5 space-y-4">
+          <div className={cn("mb-4 p-4 rounded-lg border space-y-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-white/5'))}>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-zinc-400 mb-1.5 block">Supplier (optional)</Label>
+                <Label className={cn("mb-1.5 block", t('text-slate-500', 'text-zinc-400'))}>Supplier (optional)</Label>
                 <Select
                   value={purchaseForm.supplier_id}
                   onValueChange={(val) => setPurchaseForm(prev => ({...prev, supplier_id: val}))}
                 >
-                  <SelectTrigger className="bg-zinc-800/50 border-white/10">
+                  <SelectTrigger className={cn(t('bg-slate-50', 'bg-zinc-800/50'), t('border-slate-200', 'border-white/10'))}>
                     <SelectValue placeholder="Select supplier..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -1340,47 +1350,47 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
                 </Select>
               </div>
               <div>
-                <Label className="text-zinc-400 mb-1.5 block">Purchase Date</Label>
+                <Label className={cn("mb-1.5 block", t('text-slate-500', 'text-zinc-400'))}>Purchase Date</Label>
                 <Input
                   type="date"
                   value={purchaseForm.purchase_date}
                   onChange={(e) => setPurchaseForm(prev => ({...prev, purchase_date: e.target.value}))}
-                  className="bg-zinc-800/50 border-white/10"
+                  className={cn(t('bg-slate-50', 'bg-zinc-800/50'), t('border-slate-200', 'border-white/10'))}
                 />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label className="text-zinc-400 mb-1.5 block">Quantity *</Label>
+                <Label className={cn("mb-1.5 block", t('text-slate-500', 'text-zinc-400'))}>Quantity *</Label>
                 <Input
                   type="number"
                   placeholder="0"
                   value={purchaseForm.quantity}
                   onChange={(e) => setPurchaseForm(prev => ({...prev, quantity: e.target.value}))}
-                  className="bg-zinc-800/50 border-white/10"
+                  className={cn(t('bg-slate-50', 'bg-zinc-800/50'), t('border-slate-200', 'border-white/10'))}
                   min="0"
                   step="1"
                 />
               </div>
               <div>
-                <Label className="text-zinc-400 mb-1.5 block">Unit Price *</Label>
+                <Label className={cn("mb-1.5 block", t('text-slate-500', 'text-zinc-400'))}>Unit Price *</Label>
                 <Input
                   type="number"
                   placeholder="0.00"
                   value={purchaseForm.unit_price}
                   onChange={(e) => setPurchaseForm(prev => ({...prev, unit_price: e.target.value}))}
-                  className="bg-zinc-800/50 border-white/10"
+                  className={cn(t('bg-slate-50', 'bg-zinc-800/50'), t('border-slate-200', 'border-white/10'))}
                   min="0"
                   step="0.01"
                 />
               </div>
               <div>
-                <Label className="text-zinc-400 mb-1.5 block">Invoice # (optional)</Label>
+                <Label className={cn("mb-1.5 block", t('text-slate-500', 'text-zinc-400'))}>Invoice # (optional)</Label>
                 <Input
                   placeholder="INV-001"
                   value={purchaseForm.invoice_number}
                   onChange={(e) => setPurchaseForm(prev => ({...prev, invoice_number: e.target.value}))}
-                  className="bg-zinc-800/50 border-white/10"
+                  className={cn(t('bg-slate-50', 'bg-zinc-800/50'), t('border-slate-200', 'border-white/10'))}
                 />
               </div>
             </div>
@@ -1402,44 +1412,44 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
           </div>
         ) : purchaseHistory.length === 0 ? (
           <div className="text-center py-8">
-            <History className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
-            <p className="text-sm text-zinc-500">No purchase history yet</p>
-            <p className="text-xs text-zinc-600 mt-1">Purchases from invoices will appear here automatically</p>
+            <History className={cn("w-10 h-10 mx-auto mb-3", t('text-slate-300', 'text-zinc-600'))} />
+            <p className={cn("text-sm", t('text-slate-500', 'text-zinc-500'))}>No purchase history yet</p>
+            <p className={cn("text-xs mt-1", t('text-slate-400', 'text-zinc-600'))}>Purchases from invoices will appear here automatically</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="text-left border-b border-white/5">
-                  <th className="pb-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Date</th>
-                  <th className="pb-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Supplier</th>
-                  <th className="pb-3 text-xs font-medium text-zinc-500 uppercase tracking-wider text-right">Qty</th>
-                  <th className="pb-3 text-xs font-medium text-zinc-500 uppercase tracking-wider text-right">Unit Price</th>
-                  <th className="pb-3 text-xs font-medium text-zinc-500 uppercase tracking-wider text-right">Total</th>
-                  <th className="pb-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Invoice</th>
-                  <th className="pb-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Source</th>
+                <tr className={cn("text-left border-b", t('border-slate-200', 'border-white/5'))}>
+                  <th className={cn("pb-3 text-xs font-medium uppercase tracking-wider", t('text-slate-500', 'text-zinc-500'))}>Date</th>
+                  <th className={cn("pb-3 text-xs font-medium uppercase tracking-wider", t('text-slate-500', 'text-zinc-500'))}>Supplier</th>
+                  <th className={cn("pb-3 text-xs font-medium uppercase tracking-wider text-right", t('text-slate-500', 'text-zinc-500'))}>Qty</th>
+                  <th className={cn("pb-3 text-xs font-medium uppercase tracking-wider text-right", t('text-slate-500', 'text-zinc-500'))}>Unit Price</th>
+                  <th className={cn("pb-3 text-xs font-medium uppercase tracking-wider text-right", t('text-slate-500', 'text-zinc-500'))}>Total</th>
+                  <th className={cn("pb-3 text-xs font-medium uppercase tracking-wider", t('text-slate-500', 'text-zinc-500'))}>Invoice</th>
+                  <th className={cn("pb-3 text-xs font-medium uppercase tracking-wider", t('text-slate-500', 'text-zinc-500'))}>Source</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className={cn("divide-y", t('divide-slate-200', 'divide-white/5'))}>
                 {purchaseHistory.map(purchase => (
                   <tr key={purchase.id} className="hover:bg-white/2">
-                    <td className="py-3 text-sm text-zinc-300">
+                    <td className={cn("py-3 text-sm", t('text-slate-600', 'text-zinc-300'))}>
                       {new Date(purchase.purchase_date).toLocaleDateString()}
                     </td>
-                    <td className="py-3 text-sm text-white">
-                      {purchase.suppliers?.name || <span className="text-zinc-500">-</span>}
+                    <td className={cn("py-3 text-sm", t('text-slate-900', 'text-white'))}>
+                      {purchase.suppliers?.name || <span className={t('text-slate-400', 'text-zinc-500')}>-</span>}
                     </td>
-                    <td className="py-3 text-sm text-zinc-300 text-right">
+                    <td className={cn("py-3 text-sm text-right", t('text-slate-600', 'text-zinc-300'))}>
                       {formatNumber(purchase.quantity)}
                     </td>
-                    <td className="py-3 text-sm text-zinc-300 text-right">
+                    <td className={cn("py-3 text-sm text-right", t('text-slate-600', 'text-zinc-300'))}>
                       {formatPrice(purchase.unit_price, purchase.currency)}
                     </td>
-                    <td className="py-3 text-sm text-white font-medium text-right">
+                    <td className={cn("py-3 text-sm font-medium text-right", t('text-slate-900', 'text-white'))}>
                       {formatPrice(purchase.total_amount, purchase.currency)}
                     </td>
-                    <td className="py-3 text-sm text-zinc-400 font-mono">
-                      {purchase.invoice_number || <span className="text-zinc-600">-</span>}
+                    <td className={cn("py-3 text-sm font-mono", t('text-slate-500', 'text-zinc-400'))}>
+                      {purchase.invoice_number || <span className={t('text-slate-400', 'text-zinc-600')}>-</span>}
                     </td>
                     <td className="py-3">
                       <Badge
@@ -1476,29 +1486,30 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
 // ============= SPECIFICATIONS SECTION =============
 
 function SpecificationsSection({ details, onDetailsUpdate }) {
+  const { t } = useTheme();
   const specs = details?.specifications || [];
   const attributes = details?.attributes || [];
 
   return (
     <div className="space-y-4">
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+      <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
         <div className="flex items-center gap-2 mb-6">
           <Settings className="w-5 h-5 text-cyan-400" />
-          <span className="font-medium text-white">Technical Specifications</span>
+          <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>Technical Specifications</span>
         </div>
 
         {specs.length === 0 ? (
           <div className="text-center py-8">
-            <Settings className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
-            <p className="text-sm text-zinc-500">No specifications added yet</p>
-            <p className="text-xs text-zinc-600 mt-1">Add technical details like dimensions, materials, etc.</p>
+            <Settings className={cn("w-10 h-10 mx-auto mb-3", t('text-slate-300', 'text-zinc-600'))} />
+            <p className={cn("text-sm", t('text-slate-500', 'text-zinc-500'))}>No specifications added yet</p>
+            <p className={cn("text-xs mt-1", t('text-slate-400', 'text-zinc-600'))}>Add technical details like dimensions, materials, etc.</p>
           </div>
         ) : (
           <div className="space-y-2">
             {specs.map((spec, index) => (
-              <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50 border border-white/5">
-                <span className="text-zinc-400">{spec.name}</span>
-                <span className="text-white font-medium">{spec.value}</span>
+              <div key={index} className={cn("flex items-center justify-between p-3 rounded-lg border", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-white/5'))}>
+                <span className={t('text-slate-500', 'text-zinc-400')}>{spec.name}</span>
+                <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>{spec.value}</span>
               </div>
             ))}
           </div>
@@ -1506,17 +1517,17 @@ function SpecificationsSection({ details, onDetailsUpdate }) {
       </div>
 
       {attributes.length > 0 && (
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+        <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
           <div className="flex items-center gap-2 mb-6">
             <Layers className="w-5 h-5 text-cyan-400" />
-            <span className="font-medium text-white">Attributes</span>
+            <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>Attributes</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {attributes.map((attr, index) => (
-              <div key={index} className="p-3 rounded-lg bg-zinc-900/50 border border-white/5">
-                <p className="text-xs text-zinc-500 mb-1">{attr.name}</p>
-                <p className="text-sm text-white">{attr.value}</p>
+              <div key={index} className={cn("p-3 rounded-lg border", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-white/5'))}>
+                <p className={cn("text-xs mb-1", t('text-slate-500', 'text-zinc-500'))}>{attr.name}</p>
+                <p className={cn("text-sm", t('text-slate-900', 'text-white'))}>{attr.value}</p>
               </div>
             ))}
           </div>
@@ -1525,10 +1536,10 @@ function SpecificationsSection({ details, onDetailsUpdate }) {
 
       {/* Certifications */}
       {details?.certifications && details.certifications.length > 0 && (
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+        <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
           <div className="flex items-center gap-2 mb-6">
             <Shield className="w-5 h-5 text-cyan-400" />
-            <span className="font-medium text-white">Certifications</span>
+            <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>Certifications</span>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -1548,6 +1559,7 @@ function SpecificationsSection({ details, onDetailsUpdate }) {
 // ============= DOCUMENTS SECTION =============
 
 function DocumentsSectionWrapper({ details, onDetailsUpdate }) {
+  const { t } = useTheme();
   const documents = details?.documents || [];
 
   const handleUpload = async (file) => {
@@ -1569,7 +1581,7 @@ function DocumentsSectionWrapper({ details, onDetailsUpdate }) {
   };
 
   return (
-    <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+    <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
       <DocumentsSection
         documents={documents}
         onUpload={handleUpload}
@@ -1582,15 +1594,16 @@ function DocumentsSectionWrapper({ details, onDetailsUpdate }) {
 // ============= ACTIVITY SECTION =============
 
 function ActivitySectionWrapper({ product, details }) {
+  const { t } = useTheme();
   const activities = useMemo(() => {
     return generateMockActivities(product, details);
   }, [product, details]);
 
   return (
-    <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+    <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
       <div className="flex items-center gap-2 mb-6">
         <History className="w-5 h-5 text-cyan-400" />
-        <span className="font-medium text-white">Activity History</span>
+        <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>Activity History</span>
       </div>
 
       <ActivityTimeline activities={activities} maxItems={20} />
@@ -1601,6 +1614,7 @@ function ActivitySectionWrapper({ product, details }) {
 // ============= MAIN COMPONENT =============
 
 export default function ProductDetail() {
+  const { theme, toggleTheme, t } = useTheme();
   const { user } = useUser();
   const [searchParams] = useSearchParams();
   const type = searchParams.get('type') || 'digital';
@@ -1759,15 +1773,15 @@ export default function ProductDetail() {
   // Loading State
   if (loading) {
     return (
-      <div className="min-h-screen bg-black">
+      <div className={cn("min-h-screen", t('bg-slate-50', 'bg-black'))}>
         <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
-          <Skeleton className="h-10 w-48 bg-zinc-800/50" />
-          <Skeleton className="h-12 w-full bg-zinc-800/50 rounded-lg" />
+          <Skeleton className={cn("h-10 w-48", t('bg-slate-200', 'bg-zinc-800/50'))} />
+          <Skeleton className={cn("h-12 w-full rounded-lg", t('bg-slate-200', 'bg-zinc-800/50'))} />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <Skeleton className="aspect-square bg-zinc-800/50 rounded-xl" />
+            <Skeleton className={cn("aspect-square rounded-xl", t('bg-slate-200', 'bg-zinc-800/50'))} />
             <div className="lg:col-span-2 space-y-4">
-              <Skeleton className="h-48 bg-zinc-800/50 rounded-xl" />
-              <Skeleton className="h-32 bg-zinc-800/50 rounded-xl" />
+              <Skeleton className={cn("h-48 rounded-xl", t('bg-slate-200', 'bg-zinc-800/50'))} />
+              <Skeleton className={cn("h-32 rounded-xl", t('bg-slate-200', 'bg-zinc-800/50'))} />
             </div>
           </div>
         </div>
@@ -1778,16 +1792,16 @@ export default function ProductDetail() {
   // Error State
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-black">
+      <div className={cn("min-h-screen", t('bg-slate-50', 'bg-black'))}>
         <div className="max-w-full mx-auto px-4 lg:px-6 py-4">
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-8 text-center max-w-md mx-auto">
+          <div className={cn("border rounded-xl p-8 text-center max-w-md mx-auto", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
             <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto mb-4">
               <XCircle className="w-8 h-8 text-red-400" />
             </div>
-            <h4 className="text-lg font-medium text-white mb-2">{error || 'Product not found'}</h4>
-            <p className="text-sm text-zinc-500 mb-6">The product you're looking for doesn't exist or has been removed.</p>
+            <h4 className={cn("text-lg font-medium mb-2", t('text-slate-900', 'text-white'))}>{error || 'Product not found'}</h4>
+            <p className={cn("text-sm mb-6", t('text-slate-500', 'text-zinc-500'))}>The product you're looking for doesn't exist or has been removed.</p>
             <Link to={createPageUrl('Products')}>
-              <Button variant="outline" className="border-white/10 text-zinc-300">
+              <Button variant="outline" className={cn(t('border-slate-200', 'border-white/10'), t('text-slate-600', 'text-zinc-300'))}>
                 <ArrowLeft className="w-4 h-4 mr-2" /> Back to Products
               </Button>
             </Link>
@@ -1798,32 +1812,45 @@ export default function ProductDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <ProductsPageTransition>
+    <div className={cn("min-h-screen", t('bg-slate-50', 'bg-black'))}>
       <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link to={createPageUrl(backUrl)}>
-              <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white -ml-2">
+              <Button variant="ghost" size="sm" className={cn(t('text-slate-500', 'text-zinc-400'), t('hover:text-slate-900', 'hover:text-white'), "-ml-2")}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
             </Link>
-            <div className="h-6 w-px bg-white/10" />
-            <h1 className="text-lg font-semibold text-white truncate max-w-md">
+            <div className={cn("h-6 w-px", t('bg-slate-200', 'bg-white/10'))} />
+            <h1 className={cn("text-lg font-semibold truncate max-w-md", t('text-slate-900', 'text-white'))}>
               {product.name}
             </h1>
           </div>
 
-          <QuickActions
-            product={product}
-            details={details}
-            onDuplicate={handleDuplicate}
-            onArchive={handleArchive}
-            onPublish={handlePublish}
-            onAdjustStock={handleAdjustStock}
-            isPhysical={isPhysical}
-          />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className={cn(
+                "p-2 rounded-lg border transition-colors",
+                t('bg-white border-slate-200 hover:bg-slate-50 text-slate-600', 'bg-zinc-900 border-white/10 hover:bg-zinc-800 text-zinc-400')
+              )}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            <QuickActions
+              product={product}
+              details={details}
+              onDuplicate={handleDuplicate}
+              onArchive={handleArchive}
+              onPublish={handlePublish}
+              onAdjustStock={handleAdjustStock}
+              isPhysical={isPhysical}
+            />
+          </div>
         </div>
 
         {/* Section Navigation */}
@@ -1906,7 +1933,7 @@ export default function ProductDetail() {
         {/* Related Products */}
         {activeSection === 'overview' && relatedProducts.length > 0 && (
           <div className="mt-6">
-            <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+            <h3 className={cn("text-lg font-semibold mb-3 flex items-center gap-2", t('text-slate-900', 'text-white'))}>
               <Layers className="w-5 h-5 text-cyan-400" />
               Related Products
             </h3>
@@ -1933,5 +1960,6 @@ export default function ProductDetail() {
         productDetails={details}
       />
     </div>
+    </ProductsPageTransition>
   );
 }

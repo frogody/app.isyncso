@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Filter, Plus, Mail, Phone, Building, MapPin, MoreVertical, X, Download, Trash2, Tag, Sun, Moon } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCRMTheme } from '@/contexts/CRMThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { CRMPageTransition } from '@/components/crm/ui';
 
 const initialContacts = [
@@ -14,7 +14,7 @@ const initialContacts = [
 ];
 
 export default function Contacts() {
-  const { theme, toggleTheme, crt } = useCRMTheme();
+  const { theme, toggleTheme, crt } = useTheme();
   const [contacts, setContacts] = useState(initialContacts);
   const [selectedContact, setSelectedContact] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);

@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Sparkles, Globe, Building2, Box, Database } from 'lucide-react';
 import { SentinelButton } from './ui/SentinelButton';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { cn } from '@/lib/utils';
 
 interface AISystem {
@@ -70,7 +70,7 @@ const AI_TECHNIQUE_OPTIONS = [
 ] as const;
 
 export default function AISystemModal({ system, onClose, onSave, onCreateAndAssess }: AISystemModalProps) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
 
   const [formData, setFormData] = useState<FormData>({
     name: system?.name || '',

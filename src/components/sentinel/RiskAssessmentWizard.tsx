@@ -9,7 +9,7 @@ import { SentinelButton } from './ui/SentinelButton';
 import { SentinelBadge } from './ui/SentinelBadge';
 import RiskClassificationBadge from './RiskClassificationBadge';
 import type { RiskClassification } from '@/tokens/sentinel';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { cn } from '@/lib/utils';
 
 interface RiskAssessmentWizardProps {
@@ -75,7 +75,7 @@ const stepTransition = {
 };
 
 export default function RiskAssessmentWizard({ systemId, onComplete }: RiskAssessmentWizardProps) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
   const [step, setStep] = useState(0);
   const [urls, setUrls] = useState({ website: '', product: '' });
   const [researching, setResearching] = useState(false);

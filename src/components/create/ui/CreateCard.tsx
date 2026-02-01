@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { motion, type HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { useCreateTheme } from '@/contexts/CreateThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 interface CreateCardProps extends HTMLMotionProps<'div'> {
   variant?: 'default' | 'interactive' | 'elevated';
@@ -17,7 +17,7 @@ export function CreateCard({
   onClick,
   ...props
 }: CreateCardProps) {
-  const { ct } = useCreateTheme();
+  const { ct } = useTheme();
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -64,7 +64,7 @@ export function CreateCard({
 }
 
 export function CreateCardSkeleton({ className }: { className?: string }) {
-  const { ct } = useCreateTheme();
+  const { ct } = useTheme();
   return (
     <div
       className={cn(

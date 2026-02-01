@@ -35,7 +35,7 @@ import {
   BookmarkPlus,
 } from 'lucide-react';
 import { Sun, Moon } from 'lucide-react';
-import { useCreateTheme } from '@/contexts/CreateThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -171,7 +171,7 @@ function getModeFromUseCase(useCaseId) {
 
 export default function CreateImages() {
   const { user } = useUser();
-  const { theme, toggleTheme, ct } = useCreateTheme();
+  const { theme, toggleTheme, ct } = useTheme();
   const [prompt, setPrompt] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('photorealistic');
   const [aspectRatio, setAspectRatio] = useState('1:1');

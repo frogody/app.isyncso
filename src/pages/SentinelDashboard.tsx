@@ -20,7 +20,7 @@ import RiskClassificationBadge from '@/components/sentinel/RiskClassificationBad
 import type { RiskClassification } from '@/tokens/sentinel';
 import { MOTION_VARIANTS } from '@/tokens/sentinel';
 import { ThemeToggle } from '@/components/sentinel/ThemeToggle';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { cn } from '@/lib/utils';
 
 const CLASSIFICATION_ORDER: RiskClassification[] = [
@@ -47,7 +47,7 @@ export default function SentinelDashboard() {
   const { systems, loading } = useAISystems();
   const { totalSystems, complianceScore, byClassification, byStatus } = useComplianceStatus(systems);
 
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
 
   const maxClassification = Math.max(...CLASSIFICATION_ORDER.map(c => byClassification[c]), 1);
   const maxStatus = Math.max(...STATUS_CONFIG.map(s => byStatus[s.key]), 1);

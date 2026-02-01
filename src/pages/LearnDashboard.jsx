@@ -5,7 +5,7 @@ import { createPageUrl } from '@/utils';
 import { formatMinutes } from '@/utils/dateUtils';
 import { db } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
-import { useLearnTheme } from '@/contexts/LearnThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { LearnPageTransition } from '@/components/learn/ui';
 import {
   BookOpen, Trophy, Flame, Target, Clock, Zap,
@@ -26,7 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 
 function StatCardEnhanced({ icon: Icon, label, value, sublabel, color = 'teal', onClick, delay = 0 }) {
-  const { lt } = useLearnTheme();
+  const { lt } = useTheme();
   const colorClasses = {
     teal: { icon: 'text-teal-400/70', bg: lt('bg-slate-100', 'bg-zinc-800/80'), border: lt('border-slate-200', 'border-zinc-700/50'), glow: 'shadow-teal-500/5' },
     orange: { icon: 'text-teal-300/70', bg: lt('bg-slate-100', 'bg-zinc-800/80'), border: lt('border-slate-200', 'border-zinc-700/50'), glow: 'shadow-teal-500/5' },
@@ -65,7 +65,7 @@ function StatCardEnhanced({ icon: Icon, label, value, sublabel, color = 'teal', 
 }
 
 function ContinueLearningCard({ course, progress, index }) {
-  const { lt } = useLearnTheme();
+  const { lt } = useTheme();
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -114,7 +114,7 @@ function ContinueLearningCard({ course, progress, index }) {
 
 export default function LearnDashboard() {
   const { user } = useUser();
-  const { theme, toggleTheme, lt } = useLearnTheme();
+  const { theme, toggleTheme, lt } = useTheme();
   const [analytics, setAnalytics] = useState(null);
   const [gamification, setGamification] = useState(null);
   const [courses, setCourses] = useState([]);

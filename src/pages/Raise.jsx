@@ -34,7 +34,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { RaisePageTransition } from '@/components/raise/RaisePageTransition';
-import { useRaiseTheme } from '@/contexts/RaiseThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 // Investor Pipeline Stages
 const INVESTOR_STAGES = [
@@ -48,7 +48,7 @@ const INVESTOR_STAGES = [
 
 // Investor Card Component for Kanban
 function InvestorCard({ investor, index, stageConfig, onEdit, onDelete }) {
-  const { rt } = useRaiseTheme();
+  const { rt } = useTheme();
 
   return (
     <Draggable draggableId={investor.id} index={index}>
@@ -148,7 +148,7 @@ function InvestorCard({ investor, index, stageConfig, onEdit, onDelete }) {
 
 // Stage Column Component for Kanban
 function InvestorStageColumn({ stage, investors, onAddInvestor, onEdit, onDelete }) {
-  const { rt } = useRaiseTheme();
+  const { rt } = useTheme();
   const stageInvestors = investors.filter(i => i.status === stage.id);
   const totalCheckSize = stageInvestors.reduce((sum, i) => sum + (i.check_size || 0), 0);
 
@@ -492,7 +492,7 @@ function RaiseContent({
   metrics, getStatusBadgeVariant, handleExport, handleDragEnd,
   handleDeleteInvestor,
 }) {
-  const { theme, toggleTheme, rt } = useRaiseTheme();
+  const { theme, toggleTheme, rt } = useTheme();
 
   return (
     <div className={`min-h-screen ${rt('bg-slate-50', 'bg-black')}`}>

@@ -28,7 +28,7 @@ import {
   Moon,
 } from 'lucide-react';
 import { CreatePageTransition } from '@/components/create/ui';
-import { useCreateTheme } from '@/contexts/CreateThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { toast } from 'sonner';
 import { createPageUrl } from '@/utils';
 import { useNavigate } from 'react-router-dom';
@@ -49,7 +49,7 @@ const FILTER_CHIPS = [
 ];
 
 export default function CreateLibrary() {
-  const { theme, toggleTheme, ct } = useCreateTheme();
+  const { theme, toggleTheme, ct } = useTheme();
   const { user } = useUser();
   const navigate = useNavigate();
   const [content, setContent] = useState([]);

@@ -39,10 +39,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { RaisePageTransition } from '@/components/raise/RaisePageTransition';
-import { useRaiseTheme } from '@/contexts/RaiseThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export default function RaiseInvestors() {
-  const { theme, toggleTheme, rt } = useRaiseTheme();
+  const { theme, toggleTheme, rt } = useTheme();
   const [loading, setLoading] = useState(true);
   const [investors, setInvestors] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');

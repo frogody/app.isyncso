@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { fullEnrichFromLinkedIn, fullEnrichFromEmail } from '@/lib/explorium-api';
-import { useCRMTheme } from '@/contexts/CRMThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { CRMPageTransition } from '@/components/crm/ui';
 import {
   ArrowLeft,
@@ -252,7 +252,7 @@ const getSocialIcon = (platform) => {
 export default function CRMContactProfile() {
   const { user } = useUser();
   const { hasPermission } = usePermissions();
-  const { theme, toggleTheme, crt } = useCRMTheme();
+  const { theme, toggleTheme, crt } = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const contactId = searchParams.get('id');

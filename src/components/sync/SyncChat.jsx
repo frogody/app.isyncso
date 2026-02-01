@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/api/supabaseClient';
 import { useLocalStorage } from '@/components/hooks/useLocalStorage';
 import SyncAvatarMini from '@/components/icons/SyncAvatarMini';
-import { useSyncTheme } from '@/contexts/SyncThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 // Agent icon mapping
 const AGENT_ICONS = {
@@ -83,7 +83,7 @@ function parseActionsFromContent(content) {
 
 // Action buttons component
 function ActionButtons({ actions, onAction, disabled }) {
-  const { syt } = useSyncTheme();
+  const { syt } = useTheme();
   if (!actions || actions.length === 0) return null;
 
   return (
@@ -113,7 +113,7 @@ function ActionButtons({ actions, onAction, disabled }) {
 
 // Message component
 function ChatMessage({ message, isLast, onAction, isLoading }) {
-  const { syt } = useSyncTheme();
+  const { syt } = useTheme();
   const isUser = message.role === 'user';
   const agentId = message.agentId || 'sync';
   const AgentIcon = AGENT_ICONS[agentId] || Bot;
@@ -226,7 +226,7 @@ function ChatMessage({ message, isLast, onAction, isLoading }) {
 
 // Loading indicator
 function TypingIndicator({ agentId }) {
-  const { syt } = useSyncTheme();
+  const { syt } = useTheme();
   const colors = AGENT_COLORS[agentId] || AGENT_COLORS.sync;
   const AgentIcon = AGENT_ICONS[agentId] || Bot;
 
@@ -293,7 +293,7 @@ export default function SyncChat({
   expanded = false,
   onToggleExpand,
 }) {
-  const { syt } = useSyncTheme();
+  const { syt } = useTheme();
 
   // Persist sessionId and messages in localStorage
   const [sessionId, setSessionId] = useLocalStorage('sync_session_id', null);

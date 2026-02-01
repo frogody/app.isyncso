@@ -19,11 +19,11 @@ import ContentEnhancer from "../components/ai/ContentEnhancer";
 import LearningPathOptimizer from "../components/ai/LearningPathOptimizer";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { useLearnTheme } from '@/contexts/LearnThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { LearnPageTransition } from '@/components/learn/ui';
 
 export default function LearnAITools() {
-  const { theme, toggleTheme, lt } = useLearnTheme();
+  const { theme, toggleTheme, lt } = useTheme();
   const [activeTab, setActiveTab] = useState("generator");
   const [importStatus, setImportStatus] = useState("idle");
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0, currentCourse: "" });

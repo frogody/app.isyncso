@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SentinelCard } from './SentinelCard';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 type AccentColor = 'emerald' | 'orange' | 'red' | 'green' | 'yellow' | 'purple' | 'blue';
 
@@ -28,7 +28,7 @@ interface StatCardProps {
 }
 
 export function StatCard({ label, value, subtitle, icon: Icon, trend, loading, delay = 0, accentColor = 'emerald' }: StatCardProps) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
   const accent = ACCENT_STYLES[accentColor];
 
   if (loading) {
@@ -83,7 +83,7 @@ export function StatCard({ label, value, subtitle, icon: Icon, trend, loading, d
 }
 
 function StatCardSkeleton() {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
   return (
     <SentinelCard padding="none" className="min-w-0 overflow-hidden">
       <div className="flex">

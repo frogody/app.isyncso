@@ -40,7 +40,7 @@ import {
   Moon,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { useCRMTheme } from '@/contexts/CRMThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { CRMPageTransition } from '@/components/crm/ui';
 
 // Animation variants
@@ -184,7 +184,7 @@ export default function CRMCompanyProfile() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const companyId = searchParams.get('id');
-  const { theme, toggleTheme, crt } = useCRMTheme();
+  const { theme, toggleTheme, crt } = useTheme();
 
   const [company, setCompany] = useState(null);
   const [contacts, setContacts] = useState([]);

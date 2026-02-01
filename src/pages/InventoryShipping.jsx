@@ -4,8 +4,10 @@ import { createPageUrl } from "@/utils";
 import {
   Truck, Package, Search, Filter, Clock, Check, AlertTriangle,
   Send, Barcode, MapPin, User, Calendar, ChevronRight, X,
-  ExternalLink, Copy, RefreshCw, AlertCircle
+  ExternalLink, Copy, RefreshCw, AlertCircle, Sun, Moon
 } from "lucide-react";
+import { useTheme } from '@/contexts/GlobalThemeContext';
+import { ProductsPageTransition } from '@/components/products/ui';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -89,7 +91,7 @@ const CARRIERS = [
 ];
 
 // Ship modal with REQUIRED track & trace
-function ShipModal({ task, isOpen, onClose, onShip }) {
+function ShipModal({ task, isOpen, onClose, onShip, t }) {
   const [trackTraceCode, setTrackTraceCode] = useState("");
   const [carrier, setCarrier] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -131,17 +133,17 @@ function ShipModal({ task, isOpen, onClose, onShip }) {
 
         <div className="space-y-4 py-4">
           {/* Order info */}
-          <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/10">
+          <div className={`p-3 rounded-lg ${t ? t('bg-slate-50 border-slate-200', 'bg-zinc-900/50 border-white/10') : 'bg-zinc-900/50 border-white/10'} border`}>
             <div className="text-sm">
-              <span className="text-zinc-400">Order:</span>
-              <span className="ml-2 text-white font-medium">
+              <span className={`${t ? t('text-slate-500', 'text-zinc-400') : 'text-zinc-400'}`}>Order:</span>
+              <span className={`ml-2 ${t ? t('text-slate-900', 'text-white') : 'text-white'} font-medium`}>
                 {task?.sales_orders?.order_number || task?.task_number}
               </span>
             </div>
             {task?.sales_orders?.customers?.name && (
               <div className="text-sm mt-1">
-                <span className="text-zinc-400">Klant:</span>
-                <span className="ml-2 text-white">
+                <span className={`${t ? t('text-slate-500', 'text-zinc-400') : 'text-zinc-400'}`}>Klant:</span>
+                <span className={`ml-2 ${t ? t('text-slate-900', 'text-white') : 'text-white'}`}>
                   {task.sales_orders.customers.name}
                 </span>
               </div>
@@ -162,10 +164,10 @@ function ShipModal({ task, isOpen, onClose, onShip }) {
                 setTrackTraceCode(e.target.value);
                 setError("");
               }}
-              className="mt-1 bg-zinc-900/50 border-white/10"
+              className={`mt-1 ${t ? t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/10') : 'bg-zinc-900/50 border-white/10'}`}
               autoFocus
             />
-            <p className="text-xs text-zinc-500 mt-1">
+            <p className={`text-xs ${t ? t('text-slate-500', 'text-zinc-500') : 'text-zinc-500'} mt-1`}>
               Deze code is verplicht voor het voltooien van de verzending
             </p>
           </div>
@@ -174,7 +176,7 @@ function ShipModal({ task, isOpen, onClose, onShip }) {
           <div>
             <Label>Vervoerder (optioneel)</Label>
             <Select value={carrier} onValueChange={setCarrier}>
-              <SelectTrigger className="mt-1 bg-zinc-900/50 border-white/10">
+              <SelectTrigger className={`mt-1 ${t ? t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/10') : 'bg-zinc-900/50 border-white/10'}`}>
                 <SelectValue placeholder="Selecteer vervoerder..." />
               </SelectTrigger>
               <SelectContent>
@@ -185,7 +187,7 @@ function ShipModal({ task, isOpen, onClose, onShip }) {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-zinc-500 mt-1">
+            <p className={`text-xs ${t ? t('text-slate-500', 'text-zinc-500') : 'text-zinc-500'} mt-1`}>
               Wordt automatisch gedetecteerd als niet opgegeven
             </p>
           </div>
@@ -247,7 +249,7 @@ function getPriorityStyle(priorityKey) {
 }
 
 // Shipping task card
-function ShippingTaskCard({ task, onShip }) {
+function ShippingTaskCard({ task, onShip, t }) {
   if (!task) return null;
 
   const status = getStatusStyle(task.status);
@@ -256,7 +258,7 @@ function ShippingTaskCard({ task, onShip }) {
   const isShippable = ["pending", "ready_to_ship"].includes(task.status);
 
   return (
-    <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/5 hover:border-cyan-500/30 transition-all">
+    <div className={`p-3 rounded-lg ${t('bg-white/80 border-slate-200', 'bg-zinc-900/50 border-white/5')} border hover:border-cyan-500/30 transition-all`}>
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-2">
           <div className={`p-2 rounded-lg ${status.bg} ${status.border}`}>
@@ -264,7 +266,7 @@ function ShippingTaskCard({ task, onShip }) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-medium text-white">
+              <h3 className={`font-medium ${t('text-slate-900', 'text-white')}`}>
                 {task.sales_orders?.order_number || task.task_number}
               </h3>
               <Badge className={`${status.bg} ${status.text} ${status.border}`}>
@@ -276,7 +278,7 @@ function ShippingTaskCard({ task, onShip }) {
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-zinc-400 mt-1">
+            <p className={`text-sm ${t('text-slate-500', 'text-zinc-400')} mt-1`}>
               {task.sales_orders?.customers?.name || "Onbekende klant"}
             </p>
           </div>
@@ -295,7 +297,7 @@ function ShippingTaskCard({ task, onShip }) {
 
         {task.status === "shipped" && task.track_trace_code && (
           <div className="text-right">
-            <div className="text-xs text-zinc-500">Track & Trace</div>
+            <div className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>Track & Trace</div>
             <div className="flex items-center gap-1 mt-1">
               <code className="text-sm text-cyan-400">{task.track_trace_code}</code>
               <Button
@@ -325,29 +327,29 @@ function ShippingTaskCard({ task, onShip }) {
       </div>
 
       {/* Shipping details */}
-      <div className="mt-2 pt-2 border-t border-white/5 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+      <div className={`mt-2 pt-2 border-t ${t('border-slate-200', 'border-white/5')} grid grid-cols-2 md:grid-cols-4 gap-2 text-xs`}>
         <div>
-          <span className="text-zinc-500">Pakjes</span>
-          <span className="ml-2 text-white">{task.package_count}</span>
+          <span className={`${t('text-slate-500', 'text-zinc-500')}`}>Pakjes</span>
+          <span className={`ml-2 ${t('text-slate-900', 'text-white')}`}>{task.package_count}</span>
         </div>
         {task.carrier && (
           <div>
-            <span className="text-zinc-500">Vervoerder</span>
-            <span className="ml-2 text-white">{task.carrier}</span>
+            <span className={`${t('text-slate-500', 'text-zinc-500')}`}>Vervoerder</span>
+            <span className={`ml-2 ${t('text-slate-900', 'text-white')}`}>{task.carrier}</span>
           </div>
         )}
         {task.ship_by_date && (
           <div>
-            <span className="text-zinc-500">Verzenden voor</span>
-            <span className="ml-2 text-white">
+            <span className={`${t('text-slate-500', 'text-zinc-500')}`}>Verzenden voor</span>
+            <span className={`ml-2 ${t('text-slate-900', 'text-white')}`}>
               {new Date(task.ship_by_date).toLocaleDateString("nl-NL")}
             </span>
           </div>
         )}
         {task.shipped_at && (
           <div>
-            <span className="text-zinc-500">Verzonden</span>
-            <span className="ml-2 text-white">
+            <span className={`${t('text-slate-500', 'text-zinc-500')}`}>Verzonden</span>
+            <span className={`ml-2 ${t('text-slate-900', 'text-white')}`}>
               {new Date(task.shipped_at).toLocaleDateString("nl-NL")}
             </span>
           </div>
@@ -386,6 +388,7 @@ function OverdueAlert({ count, onClick }) {
 
 export default function InventoryShipping() {
   const { user } = useUser();
+  const { theme, toggleTheme, t } = useTheme();
   const [tasks, setTasks] = useState([]);
   const [overdueJobs, setOverdueJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -466,120 +469,131 @@ export default function InventoryShipping() {
   };
 
   return (
-    <PermissionGuard permission="shipping.manage" showMessage>
-      <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
-          <div>
-            <h1 className="text-lg font-bold text-white">Shipping</h1>
-            <p className="text-xs text-zinc-400">Manage outbound shipments</p>
+    <ProductsPageTransition>
+      <PermissionGuard permission="shipping.manage" showMessage>
+        <div className={`max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4 ${t('bg-white text-slate-900', 'bg-transparent text-white')}`}>
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+            <div>
+              <h1 className={`text-lg font-bold ${t('text-slate-900', 'text-white')}`}>Shipping</h1>
+              <p className={`text-xs ${t('text-slate-500', 'text-zinc-400')}`}>Manage outbound shipments</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleTheme}
+                className={`p-2 rounded-lg border transition-colors ${t('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-white/10 hover:bg-white/5 text-zinc-400')}`}
+                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* Overdue alert */}
+          <OverdueAlert
+            count={stats.overdue}
+            onClick={() => setFilter("shipped")}
+          />
+
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+            <div className={`${t('bg-white/80 border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
+              <div className="flex items-center gap-2 mb-1">
+                <Clock className="w-4 h-4 text-yellow-400" />
+                <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>Te verzenden</span>
+              </div>
+              <p className={`text-lg font-bold ${t('text-slate-900', 'text-white')}`}>{stats.pending}</p>
+            </div>
+            <div className={`${t('bg-white/80 border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
+              <div className="flex items-center gap-2 mb-1">
+                <Truck className="w-4 h-4 text-blue-400" />
+                <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>Onderweg</span>
+              </div>
+              <p className={`text-lg font-bold ${t('text-slate-900', 'text-white')}`}>{stats.shipped}</p>
+            </div>
+            <div className={`${t('bg-white/80 border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
+              <div className="flex items-center gap-2 mb-1">
+                <Check className="w-4 h-4 text-green-400" />
+                <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>Afgeleverd</span>
+              </div>
+              <p className={`text-lg font-bold ${t('text-slate-900', 'text-white')}`}>{stats.delivered}</p>
+            </div>
+            <div className={`${t('bg-white/80 border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
+              <div className="flex items-center gap-2 mb-1">
+                <AlertTriangle className="w-4 h-4 text-red-400" />
+                <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>Te laat</span>
+              </div>
+              <p className={`text-lg font-bold ${t('text-slate-900', 'text-white')}`}>{stats.overdue}</p>
+            </div>
           </div>
+
+          {/* Filters */}
+          <div className={`${t('bg-white/80 border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3 mb-4`}>
+            <div className="flex flex-col md:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${t('text-slate-400', 'text-zinc-500')}`} />
+                <Input
+                  placeholder="Zoek op order, klant of T&T code..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className={`pl-9 ${t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/10')}`}
+                />
+              </div>
+              <Tabs value={filter} onValueChange={setFilter}>
+                <TabsList className={`${t('bg-slate-100', 'bg-zinc-900/50')}`}>
+                  <TabsTrigger value="all">Alles</TabsTrigger>
+                  <TabsTrigger value="pending">Te verzenden</TabsTrigger>
+                  <TabsTrigger value="shipped">Onderweg</TabsTrigger>
+                  <TabsTrigger value="delivered">Afgeleverd</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+
+          {/* Task list */}
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-24 rounded-lg" />
+              ))}
+            </div>
+          ) : filteredTasks.length === 0 ? (
+            <div className={`${t('bg-white/80 border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-8 text-center`}>
+              <Package className={`w-12 h-12 mx-auto ${t('text-slate-300', 'text-zinc-600')} mb-3`} />
+              <h3 className={`text-base font-medium ${t('text-slate-900', 'text-white')} mb-1`}>
+                Geen verzendtaken gevonden
+              </h3>
+              <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>
+                {search
+                  ? "Probeer een andere zoekopdracht"
+                  : "Er zijn momenteel geen verzendtaken"}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredTasks.map((task) => (
+                <ShippingTaskCard
+                  key={task.id}
+                  task={task}
+                  onShip={openShipModal}
+                  t={t}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Ship modal */}
+          <ShipModal
+            task={selectedTask}
+            isOpen={showShipModal}
+            onClose={() => {
+              setShowShipModal(false);
+              setSelectedTask(null);
+            }}
+            onShip={handleShip}
+            t={t}
+          />
         </div>
-
-        {/* Overdue alert */}
-        <OverdueAlert
-          count={stats.overdue}
-          onClick={() => setFilter("shipped")}
-        />
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Clock className="w-4 h-4 text-yellow-400" />
-              <span className="text-xs text-zinc-500">Te verzenden</span>
-            </div>
-            <p className="text-lg font-bold text-white">{stats.pending}</p>
-          </div>
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Truck className="w-4 h-4 text-blue-400" />
-              <span className="text-xs text-zinc-500">Onderweg</span>
-            </div>
-            <p className="text-lg font-bold text-white">{stats.shipped}</p>
-          </div>
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Check className="w-4 h-4 text-green-400" />
-              <span className="text-xs text-zinc-500">Afgeleverd</span>
-            </div>
-            <p className="text-lg font-bold text-white">{stats.delivered}</p>
-          </div>
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle className="w-4 h-4 text-red-400" />
-              <span className="text-xs text-zinc-500">Te laat</span>
-            </div>
-            <p className="text-lg font-bold text-white">{stats.overdue}</p>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3 mb-4">
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-              <Input
-                placeholder="Zoek op order, klant of T&T code..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-zinc-900/50 border-white/10"
-              />
-            </div>
-            <Tabs value={filter} onValueChange={setFilter}>
-              <TabsList className="bg-zinc-900/50">
-                <TabsTrigger value="all">Alles</TabsTrigger>
-                <TabsTrigger value="pending">Te verzenden</TabsTrigger>
-                <TabsTrigger value="shipped">Onderweg</TabsTrigger>
-                <TabsTrigger value="delivered">Afgeleverd</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </div>
-
-        {/* Task list */}
-        {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-24 rounded-lg" />
-            ))}
-          </div>
-        ) : filteredTasks.length === 0 ? (
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-8 text-center">
-            <Package className="w-12 h-12 mx-auto text-zinc-600 mb-3" />
-            <h3 className="text-base font-medium text-white mb-1">
-              Geen verzendtaken gevonden
-            </h3>
-            <p className="text-xs text-zinc-500">
-              {search
-                ? "Probeer een andere zoekopdracht"
-                : "Er zijn momenteel geen verzendtaken"}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredTasks.map((task) => (
-              <ShippingTaskCard
-                key={task.id}
-                task={task}
-                onShip={openShipModal}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Ship modal */}
-        <ShipModal
-          task={selectedTask}
-          isOpen={showShipModal}
-          onClose={() => {
-            setShowShipModal(false);
-            setSelectedTask(null);
-          }}
-          onShip={handleShip}
-        />
-      </div>
-    </PermissionGuard>
+      </PermissionGuard>
+    </ProductsPageTransition>
   );
 }

@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 interface SentinelButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onAnimationStart' | 'onDragStart' | 'onDragEnd' | 'onDrag'> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -25,7 +25,7 @@ export const SentinelButton = forwardRef<HTMLButtonElement, SentinelButtonProps>
     },
     ref
   ) {
-    const { st } = useSentinelTheme();
+    const { st } = useTheme();
 
     return (
       <motion.button

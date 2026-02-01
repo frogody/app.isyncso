@@ -6,11 +6,11 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ChatInterface } from "@/components/ui/ChatInterface";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useLearnTheme } from '@/contexts/LearnThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { LearnPageTransition } from '@/components/learn/ui';
 
 export default function LearnAssistant() {
-  const { theme, toggleTheme, lt } = useLearnTheme();
+  const { theme, toggleTheme, lt } = useTheme();
   const { user, isLoading: userLoading } = useUser();
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);

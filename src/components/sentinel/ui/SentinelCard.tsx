@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { motion, type HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 interface SentinelCardProps extends HTMLMotionProps<'div'> {
   variant?: 'default' | 'interactive' | 'elevated';
@@ -17,7 +17,7 @@ export function SentinelCard({
   onClick,
   ...props
 }: SentinelCardProps) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -64,7 +64,7 @@ export function SentinelCard({
 }
 
 export function SentinelCardSkeleton({ className }: { className?: string }) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
   return (
     <div
       className={cn(

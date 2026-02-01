@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
-import { useCreateTheme } from '@/contexts/CreateThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 interface CreateButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onAnimationStart' | 'onDragStart' | 'onDragEnd' | 'onDrag'> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -25,7 +25,7 @@ export const CreateButton = forwardRef<HTMLButtonElement, CreateButtonProps>(
     },
     ref
   ) {
-    const { ct } = useCreateTheme();
+    const { ct } = useTheme();
 
     return (
       <motion.button

@@ -7,7 +7,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus, Download, ExternalLink, Image as ImageIcon, FileText, Sun, Moon } from 'lucide-react';
-import { useSyncTheme } from '@/contexts/SyncThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { SyncPageTransition } from '@/components/sync/ui';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -295,7 +295,7 @@ function ImageCard({ url }) {
 // ============================================================================
 
 function DocumentCard({ url, title }) {
-  const { syt } = useSyncTheme();
+  const { syt } = useTheme();
   const cardRef = useRef(null);
 
   // Animate card entrance
@@ -431,7 +431,7 @@ function getActionEffect(actionType) {
 // ============================================================================
 
 function AgentChannelMessage({ message, isLatest, highlightBorders }) {
-  const { syt } = useSyncTheme();
+  const { syt } = useTheme();
   const messageRef = useRef(null);
   const agent = AGENT_SEGMENTS.find(a => a.id === message.agentId) || AGENT_SEGMENTS.find(a => a.id === 'sync');
   const isSyncMessage = message.agentId === 'sync' || !message.agentId;
@@ -1513,7 +1513,7 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, acti
 // ============================================================================
 
 function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level = 0.25, seed = 1, activeAgent = null, actionEffect = null, showSuccess = false }) {
-  const { syt } = useSyncTheme();
+  const { syt } = useTheme();
   const labelRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -1590,7 +1590,7 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
 // ============================================================================
 
 function Bubble({ role, text, ts, index, document, highlightBorders }) {
-  const { syt } = useSyncTheme();
+  const { syt } = useTheme();
   const bubbleRef = useRef(null);
   const isUser = role === 'user';
 
@@ -1668,7 +1668,7 @@ const DEFAULT_MESSAGES = [
 ];
 
 export default function SyncAgent() {
-  const { theme, toggleTheme, syt } = useSyncTheme();
+  const { theme, toggleTheme, syt } = useTheme();
   const { user } = useUser();
   const syncStateContext = useSyncState();
   const [mood, setMoodLocal] = useState('listening');

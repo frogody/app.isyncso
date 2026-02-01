@@ -1,7 +1,7 @@
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 interface Props {
   children: ReactNode;
@@ -60,7 +60,7 @@ export function SentinelErrorState({
   message,
   onRetry,
 }: SentinelErrorStateProps) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6">
       <div className={cn('p-4 rounded-full mb-4', st('bg-red-100', 'bg-red-500/10'))}>
@@ -99,7 +99,7 @@ interface SentinelEmptyStateProps {
 }
 
 export function SentinelEmptyState({ icon, title, message, action, actionLabel, onAction }: SentinelEmptyStateProps) {
-  const { st } = useSentinelTheme();
+  const { st } = useTheme();
   const resolvedAction = action || (actionLabel && onAction ? { label: actionLabel, onClick: onAction } : null);
 
   // Render icon: if it's a component type (function), instantiate it; otherwise render as ReactNode

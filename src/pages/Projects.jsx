@@ -43,7 +43,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import NotionEditor, { generateId as generateBlockId } from "@/components/shared/NotionEditor";
-import { useProjectsTheme } from '@/contexts/ProjectsThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { ProjectsPageTransition } from '@/components/projects/ui';
 import { cn } from '@/lib/utils';
 
@@ -183,7 +183,7 @@ const generateFolderShareLink = (folderId) => {
 
 // Progress Ring Component
 function ProgressRing({ progress, size = 40, strokeWidth = 3 }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (progress / 100) * circumference;
@@ -229,7 +229,7 @@ function ProgressRing({ progress, size = 40, strokeWidth = 3 }) {
 
 // File Drop Zone Component - Premium Design
 function FileDropZone({ onFilesAdded, files = [], onRemoveFile, onTogglePublic }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -412,7 +412,7 @@ function FileDropZone({ onFilesAdded, files = [], onRemoveFile, onTogglePublic }
 
 // Client Update Component
 function ClientUpdateItem({ update, isOwner, onDelete }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   return (
     <div className={`relative pl-6 pb-6 border-l-2 ${pt('border-slate-200','border-zinc-800')} last:border-l-transparent last:pb-0`}>
       <div className="absolute -left-2 top-0 w-4 h-4 rounded-full bg-cyan-500/20 border-2 border-cyan-500/50" />
@@ -470,7 +470,7 @@ function ClientUpdateItem({ update, isOwner, onDelete }) {
 
 // Premium Toggle Switch Component
 function PremiumToggle({ enabled, onChange, size = "default" }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const sizes = {
     small: { track: "w-8 h-4", thumb: "w-3 h-3", translate: "translate-x-4" },
     default: { track: "w-11 h-6", thumb: "w-5 h-5", translate: "translate-x-5" },
@@ -495,7 +495,7 @@ function PremiumToggle({ enabled, onChange, size = "default" }) {
 
 // Share Settings Panel - Premium Design
 function ShareSettingsPanel({ project, onUpdateSettings, onGenerateLink }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const [settings, setSettings] = useState(project?.share_settings || {});
   const [copied, setCopied] = useState(false);
 
@@ -686,7 +686,7 @@ function ShareSettingsPanel({ project, onUpdateSettings, onGenerateLink }) {
 
 // Notion-like Page Block Component
 function PageBlock({ block, onUpdate, onDelete, isEditing }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const [content, setContent] = useState(block.content || '');
   const [isLocalEditing, setIsLocalEditing] = useState(false);
 
@@ -773,7 +773,7 @@ function PageBlock({ block, onUpdate, onDelete, isEditing }) {
 
 // Client Portal / Shareable Project View - Premium Design
 function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUpdate }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const [newUpdate, setNewUpdate] = useState('');
   const statusConfig = PROJECT_STATUSES.find(s => s.id === project?.status) || PROJECT_STATUSES[0];
 
@@ -1246,7 +1246,7 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
 
 // Folder Card Component
 function FolderCard({ folder, projects, onClick }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const colorConfig = FOLDER_COLORS.find(c => c.id === folder.cover_color) || FOLDER_COLORS[0];
   const folderProjects = projects.filter(p => folder.project_ids?.includes(p.id));
   const completedProjects = folderProjects.filter(p => p.status === 'completed').length;
@@ -1367,7 +1367,7 @@ function FolderDetailSheet({
   onAddProjects,
   onViewProject
 }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const [showSharePreview, setShowSharePreview] = useState(false);
   const [showAddProjects, setShowAddProjects] = useState(false);
   const [selectedProjectIds, setSelectedProjectIds] = useState([]);
@@ -1738,7 +1738,7 @@ function FolderDetailSheet({
 
 // Folder Share Settings Panel
 function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink, onPreviewPortal }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const [settings, setSettings] = useState(folder?.share_settings || {});
   const [copied, setCopied] = useState(false);
 
@@ -1902,7 +1902,7 @@ function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink, onPrevi
 
 // Shareable Folder View - Client Portal (matches new portal design)
 function ShareableFolderView({ folder, projects, tasks }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const colorConfig = FOLDER_COLORS.find(c => c.id === folder?.cover_color) || FOLDER_COLORS[0];
   const settings = folder?.share_settings || {};
   const primaryColor = '#06b6d4'; // cyan-500
@@ -2063,7 +2063,7 @@ function ShareableFolderView({ folder, projects, tasks }) {
 
 // Timeline Bar for Gantt-like view
 function TimelineBar({ project, startDate, endDate, totalDays }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const projectStart = new Date(project.start_date || Date.now());
   const projectEnd = new Date(project.due_date || Date.now());
   const timelineStart = new Date(startDate);
@@ -2090,7 +2090,7 @@ function TimelineBar({ project, startDate, endDate, totalDays }) {
 
 // Project Card Component
 function ProjectCard({ project, tasks, onClick, onStatusChange, onEdit, onDelete }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const statusConfig = PROJECT_STATUSES.find(s => s.id === project.status) || PROJECT_STATUSES[0];
   const priorityConfig = PRIORITY_LEVELS.find(p => p.id === project.priority) || PRIORITY_LEVELS[1];
   const StatusIcon = statusConfig.icon;
@@ -2228,7 +2228,7 @@ function ProjectCard({ project, tasks, onClick, onStatusChange, onEdit, onDelete
 
 // Kanban Project Card
 function KanbanProjectCard({ project, index, onClick }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const priorityConfig = PRIORITY_LEVELS.find(p => p.id === project.priority) || PRIORITY_LEVELS[1];
   const progress = project.progress || 0;
 
@@ -2306,7 +2306,7 @@ function KanbanProjectCard({ project, index, onClick }) {
 
 // Kanban Column
 function KanbanColumn({ status, projects, onAddProject, onClick }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const StatusIcon = status.icon;
 
   return (
@@ -2372,7 +2372,7 @@ function ProjectDetailSheet({
   onToggleMilestone,
   onDeleteMilestone,
 }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const [showSharePreview, setShowSharePreview] = useState(false);
   const statusConfig = PROJECT_STATUSES.find(s => s.id === project?.status) || PROJECT_STATUSES[0];
   const priorityConfig = PRIORITY_LEVELS.find(p => p.id === project?.priority) || PRIORITY_LEVELS[1];
@@ -2820,7 +2820,7 @@ function ProjectDetailSheet({
 
 // Client Update Form Component
 function ClientUpdateForm({ onSubmit }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const [content, setContent] = useState('');
 
   const handleSubmit = () => {
@@ -2866,7 +2866,7 @@ function ClientUpdateForm({ onSubmit }) {
 
 // Task Item Component
 function TaskItem({ task, onUpdate }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const priorityConfig = PRIORITY_LEVELS.find(p => p.id === task.priority) || PRIORITY_LEVELS[1];
 
   const cycleStatus = () => {
@@ -2908,7 +2908,7 @@ function TaskItem({ task, onUpdate }) {
 
 // Analytics Overview
 function ProjectAnalytics({ projects, tasks }) {
-  const { pt } = useProjectsTheme();
+  const { pt } = useTheme();
   const stats = useMemo(() => {
     const byStatus = {};
     PROJECT_STATUSES.forEach(s => { byStatus[s.id] = 0; });
@@ -2987,7 +2987,7 @@ function ProjectAnalytics({ projects, tasks }) {
 // Main Projects Component
 export default function Projects() {
   const { user } = useUser();
-  const { theme, toggleTheme, pt } = useProjectsTheme();
+  const { theme, toggleTheme, pt } = useTheme();
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -36,12 +36,12 @@ import TeamManagement from "@/pages/TeamManagement";
 import Integrations from "@/pages/Integrations";
 import { Link } from "react-router-dom";
 import { LayoutGrid, Sun, Moon } from "lucide-react";
-import { useSettingsTheme } from '@/contexts/SettingsThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { SettingsPageTransition } from '@/components/settings/ui';
 
 export default function Settings() {
   const { user, company, settings: userSettings, updateUser, updateSettings, isLoading: userLoading } = useUser();
-  const { theme, toggleTheme, st } = useSettingsTheme();
+  const { theme, toggleTheme, st } = useTheme();
   const { isAdmin } = usePermissions();
   const [saving, setSaving] = useState(false);
   const [refreshingCompany, setRefreshingCompany] = useState(false);

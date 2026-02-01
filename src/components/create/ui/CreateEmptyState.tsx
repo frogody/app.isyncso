@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { useCreateTheme } from '@/contexts/CreateThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { CreateButton } from './CreateButton';
 
 interface CreateEmptyStateProps {
@@ -13,7 +13,7 @@ interface CreateEmptyStateProps {
 }
 
 export function CreateEmptyState({ icon: IconOrNode, title, message, action }: CreateEmptyStateProps) {
-  const { ct } = useCreateTheme();
+  const { ct } = useTheme();
 
   const isComponent = typeof IconOrNode === 'function';
 

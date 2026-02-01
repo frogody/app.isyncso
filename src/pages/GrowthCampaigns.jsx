@@ -19,7 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Progress } from "@/components/ui/progress";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { GrowthPageTransition } from '@/components/growth/ui';
 import { Sun, Moon } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -52,7 +52,7 @@ const emptyForm = {
 };
 
 function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetails }) {
-  const { gt } = useGrowthTheme();
+  const { gt } = useTheme();
   const typeConfig = CAMPAIGN_TYPES.find(t => t.id === campaign.campaign_type) || CAMPAIGN_TYPES[1];
   const statusConfig = STATUS_CONFIG[campaign.status] || STATUS_CONFIG.draft;
   const Icon = typeConfig.icon;
@@ -158,7 +158,7 @@ function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetail
 }
 
 export default function GrowthCampaigns() {
-  const { theme, toggleTheme, gt } = useGrowthTheme();
+  const { theme, toggleTheme, gt } = useTheme();
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);

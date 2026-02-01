@@ -1,6 +1,6 @@
 import { motion, type HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { useRaiseTheme } from '@/contexts/RaiseThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { MOTION_VARIANTS } from '@/tokens/raise';
 
 interface RaiseCardProps extends HTMLMotionProps<'div'> {
@@ -23,7 +23,7 @@ export function RaiseCard({
   padding = 'none',
   ...props
 }: RaiseCardProps) {
-  const { rt } = useRaiseTheme();
+  const { rt } = useTheme();
 
   const isInteractive = variant === 'interactive';
 
@@ -75,7 +75,7 @@ export function RaiseCardTitle({
   children,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  const { rt } = useRaiseTheme();
+  const { rt } = useTheme();
   return (
     <div
       className={cn(
@@ -95,7 +95,7 @@ export function RaiseCardDescription({
   children,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  const { rt } = useRaiseTheme();
+  const { rt } = useTheme();
   return (
     <div
       className={cn('text-sm', rt('text-slate-500', 'text-zinc-400'), className)}
@@ -119,7 +119,7 @@ export function RaiseCardContent({
 }
 
 export function RaiseCardSkeleton({ className }: { className?: string }) {
-  const { rt } = useRaiseTheme();
+  const { rt } = useTheme();
   return (
     <div
       className={cn(

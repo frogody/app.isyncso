@@ -23,7 +23,7 @@ import { Subscription } from '@/api/entities';
 import { usePermissions } from '@/components/context/PermissionContext';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
-import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 
 const BILLING_CYCLES = [
@@ -58,7 +58,7 @@ export default function FinanceSubscriptions() {
   const [saving, setSaving] = useState(false);
 
   const { hasPermission, isLoading: permLoading } = usePermissions();
-  const { theme, toggleTheme, ft } = useFinanceTheme();
+  const { theme, toggleTheme, ft } = useTheme();
 
   const [formData, setFormData] = useState({
     name: '',

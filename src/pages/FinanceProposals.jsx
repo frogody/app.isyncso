@@ -28,7 +28,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { useUser } from '@/components/context/UserContext';
-import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 
 const getStatusConfig = (ft) => ({
@@ -44,7 +44,7 @@ export default function FinanceProposals() {
   const navigate = useNavigate();
   const { user } = useUser();
   const { hasPermission, isLoading: permLoading } = usePermissions();
-  const { theme, toggleTheme, ft } = useFinanceTheme();
+  const { theme, toggleTheme, ft } = useTheme();
 
   const STATUS_CONFIG = useMemo(() => getStatusConfig(ft), [ft]);
 

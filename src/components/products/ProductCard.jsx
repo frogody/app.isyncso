@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 const STATUS_COLORS = {
   published: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/30', label: 'Published' },
@@ -40,6 +41,7 @@ export function ProductGridCard({
   onDelete,
   index = 0,
 }) {
+  const { t } = useTheme();
   const status = STATUS_COLORS[product.status] || STATUS_COLORS.draft;
   const isDigital = productType === 'digital';
   const Icon = isDigital ? Cloud : Package;
@@ -58,7 +60,7 @@ export function ProductGridCard({
     >
       <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)}>
         <div className={cn(
-          "group rounded-xl bg-zinc-900/50 border border-white/5 transition-all overflow-hidden",
+          `group rounded-xl ${t('bg-white shadow-sm', 'bg-zinc-900/50')} border ${t('border-slate-200', 'border-white/5')} transition-all overflow-hidden`,
           "hover:border-cyan-500/30"
         )}>
           {/* Image/Preview */}
@@ -84,10 +86,10 @@ export function ProductGridCard({
 
           {/* Content */}
           <div className="p-4">
-            <h3 className="font-medium text-white truncate transition-colors group-hover:text-cyan-400">
+            <h3 className={`font-medium ${t('text-slate-900', 'text-white')} truncate transition-colors group-hover:text-cyan-400`}>
               {product.name}
             </h3>
-            <p className="text-sm text-zinc-500 mt-1 line-clamp-2 min-h-[2.5rem]">
+            <p className={`text-sm ${t('text-slate-500', 'text-zinc-500')} mt-1 line-clamp-2 min-h-[2.5rem]`}>
               {product.tagline || product.short_description || 'No description'}
             </p>
 
@@ -118,7 +120,7 @@ export function ProductGridCard({
               )}
             </div>
 
-            <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
+            <div className={`flex items-center justify-between mt-4 pt-3 border-t ${t('border-slate-200', 'border-white/5')}`}>
               <div className="flex items-center gap-2">
                 {isDigital && pricingModel && (
                   <>
@@ -127,53 +129,53 @@ export function ProductGridCard({
                     </span>
                     {product.category && (
                       <>
-                        <span className="text-zinc-600">|</span>
-                        <span className="text-xs text-zinc-500">{product.category}</span>
+                        <span className={t('text-slate-300', 'text-zinc-600')}>|</span>
+                        <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>{product.category}</span>
                       </>
                     )}
                   </>
                 )}
                 {!isDigital && pricing?.base_price && (
                   <>
-                    <span className="text-sm font-medium text-white">
+                    <span className={`text-sm font-medium ${t('text-slate-900', 'text-white')}`}>
                       €{parseFloat(pricing.base_price).toFixed(2)}
                     </span>
                     {pricing.compare_at_price && (
-                      <span className="text-xs text-zinc-500 line-through">
+                      <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')} line-through`}>
                         €{parseFloat(pricing.compare_at_price).toFixed(2)}
                       </span>
                     )}
                   </>
                 )}
                 {!isDigital && product.ean && (
-                  <span className="text-xs text-zinc-500">EAN: {product.ean}</span>
+                  <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>EAN: {product.ean}</span>
                 )}
               </div>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-zinc-500 hover:text-white">
+                  <Button variant="ghost" size="sm" className={`h-7 w-7 p-0 ${t('text-slate-500', 'text-zinc-500')} ${t('hover:text-slate-900', 'hover:text-white')}`}>
                     <MoreHorizontal className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10" onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenuItem className="text-zinc-300 hover:text-white">
+                <DropdownMenuContent align="end" className={`${t('bg-white', 'bg-zinc-900')} ${t('border-slate-200', 'border-white/10')}`} onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenuItem className={`${t('text-slate-700', 'text-zinc-300')} ${t('hover:text-slate-900', 'hover:text-white')}`}>
                     <Eye className="w-4 h-4 mr-2" /> View
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="text-zinc-300 hover:text-white"
+                    className={`${t('text-slate-700', 'text-zinc-300')} ${t('hover:text-slate-900', 'hover:text-white')}`}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit?.(product); }}
                   >
                     <Edit2 className="w-4 h-4 mr-2" /> Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="text-zinc-300 hover:text-white"
+                    className={`${t('text-slate-700', 'text-zinc-300')} ${t('hover:text-slate-900', 'hover:text-white')}`}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate?.(product); }}
                   >
                     <Copy className="w-4 h-4 mr-2" /> Duplicate
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="text-zinc-400 hover:text-zinc-300"
+                    className={`${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-700', 'hover:text-zinc-300')}`}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onArchive?.(product); }}
                   >
                     <Archive className="w-4 h-4 mr-2" /> Archive
@@ -204,6 +206,7 @@ export function ProductListRow({
   onDelete,
   index = 0,
 }) {
+  const { t } = useTheme();
   const status = STATUS_COLORS[product.status] || STATUS_COLORS.draft;
   const isDigital = productType === 'digital';
   const Icon = isDigital ? Cloud : Package;
@@ -223,7 +226,7 @@ export function ProductListRow({
     >
       <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)}>
         <div className={cn(
-          "group flex items-center gap-4 p-4 rounded-xl bg-zinc-900/50 border border-white/5 transition-all",
+          `group flex items-center gap-4 p-4 rounded-xl ${t('bg-white shadow-sm', 'bg-zinc-900/50')} border ${t('border-slate-200', 'border-white/5')} transition-all`,
           "hover:border-cyan-500/30"
         )}>
           {/* Thumbnail */}
@@ -249,7 +252,7 @@ export function ProductListRow({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className={cn(
-                "font-medium text-white truncate transition-colors",
+                `font-medium ${t('text-slate-900', 'text-white')} truncate transition-colors`,
                 "group-hover:text-cyan-400"
               )}>
                 {product.name}
@@ -278,7 +281,7 @@ export function ProductListRow({
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-zinc-500 mt-0.5 truncate">
+            <p className={`text-sm ${t('text-slate-500', 'text-zinc-500')} mt-0.5 truncate`}>
               {product.tagline || product.short_description || 'No description'}
             </p>
           </div>
@@ -291,17 +294,17 @@ export function ProductListRow({
                   {pricingModel.label}
                 </span>
                 {packages.length > 0 && (
-                  <p className="text-xs text-zinc-500">{packages.length} packages</p>
+                  <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>{packages.length} packages</p>
                 )}
               </>
             )}
             {!isDigital && pricing?.base_price && (
               <>
-                <span className="text-sm font-medium text-white">
+                <span className={`text-sm font-medium ${t('text-slate-900', 'text-white')}`}>
                   €{parseFloat(pricing.base_price).toFixed(2)}
                 </span>
                 {details?.inventory?.quantity > 0 && (
-                  <p className="text-xs text-zinc-500">
+                  <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>
                     {details.inventory.quantity} units
                   </p>
                 )}
@@ -311,7 +314,7 @@ export function ProductListRow({
 
           {/* Category / EAN */}
           <div className="text-right flex-shrink-0 w-32 hidden lg:block">
-            <span className="text-sm text-zinc-400">
+            <span className={`text-sm ${t('text-slate-500', 'text-zinc-400')}`}>
               {isDigital
                 ? product.category || 'Uncategorized'
                 : product.ean || 'No EAN'}
@@ -322,7 +325,7 @@ export function ProductListRow({
           <div className="flex items-center gap-2 flex-shrink-0">
             {isDigital && details?.demo_url && (
               <Button variant="ghost" size="sm" className={cn(
-                "h-8 text-zinc-400",
+                `h-8 ${t('text-slate-500', 'text-zinc-400')}`,
                 "hover:text-cyan-400"
               )}>
                 <Play className="w-4 h-4" />
@@ -330,28 +333,28 @@ export function ProductListRow({
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-zinc-500 hover:text-white">
+                <Button variant="ghost" size="sm" className={`h-8 w-8 p-0 ${t('text-slate-500', 'text-zinc-500')} ${t('hover:text-slate-900', 'hover:text-white')}`}>
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10" onClick={(e) => e.stopPropagation()}>
-                <DropdownMenuItem className="text-zinc-300 hover:text-white">
+              <DropdownMenuContent align="end" className={`${t('bg-white', 'bg-zinc-900')} ${t('border-slate-200', 'border-white/10')}`} onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuItem className={`${t('text-slate-700', 'text-zinc-300')} ${t('hover:text-slate-900', 'hover:text-white')}`}>
                   <Eye className="w-4 h-4 mr-2" /> View
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="text-zinc-300 hover:text-white"
+                  className={`${t('text-slate-700', 'text-zinc-300')} ${t('hover:text-slate-900', 'hover:text-white')}`}
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit?.(product); }}
                 >
                   <Edit2 className="w-4 h-4 mr-2" /> Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="text-zinc-300 hover:text-white"
+                  className={`${t('text-slate-700', 'text-zinc-300')} ${t('hover:text-slate-900', 'hover:text-white')}`}
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate?.(product); }}
                 >
                   <Copy className="w-4 h-4 mr-2" /> Duplicate
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="text-zinc-400 hover:text-zinc-300"
+                  className={`${t('text-slate-500', 'text-zinc-400')} ${t('hover:text-slate-700', 'hover:text-zinc-300')}`}
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); onArchive?.(product); }}
                 >
                   <Archive className="w-4 h-4 mr-2" /> Archive

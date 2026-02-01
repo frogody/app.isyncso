@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Search } from 'lucide-react';
-import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 interface SentinelInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string;
@@ -11,7 +11,7 @@ interface SentinelInputProps extends React.InputHTMLAttributes<HTMLInputElement>
 
 export const SentinelInput = forwardRef<HTMLInputElement, SentinelInputProps>(
   function SentinelInput({ error, label, variant = 'default', className, ...props }, ref) {
-    const { st } = useSentinelTheme();
+    const { st } = useTheme();
 
     return (
       <div className="w-full">

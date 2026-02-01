@@ -25,7 +25,7 @@ import { usePermissions } from '@/components/context/PermissionContext';
 import { useUser } from '@/components/context/UserContext';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
-import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 
 const EXPENSE_CATEGORIES = [
@@ -58,7 +58,7 @@ export default function FinanceExpenses() {
 
   const { hasPermission, isLoading: permLoading } = usePermissions();
   const { user } = useUser();
-  const { theme, toggleTheme, ft } = useFinanceTheme();
+  const { theme, toggleTheme, ft } = useTheme();
 
   // Form state
   const [formData, setFormData] = useState({

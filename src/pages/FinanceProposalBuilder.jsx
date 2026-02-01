@@ -11,7 +11,7 @@ import {
   Loader2, CheckCircle2, Type, Image, List, PenTool, Download,
   Sun, Moon
 } from 'lucide-react';
-import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,7 +53,7 @@ export default function FinanceProposalBuilder() {
   const [searchParams] = useSearchParams();
   const { user } = useUser();
   const { hasPermission, isLoading: permLoading } = usePermissions();
-  const { theme, toggleTheme, ft } = useFinanceTheme();
+  const { theme, toggleTheme, ft } = useTheme();
 
   const proposalId = searchParams.get('id');
   const prospectIdParam = searchParams.get('prospect');

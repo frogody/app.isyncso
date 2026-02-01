@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSyncTheme } from '@/contexts/SyncThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,7 +113,7 @@ const categoryColors = {
 };
 
 export default function MasterPromptTemplates({ sessionId }) {
-  const { syt } = useSyncTheme();
+  const { syt } = useTheme();
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [variables, setVariables] = useState({});
   const [sending, setSending] = useState(false);

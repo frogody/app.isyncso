@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { useRaiseTheme } from '@/contexts/RaiseThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { RaiseButton } from './RaiseButton';
 
 interface RaiseEmptyStateProps {
@@ -25,7 +25,7 @@ export function RaiseEmptyState({
   onAction,
   className,
 }: RaiseEmptyStateProps) {
-  const { rt } = useRaiseTheme();
+  const { rt } = useTheme();
 
   return (
     <div

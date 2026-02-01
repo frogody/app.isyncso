@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useCRMTheme } from '@/contexts/CRMThemeContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { CRMPageTransition } from '@/components/crm/ui';
 import anime from '@/lib/anime-wrapper';
 const animate = anime;
@@ -117,7 +117,7 @@ const emptyContact = {
 
 // Lead Score Component - using cyan theme
 function LeadScoreIndicator({ score, size = "md", crt: crtProp }) {
-  const themeCtx = useCRMTheme();
+  const themeCtx = useTheme();
   const crt = crtProp || themeCtx.crt;
   const getScoreColor = (s) => {
     if (s >= 80) return { bg: "bg-cyan-400", text: "text-cyan-400", label: "Hot" };
@@ -155,7 +155,7 @@ function LeadScoreIndicator({ score, size = "md", crt: crtProp }) {
 
 // Contact Card for Grid View
 function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange, crt: crtProp }) {
-  const themeCtx = useCRMTheme();
+  const themeCtx = useTheme();
   const crt = crtProp || themeCtx.crt;
   const stageConfig = PIPELINE_STAGES.find(s => s.id === contact.stage) || PIPELINE_STAGES[0];
 
@@ -262,7 +262,7 @@ function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange
 
 // Pipeline Kanban Card
 function PipelineCard({ contact, index, onEdit, onDelete, crt: crtProp }) {
-  const themeCtx = useCRMTheme();
+  const themeCtx = useTheme();
   const crt = crtProp || themeCtx.crt;
   return (
     <Draggable draggableId={contact.id} index={index}>
@@ -337,7 +337,7 @@ function PipelineCard({ contact, index, onEdit, onDelete, crt: crtProp }) {
 
 // Pipeline Column
 function PipelineColumn({ stage, contacts, onAddContact, onEdit, onDelete, crt: crtProp }) {
-  const themeCtx = useCRMTheme();
+  const themeCtx = useTheme();
   const crt = crtProp || themeCtx.crt;
   const totalValue = contacts.reduce((sum, c) => sum + (parseFloat(c.deal_value) || 0), 0);
 
@@ -399,7 +399,7 @@ function PipelineColumn({ stage, contacts, onAddContact, onEdit, onDelete, crt: 
 
 // Contact Detail Sheet
 function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activities, deals, crt: crtProp }) {
-  const themeCtx = useCRMTheme();
+  const themeCtx = useTheme();
   const crt = crtProp || themeCtx.crt;
   const stageConfig = PIPELINE_STAGES.find(s => s.id === contact?.stage) || PIPELINE_STAGES[0];
 
@@ -634,7 +634,7 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
 
 // Analytics Dashboard
 function CRMAnalytics({ contacts, crt: crtProp }) {
-  const themeCtx = useCRMTheme();
+  const themeCtx = useTheme();
   const crt = crtProp || themeCtx.crt;
   // eslint-disable-next-line no-unused-vars
   const stats = useMemo(() => {
@@ -736,7 +736,7 @@ function CRMAnalytics({ contacts, crt: crtProp }) {
 
 // Main CRM Component
 export default function CRMContacts() {
-  const { theme, toggleTheme, crt } = useCRMTheme();
+  const { theme, toggleTheme, crt } = useTheme();
   const { user } = useUser();
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
