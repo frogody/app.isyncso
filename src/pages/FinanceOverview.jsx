@@ -365,13 +365,13 @@ export default function FinanceOverview() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className={`${ft('text-slate-500', 'text-zinc-400')} text-xs mb-0.5`}>Net Income</p>
-                  <p className={`text-xl font-bold ${metrics.netIncome >= 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+                  <p className={`text-xl font-bold ${ft('text-slate-900', 'text-white')}`}>
                     {metrics.netIncome >= 0 ? '+' : ''}{metrics.netIncome.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' })}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className={`${ft('text-slate-500', 'text-zinc-400')} text-xs mb-0.5`}>Profit Margin</p>
-                  <p className={`text-lg font-bold ${metrics.profitMargin >= 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+                  <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>
                     {metrics.profitMargin}%
                   </p>
                 </div>
@@ -469,7 +469,7 @@ export default function FinanceOverview() {
                             </p>
                           </div>
                         </div>
-                        <p className={`font-medium ${transaction.type === 'invoice' ? 'text-emerald-500' : 'text-red-400'}`}>
+                        <p className={`font-medium ${ft('text-slate-900', 'text-white')}`}>
                           {transaction.type === 'invoice' ? '+' : '-'}€{(transaction.total || transaction.amount || 0).toLocaleString()}
                         </p>
                       </div>

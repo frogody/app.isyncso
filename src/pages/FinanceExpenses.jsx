@@ -565,7 +565,7 @@ export default function FinanceExpenses() {
                           </div>
 
                           <div className="flex items-center gap-3">
-                            <p className="text-sm font-semibold text-red-400">
+                            <p className={`text-sm font-semibold ${ft('text-slate-900', 'text-white')}`}>
                               -€{(expense.amount || 0).toLocaleString()}
                             </p>
 
