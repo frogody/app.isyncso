@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import {
   CreditCard, Plus, Search, Filter, Download, Calendar, Tag, Building,
   MoreVertical, Edit2, Trash2, X, ChevronDown, ArrowUpDown, Receipt,
-  TrendingUp, TrendingDown, Wallet, PieChart, FileText, Upload, Check
+  TrendingUp, TrendingDown, Wallet, PieChart, FileText, Upload, Check,
+  Sun, Moon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,8 @@ import { usePermissions } from '@/components/context/PermissionContext';
 import { useUser } from '@/components/context/UserContext';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
+import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
+import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 
 const EXPENSE_CATEGORIES = [
   { value: 'software', label: 'Software & Tools', color: 'amber', icon: '💻' },
@@ -55,6 +58,7 @@ export default function FinanceExpenses() {
 
   const { hasPermission, isLoading: permLoading } = usePermissions();
   const { user } = useUser();
+  const { theme, toggleTheme, ft } = useFinanceTheme();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -289,438 +293,452 @@ export default function FinanceExpenses() {
 
   if (loading || permLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <FinancePageTransition>
+      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
 
-      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
-        {/* Header */}
-        <PageHeader
-          icon={CreditCard}
-          title="Expenses"
-          subtitle="Track and categorize your business expenses"
-          color="amber"
-          actions={
-            <div className="flex gap-3">
-              <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
-                <Download className="w-4 h-4 mr-2" />
-                Export
-              </Button>
-              {canCreate && (
-                <Button
-                  className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                  onClick={() => { resetForm(); setShowCreateModal(true); }}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Expense
-                </Button>
-              )}
-            </div>
-          }
-        />
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-zinc-400">Total Expenses</span>
-                <Wallet className="w-3.5 h-3.5 text-amber-400" />
-              </div>
-              <p className="text-lg font-bold text-white">€${stats.total.toLocaleString()}</p>
-              <p className="text-[10px] text-zinc-500">{stats.count} expenses</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-zinc-400">This Month</span>
-                {monthlyTrend === 'up' ? (
-                  <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
-                ) : (
-                  <TrendingDown className="w-3.5 h-3.5 text-amber-400" />
-                )}
-              </div>
-              <p className="text-lg font-bold text-white">€${stats.thisMonth.toLocaleString()}</p>
-              <p className={`text-[10px] text-amber-400`}>
-                {stats.percentChange > 0 ? '+' : ''}{stats.percentChange}% vs last month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-zinc-900/50 border-zinc-800 md:col-span-2">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-zinc-400">Top Categories</span>
-                <PieChart className="w-3.5 h-3.5 text-zinc-400" />
-              </div>
-              <div className="flex gap-3">
-                {categoryBreakdown.slice(0, 3).map((cat) => (
-                  <div key={cat.category} className="flex-1">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="text-sm">{cat.config.icon}</span>
-                      <span className="text-[10px] text-zinc-400 capitalize">{cat.config.label}</span>
-                    </div>
-                    <p className="text-xs font-medium text-white">€${cat.amount.toLocaleString()}</p>
-                    <Progress value={parseFloat(cat.percentage)} className="h-0.5 mt-1 bg-zinc-800" indicatorClassName="bg-amber-500" />
+        <div className="w-full px-4 lg:px-6 py-4 space-y-4">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <PageHeader
+                icon={CreditCard}
+                title="Expenses"
+                subtitle="Track and categorize your business expenses"
+                color="amber"
+                actions={
+                  <div className="flex gap-3">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={toggleTheme}
+                      className={ft('text-slate-500 hover:bg-slate-200', 'text-zinc-400 hover:bg-zinc-800')}
+                    >
+                      {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                    </Button>
+                    <Button variant="outline" className={ft('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Export
+                    </Button>
+                    {canCreate && (
+                      <Button
+                        className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                        onClick={() => { resetForm(); setShowCreateModal(true); }}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Expense
+                      </Button>
+                    )}
                   </div>
-                ))}
+                }
+              />
+            </div>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Card className={ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>Total Expenses</span>
+                  <Wallet className="w-3.5 h-3.5 text-amber-400" />
+                </div>
+                <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>${stats.total.toLocaleString()}</p>
+                <p className={`text-[10px] ${ft('text-slate-400', 'text-zinc-500')}`}>{stats.count} expenses</p>
+              </CardContent>
+            </Card>
+
+            <Card className={ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>This Month</span>
+                  {monthlyTrend === 'up' ? (
+                    <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
+                  ) : (
+                    <TrendingDown className="w-3.5 h-3.5 text-amber-400" />
+                  )}
+                </div>
+                <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>${stats.thisMonth.toLocaleString()}</p>
+                <p className={`text-[10px] text-amber-400`}>
+                  {stats.percentChange > 0 ? '+' : ''}{stats.percentChange}% vs last month
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className={`${ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')} md:col-span-2`}>
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>Top Categories</span>
+                  <PieChart className={`w-3.5 h-3.5 ${ft('text-slate-400', 'text-zinc-400')}`} />
+                </div>
+                <div className="flex gap-3">
+                  {categoryBreakdown.slice(0, 3).map((cat) => (
+                    <div key={cat.category} className="flex-1">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="text-sm">{cat.config.icon}</span>
+                        <span className={`text-[10px] ${ft('text-slate-500', 'text-zinc-400')} capitalize`}>{cat.config.label}</span>
+                      </div>
+                      <p className={`text-xs font-medium ${ft('text-slate-900', 'text-white')}`}>${cat.amount.toLocaleString()}</p>
+                      <Progress value={parseFloat(cat.percentage)} className={`h-0.5 mt-1 ${ft('bg-slate-200', 'bg-zinc-800')}`} indicatorClassName="bg-amber-500" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters */}
+          <Card className={ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
+            <CardContent className="p-3">
+              <div className="flex flex-col md:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${ft('text-slate-400', 'text-zinc-500')}`} />
+                  <Input
+                    placeholder="Search expenses..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={`pl-10 ${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
+                  />
+                </div>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className={ft('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}>
+                      <Tag className="w-4 h-4 mr-2" />
+                      {categoryFilter === 'all' ? 'All Categories' : getCategoryConfig(categoryFilter).label}
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className={`${ft('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')} max-h-64 overflow-y-auto`}>
+                    <DropdownMenuItem
+                      onClick={() => setCategoryFilter('all')}
+                      className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800')}
+                    >
+                      All Categories
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className={ft('bg-slate-200', 'bg-zinc-700')} />
+                    {EXPENSE_CATEGORIES.map((cat) => (
+                      <DropdownMenuItem
+                        key={cat.value}
+                        onClick={() => setCategoryFilter(cat.value)}
+                        className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800')}
+                      >
+                        <span className="mr-2">{cat.icon}</span>
+                        {cat.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className={ft('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}>
+                      <Calendar className="w-4 h-4 mr-2" />
+                      {dateRange === 'all' ? 'All Time' : dateRange}
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className={ft('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}>
+                    {[
+                      { value: 'all', label: 'All Time' },
+                      { value: 'today', label: 'Today' },
+                      { value: 'week', label: 'This Week' },
+                      { value: 'month', label: 'This Month' },
+                      { value: 'year', label: 'This Year' }
+                    ].map((option) => (
+                      <DropdownMenuItem
+                        key={option.value}
+                        onClick={() => setDateRange(option.value)}
+                        className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800')}
+                      >
+                        {option.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className={ft('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}>
+                      <ArrowUpDown className="w-4 h-4 mr-2" />
+                      Sort
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className={ft('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}>
+                    {[
+                      { value: 'date', label: 'Date' },
+                      { value: 'amount', label: 'Amount' },
+                      { value: 'category', label: 'Category' },
+                      { value: 'vendor', label: 'Vendor' }
+                    ].map((option) => (
+                      <DropdownMenuItem
+                        key={option.value}
+                        onClick={() => {
+                          if (sortBy === option.value) {
+                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                          } else {
+                            setSortBy(option.value);
+                            setSortOrder('desc');
+                          }
+                        }}
+                        className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800')}
+                      >
+                        {option.label} {sortBy === option.value && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Expense List */}
+          <Card className={ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
+            <CardContent className="p-0">
+              {filteredExpenses.length === 0 ? (
+                <div className="text-center py-16">
+                  <CreditCard className={`w-16 h-16 ${ft('text-slate-300', 'text-zinc-600')} mx-auto mb-4`} />
+                  <h3 className={`text-lg font-medium ${ft('text-slate-900', 'text-white')} mb-2`}>No expenses found</h3>
+                  <p className={`${ft('text-slate-400', 'text-zinc-500')} mb-6`}>
+                    {searchQuery || categoryFilter !== 'all' || dateRange !== 'all'
+                      ? 'Try adjusting your filters'
+                      : 'Start tracking your business expenses'}
+                  </p>
+                  {canCreate && !searchQuery && categoryFilter === 'all' && (
+                    <Button
+                      className="bg-amber-500 hover:bg-amber-600"
+                      onClick={() => { resetForm(); setShowCreateModal(true); }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Expense
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className={`divide-y ${ft('divide-slate-100', 'divide-zinc-800')}`}>
+                  {filteredExpenses.map((expense) => {
+                    const catConfig = getCategoryConfig(expense.category);
+                    return (
+                      <div
+                        key={expense.id}
+                        className={`px-3 py-2 ${ft('hover:bg-slate-50', 'hover:bg-white/[0.03]')} transition-colors`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 flex-1">
+                            <div className={`p-1.5 rounded-lg bg-${catConfig.color}-500/10`}>
+                              <span className="text-base">{catConfig.icon}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className={`text-sm font-medium ${ft('text-slate-900', 'text-white')} truncate`}>
+                                  {expense.description || 'Untitled Expense'}
+                                </p>
+                                <Badge variant="outline" size="xs" className={ft('text-slate-500 border-slate-300', 'text-zinc-400 border-zinc-600')}>
+                                  {catConfig.label}
+                                </Badge>
+                                {expense.tax_deductible && (
+                                  <Badge variant="outline" size="xs" className="text-amber-400 border-amber-500/30">
+                                    Tax Deductible
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className={`flex items-center gap-3 mt-0.5 text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
+                                {expense.vendor && (
+                                  <span className="flex items-center gap-1">
+                                    <Building className="w-3 h-3" />
+                                    {expense.vendor}
+                                  </span>
+                                )}
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {expense.date ? new Date(expense.date).toLocaleDateString() : 'No date'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <p className="text-sm font-semibold text-amber-400">
+                              -${(expense.amount || 0).toLocaleString()}
+                            </p>
+
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className={ft('text-slate-400 hover:text-slate-900', 'text-zinc-400 hover:text-white')}>
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className={ft('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}>
+                                <DropdownMenuItem
+                                  onClick={() => openEditModal(expense)}
+                                  className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800')}
+                                >
+                                  <Edit2 className="w-4 h-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                {expense.receipt_url && (
+                                  <DropdownMenuItem
+                                    onClick={() => window.open(expense.receipt_url, '_blank')}
+                                    className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800')}
+                                  >
+                                    <Receipt className="w-4 h-4 mr-2" />
+                                    View Receipt
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator className={ft('bg-slate-200', 'bg-zinc-700')} />
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteExpense(expense)}
+                                  className={ft('text-red-500 hover:bg-slate-100', 'text-red-400 hover:bg-zinc-800')}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters */}
-        <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardContent className="p-3">
-            <div className="flex flex-col md:flex-row gap-3">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                <Input
-                  placeholder="Search expenses..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-zinc-800 border-zinc-700 text-white"
-                />
-              </div>
+        {/* Create/Edit Expense Modal */}
+        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+          <DialogContent className={`${ft('bg-white border-slate-200 text-slate-900', 'bg-zinc-900 border-zinc-700 text-white')} max-w-lg max-h-[90vh] overflow-y-auto`}>
+            <DialogHeader>
+              <DialogTitle>{editMode ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
+              <DialogDescription className={ft('text-slate-500', 'text-zinc-400')}>
+                {editMode ? 'Update expense details' : 'Record a new business expense'}
+              </DialogDescription>
+            </DialogHeader>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="border-zinc-700 text-zinc-300">
-                    <Tag className="w-4 h-4 mr-2" />
-                    {categoryFilter === 'all' ? 'All Categories' : getCategoryConfig(categoryFilter).label}
-                    <ChevronDown className="w-4 h-4 ml-2" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-zinc-900 border-zinc-700 max-h-64 overflow-y-auto">
-                  <DropdownMenuItem
-                    onClick={() => setCategoryFilter('all')}
-                    className="text-zinc-300 hover:bg-zinc-800"
-                  >
-                    All Categories
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-zinc-700" />
-                  {EXPENSE_CATEGORIES.map((cat) => (
-                    <DropdownMenuItem
-                      key={cat.value}
-                      onClick={() => setCategoryFilter(cat.value)}
-                      className="text-zinc-300 hover:bg-zinc-800"
-                    >
-                      <span className="mr-2">{cat.icon}</span>
-                      {cat.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="border-zinc-700 text-zinc-300">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    {dateRange === 'all' ? 'All Time' : dateRange}
-                    <ChevronDown className="w-4 h-4 ml-2" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-zinc-900 border-zinc-700">
-                  {[
-                    { value: 'all', label: 'All Time' },
-                    { value: 'today', label: 'Today' },
-                    { value: 'week', label: 'This Week' },
-                    { value: 'month', label: 'This Month' },
-                    { value: 'year', label: 'This Year' }
-                  ].map((option) => (
-                    <DropdownMenuItem
-                      key={option.value}
-                      onClick={() => setDateRange(option.value)}
-                      className="text-zinc-300 hover:bg-zinc-800"
-                    >
-                      {option.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="border-zinc-700 text-zinc-300">
-                    <ArrowUpDown className="w-4 h-4 mr-2" />
-                    Sort
-                    <ChevronDown className="w-4 h-4 ml-2" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-zinc-900 border-zinc-700">
-                  {[
-                    { value: 'date', label: 'Date' },
-                    { value: 'amount', label: 'Amount' },
-                    { value: 'category', label: 'Category' },
-                    { value: 'vendor', label: 'Vendor' }
-                  ].map((option) => (
-                    <DropdownMenuItem
-                      key={option.value}
-                      onClick={() => {
-                        if (sortBy === option.value) {
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        } else {
-                          setSortBy(option.value);
-                          setSortOrder('desc');
-                        }
-                      }}
-                      className="text-zinc-300 hover:bg-zinc-800"
-                    >
-                      {option.label} {sortBy === option.value && (sortOrder === 'asc' ? '↑' : '↓')}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Expense List */}
-        <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardContent className="p-0">
-            {filteredExpenses.length === 0 ? (
-              <div className="text-center py-16">
-                <CreditCard className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-white mb-2">No expenses found</h3>
-                <p className="text-zinc-500 mb-6">
-                  {searchQuery || categoryFilter !== 'all' || dateRange !== 'all'
-                    ? 'Try adjusting your filters'
-                    : 'Start tracking your business expenses'}
-                </p>
-                {canCreate && !searchQuery && categoryFilter === 'all' && (
-                  <Button
-                    className="bg-amber-500 hover:bg-amber-600"
-                    onClick={() => { resetForm(); setShowCreateModal(true); }}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Expense
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="divide-y divide-zinc-800">
-                {filteredExpenses.map((expense) => {
-                  const catConfig = getCategoryConfig(expense.category);
-                  return (
-                    <div
-                      key={expense.id}
-                      className="px-3 py-2 hover:bg-white/[0.03] transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 flex-1">
-                          <div className={`p-1.5 rounded-lg bg-${catConfig.color}-500/10`}>
-                            <span className="text-base">{catConfig.icon}</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium text-white truncate">
-                                {expense.description || 'Untitled Expense'}
-                              </p>
-                              <Badge variant="outline" size="xs" className="text-zinc-400 border-zinc-600">
-                                {catConfig.label}
-                              </Badge>
-                              {expense.tax_deductible && (
-                                <Badge variant="outline" size="xs" className="text-amber-400 border-amber-500/30">
-                                  Tax Deductible
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-3 mt-0.5 text-xs text-zinc-500">
-                              {expense.vendor && (
-                                <span className="flex items-center gap-1">
-                                  <Building className="w-3 h-3" />
-                                  {expense.vendor}
-                                </span>
-                              )}
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {expense.date ? new Date(expense.date).toLocaleDateString() : 'No date'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <p className="text-sm font-semibold text-amber-400">
-                            -€{(expense.amount || 0).toLocaleString()}
-                          </p>
-
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white">
-                                <MoreVertical className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-700">
-                              <DropdownMenuItem
-                                onClick={() => openEditModal(expense)}
-                                className="text-zinc-300 hover:bg-zinc-800"
-                              >
-                                <Edit2 className="w-4 h-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                              {expense.receipt_url && (
-                                <DropdownMenuItem
-                                  onClick={() => window.open(expense.receipt_url, '_blank')}
-                                  className="text-zinc-300 hover:bg-zinc-800"
-                                >
-                                  <Receipt className="w-4 h-4 mr-2" />
-                                  View Receipt
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuSeparator className="bg-zinc-700" />
-                              <DropdownMenuItem
-                                onClick={() => handleDeleteExpense(expense)}
-                                className="text-red-400 hover:bg-zinc-800"
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Create/Edit Expense Modal */}
-      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editMode ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
-            <DialogDescription className="text-zinc-400">
-              {editMode ? 'Update expense details' : 'Record a new business expense'}
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleSaveExpense} className="space-y-4">
-            <div>
-              <Label className="text-zinc-300">Description *</Label>
-              <Input
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                required
-                className="bg-zinc-800 border-zinc-700 text-white mt-1"
-                placeholder="What was this expense for?"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSaveExpense} className="space-y-4">
               <div>
-                <Label className="text-zinc-300">Amount *</Label>
+                <Label className={ft('text-slate-600', 'text-zinc-300')}>Description *</Label>
                 <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.amount}
-                  onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   required
-                  className="bg-zinc-800 border-zinc-700 text-white mt-1"
-                  placeholder="0.00"
+                  className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
+                  placeholder="What was this expense for?"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className={ft('text-slate-600', 'text-zinc-300')}>Amount *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.amount}
+                    onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                    required
+                    className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <Label className={ft('text-slate-600', 'text-zinc-300')}>Date</Label>
+                  <Input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                    className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className={ft('text-slate-600', 'text-zinc-300')}>Category</Label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                  className={`w-full mt-1 ${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border border-zinc-700 text-white')} rounded-md px-3 py-2`}
+                >
+                  {EXPENSE_CATEGORIES.map((cat) => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.icon} {cat.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <Label className={ft('text-slate-600', 'text-zinc-300')}>Vendor</Label>
+                <Input
+                  value={formData.vendor}
+                  onChange={(e) => setFormData(prev => ({ ...prev, vendor: e.target.value }))}
+                  className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
+                  placeholder="Vendor or merchant name"
                 />
               </div>
 
               <div>
-                <Label className="text-zinc-300">Date</Label>
-                <Input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700 text-white mt-1"
+                <Label className={ft('text-slate-600', 'text-zinc-300')}>Notes</Label>
+                <Textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
+                  placeholder="Additional notes..."
+                  rows={2}
                 />
               </div>
-            </div>
 
-            <div>
-              <Label className="text-zinc-300">Category</Label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full mt-1 bg-zinc-800 border border-zinc-700 text-white rounded-md px-3 py-2"
-              >
-                {EXPENSE_CATEGORIES.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.icon} {cat.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.tax_deductible}
+                    onChange={(e) => setFormData(prev => ({ ...prev, tax_deductible: e.target.checked }))}
+                    className={`rounded ${ft('border-slate-300 bg-slate-100', 'border-zinc-600 bg-zinc-800')} text-amber-500`}
+                  />
+                  <span className={`text-sm ${ft('text-slate-600', 'text-zinc-300')}`}>Tax Deductible</span>
+                </label>
 
-            <div>
-              <Label className="text-zinc-300">Vendor</Label>
-              <Input
-                value={formData.vendor}
-                onChange={(e) => setFormData(prev => ({ ...prev, vendor: e.target.value }))}
-                className="bg-zinc-800 border-zinc-700 text-white mt-1"
-                placeholder="Vendor or merchant name"
-              />
-            </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_recurring}
+                    onChange={(e) => setFormData(prev => ({ ...prev, is_recurring: e.target.checked }))}
+                    className={`rounded ${ft('border-slate-300 bg-slate-100', 'border-zinc-600 bg-zinc-800')} text-amber-500`}
+                  />
+                  <span className={`text-sm ${ft('text-slate-600', 'text-zinc-300')}`}>Recurring Expense</span>
+                </label>
+              </div>
 
-            <div>
-              <Label className="text-zinc-300">Notes</Label>
-              <Textarea
-                value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                className="bg-zinc-800 border-zinc-700 text-white mt-1"
-                placeholder="Additional notes..."
-                rows={2}
-              />
-            </div>
-
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.tax_deductible}
-                  onChange={(e) => setFormData(prev => ({ ...prev, tax_deductible: e.target.checked }))}
-                  className="rounded border-zinc-600 bg-zinc-800 text-amber-500"
-                />
-                <span className="text-sm text-zinc-300">Tax Deductible</span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.is_recurring}
-                  onChange={(e) => setFormData(prev => ({ ...prev, is_recurring: e.target.checked }))}
-                  className="rounded border-zinc-600 bg-zinc-800 text-amber-500"
-                />
-                <span className="text-sm text-zinc-300">Recurring Expense</span>
-              </label>
-            </div>
-
-            <DialogFooter className="gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowCreateModal(false)}
-                className="border-zinc-700"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={saving}
-                className="bg-amber-500 hover:bg-amber-600"
-              >
-                {saving ? 'Saving...' : (editMode ? 'Update Expense' : 'Add Expense')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
+              <DialogFooter className="gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCreateModal(false)}
+                  className={ft('border-slate-200', 'border-zinc-700')}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  className="bg-amber-500 hover:bg-amber-600"
+                >
+                  {saving ? 'Saving...' : (editMode ? 'Update Expense' : 'Add Expense')}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </FinancePageTransition>
   );
 }

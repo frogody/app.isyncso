@@ -8,7 +8,7 @@ import {
   FileText, Plus, Search, Filter, Download, Send, Check, Clock, AlertCircle,
   MoreVertical, Eye, Edit2, Trash2, Copy, ArrowRight, X, ChevronDown,
   ArrowUpDown, Calendar, Euro, Building2, User, Mail, CheckCircle2,
-  XCircle, FileCheck, Loader2, RefreshCw
+  XCircle, FileCheck, Loader2, RefreshCw, Sun, Moon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,8 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { useUser } from '@/components/context/UserContext';
+import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
+import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 
 const STATUS_CONFIG = {
   draft: { label: 'Draft', color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30', icon: FileText },
@@ -42,6 +44,7 @@ export default function FinanceProposals() {
   const navigate = useNavigate();
   const { user } = useUser();
   const { hasPermission, isLoading: permLoading } = usePermissions();
+  const { theme, toggleTheme, ft } = useFinanceTheme();
 
   const [loading, setLoading] = useState(true);
   const [proposals, setProposals] = useState([]);
@@ -312,452 +315,466 @@ export default function FinanceProposals() {
     return (
       <div className="p-6 space-y-6">
         <div className="flex justify-between items-center">
-          <Skeleton className="h-10 w-48 bg-zinc-800" />
-          <Skeleton className="h-10 w-32 bg-zinc-800" />
+          <Skeleton className={`h-10 w-48 ${ft('bg-slate-200', 'bg-zinc-800')}`} />
+          <Skeleton className={`h-10 w-32 ${ft('bg-slate-200', 'bg-zinc-800')}`} />
         </div>
         <div className="grid grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => (
-            <Skeleton key={i} className="h-24 bg-zinc-800" />
+            <Skeleton key={i} className={`h-24 ${ft('bg-slate-200', 'bg-zinc-800')}`} />
           ))}
         </div>
-        <Skeleton className="h-[400px] bg-zinc-800" />
+        <Skeleton className={`h-[400px] ${ft('bg-slate-200', 'bg-zinc-800')}`} />
       </div>
     );
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <PageHeader
-        title="Proposals"
-        subtitle="Create and manage sales proposals"
-        icon={FileText}
-        color="amber"
-        actions={
-          <Button
-            onClick={handleCreateProposal}
-            className="bg-amber-500 hover:bg-amber-600"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Proposal
-          </Button>
-        }
-      />
-
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          label="Total Proposals"
-          value={stats.total}
-          icon={FileText}
-          color="amber"
-        />
-        <StatCard
-          label="Total Value"
-          value={`€${stats.totalValue.toLocaleString()}`}
-          icon={Euro}
-          color="amber"
-        />
-        <StatCard
-          label="Accepted"
-          value={`${stats.accepted} (€${stats.acceptedValue.toLocaleString()})`}
-          icon={CheckCircle2}
-          color="amber"
-        />
-        <StatCard
-          label="Conversion Rate"
-          value={`${stats.conversionRate}%`}
-          icon={ArrowRight}
-          color="amber"
-        />
-      </div>
-
-      {/* Filters & Search */}
-      <Card className="bg-zinc-900/50 border-zinc-800">
-        <CardContent className="p-3">
-          <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between">
-            <div className="flex-1 max-w-md">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                <Input
-                  placeholder="Search proposals..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-zinc-800 border-zinc-700 text-white"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {/* Status Filter Tabs */}
-              <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-                <TabsList className="bg-zinc-800">
-                  <TabsTrigger value="all" className="data-[state=active]:bg-amber-500">All</TabsTrigger>
-                  <TabsTrigger value="draft" className="data-[state=active]:bg-zinc-600">Draft</TabsTrigger>
-                  <TabsTrigger value="sent" className="data-[state=active]:bg-amber-500">Sent</TabsTrigger>
-                  <TabsTrigger value="accepted" className="data-[state=active]:bg-amber-500">Accepted</TabsTrigger>
-                </TabsList>
-              </Tabs>
-
-              {/* Sort Menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300">
-                    <ArrowUpDown className="w-4 h-4 mr-2" />
-                    Sort
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-zinc-900 border-zinc-700">
-                  <DropdownMenuItem onClick={() => { setSortBy('date'); setSortOrder('desc'); }} className="text-zinc-300">
-                    Newest First
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setSortBy('date'); setSortOrder('asc'); }} className="text-zinc-300">
-                    Oldest First
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-zinc-700" />
-                  <DropdownMenuItem onClick={() => { setSortBy('amount'); setSortOrder('desc'); }} className="text-zinc-300">
-                    Highest Value
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setSortBy('client'); setSortOrder('asc'); }} className="text-zinc-300">
-                    Client Name A-Z
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Proposals List */}
-      <Card className="bg-zinc-900/50 border-zinc-800">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-white">
-            {filteredProposals.length} {filteredProposals.length === 1 ? 'Proposal' : 'Proposals'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {filteredProposals.length === 0 ? (
-            <div className="text-center py-12">
-              <FileText className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-white mb-2">No proposals found</h3>
-              <p className="text-zinc-400 mb-4">
-                {searchQuery || statusFilter !== 'all'
-                  ? 'Try adjusting your filters'
-                  : 'Create your first proposal to get started'}
-              </p>
-              {!searchQuery && statusFilter === 'all' && (
-                <Button onClick={handleCreateProposal} className="bg-amber-500 hover:bg-amber-600">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Proposal
+    <FinancePageTransition>
+      <div className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <PageHeader
+            title="Proposals"
+            subtitle="Create and manage sales proposals"
+            icon={FileText}
+            color="amber"
+            actions={
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleTheme}
+                  className={ft('text-slate-500 hover:text-slate-700 hover:bg-slate-100', 'text-zinc-400 hover:text-white hover:bg-zinc-800')}
+                >
+                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </Button>
-              )}
-            </div>
-          ) : (
-            <div className="divide-y divide-zinc-800">
-              {filteredProposals.map((proposal, idx) => {
-                const StatusIcon = STATUS_CONFIG[proposal.status]?.icon || FileText;
-                const statusConfig = STATUS_CONFIG[proposal.status] || STATUS_CONFIG.draft;
-
-                return (
-                  <div
-                    key={proposal.id}
-                    className="group flex items-center gap-2 px-3 py-2 hover:bg-white/[0.03] transition-all cursor-pointer"
-                    onClick={() => { setSelectedProposal(proposal); setShowDetailModal(true); }}
-                  >
-                    {/* Icon */}
-                    <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-3.5 h-3.5 text-amber-400" />
-                    </div>
-
-                    {/* Main Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-[10px] text-zinc-500">
-                          {proposal.proposal_number || 'DRAFT'}
-                        </span>
-                        <Badge variant="outline" className={`text-[10px] px-1.5 py-px ${statusConfig.color}`}>
-                          <StatusIcon className="w-2.5 h-2.5 mr-0.5" />
-                          {statusConfig.label}
-                        </Badge>
-                        {proposal.converted_to_invoice_id && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-px bg-amber-500/20 text-amber-400 border-amber-500/30">
-                            <FileCheck className="w-2.5 h-2.5 mr-0.5" />
-                            Converted
-                          </Badge>
-                        )}
-                      </div>
-                      <h4 className="text-sm font-medium text-white truncate">
-                        {proposal.title || 'Untitled Proposal'}
-                      </h4>
-                      <div className="flex items-center gap-3 text-xs text-zinc-500">
-                        <span className="flex items-center gap-1">
-                          <Building2 className="w-3 h-3" />
-                          {proposal.client_company || proposal.client_name || 'No client'}
-                        </span>
-                        {proposal.valid_until && (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            Valid until {new Date(proposal.valid_until).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Amount */}
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-bold text-white">
-                        €{(proposal.total || 0).toLocaleString()}
-                      </p>
-                      <p className="text-[10px] text-zinc-500">
-                        {new Date(proposal.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="bg-zinc-900 border-zinc-700" align="end">
-                          <DropdownMenuItem
-                            onClick={() => { setSelectedProposal(proposal); setShowDetailModal(true); }}
-                            className="text-zinc-300 hover:bg-zinc-800"
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleEditProposal(proposal)}
-                            className="text-zinc-300 hover:bg-zinc-800"
-                          >
-                            <Edit2 className="w-4 h-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDuplicateProposal(proposal)}
-                            className="text-zinc-300 hover:bg-zinc-800"
-                          >
-                            <Copy className="w-4 h-4 mr-2" />
-                            Duplicate
-                          </DropdownMenuItem>
-                          {proposal.status === 'draft' && proposal.client_email && (
-                            <DropdownMenuItem
-                              onClick={() => handleSendProposal(proposal)}
-                              className="text-amber-400 hover:bg-zinc-800"
-                            >
-                              <Send className="w-4 h-4 mr-2" />
-                              Send Proposal
-                            </DropdownMenuItem>
-                          )}
-                          {!proposal.converted_to_invoice_id && ['accepted', 'viewed', 'sent'].includes(proposal.status) && (
-                            <DropdownMenuItem
-                              onClick={() => { setSelectedProposal(proposal); handleConvertToInvoice(proposal); }}
-                              className="text-amber-400 hover:bg-zinc-800"
-                            >
-                              <ArrowRight className="w-4 h-4 mr-2" />
-                              Convert to Invoice
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator className="bg-zinc-700" />
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteProposal(proposal)}
-                            className="text-red-400 hover:bg-zinc-800"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Proposal Detail Modal */}
-      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-amber-400" />
-              {selectedProposal?.proposal_number || 'Proposal Details'}
-            </DialogTitle>
-          </DialogHeader>
-
-          {selectedProposal && (
-            <div className="space-y-6">
-              {/* Status & Value */}
-              <div className="flex items-center justify-between">
-                <Badge variant="outline" className={`${STATUS_CONFIG[selectedProposal.status]?.color || ''}`}>
-                  {STATUS_CONFIG[selectedProposal.status]?.label || selectedProposal.status}
-                </Badge>
-                <p className="text-3xl font-bold text-white">
-                  €{(selectedProposal.total || 0).toLocaleString()}
-                </p>
+                <Button
+                  onClick={handleCreateProposal}
+                  className="bg-amber-500 hover:bg-amber-600"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Proposal
+                </Button>
               </div>
+            }
+          />
+        </div>
 
-              {/* Title */}
-              <div>
-                <h3 className="text-xl font-semibold text-white">
-                  {selectedProposal.title || 'Untitled Proposal'}
-                </h3>
-                {selectedProposal.introduction && (
-                  <p className="text-zinc-400 mt-2 text-sm">{selectedProposal.introduction}</p>
-                )}
-              </div>
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <StatCard
+            label="Total Proposals"
+            value={stats.total}
+            icon={FileText}
+            color="amber"
+          />
+          <StatCard
+            label="Total Value"
+            value={`€${stats.totalValue.toLocaleString()}`}
+            icon={Euro}
+            color="amber"
+          />
+          <StatCard
+            label="Accepted"
+            value={`${stats.accepted} (€${stats.acceptedValue.toLocaleString()})`}
+            icon={CheckCircle2}
+            color="amber"
+          />
+          <StatCard
+            label="Conversion Rate"
+            value={`${stats.conversionRate}%`}
+            icon={ArrowRight}
+            color="amber"
+          />
+        </div>
 
-              {/* Client Info */}
-              <div className="space-y-3 bg-zinc-800/50 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-zinc-400 mb-3">Client Information</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-zinc-500 text-xs">Company</span>
-                    <p className="text-white">{selectedProposal.client_company || '-'}</p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500 text-xs">Contact</span>
-                    <p className="text-white">{selectedProposal.client_name || '-'}</p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500 text-xs">Email</span>
-                    <p className="text-white">{selectedProposal.client_email || '-'}</p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500 text-xs">Valid Until</span>
-                    <p className="text-white">
-                      {selectedProposal.valid_until
-                        ? new Date(selectedProposal.valid_until).toLocaleDateString()
-                        : '-'}
-                    </p>
-                  </div>
+        {/* Filters & Search */}
+        <Card className={ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
+          <CardContent className="p-3">
+            <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between">
+              <div className="flex-1 max-w-md">
+                <div className="relative">
+                  <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${ft('text-slate-400', 'text-zinc-500')}`} />
+                  <Input
+                    placeholder="Search proposals..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={`pl-10 ${ft('bg-slate-50 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
+                  />
                 </div>
               </div>
 
-              {/* Line Items */}
-              {selectedProposal.line_items?.length > 0 && (
-                <div className="space-y-3 bg-zinc-800/50 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-zinc-400 mb-3">Line Items</h4>
-                  <div className="space-y-2">
-                    {selectedProposal.line_items.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between py-2 border-b border-zinc-700/50 last:border-0">
-                        <div className="flex items-center gap-3">
-                          {item.is_subscription ? (
-                            <RefreshCw className="w-4 h-4 text-amber-400" />
-                          ) : (
-                            <FileText className="w-4 h-4 text-zinc-400" />
+              <div className="flex items-center gap-3">
+                {/* Status Filter Tabs */}
+                <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+                  <TabsList className={ft('bg-slate-100', 'bg-zinc-800')}>
+                    <TabsTrigger value="all" className="data-[state=active]:bg-amber-500">All</TabsTrigger>
+                    <TabsTrigger value="draft" className={`data-[state=active]:${ft('bg-slate-300', 'bg-zinc-600')}`}>Draft</TabsTrigger>
+                    <TabsTrigger value="sent" className="data-[state=active]:bg-amber-500">Sent</TabsTrigger>
+                    <TabsTrigger value="accepted" className="data-[state=active]:bg-amber-500">Accepted</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+
+                {/* Sort Menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className={ft('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}>
+                      <ArrowUpDown className="w-4 h-4 mr-2" />
+                      Sort
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className={ft('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}>
+                    <DropdownMenuItem onClick={() => { setSortBy('date'); setSortOrder('desc'); }} className={ft('text-slate-600', 'text-zinc-300')}>
+                      Newest First
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setSortBy('date'); setSortOrder('asc'); }} className={ft('text-slate-600', 'text-zinc-300')}>
+                      Oldest First
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className={ft('bg-slate-200', 'bg-zinc-700')} />
+                    <DropdownMenuItem onClick={() => { setSortBy('amount'); setSortOrder('desc'); }} className={ft('text-slate-600', 'text-zinc-300')}>
+                      Highest Value
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setSortBy('client'); setSortOrder('asc'); }} className={ft('text-slate-600', 'text-zinc-300')}>
+                      Client Name A-Z
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Proposals List */}
+        <Card className={ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
+          <CardHeader className="pb-2">
+            <CardTitle className={`text-lg ${ft('text-slate-900', 'text-white')}`}>
+              {filteredProposals.length} {filteredProposals.length === 1 ? 'Proposal' : 'Proposals'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredProposals.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className={`w-12 h-12 ${ft('text-slate-300', 'text-zinc-600')} mx-auto mb-4`} />
+                <h3 className={`text-lg font-medium ${ft('text-slate-900', 'text-white')} mb-2`}>No proposals found</h3>
+                <p className={`${ft('text-slate-500', 'text-zinc-400')} mb-4`}>
+                  {searchQuery || statusFilter !== 'all'
+                    ? 'Try adjusting your filters'
+                    : 'Create your first proposal to get started'}
+                </p>
+                {!searchQuery && statusFilter === 'all' && (
+                  <Button onClick={handleCreateProposal} className="bg-amber-500 hover:bg-amber-600">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Proposal
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className={`divide-y ${ft('divide-slate-100', 'divide-zinc-800')}`}>
+                {filteredProposals.map((proposal, idx) => {
+                  const StatusIcon = STATUS_CONFIG[proposal.status]?.icon || FileText;
+                  const statusConfig = STATUS_CONFIG[proposal.status] || STATUS_CONFIG.draft;
+
+                  return (
+                    <div
+                      key={proposal.id}
+                      className={`group flex items-center gap-2 px-3 py-2 ${ft('hover:bg-slate-50', 'hover:bg-white/[0.03]')} transition-all cursor-pointer`}
+                      onClick={() => { setSelectedProposal(proposal); setShowDetailModal(true); }}
+                    >
+                      {/* Icon */}
+                      <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                        <FileText className="w-3.5 h-3.5 text-amber-400" />
+                      </div>
+
+                      {/* Main Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`font-mono text-[10px] ${ft('text-slate-400', 'text-zinc-500')}`}>
+                            {proposal.proposal_number || 'DRAFT'}
+                          </span>
+                          <Badge variant="outline" className={`text-[10px] px-1.5 py-px ${statusConfig.color}`}>
+                            <StatusIcon className="w-2.5 h-2.5 mr-0.5" />
+                            {statusConfig.label}
+                          </Badge>
+                          {proposal.converted_to_invoice_id && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-px bg-amber-500/20 text-amber-400 border-amber-500/30">
+                              <FileCheck className="w-2.5 h-2.5 mr-0.5" />
+                              Converted
+                            </Badge>
                           )}
-                          <div>
-                            <p className="text-white text-sm">{item.name || item.description}</p>
-                            {item.is_subscription && (
-                              <p className="text-xs text-amber-400">{item.billing_cycle}</p>
+                        </div>
+                        <h4 className={`text-sm font-medium ${ft('text-slate-900', 'text-white')} truncate`}>
+                          {proposal.title || 'Untitled Proposal'}
+                        </h4>
+                        <div className={`flex items-center gap-3 text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
+                          <span className="flex items-center gap-1">
+                            <Building2 className="w-3 h-3" />
+                            {proposal.client_company || proposal.client_name || 'No client'}
+                          </span>
+                          {proposal.valid_until && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              Valid until {new Date(proposal.valid_until).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Amount */}
+                      <div className="text-right flex-shrink-0">
+                        <p className={`text-sm font-bold ${ft('text-slate-900', 'text-white')}`}>
+                          €{(proposal.total || 0).toLocaleString()}
+                        </p>
+                        <p className={`text-[10px] ${ft('text-slate-400', 'text-zinc-500')}`}>
+                          {new Date(proposal.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className={ft('text-slate-400 hover:text-slate-700', 'text-zinc-400 hover:text-white')}>
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className={ft('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')} align="end">
+                            <DropdownMenuItem
+                              onClick={() => { setSelectedProposal(proposal); setShowDetailModal(true); }}
+                              className={ft('text-slate-600 hover:bg-slate-50', 'text-zinc-300 hover:bg-zinc-800')}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleEditProposal(proposal)}
+                              className={ft('text-slate-600 hover:bg-slate-50', 'text-zinc-300 hover:bg-zinc-800')}
+                            >
+                              <Edit2 className="w-4 h-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDuplicateProposal(proposal)}
+                              className={ft('text-slate-600 hover:bg-slate-50', 'text-zinc-300 hover:bg-zinc-800')}
+                            >
+                              <Copy className="w-4 h-4 mr-2" />
+                              Duplicate
+                            </DropdownMenuItem>
+                            {proposal.status === 'draft' && proposal.client_email && (
+                              <DropdownMenuItem
+                                onClick={() => handleSendProposal(proposal)}
+                                className={`text-amber-400 ${ft('hover:bg-slate-50', 'hover:bg-zinc-800')}`}
+                              >
+                                <Send className="w-4 h-4 mr-2" />
+                                Send Proposal
+                              </DropdownMenuItem>
+                            )}
+                            {!proposal.converted_to_invoice_id && ['accepted', 'viewed', 'sent'].includes(proposal.status) && (
+                              <DropdownMenuItem
+                                onClick={() => { setSelectedProposal(proposal); handleConvertToInvoice(proposal); }}
+                                className={`text-amber-400 ${ft('hover:bg-slate-50', 'hover:bg-zinc-800')}`}
+                              >
+                                <ArrowRight className="w-4 h-4 mr-2" />
+                                Convert to Invoice
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator className={ft('bg-slate-200', 'bg-zinc-700')} />
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteProposal(proposal)}
+                              className={`text-red-400 ${ft('hover:bg-slate-50', 'hover:bg-zinc-800')}`}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Proposal Detail Modal */}
+        <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+          <DialogContent className={`${ft('bg-white border-slate-200 text-slate-900', 'bg-zinc-900 border-zinc-700 text-white')} max-w-2xl max-h-[90vh] overflow-y-auto`}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-amber-400" />
+                {selectedProposal?.proposal_number || 'Proposal Details'}
+              </DialogTitle>
+            </DialogHeader>
+
+            {selectedProposal && (
+              <div className="space-y-6">
+                {/* Status & Value */}
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline" className={`${STATUS_CONFIG[selectedProposal.status]?.color || ''}`}>
+                    {STATUS_CONFIG[selectedProposal.status]?.label || selectedProposal.status}
+                  </Badge>
+                  <p className={`text-3xl font-bold ${ft('text-slate-900', 'text-white')}`}>
+                    €{(selectedProposal.total || 0).toLocaleString()}
+                  </p>
+                </div>
+
+                {/* Title */}
+                <div>
+                  <h3 className={`text-xl font-semibold ${ft('text-slate-900', 'text-white')}`}>
+                    {selectedProposal.title || 'Untitled Proposal'}
+                  </h3>
+                  {selectedProposal.introduction && (
+                    <p className={`${ft('text-slate-500', 'text-zinc-400')} mt-2 text-sm`}>{selectedProposal.introduction}</p>
+                  )}
+                </div>
+
+                {/* Client Info */}
+                <div className={`space-y-3 ${ft('bg-slate-100', 'bg-zinc-800/50')} rounded-lg p-4`}>
+                  <h4 className={`text-sm font-medium ${ft('text-slate-500', 'text-zinc-400')} mb-3`}>Client Information</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className={`${ft('text-slate-400', 'text-zinc-500')} text-xs`}>Company</span>
+                      <p className={ft('text-slate-900', 'text-white')}>{selectedProposal.client_company || '-'}</p>
+                    </div>
+                    <div>
+                      <span className={`${ft('text-slate-400', 'text-zinc-500')} text-xs`}>Contact</span>
+                      <p className={ft('text-slate-900', 'text-white')}>{selectedProposal.client_name || '-'}</p>
+                    </div>
+                    <div>
+                      <span className={`${ft('text-slate-400', 'text-zinc-500')} text-xs`}>Email</span>
+                      <p className={ft('text-slate-900', 'text-white')}>{selectedProposal.client_email || '-'}</p>
+                    </div>
+                    <div>
+                      <span className={`${ft('text-slate-400', 'text-zinc-500')} text-xs`}>Valid Until</span>
+                      <p className={ft('text-slate-900', 'text-white')}>
+                        {selectedProposal.valid_until
+                          ? new Date(selectedProposal.valid_until).toLocaleDateString()
+                          : '-'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Line Items */}
+                {selectedProposal.line_items?.length > 0 && (
+                  <div className={`space-y-3 ${ft('bg-slate-100', 'bg-zinc-800/50')} rounded-lg p-4`}>
+                    <h4 className={`text-sm font-medium ${ft('text-slate-500', 'text-zinc-400')} mb-3`}>Line Items</h4>
+                    <div className="space-y-2">
+                      {selectedProposal.line_items.map((item, idx) => (
+                        <div key={idx} className={`flex items-center justify-between py-2 border-b ${ft('border-slate-200/50', 'border-zinc-700/50')} last:border-0`}>
+                          <div className="flex items-center gap-3">
+                            {item.is_subscription ? (
+                              <RefreshCw className="w-4 h-4 text-amber-400" />
+                            ) : (
+                              <FileText className={`w-4 h-4 ${ft('text-slate-400', 'text-zinc-400')}`} />
+                            )}
+                            <div>
+                              <p className={`${ft('text-slate-900', 'text-white')} text-sm`}>{item.name || item.description}</p>
+                              {item.is_subscription && (
+                                <p className="text-xs text-amber-400">{item.billing_cycle}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className={`${ft('text-slate-900', 'text-white')} font-medium`}>
+                              €{((item.quantity || 1) * (item.unit_price || 0)).toLocaleString()}
+                            </p>
+                            {item.quantity > 1 && (
+                              <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>{item.quantity} x €{item.unit_price}</p>
                             )}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-white font-medium">
-                            €{((item.quantity || 1) * (item.unit_price || 0)).toLocaleString()}
-                          </p>
-                          {item.quantity > 1 && (
-                            <p className="text-xs text-zinc-500">{item.quantity} x €{item.unit_price}</p>
-                          )}
+                      ))}
+                    </div>
+
+                    {/* Totals */}
+                    <div className={`pt-3 border-t ${ft('border-slate-200', 'border-zinc-700')} space-y-2`}>
+                      <div className="flex justify-between text-sm">
+                        <span className={ft('text-slate-500', 'text-zinc-400')}>Subtotal</span>
+                        <span className={ft('text-slate-900', 'text-white')}>€{(selectedProposal.subtotal || selectedProposal.total || 0).toLocaleString()}</span>
+                      </div>
+                      {selectedProposal.discount_amount > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className={ft('text-slate-500', 'text-zinc-400')}>Discount</span>
+                          <span className="text-amber-400">-€{selectedProposal.discount_amount.toLocaleString()}</span>
                         </div>
+                      )}
+                      {selectedProposal.tax_amount > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className={ft('text-slate-500', 'text-zinc-400')}>Tax ({selectedProposal.tax_percent}%)</span>
+                          <span className={ft('text-slate-900', 'text-white')}>€{selectedProposal.tax_amount.toLocaleString()}</span>
+                        </div>
+                      )}
+                      <div className={`flex justify-between text-lg font-bold pt-2 border-t ${ft('border-slate-300', 'border-zinc-600')}`}>
+                        <span className={ft('text-slate-900', 'text-white')}>Total</span>
+                        <span className="text-amber-400">€{(selectedProposal.total || 0).toLocaleString()}</span>
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Totals */}
-                  <div className="pt-3 border-t border-zinc-700 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-zinc-400">Subtotal</span>
-                      <span className="text-white">€{(selectedProposal.subtotal || selectedProposal.total || 0).toLocaleString()}</span>
-                    </div>
-                    {selectedProposal.discount_amount > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-zinc-400">Discount</span>
-                        <span className="text-amber-400">-€{selectedProposal.discount_amount.toLocaleString()}</span>
-                      </div>
-                    )}
-                    {selectedProposal.tax_amount > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-zinc-400">Tax ({selectedProposal.tax_percent}%)</span>
-                        <span className="text-white">€{selectedProposal.tax_amount.toLocaleString()}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-lg font-bold pt-2 border-t border-zinc-600">
-                      <span className="text-white">Total</span>
-                      <span className="text-amber-400">€{(selectedProposal.total || 0).toLocaleString()}</span>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Tracking Info */}
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="bg-zinc-800/50 rounded-lg p-3">
-                  <p className="text-xs text-zinc-500">Created</p>
-                  <p className="text-sm text-white">
-                    {new Date(selectedProposal.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                {selectedProposal.sent_at && (
-                  <div className="bg-zinc-800/50 rounded-lg p-3">
-                    <p className="text-xs text-zinc-500">Sent</p>
-                    <p className="text-sm text-white">
-                      {new Date(selectedProposal.sent_at).toLocaleDateString()}
+                {/* Tracking Info */}
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className={`${ft('bg-slate-100', 'bg-zinc-800/50')} rounded-lg p-3`}>
+                    <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>Created</p>
+                    <p className={`text-sm ${ft('text-slate-900', 'text-white')}`}>
+                      {new Date(selectedProposal.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                )}
-                {selectedProposal.view_count > 0 && (
-                  <div className="bg-zinc-800/50 rounded-lg p-3">
-                    <p className="text-xs text-zinc-500">Views</p>
-                    <p className="text-sm text-white">{selectedProposal.view_count}</p>
-                  </div>
-                )}
-              </div>
+                  {selectedProposal.sent_at && (
+                    <div className={`${ft('bg-slate-100', 'bg-zinc-800/50')} rounded-lg p-3`}>
+                      <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>Sent</p>
+                      <p className={`text-sm ${ft('text-slate-900', 'text-white')}`}>
+                        {new Date(selectedProposal.sent_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+                  {selectedProposal.view_count > 0 && (
+                    <div className={`${ft('bg-slate-100', 'bg-zinc-800/50')} rounded-lg p-3`}>
+                      <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>Views</p>
+                      <p className={`text-sm ${ft('text-slate-900', 'text-white')}`}>{selectedProposal.view_count}</p>
+                    </div>
+                  )}
+                </div>
 
-              {/* Actions */}
-              <div className="flex gap-3 pt-4">
-                <Button
-                  variant="outline"
-                  className="flex-1 border-zinc-700"
-                  onClick={() => handleEditProposal(selectedProposal)}
-                >
-                  <Edit2 className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
-                {selectedProposal.status === 'draft' && (
+                {/* Actions */}
+                <div className="flex gap-3 pt-4">
                   <Button
-                    className="flex-1 bg-amber-500 hover:bg-amber-600"
-                    onClick={() => { handleSendProposal(selectedProposal); setShowDetailModal(false); }}
+                    variant="outline"
+                    className={`flex-1 ${ft('border-slate-200', 'border-zinc-700')}`}
+                    onClick={() => handleEditProposal(selectedProposal)}
                   >
-                    <Send className="w-4 h-4 mr-2" />
-                    Send
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Edit
                   </Button>
-                )}
-                {!selectedProposal.converted_to_invoice_id && ['accepted', 'viewed', 'sent'].includes(selectedProposal.status) && (
-                  <Button
-                    className="flex-1 bg-amber-500 hover:bg-amber-600"
-                    onClick={() => handleConvertToInvoice(selectedProposal)}
-                    disabled={converting}
-                  >
-                    {converting ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <ArrowRight className="w-4 h-4 mr-2" />
-                    )}
-                    Convert to Invoice
-                  </Button>
-                )}
+                  {selectedProposal.status === 'draft' && (
+                    <Button
+                      className="flex-1 bg-amber-500 hover:bg-amber-600"
+                      onClick={() => { handleSendProposal(selectedProposal); setShowDetailModal(false); }}
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      Send
+                    </Button>
+                  )}
+                  {!selectedProposal.converted_to_invoice_id && ['accepted', 'viewed', 'sent'].includes(selectedProposal.status) && (
+                    <Button
+                      className="flex-1 bg-amber-500 hover:bg-amber-600"
+                      onClick={() => handleConvertToInvoice(selectedProposal)}
+                      disabled={converting}
+                    >
+                      {converting ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <ArrowRight className="w-4 h-4 mr-2" />
+                      )}
+                      Convert to Invoice
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </FinancePageTransition>
   );
 }

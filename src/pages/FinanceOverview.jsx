@@ -6,11 +6,13 @@ import anime from '@/lib/anime-wrapper';
 const animate = anime;
 const stagger = anime.stagger;
 import { prefersReducedMotion } from '@/lib/animations';
+import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
+import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 import {
   Euro, TrendingUp, TrendingDown, CreditCard, Receipt,
   PieChart, BarChart3, ArrowUpRight, ArrowDownRight, Plus,
   Download, Calendar, FileText, BadgeEuro, ChevronRight,
-  Wallet, Target, AlertCircle
+  Wallet, Target, AlertCircle, Sun, Moon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,6 +30,7 @@ export default function FinanceOverview() {
   const [subscriptions, setSubscriptions] = useState([]);
 
   const { hasPermission, isLoading: permLoading } = usePermissions();
+  const { theme, toggleTheme, ft } = useFinanceTheme();
 
   // Refs for anime.js animations
   const statsGridRef = useRef(null);
@@ -267,7 +270,7 @@ export default function FinanceOverview() {
 
   if (loading || permLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
       </div>
     );
@@ -275,244 +278,257 @@ export default function FinanceOverview() {
 
   if (!canView) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-center p-6">
+      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex flex-col items-center justify-center text-center p-6`}>
         <AlertCircle className="w-16 h-16 text-red-400 mb-4" />
-        <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
-        <p className="text-zinc-400">You don't have permission to view finance data.</p>
+        <h2 className={`text-2xl font-bold ${ft('text-slate-900', 'text-white')} mb-2`}>Access Denied</h2>
+        <p className={ft('text-slate-500', 'text-zinc-400')}>You don't have permission to view finance data.</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <FinancePageTransition>
+      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
 
-      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
-        {/* Header */}
-        <PageHeader
-          icon={Euro}
-          title="Finance Overview"
-          subtitle="Track revenue, expenses, and financial health"
-          color="amber"
-          actions={
-            <div className="flex gap-3">
-              <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800" onClick={handleExportReport}>
-                <Download className="w-4 h-4 mr-2" />
-                Export Report
-              </Button>
-            </div>
-          }
-        />
-
-        {/* Key Metrics Grid */}
-        <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {[
-            { title: 'Total Revenue', value: metrics.totalRevenue, displayValue: `€${metrics.totalRevenue.toLocaleString()}`, change: '+12.5%', trend: 'up', icon: Euro, color: 'amber' },
-            { title: 'Total Expenses', value: metrics.totalExpenses, displayValue: `€${metrics.totalExpenses.toLocaleString()}`, change: '-3.2%', trend: 'down', icon: CreditCard, color: 'amber' },
-            { title: 'Pending Invoices', value: metrics.pendingInvoices, displayValue: `€${metrics.pendingInvoices.toLocaleString()}`, change: `${metrics.pendingCount} invoices`, trend: 'neutral', icon: Receipt, color: 'amber' },
-            { title: 'Monthly Recurring', value: metrics.monthlyRecurring, displayValue: `€${metrics.monthlyRecurring.toLocaleString()}`, change: `${metrics.activeSubscriptions} active`, trend: 'up', icon: TrendingUp, color: 'amber' }
-          ].map((metric, index) => (
-            <div key={metric.title} className="stat-card">
-              <Card className="bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 transition-colors">
-                <CardContent className="p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className={`p-2 rounded-lg ${getColorClasses(metric.color)}`}>
-                      <metric.icon className="w-4 h-4" />
-                    </div>
-                    {metric.trend === 'up' && (
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-px text-amber-400 border-amber-500/30 bg-amber-500/10">
-                        <ArrowUpRight className="w-2.5 h-2.5 mr-0.5" />
-                        {metric.change}
-                      </Badge>
-                    )}
-                    {metric.trend === 'down' && (
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-px text-amber-400 border-amber-500/30 bg-amber-500/10">
-                        <ArrowDownRight className="w-2.5 h-2.5 mr-0.5" />
-                        {metric.change}
-                      </Badge>
-                    )}
-                    {metric.trend === 'neutral' && (
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-px text-zinc-400 border-zinc-500/30">
-                        {metric.change}
-                      </Badge>
-                    )}
+        <div className="w-full px-4 lg:px-6 py-4 space-y-4">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <PageHeader
+                icon={Euro}
+                title="Finance Overview"
+                subtitle="Track revenue, expenses, and financial health"
+                color="amber"
+                actions={
+                  <div className="flex gap-3">
+                    <Button variant="outline" className={`${ft('border-slate-200', 'border-zinc-700')} ${ft('text-slate-600', 'text-zinc-300')} ${ft('hover:bg-slate-100', 'hover:bg-zinc-800')}`} onClick={handleExportReport}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Export Report
+                    </Button>
                   </div>
-                  <p className="stat-number text-lg font-bold text-white" data-value={metric.value} data-prefix="€">{metric.displayValue}</p>
-                  <p className="text-xs text-zinc-500">{metric.title}</p>
-                </CardContent>
-              </Card>
-            </div>
-          ))}
-        </div>
-
-        {/* Profit Overview */}
-        <Card className="bg-gradient-to-r from-amber-950/30 to-amber-950/30 border-amber-500/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-xs mb-0.5">Net Income</p>
-                <p className={`text-xl font-bold ${metrics.netIncome >= 0 ? 'text-amber-400' : 'text-red-400'}`}>
-                  {metrics.netIncome >= 0 ? '+' : ''}{metrics.netIncome.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' })}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-zinc-400 text-xs mb-0.5">Profit Margin</p>
-                <p className={`text-lg font-bold ${metrics.profitMargin >= 0 ? 'text-amber-400' : 'text-red-400'}`}>
-                  {metrics.profitMargin}%
-                </p>
-              </div>
-            </div>
-            <div className="mt-3">
-              <Progress
-                value={Math.max(0, Math.min(100, Number(metrics.profitMargin)))}
-                className="h-1.5 bg-zinc-800"
-                indicatorClassName="bg-amber-500"
+                }
               />
             </div>
-          </CardContent>
-        </Card>
+            <button
+              onClick={toggleTheme}
+              className={`ml-4 p-2 rounded-lg transition-colors ${ft('bg-slate-200 hover:bg-slate-300 text-slate-700', 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300')}`}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Expense Breakdown */}
-          <Card className="bg-zinc-900/50 border-zinc-800 lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <PieChart className="w-5 h-5 text-amber-400" />
-                Expense Breakdown
-              </CardTitle>
-              <CardDescription>By category</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {expensesByCategory.length === 0 ? (
-                <div className="text-center py-8">
-                  <PieChart className="w-12 h-12 text-zinc-600 mx-auto mb-2" />
-                  <p className="text-zinc-500">No expenses recorded</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {expensesByCategory.slice(0, 5).map((cat, index) => (
-                    <div key={cat.name} className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${getCategoryColor(cat.name)}`} />
-                      <div className="flex-1">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-zinc-300 capitalize">{cat.name}</span>
-                          <span className="text-white font-medium">€${cat.amount.toLocaleString()}</span>
-                        </div>
-                        <Progress
-                          value={(cat.amount / metrics.totalExpenses) * 100}
-                          className="h-1.5 mt-1 bg-zinc-800"
-                          indicatorClassName="bg-amber-500"
-                        />
+          {/* Key Metrics Grid */}
+          <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { title: 'Total Revenue', value: metrics.totalRevenue, displayValue: `€${metrics.totalRevenue.toLocaleString()}`, change: '+12.5%', trend: 'up', icon: Euro, color: 'amber' },
+              { title: 'Total Expenses', value: metrics.totalExpenses, displayValue: `€${metrics.totalExpenses.toLocaleString()}`, change: '-3.2%', trend: 'down', icon: CreditCard, color: 'amber' },
+              { title: 'Pending Invoices', value: metrics.pendingInvoices, displayValue: `€${metrics.pendingInvoices.toLocaleString()}`, change: `${metrics.pendingCount} invoices`, trend: 'neutral', icon: Receipt, color: 'amber' },
+              { title: 'Monthly Recurring', value: metrics.monthlyRecurring, displayValue: `€${metrics.monthlyRecurring.toLocaleString()}`, change: `${metrics.activeSubscriptions} active`, trend: 'up', icon: TrendingUp, color: 'amber' }
+            ].map((metric, index) => (
+              <div key={metric.title} className="stat-card">
+                <Card className={`${ft('bg-white', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-zinc-800')} ${ft('hover:border-slate-300', 'hover:border-zinc-700')} transition-colors`}>
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className={`p-2 rounded-lg ${getColorClasses(metric.color)}`}>
+                        <metric.icon className="w-4 h-4" />
                       </div>
+                      {metric.trend === 'up' && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-px text-amber-400 border-amber-500/30 bg-amber-500/10">
+                          <ArrowUpRight className="w-2.5 h-2.5 mr-0.5" />
+                          {metric.change}
+                        </Badge>
+                      )}
+                      {metric.trend === 'down' && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-px text-amber-400 border-amber-500/30 bg-amber-500/10">
+                          <ArrowDownRight className="w-2.5 h-2.5 mr-0.5" />
+                          {metric.change}
+                        </Badge>
+                      )}
+                      {metric.trend === 'neutral' && (
+                        <Badge variant="outline" className={`text-[10px] px-1.5 py-px ${ft('text-slate-500', 'text-zinc-400')} ${ft('border-slate-300', 'border-zinc-500/30')}`}>
+                          {metric.change}
+                        </Badge>
+                      )}
                     </div>
-                  ))}
+                    <p className={`stat-number text-lg font-bold ${ft('text-slate-900', 'text-white')}`} data-value={metric.value} data-prefix="€">{metric.displayValue}</p>
+                    <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>{metric.title}</p>
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
+          </div>
+
+          {/* Profit Overview */}
+          <Card className="bg-gradient-to-r from-amber-950/30 to-amber-950/30 border-amber-500/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`${ft('text-slate-500', 'text-zinc-400')} text-xs mb-0.5`}>Net Income</p>
+                  <p className={`text-xl font-bold ${metrics.netIncome >= 0 ? 'text-amber-400' : 'text-red-400'}`}>
+                    {metrics.netIncome >= 0 ? '+' : ''}{metrics.netIncome.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' })}
+                  </p>
                 </div>
-              )}
-              <Link to={createPageUrl('FinanceExpenses')}>
-                <Button variant="ghost" className="w-full mt-4 text-amber-400 hover:bg-amber-500/10">
-                  View All Expenses
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
+                <div className="text-right">
+                  <p className={`${ft('text-slate-500', 'text-zinc-400')} text-xs mb-0.5`}>Profit Margin</p>
+                  <p className={`text-lg font-bold ${metrics.profitMargin >= 0 ? 'text-amber-400' : 'text-red-400'}`}>
+                    {metrics.profitMargin}%
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3">
+                <Progress
+                  value={Math.max(0, Math.min(100, Number(metrics.profitMargin)))}
+                  className={`h-1.5 ${ft('bg-slate-200', 'bg-zinc-800')}`}
+                  indicatorClassName="bg-amber-500"
+                />
+              </div>
             </CardContent>
           </Card>
 
-          {/* Recent Transactions */}
-          <Card className="bg-zinc-900/50 border-zinc-800 lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Wallet className="w-5 h-5 text-amber-400" />
-                Recent Transactions
-              </CardTitle>
-              <CardDescription>Latest financial activity</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {recentTransactions.length === 0 ? (
-                <div className="text-center py-8">
-                  <Wallet className="w-12 h-12 text-zinc-600 mx-auto mb-2" />
-                  <p className="text-zinc-500">No transactions yet</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {recentTransactions.map((transaction, index) => (
-                    <div key={`${transaction.type}-${transaction.id}`} className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg hover:bg-zinc-800/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${transaction.type === 'invoice' ? 'bg-amber-500/10' : 'bg-amber-500/10'}`}>
-                          {transaction.type === 'invoice' ? (
-                            <FileText className="w-4 h-4 text-amber-400" />
-                          ) : (
-                            <CreditCard className="w-4 h-4 text-amber-400" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-white">
-                            {transaction.type === 'invoice'
-                              ? (transaction.client_name || transaction.invoice_number || 'Invoice')
-                              : (transaction.description || 'Expense')}
-                          </p>
-                          <p className="text-xs text-zinc-500">
-                            {new Date(transaction.date).toLocaleDateString()}
-                          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Expense Breakdown */}
+            <Card className={`${ft('bg-white', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-zinc-800')} lg:col-span-1`}>
+              <CardHeader>
+                <CardTitle className={`${ft('text-slate-900', 'text-white')} flex items-center gap-2`}>
+                  <PieChart className="w-5 h-5 text-amber-400" />
+                  Expense Breakdown
+                </CardTitle>
+                <CardDescription>By category</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {expensesByCategory.length === 0 ? (
+                  <div className="text-center py-8">
+                    <PieChart className="w-12 h-12 text-zinc-600 mx-auto mb-2" />
+                    <p className={ft('text-slate-400', 'text-zinc-500')}>No expenses recorded</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {expensesByCategory.slice(0, 5).map((cat, index) => (
+                      <div key={cat.name} className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${getCategoryColor(cat.name)}`} />
+                        <div className="flex-1">
+                          <div className="flex justify-between text-sm">
+                            <span className={`${ft('text-slate-600', 'text-zinc-300')} capitalize`}>{cat.name}</span>
+                            <span className={`${ft('text-slate-900', 'text-white')} font-medium`}>€${cat.amount.toLocaleString()}</span>
+                          </div>
+                          <Progress
+                            value={(cat.amount / metrics.totalExpenses) * 100}
+                            className={`h-1.5 mt-1 ${ft('bg-slate-200', 'bg-zinc-800')}`}
+                            indicatorClassName="bg-amber-500"
+                          />
                         </div>
                       </div>
-                      <p className={`font-medium ${transaction.type === 'invoice' ? 'text-amber-400' : 'text-amber-400'}`}>
-                        {transaction.type === 'invoice' ? '+' : '-'}€{(transaction.total || transaction.amount || 0).toLocaleString()}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link to={createPageUrl('FinanceInvoices')}>
-            <Card className="bg-zinc-900/50 border-zinc-800 hover:border-amber-500/30 transition-colors cursor-pointer group">
-              <CardContent className="p-6 flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
-                  <Receipt className="w-6 h-6 text-amber-400" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-white font-medium">Invoices</h3>
-                  <p className="text-sm text-zinc-500">{invoices.length} total</p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-zinc-500 group-hover:text-amber-400 transition-colors" />
+                    ))}
+                  </div>
+                )}
+                <Link to={createPageUrl('FinanceExpenses')}>
+                  <Button variant="ghost" className="w-full mt-4 text-amber-400 hover:bg-amber-500/10">
+                    View All Expenses
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
-          </Link>
 
-          <Link to={createPageUrl('FinanceExpenses')}>
-            <Card className="bg-zinc-900/50 border-zinc-800 hover:border-amber-500/30 transition-colors cursor-pointer group">
-              <CardContent className="p-6 flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
-                  <CreditCard className="w-6 h-6 text-amber-400" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-white font-medium">Expenses</h3>
-                  <p className="text-sm text-zinc-500">{expenses.length} recorded</p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-zinc-500 group-hover:text-amber-400 transition-colors" />
+            {/* Recent Transactions */}
+            <Card className={`${ft('bg-white', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-zinc-800')} lg:col-span-2`}>
+              <CardHeader>
+                <CardTitle className={`${ft('text-slate-900', 'text-white')} flex items-center gap-2`}>
+                  <Wallet className="w-5 h-5 text-amber-400" />
+                  Recent Transactions
+                </CardTitle>
+                <CardDescription>Latest financial activity</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {recentTransactions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Wallet className="w-12 h-12 text-zinc-600 mx-auto mb-2" />
+                    <p className={ft('text-slate-400', 'text-zinc-500')}>No transactions yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentTransactions.map((transaction, index) => (
+                      <div key={`${transaction.type}-${transaction.id}`} className={`flex items-center justify-between p-3 ${ft('bg-slate-100', 'bg-zinc-800/30')} rounded-lg ${ft('hover:bg-slate-200', 'hover:bg-zinc-800/50')} transition-colors`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${transaction.type === 'invoice' ? 'bg-amber-500/10' : 'bg-amber-500/10'}`}>
+                            {transaction.type === 'invoice' ? (
+                              <FileText className="w-4 h-4 text-amber-400" />
+                            ) : (
+                              <CreditCard className="w-4 h-4 text-amber-400" />
+                            )}
+                          </div>
+                          <div>
+                            <p className={`text-sm font-medium ${ft('text-slate-900', 'text-white')}`}>
+                              {transaction.type === 'invoice'
+                                ? (transaction.client_name || transaction.invoice_number || 'Invoice')
+                                : (transaction.description || 'Expense')}
+                            </p>
+                            <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
+                              {new Date(transaction.date).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <p className={`font-medium ${transaction.type === 'invoice' ? 'text-amber-400' : 'text-amber-400'}`}>
+                          {transaction.type === 'invoice' ? '+' : '-'}€{(transaction.total || transaction.amount || 0).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
-          </Link>
+          </div>
 
-          <Link to={createPageUrl('FinanceSubscriptions')}>
-            <Card className="bg-zinc-900/50 border-zinc-800 hover:border-amber-500/30 transition-colors cursor-pointer group">
-              <CardContent className="p-6 flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
-                  <BadgeEuro className="w-6 h-6 text-amber-400" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-white font-medium">Subscriptions</h3>
-                  <p className="text-sm text-zinc-500">{metrics.activeSubscriptions} active</p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-zinc-500 group-hover:text-amber-400 transition-colors" />
-              </CardContent>
-            </Card>
-          </Link>
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Link to={createPageUrl('FinanceInvoices')}>
+              <Card className={`${ft('bg-white', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-zinc-800')} hover:border-amber-500/30 transition-colors cursor-pointer group`}>
+                <CardContent className="p-6 flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
+                    <Receipt className="w-6 h-6 text-amber-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className={`${ft('text-slate-900', 'text-white')} font-medium`}>Invoices</h3>
+                    <p className={`text-sm ${ft('text-slate-400', 'text-zinc-500')}`}>{invoices.length} total</p>
+                  </div>
+                  <ChevronRight className={`w-5 h-5 ${ft('text-slate-400', 'text-zinc-500')} group-hover:text-amber-400 transition-colors`} />
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link to={createPageUrl('FinanceExpenses')}>
+              <Card className={`${ft('bg-white', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-zinc-800')} hover:border-amber-500/30 transition-colors cursor-pointer group`}>
+                <CardContent className="p-6 flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
+                    <CreditCard className="w-6 h-6 text-amber-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className={`${ft('text-slate-900', 'text-white')} font-medium`}>Expenses</h3>
+                    <p className={`text-sm ${ft('text-slate-400', 'text-zinc-500')}`}>{expenses.length} recorded</p>
+                  </div>
+                  <ChevronRight className={`w-5 h-5 ${ft('text-slate-400', 'text-zinc-500')} group-hover:text-amber-400 transition-colors`} />
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link to={createPageUrl('FinanceSubscriptions')}>
+              <Card className={`${ft('bg-white', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-zinc-800')} hover:border-amber-500/30 transition-colors cursor-pointer group`}>
+                <CardContent className="p-6 flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
+                    <BadgeEuro className="w-6 h-6 text-amber-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className={`${ft('text-slate-900', 'text-white')} font-medium`}>Subscriptions</h3>
+                    <p className={`text-sm ${ft('text-slate-400', 'text-zinc-500')}`}>{metrics.activeSubscriptions} active</p>
+                  </div>
+                  <ChevronRight className={`w-5 h-5 ${ft('text-slate-400', 'text-zinc-500')} group-hover:text-amber-400 transition-colors`} />
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
         </div>
       </div>
-    </div>
+    </FinancePageTransition>
   );
 }

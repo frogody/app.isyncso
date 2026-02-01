@@ -5,8 +5,11 @@ import {
   Receipt, Search, Filter, Clock, Check, X, AlertTriangle,
   Eye, FileText, Upload, Sparkles, ChevronRight, Edit2,
   CheckCircle2, XCircle, RefreshCw, Euro, Calendar,
-  Building, Percent, ExternalLink, Image, FileUp, Loader2
+  Building, Percent, ExternalLink, Image, FileUp, Loader2,
+  Sun, Moon
 } from "lucide-react";
+import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
+import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -166,7 +169,7 @@ function ConfidenceIndicator({ confidence }) {
 }
 
 // Review modal
-function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
+function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, ft }) {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -216,10 +219,10 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
 
         <div className="space-y-4 py-4">
           {/* Confidence score */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50 border border-white/10">
+          <div className={`flex items-center justify-between p-3 rounded-lg ${ft('bg-slate-100', 'bg-zinc-900/50')} border ${ft('border-slate-200', 'border-white/10')}`}>
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs text-zinc-400">AI Betrouwbaarheid</span>
+              <span className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>AI Betrouwbaarheid</span>
             </div>
             <ConfidenceIndicator confidence={expense.ai_confidence || 0} />
           </div>
@@ -227,12 +230,12 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
           {/* Original document */}
           {expense.original_file_url && (
             <div>
-              <Label className="text-zinc-400 text-xs">Origineel document</Label>
-              <div className="mt-2 rounded-lg border border-white/10 overflow-hidden">
+              <Label className={`${ft('text-slate-500', 'text-zinc-400')} text-xs`}>Origineel document</Label>
+              <div className={`mt-2 rounded-lg border ${ft('border-slate-200', 'border-white/10')} overflow-hidden`}>
                 <img
                   src={expense.original_file_url}
                   alt="Invoice"
-                  className="w-full max-h-48 object-contain bg-zinc-950"
+                  className={`w-full max-h-48 object-contain ${ft('bg-slate-50', 'bg-zinc-950')}`}
                 />
               </div>
               <Button
@@ -250,28 +253,28 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
           {/* Extracted data */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-zinc-400 text-xs">Leverancier</Label>
-              <p className="text-white font-medium text-sm">
+              <Label className={`${ft('text-slate-500', 'text-zinc-400')} text-xs`}>Leverancier</Label>
+              <p className={`${ft('text-slate-900', 'text-white')} font-medium text-sm`}>
                 {extractedData.supplier_name || expense.suppliers?.name || "-"}
               </p>
             </div>
             <div>
-              <Label className="text-zinc-400 text-xs">Invoice Number</Label>
-              <p className="text-white font-medium text-sm">
+              <Label className={`${ft('text-slate-500', 'text-zinc-400')} text-xs`}>Invoice Number</Label>
+              <p className={`${ft('text-slate-900', 'text-white')} font-medium text-sm`}>
                 {expense.external_reference || "-"}
               </p>
             </div>
             <div>
-              <Label className="text-zinc-400 text-xs">Invoice Date</Label>
-              <p className="text-white font-medium text-sm">
+              <Label className={`${ft('text-slate-500', 'text-zinc-400')} text-xs`}>Invoice Date</Label>
+              <p className={`${ft('text-slate-900', 'text-white')} font-medium text-sm`}>
                 {expense.invoice_date
                   ? new Date(expense.invoice_date).toLocaleDateString("nl-NL")
                   : "-"}
               </p>
             </div>
             <div>
-              <Label className="text-zinc-400 text-xs">Total</Label>
-              <p className="text-white font-medium text-base">
+              <Label className={`${ft('text-slate-500', 'text-zinc-400')} text-xs`}>Total</Label>
+              <p className={`${ft('text-slate-900', 'text-white')} font-medium text-base`}>
                 &euro; {expense.total?.toFixed(2) || "0.00"}
               </p>
             </div>
@@ -280,59 +283,59 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
           {/* Line items */}
           {expense.expense_line_items && expense.expense_line_items.length > 0 && (
             <div>
-              <Label className="text-zinc-400 mb-2 block text-xs">Line Items</Label>
-              <div className="rounded-lg border border-white/10 overflow-hidden">
+              <Label className={`${ft('text-slate-500', 'text-zinc-400')} mb-2 block text-xs`}>Line Items</Label>
+              <div className={`rounded-lg border ${ft('border-slate-200', 'border-white/10')} overflow-hidden`}>
                 <table className="w-full text-xs">
-                  <thead className="bg-zinc-900/50">
-                    <tr className="text-left text-zinc-500 text-[10px]">
+                  <thead className={ft('bg-slate-100', 'bg-zinc-900/50')}>
+                    <tr className={`text-left ${ft('text-slate-400', 'text-zinc-500')} text-[10px]`}>
                       <th className="px-2 py-1">Omschrijving</th>
                       <th className="px-2 py-1 text-right">Aantal</th>
                       <th className="px-2 py-1 text-right">Price</th>
                       <th className="px-2 py-1 text-right">Total</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
+                  <tbody className={`divide-y ${ft('divide-slate-100', 'divide-white/5')}`}>
                     {expense.expense_line_items.map((item) => (
                       <tr key={item.id}>
-                        <td className="px-2 py-1 text-white">
+                        <td className={`px-2 py-1 ${ft('text-slate-900', 'text-white')}`}>
                           {item.description}
                           {item.ean && (
-                            <span className="ml-2 text-[10px] text-zinc-500">
+                            <span className={`ml-2 text-[10px] ${ft('text-slate-400', 'text-zinc-500')}`}>
                               EAN: {item.ean}
                             </span>
                           )}
                         </td>
-                        <td className="px-2 py-1 text-right text-zinc-400">
+                        <td className={`px-2 py-1 text-right ${ft('text-slate-500', 'text-zinc-400')}`}>
                           {item.quantity}
                         </td>
-                        <td className="px-2 py-1 text-right text-zinc-400">
+                        <td className={`px-2 py-1 text-right ${ft('text-slate-500', 'text-zinc-400')}`}>
                           &euro; {item.unit_price?.toFixed(2)}
                         </td>
-                        <td className="px-2 py-1 text-right text-white">
+                        <td className={`px-2 py-1 text-right ${ft('text-slate-900', 'text-white')}`}>
                           &euro; {item.line_total?.toFixed(2)}
                         </td>
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot className="bg-zinc-900/30">
+                  <tfoot className={ft('bg-slate-50', 'bg-zinc-900/30')}>
                     <tr>
-                      <td colSpan={3} className="px-2 py-1 text-right text-zinc-400">
+                      <td colSpan={3} className={`px-2 py-1 text-right ${ft('text-slate-500', 'text-zinc-400')}`}>
                         Subtotaal
                       </td>
-                      <td className="px-2 py-1 text-right text-white">
+                      <td className={`px-2 py-1 text-right ${ft('text-slate-900', 'text-white')}`}>
                         &euro; {expense.subtotal?.toFixed(2)}
                       </td>
                     </tr>
                     <tr>
-                      <td colSpan={3} className="px-2 py-1 text-right text-zinc-400">
+                      <td colSpan={3} className={`px-2 py-1 text-right ${ft('text-slate-500', 'text-zinc-400')}`}>
                         BTW ({expense.tax_percent || 21}%)
                       </td>
-                      <td className="px-2 py-1 text-right text-white">
+                      <td className={`px-2 py-1 text-right ${ft('text-slate-900', 'text-white')}`}>
                         &euro; {expense.tax_amount?.toFixed(2)}
                       </td>
                     </tr>
                     <tr className="font-medium">
-                      <td colSpan={3} className="px-2 py-1 text-right text-white">
+                      <td colSpan={3} className={`px-2 py-1 text-right ${ft('text-slate-900', 'text-white')}`}>
                         Total
                       </td>
                       <td className="px-2 py-1 text-right text-cyan-400">
@@ -352,7 +355,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
               placeholder="Eventuele opmerkingen bij de beoordeling..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="mt-1 bg-zinc-900/50 border-white/10"
+              className={`mt-1 ${ft('bg-slate-100', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-white/10')}`}
             />
           </div>
         </div>
@@ -399,7 +402,7 @@ function getExpenseStatusStyle(statusKey) {
 }
 
 // Expense card
-function ExpenseCard({ expense, onReview, onRetry }) {
+function ExpenseCard({ expense, onReview, onRetry, ft }) {
   // Defensive: ensure expense exists
   if (!expense) return null;
 
@@ -410,10 +413,10 @@ function ExpenseCard({ expense, onReview, onRetry }) {
 
   return (
     <div
-      className={`p-3 rounded-lg bg-zinc-900/50 border transition-all ${
+      className={`p-3 rounded-lg ${ft('bg-white', 'bg-zinc-900/50')} border transition-all ${
         needsReview
           ? "border-yellow-500/30 hover:border-yellow-500/50"
-          : "border-white/5 hover:border-cyan-500/30"
+          : `${ft('border-slate-200', 'border-white/5')} hover:border-cyan-500/30`
       }`}
     >
       <div className="flex items-start justify-between">
@@ -423,7 +426,7 @@ function ExpenseCard({ expense, onReview, onRetry }) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-medium text-white text-sm">
+              <h3 className={`font-medium ${ft('text-slate-900', 'text-white')} text-sm`}>
                 {expense.expense_number || expense.external_reference || "Invoice"}
               </h3>
               <Badge className={`${status.bg} ${status.text} ${status.border} text-xs`}>
@@ -436,14 +439,14 @@ function ExpenseCard({ expense, onReview, onRetry }) {
                 </Badge>
               )}
             </div>
-            <p className="text-xs text-zinc-400 mt-1">
+            <p className={`text-xs ${ft('text-slate-500', 'text-zinc-400')} mt-1`}>
               {expense.suppliers?.name || "Unknown supplier"}
             </p>
           </div>
         </div>
 
         <div className="text-right">
-          <p className="text-sm font-semibold text-white">
+          <p className={`text-sm font-semibold ${ft('text-slate-900', 'text-white')}`}>
             &euro; {expense.total?.toFixed(2) || "0.00"}
           </p>
           {expense.ai_confidence !== undefined && (
@@ -453,8 +456,8 @@ function ExpenseCard({ expense, onReview, onRetry }) {
       </div>
 
       {/* Details row */}
-      <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-3 text-xs text-zinc-500">
+      <div className={`mt-2 pt-2 border-t ${ft('border-slate-100', 'border-white/5')} flex items-center justify-between`}>
+        <div className={`flex items-center gap-3 text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
           {expense.invoice_date && (
             <span className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />
@@ -555,7 +558,7 @@ function ReviewQueueBanner({ count, onClick }) {
 }
 
 // Upload invoice modal
-function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, userId }) {
+function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, userId, ft }) {
   const fileInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -788,7 +791,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
                 ? "border-cyan-500 bg-cyan-500/10"
                 : selectedFile
                   ? "border-green-500/50 bg-green-500/5"
-                  : "border-white/20 hover:border-cyan-500/50 hover:bg-cyan-500/5"
+                  : `${ft('border-slate-300', 'border-white/20')} ${ft('hover:border-cyan-500/50 hover:bg-cyan-500/5', 'hover:border-cyan-500/50 hover:bg-cyan-500/5')}`
               }
             `}
           >
@@ -814,14 +817,14 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
                   </div>
                 )}
                 <div className="mt-3 text-center">
-                  <p className="text-white font-medium truncate text-sm">{selectedFile.name}</p>
-                  <p className="text-xs text-zinc-400">
+                  <p className={`${ft('text-slate-900', 'text-white')} font-medium truncate text-sm`}>{selectedFile.name}</p>
+                  <p className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>
                     {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="mt-2 text-zinc-400"
+                    className={`mt-2 ${ft('text-slate-500', 'text-zinc-400')}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedFile(null);
@@ -838,10 +841,10 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
                 <div className="w-12 h-12 mx-auto rounded-full bg-cyan-500/10 flex items-center justify-center mb-3">
                   <FileUp className="w-6 h-6 text-cyan-400" />
                 </div>
-                <p className="text-white font-medium text-sm">
+                <p className={`${ft('text-slate-900', 'text-white')} font-medium text-sm`}>
                   Sleep een bestand hierheen of klik om te selecteren
                 </p>
-                <p className="text-xs text-zinc-400 mt-1">
+                <p className={`text-xs ${ft('text-slate-500', 'text-zinc-400')} mt-1`}>
                   JPG, PNG, WebP of PDF (max 50MB)
                 </p>
               </div>
@@ -852,7 +855,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
           {isUploading && (
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-zinc-400">
+                <span className={ft('text-slate-500', 'text-zinc-400')}>
                   {uploadProgress < 90 ? "Uploaden..." : "Verwerken..."}
                 </span>
                 <span className="text-cyan-400">{uploadProgress}%</span>
@@ -862,12 +865,12 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
           )}
 
           {/* Info box */}
-          <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/10">
+          <div className={`p-3 rounded-lg ${ft('bg-slate-100', 'bg-zinc-900/50')} border ${ft('border-slate-200', 'border-white/10')}`}>
             <div className="flex items-start gap-2">
               <Sparkles className="w-3 h-3 text-cyan-400 mt-0.5 flex-shrink-0" />
-              <div className="text-xs text-zinc-400">
+              <div className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>
                 <p>AI zal automatisch extracten:</p>
-                <ul className="mt-1 space-y-0 text-zinc-500 text-[10px]">
+                <ul className={`mt-1 space-y-0 ${ft('text-slate-400', 'text-zinc-500')} text-[10px]`}>
                   <li>- Leveranciersgegevens</li>
                   <li>- Invoice Number en datum</li>
                   <li>- Amounts and VAT</li>
@@ -907,6 +910,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
 
 export default function InventoryExpenses() {
   const { user } = useUser();
+  const { theme, toggleTheme, ft } = useFinanceTheme();
   const [expenses, setExpenses] = useState([]);
   const [reviewQueue, setReviewQueue] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1074,137 +1078,150 @@ export default function InventoryExpenses() {
 
   return (
     <PermissionGuard permission="finance.view" showMessage>
-      <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
-          <div>
-            <h1 className="text-lg font-bold text-white">Expenses</h1>
-            <p className="text-xs text-zinc-400">Track and manage inventory expenses</p>
+      <FinancePageTransition>
+        <div className={`max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4`}>
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+            <div>
+              <h1 className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>Expenses</h1>
+              <p className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>Track and manage inventory expenses</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800')}
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </Button>
+              <Button
+                className="bg-cyan-600 hover:bg-cyan-700"
+                onClick={() => setShowUploadModal(true)}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Invoice
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              className="bg-cyan-600 hover:bg-cyan-700"
-              onClick={() => setShowUploadModal(true)}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Invoice
-            </Button>
+
+          {/* Review queue banner */}
+          <ReviewQueueBanner
+            count={stats.pendingReview}
+            onClick={() => setFilter("review")}
+          />
+
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className={`${ft('bg-white', 'bg-zinc-900/50')} border ${ft('border-slate-200', 'border-zinc-800/60')} rounded-xl p-3`}>
+              <div className="flex items-center gap-2 mb-1">
+                <Receipt className="w-4 h-4 text-cyan-400" />
+                <span className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>Total facturen</span>
+              </div>
+              <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>{stats.total}</p>
+            </div>
+            <div className={`${ft('bg-white', 'bg-zinc-900/50')} border ${ft('border-slate-200', 'border-zinc-800/60')} rounded-xl p-3`}>
+              <div className="flex items-center gap-2 mb-1">
+                <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                <span className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>To Review</span>
+              </div>
+              <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>{stats.pendingReview}</p>
+            </div>
+            <div className={`${ft('bg-white', 'bg-zinc-900/50')} border ${ft('border-slate-200', 'border-zinc-800/60')} rounded-xl p-3`}>
+              <div className="flex items-center gap-2 mb-1">
+                <Check className="w-4 h-4 text-green-400" />
+                <span className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>Approved</span>
+              </div>
+              <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>{stats.approved}</p>
+            </div>
+            <div className={`${ft('bg-white', 'bg-zinc-900/50')} border ${ft('border-slate-200', 'border-zinc-800/60')} rounded-xl p-3`}>
+              <div className="flex items-center gap-2 mb-1">
+                <Euro className="w-4 h-4 text-purple-400" />
+                <span className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>Total bedrag</span>
+              </div>
+              <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>&euro; {stats.totalAmount.toFixed(0)}</p>
+            </div>
           </div>
+
+          {/* Filters */}
+          <div className={`${ft('bg-white', 'bg-zinc-900/50')} border ${ft('border-slate-200', 'border-zinc-800/60')} rounded-xl p-3`}>
+            <div className="flex flex-col md:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${ft('text-slate-400', 'text-zinc-500')}`} />
+                <Input
+                  placeholder="Search by invoice number or supplier..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className={`pl-9 ${ft('bg-slate-100', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-white/10')}`}
+                />
+              </div>
+              <Tabs value={filter} onValueChange={setFilter}>
+                <TabsList className={ft('bg-slate-100', 'bg-zinc-900/50')}>
+                  <TabsTrigger value="all">Alles</TabsTrigger>
+                  <TabsTrigger value="review">To Review</TabsTrigger>
+                  <TabsTrigger value="approved">Approved</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+
+          {/* Expense list */}
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-24 rounded-lg" />
+              ))}
+            </div>
+          ) : filteredExpenses.length === 0 ? (
+            <div className={`${ft('bg-white', 'bg-zinc-900/50')} border ${ft('border-slate-200', 'border-zinc-800/60')} rounded-xl p-8 text-center`}>
+              <Receipt className={`w-12 h-12 mx-auto ${ft('text-slate-300', 'text-zinc-600')} mb-3`} />
+              <h3 className={`text-base font-medium ${ft('text-slate-900', 'text-white')} mb-2`}>
+                Geen facturen gevonden
+              </h3>
+              <p className={`text-sm ${ft('text-slate-400', 'text-zinc-500')}`}>
+                {search
+                  ? "Probeer een andere zoekopdracht"
+                  : "Upload an invoice to get started"}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredExpenses.map((expense) => (
+                <ExpenseCard
+                  key={expense.id}
+                  expense={expense}
+                  onReview={handleReview}
+                  onRetry={handleRetry}
+                  ft={ft}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Review modal */}
+          <ReviewModal
+            expense={selectedExpense}
+            isOpen={showReviewModal}
+            onClose={() => {
+              setShowReviewModal(false);
+              setSelectedExpense(null);
+            }}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            ft={ft}
+          />
+
+          {/* Upload invoice modal */}
+          <UploadInvoiceModal
+            isOpen={showUploadModal}
+            onClose={() => setShowUploadModal(false)}
+            onUploadComplete={loadExpenses}
+            companyId={companyId}
+            userId={user?.id}
+            ft={ft}
+          />
         </div>
-
-        {/* Review queue banner */}
-        <ReviewQueueBanner
-          count={stats.pendingReview}
-          onClick={() => setFilter("review")}
-        />
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Receipt className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs text-zinc-500">Total facturen</span>
-            </div>
-            <p className="text-lg font-bold text-white">{stats.total}</p>
-          </div>
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle className="w-4 h-4 text-yellow-400" />
-              <span className="text-xs text-zinc-500">To Review</span>
-            </div>
-            <p className="text-lg font-bold text-white">{stats.pendingReview}</p>
-          </div>
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Check className="w-4 h-4 text-green-400" />
-              <span className="text-xs text-zinc-500">Approved</span>
-            </div>
-            <p className="text-lg font-bold text-white">{stats.approved}</p>
-          </div>
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Euro className="w-4 h-4 text-purple-400" />
-              <span className="text-xs text-zinc-500">Total bedrag</span>
-            </div>
-            <p className="text-lg font-bold text-white">&euro; {stats.totalAmount.toFixed(0)}</p>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-              <Input
-                placeholder="Search by invoice number or supplier..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-zinc-900/50 border-white/10"
-              />
-            </div>
-            <Tabs value={filter} onValueChange={setFilter}>
-              <TabsList className="bg-zinc-900/50">
-                <TabsTrigger value="all">Alles</TabsTrigger>
-                <TabsTrigger value="review">To Review</TabsTrigger>
-                <TabsTrigger value="approved">Approved</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </div>
-
-        {/* Expense list */}
-        {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-24 rounded-lg" />
-            ))}
-          </div>
-        ) : filteredExpenses.length === 0 ? (
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-8 text-center">
-            <Receipt className="w-12 h-12 mx-auto text-zinc-600 mb-3" />
-            <h3 className="text-base font-medium text-white mb-2">
-              Geen facturen gevonden
-            </h3>
-            <p className="text-sm text-zinc-500">
-              {search
-                ? "Probeer een andere zoekopdracht"
-                : "Upload an invoice to get started"}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredExpenses.map((expense) => (
-              <ExpenseCard
-                key={expense.id}
-                expense={expense}
-                onReview={handleReview}
-                onRetry={handleRetry}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Review modal */}
-        <ReviewModal
-          expense={selectedExpense}
-          isOpen={showReviewModal}
-          onClose={() => {
-            setShowReviewModal(false);
-            setSelectedExpense(null);
-          }}
-          onApprove={handleApprove}
-          onReject={handleReject}
-        />
-
-        {/* Upload invoice modal */}
-        <UploadInvoiceModal
-          isOpen={showUploadModal}
-          onClose={() => setShowUploadModal(false)}
-          onUploadComplete={loadExpenses}
-          companyId={companyId}
-          userId={user?.id}
-        />
-      </div>
+      </FinancePageTransition>
     </PermissionGuard>
   );
 }

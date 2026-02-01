@@ -6,8 +6,10 @@ import {
   Receipt, Plus, Search, Filter, Download, Send, Check, Clock, AlertCircle,
   FileText, MoreVertical, Eye, Edit2, Trash2, Mail, X, ChevronDown,
   ArrowUpDown, Calendar, Euro, Building2, User, Package, RefreshCw, Zap,
-  FileDown, Printer
+  FileDown, Printer, Sun, Moon
 } from 'lucide-react';
+import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
+import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 import { downloadInvoicePDF, previewInvoicePDF } from '@/utils/generateInvoicePDF';
 import { ProductSelector } from '@/components/finance';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -29,6 +31,7 @@ import { toast } from 'sonner';
 
 export default function FinanceInvoices() {
   const { user } = useUser();
+  const { theme, toggleTheme, ft } = useFinanceTheme();
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -390,25 +393,34 @@ export default function FinanceInvoices() {
 
   if (loading || permLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <FinancePageTransition>
+    <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
 
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
-        <PageHeader
-          icon={Receipt}
-          title="Invoices"
-          subtitle="Create, send, and track your invoices"
-          color="amber"
-          actions={
-            <div className="flex gap-3">
-              <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+        <div className="flex items-center justify-between">
+          <PageHeader
+            icon={Receipt}
+            title="Invoices"
+            subtitle="Create, send, and track your invoices"
+            color="amber"
+            actions={
+              <div className="flex gap-3">
+                <button
+                  onClick={toggleTheme}
+                  className={`p-2 rounded-lg border transition-colors ${ft('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-zinc-700 hover:bg-zinc-800 text-zinc-400')}`}
+                  title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </button>
+                <Button variant="outline" className={ft('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}>
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
@@ -421,9 +433,10 @@ export default function FinanceInvoices() {
                   New Invoice
                 </Button>
               )}
-            </div>
-          }
-        />
+              </div>
+            }
+          />
+        </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -433,13 +446,13 @@ export default function FinanceInvoices() {
             { label: 'Pending', value: `€${stats.pending.toLocaleString()}`, icon: Clock, color: 'amber' },
             { label: 'Overdue', value: `€${stats.overdue.toLocaleString()}`, icon: AlertCircle, color: 'red' }
           ].map((stat) => (
-            <Card key={stat.label} className="bg-zinc-900/50 border-zinc-800">
+            <Card key={stat.label} className={ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
               <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-zinc-400">{stat.label}</span>
-                  {stat.icon && <stat.icon className={`w-3.5 h-3.5 ${stat.color === 'amber' ? 'text-amber-400' : stat.color === 'red' ? 'text-red-400' : 'text-zinc-400'}`} />}
+                  <span className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>{stat.label}</span>
+                  {stat.icon && <stat.icon className={`w-3.5 h-3.5 ${stat.color === 'amber' ? 'text-amber-400' : stat.color === 'red' ? 'text-red-400' : ft('text-slate-500', 'text-zinc-400')}`} />}
                 </div>
-                <p className="text-lg font-bold text-white">{stat.value}</p>
+                <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>{stat.value}</p>
                 {stat.count !== undefined && (
                   <p className="text-[10px] text-zinc-500">{stat.count} invoices</p>
                 )}
@@ -449,7 +462,7 @@ export default function FinanceInvoices() {
         </div>
 
         {/* Filters */}
-        <Card className="bg-zinc-900/50 border-zinc-800">
+        <Card className={ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
           <CardContent className="p-3">
             <div className="flex flex-col md:flex-row gap-3">
               <div className="flex-1 relative">
@@ -458,24 +471,24 @@ export default function FinanceInvoices() {
                   placeholder="Search invoices..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-zinc-800 border-zinc-700 text-white"
+                  className={`pl-10 ${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
                 />
               </div>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="border-zinc-700 text-zinc-300">
+                  <Button variant="outline" className={ft('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}>
                     <Filter className="w-4 h-4 mr-2" />
                     Status: {statusFilter === 'all' ? 'All' : statusFilter}
                     <ChevronDown className="w-4 h-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-zinc-900 border-zinc-700">
+                <DropdownMenuContent className={ft('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}>
                   {['all', 'draft', 'sent', 'pending', 'paid', 'overdue'].map((status) => (
                     <DropdownMenuItem
                       key={status}
                       onClick={() => setStatusFilter(status)}
-                      className="text-zinc-300 hover:bg-zinc-800 capitalize"
+                      className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800') + ' capitalize'}
                     >
                       {status}
                     </DropdownMenuItem>
@@ -485,13 +498,13 @@ export default function FinanceInvoices() {
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="border-zinc-700 text-zinc-300">
+                  <Button variant="outline" className={ft('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}>
                     <ArrowUpDown className="w-4 h-4 mr-2" />
                     Sort
                     <ChevronDown className="w-4 h-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-zinc-900 border-zinc-700">
+                <DropdownMenuContent className={ft('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}>
                   {[
                     { value: 'date', label: 'Date' },
                     { value: 'amount', label: 'Amount' },
@@ -508,7 +521,7 @@ export default function FinanceInvoices() {
                           setSortOrder('desc');
                         }
                       }}
-                      className="text-zinc-300 hover:bg-zinc-800"
+                      className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800')}
                     >
                       {option.label} {sortBy === option.value && (sortOrder === 'asc' ? '↑' : '↓')}
                     </DropdownMenuItem>
@@ -520,12 +533,12 @@ export default function FinanceInvoices() {
         </Card>
 
         {/* Invoice List */}
-        <Card className="bg-zinc-900/50 border-zinc-800">
+        <Card className={ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
           <CardContent className="p-0">
             {filteredInvoices.length === 0 ? (
               <div className="text-center py-16">
                 <Receipt className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-white mb-2">No invoices found</h3>
+                <h3 className={`text-lg font-medium ${ft('text-slate-900', 'text-white')} mb-2`}>No invoices found</h3>
                 <p className="text-zinc-500 mb-6">
                   {searchQuery || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Create your first invoice to get started'}
                 </p>
@@ -540,11 +553,11 @@ export default function FinanceInvoices() {
                 )}
               </div>
             ) : (
-              <div className="divide-y divide-zinc-800">
+              <div className={`divide-y ${ft('divide-slate-200', 'divide-zinc-800')}`}>
                 {filteredInvoices.map((invoice) => (
                   <div
                     key={invoice.id}
-                    className="px-3 py-2 hover:bg-white/[0.03] transition-colors"
+                    className={`px-3 py-2 transition-colors ${ft('hover:bg-slate-50', 'hover:bg-white/[0.03]')}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 flex-1">
@@ -553,7 +566,7 @@ export default function FinanceInvoices() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-white">
+                            <p className={`text-sm font-medium ${ft('text-slate-900', 'text-white')}`}>
                               {invoice.invoice_number || `INV-${invoice.id?.slice(0, 8)}`}
                             </p>
                             <Badge variant="outline" size="xs" className={getStatusBadge(invoice.status)}>
@@ -576,50 +589,50 @@ export default function FinanceInvoices() {
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <p className="text-sm font-semibold text-white">
+                        <p className={`text-sm font-semibold ${ft('text-slate-900', 'text-white')}`}>
                           €{(invoice.total || 0).toLocaleString()}
                         </p>
 
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white">
+                            <Button variant="ghost" size="sm" className={ft('text-slate-400 hover:text-slate-900', 'text-zinc-400 hover:text-white')}>
                               <MoreVertical className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-700">
+                          <DropdownMenuContent align="end" className={ft('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}>
                             <DropdownMenuItem
                               onClick={() => { setSelectedInvoice(invoice); setShowDetailModal(true); }}
-                              className="text-zinc-300 hover:bg-zinc-800"
+                              className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800')}
                             >
                               <Eye className="w-4 h-4 mr-2" />
                               View Details
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => previewInvoicePDF(invoice)}
-                              className="text-zinc-300 hover:bg-zinc-800"
+                              className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800')}
                             >
                               <Printer className="w-4 h-4 mr-2" />
                               View PDF
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => downloadInvoicePDF(invoice)}
-                              className="text-zinc-300 hover:bg-zinc-800"
+                              className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800')}
                             >
                               <FileDown className="w-4 h-4 mr-2" />
                               Download PDF
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => openEditModal(invoice)}
-                              className="text-zinc-300 hover:bg-zinc-800"
+                              className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800')}
                             >
                               <Edit2 className="w-4 h-4 mr-2" />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator className="bg-zinc-700" />
+                            <DropdownMenuSeparator className={ft('bg-slate-200', 'bg-zinc-700')} />
                             {invoice.status === 'draft' && invoice.client_email && (
                               <DropdownMenuItem
                                 onClick={() => handleSendInvoice(invoice)}
-                                className="text-amber-400 hover:bg-zinc-800"
+                                className={`text-amber-400 ${ft('hover:bg-slate-100', 'hover:bg-zinc-800')}`}
                               >
                                 <Send className="w-4 h-4 mr-2" />
                                 Send Invoice
@@ -628,16 +641,16 @@ export default function FinanceInvoices() {
                             {invoice.status !== 'paid' && (
                               <DropdownMenuItem
                                 onClick={() => handleUpdateStatus(invoice, 'paid')}
-                                className="text-amber-400 hover:bg-zinc-800"
+                                className={`text-amber-400 ${ft('hover:bg-slate-100', 'hover:bg-zinc-800')}`}
                               >
                                 <Check className="w-4 h-4 mr-2" />
                                 Mark as Paid
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuSeparator className="bg-zinc-700" />
+                            <DropdownMenuSeparator className={ft('bg-slate-200', 'bg-zinc-700')} />
                             <DropdownMenuItem
                               onClick={() => handleDeleteInvoice(invoice)}
-                              className="text-red-400 hover:bg-zinc-800"
+                              className={`text-red-400 ${ft('hover:bg-slate-100', 'hover:bg-zinc-800')}`}
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
                               Delete
@@ -656,10 +669,10 @@ export default function FinanceInvoices() {
 
       {/* Create/Edit Invoice Modal */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className={`${ft('bg-white border-slate-200 text-slate-900', 'bg-zinc-900 border-zinc-700 text-white')} max-w-lg max-h-[90vh] overflow-y-auto`}>
           <DialogHeader>
             <DialogTitle>{editMode ? 'Edit Invoice' : 'Create New Invoice'}</DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogDescription className={ft('text-slate-500', 'text-zinc-400')}>
               {editMode ? 'Update invoice details' : 'Fill in the details to create a new invoice'}
             </DialogDescription>
           </DialogHeader>
@@ -667,50 +680,50 @@ export default function FinanceInvoices() {
           <form onSubmit={handleCreateInvoice} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <Label className="text-zinc-300">Client Name *</Label>
+                <Label className={ft('text-slate-600', 'text-zinc-300')}>Client Name *</Label>
                 <Input
                   value={formData.client_name}
                   onChange={(e) => setFormData(prev => ({ ...prev, client_name: e.target.value }))}
                   required
-                  className="bg-zinc-800 border-zinc-700 text-white mt-1"
+                  className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
                   placeholder="Enter client name"
                 />
               </div>
 
               <div>
-                <Label className="text-zinc-300">Client Email</Label>
+                <Label className={ft('text-slate-600', 'text-zinc-300')}>Client Email</Label>
                 <Input
                   type="email"
                   value={formData.client_email}
                   onChange={(e) => setFormData(prev => ({ ...prev, client_email: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700 text-white mt-1"
+                  className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
                   placeholder="client@example.com"
                 />
               </div>
 
               <div>
-                <Label className="text-zinc-300">Due Date</Label>
+                <Label className={ft('text-slate-600', 'text-zinc-300')}>Due Date</Label>
                 <Input
                   type="date"
                   value={formData.due_date}
                   onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700 text-white mt-1"
+                  className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
                 />
               </div>
 
               <div className="col-span-2">
-                <Label className="text-zinc-300">Client Address</Label>
+                <Label className={ft('text-slate-600', 'text-zinc-300')}>Client Address</Label>
                 <Textarea
                   value={formData.client_address}
                   onChange={(e) => setFormData(prev => ({ ...prev, client_address: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700 text-white mt-1"
+                  className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
                   placeholder="Enter billing address"
                   rows={2}
                 />
               </div>
 
               {/* Line Items Section */}
-              <div className="col-span-2 pt-4 border-t border-zinc-700">
+              <div className={`col-span-2 pt-4 border-t ${ft('border-slate-200', 'border-zinc-700')}`}>
                 <div className="flex items-center justify-between mb-3">
                   <Label className="text-zinc-300 flex items-center gap-2">
                     <Package className="w-4 h-4" />
@@ -735,9 +748,9 @@ export default function FinanceInvoices() {
                       (item.description || item.name || item.product_id) && (
                         <div
                           key={idx}
-                          className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/50 border border-white/5"
+                          className={`flex items-center gap-3 p-3 rounded-lg border ${ft('bg-slate-100 border-slate-200', 'bg-zinc-800/50 border-white/5')}`}
                         >
-                          <div className="w-8 h-8 rounded flex items-center justify-center bg-zinc-700/50">
+                          <div className={`w-8 h-8 rounded flex items-center justify-center ${ft('bg-slate-200', 'bg-zinc-700/50')}`}>
                             {item.is_subscription ? (
                               <RefreshCw className="w-4 h-4 text-amber-400" />
                             ) : item.product_id ? (
@@ -747,7 +760,7 @@ export default function FinanceInvoices() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-white text-sm truncate">
+                            <p className={`font-medium ${ft('text-slate-900', 'text-white')} text-sm truncate`}>
                               {item.name || item.description}
                             </p>
                             {item.is_subscription && (
@@ -757,7 +770,7 @@ export default function FinanceInvoices() {
                             )}
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-medium text-white">
+                            <p className={`text-sm font-medium ${ft('text-slate-900', 'text-white')}`}>
                               €{((item.quantity || 1) * (parseFloat(item.unit_price) || 0)).toFixed(2)}
                             </p>
                             {item.quantity > 1 && (
@@ -788,7 +801,7 @@ export default function FinanceInvoices() {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-6 rounded-lg border border-dashed border-zinc-700 mb-4">
+                  <div className={`text-center py-6 rounded-lg border border-dashed ${ft('border-slate-300', 'border-zinc-700')} mb-4`}>
                     <Package className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
                     <p className="text-sm text-zinc-500">No products added</p>
                     <p className="text-xs text-zinc-600 mt-1">
@@ -799,24 +812,24 @@ export default function FinanceInvoices() {
 
                 {/* Manual amount override */}
                 <div>
-                  <Label className="text-zinc-500 text-xs">Manual Amount Override</Label>
+                  <Label className={`${ft('text-slate-400', 'text-zinc-500')} text-xs`}>Manual Amount Override</Label>
                   <Input
                     type="number"
                     step="0.01"
                     value={formData.total}
                     onChange={(e) => setFormData(prev => ({ ...prev, total: e.target.value }))}
-                    className="bg-zinc-800 border-zinc-700 text-white mt-1"
+                    className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
                     placeholder="Leave empty to use calculated total"
                   />
                 </div>
               </div>
 
               <div className="col-span-2">
-                <Label className="text-zinc-300">Notes</Label>
+                <Label className={ft('text-slate-600', 'text-zinc-300')}>Notes</Label>
                 <Textarea
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700 text-white mt-1"
+                  className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
                   placeholder="Invoice notes or additional information"
                   rows={2}
                 />
@@ -828,7 +841,7 @@ export default function FinanceInvoices() {
                 type="button"
                 variant="outline"
                 onClick={() => setShowCreateModal(false)}
-                className="border-zinc-700"
+                className={ft('border-slate-200', 'border-zinc-700')}
               >
                 Cancel
               </Button>
@@ -846,7 +859,7 @@ export default function FinanceInvoices() {
 
       {/* Invoice Detail Modal */}
       <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-lg">
+        <DialogContent className={`${ft('bg-white border-slate-200 text-slate-900', 'bg-zinc-900 border-zinc-700 text-white')} max-w-lg`}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-amber-400" />
@@ -860,29 +873,29 @@ export default function FinanceInvoices() {
                 <Badge variant="outline" className={getStatusBadge(selectedInvoice.status)}>
                   {selectedInvoice.status || 'draft'}
                 </Badge>
-                <p className="text-2xl font-bold text-white">
+                <p className={`text-2xl font-bold ${ft('text-slate-900', 'text-white')}`}>
                   €{(selectedInvoice.total || 0).toLocaleString()}
                 </p>
               </div>
 
-              <div className="space-y-3 bg-zinc-800/50 rounded-lg p-4">
+              <div className={`space-y-3 ${ft('bg-slate-100', 'bg-zinc-800/50')} rounded-lg p-4`}>
                 <div className="flex justify-between">
-                  <span className="text-zinc-400">Client</span>
-                  <span className="text-white">{selectedInvoice.client_name || '-'}</span>
+                  <span className={ft('text-slate-500', 'text-zinc-400')}>Client</span>
+                  <span className={ft('text-slate-900', 'text-white')}>{selectedInvoice.client_name || '-'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-400">Email</span>
-                  <span className="text-white">{selectedInvoice.client_email || '-'}</span>
+                  <span className={ft('text-slate-500', 'text-zinc-400')}>Email</span>
+                  <span className={ft('text-slate-900', 'text-white')}>{selectedInvoice.client_email || '-'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-400">Due Date</span>
-                  <span className="text-white">
+                  <span className={ft('text-slate-500', 'text-zinc-400')}>Due Date</span>
+                  <span className={ft('text-slate-900', 'text-white')}>
                     {selectedInvoice.due_date ? new Date(selectedInvoice.due_date).toLocaleDateString() : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-400">Created</span>
-                  <span className="text-white">
+                  <span className={ft('text-slate-500', 'text-zinc-400')}>Created</span>
+                  <span className={ft('text-slate-900', 'text-white')}>
                     {selectedInvoice.created_at ? new Date(selectedInvoice.created_at).toLocaleDateString() : '-'}
                   </span>
                 </div>
@@ -890,11 +903,11 @@ export default function FinanceInvoices() {
 
               {/* Line Items */}
               {selectedInvoice.items?.length > 0 && (
-                <div className="bg-zinc-800/50 rounded-lg p-4">
-                  <p className="text-zinc-400 text-sm mb-3">Line Items</p>
+                <div className={`${ft('bg-slate-100', 'bg-zinc-800/50')} rounded-lg p-4`}>
+                  <p className={`${ft('text-slate-500', 'text-zinc-400')} text-sm mb-3`}>Line Items</p>
                   <div className="space-y-2">
                     {selectedInvoice.items.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between py-2 border-b border-zinc-700/50 last:border-0">
+                      <div key={idx} className={`flex items-center justify-between py-2 border-b ${ft('border-slate-200/50', 'border-zinc-700/50')} last:border-0`}>
                         <div className="flex items-center gap-2">
                           {item.is_subscription ? (
                             <RefreshCw className="w-4 h-4 text-amber-400" />
@@ -902,14 +915,14 @@ export default function FinanceInvoices() {
                             <Package className="w-4 h-4 text-zinc-400" />
                           )}
                           <div>
-                            <p className="text-white text-sm">{item.name || item.description}</p>
+                            <p className={`${ft('text-slate-900', 'text-white')} text-sm`}>{item.name || item.description}</p>
                             {item.is_subscription && (
                               <p className="text-xs text-amber-400">{item.plan_name} ({item.billing_cycle})</p>
                             )}
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-white font-medium">
+                          <p className={`${ft('text-slate-900', 'text-white')} font-medium`}>
                             €{((item.quantity || 1) * (parseFloat(item.unit_price) || 0)).toFixed(2)}
                           </p>
                           {item.quantity > 1 && (
@@ -923,17 +936,17 @@ export default function FinanceInvoices() {
               )}
 
               {selectedInvoice.description && (
-                <div className="bg-zinc-800/50 rounded-lg p-4">
-                  <p className="text-zinc-400 text-sm mb-1">Notes</p>
-                  <p className="text-white">{selectedInvoice.description}</p>
+                <div className={`${ft('bg-slate-100', 'bg-zinc-800/50')} rounded-lg p-4`}>
+                  <p className={`${ft('text-slate-500', 'text-zinc-400')} text-sm mb-1`}>Notes</p>
+                  <p className={ft('text-slate-900', 'text-white')}>{selectedInvoice.description}</p>
                 </div>
               )}
 
               {/* PDF Actions */}
-              <div className="flex gap-3 pt-4 border-t border-zinc-700">
+              <div className={`flex gap-3 pt-4 border-t ${ft('border-slate-200', 'border-zinc-700')}`}>
                 <Button
                   variant="outline"
-                  className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  className={`flex-1 ${ft('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}`}
                   onClick={() => previewInvoicePDF(selectedInvoice)}
                 >
                   <Printer className="w-4 h-4 mr-2" />
@@ -941,7 +954,7 @@ export default function FinanceInvoices() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  className={`flex-1 ${ft('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}`}
                   onClick={() => downloadInvoicePDF(selectedInvoice)}
                 >
                   <FileDown className="w-4 h-4 mr-2" />
@@ -983,5 +996,6 @@ export default function FinanceInvoices() {
         currency="EUR"
       />
     </div>
+    </FinancePageTransition>
   );
 }
