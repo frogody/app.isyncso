@@ -186,6 +186,8 @@ import FinanceVendors from "./FinanceVendors";
 
 import FinanceBills from "./FinanceBills";
 
+import FinanceBillPayments from "./FinanceBillPayments";
+
 import Raise from "./Raise";
 
 import RaiseInvestors from "./RaiseInvestors";
@@ -475,6 +477,8 @@ const PAGES = {
     FinanceVendors: FinanceVendors,
 
     FinanceBills: FinanceBills,
+
+    FinanceBillPayments: FinanceBillPayments,
 
     Raise: Raise,
 
@@ -835,6 +839,8 @@ function PagesContent() {
                 <Route path="/FinanceVendors" element={<FinanceVendors />} />
 
                 <Route path="/FinanceBills" element={<FinanceBills />} />
+
+                <Route path="/FinanceBillPayments" element={<FinanceBillPayments />} />
 
                 <Route path="/Raise" element={<Raise />} />
 

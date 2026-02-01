@@ -54,6 +54,7 @@ import {
   TrendingUp,
   Receipt,
   ScrollText,
+  Wallet,
   CreditCard,
   PieChart,
   Bot,
@@ -66,7 +67,6 @@ import {
   FolderOpen,
   Truck,
   PackageCheck,
-  Wallet,
   FileSpreadsheet,
   UserCheck,
   Handshake,
@@ -374,6 +374,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'General Ledger', path: createPageUrl('FinanceGeneralLedger'), icon: BookText },
         { label: 'Vendors', path: createPageUrl('FinanceVendors'), icon: Users },
         { label: 'Bills', path: createPageUrl('FinanceBills'), icon: ScrollText },
+        { label: 'Bill Payments', path: createPageUrl('FinanceBillPayments'), icon: Wallet },
       ]
     };
   }
