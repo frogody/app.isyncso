@@ -1,4 +1,5 @@
 import * as React from "react"
+import { motion, AnimatePresence } from "framer-motion"
 
 import { cn } from "@/lib/utils"
 
@@ -90,13 +91,50 @@ const TableCaption = React.forwardRef(({ className, ...props }, ref) => (
 ))
 TableCaption.displayName = "TableCaption"
 
+const AnimatedTableRow = React.forwardRef(({ className, index = 0, selected = false, ...props }, ref) => {
+  const { compact } = React.useContext(TableContext)
+  const delay = Math.min(index * 0.05, 0.3)
+
+  return (
+    <motion.tr
+      ref={ref}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -10 }}
+      whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+      transition={{ type: "spring", stiffness: 300, damping: 25, delay }}
+      className={cn(
+        "border-b border-white/5 transition-colors data-[state=selected]:bg-muted",
+        compact && "h-9",
+        selected && "border-l-2 border-l-cyan-500 shadow-[inset_2px_0_8px_rgba(6,182,212,0.15)]",
+        className
+      )}
+      {...props} />
+  )
+})
+AnimatedTableRow.displayName = "AnimatedTableRow"
+
+const AnimatedTableBody = React.forwardRef(({ className, children, ...props }, ref) => (
+  <tbody
+    ref={ref}
+    className={cn("[&_tr:last-child]:border-0", className)}
+    {...props}>
+    <AnimatePresence mode="popLayout">
+      {children}
+    </AnimatePresence>
+  </tbody>
+))
+AnimatedTableBody.displayName = "AnimatedTableBody"
+
 export {
   Table,
   TableHeader,
   TableBody,
+  AnimatedTableBody,
   TableFooter,
   TableHead,
   TableRow,
+  AnimatedTableRow,
   TableCell,
   TableCaption,
 }
