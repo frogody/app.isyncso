@@ -594,15 +594,15 @@ export default function CreateBranding() {
               </div>
 
               {/* Preview */}
-              <div className={`mt-5 p-4 rounded-xl border ${ct('border-slate-200', 'border-zinc-700/40')}`} style={{ backgroundColor: brandData.colors.background }}>
-                <h4 className="text-sm font-bold mb-2" style={{ color: brandData.colors.primary }}>Preview Header</h4>
-                <p className="text-xs mb-3" style={{ color: brandData.colors.text }}>This is how your brand colors will look in generated content.</p>
+              <div className={`mt-5 p-4 rounded-xl border ${ct('border-slate-200', 'border-zinc-700/40')} ${ct('bg-slate-50', 'bg-zinc-800/30')}`}>
+                <h4 className={`text-sm font-bold mb-2 ${ct('text-slate-800', 'text-white')}`}>Preview Header</h4>
+                <p className={`text-xs mb-3 ${ct('text-slate-500', 'text-zinc-400')}`}>This is how your brand colors will look in generated content.</p>
                 <div className="flex gap-2 flex-wrap">
                   {['primary', 'secondary', 'accent'].map(key => (
                     <span
                       key={key}
                       className="px-4 py-1.5 rounded-full text-xs font-medium"
-                      style={{ backgroundColor: brandData.colors[key], color: brandData.colors.background }}
+                      style={{ backgroundColor: brandData.colors[key], color: '#fff' }}
                     >
                       {COLOR_LABELS[key]}
                     </span>
