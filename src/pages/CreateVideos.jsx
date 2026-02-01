@@ -41,12 +41,15 @@ import {
   ArrowLeft,
   Layers,
   ChevronRight,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { CreatePageTransition } from '@/components/create/ui';
+import { useCreateTheme } from '@/contexts/CreateThemeContext';
 import { toast } from 'sonner';
 import {
   Popover,
@@ -254,28 +257,29 @@ function getTemplateProps(templateId, selectedProduct, brandAssets, digitalProdu
 
 // --- Product Selector Popover (reusable) ---
 function ProductSelector({ selectedProduct, setSelectedProduct, products, productSearch, setProductSearch, filteredProducts }) {
+  const { ct } = useCreateTheme();
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-800/60 bg-zinc-900/50 text-sm text-zinc-300 hover:border-zinc-700 transition-colors">
+        <button className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${ct('border-slate-200', 'border-zinc-800/60')} ${ct('bg-white', 'bg-zinc-900/50')} text-sm ${ct('text-slate-600', 'text-zinc-300')} ${ct('hover:border-slate-300', 'hover:border-zinc-700')} transition-colors`}>
           <Package className="w-3.5 h-3.5 text-yellow-400" />
           {selectedProduct ? selectedProduct.name : 'Product'}
           <ChevronDown className="w-3 h-3 opacity-50" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 bg-zinc-900 border-zinc-700 p-2">
+      <PopoverContent className={`w-72 ${ct('bg-white', 'bg-zinc-900')} ${ct('border-slate-200', 'border-zinc-700')} p-2`}>
         <input
           type="text"
           placeholder="Search products..."
           value={productSearch}
           onChange={(e) => setProductSearch(e.target.value)}
-          className="w-full px-3 py-2 mb-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:border-yellow-500/50 focus:ring-yellow-500/20 focus:outline-none"
+          className={`w-full px-3 py-2 mb-2 ${ct('bg-slate-100', 'bg-zinc-800')} border ${ct('border-slate-200', 'border-zinc-700')} rounded-lg ${ct('text-slate-900', 'text-white')} text-sm focus:border-yellow-500/50 focus:ring-yellow-500/20 focus:outline-none`}
         />
         <div className="max-h-60 overflow-y-auto space-y-0.5">
           {selectedProduct && (
             <button
               onClick={() => { setSelectedProduct(null); setProductSearch(''); }}
-              className="w-full text-left px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-800 rounded-lg flex items-center gap-2"
+              className={`w-full text-left px-3 py-2 text-sm ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:bg-slate-100', 'hover:bg-zinc-800')} rounded-lg flex items-center gap-2`}
             >
               <X className="w-3 h-3" /> Clear selection
             </button>
@@ -287,7 +291,7 @@ function ProductSelector({ selectedProduct, setSelectedProduct, products, produc
               className={`w-full text-left px-3 py-2 text-sm rounded-lg flex items-center justify-between transition-colors ${
                 selectedProduct?.id === product.id
                   ? 'bg-yellow-500/20 text-yellow-400'
-                  : 'text-white hover:bg-zinc-800'
+                  : `${ct('text-slate-900', 'text-white')} ${ct('hover:bg-slate-100', 'hover:bg-zinc-800')}`
               }`}
             >
               <span className="flex items-center gap-2">
@@ -298,7 +302,7 @@ function ProductSelector({ selectedProduct, setSelectedProduct, products, produc
             </button>
           ))}
           {filteredProducts.length === 0 && (
-            <p className="text-zinc-500 text-sm text-center py-4">No products found</p>
+            <p className={`${ct('text-slate-500', 'text-zinc-500')} text-sm text-center py-4`}>No products found</p>
           )}
         </div>
       </PopoverContent>
@@ -308,6 +312,7 @@ function ProductSelector({ selectedProduct, setSelectedProduct, products, produc
 
 export default function CreateVideos() {
   const { user } = useUser();
+  const { theme, toggleTheme, ct } = useCreateTheme();
   const [mode, setMode] = useState('ai');
   const [prompt, setPrompt] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('cinematic');
@@ -681,7 +686,7 @@ export default function CreateVideos() {
 
   return (
     <CreatePageTransition>
-      <div className="min-h-screen bg-[#09090b]">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-[#09090b]')}`}>
         <div className="w-full px-4 lg:px-6 py-5 space-y-5">
 
           {/* ───── 1. Back Nav + Page Header ───── */}
@@ -689,26 +694,32 @@ export default function CreateVideos() {
             <div className="flex items-center gap-4">
               <a
                 href={createPageUrl('Create')}
-                className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+                className={`flex items-center gap-1.5 text-sm ${ct('text-slate-500', 'text-zinc-500')} ${ct('hover:text-slate-700', 'hover:text-zinc-300')} transition-colors`}
               >
                 <ArrowLeft className="w-4 h-4" />
                 Create Studio
               </a>
-              <div className="w-px h-5 bg-zinc-800" />
+              <div className={`w-px h-5 ${ct('bg-slate-200', 'bg-zinc-800')}`} />
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
                   <Clapperboard className="w-4 h-4 text-yellow-400" />
                 </div>
                 <div>
-                  <h1 className="text-lg font-semibold text-white leading-tight">Cinematic Video Studio</h1>
-                  <p className="text-xs text-zinc-500">Kling v2.1 & Minimax</p>
+                  <h1 className={`text-lg font-semibold ${ct('text-slate-900', 'text-white')} leading-tight`}>Cinematic Video Studio</h1>
+                  <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>Kling v2.1 & Minimax</p>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
+                onClick={toggleTheme}
+                className={ct('p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200', 'p-2 rounded-full bg-zinc-800 text-zinc-400 hover:bg-zinc-700')}
+              >
+                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              </button>
+              <button
                 onClick={() => setShowHistory(true)}
-                className="p-2 rounded-full border border-zinc-800/60 bg-zinc-900/50 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700 transition-colors"
+                className={`p-2 rounded-full border ${ct('border-slate-200', 'border-zinc-800/60')} ${ct('bg-white', 'bg-zinc-900/50')} ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:text-slate-700', 'hover:text-zinc-200')} ${ct('hover:border-slate-300', 'hover:border-zinc-700')} transition-colors`}
               >
                 <Clock className="w-4 h-4" />
               </button>
@@ -717,7 +728,7 @@ export default function CreateVideos() {
                 className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors ${
                   mode === 'templates'
                     ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
-                    : 'text-zinc-400 hover:text-zinc-200 border border-zinc-800/60 bg-zinc-900/50 hover:border-zinc-700'
+                    : `${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:text-slate-700', 'hover:text-zinc-200')} border ${ct('border-slate-200', 'border-zinc-800/60')} ${ct('bg-white', 'bg-zinc-900/50')} ${ct('hover:border-slate-300', 'hover:border-zinc-700')}`
                 }`}
               >
                 Templates
@@ -731,28 +742,28 @@ export default function CreateVideos() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35 }}
-              className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 p-5"
+              className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} p-5`}
             >
               <Textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Describe your video scene..."
-                className="min-h-[100px] bg-transparent border-0 text-white text-base placeholder:text-zinc-600 focus:ring-0 focus-visible:ring-0 resize-none p-0"
+                className={`min-h-[100px] bg-transparent border-0 ${ct('text-slate-900', 'text-white')} text-base ${ct('placeholder:text-slate-400', 'placeholder:text-zinc-600')} focus:ring-0 focus-visible:ring-0 resize-none p-0`}
                 maxLength={1000}
               />
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-800/40">
+              <div className={`flex items-center justify-between mt-3 pt-3 border-t ${ct('border-slate-100', 'border-zinc-800/40')}`}>
                 <div className="flex flex-wrap gap-1.5">
                   {QUICK_SUGGESTIONS.map(s => (
                     <button
                       key={s}
                       onClick={() => setPrompt(prev => prev ? `${prev} ${s.toLowerCase()}` : s)}
-                      className="px-2.5 py-1 rounded-full text-xs text-zinc-500 border border-zinc-800/60 hover:text-zinc-300 hover:border-zinc-700 transition-colors"
+                      className={`px-2.5 py-1 rounded-full text-xs ${ct('text-slate-500', 'text-zinc-500')} border ${ct('border-slate-200', 'border-zinc-800/60')} ${ct('hover:text-slate-700', 'hover:text-zinc-300')} ${ct('hover:border-slate-300', 'hover:border-zinc-700')} transition-colors`}
                     >
                       {s}
                     </button>
                   ))}
                 </div>
-                <span className="text-xs text-zinc-600">{prompt.length}/1000</span>
+                <span className={`text-xs ${ct('text-slate-400', 'text-zinc-600')}`}>{prompt.length}/1000</span>
               </div>
             </motion.div>
           )}
@@ -765,17 +776,17 @@ export default function CreateVideos() {
                 className={`text-left p-4 rounded-[20px] border transition-all ${
                   mode === 'ai'
                     ? 'border-yellow-500/30 bg-yellow-500/[0.03]'
-                    : 'border-zinc-800/60 bg-zinc-900/50 hover:border-zinc-700'
+                    : `${ct('border-slate-200', 'border-zinc-800/60')} ${ct('bg-white', 'bg-zinc-900/50')} ${ct('hover:border-slate-300', 'hover:border-zinc-700')}`
                 }`}
               >
                 <div className="flex items-center gap-3 mb-1.5">
                   <Film className="w-5 h-5 text-yellow-400" />
-                  <span className="text-sm font-medium text-white">AI Video</span>
+                  <span className={`text-sm font-medium ${ct('text-slate-900', 'text-white')}`}>AI Video</span>
                 </div>
-                <p className="text-xs text-zinc-500 mb-2">Single-shot video from a text prompt</p>
+                <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} mb-2`}>Single-shot video from a text prompt</p>
                 <div className="flex gap-1.5">
                   {['Kling', 'Minimax', 'Luma'].map(m => (
-                    <span key={m} className="px-2 py-0.5 rounded-full text-[10px] bg-zinc-800/80 text-zinc-400 border border-zinc-700/50">{m}</span>
+                    <span key={m} className={`px-2 py-0.5 rounded-full text-[10px] ${ct('bg-slate-100', 'bg-zinc-800/80')} ${ct('text-slate-500', 'text-zinc-400')} border ${ct('border-slate-200', 'border-zinc-700/50')}`}>{m}</span>
                   ))}
                 </div>
               </button>
@@ -784,15 +795,15 @@ export default function CreateVideos() {
                 className={`text-left p-4 rounded-[20px] border transition-all ${
                   mode === 'studio'
                     ? 'border-yellow-500/30 bg-yellow-500/[0.03]'
-                    : 'border-zinc-800/60 bg-zinc-900/50 hover:border-zinc-700'
+                    : `${ct('border-slate-200', 'border-zinc-800/60')} ${ct('bg-white', 'bg-zinc-900/50')} ${ct('hover:border-slate-300', 'hover:border-zinc-700')}`
                 }`}
               >
                 <div className="flex items-center gap-3 mb-1.5">
                   <Layers className="w-5 h-5 text-yellow-400" />
-                  <span className="text-sm font-medium text-white">AI Studio</span>
+                  <span className={`text-sm font-medium ${ct('text-slate-900', 'text-white')}`}>AI Studio</span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">Pro</span>
                 </div>
-                <p className="text-xs text-zinc-500">Multi-shot storyboard with automatic assembly</p>
+                <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>Multi-shot storyboard with automatic assembly</p>
               </button>
             </div>
           )}
@@ -801,7 +812,7 @@ export default function CreateVideos() {
           {(mode === 'studio' || mode === 'templates') && (
             <button
               onClick={() => setMode('ai')}
-              className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+              className={`flex items-center gap-1.5 text-sm ${ct('text-slate-500', 'text-zinc-500')} ${ct('hover:text-slate-700', 'hover:text-zinc-300')} transition-colors`}
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               Back to modes
@@ -826,10 +837,10 @@ export default function CreateVideos() {
               className="space-y-4"
             >
               {/* Settings Row */}
-              <div className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 p-4 space-y-4">
+              <div className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} p-4 space-y-4`}>
                 {/* Style */}
                 <div>
-                  <Label className="text-xs text-zinc-500 uppercase tracking-wider mb-2.5 block">Style</Label>
+                  <Label className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} uppercase tracking-wider mb-2.5 block`}>Style</Label>
                   <div className="flex flex-wrap gap-1.5">
                     {STYLE_PRESETS.map(style => {
                       const Icon = style.icon;
@@ -840,7 +851,7 @@ export default function CreateVideos() {
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                             selectedStyle === style.id
                               ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
-                              : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:text-zinc-200 hover:border-zinc-600'
+                              : `${ct('bg-slate-50', 'bg-zinc-800/50')} ${ct('text-slate-500', 'text-zinc-400')} border ${ct('border-slate-200', 'border-zinc-700/50')} ${ct('hover:text-slate-700', 'hover:text-zinc-200')} ${ct('hover:border-slate-300', 'hover:border-zinc-600')}`
                           }`}
                         >
                           <Icon className="w-3 h-3" />
@@ -854,7 +865,7 @@ export default function CreateVideos() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Duration */}
                   <div>
-                    <Label className="text-xs text-zinc-500 uppercase tracking-wider mb-2.5 block">Duration</Label>
+                    <Label className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} uppercase tracking-wider mb-2.5 block`}>Duration</Label>
                     <div className="flex gap-1.5">
                       {DURATIONS.map(dur => (
                         <button
@@ -863,7 +874,7 @@ export default function CreateVideos() {
                           className={`flex-1 py-1.5 rounded-full text-xs font-medium transition-all text-center ${
                             duration === dur.id
                               ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
-                              : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:text-zinc-200 hover:border-zinc-600'
+                              : `${ct('bg-slate-50', 'bg-zinc-800/50')} ${ct('text-slate-500', 'text-zinc-400')} border ${ct('border-slate-200', 'border-zinc-700/50')} ${ct('hover:text-slate-700', 'hover:text-zinc-200')} ${ct('hover:border-slate-300', 'hover:border-zinc-600')}`
                           }`}
                         >
                           {dur.seconds}s
@@ -874,7 +885,7 @@ export default function CreateVideos() {
 
                   {/* Aspect Ratio */}
                   <div>
-                    <Label className="text-xs text-zinc-500 uppercase tracking-wider mb-2.5 block">Aspect Ratio</Label>
+                    <Label className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} uppercase tracking-wider mb-2.5 block`}>Aspect Ratio</Label>
                     <div className="flex gap-1.5">
                       {ASPECT_RATIOS.map(ratio => {
                         const Icon = ratio.icon;
@@ -885,7 +896,7 @@ export default function CreateVideos() {
                             className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 rounded-xl text-center transition-all ${
                               aspectRatio === ratio.id
                                 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
-                                : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:text-zinc-200 hover:border-zinc-600'
+                                : `${ct('bg-slate-50', 'bg-zinc-800/50')} ${ct('text-slate-500', 'text-zinc-400')} border ${ct('border-slate-200', 'border-zinc-700/50')} ${ct('hover:text-slate-700', 'hover:text-zinc-200')} ${ct('hover:border-slate-300', 'hover:border-zinc-600')}`
                             }`}
                           >
                             <Icon className="w-3.5 h-3.5" />
@@ -898,7 +909,7 @@ export default function CreateVideos() {
 
                   {/* Product + Brand */}
                   <div>
-                    <Label className="text-xs text-zinc-500 uppercase tracking-wider mb-2.5 block">Context</Label>
+                    <Label className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} uppercase tracking-wider mb-2.5 block`}>Context</Label>
                     <div className="flex items-center gap-2">
                       <ProductSelector
                         selectedProduct={selectedProduct}
@@ -909,12 +920,12 @@ export default function CreateVideos() {
                         filteredProducts={filteredProducts}
                       />
                       {brandAssets && (
-                        <label className="flex items-center gap-1.5 cursor-pointer text-xs text-zinc-400 hover:text-zinc-300 transition-colors">
+                        <label className={`flex items-center gap-1.5 cursor-pointer text-xs ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:text-slate-700', 'hover:text-zinc-300')} transition-colors`}>
                           <input
                             type="checkbox"
                             checked={useBrandContext}
                             onChange={(e) => setUseBrandContext(e.target.checked)}
-                            className="rounded border-zinc-600 bg-zinc-800 text-yellow-500 focus:ring-yellow-500/20 w-3.5 h-3.5"
+                            className={`rounded ${ct('border-slate-300', 'border-zinc-600')} ${ct('bg-slate-100', 'bg-zinc-800')} text-yellow-500 focus:ring-yellow-500/20 w-3.5 h-3.5`}
                           />
                           <Palette className="w-3 h-3" />
                           Brand
@@ -944,7 +955,7 @@ export default function CreateVideos() {
                     </>
                   )}
                 </button>
-                <span className="text-xs text-zinc-600">
+                <span className={`text-xs ${ct('text-slate-400', 'text-zinc-600')}`}>
                   ~{durationConfig?.seconds || 10}s video &middot; est. 1-3 min
                 </span>
               </div>
@@ -957,15 +968,15 @@ export default function CreateVideos() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}
                     transition={{ duration: 0.4 }}
-                    className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 overflow-hidden"
+                    className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} overflow-hidden`}
                   >
                     <div className="aspect-video relative">
                       {isGenerating ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/80">
+                        <div className={`absolute inset-0 flex flex-col items-center justify-center ${ct('bg-slate-100/90', 'bg-zinc-950/80')}`}>
                           <Loader2 className="w-10 h-10 text-yellow-400 animate-spin mb-3" />
-                          <p className="text-zinc-400 text-sm">Creating your video...</p>
-                          <p className="text-zinc-600 text-xs mt-1">This may take 1-3 minutes</p>
-                          <div className="w-40 h-1.5 bg-zinc-800 rounded-full mt-4 overflow-hidden">
+                          <p className={`${ct('text-slate-500', 'text-zinc-400')} text-sm`}>Creating your video...</p>
+                          <p className={`${ct('text-slate-400', 'text-zinc-600')} text-xs mt-1`}>This may take 1-3 minutes</p>
+                          <div className={`w-40 h-1.5 ${ct('bg-slate-200', 'bg-zinc-800')} rounded-full mt-4 overflow-hidden`}>
                             <div className="h-full bg-yellow-500 rounded-full animate-pulse" style={{ width: '60%' }} />
                           </div>
                         </div>
@@ -980,27 +991,27 @@ export default function CreateVideos() {
                     </div>
 
                     {generatedVideo && (
-                      <div className="p-4 border-t border-zinc-800/40">
+                      <div className={`p-4 border-t ${ct('border-slate-100', 'border-zinc-800/40')}`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="border-zinc-700 text-zinc-300 bg-zinc-800/50 text-xs">
+                            <Badge variant="outline" className={`${ct('border-slate-200', 'border-zinc-700')} ${ct('text-slate-600', 'text-zinc-300')} ${ct('bg-slate-50', 'bg-zinc-800/50')} text-xs`}>
                               <Clock className="w-3 h-3 mr-1" />
                               {generatedVideo.duration}s
                             </Badge>
-                            <Badge variant="outline" className="border-zinc-700 text-zinc-300 bg-zinc-800/50 text-xs">
+                            <Badge variant="outline" className={`${ct('border-slate-200', 'border-zinc-700')} ${ct('text-slate-600', 'text-zinc-300')} ${ct('bg-slate-50', 'bg-zinc-800/50')} text-xs`}>
                               {aspectRatio}
                             </Badge>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => handleDownload(generatedVideo.url)}
-                              className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                              className={`p-2 rounded-full ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:text-slate-900', 'hover:text-white')} ${ct('hover:bg-slate-100', 'hover:bg-zinc-800')} transition-colors`}
                             >
                               <Download className="w-4 h-4" />
                             </button>
                             <button
                               onClick={handleGenerate}
-                              className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                              className={`p-2 rounded-full ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:text-slate-900', 'hover:text-white')} ${ct('hover:bg-slate-100', 'hover:bg-zinc-800')} transition-colors`}
                             >
                               <RefreshCw className="w-4 h-4" />
                             </button>
@@ -1009,10 +1020,10 @@ export default function CreateVideos() {
 
                         {generatedVideo.enhanced_prompt && (
                           <details className="mt-3">
-                            <summary className="text-xs text-zinc-500 cursor-pointer hover:text-zinc-400 transition-colors">
+                            <summary className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} cursor-pointer ${ct('hover:text-slate-700', 'hover:text-zinc-400')} transition-colors`}>
                               Prompt details
                             </summary>
-                            <p className="text-xs text-zinc-400 mt-2 p-2 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
+                            <p className={`text-xs ${ct('text-slate-500', 'text-zinc-400')} mt-2 p-2 ${ct('bg-slate-50', 'bg-zinc-800/50')} rounded-xl border ${ct('border-slate-200', 'border-zinc-700/50')}`}>
                               {generatedVideo.enhanced_prompt}
                             </p>
                           </details>
@@ -1035,7 +1046,7 @@ export default function CreateVideos() {
             >
               {/* Template Gallery */}
               <div>
-                <Label className="text-xs text-zinc-500 uppercase tracking-wider mb-3 block">Choose a Template</Label>
+                <Label className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} uppercase tracking-wider mb-3 block`}>Choose a Template</Label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                   {TEMPLATES.map(t => (
                     <button
@@ -1044,19 +1055,19 @@ export default function CreateVideos() {
                       className={`group relative p-3 rounded-[20px] border text-left transition-all ${
                         selectedTemplate === t.id
                           ? 'border-yellow-500/30 bg-yellow-500/[0.03]'
-                          : 'border-zinc-800/60 bg-zinc-900/50 hover:border-zinc-700'
+                          : `${ct('border-slate-200', 'border-zinc-800/60')} ${ct('bg-white', 'bg-zinc-900/50')} ${ct('hover:border-slate-300', 'hover:border-zinc-700')}`
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${
-                        selectedTemplate === t.id ? 'bg-yellow-500/20' : 'bg-zinc-800/50'
+                        selectedTemplate === t.id ? 'bg-yellow-500/20' : ct('bg-slate-100', 'bg-zinc-800/50')
                       }`}>
-                        <Film className={`w-4 h-4 ${selectedTemplate === t.id ? 'text-yellow-400' : 'text-zinc-500'}`} />
+                        <Film className={`w-4 h-4 ${selectedTemplate === t.id ? 'text-yellow-400' : ct('text-slate-500', 'text-zinc-500')}`} />
                       </div>
-                      <p className={`text-xs font-medium ${selectedTemplate === t.id ? 'text-white' : 'text-zinc-300'}`}>{t.label}</p>
-                      <p className="text-[10px] text-zinc-600 mt-0.5 line-clamp-2">{t.description}</p>
+                      <p className={`text-xs font-medium ${selectedTemplate === t.id ? ct('text-slate-900', 'text-white') : ct('text-slate-600', 'text-zinc-300')}`}>{t.label}</p>
+                      <p className={`text-[10px] ${ct('text-slate-400', 'text-zinc-600')} mt-0.5 line-clamp-2`}>{t.description}</p>
                       <div className="flex gap-1 mt-2">
-                        <span className="text-[9px] text-zinc-600 bg-zinc-800/50 px-1.5 py-0.5 rounded-full">{t.fps}fps</span>
-                        <span className="text-[9px] text-zinc-600 bg-zinc-800/50 px-1.5 py-0.5 rounded-full">{(t.durationFrames / t.fps).toFixed(0)}s</span>
+                        <span className={`text-[9px] ${ct('text-slate-400', 'text-zinc-600')} ${ct('bg-slate-50', 'bg-zinc-800/50')} px-1.5 py-0.5 rounded-full`}>{t.fps}fps</span>
+                        <span className={`text-[9px] ${ct('text-slate-400', 'text-zinc-600')} ${ct('bg-slate-50', 'bg-zinc-800/50')} px-1.5 py-0.5 rounded-full`}>{(t.durationFrames / t.fps).toFixed(0)}s</span>
                       </div>
                     </button>
                   ))}
@@ -1067,10 +1078,10 @@ export default function CreateVideos() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Left: Product & Content */}
                 <div className="space-y-4">
-                  <div className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 p-4 space-y-3">
+                  <div className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} p-4 space-y-3`}>
                     <div className="flex items-center gap-2">
                       <Package className="w-4 h-4 text-yellow-400" />
-                      <h3 className="text-sm font-medium text-white">Content</h3>
+                      <h3 className={`text-sm font-medium ${ct('text-slate-900', 'text-white')}`}>Content</h3>
                     </div>
                     <ProductSelector
                       selectedProduct={selectedProduct}
@@ -1085,7 +1096,7 @@ export default function CreateVideos() {
                       <button
                         onClick={handleAnalyzeDesign}
                         disabled={isAnalyzing}
-                        className="flex items-center gap-2 px-3 py-1.5 hover:bg-zinc-800/50 border border-zinc-700/50 rounded-full text-xs text-zinc-500 transition-colors disabled:opacity-50"
+                        className={`flex items-center gap-2 px-3 py-1.5 ${ct('hover:bg-slate-50', 'hover:bg-zinc-800/50')} border ${ct('border-slate-200', 'border-zinc-700/50')} rounded-full text-xs ${ct('text-slate-500', 'text-zinc-500')} transition-colors disabled:opacity-50`}
                       >
                         {isAnalyzing ? (
                           <>
@@ -1108,28 +1119,28 @@ export default function CreateVideos() {
                     />
 
                     {/* Template data preview */}
-                    <div className="p-3 bg-zinc-800/30 rounded-xl border border-zinc-700/30 space-y-1.5">
-                      <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 uppercase tracking-wider">
+                    <div className={`p-3 ${ct('bg-slate-50', 'bg-zinc-800/30')} rounded-xl border ${ct('border-slate-100', 'border-zinc-700/30')} space-y-1.5`}>
+                      <div className={`flex items-center gap-1.5 text-[10px] ${ct('text-slate-400', 'text-zinc-600')} uppercase tracking-wider`}>
                         <Info className="w-3 h-3" />
                         Live data
                       </div>
                       <div className="grid grid-cols-2 gap-1.5 text-xs">
                         <div>
-                          <span className="text-zinc-600">Product:</span>
-                          <span className="text-zinc-400 ml-1">{templateProps.productName || templateProps.headline || '-'}</span>
+                          <span className={ct('text-slate-400', 'text-zinc-600')}>Product:</span>
+                          <span className={`${ct('text-slate-600', 'text-zinc-400')} ml-1`}>{templateProps.productName || templateProps.headline || '-'}</span>
                         </div>
                         <div>
-                          <span className="text-zinc-600">Features:</span>
-                          <span className="text-zinc-400 ml-1">{templateProps.features?.length || 0}</span>
+                          <span className={ct('text-slate-400', 'text-zinc-600')}>Features:</span>
+                          <span className={`${ct('text-slate-600', 'text-zinc-400')} ml-1`}>{templateProps.features?.length || 0}</span>
                         </div>
                         {templateProps.screenshots && (
                           <div>
-                            <span className="text-zinc-600">Screenshots:</span>
-                            <span className="text-zinc-400 ml-1">{templateProps.screenshots.length}</span>
+                            <span className={ct('text-slate-400', 'text-zinc-600')}>Screenshots:</span>
+                            <span className={`${ct('text-slate-600', 'text-zinc-400')} ml-1`}>{templateProps.screenshots.length}</span>
                           </div>
                         )}
                         <div className="col-span-2 flex items-center gap-1.5">
-                          <span className="text-zinc-600">Brand:</span>
+                          <span className={ct('text-slate-400', 'text-zinc-600')}>Brand:</span>
                           <div className="flex gap-0.5">
                             <div className="w-3 h-3 rounded" style={{ background: templateProps.brandColors?.primary || '#0f0f0f' }} />
                             <div className="w-3 h-3 rounded" style={{ background: templateProps.brandColors?.secondary || '#1a1a2e' }} />
@@ -1143,23 +1154,23 @@ export default function CreateVideos() {
 
                 {/* Center + Right: Preview */}
                 <div className="lg:col-span-2 space-y-4">
-                  <div className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 p-4">
+                  <div className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} p-4`}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Play className="w-4 h-4 text-yellow-400" />
-                        <h3 className="text-sm font-medium text-white">Live Preview</h3>
+                        <h3 className={`text-sm font-medium ${ct('text-slate-900', 'text-white')}`}>Live Preview</h3>
                       </div>
                       <div className="flex gap-1.5">
-                        <Badge variant="outline" className="border-zinc-700 text-zinc-500 bg-zinc-800/50 text-[10px]">
+                        <Badge variant="outline" className={`${ct('border-slate-200', 'border-zinc-700')} ${ct('text-slate-500', 'text-zinc-500')} ${ct('bg-slate-50', 'bg-zinc-800/50')} text-[10px]`}>
                           {currentTemplateConfig.durationFrames} frames
                         </Badge>
-                        <Badge variant="outline" className="border-zinc-700 text-zinc-500 bg-zinc-800/50 text-[10px]">
+                        <Badge variant="outline" className={`${ct('border-slate-200', 'border-zinc-700')} ${ct('text-slate-500', 'text-zinc-500')} ${ct('bg-slate-50', 'bg-zinc-800/50')} text-[10px]`}>
                           {currentTemplateConfig.width}x{currentTemplateConfig.height}
                         </Badge>
                       </div>
                     </div>
 
-                    <div ref={playerContainerRef} className="rounded-xl overflow-hidden border border-zinc-700/50">
+                    <div ref={playerContainerRef} className={`rounded-xl overflow-hidden border ${ct('border-slate-200', 'border-zinc-700/50')}`}>
                       {playerWidth > 0 && (
                         <Player
                           ref={playerRef}
@@ -1178,7 +1189,7 @@ export default function CreateVideos() {
                       )}
                     </div>
 
-                    <p className="text-[10px] text-zinc-600 mt-2">Click the player to play/pause.</p>
+                    <p className={`text-[10px] ${ct('text-slate-400', 'text-zinc-600')} mt-2`}>Click the player to play/pause.</p>
                   </div>
 
                   {/* Render Button */}
@@ -1204,16 +1215,16 @@ export default function CreateVideos() {
 
                   {/* Recent Renders */}
                   {recentRenders.length > 0 && (
-                    <div className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 p-4">
-                      <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">Recent Renders</h4>
+                    <div className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} p-4`}>
+                      <h4 className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-500')} uppercase tracking-wider mb-3`}>Recent Renders</h4>
                       <div className="space-y-1.5">
                         {recentRenders.map(job => (
-                          <div key={job.id} className="flex items-center justify-between p-2.5 bg-zinc-800/30 border border-zinc-700/30 rounded-xl">
+                          <div key={job.id} className={`flex items-center justify-between p-2.5 ${ct('bg-slate-50', 'bg-zinc-800/30')} border ${ct('border-slate-100', 'border-zinc-700/30')} rounded-xl`}>
                             <div className="flex items-center gap-2.5">
-                              <Film className="w-3.5 h-3.5 text-zinc-500" />
+                              <Film className={`w-3.5 h-3.5 ${ct('text-slate-500', 'text-zinc-500')}`} />
                               <div>
-                                <p className="text-xs text-white">{job.template_id}</p>
-                                <p className="text-[10px] text-zinc-600">{new Date(job.created_at).toLocaleDateString()}</p>
+                                <p className={`text-xs ${ct('text-slate-900', 'text-white')}`}>{job.template_id}</p>
+                                <p className={`text-[10px] ${ct('text-slate-400', 'text-zinc-600')}`}>{new Date(job.created_at).toLocaleDateString()}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -1271,41 +1282,41 @@ export default function CreateVideos() {
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
                   transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                  className="fixed top-0 right-0 h-full w-full max-w-md bg-zinc-950 border-l border-zinc-800/60 z-50 flex flex-col"
+                  className={`fixed top-0 right-0 h-full w-full max-w-md ${ct('bg-white', 'bg-zinc-950')} border-l ${ct('border-slate-200', 'border-zinc-800/60')} z-50 flex flex-col`}
                 >
-                  <div className="flex items-center justify-between p-4 border-b border-zinc-800/60">
+                  <div className={`flex items-center justify-between p-4 border-b ${ct('border-slate-200', 'border-zinc-800/60')}`}>
                     <div className="flex items-center gap-2">
                       <History className="w-4 h-4 text-yellow-400" />
-                      <h2 className="text-sm font-semibold text-white">Generation History</h2>
-                      <span className="text-xs text-zinc-500">({generationHistory.length})</span>
+                      <h2 className={`text-sm font-semibold ${ct('text-slate-900', 'text-white')}`}>Generation History</h2>
+                      <span className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>({generationHistory.length})</span>
                     </div>
                     <button
                       onClick={() => setShowHistory(false)}
-                      className="p-1.5 rounded-full hover:bg-zinc-800 text-zinc-400 transition-colors"
+                      className={`p-1.5 rounded-full ${ct('hover:bg-slate-100', 'hover:bg-zinc-800')} ${ct('text-slate-500', 'text-zinc-400')} transition-colors`}
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                   <div className="flex-1 overflow-y-auto p-4 space-y-3">
                     {generationHistory.length === 0 && (
-                      <div className="text-center py-12 text-zinc-600 text-sm">No videos generated yet</div>
+                      <div className={`text-center py-12 ${ct('text-slate-400', 'text-zinc-600')} text-sm`}>No videos generated yet</div>
                     )}
                     {generationHistory.map(item => (
                       <div
                         key={item.id}
-                        className="group rounded-[16px] border border-zinc-800/60 bg-zinc-900/50 overflow-hidden cursor-pointer hover:border-zinc-700 transition-colors"
+                        className={`group rounded-[16px] border ${ct('border-slate-200', 'border-zinc-800/60')} ${ct('bg-white', 'bg-zinc-900/50')} overflow-hidden cursor-pointer ${ct('hover:border-slate-300', 'hover:border-zinc-700')} transition-colors`}
                         onClick={() => { setPreviewVideo(item); setShowHistory(false); }}
                       >
                         <div className="relative aspect-video">
                           {item.thumbnail_url ? (
                             <img src={item.thumbnail_url} alt={item.name} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
-                              <Video className="w-8 h-8 text-zinc-800" />
+                            <div className={`w-full h-full ${ct('bg-slate-100', 'bg-zinc-900')} flex items-center justify-center`}>
+                              <Video className={`w-8 h-8 ${ct('text-slate-300', 'text-zinc-800')}`} />
                             </div>
                           )}
                           <div className="absolute bottom-2 left-2">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/70 text-white border border-white/10">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] bg-black/70 text-white border ${ct('border-slate-200', 'border-white/10')}`}>
                               {item.duration || item.generation_config?.duration_seconds}s
                             </span>
                           </div>
@@ -1331,11 +1342,11 @@ export default function CreateVideos() {
                           </div>
                         </div>
                         <div className="p-2.5">
-                          <p className="text-xs text-zinc-400 line-clamp-1">{item.generation_config?.prompt || item.name}</p>
+                          <p className={`text-xs ${ct('text-slate-500', 'text-zinc-400')} line-clamp-1`}>{item.generation_config?.prompt || item.name}</p>
                           <div className="flex gap-1.5 mt-1.5">
-                            <span className="text-[10px] text-zinc-600">{item.generation_config?.style}</span>
-                            <span className="text-[10px] text-zinc-700">&middot;</span>
-                            <span className="text-[10px] text-zinc-600">{item.generation_config?.aspect_ratio}</span>
+                            <span className={`text-[10px] ${ct('text-slate-400', 'text-zinc-600')}`}>{item.generation_config?.style}</span>
+                            <span className={`text-[10px] ${ct('text-slate-300', 'text-zinc-700')}`}>&middot;</span>
+                            <span className={`text-[10px] ${ct('text-slate-400', 'text-zinc-600')}`}>{item.generation_config?.aspect_ratio}</span>
                           </div>
                         </div>
                       </div>
@@ -1358,9 +1369,9 @@ export default function CreateVideos() {
 
         {/* Video Preview Dialog */}
         <Dialog open={!!previewVideo} onOpenChange={() => setPreviewVideo(null)}>
-          <DialogContent className="max-w-4xl bg-zinc-900 border-zinc-700">
+          <DialogContent className={`max-w-4xl ${ct('bg-white', 'bg-zinc-900')} ${ct('border-slate-200', 'border-zinc-700')}`}>
             <DialogHeader>
-              <DialogTitle className="text-white">
+              <DialogTitle className={ct('text-slate-900', 'text-white')}>
                 {previewVideo?.name || 'Generated Video'}
               </DialogTitle>
             </DialogHeader>
@@ -1374,21 +1385,21 @@ export default function CreateVideos() {
                   poster={previewVideo.thumbnail_url}
                 />
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-zinc-700 text-zinc-300 bg-zinc-800/50 text-xs">
+                  <Badge variant="outline" className={`${ct('border-slate-200', 'border-zinc-700')} ${ct('text-slate-600', 'text-zinc-300')} ${ct('bg-slate-50', 'bg-zinc-800/50')} text-xs`}>
                     <Clock className="w-3 h-3 mr-1" />
                     {previewVideo.duration || previewVideo.generation_config?.duration_seconds}s
                   </Badge>
-                  <Badge variant="outline" className="border-zinc-700 text-zinc-300 bg-zinc-800/50 text-xs">
+                  <Badge variant="outline" className={`${ct('border-slate-200', 'border-zinc-700')} ${ct('text-slate-600', 'text-zinc-300')} ${ct('bg-slate-50', 'bg-zinc-800/50')} text-xs`}>
                     {previewVideo.generation_config?.aspect_ratio || '16:9'}
                   </Badge>
-                  <Badge variant="outline" className="border-zinc-700 text-zinc-300 bg-zinc-800/50 text-xs">
+                  <Badge variant="outline" className={`${ct('border-slate-200', 'border-zinc-700')} ${ct('text-slate-600', 'text-zinc-300')} ${ct('bg-slate-50', 'bg-zinc-800/50')} text-xs`}>
                     {previewVideo.generation_config?.style || 'cinematic'}
                   </Badge>
                 </div>
                 {previewVideo.generation_config?.prompt && (
-                  <div className="p-2 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
-                    <Label className="text-zinc-500 text-[10px] mb-1 block">Prompt:</Label>
-                    <p className="text-zinc-300 text-xs">{previewVideo.generation_config.prompt}</p>
+                  <div className={`p-2 ${ct('bg-slate-50', 'bg-zinc-800/50')} rounded-xl border ${ct('border-slate-200', 'border-zinc-700/50')}`}>
+                    <Label className={`${ct('text-slate-500', 'text-zinc-500')} text-[10px] mb-1 block`}>Prompt:</Label>
+                    <p className={`${ct('text-slate-600', 'text-zinc-300')} text-xs`}>{previewVideo.generation_config.prompt}</p>
                   </div>
                 )}
                 <div className="flex gap-2">
@@ -1401,7 +1412,7 @@ export default function CreateVideos() {
                   </button>
                   <button
                     onClick={() => { handleRegenerate(previewVideo); setPreviewVideo(null); }}
-                    className="px-4 py-2 rounded-full border border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-sm transition-colors flex items-center gap-2"
+                    className={`px-4 py-2 rounded-full border ${ct('border-slate-200', 'border-zinc-700')} ${ct('text-slate-600', 'text-zinc-300')} ${ct('hover:bg-slate-100', 'hover:bg-zinc-800')} text-sm transition-colors flex items-center gap-2`}
                   >
                     <RefreshCw className="w-4 h-4" />
                     Use Settings

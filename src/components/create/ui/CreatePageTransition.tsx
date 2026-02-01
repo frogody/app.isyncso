@@ -1,6 +1,7 @@
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MOTION_VARIANTS } from '@/tokens/create';
-import { CreateThemeProvider } from '@/contexts/CreateThemeContext';
+import { CreateThemeProvider, useCreateTheme } from '@/contexts/CreateThemeContext';
 
 interface CreatePageTransitionProps {
   children: React.ReactNode;
@@ -9,20 +10,44 @@ interface CreatePageTransitionProps {
 
 /**
  * Wraps page content with enter/exit fade+slide animation and Create theme provider.
- * Use at the top level of each Create page component.
+ * Toggles data-create-light on <html> so CSS overrides apply to the entire page
+ * (including body background) — not just descendants of this component.
  */
 export function CreatePageTransition({ children, className }: CreatePageTransitionProps) {
   return (
     <CreateThemeProvider>
-      <motion.div
-        initial={MOTION_VARIANTS.page.initial}
-        animate={MOTION_VARIANTS.page.animate}
-        exit={MOTION_VARIANTS.page.exit}
-        transition={MOTION_VARIANTS.page.transition}
-        className={className}
-      >
+      <CreatePageTransitionInner className={className}>
         {children}
-      </motion.div>
+      </CreatePageTransitionInner>
     </CreateThemeProvider>
+  );
+}
+
+function CreatePageTransitionInner({ children, className }: CreatePageTransitionProps) {
+  const { theme } = useCreateTheme();
+
+  useEffect(() => {
+    const html = document.documentElement;
+    if (theme === 'light') {
+      html.setAttribute('data-create-light', '');
+    } else {
+      html.removeAttribute('data-create-light');
+    }
+    return () => {
+      html.removeAttribute('data-create-light');
+    };
+  }, [theme]);
+
+  return (
+    <motion.div
+      initial={MOTION_VARIANTS.page.initial}
+      animate={MOTION_VARIANTS.page.animate}
+      exit={MOTION_VARIANTS.page.exit}
+      transition={MOTION_VARIANTS.page.transition}
+      className={className}
+      data-create-light={theme === 'light' ? '' : undefined}
+    >
+      {children}
+    </motion.div>
   );
 }

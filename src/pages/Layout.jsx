@@ -1803,6 +1803,127 @@ export default function Layout({ children, currentPageName }) {
           [data-raise-light] .active\\:bg-white\\/10:active { background: rgba(0,0,0,0.06) !important; }
           [data-raise-light] .animate-in { border-color: #E2E8F0 !important; }
 
+          /* ═══════════════════════════════════════════════════
+             CREATE LIGHT THEME OVERRIDES
+             Yellow accent (#EAB308) on white/slate backgrounds
+             ═══════════════════════════════════════════════════ */
+
+          /* Page & body */
+          html[data-create-light] body { background: #F8FAFC !important; color: #0F172A !important; }
+          html[data-create-light] .min-h-screen.bg-black,
+          html[data-create-light] .min-h-screen.bg-\\[\\#09090b\\] { background: #F8FAFC !important; }
+          html[data-create-light] .bg-black { background: #F8FAFC !important; }
+          html[data-create-light] .bg-\\[\\#09090b\\] { background: #F8FAFC !important; }
+
+          /* Backgrounds — dark surfaces → light */
+          [data-create-light] .bg-zinc-900 { background: #FFFFFF !important; }
+          [data-create-light] .bg-zinc-900\\/50, [data-create-light] .bg-zinc-900\\/60, [data-create-light] .bg-zinc-900\\/70 {
+            background: #FFFFFF !important; border-color: #E2E8F0 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+          }
+          [data-create-light] .bg-zinc-800 { background: #E2E8F0 !important; }
+          [data-create-light] .bg-zinc-800\\/50, [data-create-light] .bg-zinc-800\\/30, [data-create-light] .bg-zinc-800\\/60 {
+            background: #F1F5F9 !important; border-color: #E2E8F0 !important;
+          }
+          [data-create-light] .bg-zinc-700, [data-create-light] .bg-zinc-700\\/30 { background: #CBD5E1 !important; }
+          [data-create-light] .bg-white,
+          [data-create-light] .bg-white\\/95, [data-create-light] .bg-white\\/90, [data-create-light] .bg-white\\/80,
+          [data-create-light] .bg-white\\/70, [data-create-light] .bg-white\\/60, [data-create-light] .bg-white\\/50 {
+            background: #FFFFFF !important; border-color: #E2E8F0 !important;
+          }
+          [data-create-light] .bg-white\\/5 { background: rgba(0,0,0,0.03) !important; }
+          [data-create-light] .bg-white\\/10, [data-create-light] .bg-white\\/20 { background: rgba(0,0,0,0.04) !important; }
+          [data-create-light] .bg-black\\/95 { background: rgba(255,255,255,0.97) !important; border-color: #E2E8F0 !important; }
+          [data-create-light] .text-black { color: #0F172A !important; }
+          [data-create-light] .border-white { border-color: #E2E8F0 !important; }
+
+          /* Text — primary & zinc grays → slate */
+          [data-create-light] .text-white { color: #0F172A !important; }
+          [data-create-light] .text-zinc-300 { color: #475569 !important; }
+          [data-create-light] .text-zinc-400 { color: #64748B !important; }
+          [data-create-light] .text-zinc-500 { color: #64748B !important; }
+          [data-create-light] .text-zinc-600 { color: #475569 !important; }
+          [data-create-light] .text-zinc-700 { color: #334155 !important; }
+          [data-create-light] .text-gray-400 { color: #64748B !important; }
+          [data-create-light] .text-gray-300 { color: #64748B !important; }
+          [data-create-light] .hover\\:text-white:hover { color: #0F172A !important; }
+
+          /* Borders — zinc → slate */
+          [data-create-light] .border-zinc-800, [data-create-light] .border-zinc-800\\/60, [data-create-light] .border-zinc-800\\/50 {
+            border-color: #E2E8F0 !important;
+          }
+          [data-create-light] .border-zinc-700, [data-create-light] .border-zinc-700\\/60, [data-create-light] .border-zinc-700\\/30 {
+            border-color: #CBD5E1 !important;
+          }
+          [data-create-light] .border-zinc-600 { border-color: #CBD5E1 !important; }
+          [data-create-light] .border-white\\/10 { border-color: #E2E8F0 !important; }
+          [data-create-light] .border-white\\/5 { border-color: #E2E8F0 !important; }
+
+          /* Shadows */
+          [data-create-light] .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.06) !important; }
+          [data-create-light] .shadow-md { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.05) !important; }
+          [data-create-light] .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04) !important; }
+          [data-create-light] .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15) !important; }
+
+          /* Yellow accent (Create primary) */
+          [data-create-light] .text-yellow-400, [data-create-light] .text-yellow-400\\/80 { color: #CA8A04 !important; }
+          [data-create-light] .text-yellow-500 { color: #CA8A04 !important; }
+          [data-create-light] .bg-yellow-500\\/10, [data-create-light] .bg-yellow-400\\/10 { background: rgba(234,179,8,0.08) !important; }
+          [data-create-light] .bg-yellow-500\\/20, [data-create-light] .bg-yellow-400\\/20 { background: rgba(234,179,8,0.1) !important; }
+          [data-create-light] .bg-yellow-500 { background: #CA8A04 !important; }
+          [data-create-light] .bg-yellow-950\\/30 { background: rgba(234,179,8,0.06) !important; }
+          [data-create-light] .border-yellow-500\\/20, [data-create-light] .border-yellow-500\\/30, [data-create-light] .border-yellow-400\\/20 { border-color: rgba(234,179,8,0.25) !important; }
+          [data-create-light] .border-yellow-500\\/50 { border-color: rgba(234,179,8,0.35) !important; }
+          [data-create-light] .hover\\:bg-yellow-600:hover { background: #A16207 !important; }
+          [data-create-light] .shadow-yellow-500\\/20 { box-shadow: 0 4px 15px rgba(234,179,8,0.15) !important; }
+
+          /* Green */
+          [data-create-light] .text-green-400 { color: #16A34A !important; }
+          [data-create-light] .bg-green-500\\/10, [data-create-light] .bg-green-500\\/20 { background: rgba(34,197,94,0.08) !important; }
+          [data-create-light] .border-green-500\\/30 { border-color: rgba(34,197,94,0.25) !important; }
+
+          /* Red */
+          [data-create-light] .text-red-400 { color: #DC2626 !important; }
+          [data-create-light] .bg-red-500\\/20, [data-create-light] .bg-red-500\\/10 { background: rgba(220,38,38,0.08) !important; }
+          [data-create-light] .border-red-500\\/30 { border-color: rgba(220,38,38,0.25) !important; }
+
+          /* Neutral */
+          [data-create-light] .bg-zinc-500\\/20, [data-create-light] .bg-zinc-500\\/10 { background: rgba(100,116,139,0.1) !important; }
+
+          /* Gradients */
+          [data-create-light] .from-black { --tw-gradient-from: #FFFFFF !important; }
+          [data-create-light] .via-black { --tw-gradient-via: #FFFFFF !important; }
+
+          /* Inputs */
+          [data-create-light] input, [data-create-light] textarea, [data-create-light] select {
+            background: #FFFFFF !important; color: #0F172A !important; border-color: #CBD5E1 !important;
+          }
+          [data-create-light] input:focus, [data-create-light] textarea:focus, [data-create-light] select:focus {
+            border-color: #EAB308 !important; box-shadow: 0 0 0 3px rgba(234,179,8,0.15) !important;
+          }
+          [data-create-light] input::placeholder, [data-create-light] textarea::placeholder { color: #94A3B8 !important; }
+
+          /* Interactive states */
+          [data-create-light] .hover\\:bg-white\\/5:hover { background: rgba(0,0,0,0.04) !important; }
+          [data-create-light] .hover\\:bg-zinc-800:hover { background: #F1F5F9 !important; }
+          [data-create-light] .hover\\:border-zinc-700\\/60:hover { border-color: #CBD5E1 !important; }
+          [data-create-light] .focus\\:bg-zinc-800:focus { background: #F1F5F9 !important; }
+          [data-create-light] .data-\\[state\\=active\\]\\:bg-zinc-800[data-state="active"] { background: #FFFFFF !important; box-shadow: 0 1px 2px rgba(0,0,0,0.08) !important; }
+
+          /* Glass card */
+          [data-create-light] .glass-card { background: #FFFFFF !important; border: 1px solid #E2E8F0 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important; }
+
+          /* ── Create Light: Sidebar & Submenus ──────────────── */
+          html[data-create-light] .sidebar-shell {
+            background: #FFFFFF !important;
+            border-right: 1px solid #E2E8F0 !important;
+          }
+          [data-create-light] .bg-gradient-to-t.from-black { background: #FFFFFF !important; }
+          [data-create-light] .bg-gray-900 { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
+          [data-create-light] .hover\\:text-white:hover { color: #0F172A !important; }
+          [data-create-light] .group-hover\\:text-white:hover { color: #0F172A !important; }
+          [data-create-light] .active\\:bg-white\\/10:active { background: rgba(0,0,0,0.06) !important; }
+          [data-create-light] .animate-in { border-color: #E2E8F0 !important; }
+
           /* Surfaces */
           .glass-card {
             background: #0A0A0A !important;

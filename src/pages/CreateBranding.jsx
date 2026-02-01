@@ -21,10 +21,13 @@ import {
   ChevronLeft,
   Paintbrush,
   Camera,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { CreatePageTransition } from '@/components/create/ui';
+import { useCreateTheme } from '@/contexts/CreateThemeContext';
 
 const BRAND_BUCKET = 'brand-assets';
 
@@ -94,20 +97,21 @@ const COLOR_LABELS = {
 // --- Collapsible Section ---
 function Section({ icon: Icon, title, defaultOpen = true, children }) {
   const [open, setOpen] = useState(defaultOpen);
+  const { ct } = useCreateTheme();
 
   return (
-    <div className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 overflow-hidden">
+    <div className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} overflow-hidden`}>
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors"
+        className={`w-full flex items-center gap-3 px-5 py-4 text-left ${ct('hover:bg-slate-50', 'hover:bg-white/[0.02]')} transition-colors`}
       >
         <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
           <Icon className="w-4 h-4 text-yellow-400" />
         </div>
-        <span className="text-white font-semibold text-sm flex-1">{title}</span>
+        <span className={`${ct('text-slate-900', 'text-white')} font-semibold text-sm flex-1`}>{title}</span>
         <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
-          <ChevronDown className="w-4 h-4 text-zinc-500" />
+          <ChevronDown className={`w-4 h-4 ${ct('text-slate-500', 'text-zinc-500')}`} />
         </motion.div>
       </button>
       <AnimatePresence initial={false}>
@@ -129,6 +133,7 @@ function Section({ icon: Icon, title, defaultOpen = true, children }) {
 
 // --- Logo Upload Slot ---
 function LogoSlot({ logo, logoType, label, description, onUpload, onRemove, uploading }) {
+  const { ct } = useCreateTheme();
   const handleDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer?.files?.[0];
@@ -137,9 +142,9 @@ function LogoSlot({ logo, logoType, label, description, onUpload, onRemove, uplo
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium text-zinc-400">{label}</p>
+      <p className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-400')}`}>{label}</p>
       {logo ? (
-        <div className="relative group aspect-video bg-zinc-800/50 rounded-xl border border-zinc-700/50 flex items-center justify-center overflow-hidden">
+        <div className={`relative group aspect-video ${ct('bg-slate-50', 'bg-zinc-800/50')} rounded-xl border ${ct('border-slate-200', 'border-zinc-700/50')} flex items-center justify-center overflow-hidden`}>
           <img src={logo.url} alt={logo.name} className="max-w-full max-h-full object-contain" />
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
             <label className="cursor-pointer">
@@ -163,13 +168,13 @@ function LogoSlot({ logo, logoType, label, description, onUpload, onRemove, uplo
           onDrop={handleDrop}
         >
           <input type="file" accept="image/*" onChange={(e) => onUpload(e, logoType)} className="hidden" disabled={uploading} />
-          <div className="aspect-video bg-zinc-800/30 rounded-xl border-2 border-dashed border-zinc-700/60 hover:border-yellow-500/40 transition-colors flex flex-col items-center justify-center gap-2">
-            <Camera className="w-5 h-5 text-zinc-600" />
-            <span className="text-xs text-zinc-500">{uploading ? 'Uploading...' : 'Drop or click'}</span>
+          <div className={`aspect-video ${ct('bg-slate-50', 'bg-zinc-800/30')} rounded-xl border-2 border-dashed ${ct('border-slate-300', 'border-zinc-700/60')} hover:border-yellow-500/40 transition-colors flex flex-col items-center justify-center gap-2`}>
+            <Camera className={`w-5 h-5 ${ct('text-slate-400', 'text-zinc-600')}`} />
+            <span className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>{uploading ? 'Uploading...' : 'Drop or click'}</span>
           </div>
         </label>
       )}
-      <p className="text-[11px] text-zinc-600">{description}</p>
+      <p className={`text-[11px] ${ct('text-slate-400', 'text-zinc-600')}`}>{description}</p>
     </div>
   );
 }
@@ -177,18 +182,19 @@ function LogoSlot({ logo, logoType, label, description, onUpload, onRemove, uplo
 // --- Font Picker Popover ---
 function FontPicker({ value, onChange, label }) {
   const [open, setOpen] = useState(false);
+  const { ct } = useCreateTheme();
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium text-zinc-400">{label}</p>
+      <p className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-400')}`}>{label}</p>
       <div className="relative">
         <button
           type="button"
           onClick={() => setOpen(o => !o)}
-          className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-zinc-800/50 border border-zinc-700/60 hover:border-zinc-600 transition-colors text-left"
+          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl ${ct('bg-slate-50', 'bg-zinc-800/50')} border ${ct('border-slate-200', 'border-zinc-700/60')} ${ct('hover:border-slate-300', 'hover:border-zinc-600')} transition-colors text-left`}
         >
-          <span className="text-white text-sm" style={{ fontFamily: value }}>{value}</span>
-          <ChevronDown className="w-4 h-4 text-zinc-500" />
+          <span className={`${ct('text-slate-900', 'text-white')} text-sm`} style={{ fontFamily: value }}>{value}</span>
+          <ChevronDown className={`w-4 h-4 ${ct('text-slate-500', 'text-zinc-500')}`} />
         </button>
         <AnimatePresence>
           {open && (
@@ -197,14 +203,14 @@ function FontPicker({ value, onChange, label }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.15 }}
-              className="absolute z-30 top-full mt-1 w-full max-h-56 overflow-y-auto rounded-xl bg-zinc-900 border border-zinc-700/60 shadow-xl"
+              className={`absolute z-30 top-full mt-1 w-full max-h-56 overflow-y-auto rounded-xl ${ct('bg-white', 'bg-zinc-900')} border ${ct('border-slate-200', 'border-zinc-700/60')} shadow-xl`}
             >
               {FONT_OPTIONS.map(font => (
                 <button
                   key={font}
                   type="button"
                   onClick={() => { onChange(font); setOpen(false); }}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-white/[0.04] transition-colors ${font === value ? 'text-yellow-400 bg-yellow-500/5' : 'text-zinc-300'}`}
+                  className={`w-full text-left px-4 py-2 text-sm ${ct('hover:bg-slate-50', 'hover:bg-white/[0.04]')} transition-colors ${font === value ? 'text-yellow-400 bg-yellow-500/5' : ct('text-slate-600', 'text-zinc-300')}`}
                   style={{ fontFamily: font }}
                 >
                   {font}
@@ -220,6 +226,7 @@ function FontPicker({ value, onChange, label }) {
 
 // --- Pill Select ---
 function PillSelect({ options, value, onChange }) {
+  const { ct } = useCreateTheme();
   return (
     <div className="flex flex-wrap gap-2">
       {options.map(opt => (
@@ -230,7 +237,7 @@ function PillSelect({ options, value, onChange }) {
           className={`px-4 py-1.5 text-xs font-medium rounded-full border transition-all ${
             value === opt.value
               ? 'bg-yellow-500/15 border-yellow-500/40 text-yellow-400'
-              : 'bg-zinc-800/40 border-zinc-700/50 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300'
+              : `${ct('bg-slate-50', 'bg-zinc-800/40')} ${ct('border-slate-200', 'border-zinc-700/50')} ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:border-slate-300', 'hover:border-zinc-600')} ${ct('hover:text-slate-700', 'hover:text-zinc-300')}`
           }`}
         >
           {opt.label}
@@ -243,6 +250,7 @@ function PillSelect({ options, value, onChange }) {
 // --- Chip Input ---
 function ChipInput({ items, onAdd, onRemove, placeholder, variant = 'yellow' }) {
   const [val, setVal] = useState('');
+  const { ct } = useCreateTheme();
   const colors = variant === 'red'
     ? 'bg-red-500/10 text-red-400 border-red-500/20'
     : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
@@ -261,12 +269,12 @@ function ChipInput({ items, onAdd, onRemove, placeholder, variant = 'yellow' }) 
           onChange={e => setVal(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAdd())}
           placeholder={placeholder}
-          className="bg-zinc-800/50 border-zinc-700/60 text-white text-sm focus:border-yellow-500/40 rounded-xl"
+          className={`${ct('bg-slate-50', 'bg-zinc-800/50')} ${ct('border-slate-200', 'border-zinc-700/60')} ${ct('text-slate-900', 'text-white')} text-sm focus:border-yellow-500/40 rounded-xl`}
         />
         <button
           type="button"
           onClick={handleAdd}
-          className="shrink-0 p-2.5 rounded-xl bg-zinc-800/50 border border-zinc-700/60 text-zinc-400 hover:text-white hover:border-zinc-600 transition-colors"
+          className={`shrink-0 p-2.5 rounded-xl ${ct('bg-slate-50', 'bg-zinc-800/50')} border ${ct('border-slate-200', 'border-zinc-700/60')} ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:text-slate-900', 'hover:text-white')} ${ct('hover:border-slate-300', 'hover:border-zinc-600')} transition-colors`}
         >
           <Plus className="w-4 h-4" />
         </button>
@@ -294,6 +302,7 @@ function ChipInput({ items, onAdd, onRemove, placeholder, variant = 'yellow' }) 
 // =====================
 export default function CreateBranding() {
   const { user } = useUser();
+  const { theme, toggleTheme, ct } = useCreateTheme();
   const [brandAsset, setBrandAsset] = useState(null);
   const [brandData, setBrandData] = useState(DEFAULT_BRAND_DATA);
   const [loading, setLoading] = useState(true);
@@ -431,7 +440,7 @@ export default function CreateBranding() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-[#09090b]')} flex items-center justify-center`}>
         <Loader2 className="w-8 h-8 text-yellow-400 animate-spin" />
       </div>
     );
@@ -442,7 +451,7 @@ export default function CreateBranding() {
 
   return (
     <CreatePageTransition>
-      <div className="min-h-screen bg-[#09090b]">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-[#09090b]')}`}>
         <div className="w-full px-4 lg:px-6 py-5 space-y-5">
 
           {/* ---- Header Row ---- */}
@@ -450,23 +459,26 @@ export default function CreateBranding() {
             <div className="flex items-center gap-4">
               <a
                 href={createPageUrl('Create')}
-                className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+                className={`flex items-center gap-1.5 text-xs ${ct('text-slate-500', 'text-zinc-500')} ${ct('hover:text-slate-700', 'hover:text-zinc-300')} transition-colors`}
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
                 Create Studio
               </a>
-              <div className="w-px h-5 bg-zinc-800" />
+              <div className={`w-px h-5 ${ct('bg-slate-200', 'bg-zinc-800')}`} />
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
                   <Paintbrush className="w-4 h-4 text-yellow-400" />
                 </div>
                 <div>
-                  <h1 className="text-base font-semibold text-white leading-tight">Brand Identity Designer</h1>
-                  <p className="text-[11px] text-zinc-500">Complete Brand Kits</p>
+                  <h1 className={`text-base font-semibold ${ct('text-slate-900', 'text-white')} leading-tight`}>Brand Identity Designer</h1>
+                  <p className={`text-[11px] ${ct('text-slate-500', 'text-zinc-500')}`}>Complete Brand Kits</p>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <button onClick={toggleTheme} className={ct('p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200', 'p-2 rounded-full bg-zinc-800 text-zinc-400 hover:bg-zinc-700')}>
+                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              </button>
               <AnimatePresence mode="wait">
                 {saving && (
                   <motion.span
@@ -501,15 +513,15 @@ export default function CreateBranding() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="rounded-[20px] bg-zinc-900/50 border border-yellow-500/10 shadow-[0_0_40px_-12px_rgba(234,179,8,0.06)] p-5"
+            className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border border-yellow-500/10 shadow-[0_0_40px_-12px_rgba(234,179,8,0.06)] p-5`}
           >
             <div className="flex items-center gap-6 flex-wrap">
               {/* Logo */}
-              <div className="w-16 h-16 rounded-xl bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center overflow-hidden shrink-0">
+              <div className={`w-16 h-16 rounded-xl ${ct('bg-slate-100', 'bg-zinc-800/60')} border ${ct('border-slate-200', 'border-zinc-700/40')} flex items-center justify-center overflow-hidden shrink-0`}>
                 {primaryLogo ? (
                   <img src={primaryLogo.url} alt="Logo" className="max-w-full max-h-full object-contain" />
                 ) : (
-                  <ImageIcon className="w-5 h-5 text-zinc-600" />
+                  <ImageIcon className={`w-5 h-5 ${ct('text-slate-400', 'text-zinc-600')}`} />
                 )}
               </div>
 
@@ -518,7 +530,7 @@ export default function CreateBranding() {
                 {Object.entries(brandData.colors).map(([key, color]) => (
                   <div
                     key={key}
-                    className="w-8 h-8 rounded-full border-2 border-zinc-800"
+                    className={`w-8 h-8 rounded-full border-2 ${ct('border-slate-200', 'border-zinc-800')}`}
                     style={{ backgroundColor: color }}
                     title={`${COLOR_LABELS[key]}: ${color}`}
                   />
@@ -527,10 +539,10 @@ export default function CreateBranding() {
 
               {/* Typography preview */}
               <div className="flex-1 min-w-[180px]">
-                <p className="text-sm font-bold text-white truncate" style={{ fontFamily: brandData.typography.primary_font }}>
+                <p className={`text-sm font-bold ${ct('text-slate-900', 'text-white')} truncate`} style={{ fontFamily: brandData.typography.primary_font }}>
                   {brandData.typography.primary_font}
                 </p>
-                <p className="text-xs text-zinc-400 truncate" style={{ fontFamily: brandData.typography.secondary_font }}>
+                <p className={`text-xs ${ct('text-slate-500', 'text-zinc-400')} truncate`} style={{ fontFamily: brandData.typography.secondary_font }}>
                   Body text in {brandData.typography.secondary_font}
                 </p>
               </div>
@@ -561,7 +573,7 @@ export default function CreateBranding() {
                   <div key={key} className="flex flex-col items-center gap-2 min-w-[72px]">
                     <label className="relative cursor-pointer group">
                       <div
-                        className="w-14 h-14 rounded-full border-2 border-zinc-700/60 group-hover:border-zinc-500 transition-colors shadow-lg"
+                        className={`w-14 h-14 rounded-full border-2 ${ct('border-slate-200', 'border-zinc-700/60')} ${ct('group-hover:border-slate-400', 'group-hover:border-zinc-500')} transition-colors shadow-lg`}
                         style={{ backgroundColor: color }}
                       />
                       <input
@@ -571,18 +583,18 @@ export default function CreateBranding() {
                         className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                       />
                     </label>
-                    <span className="text-[11px] text-zinc-500 capitalize">{COLOR_LABELS[key]}</span>
+                    <span className={`text-[11px] ${ct('text-slate-500', 'text-zinc-500')} capitalize`}>{COLOR_LABELS[key]}</span>
                     <Input
                       value={color}
                       onChange={e => updateField('colors', key, e.target.value)}
-                      className="w-20 text-center text-[11px] font-mono bg-zinc-800/50 border-zinc-700/40 text-zinc-300 rounded-lg px-1.5 py-1 h-auto focus:border-yellow-500/40"
+                      className={`w-20 text-center text-[11px] font-mono ${ct('bg-slate-50', 'bg-zinc-800/50')} ${ct('border-slate-200', 'border-zinc-700/40')} ${ct('text-slate-600', 'text-zinc-300')} rounded-lg px-1.5 py-1 h-auto focus:border-yellow-500/40`}
                     />
                   </div>
                 ))}
               </div>
 
               {/* Preview */}
-              <div className="mt-5 p-4 rounded-xl border border-zinc-700/40" style={{ backgroundColor: brandData.colors.background }}>
+              <div className={`mt-5 p-4 rounded-xl border ${ct('border-slate-200', 'border-zinc-700/40')}`} style={{ backgroundColor: brandData.colors.background }}>
                 <h4 className="text-sm font-bold mb-2" style={{ color: brandData.colors.primary }}>Preview Header</h4>
                 <p className="text-xs mb-3" style={{ color: brandData.colors.text }}>This is how your brand colors will look in generated content.</p>
                 <div className="flex gap-2 flex-wrap">
@@ -615,15 +627,15 @@ export default function CreateBranding() {
                   onChange={v => updateField('typography', 'secondary_font', v)}
                 />
               </div>
-              <div className="mt-4 p-4 bg-zinc-800/30 rounded-xl border border-zinc-700/40 space-y-1.5">
+              <div className={`mt-4 p-4 ${ct('bg-slate-50', 'bg-zinc-800/30')} rounded-xl border ${ct('border-slate-200', 'border-zinc-700/40')} space-y-1.5`}>
                 <h4
-                  className="text-lg font-bold text-white"
+                  className={`text-lg font-bold ${ct('text-slate-900', 'text-white')}`}
                   style={{ fontFamily: brandData.typography.primary_font }}
                 >
                   Your Heading
                 </h4>
                 <p
-                  className="text-sm text-zinc-400 leading-relaxed"
+                  className={`text-sm ${ct('text-slate-500', 'text-zinc-400')} leading-relaxed`}
                   style={{ fontFamily: brandData.typography.secondary_font }}
                 >
                   Your body text looks like this. It should be easy to read and reflect your brand personality across all generated content.
@@ -637,7 +649,7 @@ export default function CreateBranding() {
             <Section icon={MessageSquare} title="Voice & Tone">
               <div className="space-y-4">
                 <div>
-                  <p className="text-xs font-medium text-zinc-400 mb-2">Tone</p>
+                  <p className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-400')} mb-2`}>Tone</p>
                   <PillSelect
                     options={TONE_OPTIONS}
                     value={brandData.voice.tone}
@@ -645,7 +657,7 @@ export default function CreateBranding() {
                   />
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-zinc-400 mb-2">Keywords</p>
+                  <p className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-400')} mb-2`}>Keywords</p>
                   <ChipInput
                     items={brandData.voice.keywords}
                     onAdd={addKeyword}
@@ -654,21 +666,21 @@ export default function CreateBranding() {
                   />
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-zinc-400 mb-1.5">Style Guide</p>
+                  <p className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-400')} mb-1.5`}>Style Guide</p>
                   <Textarea
                     value={brandData.voice.style_guide}
                     onChange={e => updateField('voice', 'style_guide', e.target.value)}
                     placeholder="Describe your brand's writing style, preferred phrases, things to avoid..."
-                    className="bg-zinc-800/50 border-zinc-700/60 text-white text-sm min-h-[80px] rounded-xl focus:border-yellow-500/40"
+                    className={`${ct('bg-slate-50', 'bg-zinc-800/50')} ${ct('border-slate-200', 'border-zinc-700/60')} ${ct('text-slate-900', 'text-white')} text-sm min-h-[80px] rounded-xl focus:border-yellow-500/40`}
                   />
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-zinc-400 mb-1.5">Sample Copy</p>
+                  <p className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-400')} mb-1.5`}>Sample Copy</p>
                   <Textarea
                     value={brandData.voice.sample_copy}
                     onChange={e => updateField('voice', 'sample_copy', e.target.value)}
                     placeholder="Paste examples of your brand's writing that represent the ideal tone..."
-                    className="bg-zinc-800/50 border-zinc-700/60 text-white text-sm min-h-[100px] rounded-xl focus:border-yellow-500/40"
+                    className={`${ct('bg-slate-50', 'bg-zinc-800/50')} ${ct('border-slate-200', 'border-zinc-700/60')} ${ct('text-slate-900', 'text-white')} text-sm min-h-[100px] rounded-xl focus:border-yellow-500/40`}
                   />
                 </div>
               </div>
@@ -680,7 +692,7 @@ export default function CreateBranding() {
             <Section icon={Sparkles} title="Visual Style">
               <div className="space-y-4">
                 <div>
-                  <p className="text-xs font-medium text-zinc-400 mb-2">Mood</p>
+                  <p className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-400')} mb-2`}>Mood</p>
                   <PillSelect
                     options={MOOD_OPTIONS}
                     value={brandData.visual_style.mood}
@@ -688,17 +700,17 @@ export default function CreateBranding() {
                   />
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-zinc-400 mb-1.5">Image Style</p>
+                  <p className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-400')} mb-1.5`}>Image Style</p>
                   <Input
                     value={brandData.visual_style.image_style}
                     onChange={e => updateField('visual_style', 'image_style', e.target.value)}
                     placeholder="e.g., clean, minimal, vibrant..."
-                    className="bg-zinc-800/50 border-zinc-700/60 text-white text-sm rounded-xl focus:border-yellow-500/40"
+                    className={`${ct('bg-slate-50', 'bg-zinc-800/50')} ${ct('border-slate-200', 'border-zinc-700/60')} ${ct('text-slate-900', 'text-white')} text-sm rounded-xl focus:border-yellow-500/40`}
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs font-medium text-zinc-400 mb-2">Preferred Themes</p>
+                    <p className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-400')} mb-2`}>Preferred Themes</p>
                     <ChipInput
                       items={brandData.visual_style.preferred_themes}
                       onAdd={t => addTheme(t, false)}
@@ -707,7 +719,7 @@ export default function CreateBranding() {
                     />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-zinc-400 mb-2">Themes to Avoid</p>
+                    <p className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-400')} mb-2`}>Themes to Avoid</p>
                     <ChipInput
                       items={brandData.visual_style.avoid_themes}
                       onAdd={t => addTheme(t, true)}
