@@ -11,12 +11,17 @@ import {
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { GrowthPageTransition } from '@/components/growth/ui';
 import { Button } from "@/components/ui/button";
+import { MotionButton } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AnimatedBadge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { GlassCard, StatCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
+import { AnimatedNumber, AnimatedCurrency } from "@/components/ui/AnimatedNumber";
+import { AnimatedProgress } from "@/components/ui/progress";
+import { EmptyState } from "@/components/ui/EmptyState";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
@@ -216,16 +221,16 @@ export default function Growth() {
                 {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
               <Link to={createPageUrl('GrowthResearch')}>
-                <Button variant="outline" className={`${gt('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700')} hover:text-white`}>
+                <MotionButton variant="outline" className={`${gt('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700')} hover:text-white`}>
                   <Search className="w-4 h-4 mr-2" />
                   Research
-                </Button>
+                </MotionButton>
               </Link>
               <Link to={createPageUrl('GrowthCampaigns')}>
-                <Button className="bg-indigo-500 hover:bg-indigo-400 text-white">
+                <MotionButton className="bg-indigo-500 hover:bg-indigo-400 text-white">
                   <Plus className="w-4 h-4 mr-2" />
                   New Campaign
-                </Button>
+                </MotionButton>
               </Link>
             </div>
           }
@@ -243,17 +248,17 @@ export default function Growth() {
                 className={`pl-8 h-8 text-xs ${gt('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800/50 border-zinc-700/60 text-white')} focus:border-indigo-500/40`}
               />
             </div>
-            <Button type="submit" size="sm" className="bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium h-8 text-xs">
+            <MotionButton type="submit" size="sm" className="bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium h-8 text-xs">
               Find Prospects
-            </Button>
+            </MotionButton>
           </form>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard icon={Euro} label="Pipeline Value" value={`€${totalPipeline.toLocaleString()}`} color="indigo" delay={0} />
+          <StatCard icon={Euro} label="Pipeline Value" value={totalPipeline} color="indigo" delay={0} />
           <StatCard icon={Users} label="Total Prospects" value={totalProspects} color="indigo" delay={0.1} />
-          <StatCard icon={Target} label="Won Revenue" value={`€${wonValue.toLocaleString()}`} color="indigo" delay={0.2} />
+          <StatCard icon={Target} label="Won Revenue" value={wonValue} color="indigo" delay={0.2} />
           <StatCard icon={Bell} label="New Signals" value={signals.length} color="indigo" delay={0.3} />
         </div>
 
@@ -270,6 +275,8 @@ export default function Growth() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 + i * 0.05 }}
+              whileHover={{ y: -4, scale: 1.02, boxShadow: '0 8px 30px rgba(99, 102, 241, 0.15)' }}
+              whileTap={{ scale: 0.98 }}
             >
               <Link to={createPageUrl(action.path)}>
                 <div className={`p-3 text-center cursor-pointer rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')} hover:border-indigo-500/30 transition-all`}>
@@ -315,22 +322,20 @@ export default function Growth() {
               <Zap className="w-4 h-4 text-indigo-400/70" />
               Conversion Funnel
             </h3>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {(() => {
-                // Real data from campaigns and opportunities - synced with CRM stages
                 const leadsCount = campaigns.reduce((sum, c) => sum + (c.total_contacts || 0), 0);
                 const qualifiedCount = campaigns.reduce((sum, c) => sum + (c.meetings_booked || 0), 0);
                 const proposalCount = opportunities.filter(o => o.stage === 'proposal').length;
                 const closedWonCount = opportunities.filter(o => o.stage === 'won').length;
 
-                // Calculate widths based on max value
                 const maxValue = Math.max(leadsCount, qualifiedCount, proposalCount, closedWonCount, 1);
 
                 return [
-                  { label: 'Leads', value: leadsCount, width: Math.max((leadsCount / maxValue) * 100, 10), color: 'bg-indigo-500/60' },
-                  { label: 'Qualified', value: qualifiedCount, width: Math.max((qualifiedCount / maxValue) * 100, 10), color: 'bg-indigo-500/70' },
-                  { label: 'Proposal', value: proposalCount, width: Math.max((proposalCount / maxValue) * 100, 10), color: 'bg-indigo-500/80' },
-                  { label: 'Won', value: closedWonCount, width: Math.max((closedWonCount / maxValue) * 100, 10), color: 'bg-indigo-500/90' },
+                  { label: 'Leads', value: leadsCount, pct: Math.max((leadsCount / maxValue) * 100, 5) },
+                  { label: 'Qualified', value: qualifiedCount, pct: Math.max((qualifiedCount / maxValue) * 100, 5) },
+                  { label: 'Proposal', value: proposalCount, pct: Math.max((proposalCount / maxValue) * 100, 5) },
+                  { label: 'Won', value: closedWonCount, pct: Math.max((closedWonCount / maxValue) * 100, 5) },
                 ];
               })().map((stage, i) => (
                 <motion.div
@@ -338,14 +343,13 @@ export default function Growth() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5 + i * 0.05 }}
-                  className="flex items-center gap-2"
+                  className="space-y-1"
                 >
-                  <span className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} w-16`}>{stage.label}</span>
-                  <div className={`flex-1 h-5 ${gt('bg-slate-200', 'bg-zinc-800')} rounded-md overflow-hidden`}>
-                    <div className={`h-full ${stage.color} rounded-md flex items-center justify-end pr-2`} style={{ width: `${stage.width}%` }}>
-                      <span className="text-[10px] font-bold text-white">{stage.value}</span>
-                    </div>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-xs ${gt('text-slate-500', 'text-zinc-400')}`}>{stage.label}</span>
+                    <span className="text-xs font-bold text-indigo-400/80">{stage.value}</span>
                   </div>
+                  <AnimatedProgress value={stage.pct} color="purple" glow />
                 </motion.div>
               ))}
             </div>
@@ -381,23 +385,26 @@ export default function Growth() {
             </h3>
             <div className="grid grid-cols-3 gap-3 text-center py-4">
               <div>
-                <p className="text-2xl font-bold text-indigo-400/70">{wonDeals.length}</p>
+                <p className="text-2xl font-bold text-indigo-400/70">
+                  <AnimatedNumber value={wonDeals.length} duration={1} />
+                </p>
                 <p className={`${gt('text-slate-400', 'text-zinc-500')} text-xs mt-0.5`}>Won</p>
               </div>
               <div>
-                <p className={`text-2xl font-bold ${gt('text-slate-400', 'text-zinc-600')}`}>{lostDeals.length}</p>
+                <p className={`text-2xl font-bold ${gt('text-slate-400', 'text-zinc-600')}`}>
+                  <AnimatedNumber value={lostDeals.length} duration={1} />
+                </p>
                 <p className={`${gt('text-slate-400', 'text-zinc-500')} text-xs mt-0.5`}>Lost</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-indigo-400/80">{winRate}%</p>
+                <p className="text-2xl font-bold text-indigo-400/80">
+                  <AnimatedNumber value={winRate} suffix="%" duration={1} />
+                </p>
                 <p className={`${gt('text-slate-400', 'text-zinc-500')} text-xs mt-0.5`}>Win Rate</p>
               </div>
             </div>
             <div className="mt-3">
-              <div className="flex h-3 rounded-full overflow-hidden">
-                <div className="bg-indigo-500/60" style={{ width: `${winRate}%` }} />
-                <div className={gt('bg-slate-200', 'bg-zinc-800')} style={{ width: `${100 - winRate}%` }} />
-              </div>
+              <AnimatedProgress value={winRate} color="purple" glow gradient />
               <div className={`flex justify-between mt-1.5 text-[10px] ${gt('text-slate-400', 'text-zinc-500')}`}>
                 <span>Won: €{wonValue.toLocaleString()}</span>
                 <span>Lost: €{lostDeals.reduce((s, o) => s + (o.deal_value || 0), 0).toLocaleString()}</span>
@@ -466,21 +473,20 @@ export default function Growth() {
                     </div>
                     <div className="text-right ml-3">
                       <p className="text-indigo-400/80 font-bold text-xs">€{(opp.deal_value || 0).toLocaleString()}</p>
-                      <Badge size="xs" className={stageBadges[opp.stage] || 'bg-zinc-700/60'}>{opp.stage}</Badge>
+                      <AnimatedBadge size="xs" className={stageBadges[opp.stage] || 'bg-zinc-700/60'}>{opp.stage}</AnimatedBadge>
                     </div>
                   </motion.div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-6">
-                <Target className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                <p className={`${gt('text-slate-500', 'text-zinc-400')} text-xs`}>No deals yet</p>
-                <Link to={createPageUrl('GrowthPipeline')}>
-                  <Button variant="outline" size="sm" className="mt-2 h-7 text-xs border-indigo-500/30 text-indigo-400/80 hover:text-indigo-300">
-                    Add Opportunity
-                  </Button>
-                </Link>
-              </div>
+              <EmptyState
+                icon={Target}
+                title="No deals yet"
+                description="Add opportunities to track your pipeline"
+                action={() => window.location.href = createPageUrl('GrowthPipeline')}
+                actionLabel="Add Opportunity"
+                size="sm"
+              />
             )}
           </div>
 
@@ -511,23 +517,21 @@ export default function Growth() {
                       <p className={`font-medium ${gt('text-slate-900', 'text-white')} text-xs truncate`}>{list.name}</p>
                       <p className={`text-[10px] ${gt('text-slate-400', 'text-zinc-500')}`}>{list.prospect_count || 0} prospects</p>
                     </div>
-                    <Badge size="xs" className="bg-indigo-500/20 text-indigo-400/80 border-indigo-500/30">
+                    <AnimatedBadge size="xs" variant="info">
                       {list.status || 'active'}
-                    </Badge>
+                    </AnimatedBadge>
                   </motion.div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-6">
-                <Users className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                <p className={`${gt('text-slate-400', 'text-zinc-500')} text-xs mb-3`}>No prospect lists yet</p>
-                <Link to={createPageUrl('GrowthResearch')}>
-                  <Button size="sm" className="bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium h-7 text-xs">
-                    <Search className="w-3 h-3 mr-1.5" />
-                    Start Research
-                  </Button>
-                </Link>
-              </div>
+              <EmptyState
+                icon={Users}
+                title="No prospect lists yet"
+                description="Research and build your prospect lists"
+                action={() => window.location.href = createPageUrl('GrowthResearch')}
+                actionLabel="Start Research"
+                size="sm"
+              />
             )}
           </div>
 
@@ -558,18 +562,24 @@ export default function Growth() {
                       <p className={`font-medium ${gt('text-slate-900', 'text-white')} text-xs truncate`}>{signal.company_name}</p>
                       <p className={`text-[10px] ${gt('text-slate-400', 'text-zinc-500')} truncate`}>{signal.headline}</p>
                     </div>
-                    <Badge size="xs" className={signal.relevance_score >= 80 ? 'bg-red-500/20 text-red-400/80 border-red-500/30' : 'bg-indigo-500/20 text-indigo-400/80 border-indigo-500/30'}>
+                    <AnimatedBadge
+                      size="xs"
+                      variant={signal.relevance_score >= 80 ? 'destructive' : 'info'}
+                      pulse={signal.relevance_score >= 80}
+                      className={signal.relevance_score >= 80 ? 'bg-red-500/20 text-red-400/80 border-red-500/30' : undefined}
+                    >
                       {signal.signal_type}
-                    </Badge>
+                    </AnimatedBadge>
                   </motion.div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-6">
-                <Bell className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                <p className={`${gt('text-slate-400', 'text-zinc-500')} text-xs mb-2`}>No signals yet</p>
-                <p className={`text-[10px] ${gt('text-slate-400', 'text-zinc-600')}`}>Signals appear as we detect opportunities</p>
-              </div>
+              <EmptyState
+                icon={Bell}
+                title="No signals yet"
+                description="Signals appear as we detect opportunities"
+                size="sm"
+              />
             )}
           </div>
         </div>
