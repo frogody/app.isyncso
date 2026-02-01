@@ -182,6 +182,14 @@ const bottomNavItems = [
 
 // Engine apps with permission requirements
 const ENGINE_ITEMS_CONFIG = {
+  finance: {
+    title: "Finance",
+    url: createPageUrl("FinanceOverview"),
+    icon: Euro,
+    id: 'finance',
+    permission: "finance.view",
+    matchPatterns: ["/finance", "/proposal"],
+  },
   growth: {
     title: "Growth",
     url: createPageUrl("Growth"),
@@ -213,14 +221,6 @@ const ENGINE_ITEMS_CONFIG = {
     id: 'sentinel',
     permission: "admin.access", // Admin/compliance feature
     matchPatterns: ["/sentinel", "/aisystem", "/compliance", "/document", "/riskassessment"],
-  },
-  finance: {
-    title: "Finance",
-    url: createPageUrl("FinanceOverview"),
-    icon: Euro,
-    id: 'finance',
-    permission: "finance.view",
-    matchPatterns: ["/finance", "/proposal"],
   },
   raise: {
     title: "Raise",
@@ -375,6 +375,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Vendors', path: createPageUrl('FinanceVendors'), icon: Users },
         { label: 'Bills', path: createPageUrl('FinanceBills'), icon: ScrollText },
         { label: 'Bill Payments', path: createPageUrl('FinanceBillPayments'), icon: Wallet },
+        { label: 'Profit & Loss', path: createPageUrl('FinanceReportPL'), icon: TrendingUp },
       ]
     };
   }
