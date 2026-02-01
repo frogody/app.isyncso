@@ -20,7 +20,6 @@ import { useUser } from "@/components/context/UserContext";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
-import ClayCampaignBuilder from "@/components/growth/ClayCampaignBuilder";
 import { toast } from "sonner";
 
 export default function Growth() {
@@ -351,11 +350,6 @@ export default function Growth() {
               ))}
             </div>
           </div>
-        </div>
-
-        {/* Clay Campaign Builder - Headliner Feature */}
-        <div className={`p-4 rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
-          <ClayCampaignBuilder />
         </div>
 
         {/* Analytics Section */}
