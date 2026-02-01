@@ -379,6 +379,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Profit & Loss', path: createPageUrl('FinanceReportPL'), icon: TrendingUp },
         { label: 'Balance Sheet', path: createPageUrl('FinanceReportBS'), icon: Scale },
         { label: 'Trial Balance', path: createPageUrl('FinanceReportTB'), icon: FileSpreadsheet },
+        { label: 'Aging Reports', path: createPageUrl('FinanceReportAging'), icon: Clock },
       ]
     };
   }
