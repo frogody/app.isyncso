@@ -352,7 +352,7 @@ export default function FinanceProposalBuilder() {
                 {proposalId ? 'Edit Proposal' : 'New Proposal'}
               </h1>
               {proposal.proposal_number && (
-                <p className="text-sm text-zinc-500 font-mono">{proposal.proposal_number}</p>
+                <p className={`text-sm ${ft('text-slate-400', 'text-zinc-500')} font-mono`}>{proposal.proposal_number}</p>
               )}
             </div>
           </div>
@@ -532,9 +532,9 @@ export default function FinanceProposalBuilder() {
 
                       {proposal.sections.length === 0 ? (
                         <div className={`text-center py-8 rounded-lg border border-dashed ${ft('border-slate-200', 'border-zinc-700')}`}>
-                          <List className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                          <p className="text-sm text-zinc-500">No sections added</p>
-                          <p className="text-xs text-zinc-600 mt-1">
+                          <List className={`w-8 h-8 ${ft('text-slate-300', 'text-zinc-600')} mx-auto mb-2`} />
+                          <p className={`text-sm ${ft('text-slate-400', 'text-zinc-500')}`}>No sections added</p>
+                          <p className={`text-xs ${ft('text-slate-400', 'text-zinc-600')} mt-1`}>
                             Add sections to build your proposal content
                           </p>
                         </div>
@@ -545,7 +545,7 @@ export default function FinanceProposalBuilder() {
                               <div className={`border ${ft('border-slate-200', 'border-zinc-700')} rounded-lg overflow-hidden`}>
                                 <CollapsibleTrigger className={`w-full flex items-center justify-between p-3 ${ft('bg-slate-100 hover:bg-slate-200', 'bg-zinc-800/50 hover:bg-zinc-800')} transition-colors`}>
                                   <div className="flex items-center gap-3">
-                                    <GripVertical className="w-4 h-4 text-zinc-600" />
+                                    <GripVertical className={`w-4 h-4 ${ft('text-slate-300', 'text-zinc-600')}`} />
                                     <Badge variant="outline" className={`${ft('bg-slate-200/50 text-slate-500 border-slate-300', 'bg-zinc-700/50 text-zinc-400 border-zinc-600')} text-xs`}>
                                       {SECTION_TYPES.find(t => t.id === section.type)?.label || section.type}
                                     </Badge>
@@ -622,9 +622,9 @@ export default function FinanceProposalBuilder() {
 
                       {proposal.line_items.length === 0 ? (
                         <div className={`text-center py-8 rounded-lg border border-dashed ${ft('border-slate-200', 'border-zinc-700')}`}>
-                          <Package className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                          <p className="text-sm text-zinc-500">No products added</p>
-                          <p className="text-xs text-zinc-600 mt-1">
+                          <Package className={`w-8 h-8 ${ft('text-slate-300', 'text-zinc-600')} mx-auto mb-2`} />
+                          <p className={`text-sm ${ft('text-slate-400', 'text-zinc-500')}`}>No products added</p>
+                          <p className={`text-xs ${ft('text-slate-400', 'text-zinc-600')} mt-1`}>
                             Click "Add Product" to select from your catalog
                           </p>
                         </div>
@@ -657,7 +657,7 @@ export default function FinanceProposalBuilder() {
                                   &euro;{((item.quantity || 1) * (parseFloat(item.unit_price) || 0)).toLocaleString()}
                                 </p>
                                 {item.quantity > 1 && (
-                                  <p className="text-xs text-zinc-500">
+                                  <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
                                     {item.quantity} x &euro;{parseFloat(item.unit_price || 0).toLocaleString()}
                                   </p>
                                 )}

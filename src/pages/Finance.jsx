@@ -26,7 +26,7 @@ function Modal({ isOpen, onClose, title, children, ft }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+      <div className={`absolute inset-0 ${ft('bg-white/95', 'bg-black/80')} backdrop-blur-sm`} onClick={onClose} />
       <div className={`relative ${ft('bg-white', 'bg-zinc-900')} ${ft('border-slate-200', 'border-zinc-700')} border rounded-xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto`}>
         <div className="flex items-center justify-between mb-4">
           <h2 className={`text-xl font-semibold ${ft('text-slate-900', 'text-white')}`}>{title}</h2>

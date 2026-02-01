@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
 import { Product, DigitalProduct, PhysicalProduct, ProductBundle } from '@/api/entities';
 import { useUser } from '@/components/context/UserContext';
 
@@ -98,7 +99,7 @@ function createLineItem(product, details, selection = {}) {
   return lineItem;
 }
 
-function ProductCard({ product, details, currency, onSelect, isSelected }) {
+function ProductCard({ product, details, currency, onSelect, isSelected, ft }) {
   const isDigital = product.type === 'digital';
   const basePrice = details?.pricing?.base_price || product.price || 0;
   const hasSubscription = details?.pricing_config?.subscriptions?.enabled;
@@ -112,7 +113,7 @@ function ProductCard({ product, details, currency, onSelect, isSelected }) {
         "p-4 rounded-xl border transition-all cursor-pointer group",
         isSelected
           ? "bg-cyan-500/10 border-cyan-500/30"
-          : "bg-zinc-900/50 border-white/10 hover:border-white/20"
+          : ft("bg-slate-100 border-slate-200 hover:border-slate-300", "bg-zinc-900/50 border-white/10 hover:border-white/20")
       )}
       onClick={() => onSelect(product, details)}
     >
@@ -122,31 +123,31 @@ function ProductCard({ product, details, currency, onSelect, isSelected }) {
           "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
           isDigital
             ? "bg-cyan-500/10 border border-cyan-500/30"
-            : "bg-amber-500/10 border border-amber-500/30"
+            : "bg-blue-500/10 border border-blue-500/30"
         )}>
           {isDigital ? (
             <Zap className="w-5 h-5 text-cyan-400" />
           ) : (
-            <Package className="w-5 h-5 text-amber-400" />
+            <Package className="w-5 h-5 text-blue-400" />
           )}
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h4 className="font-medium text-white truncate">{product.name}</h4>
+            <h4 className={`font-medium ${ft('text-slate-900', 'text-white')} truncate`}>{product.name}</h4>
             {isDraft && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-zinc-800 text-zinc-400 border-zinc-700">
+              <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${ft('bg-slate-200 text-slate-500 border-slate-300', 'bg-zinc-800 text-zinc-400 border-zinc-700')}`}>
                 Draft
               </Badge>
             )}
             {isSelected && <Check className="w-4 h-4 text-cyan-400" />}
           </div>
           {product.sku && (
-            <p className="text-xs text-zinc-500">SKU: {product.sku}</p>
+            <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>SKU: {product.sku}</p>
           )}
           {product.short_description && (
-            <p className="text-sm text-zinc-400 line-clamp-1 mt-1">
+            <p className={`text-sm ${ft('text-slate-500', 'text-zinc-400')} line-clamp-1 mt-1`}>
               {product.short_description}
             </p>
           )}
@@ -161,7 +162,7 @@ function ProductCard({ product, details, currency, onSelect, isSelected }) {
                 </Badge>
               )}
               {hasOneTime && (
-                <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-400 border-amber-500/30">
+                <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/30">
                   <Zap className="w-3 h-3 mr-1" />
                   One-time
                 </Badge>
@@ -178,11 +179,11 @@ function ProductCard({ product, details, currency, onSelect, isSelected }) {
 
         {/* Price */}
         <div className="text-right flex-shrink-0">
-          <div className="text-lg font-semibold text-white">
+          <div className={`text-lg font-semibold ${ft('text-slate-900', 'text-white')}`}>
             {formatPrice(basePrice, currency)}
           </div>
           {!isDigital && (
-            <p className="text-xs text-zinc-500">Base price</p>
+            <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>Base price</p>
           )}
         </div>
       </div>
@@ -190,7 +191,7 @@ function ProductCard({ product, details, currency, onSelect, isSelected }) {
   );
 }
 
-function DigitalPricingSelector({ product, details, currency, onConfirm, onCancel }) {
+function DigitalPricingSelector({ product, details, currency, onConfirm, onCancel, ft }) {
   const [selectedType, setSelectedType] = useState('subscription');
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [selectedCycle, setSelectedCycle] = useState('monthly');
@@ -261,14 +262,14 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
   return (
     <div className="space-y-6">
       {/* Product Info Header */}
-      <div className="flex items-center gap-3 p-4 rounded-lg bg-zinc-900/50 border border-white/5">
+      <div className={`flex items-center gap-3 p-4 rounded-lg ${ft('bg-slate-100 border border-slate-200', 'bg-zinc-900/50 border border-white/5')}`}>
         <div className="w-12 h-12 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
           <Zap className="w-6 h-6 text-cyan-400" />
         </div>
         <div className="flex-1">
-          <h3 className="font-medium text-white">{product.name}</h3>
+          <h3 className={`font-medium ${ft('text-slate-900', 'text-white')}`}>{product.name}</h3>
           {product.short_description && (
-            <p className="text-sm text-zinc-500">{product.short_description}</p>
+            <p className={`text-sm ${ft('text-slate-400', 'text-zinc-500')}`}>{product.short_description}</p>
           )}
         </div>
       </div>
@@ -276,7 +277,7 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
       {/* Pricing Type Tabs */}
       {(hasSubscription || hasOneTime) && (
         <Tabs value={selectedType} onValueChange={setSelectedType}>
-          <TabsList className="bg-zinc-900/50 border border-white/5">
+          <TabsList className={ft('bg-slate-100 border border-slate-200', 'bg-zinc-900/50 border border-white/5')}>
             {hasSubscription && (
               <TabsTrigger value="subscription" className="data-[state=active]:bg-cyan-500/20">
                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -284,7 +285,7 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
               </TabsTrigger>
             )}
             {hasOneTime && (
-              <TabsTrigger value="one_time" className="data-[state=active]:bg-amber-500/20">
+              <TabsTrigger value="one_time" className="data-[state=active]:bg-blue-500/20">
                 <Zap className="w-4 h-4 mr-2" />
                 One-time
               </TabsTrigger>
@@ -296,7 +297,7 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
             <TabsContent value="subscription" className="space-y-4 mt-4">
               {/* Plan Selection */}
               <div>
-                <label className="text-sm text-zinc-400 mb-2 block">Select Plan</label>
+                <label className={`text-sm ${ft('text-slate-500', 'text-zinc-400')} mb-2 block`}>Select Plan</label>
                 <div className="space-y-2">
                   {subscriptionPlans.map(plan => (
                     <div
@@ -305,7 +306,7 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
                         "p-3 rounded-lg border cursor-pointer transition-all",
                         selectedPlan?.id === plan.id
                           ? "bg-cyan-500/10 border-cyan-500/30"
-                          : "bg-zinc-900/50 border-white/10 hover:border-white/20"
+                          : ft("bg-slate-100 border-slate-200 hover:border-slate-300", "bg-zinc-900/50 border-white/10 hover:border-white/20")
                       )}
                       onClick={() => setSelectedPlan(plan)}
                     >
@@ -314,7 +315,7 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
                           {selectedPlan?.id === plan.id && (
                             <Check className="w-4 h-4 text-cyan-400" />
                           )}
-                          <span className="font-medium text-white">{plan.name}</span>
+                          <span className={`font-medium ${ft('text-slate-900', 'text-white')}`}>{plan.name}</span>
                           {plan.is_popular && (
                             <Badge className="bg-cyan-500/20 text-cyan-400 text-xs">
                               <Star className="w-3 h-3 mr-1" /> Popular
@@ -322,10 +323,10 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
                           )}
                         </div>
                         <div className="text-right">
-                          <span className="text-lg font-semibold text-white">
+                          <span className={`text-lg font-semibold ${ft('text-slate-900', 'text-white')}`}>
                             {formatPrice(plan.pricing?.[selectedCycle]?.amount || 0, currency)}
                           </span>
-                          <span className="text-sm text-zinc-500">/{selectedCycle === 'yearly' ? 'year' : 'mo'}</span>
+                          <span className={`text-sm ${ft('text-slate-400', 'text-zinc-500')}`}>/{selectedCycle === 'yearly' ? 'year' : 'mo'}</span>
                         </div>
                       </div>
                     </div>
@@ -335,9 +336,9 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
 
               {/* Billing Cycle */}
               <div>
-                <label className="text-sm text-zinc-400 mb-2 block">Billing Cycle</label>
+                <label className={`text-sm ${ft('text-slate-500', 'text-zinc-400')} mb-2 block`}>Billing Cycle</label>
                 <Select value={selectedCycle} onValueChange={setSelectedCycle}>
-                  <SelectTrigger className="bg-zinc-900/50 border-white/10">
+                  <SelectTrigger className={ft('bg-slate-100 border-slate-200', 'bg-zinc-900/50 border-white/10')}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -353,7 +354,7 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
           {hasOneTime && (
             <TabsContent value="one_time" className="space-y-4 mt-4">
               <div>
-                <label className="text-sm text-zinc-400 mb-2 block">Select Service</label>
+                <label className={`text-sm ${ft('text-slate-500', 'text-zinc-400')} mb-2 block`}>Select Service</label>
                 <div className="space-y-2">
                   {oneTimeItems.map(item => (
                     <div
@@ -361,24 +362,24 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
                       className={cn(
                         "p-3 rounded-lg border cursor-pointer transition-all",
                         selectedOneTime?.id === item.id
-                          ? "bg-amber-500/10 border-amber-500/30"
-                          : "bg-zinc-900/50 border-white/10 hover:border-white/20"
+                          ? "bg-blue-500/10 border-blue-500/30"
+                          : ft("bg-slate-100 border-slate-200 hover:border-slate-300", "bg-zinc-900/50 border-white/10 hover:border-white/20")
                       )}
                       onClick={() => setSelectedOneTime(item)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {selectedOneTime?.id === item.id && (
-                            <Check className="w-4 h-4 text-amber-400" />
+                            <Check className="w-4 h-4 text-blue-400" />
                           )}
-                          <span className="font-medium text-white">{item.name}</span>
+                          <span className={`font-medium ${ft('text-slate-900', 'text-white')}`}>{item.name}</span>
                         </div>
-                        <span className="text-lg font-semibold text-white">
+                        <span className={`text-lg font-semibold ${ft('text-slate-900', 'text-white')}`}>
                           {formatPrice(item.amount, currency)}
                         </span>
                       </div>
                       {item.description && (
-                        <p className="text-sm text-zinc-500 mt-1">{item.description}</p>
+                        <p className={`text-sm ${ft('text-slate-400', 'text-zinc-500')} mt-1`}>{item.description}</p>
                       )}
                     </div>
                   ))}
@@ -392,7 +393,7 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
       {/* Add-ons */}
       {hasAddOns && (
         <div>
-          <label className="text-sm text-zinc-400 mb-2 block flex items-center gap-2">
+          <label className={`text-sm ${ft('text-slate-500', 'text-zinc-400')} mb-2 block flex items-center gap-2`}>
             <Gift className="w-4 h-4" />
             Optional Add-ons
           </label>
@@ -410,7 +411,7 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
                     "p-3 rounded-lg border cursor-pointer transition-all",
                     isSelected
                       ? "bg-purple-500/10 border-purple-500/30"
-                      : "bg-zinc-900/50 border-white/10 hover:border-white/20"
+                      : ft("bg-slate-100 border-slate-200 hover:border-slate-300", "bg-zinc-900/50 border-white/10 hover:border-white/20")
                   )}
                   onClick={() => toggleAddOn(addon)}
                 >
@@ -420,11 +421,11 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
                         "w-5 h-5 rounded border flex items-center justify-center",
                         isSelected
                           ? "bg-purple-500 border-purple-500"
-                          : "border-white/20"
+                          : ft("border-slate-300", "border-white/20")
                       )}>
                         {isSelected && <Check className="w-3 h-3 text-white" />}
                       </div>
-                      <span className="font-medium text-white">{addon.name}</span>
+                      <span className={`font-medium ${ft('text-slate-900', 'text-white')}`}>{addon.name}</span>
                       {addon.pricing_type === 'subscription' && (
                         <Badge variant="outline" className="text-xs text-purple-400 border-purple-500/30">
                           <RefreshCw className="w-3 h-3 mr-1" /> Recurring
@@ -432,11 +433,11 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
                       )}
                     </div>
                     <div className="text-right">
-                      <span className="font-semibold text-white">
+                      <span className={`font-semibold ${ft('text-slate-900', 'text-white')}`}>
                         +{formatPrice(price, currency)}
                       </span>
                       {addon.pricing_type === 'subscription' && (
-                        <span className="text-xs text-zinc-500">/mo</span>
+                        <span className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>/mo</span>
                       )}
                     </div>
                   </div>
@@ -450,20 +451,20 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
       {/* Price Summary */}
       <div className="p-4 rounded-lg bg-gradient-to-r from-cyan-500/10 to-cyan-600/5 border border-cyan-500/20">
         <div className="flex items-center justify-between">
-          <span className="text-zinc-400">Line Item Total</span>
+          <span className={ft('text-slate-500', 'text-zinc-400')}>Line Item Total</span>
           <div className="text-right">
             <span className="text-2xl font-bold text-cyan-400">
               {formatPrice(previewPrice + addOnsTotal, currency)}
             </span>
             {selectedType === 'subscription' && (
-              <span className="text-sm text-zinc-500 ml-1">
+              <span className={`text-sm ${ft('text-slate-400', 'text-zinc-500')} ml-1`}>
                 /{selectedCycle === 'yearly' ? 'year' : 'mo'}
               </span>
             )}
           </div>
         </div>
         {addOnsTotal > 0 && (
-          <p className="text-xs text-zinc-500 mt-1">
+          <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')} mt-1`}>
             Includes {selectedAddOns.length} add-on{selectedAddOns.length !== 1 ? 's' : ''}
           </p>
         )}
@@ -482,7 +483,7 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
           <Plus className="w-4 h-4 mr-2" />
           Add to Invoice
         </Button>
-        <Button variant="ghost" onClick={onCancel} className="text-zinc-400">
+        <Button variant="ghost" onClick={onCancel} className={ft('text-slate-500', 'text-zinc-400')}>
           Cancel
         </Button>
       </div>
@@ -497,6 +498,7 @@ export default function ProductSelector({
   currency = 'EUR',
   excludeIds = []
 }) {
+  const { ft } = useFinanceTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState([]);
   const [productDetails, setProductDetails] = useState({});
@@ -612,9 +614,9 @@ export default function ProductSelector({
   if (selectedProduct) {
     return (
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-lg bg-zinc-900 border-white/10">
+        <DialogContent className={`max-w-lg ${ft('bg-white border-slate-200', 'bg-zinc-900 border-white/10')}`}>
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
+            <DialogTitle className={`${ft('text-slate-900', 'text-white')} flex items-center gap-2`}>
               <CreditCard className="w-5 h-5 text-cyan-400" />
               Select Pricing Options
             </DialogTitle>
@@ -623,6 +625,7 @@ export default function ProductSelector({
             product={selectedProduct}
             details={selectedDetails}
             currency={currency}
+            ft={ft}
             onConfirm={handleDigitalConfirm}
             onCancel={() => {
               setSelectedProduct(null);
@@ -636,9 +639,9 @@ export default function ProductSelector({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl bg-zinc-900 border-white/10 max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className={`max-w-2xl ${ft('bg-white border-slate-200', 'bg-zinc-900 border-white/10')} max-h-[80vh] overflow-hidden flex flex-col`}>
         <DialogHeader>
-          <DialogTitle className="text-white flex items-center gap-2">
+          <DialogTitle className={`${ft('text-slate-900', 'text-white')} flex items-center gap-2`}>
             <Package className="w-5 h-5 text-cyan-400" />
             Add Product to Invoice
           </DialogTitle>
@@ -648,16 +651,16 @@ export default function ProductSelector({
           {/* Search & Filters */}
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${ft('text-slate-400', 'text-zinc-500')}`} />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products by name or SKU..."
-                className="pl-9 bg-zinc-800 border-white/10"
+                className={`pl-9 ${ft('bg-slate-100 border-slate-200', 'bg-zinc-800 border-white/10')}`}
               />
             </div>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="bg-zinc-800 border border-white/5">
+              <TabsList className={ft('bg-slate-100 border border-slate-200', 'bg-zinc-800 border border-white/5')}>
                 <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
                 <TabsTrigger value="digital" className="text-xs">Digital</TabsTrigger>
                 <TabsTrigger value="physical" className="text-xs">Physical</TabsTrigger>
@@ -670,13 +673,13 @@ export default function ProductSelector({
             {loading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="h-20 rounded-xl bg-zinc-800/50 animate-pulse" />
+                  <div key={i} className={`h-20 rounded-xl ${ft('bg-slate-200', 'bg-zinc-800/50')} animate-pulse`} />
                 ))}
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="text-center py-12">
-                <Package className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-                <p className="text-zinc-400">
+                <Package className={`w-12 h-12 ${ft('text-slate-300', 'text-zinc-600')} mx-auto mb-3`} />
+                <p className={ft('text-slate-500', 'text-zinc-400')}>
                   {products.length === 0 ? 'No published products' : 'No products match your search'}
                 </p>
               </div>
@@ -689,6 +692,7 @@ export default function ProductSelector({
                   currency={currency}
                   onSelect={handleProductSelect}
                   isSelected={false}
+                  ft={ft}
                 />
               ))
             )}

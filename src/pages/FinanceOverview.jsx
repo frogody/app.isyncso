@@ -399,7 +399,7 @@ export default function FinanceOverview() {
               <CardContent>
                 {expensesByCategory.length === 0 ? (
                   <div className="text-center py-8">
-                    <PieChart className="w-12 h-12 text-zinc-600 mx-auto mb-2" />
+                    <PieChart className={`w-12 h-12 ${ft('text-slate-300', 'text-zinc-600')} mx-auto mb-2`} />
                     <p className={ft('text-slate-400', 'text-zinc-500')}>No expenses recorded</p>
                   </div>
                 ) : (
@@ -443,7 +443,7 @@ export default function FinanceOverview() {
               <CardContent>
                 {recentTransactions.length === 0 ? (
                   <div className="text-center py-8">
-                    <Wallet className="w-12 h-12 text-zinc-600 mx-auto mb-2" />
+                    <Wallet className={`w-12 h-12 ${ft('text-slate-300', 'text-zinc-600')} mx-auto mb-2`} />
                     <p className={ft('text-slate-400', 'text-zinc-500')}>No transactions yet</p>
                   </div>
                 ) : (

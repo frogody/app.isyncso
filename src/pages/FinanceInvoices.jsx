@@ -376,12 +376,12 @@ export default function FinanceInvoices() {
 
   const getStatusBadge = (status) => {
     const styles = {
-      draft: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
+      draft: ft('bg-slate-200/50 text-slate-500 border-slate-300', 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'),
       sent: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
       pending: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
       paid: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
       overdue: 'bg-red-500/20 text-red-400 border-red-500/30',
-      cancelled: 'bg-zinc-500/20 text-zinc-500 border-zinc-500/30'
+      cancelled: ft('bg-slate-200/50 text-slate-500 border-slate-300', 'bg-zinc-500/20 text-zinc-500 border-zinc-500/30')
     };
     return styles[status] || styles.pending;
   };
@@ -454,7 +454,7 @@ export default function FinanceInvoices() {
                 </div>
                 <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>{stat.value}</p>
                 {stat.count !== undefined && (
-                  <p className="text-[10px] text-zinc-500">{stat.count} invoices</p>
+                  <p className={`text-[10px] ${ft('text-slate-400', 'text-zinc-500')}`}>{stat.count} invoices</p>
                 )}
               </CardContent>
             </Card>
@@ -466,7 +466,7 @@ export default function FinanceInvoices() {
           <CardContent className="p-3">
             <div className="flex flex-col md:flex-row gap-3">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${ft('text-slate-400', 'text-zinc-500')}`} />
                 <Input
                   placeholder="Search invoices..."
                   value={searchQuery}
@@ -537,9 +537,9 @@ export default function FinanceInvoices() {
           <CardContent className="p-0">
             {filteredInvoices.length === 0 ? (
               <div className="text-center py-16">
-                <Receipt className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
+                <Receipt className={`w-16 h-16 ${ft('text-slate-300', 'text-zinc-600')} mx-auto mb-4`} />
                 <h3 className={`text-lg font-medium ${ft('text-slate-900', 'text-white')} mb-2`}>No invoices found</h3>
-                <p className="text-zinc-500 mb-6">
+                <p className={`${ft('text-slate-400', 'text-zinc-500')} mb-6`}>
                   {searchQuery || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Create your first invoice to get started'}
                 </p>
                 {canCreate && !searchQuery && statusFilter === 'all' && (
@@ -573,7 +573,7 @@ export default function FinanceInvoices() {
                               {invoice.status || 'draft'}
                             </Badge>
                           </div>
-                          <div className="flex items-center gap-3 mt-0.5 text-xs text-zinc-500">
+                          <div className={`flex items-center gap-3 mt-0.5 text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
                             <span className="flex items-center gap-1">
                               <Building2 className="w-3 h-3" />
                               {invoice.client_name || 'No client'}
@@ -725,7 +725,7 @@ export default function FinanceInvoices() {
               {/* Line Items Section */}
               <div className={`col-span-2 pt-4 border-t ${ft('border-slate-200', 'border-zinc-700')}`}>
                 <div className="flex items-center justify-between mb-3">
-                  <Label className="text-zinc-300 flex items-center gap-2">
+                  <Label className={`${ft('text-slate-600', 'text-zinc-300')} flex items-center gap-2`}>
                     <Package className="w-4 h-4" />
                     Line Items
                   </Label>
@@ -756,7 +756,7 @@ export default function FinanceInvoices() {
                             ) : item.product_id ? (
                               <Zap className="w-4 h-4 text-blue-400" />
                             ) : (
-                              <Package className="w-4 h-4 text-zinc-400" />
+                              <Package className={`w-4 h-4 ${ft('text-slate-400', 'text-zinc-400')}`} />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -774,7 +774,7 @@ export default function FinanceInvoices() {
                               €{((item.quantity || 1) * (parseFloat(item.unit_price) || 0)).toFixed(2)}
                             </p>
                             {item.quantity > 1 && (
-                              <p className="text-xs text-zinc-500">
+                              <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
                                 {item.quantity} x €{parseFloat(item.unit_price || 0).toFixed(2)}
                               </p>
                             )}
@@ -784,7 +784,7 @@ export default function FinanceInvoices() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleRemoveItem(idx)}
-                            className="text-zinc-400 hover:text-red-400 h-8 w-8 p-0"
+                            className={`${ft('text-slate-400', 'text-zinc-400')} hover:text-red-400 h-8 w-8 p-0`}
                           >
                             <X className="w-4 h-4" />
                           </Button>
@@ -802,9 +802,9 @@ export default function FinanceInvoices() {
                   </div>
                 ) : (
                   <div className={`text-center py-6 rounded-lg border border-dashed ${ft('border-slate-300', 'border-zinc-700')} mb-4`}>
-                    <Package className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                    <p className="text-sm text-zinc-500">No products added</p>
-                    <p className="text-xs text-zinc-600 mt-1">
+                    <Package className={`w-8 h-8 ${ft('text-slate-300', 'text-zinc-600')} mx-auto mb-2`} />
+                    <p className={`text-sm ${ft('text-slate-400', 'text-zinc-500')}`}>No products added</p>
+                    <p className={`text-xs ${ft('text-slate-400', 'text-zinc-600')} mt-1`}>
                       Click "Add Product" to select from your catalog
                     </p>
                   </div>

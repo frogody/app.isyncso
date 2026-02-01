@@ -31,20 +31,22 @@ import { useUser } from '@/components/context/UserContext';
 import { useFinanceTheme } from '@/contexts/FinanceThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 
-const STATUS_CONFIG = {
-  draft: { label: 'Draft', color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30', icon: FileText },
+const getStatusConfig = (ft) => ({
+  draft: { label: 'Draft', color: ft('bg-slate-200/50 text-slate-500 border-slate-300', 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'), icon: FileText },
   sent: { label: 'Sent', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Send },
   viewed: { label: 'Viewed', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Eye },
   accepted: { label: 'Accepted', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: CheckCircle2 },
   rejected: { label: 'Rejected', color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: XCircle },
-  expired: { label: 'Expired', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Clock }
-};
+  expired: { label: 'Expired', color: ft('bg-slate-200/50 text-slate-500 border-slate-300', 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'), icon: Clock }
+});
 
 export default function FinanceProposals() {
   const navigate = useNavigate();
   const { user } = useUser();
   const { hasPermission, isLoading: permLoading } = usePermissions();
   const { theme, toggleTheme, ft } = useFinanceTheme();
+
+  const STATUS_CONFIG = useMemo(() => getStatusConfig(ft), [ft]);
 
   const [loading, setLoading] = useState(true);
   const [proposals, setProposals] = useState([]);
