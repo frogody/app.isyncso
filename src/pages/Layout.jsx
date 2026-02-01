@@ -367,6 +367,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Proposals', path: createPageUrl('FinanceProposals'), icon: FileText },
         { label: 'Business Expenses', path: createPageUrl('FinanceExpenses'), icon: Euro },
         { label: 'Subscriptions', path: createPageUrl('FinanceSubscriptions'), icon: CreditCard },
+        { label: 'Chart of Accounts', path: createPageUrl('FinanceAccounts'), icon: BookOpen },
       ]
     };
   }

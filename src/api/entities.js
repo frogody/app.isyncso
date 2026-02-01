@@ -99,6 +99,13 @@ export const Expense = db.entities.Expense;
 export const Invoice = db.entities.Invoice;
 export const Subscription = db.entities.Subscription;
 
+// === Bookkeeping (Chart of Accounts & General Ledger) ===
+export const AccountType = db.entities.AccountType;
+export const Account = db.entities.Account;
+export const FiscalPeriod = db.entities.FiscalPeriod;
+export const JournalEntry = db.entities.JournalEntry;
+export const JournalEntryLine = db.entities.JournalEntryLine;
+
 // === Raise (Fundraising) ===
 export const RaiseCampaign = db.entities.RaiseCampaign;
 export const RaiseInvestor = db.entities.RaiseInvestor;
