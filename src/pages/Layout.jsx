@@ -1697,8 +1697,16 @@ export default function Layout({ children, currentPageName }) {
             background: #F1F5F9 !important; border-color: #E2E8F0 !important;
           }
           [data-raise-light] .bg-zinc-700, [data-raise-light] .bg-zinc-700\/30 { background: #CBD5E1 !important; }
+          [data-raise-light] .bg-white,
+          [data-raise-light] .bg-white\/95, [data-raise-light] .bg-white\/90, [data-raise-light] .bg-white\/80,
+          [data-raise-light] .bg-white\/70, [data-raise-light] .bg-white\/60, [data-raise-light] .bg-white\/50 {
+            background: #FFFFFF !important; border-color: #E2E8F0 !important;
+          }
           [data-raise-light] .bg-white\/5 { background: rgba(0,0,0,0.03) !important; }
+          [data-raise-light] .bg-white\/10, [data-raise-light] .bg-white\/20 { background: rgba(0,0,0,0.04) !important; }
           [data-raise-light] .bg-black\/95 { background: rgba(255,255,255,0.97) !important; border-color: #E2E8F0 !important; }
+          [data-raise-light] .text-black { color: #0F172A !important; }
+          [data-raise-light] .border-white { border-color: #E2E8F0 !important; }
 
           /* Text — primary & zinc grays → slate */
           [data-raise-light] .text-white { color: #0F172A !important; }
@@ -1848,6 +1856,10 @@ export default function Layout({ children, currentPageName }) {
           html[data-sentinel-light] .text-white { color: #0F172A !important; }
           html[data-sentinel-light] .text-black { color: #0F172A !important; }
           html[data-sentinel-light] .bg-white, html[data-sentinel-light] .bg-white\\/95, html[data-sentinel-light] .bg-white\\/90 { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
+          html[data-raise-light] .text-white { color: #0F172A !important; }
+          html[data-raise-light] .text-black { color: #0F172A !important; }
+          html[data-raise-light] .bg-white, html[data-raise-light] .bg-white\\/95, html[data-raise-light] .bg-white\\/90 { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
+          html[data-raise-light] .bg-black { background: #F8FAFC !important; }
           .text-gray-300, .text-gray-400 { color: #888 !important; }
 
           /* Badges & Pills */
