@@ -1912,11 +1912,41 @@ export default function Layout({ children, currentPageName }) {
           /* Glass card */
           [data-create-light] .glass-card { background: #FFFFFF !important; border: 1px solid #E2E8F0 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important; }
 
+          /* ── Create Light: Additional dark surface overrides ── */
+          [data-create-light] .bg-zinc-950,
+          [data-create-light] .bg-zinc-950\\/80 { background: #FFFFFF !important; }
+          [data-create-light] .bg-black\\/60 { background: rgba(248,250,252,0.9) !important; }
+          [data-create-light] .bg-black\\/80 { background: rgba(248,250,252,0.95) !important; }
+          [data-create-light] .bg-white\\/\\[0\\.04\\],
+          [data-create-light] .bg-white\\/\\[0\\.06\\],
+          [data-create-light] .bg-white\\/\\[0\\.07\\] { background: #F1F5F9 !important; }
+          [data-create-light] .border-white\\/\\[0\\.04\\],
+          [data-create-light] .border-white\\/\\[0\\.06\\],
+          [data-create-light] .border-white\\/\\[0\\.08\\],
+          [data-create-light] .border-white\\/\\[0\\.12\\] { border-color: #E2E8F0 !important; }
+          [data-create-light] .ring-white\\/\\[0\\.03\\],
+          [data-create-light] .ring-white\\/\\[0\\.04\\] { --tw-ring-color: #E2E8F0 !important; }
+          [data-create-light] .bg-yellow-500\\/\\[0\\.04\\],
+          [data-create-light] .bg-yellow-500\\/\\[0\\.06\\],
+          [data-create-light] .bg-yellow-500\\/\\[0\\.08\\] { background: rgba(234,179,8,0.06) !important; }
+          [data-create-light] .border-yellow-500\\/\\[0\\.07\\],
+          [data-create-light] .border-yellow-500\\/\\[0\\.12\\] { border-color: rgba(234,179,8,0.2) !important; }
+
           /* ── Create Light: Sidebar & Submenus ──────────────── */
           html[data-create-light] .sidebar-shell {
             background: #FFFFFF !important;
             border-right: 1px solid #E2E8F0 !important;
           }
+          html[data-create-light] .sidebar-shell * {
+            border-color: #E2E8F0 !important;
+          }
+          html[data-create-light] .sidebar-shell .text-white { color: #334155 !important; }
+          html[data-create-light] .sidebar-shell .text-zinc-400,
+          html[data-create-light] .sidebar-shell .text-zinc-500 { color: #64748B !important; }
+          html[data-create-light] .sidebar-shell .bg-white\\/5,
+          html[data-create-light] .sidebar-shell .bg-white\\/10 { background: rgba(0,0,0,0.04) !important; }
+          html[data-create-light] .sidebar-shell svg { color: #475569 !important; }
+          html[data-create-light] .sidebar-shell .border-white\\/10 { border-color: #E2E8F0 !important; }
           [data-create-light] .bg-gradient-to-t.from-black { background: #FFFFFF !important; }
           [data-create-light] .bg-gray-900 { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
           [data-create-light] .hover\\:text-white:hover { color: #0F172A !important; }
@@ -2051,6 +2081,15 @@ export default function Layout({ children, currentPageName }) {
             background: #FFFFFF !important;
             border-right: 1px solid #E2E8F0 !important;
           }
+          html[data-finance-light] .sidebar-shell * {
+            border-color: #E2E8F0 !important;
+          }
+          html[data-finance-light] .sidebar-shell .text-white { color: #334155 !important; }
+          html[data-finance-light] .sidebar-shell .text-zinc-400,
+          html[data-finance-light] .sidebar-shell .text-zinc-500 { color: #64748B !important; }
+          html[data-finance-light] .sidebar-shell .bg-white\\/5,
+          html[data-finance-light] .sidebar-shell .bg-white\\/10 { background: rgba(0,0,0,0.04) !important; }
+          html[data-finance-light] .sidebar-shell svg { color: #475569 !important; }
           [data-finance-light] .bg-gradient-to-t.from-black { background: #FFFFFF !important; }
           [data-finance-light] .bg-gray-900 { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
           [data-finance-light] .hover\\:text-white:hover { color: #0F172A !important; }
