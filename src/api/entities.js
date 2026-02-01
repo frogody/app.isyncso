@@ -112,6 +112,9 @@ export const Bill = db.entities.Bill;
 export const BillLineItem = db.entities.BillLineItem;
 export const BillPayment = db.entities.BillPayment;
 
+// === Financial Reports ===
+export const SavedReport = db.entities.SavedReport;
+
 // === Raise (Fundraising) ===
 export const RaiseCampaign = db.entities.RaiseCampaign;
 export const RaiseInvestor = db.entities.RaiseInvestor;
