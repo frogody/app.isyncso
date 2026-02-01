@@ -13,6 +13,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mic, MicOff, Volume2, VolumeX, MessageSquare, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSyncTheme } from '@/contexts/SyncThemeContext';
 import { useUser } from '@/components/context/UserContext';
 import { useSyncState } from '@/components/context/SyncStateContext';
 import SyncAvatarMini from '@/components/icons/SyncAvatarMini';
@@ -40,6 +41,7 @@ const VOICE_STATES = {
 
 export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
   const { user } = useUser();
+  const { syt } = useSyncTheme();
   const syncState = useSyncState();
 
   // Core state
@@ -394,11 +396,11 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center"
+            className={`fixed inset-0 z-50 ${syt('bg-white/80', 'bg-black/80')} backdrop-blur-sm flex items-center justify-center`}
           >
-            <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-sm text-center">
-              <p className="text-white mb-4">Voice mode requires a browser with Speech Recognition support.</p>
-              <button onClick={onClose} className="px-4 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700">
+            <div className={`${syt('bg-white', 'bg-zinc-900')} border ${syt('border-slate-300', 'border-zinc-700')} rounded-2xl p-6 max-w-sm text-center`}>
+              <p className={`${syt('text-slate-900', 'text-white')} mb-4`}>Voice mode requires a browser with Speech Recognition support.</p>
+              <button onClick={onClose} className={`px-4 py-2 ${syt('bg-slate-100', 'bg-zinc-800')} ${syt('text-slate-900', 'text-white')} rounded-lg ${syt('hover:bg-slate-200', 'hover:bg-zinc-700')}`}>
                 Close
               </button>
             </div>
@@ -427,19 +429,19 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center"
+          className={`fixed inset-0 z-50 ${syt('bg-white/90', 'bg-black/90')} backdrop-blur-md flex flex-col items-center justify-center`}
         >
           {/* Top controls */}
           <div className="absolute top-6 right-6 flex items-center gap-2">
             {latency && (
-              <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-zinc-800/50 text-xs">
+              <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full ${syt('bg-slate-50', 'bg-zinc-800/50')} text-xs`}>
                 <Zap className="w-3 h-3 text-green-400" />
                 <span className="text-green-400">{latency}ms</span>
               </div>
             )}
             <button
               onClick={onSwitchToChat}
-              className="p-3 rounded-full bg-zinc-800/50 text-zinc-400 hover:text-white hover:bg-zinc-700/50 transition-colors"
+              className={`p-3 rounded-full ${syt('bg-slate-50', 'bg-zinc-800/50')} ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:text-slate-900', 'hover:text-white')} ${syt('hover:bg-slate-100', 'hover:bg-zinc-700/50')} transition-colors`}
               title="Switch to chat"
             >
               <MessageSquare className="w-5 h-5" />
@@ -450,7 +452,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
                 "p-3 rounded-full transition-colors",
                 isMuted
                   ? "bg-red-500/20 text-red-400"
-                  : "bg-zinc-800/50 text-zinc-400 hover:text-white hover:bg-zinc-700/50"
+                  : `${syt('bg-slate-50', 'bg-zinc-800/50')} ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:text-slate-900', 'hover:text-white')} ${syt('hover:bg-slate-100', 'hover:bg-zinc-700/50')}`
               )}
               title={isMuted ? "Unmute" : "Mute"}
             >
@@ -458,7 +460,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
             </button>
             <button
               onClick={onClose}
-              className="p-3 rounded-full bg-zinc-800/50 text-zinc-400 hover:text-white hover:bg-zinc-700/50 transition-colors"
+              className={`p-3 rounded-full ${syt('bg-slate-50', 'bg-zinc-800/50')} ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:text-slate-900', 'hover:text-white')} ${syt('hover:bg-slate-100', 'hover:bg-zinc-700/50')} transition-colors`}
             >
               <X className="w-5 h-5" />
             </button>
@@ -466,7 +468,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
 
           {/* Brand badge */}
           <div className="absolute top-6 left-6">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/30 text-xs text-zinc-500">
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${syt('bg-slate-100/50', 'bg-zinc-800/30')} text-xs ${syt('text-slate-400', 'text-zinc-500')}`}>
               <span>Powered by</span>
               <span className="text-purple-400 font-medium">Together.ai</span>
             </div>
@@ -496,7 +498,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
 
             {/* Status text */}
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-semibold text-white">
+              <h2 className={`text-2xl font-semibold ${syt('text-slate-900', 'text-white')}`}>
                 {getDisplayStatus()}
               </h2>
               {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -517,7 +519,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
                 <motion.p
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-lg text-zinc-300"
+                  className={`text-lg ${syt('text-slate-600', 'text-zinc-300')}`}
                 >
                   {lastResponse}
                 </motion.p>
@@ -554,7 +556,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
                   ? "bg-purple-500 text-white shadow-[0_0_30px_rgba(168,85,247,0.5)]"
                   : isSpeaking || isProcessing
                   ? "bg-purple-500/30 text-purple-300 cursor-not-allowed"
-                  : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                  : `${syt('bg-slate-100', 'bg-zinc-800')} ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:bg-slate-200', 'hover:bg-zinc-700')}`
               )}
               disabled={isSpeaking || isProcessing}
             >
@@ -566,7 +568,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
             </motion.button>
 
             {/* Instruction */}
-            <p className="text-sm text-zinc-600">
+            <p className={`text-sm ${syt('text-slate-400', 'text-zinc-600')}`}>
               {isListening
                 ? "Speak naturally"
                 : isSpeaking || isProcessing

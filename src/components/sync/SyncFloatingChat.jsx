@@ -13,6 +13,7 @@ import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import { useSyncState } from '@/components/context/SyncStateContext';
 import SyncAvatarMini from '@/components/icons/SyncAvatarMini';
+import { useSyncTheme } from '@/contexts/SyncThemeContext';
 
 // Generate unique session ID
 const generateSessionId = () => `floating-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -20,6 +21,7 @@ const generateSessionId = () => `floating-${Date.now()}-${Math.random().toString
 export default function SyncFloatingChat({ isOpen, onClose, onExpandToFullPage, onStartVoice }) {
   const { user } = useUser();
   const syncState = useSyncState();
+  const { syt } = useSyncTheme();
   const [messages, setMessages] = useState([
     { role: 'assistant', text: "Hey! How can I help?", ts: Date.now() }
   ]);
@@ -128,38 +130,53 @@ export default function SyncFloatingChat({ isOpen, onClose, onExpandToFullPage, 
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.95 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="fixed bottom-6 right-6 z-50 w-[380px] h-[500px] flex flex-col bg-zinc-900/95 backdrop-blur-xl border border-zinc-700/50 rounded-2xl shadow-2xl overflow-hidden"
+          className={cn(
+            "fixed bottom-6 right-6 z-50 w-[380px] h-[500px] flex flex-col backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden",
+            syt('bg-white/95 border border-slate-200', 'bg-zinc-900/95 border border-zinc-700/50')
+          )}
           style={{
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(168, 85, 247, 0.1)',
           }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/50 bg-zinc-900/80">
+          <div className={cn(
+            "flex items-center justify-between px-4 py-3 border-b",
+            syt('border-slate-200 bg-white/80', 'border-zinc-800/50 bg-zinc-900/80')
+          )}>
             <div className="flex items-center gap-3">
               <SyncAvatarMini size={36} />
               <div>
-                <h3 className="text-sm font-semibold text-white">SYNC</h3>
-                <p className="text-xs text-zinc-500">AI Orchestrator</p>
+                <h3 className={cn("text-sm font-semibold", syt('text-slate-900', 'text-white'))}>SYNC</h3>
+                <p className={cn("text-xs", syt('text-slate-400', 'text-zinc-500'))}>AI Orchestrator</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
               <button
                 onClick={onStartVoice}
-                className="p-2 rounded-lg text-zinc-400 hover:text-purple-400 hover:bg-zinc-800/50 transition-colors"
+                className={cn(
+                  "p-2 rounded-lg hover:text-purple-400 transition-colors",
+                  syt('text-slate-500 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800/50')
+                )}
                 title="Voice mode"
               >
                 <Mic className="w-4 h-4" />
               </button>
               <button
                 onClick={onExpandToFullPage}
-                className="p-2 rounded-lg text-zinc-400 hover:text-cyan-400 hover:bg-zinc-800/50 transition-colors"
+                className={cn(
+                  "p-2 rounded-lg hover:text-cyan-400 transition-colors",
+                  syt('text-slate-500 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800/50')
+                )}
                 title="Open full page"
               >
                 <Maximize2 className="w-4 h-4" />
               </button>
               <button
                 onClick={onClose}
-                className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-colors"
+                className={cn(
+                  "p-2 rounded-lg transition-colors",
+                  syt('text-slate-500 hover:text-slate-900 hover:bg-slate-100', 'text-zinc-400 hover:text-white hover:bg-zinc-800/50')
+                )}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -191,17 +208,23 @@ export default function SyncFloatingChat({ isOpen, onClose, onExpandToFullPage, 
                       ? "bg-cyan-500/20 text-cyan-100 rounded-br-sm"
                       : msg.isError
                         ? "bg-red-500/10 text-red-300 border border-red-500/20"
-                        : "bg-zinc-800/80 text-zinc-200 rounded-bl-sm"
+                        : cn(syt('bg-slate-100/80 text-slate-700', 'bg-zinc-800/80 text-zinc-200'), "rounded-bl-sm")
                   )}
                 >
                   <ReactMarkdown
-                    className="prose prose-invert prose-sm max-w-none [&>p]:m-0 [&>p]:leading-relaxed"
+                    className={cn(
+                      "prose prose-sm max-w-none [&>p]:m-0 [&>p]:leading-relaxed",
+                      syt('prose-slate', 'prose-invert')
+                    )}
                   >
                     {msg.text}
                   </ReactMarkdown>
                   {msg.action && (
-                    <div className="mt-2 pt-2 border-t border-zinc-700/50 text-xs text-zinc-400">
-                      <span className="text-green-400">✓</span> {msg.action.type?.replace(/_/g, ' ')}
+                    <div className={cn(
+                      "mt-2 pt-2 border-t text-xs",
+                      syt('border-slate-300/50 text-slate-500', 'border-zinc-700/50 text-zinc-400')
+                    )}>
+                      <span className="text-green-400">&#10003;</span> {msg.action.type?.replace(/_/g, ' ')}
                     </div>
                   )}
                 </div>
@@ -211,7 +234,7 @@ export default function SyncFloatingChat({ isOpen, onClose, onExpandToFullPage, 
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex items-center gap-2 text-zinc-500 text-sm"
+                className={cn("flex items-center gap-2 text-sm", syt('text-slate-400', 'text-zinc-500'))}
               >
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span>Thinking...</span>
@@ -221,7 +244,10 @@ export default function SyncFloatingChat({ isOpen, onClose, onExpandToFullPage, 
           </div>
 
           {/* Input */}
-          <div className="p-3 border-t border-zinc-800/50 bg-zinc-900/80">
+          <div className={cn(
+            "p-3 border-t",
+            syt('border-slate-200 bg-white/80', 'border-zinc-800/50 bg-zinc-900/80')
+          )}>
             <div className="flex items-center gap-2">
               <input
                 ref={inputRef}
@@ -231,7 +257,13 @@ export default function SyncFloatingChat({ isOpen, onClose, onExpandToFullPage, 
                 onKeyDown={handleKeyDown}
                 placeholder="Ask SYNC anything..."
                 disabled={isSending}
-                className="flex-1 bg-zinc-800/50 border border-zinc-700/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all disabled:opacity-50"
+                className={cn(
+                  "flex-1 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all disabled:opacity-50",
+                  syt(
+                    'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400',
+                    'bg-zinc-800/50 border border-zinc-700/50 text-white placeholder:text-zinc-500'
+                  )
+                )}
               />
               <button
                 onClick={sendMessage}
@@ -241,8 +273,8 @@ export default function SyncFloatingChat({ isOpen, onClose, onExpandToFullPage, 
                 <Send className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-[10px] text-zinc-600 mt-2 text-center">
-              Press Enter to send • Esc to close
+            <p className={cn("text-[10px] mt-2 text-center", syt('text-slate-400', 'text-zinc-600'))}>
+              Press Enter to send - Esc to close
             </p>
           </div>
         </motion.div>

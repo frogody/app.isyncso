@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/api/supabaseClient';
 import { useLocalStorage } from '@/components/hooks/useLocalStorage';
 import SyncAvatarMini from '@/components/icons/SyncAvatarMini';
+import { useSyncTheme } from '@/contexts/SyncThemeContext';
 
 // Agent icon mapping
 const AGENT_ICONS = {
@@ -82,6 +83,7 @@ function parseActionsFromContent(content) {
 
 // Action buttons component
 function ActionButtons({ actions, onAction, disabled }) {
+  const { syt } = useSyncTheme();
   if (!actions || actions.length === 0) return null;
 
   return (
@@ -97,8 +99,8 @@ function ActionButtons({ actions, onAction, disabled }) {
           disabled={disabled}
           className={cn(
             'px-3 py-1.5 text-xs rounded-lg border transition-all',
-            'bg-zinc-700/50 border-zinc-600 text-zinc-200',
-            'hover:bg-purple-600/20 hover:border-purple-500/50 hover:text-white',
+            syt('bg-slate-100 border-slate-300 text-slate-700', 'bg-zinc-700/50 border-zinc-600 text-zinc-200'),
+            syt('hover:bg-purple-100 hover:border-purple-400 hover:text-purple-700', 'hover:bg-purple-600/20 hover:border-purple-500/50 hover:text-white'),
             disabled && 'opacity-50 cursor-not-allowed'
           )}
         >
@@ -111,6 +113,7 @@ function ActionButtons({ actions, onAction, disabled }) {
 
 // Message component
 function ChatMessage({ message, isLast, onAction, isLoading }) {
+  const { syt } = useSyncTheme();
   const isUser = message.role === 'user';
   const agentId = message.agentId || 'sync';
   const AgentIcon = AGENT_ICONS[agentId] || Bot;
@@ -148,7 +151,7 @@ function ChatMessage({ message, isLast, onAction, isLoading }) {
               {message.agentId.charAt(0).toUpperCase() + message.agentId.slice(1)} Agent
             </span>
             {message.delegated && (
-              <span className="text-[10px] text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded">
+              <span className={cn('text-[10px] px-1.5 py-0.5 rounded', syt('text-slate-400 bg-slate-100', 'text-zinc-500 bg-zinc-800'))}>
                 delegated
               </span>
             )}
@@ -161,7 +164,7 @@ function ChatMessage({ message, isLast, onAction, isLoading }) {
             'rounded-2xl px-4 py-3 text-sm',
             isUser
               ? 'bg-purple-600 text-white'
-              : 'bg-zinc-800/80 text-zinc-200 border border-white/5'
+              : syt('bg-white border border-slate-200 shadow-sm text-slate-700', 'bg-zinc-800/80 text-zinc-200 border border-white/5')
           )}
         >
           {isUser ? (
@@ -169,7 +172,7 @@ function ChatMessage({ message, isLast, onAction, isLoading }) {
           ) : (
             <>
               <ReactMarkdown
-                className="prose prose-invert prose-sm max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-li:my-1 prose-code:text-purple-400 prose-code:bg-purple-950/30 prose-code:px-1 prose-code:rounded prose-table:my-2 prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1"
+                className={cn('prose prose-sm max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-li:my-1 prose-code:text-purple-400 prose-code:px-1 prose-code:rounded prose-table:my-2 prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1', syt('prose-code:bg-purple-50', 'prose-invert prose-code:bg-purple-950/30'))}
                 components={{
                   a: ({ node, ...props }) => (
                     <a
@@ -185,10 +188,10 @@ function ChatMessage({ message, isLast, onAction, isLoading }) {
                     </div>
                   ),
                   th: ({ node, ...props }) => (
-                    <th {...props} className="border border-zinc-700 bg-zinc-800 px-2 py-1 text-left font-medium text-zinc-300" />
+                    <th {...props} className={cn('border px-2 py-1 text-left font-medium', syt('border-slate-200 bg-slate-100 text-slate-600', 'border-zinc-700 bg-zinc-800 text-zinc-300'))} />
                   ),
                   td: ({ node, ...props }) => (
-                    <td {...props} className="border border-zinc-700 px-2 py-1" />
+                    <td {...props} className={cn('border px-2 py-1', syt('border-slate-200', 'border-zinc-700'))} />
                   ),
                 }}
               >
@@ -203,7 +206,7 @@ function ChatMessage({ message, isLast, onAction, isLoading }) {
         </div>
 
         {/* Timestamp */}
-        <span className="text-[10px] text-zinc-600 px-2">
+        <span className={cn('text-[10px] px-2', syt('text-slate-400', 'text-zinc-600'))}>
           {new Date(message.timestamp).toLocaleTimeString([], {
             hour: '2-digit',
             minute: '2-digit',
@@ -213,8 +216,8 @@ function ChatMessage({ message, isLast, onAction, isLoading }) {
 
       {/* User avatar */}
       {isUser && (
-        <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center shrink-0">
-          <User className="w-4 h-4 text-zinc-300" />
+        <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', syt('bg-slate-200', 'bg-zinc-700'))}>
+          <User className={cn('w-4 h-4', syt('text-slate-500', 'text-zinc-300'))} />
         </div>
       )}
     </motion.div>
@@ -223,6 +226,7 @@ function ChatMessage({ message, isLast, onAction, isLoading }) {
 
 // Loading indicator
 function TypingIndicator({ agentId }) {
+  const { syt } = useSyncTheme();
   const colors = AGENT_COLORS[agentId] || AGENT_COLORS.sync;
   const AgentIcon = AGENT_ICONS[agentId] || Bot;
 
@@ -241,7 +245,7 @@ function TypingIndicator({ agentId }) {
       >
         <AgentIcon className={cn('w-4 h-4', colors.text)} />
       </div>
-      <div className="bg-zinc-800/80 rounded-2xl px-4 py-3 border border-white/5">
+      <div className={cn('rounded-2xl px-4 py-3 border', syt('bg-white border-slate-200 shadow-sm', 'bg-zinc-800/80 border-white/5'))}>
         <div className="flex items-center gap-1.5">
           <div className={cn('w-2 h-2 rounded-full animate-bounce', colors.bg.replace('/20', ''))} style={{ animationDelay: '0ms' }} />
           <div className={cn('w-2 h-2 rounded-full animate-bounce', colors.bg.replace('/20', ''))} style={{ animationDelay: '150ms' }} />
@@ -289,6 +293,8 @@ export default function SyncChat({
   expanded = false,
   onToggleExpand,
 }) {
+  const { syt } = useSyncTheme();
+
   // Persist sessionId and messages in localStorage
   const [sessionId, setSessionId] = useLocalStorage('sync_session_id', null);
   const [cachedMessages, setCachedMessages] = useLocalStorage('sync_messages', []);
@@ -496,18 +502,19 @@ export default function SyncChat({
   return (
     <div
       className={cn(
-        'flex flex-col bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden',
+        'flex flex-col backdrop-blur-xl border rounded-2xl overflow-hidden',
+        syt('bg-white/95 border-slate-200 shadow-lg', 'bg-zinc-900/95 border-white/10'),
         expanded ? 'fixed inset-4 z-50' : 'h-[600px]',
         className
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-zinc-900/80">
+      <div className={cn('flex items-center justify-between px-4 py-3 border-b', syt('border-slate-200 bg-white/80', 'border-white/10 bg-zinc-900/80'))}>
         <div className="flex items-center gap-3">
           <SyncAvatarMini size={40} />
           <div>
-            <h3 className="font-semibold text-white text-sm">SYNC</h3>
-            <p className="text-xs text-zinc-500">AI Orchestrator</p>
+            <h3 className={cn('font-semibold text-sm', syt('text-slate-900', 'text-white'))}>SYNC</h3>
+            <p className={cn('text-xs', syt('text-slate-400', 'text-zinc-500'))}>AI Orchestrator</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -515,7 +522,7 @@ export default function SyncChat({
             size="sm"
             variant="ghost"
             onClick={handleNewChat}
-            className="text-zinc-400 hover:text-white gap-1.5"
+            className={cn(syt('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white'), 'gap-1.5')}
             title="Start new conversation"
           >
             <Plus className="w-4 h-4" />
@@ -526,7 +533,7 @@ export default function SyncChat({
               size="icon"
               variant="ghost"
               onClick={onToggleExpand}
-              className="text-zinc-400 hover:text-white"
+              className={syt('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')}
             >
               {expanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </Button>
@@ -536,7 +543,7 @@ export default function SyncChat({
               size="icon"
               variant="ghost"
               onClick={onClose}
-              className="text-zinc-400 hover:text-white"
+              className={syt('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')}
             >
               <X className="w-4 h-4" />
             </Button>
@@ -551,8 +558,8 @@ export default function SyncChat({
             <div className="mb-4">
               <SyncAvatarMini size={64} />
             </div>
-            <h4 className="text-lg font-medium text-white mb-2">Hey! How can I help?</h4>
-            <p className="text-sm text-zinc-500 mb-4 max-w-sm">
+            <h4 className={cn('text-lg font-medium mb-2', syt('text-slate-900', 'text-white'))}>Hey! How can I help?</h4>
+            <p className={cn('text-sm mb-4 max-w-sm', syt('text-slate-400', 'text-zinc-500'))}>
               I can help with invoices, products, prospects, and more. Just ask!
             </p>
           </div>
@@ -579,7 +586,7 @@ export default function SyncChat({
       </div>
 
       {/* Input area */}
-      <div className="p-4 border-t border-white/10 bg-zinc-900/80">
+      <div className={cn('p-4 border-t', syt('border-slate-200 bg-white/80', 'border-white/10 bg-zinc-900/80'))}>
         <div className="flex items-end gap-2">
           <input
             ref={inputRef}
@@ -590,7 +597,7 @@ export default function SyncChat({
             placeholder="Ask SYNC anything..."
             disabled={isLoading}
             className={cn(
-              'flex-1 px-4 py-3 rounded-xl bg-zinc-800/50 border border-white/10 text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all',
+              cn('flex-1 px-4 py-3 rounded-xl border focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all', syt('bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400', 'bg-zinc-800/50 border-white/10 text-white placeholder-zinc-500')),
               isLoading && 'opacity-50 cursor-not-allowed'
             )}
           />
@@ -601,7 +608,7 @@ export default function SyncChat({
               'h-12 w-12 rounded-xl transition-all',
               input.trim()
                 ? 'bg-purple-600 hover:bg-purple-500 text-white'
-                : 'bg-zinc-800 text-zinc-500'
+                : syt('bg-slate-100 text-slate-400', 'bg-zinc-800 text-zinc-500')
             )}
           >
             {isLoading ? (
@@ -611,7 +618,7 @@ export default function SyncChat({
             )}
           </Button>
         </div>
-        <p className="text-[10px] text-zinc-600 text-center mt-2">
+        <p className={cn('text-[10px] text-center mt-2', syt('text-slate-400', 'text-zinc-600'))}>
           Press Enter to send • Esc to close
         </p>
       </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSyncTheme } from '@/contexts/SyncThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -112,6 +113,7 @@ const categoryColors = {
 };
 
 export default function MasterPromptTemplates({ sessionId }) {
+  const { syt } = useSyncTheme();
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [variables, setVariables] = useState({});
   const [sending, setSending] = useState(false);
@@ -163,8 +165,8 @@ export default function MasterPromptTemplates({ sessionId }) {
           <Zap className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-white mb-1">Master Prompt Templates</h3>
-          <p className="text-zinc-400 text-sm">
+          <h3 className={`text-lg font-semibold ${syt('text-slate-900', 'text-white')} mb-1`}>Master Prompt Templates</h3>
+          <p className={`${syt('text-slate-500', 'text-zinc-400')} text-sm`}>
             Pre-built prompts for common workflows
           </p>
         </div>
@@ -172,9 +174,9 @@ export default function MasterPromptTemplates({ sessionId }) {
 
       {/* How It Works */}
       <div className="bg-purple-500/10 rounded-xl p-4 mb-6 border border-purple-500/20">
-        <div className="flex items-center gap-3 text-sm text-zinc-300">
+        <div className={`flex items-center gap-3 text-sm ${syt('text-slate-600', 'text-zinc-300')}`}>
           <Sparkles className="w-5 h-5 text-purple-400 flex-shrink-0" />
-          <span>Select → Fill variables → Send → Press <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-xs">⌘V</kbd> in Claude</span>
+          <span>Select → Fill variables → Send → Press <kbd className={`px-1.5 py-0.5 ${syt('bg-slate-100', 'bg-zinc-800')} rounded text-xs`}>⌘V</kbd> in Claude</span>
         </div>
       </div>
 
@@ -196,20 +198,20 @@ export default function MasterPromptTemplates({ sessionId }) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
                   onClick={() => setSelectedTemplate(template)}
-                  className="p-4 rounded-xl border border-zinc-700/50 bg-zinc-800/30 hover:bg-zinc-800/50 hover:border-purple-500/30 transition-all text-left group"
+                  className={`p-4 rounded-xl border ${syt('border-slate-200', 'border-zinc-700/50')} ${syt('bg-slate-50', 'bg-zinc-800/30')} ${syt('hover:bg-slate-100', 'hover:bg-zinc-800/50')} hover:border-purple-500/30 transition-all text-left group`}
                 >
                   <div className="flex items-start gap-3">
                     <span className="text-2xl">{template.icon}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-white group-hover:text-purple-400 transition-colors">{template.name}</span>
+                        <span className={`font-medium ${syt('text-slate-900', 'text-white')} group-hover:text-purple-400 transition-colors`}>{template.name}</span>
                       </div>
-                      <p className="text-sm text-zinc-400 mb-2">{template.description}</p>
+                      <p className={`text-sm ${syt('text-slate-500', 'text-zinc-400')} mb-2`}>{template.description}</p>
                       <Badge className={`${colors.bg} ${colors.text} ${colors.border} text-xs`}>
                         {template.category}
                       </Badge>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-zinc-600 group-hover:text-purple-400 transition-colors" />
+                    <ChevronRight className={`w-5 h-5 ${syt('text-slate-400', 'text-zinc-600')} group-hover:text-purple-400 transition-colors`} />
                   </div>
                 </motion.button>
               );
@@ -225,7 +227,7 @@ export default function MasterPromptTemplates({ sessionId }) {
           >
             <button
               onClick={() => setSelectedTemplate(null)}
-              className="text-sm text-zinc-400 hover:text-white flex items-center gap-1 transition-colors"
+              className={`text-sm ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:text-slate-900', 'hover:text-white')} flex items-center gap-1 transition-colors`}
             >
               <ChevronLeft className="w-4 h-4" />
               Back to templates
@@ -236,30 +238,30 @@ export default function MasterPromptTemplates({ sessionId }) {
                 {selectedTemplate.icon}
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">{selectedTemplate.name}</h3>
-                <p className="text-sm text-zinc-400">{selectedTemplate.description}</p>
+                <h3 className={`text-lg font-semibold ${syt('text-slate-900', 'text-white')}`}>{selectedTemplate.name}</h3>
+                <p className={`text-sm ${syt('text-slate-500', 'text-zinc-400')}`}>{selectedTemplate.description}</p>
               </div>
             </div>
 
             <div className="space-y-4">
               {selectedTemplate.variables.map((variable) => (
                 <div key={variable}>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2 capitalize">
+                  <label className={`block text-sm font-medium ${syt('text-slate-600', 'text-zinc-300')} mb-2 capitalize`}>
                     {variable.replace(/([A-Z])/g, ' $1').trim()}
                   </label>
                   <Input
                     value={variables[variable] || ''}
                     onChange={(e) => setVariables({ ...variables, [variable]: e.target.value })}
-                    className="bg-zinc-800/50 border-zinc-700 text-white focus:border-purple-500"
+                    className={`${syt('bg-slate-50', 'bg-zinc-800/50')} ${syt('border-slate-300', 'border-zinc-700')} ${syt('text-slate-900', 'text-white')} focus:border-purple-500`}
                     placeholder={`Enter ${variable}...`}
                   />
                 </div>
               ))}
             </div>
 
-            <div className="bg-zinc-900/50 rounded-xl p-4 border border-zinc-700/50">
-              <div className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Preview</div>
-              <pre className="text-sm text-zinc-300 whitespace-pre-wrap font-mono leading-relaxed">
+            <div className={`${syt('bg-slate-50', 'bg-zinc-900/50')} rounded-xl p-4 border ${syt('border-slate-200', 'border-zinc-700/50')}`}>
+              <div className={`text-xs font-medium ${syt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider mb-2`}>Preview</div>
+              <pre className={`text-sm ${syt('text-slate-600', 'text-zinc-300')} whitespace-pre-wrap font-mono leading-relaxed`}>
                 {selectedTemplate.prompt.replace(/{{(\w+)}}/g, (match, key) => 
                   variables[key] ? `<span class="text-purple-400">${variables[key]}</span>` : `[${key}]`
                 )}
@@ -278,8 +280,8 @@ export default function MasterPromptTemplates({ sessionId }) {
               )}
             </Button>
             
-            <p className="text-xs text-zinc-500 text-center">
-              Press <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded">⌘V</kbd> in Claude sidebar, then <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded">Enter</kbd>
+            <p className={`text-xs ${syt('text-slate-400', 'text-zinc-500')} text-center`}>
+              Press <kbd className={`px-1.5 py-0.5 ${syt('bg-slate-100', 'bg-zinc-800')} rounded`}>⌘V</kbd> in Claude sidebar, then <kbd className={`px-1.5 py-0.5 ${syt('bg-slate-100', 'bg-zinc-800')} rounded`}>Enter</kbd>
             </p>
 
             {promptSent && (
@@ -292,8 +294,8 @@ export default function MasterPromptTemplates({ sessionId }) {
                   <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-green-400 font-medium">Prompt copied!</p>
-                    <p className="text-zinc-400 text-sm mt-1">
-                      Switch to Claude and press <kbd className="px-1.5 py-0.5 bg-zinc-700 rounded text-xs">⌘V</kbd> to paste.
+                    <p className={`${syt('text-slate-500', 'text-zinc-400')} text-sm mt-1`}>
+                      Switch to Claude and press <kbd className={`px-1.5 py-0.5 ${syt('bg-slate-100', 'bg-zinc-700')} rounded text-xs`}>⌘V</kbd> to paste.
                     </p>
                   </div>
                 </div>

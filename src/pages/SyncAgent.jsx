@@ -6,7 +6,9 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus, Download, ExternalLink, Image as ImageIcon, FileText } from 'lucide-react';
+import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus, Download, ExternalLink, Image as ImageIcon, FileText, Sun, Moon } from 'lucide-react';
+import { useSyncTheme } from '@/contexts/SyncThemeContext';
+import { SyncPageTransition } from '@/components/sync/ui';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/api/supabaseClient';
@@ -291,6 +293,7 @@ function ImageCard({ url }) {
 // ============================================================================
 
 function DocumentCard({ url, title }) {
+  const { syt } = useSyncTheme();
   const cardRef = useRef(null);
 
   // Animate card entrance
@@ -341,20 +344,20 @@ function DocumentCard({ url, title }) {
           <FileText className="w-4 h-4 text-cyan-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-white truncate">{title}</div>
-          <div className="text-xs text-zinc-500 mt-0.5">Markdown Document</div>
+          <div className={`text-sm font-medium ${syt('text-slate-900', 'text-white')} truncate`}>{title}</div>
+          <div className={`text-xs ${syt('text-slate-400', 'text-zinc-500')} mt-0.5`}>Markdown Document</div>
         </div>
         <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={handleDownload}
-            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+            className={`p-1.5 rounded-lg bg-white/5 hover:bg-white/10 ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:text-slate-900', 'hover:text-white')} transition-colors`}
             title="Download"
           >
             <Download className="w-4 h-4" />
           </button>
           <button
             onClick={handleOpen}
-            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+            className={`p-1.5 rounded-lg bg-white/5 hover:bg-white/10 ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:text-slate-900', 'hover:text-white')} transition-colors`}
             title="Open in new tab"
           >
             <ExternalLink className="w-4 h-4" />
@@ -426,6 +429,7 @@ function getActionEffect(actionType) {
 // ============================================================================
 
 function AgentChannelMessage({ message, isLatest, highlightBorders }) {
+  const { syt } = useSyncTheme();
   const messageRef = useRef(null);
   const agent = AGENT_SEGMENTS.find(a => a.id === message.agentId) || AGENT_SEGMENTS.find(a => a.id === 'sync');
   const isSyncMessage = message.agentId === 'sync' || !message.agentId;
@@ -449,8 +453,8 @@ function AgentChannelMessage({ message, isLatest, highlightBorders }) {
       className={cn(
         "flex items-start gap-3 py-3 px-4 rounded-xl max-w-[85%] transition-all duration-300",
         isSyncMessage
-          ? "mr-auto bg-gradient-to-br from-zinc-800/70 to-zinc-800/40 border border-zinc-700/30"
-          : "ml-auto flex-row-reverse bg-gradient-to-bl from-zinc-700/50 to-zinc-700/30 border border-zinc-600/30",
+          ? `mr-auto ${syt('bg-gradient-to-br from-slate-100 to-slate-50 border border-slate-200', 'bg-gradient-to-br from-zinc-800/70 to-zinc-800/40 border border-zinc-700/30')}`
+          : `ml-auto flex-row-reverse ${syt('bg-gradient-to-bl from-slate-100 to-slate-50 border border-slate-200', 'bg-gradient-to-bl from-zinc-700/50 to-zinc-700/30 border border-zinc-600/30')}`,
         highlightBorders && "border-cyan-400/70 shadow-[0_0_20px_rgba(34,211,238,0.4)]"
       )}
       style={{ opacity: 0 }}
@@ -476,7 +480,7 @@ function AgentChannelMessage({ message, isLatest, highlightBorders }) {
           >
             {agent?.name || 'Agent'}
           </span>
-          <span className="text-[10px] text-zinc-500">
+          <span className={`text-[10px] ${syt('text-slate-400', 'text-zinc-500')}`}>
             {formatTime(message.ts)}
           </span>
           {/* Status indicator for latest */}
@@ -484,7 +488,7 @@ function AgentChannelMessage({ message, isLatest, highlightBorders }) {
             <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-amber-400" />
           )}
         </div>
-        <p className="text-sm text-zinc-300 leading-relaxed">
+        <p className={`text-sm ${syt('text-slate-600', 'text-zinc-300')} leading-relaxed`}>
           {message.text}
         </p>
       </div>
@@ -1507,6 +1511,7 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, acti
 // ============================================================================
 
 function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level = 0.25, seed = 1, activeAgent = null, actionEffect = null, showSuccess = false }) {
+  const { syt } = useSyncTheme();
   const labelRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -1553,7 +1558,7 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
       <div className="absolute inset-x-0 bottom-[-52px] flex justify-center">
         <div
           ref={labelRef}
-          className="rounded-xl border border-white/10 bg-black/60 px-3 py-1.5 text-xs shadow-lg backdrop-blur"
+          className={`rounded-xl border ${syt('border-slate-200 bg-white/80', 'border-white/10 bg-black/60')} px-3 py-1.5 text-xs shadow-lg backdrop-blur`}
         >
           <span className="inline-flex items-center gap-2">
             <span
@@ -1566,11 +1571,11 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
             {actionEffect?.icon && (
               <span className="text-sm">{actionEffect.icon}</span>
             )}
-            <span className="font-medium text-white">
+            <span className={`font-medium ${syt('text-slate-900', 'text-white')}`}>
               {activeAgentInfo ? `${agentName} → ${activeAgentInfo.name}` : agentName}
             </span>
-            <span className="text-zinc-500">·</span>
-            <span className="text-zinc-400 capitalize">{mood}</span>
+            <span className={syt('text-slate-400', 'text-zinc-500')}>·</span>
+            <span className={`${syt('text-slate-500', 'text-zinc-400')} capitalize`}>{mood}</span>
           </span>
         </div>
       </div>
@@ -1583,6 +1588,7 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
 // ============================================================================
 
 function Bubble({ role, text, ts, index, document, highlightBorders }) {
+  const { syt } = useSyncTheme();
   const bubbleRef = useRef(null);
   const isUser = role === 'user';
 
@@ -1612,12 +1618,12 @@ function Bubble({ role, text, ts, index, document, highlightBorders }) {
         className={cn(
           'max-w-[78%] rounded-xl border px-4 py-3 text-sm leading-relaxed shadow-sm transition-all duration-300',
           isUser
-            ? 'border-cyan-500/20 bg-cyan-600/20 text-white'
-            : 'border-white/10 bg-black/40 text-white/90',
+            ? `border-cyan-500/20 bg-cyan-600/20 ${syt('text-slate-900', 'text-white')}`
+            : `${syt('border-slate-200 bg-white/80', 'border-white/10 bg-black/40')} ${syt('text-slate-800', 'text-white/90')}`,
           highlightBorders && "border-cyan-400/70 shadow-[0_0_20px_rgba(34,211,238,0.4)]"
         )}
       >
-        <div className="mb-1.5 flex items-center gap-2 text-[11px] text-zinc-500">
+        <div className={`mb-1.5 flex items-center gap-2 text-[11px] ${syt('text-slate-400', 'text-zinc-500')}`}>
           <span className="inline-flex items-center gap-1.5">
             {isUser ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
             <span className="capitalize">{isUser ? 'You' : 'SYNC'}</span>
@@ -1660,6 +1666,7 @@ const DEFAULT_MESSAGES = [
 ];
 
 export default function SyncAgent() {
+  const { theme, toggleTheme, syt } = useSyncTheme();
   const { user } = useUser();
   const syncStateContext = useSyncState();
   const [mood, setMoodLocal] = useState('listening');
@@ -2015,7 +2022,8 @@ export default function SyncAgent() {
   ];
 
   return (
-    <div ref={pageRef} className="h-screen flex flex-col bg-black text-white overflow-hidden">
+    <SyncPageTransition>
+    <div ref={pageRef} className={`h-screen flex flex-col ${syt('bg-slate-50', 'bg-black')} ${syt('text-slate-900', 'text-white')} overflow-hidden`}>
       {/* Top bar - just buttons */}
       <div className="shrink-0 z-20">
         <div className="mx-auto flex max-w-[1600px] items-center justify-end gap-3 px-6 py-3">
@@ -2029,12 +2037,18 @@ export default function SyncAgent() {
             <span className="relative text-white">New Chat</span>
           </button>
           <button
-            className="inline-flex items-center gap-2 rounded-xl border border-zinc-700/60 bg-zinc-800/50 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white hover:border-zinc-600 transition-all duration-200"
+            className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm transition-all duration-200 ${syt('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700/60 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-white hover:border-zinc-600')}`}
             onClick={() => setSeed((s) => s + 1)}
             title="Refresh inner visual"
           >
             <RotateCcw className="h-4 w-4" />
             Refresh
+          </button>
+          <button
+            onClick={toggleTheme}
+            className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm transition-all duration-200 ${syt('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700/60 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-white hover:border-zinc-600')}`}
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
         </div>
       </div>
@@ -2045,10 +2059,10 @@ export default function SyncAgent() {
         <div
           data-animate
           className={cn(
-            "flex flex-col rounded-xl border bg-zinc-900/30 overflow-hidden transition-all duration-300",
+            `flex flex-col rounded-xl border ${syt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/30')} overflow-hidden transition-all duration-300`,
             highlightBorders
               ? "border-cyan-400/70 shadow-[0_0_30px_rgba(34,211,238,0.5)]"
-              : "border-zinc-700/50"
+              : syt('border-slate-200', 'border-zinc-700/50')
           )}
           style={{ opacity: 0 }}
         >
@@ -2079,8 +2093,8 @@ export default function SyncAgent() {
                       <Sparkles className="w-10 h-10 text-cyan-400" />
                     </div>
                   </div>
-                  <h4 className="text-lg font-semibold bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent mb-2">How can I help you?</h4>
-                  <p className="text-sm text-zinc-500 mb-8 max-w-sm">
+                  <h4 className={`text-lg font-semibold bg-gradient-to-r ${syt('from-slate-900 to-slate-600', 'from-white to-zinc-300')} bg-clip-text text-transparent mb-2`}>How can I help you?</h4>
+                  <p className={`text-sm ${syt('text-slate-400', 'text-zinc-500')} mb-8 max-w-sm`}>
                     I can help with invoices, prospects, compliance, learning, and more.
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center max-w-lg">
@@ -2091,7 +2105,7 @@ export default function SyncAgent() {
                           setInput(suggestion.action);
                           setTimeout(() => send(), 100);
                         }}
-                        className="group px-4 py-2.5 text-sm rounded-xl border border-zinc-700/60 bg-zinc-800/40 text-zinc-300 hover:bg-zinc-800 hover:text-white hover:border-cyan-500/30 transition-all duration-200 hover:shadow-lg hover:shadow-cyan-500/5"
+                        className={`group px-4 py-2.5 text-sm rounded-xl border ${syt('border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900', 'border-zinc-700/60 bg-zinc-800/40 text-zinc-300 hover:bg-zinc-800 hover:text-white')} hover:border-cyan-500/30 transition-all duration-200 hover:shadow-lg hover:shadow-cyan-500/5`}
                       >
                         {suggestion.label}
                       </button>
@@ -2107,10 +2121,10 @@ export default function SyncAgent() {
                   {isSending && (
                     <div className="flex justify-start">
                       <div className={cn(
-                        "rounded-xl bg-gradient-to-br from-zinc-800/60 to-zinc-900/60 border px-4 py-3 text-sm backdrop-blur-sm transition-all duration-300",
+                        `rounded-xl ${syt('bg-white shadow-sm', 'bg-gradient-to-br from-zinc-800/60 to-zinc-900/60')} border px-4 py-3 text-sm backdrop-blur-sm transition-all duration-300`,
                         highlightBorders
                           ? "border-cyan-400/70 shadow-[0_0_20px_rgba(34,211,238,0.4)]"
-                          : "border-zinc-700/50"
+                          : syt('border-slate-200', 'border-zinc-700/50')
                       )}>
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1.5">
@@ -2118,7 +2132,7 @@ export default function SyncAgent() {
                             <span className="inline-flex h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '150ms', animationDuration: '600ms' }} />
                             <span className="inline-flex h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '300ms', animationDuration: '600ms' }} />
                           </div>
-                          <span className="text-zinc-400">SYNC is {mood === 'thinking' ? 'thinking' : 'responding'}…</span>
+                          <span className={syt('text-slate-500', 'text-zinc-400')}>SYNC is {mood === 'thinking' ? 'thinking' : 'responding'}…</span>
                         </div>
                       </div>
                     </div>
@@ -2149,7 +2163,7 @@ export default function SyncAgent() {
           {/* Input Area - clean, no container border */}
           <div className="shrink-0 px-2 py-4">
             <div className="flex items-end gap-4">
-              <div className="flex-1 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-zinc-600/60 focus-within:border-cyan-500/40 focus-within:shadow-lg focus-within:shadow-cyan-500/5 transition-all duration-200">
+              <div className={`flex-1 rounded-xl ${syt('bg-white shadow-sm', 'bg-zinc-900/60')} border ${syt('border-slate-200 hover:border-slate-300', 'border-zinc-700/50 hover:border-zinc-600/60')} focus-within:border-cyan-500/40 focus-within:shadow-lg focus-within:shadow-cyan-500/5 transition-all duration-200`}>
                 <textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -2162,9 +2176,9 @@ export default function SyncAgent() {
                   placeholder="Message SYNC…"
                   rows={2}
                   disabled={isSending}
-                  className="w-full resize-none bg-transparent text-sm text-white/90 outline-none placeholder:text-zinc-500 disabled:opacity-50 px-4 py-3"
+                  className={`w-full resize-none bg-transparent text-sm ${syt('text-slate-900', 'text-white/90')} outline-none ${syt('placeholder:text-slate-400', 'placeholder:text-zinc-500')} disabled:opacity-50 px-4 py-3`}
                 />
-                <div className="px-4 pb-3 flex items-center justify-between text-[11px] text-zinc-600">
+                <div className={`px-4 pb-3 flex items-center justify-between text-[11px] ${syt('text-slate-400', 'text-zinc-600')}`}>
                   <span>Enter to send · Shift+Enter for newline</span>
                   <span className="tabular-nums">{input.length}</span>
                 </div>
@@ -2176,7 +2190,7 @@ export default function SyncAgent() {
                 className={cn(
                   'group relative inline-flex h-14 w-14 items-center justify-center rounded-xl transition-all duration-300 overflow-hidden',
                   isSending || !input.trim()
-                    ? 'cursor-not-allowed bg-zinc-800/60 border border-zinc-700/50 text-zinc-600'
+                    ? `cursor-not-allowed ${syt('bg-slate-100 border border-slate-200 text-slate-400', 'bg-zinc-800/60 border border-zinc-700/50 text-zinc-600')}`
                     : 'shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30'
                 )}
                 title="Send (Enter)"
@@ -2189,7 +2203,7 @@ export default function SyncAgent() {
                 )}
                 <Send className={cn(
                   "relative h-5 w-5 transition-all duration-300",
-                  input.trim() && !isSending ? "text-white" : "text-zinc-600"
+                  input.trim() && !isSending ? "text-white" : syt('text-slate-400', 'text-zinc-600')
                 )} />
               </button>
             </div>
@@ -2204,5 +2218,6 @@ export default function SyncAgent() {
         <div className="absolute bottom-[-35%] left-[10%] h-[640px] w-[640px] rounded-full bg-cyan-900/5 blur-3xl" />
       </div>
     </div>
+    </SyncPageTransition>
   );
 }
