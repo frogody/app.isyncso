@@ -167,28 +167,28 @@ export default function RaiseCampaigns() {
             <RaiseStatCard
               label="Total Campaigns"
               value={stats.total}
-              icon={Rocket}
+              icon={<Rocket className="w-5 h-5" />}
               accentColor="orange"
               delay={0}
             />
             <RaiseStatCard
               label="Active"
               value={stats.active}
-              icon={Play}
+              icon={<Play className="w-5 h-5" />}
               accentColor="green"
               delay={0.05}
             />
             <RaiseStatCard
               label="Total Target"
               value={formatCurrency(stats.totalTarget)}
-              icon={Target}
+              icon={<Target className="w-5 h-5" />}
               accentColor="blue"
               delay={0.1}
             />
             <RaiseStatCard
               label="Total Raised"
               value={formatCurrency(stats.totalRaised)}
-              icon={Euro}
+              icon={<Euro className="w-5 h-5" />}
               accentColor="purple"
               delay={0.15}
             />

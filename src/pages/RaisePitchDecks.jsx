@@ -127,28 +127,28 @@ export default function RaisePitchDecks() {
           <RaiseStatCard
             label="Total Decks"
             value={pitchDecks.length}
-            icon={FileText}
+            icon={<FileText className="w-5 h-5" />}
             accentColor="orange"
             delay={0}
           />
           <RaiseStatCard
             label="Drafts"
             value={pitchDecks.filter(d => d.status === 'draft').length}
-            icon={Edit2}
+            icon={<Edit2 className="w-5 h-5" />}
             accentColor="blue"
             delay={0.05}
           />
           <RaiseStatCard
             label="Approved"
             value={pitchDecks.filter(d => d.status === 'approved').length}
-            icon={CheckCircle}
+            icon={<CheckCircle className="w-5 h-5" />}
             accentColor="green"
             delay={0.1}
           />
           <RaiseStatCard
             label="Shared"
             value={pitchDecks.filter(d => d.status === 'shared').length}
-            icon={Share2}
+            icon={<Share2 className="w-5 h-5" />}
             accentColor="purple"
             delay={0.15}
           />

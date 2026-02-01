@@ -3,7 +3,7 @@ import { useRaiseTheme } from '@/contexts/RaiseThemeContext';
 import { RaiseButton } from './RaiseButton';
 
 interface RaiseEmptyStateProps {
-  icon?: React.ReactNode | React.ElementType;
+  icon?: React.ReactNode;
   title: string;
   message?: string;
   action?: {
@@ -41,7 +41,7 @@ export function RaiseEmptyState({
             rt('bg-slate-100 text-slate-400', 'bg-zinc-800/60 text-zinc-500'),
           )}
         >
-          {typeof icon === 'function' ? (() => { const Icon = icon as React.ElementType; return <Icon className="w-6 h-6" />; })() : icon}
+          {icon}
         </div>
       )}
       <h3

@@ -121,28 +121,28 @@ export default function RaiseDataRoom() {
             <RaiseStatCard
               label="Total Rooms"
               value={dataRooms.length}
-              icon={Folder}
+              icon={<Folder className="w-5 h-5" />}
               accentColor="orange"
               delay={0}
             />
             <RaiseStatCard
               label="Active"
               value={dataRooms.filter(r => r.is_active).length}
-              icon={Unlock}
+              icon={<Unlock className="w-5 h-5" />}
               accentColor="green"
               delay={0.05}
             />
             <RaiseStatCard
               label="NDA Required"
               value={dataRooms.filter(r => r.requires_nda).length}
-              icon={Shield}
+              icon={<Shield className="w-5 h-5" />}
               accentColor="blue"
               delay={0.1}
             />
             <RaiseStatCard
               label="Total Viewers"
               value={dataRooms.reduce((sum, r) => sum + (r.viewer_count || 0), 0)}
-              icon={Users}
+              icon={<Users className="w-5 h-5" />}
               accentColor="purple"
               delay={0.15}
             />
