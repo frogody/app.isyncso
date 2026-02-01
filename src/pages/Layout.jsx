@@ -1636,26 +1636,28 @@ export default function Layout({ children, currentPageName }) {
              (Card, Badge, Tabs, Popover, etc.) get light values
              when data-raise-light is set on <html>. */
 
+          html.dark[data-raise-light],
+          html.dark[data-raise-light] *,
           html[data-raise-light] {
-            --background: 210 40% 98%;
-            --foreground: 222.2 84% 4.9%;
-            --card: 0 0% 100%;
-            --card-foreground: 222.2 84% 4.9%;
-            --popover: 0 0% 100%;
-            --popover-foreground: 222.2 84% 4.9%;
-            --primary: 24 95% 53%;
-            --primary-foreground: 0 0% 100%;
-            --secondary: 210 40% 96.1%;
-            --secondary-foreground: 222.2 47.4% 11.2%;
-            --muted: 210 40% 96.1%;
-            --muted-foreground: 215.4 16.3% 46.9%;
-            --accent: 210 40% 96.1%;
-            --accent-foreground: 222.2 47.4% 11.2%;
-            --destructive: 0 84.2% 60.2%;
-            --destructive-foreground: 0 0% 98%;
-            --border: 214.3 31.8% 91.4%;
-            --input: 214.3 31.8% 91.4%;
-            --ring: 24 95% 53%;
+            --background: 210 40% 98% !important;
+            --foreground: 222.2 84% 4.9% !important;
+            --card: 0 0% 100% !important;
+            --card-foreground: 222.2 84% 4.9% !important;
+            --popover: 0 0% 100% !important;
+            --popover-foreground: 222.2 84% 4.9% !important;
+            --primary: 24 95% 53% !important;
+            --primary-foreground: 0 0% 100% !important;
+            --secondary: 210 40% 96.1% !important;
+            --secondary-foreground: 222.2 47.4% 11.2% !important;
+            --muted: 210 40% 96.1% !important;
+            --muted-foreground: 215.4 16.3% 46.9% !important;
+            --accent: 210 40% 96.1% !important;
+            --accent-foreground: 222.2 47.4% 11.2% !important;
+            --destructive: 0 84.2% 60.2% !important;
+            --destructive-foreground: 0 0% 98% !important;
+            --border: 214.3 31.8% 91.4% !important;
+            --input: 214.3 31.8% 91.4% !important;
+            --ring: 24 95% 53% !important;
           }
 
           /* Page & body */
