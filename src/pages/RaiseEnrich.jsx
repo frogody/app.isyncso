@@ -145,7 +145,7 @@ export default function RaiseEnrich() {
   const { user } = useUser();
   const { hasPermission } = usePermissions();
 
-  const orgId = user?.organization_id || user?.company_id;
+  const orgId = user?.company_id || user?.organization_id;
 
   // View state
   const [activeWorkspaceId, setActiveWorkspaceId] = useState(null);
@@ -224,11 +224,22 @@ export default function RaiseEnrich() {
     if (!orgId) return;
     setNestsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('nests')
-        .select('id, name, nest_items(count)')
+      // Get nests the org has purchased
+      const { data: purchases } = await supabase
+        .from('nest_purchases')
+        .select('nest_id')
         .eq('organization_id', orgId)
-        .order('created_at', { ascending: false });
+        .eq('status', 'completed');
+      const purchasedNestIds = (purchases || []).map(p => p.nest_id);
+
+      let query = supabase.from('nests').select('id, name, item_count').order('created_at', { ascending: false });
+      if (purchasedNestIds.length) {
+        query = query.in('id', purchasedNestIds);
+      } else {
+        // No purchased nests — show active marketplace nests
+        query = query.eq('is_active', true).limit(20);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       setNests(data || []);
     } catch (err) {
@@ -1000,7 +1011,7 @@ export default function RaiseEnrich() {
                     <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
                       {nests.map(n => (
                         <SelectItem key={n.id} value={n.id} className={rt('', 'text-white hover:bg-zinc-700')}>
-                          {n.name} ({n.nest_items?.[0]?.count ?? 0} items)
+                          {n.name} ({n.item_count ?? 0} items)
                         </SelectItem>
                       ))}
                     </SelectContent>
