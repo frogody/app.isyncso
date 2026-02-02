@@ -6,7 +6,7 @@ import {
   GripVertical, Type, Zap, Brain, FunctionSquare, Columns3, Trash2,
   Edit2, Settings, ChevronDown, Check, X, Loader2, AlertCircle,
   Table2, Clock, Hash, Upload, FileUp, Database, Pencil, Filter, XCircle,
-  ArrowUp, ArrowDown, ArrowUpDown, ToggleLeft, ToggleRight
+  ArrowUp, ArrowDown, ArrowUpDown, ToggleLeft, ToggleRight, Layers
 } from 'lucide-react';
 import {
   RaiseCard, RaiseCardContent, RaiseCardHeader, RaiseCardTitle,
@@ -70,9 +70,10 @@ const COLUMN_TYPES = [
   { value: 'enrichment', label: 'Enrichment', icon: Zap, desc: 'Enrich with Explorium API' },
   { value: 'ai', label: 'AI', icon: Brain, desc: 'AI-generated content' },
   { value: 'formula', label: 'Formula', icon: FunctionSquare, desc: 'Calculated value' },
+  { value: 'waterfall', label: 'Waterfall', icon: Layers, desc: 'Try multiple sources in order' },
 ];
 
-const COLUMN_TYPE_ICONS = { field: Type, enrichment: Zap, ai: Brain, formula: FunctionSquare };
+const COLUMN_TYPE_ICONS = { field: Type, enrichment: Zap, ai: Brain, formula: FunctionSquare, waterfall: Layers };
 
 // ─── Formula Engine ──────────────────────────────────────────────────────────
 
@@ -934,14 +935,101 @@ export default function RaiseEnrich() {
     toast.success(`${col.name}: placeholder values set`);
   }, [rows, cellKey]);
 
+  // ─── Run waterfall column ─────────────────────────────────────────────
+
+  const runWaterfallColumn = useCallback(async (col) => {
+    if (col.type !== 'waterfall') return;
+    const sources = (col.config?.sources || []).sort((a, b) => (a.priority || 0) - (b.priority || 0));
+    const stopOnSuccess = col.config?.stopOnSuccess !== false;
+    if (sources.length === 0) { toast.error('No sources configured for waterfall'); return; }
+
+    const total = rows.length;
+    let completed = 0;
+    let errors = 0;
+    const toastId = toast.loading(`Running ${col.name}: 0/${total}`);
+
+    for (let i = 0; i < rows.length; i += ENRICHMENT_BATCH_SIZE) {
+      const batch = rows.slice(i, i + ENRICHMENT_BATCH_SIZE);
+      await Promise.all(batch.map(async (row) => {
+        const key = cellKey(row.id, col.id);
+        try {
+          setCells(prev => ({ ...prev, [key]: { ...prev[key], status: 'pending' } }));
+          await supabase.from('enrich_cells').upsert({ row_id: row.id, column_id: col.id, status: 'pending', value: null }, { onConflict: 'row_id,column_id' });
+
+          let finalValue = null;
+          let sourceUsed = null;
+          let attempts = 0;
+
+          for (const source of sources) {
+            attempts++;
+            const fn = ENRICHMENT_FN_MAP[source.function];
+            if (!fn) continue;
+
+            const inputCol = columns.find(c => c.id === source.input_column_id);
+            const inputValue = inputCol ? getCellRawValue(row.id, inputCol) : '';
+            if (!inputValue) continue;
+
+            try {
+              let result;
+              const fnName = source.function;
+              if (fnName === 'fullEnrichFromLinkedIn') result = await fn(inputValue);
+              else if (fnName === 'fullEnrichFromEmail') {
+                const companyVal = getCellRawValue(row.id, columns.find(c => c.config?.source_field === 'company_name'));
+                result = await fn(inputValue, companyVal || undefined);
+              } else if (fnName === 'enrichCompanyOnly') result = await fn({ company_name: inputValue });
+              else if (fnName === 'matchProspect') result = await fn({ linkedin: inputValue });
+              else result = await fn(inputValue);
+
+              let displayValue = result;
+              if (source.output_field && result) displayValue = extractNestedValue(result, source.output_field);
+
+              if (displayValue != null && displayValue !== '' && displayValue !== undefined) {
+                finalValue = typeof displayValue === 'object' ? displayValue : { v: String(displayValue) };
+                sourceUsed = source.function;
+                if (stopOnSuccess) break;
+              }
+            } catch { /* source failed, try next */ }
+          }
+
+          if (finalValue) {
+            finalValue._meta = { source_used: sourceUsed, attempts };
+            setCells(prev => ({ ...prev, [key]: { ...prev[key], status: 'complete', value: finalValue } }));
+            await supabase.from('enrich_cells').upsert({
+              row_id: row.id, column_id: col.id, status: 'complete', value: finalValue, updated_at: new Date().toISOString(),
+            }, { onConflict: 'row_id,column_id' });
+          } else {
+            setCells(prev => ({ ...prev, [key]: { ...prev[key], status: 'error', error_message: `All ${attempts} sources failed` } }));
+            await supabase.from('enrich_cells').upsert({
+              row_id: row.id, column_id: col.id, status: 'error', error_message: `All ${attempts} sources failed`, updated_at: new Date().toISOString(),
+            }, { onConflict: 'row_id,column_id' });
+            errors++;
+          }
+          completed++;
+        } catch (err) {
+          errors++;
+          completed++;
+          setCells(prev => ({ ...prev, [key]: { ...prev[key], status: 'error', error_message: err.message } }));
+          await supabase.from('enrich_cells').upsert({
+            row_id: row.id, column_id: col.id, status: 'error', error_message: err.message, updated_at: new Date().toISOString(),
+          }, { onConflict: 'row_id,column_id' });
+        }
+        toast.loading(`Running ${col.name}: ${completed}/${total}`, { id: toastId });
+      }));
+    }
+    toast.dismiss(toastId);
+    if (errors > 0) toast.warning(`${col.name}: ${completed - errors} succeeded, ${errors} failed`);
+    else toast.success(`${col.name}: All ${total} rows enriched via waterfall`);
+  }, [columns, rows, cells, cellKey, getCellRawValue]);
+
   // ─── Run all columns ───────────────────────────────────────────────────
 
   const runAllColumns = useCallback(async () => {
     for (const col of columns) {
       if (col.type === 'enrichment') await runEnrichmentColumn(col);
       else if (col.type === 'ai') await runAIColumn(col);
+      else if (col.type === 'waterfall') await runWaterfallColumn(col);
     }
-  }, [columns, runEnrichmentColumn, runAIColumn]);
+  }, [columns, runEnrichmentColumn, runAIColumn, runWaterfallColumn]);
 
   // ─── Auto-run ──────────────────────────────────────────────────────────
 
@@ -966,7 +1054,7 @@ export default function RaiseEnrich() {
 
   const runIncompleteEnrichments = useCallback(async () => {
     if (autoRunRunningRef.current) return;
-    const enrichCols = columns.filter(c => c.type === 'enrichment' || c.type === 'ai');
+    const enrichCols = columns.filter(c => c.type === 'enrichment' || c.type === 'ai' || c.type === 'waterfall');
     if (enrichCols.length === 0) return;
 
     // Find rows with incomplete cells
@@ -1009,17 +1097,18 @@ export default function RaiseEnrich() {
       for (const { col } of Object.values(colGroups)) {
         if (col.type === 'enrichment') await runEnrichmentColumn(col);
         else if (col.type === 'ai') await runAIColumn(col);
+        else if (col.type === 'waterfall') await runWaterfallColumn(col);
       }
     } finally {
       autoRunRunningRef.current = false;
     }
-  }, [columns, rows, cells, cellKey, getCellRawValue, runEnrichmentColumn, runAIColumn]);
+  }, [columns, rows, cells, cellKey, getCellRawValue, runEnrichmentColumn, runAIColumn, runWaterfallColumn]);
 
   // Watch for changes that should trigger auto-run
   useEffect(() => {
     if (!autoRun || !activeWorkspaceId) return;
     const currentRowCount = rows.length;
-    const enrichColCount = columns.filter(c => c.type === 'enrichment' || c.type === 'ai').length;
+    const enrichColCount = columns.filter(c => c.type === 'enrichment' || c.type === 'ai' || c.type === 'waterfall').length;
 
     const rowsAdded = currentRowCount > prevRowCountRef.current && prevRowCountRef.current > 0;
     const colsAdded = enrichColCount > prevColCountRef.current && prevColCountRef.current > 0;
@@ -1043,7 +1132,7 @@ export default function RaiseEnrich() {
     if (!autoRun) return;
     // Check if this column is an input to any enrichment column
     const dependentCols = columns.filter(c =>
-      (c.type === 'enrichment' || c.type === 'ai') && c.config?.input_column_id === colId
+      (c.type === 'enrichment' || c.type === 'ai' || c.type === 'waterfall') && c.config?.input_column_id === colId
     );
     if (dependentCols.length > 0) {
       clearTimeout(autoRunTimerRef.current);
@@ -1396,7 +1485,7 @@ export default function RaiseEnrich() {
 
   // ─── Progress indicators ──────────────────────────────────────────────
 
-  const enrichableColumns = useMemo(() => columns.filter(c => c.type === 'enrichment' || c.type === 'ai'), [columns]);
+  const enrichableColumns = useMemo(() => columns.filter(c => c.type === 'enrichment' || c.type === 'ai' || c.type === 'waterfall'), [columns]);
 
   const columnProgress = useMemo(() => {
     const result = {};
@@ -1858,7 +1947,7 @@ export default function RaiseEnrich() {
                 const Icon = COLUMN_TYPE_ICONS[col.type] || Type;
                 const sortState = getColumnSortState(col.id);
                 const colProg = columnProgress[col.id];
-                const isEnrichable = col.type === 'enrichment' || col.type === 'ai';
+                const isEnrichable = col.type === 'enrichment' || col.type === 'ai' || col.type === 'waterfall';
                 return (
                   <div
                     key={col.id}
@@ -1870,7 +1959,7 @@ export default function RaiseEnrich() {
                     onClick={(e) => { if (!e.target.closest('[data-no-sort]')) toggleColumnSort(col.id, e.shiftKey); }}
                   >
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <Icon className={`w-3 h-3 flex-shrink-0 ${col.type === 'field' ? 'text-blue-400' : col.type === 'enrichment' ? 'text-amber-400' : col.type === 'ai' ? 'text-purple-400' : 'text-green-400'}`} />
+                      <Icon className={`w-3 h-3 flex-shrink-0 ${col.type === 'field' ? 'text-blue-400' : col.type === 'enrichment' ? 'text-amber-400' : col.type === 'ai' ? 'text-purple-400' : col.type === 'waterfall' ? 'text-cyan-400' : 'text-green-400'}`} />
                       <span className="truncate flex-1">{col.name}</span>
                       {/* Sort indicator */}
                       {sortState ? (
@@ -1896,6 +1985,11 @@ export default function RaiseEnrich() {
                           {col.type === 'ai' && (
                             <DropdownMenuItem onClick={() => runAIColumn(col)} className={rt('', 'text-white hover:bg-zinc-700')}>
                               <Brain className="w-3 h-3 mr-2" /> Run AI
+                            </DropdownMenuItem>
+                          )}
+                          {col.type === 'waterfall' && (
+                            <DropdownMenuItem onClick={() => runWaterfallColumn(col)} className={rt('', 'text-white hover:bg-zinc-700')}>
+                              <Layers className="w-3 h-3 mr-2" /> Run Waterfall
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuItem onClick={() => deleteColumn(col.id)} className="text-red-400 hover:bg-red-500/10">
@@ -2022,6 +2116,11 @@ export default function RaiseEnrich() {
                                 {debouncedSearch ? highlightMatch(displayVal, debouncedSearch) : displayVal}
                               </span>
                               {status === 'error' && <StatusDot status="error" errorMessage={cellObj?.error_message} />}
+                              {col.type === 'waterfall' && cellObj?.value?._meta?.source_used && (
+                                <span title={`Source: ${cellObj.value._meta.source_used} (${cellObj.value._meta.attempts} tried)`} className="ml-auto text-[9px] px-1 py-0.5 rounded bg-cyan-500/10 text-cyan-400 flex-shrink-0">
+                                  #{cellObj.value._meta.attempts}
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>
@@ -2540,6 +2639,94 @@ export default function RaiseEnrich() {
                     </div>
                   )}
                   <p className="text-[10px] text-zinc-500 mt-1">Type <span className="font-mono text-cyan-400">/</span> for column refs. Functions: CONCAT, IF, UPPER, LOWER, TRIM, LEN, LEFT, RIGHT, REPLACE, ROUND, CONTAINS</p>
+                </div>
+              )}
+
+              {colType === 'waterfall' && (
+                <div className="space-y-3">
+                  <div>
+                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Enrichment Sources</Label>
+                    <p className={`text-[10px] ${rt('text-gray-500', 'text-zinc-500')} mb-2`}>Sources are tried in order. If one fails or returns empty, the next source is tried.</p>
+                    <div className="space-y-2">
+                      {(colConfig.sources || []).map((src, idx) => (
+                        <div key={src.id} className={`flex items-start gap-2 p-2.5 rounded-lg border ${rt('border-gray-200 bg-gray-50', 'border-zinc-700 bg-zinc-800/50')}`}>
+                          <div className="flex items-center gap-1 pt-1">
+                            <GripVertical className="w-3 h-3 text-zinc-500" />
+                            <span className={`text-xs font-bold w-4 text-center ${rt('text-gray-400', 'text-zinc-500')}`}>{idx + 1}</span>
+                          </div>
+                          <div className="flex-1 space-y-2 min-w-0">
+                            <Select value={src.function || ''} onValueChange={v => {
+                              setColConfig(prev => ({
+                                ...prev,
+                                sources: prev.sources.map((s, i) => i === idx ? { ...s, function: v } : s),
+                              }));
+                            }}>
+                              <SelectTrigger className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}>
+                                <SelectValue placeholder="Enrichment function" />
+                              </SelectTrigger>
+                              <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                                {ENRICHMENT_FUNCTIONS.map(f => (
+                                  <SelectItem key={f.value} value={f.value} className={rt('', 'text-white hover:bg-zinc-700')}>{f.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Select value={src.input_column_id || ''} onValueChange={v => {
+                              setColConfig(prev => ({
+                                ...prev,
+                                sources: prev.sources.map((s, i) => i === idx ? { ...s, input_column_id: v } : s),
+                              }));
+                            }}>
+                              <SelectTrigger className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}>
+                                <SelectValue placeholder="Input column" />
+                              </SelectTrigger>
+                              <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                                {columns.map(c => (
+                                  <SelectItem key={c.id} value={c.id} className={rt('', 'text-white hover:bg-zinc-700')}>{c.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              value={src.output_field || ''}
+                              onChange={e => {
+                                setColConfig(prev => ({
+                                  ...prev,
+                                  sources: prev.sources.map((s, i) => i === idx ? { ...s, output_field: e.target.value } : s),
+                                }));
+                              }}
+                              placeholder="Output field (dot notation)"
+                              className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}
+                            />
+                          </div>
+                          <button
+                            onClick={() => setColConfig(prev => ({ ...prev, sources: prev.sources.filter((_, i) => i !== idx) }))}
+                            className="p-1 rounded hover:bg-red-500/10 text-zinc-500 hover:text-red-400 mt-1"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setColConfig(prev => ({
+                          ...prev,
+                          sources: [...(prev.sources || []), { id: crypto.randomUUID(), function: '', input_column_id: '', output_field: '', priority: (prev.sources || []).length }],
+                        }));
+                      }}
+                      className={`mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${rt('border-gray-200 text-gray-600 hover:bg-gray-50', 'border-zinc-700 text-zinc-400 hover:bg-zinc-800')}`}
+                    >
+                      <Plus className="w-3 h-3" /> Add Source
+                    </button>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={colConfig.stopOnSuccess !== false}
+                      onChange={e => setColConfig(prev => ({ ...prev, stopOnSuccess: e.target.checked }))}
+                      className="rounded border-zinc-600"
+                    />
+                    <span className={`text-xs ${rt('text-gray-700', 'text-zinc-300')}`}>Stop on first success</span>
+                  </label>
                 </div>
               )}
 
