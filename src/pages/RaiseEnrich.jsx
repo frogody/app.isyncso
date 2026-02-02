@@ -6,7 +6,7 @@ import {
   GripVertical, Type, Zap, Brain, FunctionSquare, Columns3, Trash2,
   Edit2, Settings, ChevronDown, Check, X, Loader2, AlertCircle,
   Table2, Clock, Hash, Upload, FileUp, Database, Pencil, Filter, XCircle,
-  ArrowUp, ArrowDown, ArrowUpDown
+  ArrowUp, ArrowDown, ArrowUpDown, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import {
   RaiseCard, RaiseCardContent, RaiseCardHeader, RaiseCardTitle,
@@ -313,6 +313,15 @@ export default function RaiseEnrich() {
   const searchRef = useRef(null);
   const searchTimerRef = useRef(null);
 
+  // Auto-run
+  const [autoRun, setAutoRun] = useState(false);
+  const [autoRunPulse, setAutoRunPulse] = useState(false);
+  const [autoRunConfirmOpen, setAutoRunConfirmOpen] = useState(false);
+  const autoRunTimerRef = useRef(null);
+  const autoRunRunningRef = useRef(false);
+  const prevRowCountRef = useRef(0);
+  const prevColCountRef = useRef(0);
+
   // Column resize
   const [resizing, setResizing] = useState(null);
   const resizeStartX = useRef(0);
@@ -422,6 +431,7 @@ export default function RaiseEnrich() {
       if (wsErr) throw wsErr;
       setWorkspace(ws);
       setWsName(ws.name);
+      setAutoRun(ws.auto_run === true);
 
       // Fetch columns
       const { data: cols, error: colErr } = await supabase
@@ -932,6 +942,116 @@ export default function RaiseEnrich() {
       else if (col.type === 'ai') await runAIColumn(col);
     }
   }, [columns, runEnrichmentColumn, runAIColumn]);
+
+  // ─── Auto-run ──────────────────────────────────────────────────────────
+
+  const toggleAutoRun = useCallback(() => {
+    if (!autoRun) {
+      setAutoRunConfirmOpen(true);
+    } else {
+      setAutoRun(false);
+      if (workspace?.id) {
+        supabase.from('enrich_workspaces').update({ auto_run: false, updated_at: new Date().toISOString() }).eq('id', workspace.id).then(() => {});
+      }
+    }
+  }, [autoRun, workspace?.id]);
+
+  const confirmAutoRun = useCallback(async () => {
+    setAutoRun(true);
+    setAutoRunConfirmOpen(false);
+    if (workspace?.id) {
+      await supabase.from('enrich_workspaces').update({ auto_run: true, updated_at: new Date().toISOString() }).eq('id', workspace.id);
+    }
+  }, [workspace?.id]);
+
+  const runIncompleteEnrichments = useCallback(async () => {
+    if (autoRunRunningRef.current) return;
+    const enrichCols = columns.filter(c => c.type === 'enrichment' || c.type === 'ai');
+    if (enrichCols.length === 0) return;
+
+    // Find rows with incomplete cells
+    const pendingWork = [];
+    for (const col of enrichCols) {
+      for (const row of rows) {
+        const cell = cells[cellKey(row.id, col.id)];
+        const status = cell?.status;
+        if (status !== 'complete' && status !== 'pending') {
+          // Check if input column has a value
+          if (col.type === 'enrichment' && col.config?.input_column_id) {
+            const inputCol = columns.find(c => c.id === col.config.input_column_id);
+            if (inputCol) {
+              const inputVal = getCellRawValue(row.id, inputCol);
+              if (!inputVal) continue; // no input, skip
+            }
+          }
+          pendingWork.push({ row, col });
+        }
+      }
+    }
+
+    if (pendingWork.length === 0) return;
+
+    autoRunRunningRef.current = true;
+    setAutoRunPulse(true);
+    setTimeout(() => setAutoRunPulse(false), 1500);
+
+    // Group by column for batch processing
+    const colGroups = {};
+    for (const { row, col } of pendingWork) {
+      if (!colGroups[col.id]) colGroups[col.id] = { col, rows: [] };
+      colGroups[col.id].rows.push(row);
+    }
+
+    const totalRows = pendingWork.length;
+    toast.info(`Auto-run: Processing ${totalRows} cell${totalRows > 1 ? 's' : ''}...`);
+
+    try {
+      for (const { col } of Object.values(colGroups)) {
+        if (col.type === 'enrichment') await runEnrichmentColumn(col);
+        else if (col.type === 'ai') await runAIColumn(col);
+      }
+    } finally {
+      autoRunRunningRef.current = false;
+    }
+  }, [columns, rows, cells, cellKey, getCellRawValue, runEnrichmentColumn, runAIColumn]);
+
+  // Watch for changes that should trigger auto-run
+  useEffect(() => {
+    if (!autoRun || !activeWorkspaceId) return;
+    const currentRowCount = rows.length;
+    const enrichColCount = columns.filter(c => c.type === 'enrichment' || c.type === 'ai').length;
+
+    const rowsAdded = currentRowCount > prevRowCountRef.current && prevRowCountRef.current > 0;
+    const colsAdded = enrichColCount > prevColCountRef.current && prevColCountRef.current > 0;
+
+    prevRowCountRef.current = currentRowCount;
+    prevColCountRef.current = enrichColCount;
+
+    if (rowsAdded || colsAdded) {
+      clearTimeout(autoRunTimerRef.current);
+      autoRunTimerRef.current = setTimeout(() => {
+        runIncompleteEnrichments();
+      }, 2000);
+    }
+
+    return () => clearTimeout(autoRunTimerRef.current);
+  }, [autoRun, activeWorkspaceId, rows.length, columns, runIncompleteEnrichments]);
+
+  // Also trigger auto-run when a cell is saved and auto-run is on (input column changes)
+  const saveCellWithAutoRun = useCallback(async (rowId, colId, value) => {
+    await saveCell(rowId, colId, value);
+    if (!autoRun) return;
+    // Check if this column is an input to any enrichment column
+    const dependentCols = columns.filter(c =>
+      (c.type === 'enrichment' || c.type === 'ai') && c.config?.input_column_id === colId
+    );
+    if (dependentCols.length > 0) {
+      clearTimeout(autoRunTimerRef.current);
+      autoRunTimerRef.current = setTimeout(() => {
+        runIncompleteEnrichments();
+      }, 2000);
+    }
+  }, [saveCell, autoRun, columns, runIncompleteEnrichments]);
 
   // ─── Export CSV ────────────────────────────────────────────────────────
 
@@ -1604,6 +1724,18 @@ export default function RaiseEnrich() {
               <RaiseButton variant="ghost" size="sm" onClick={runAllColumns}>
                 <Play className="w-3.5 h-3.5 mr-1" /> Run All
               </RaiseButton>
+              <button
+                onClick={toggleAutoRun}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  autoRun
+                    ? rt('bg-green-50 text-green-700 border border-green-200', 'bg-green-500/10 text-green-400 border border-green-500/30')
+                    : rt('text-gray-500 hover:bg-gray-100 border border-transparent', 'text-zinc-500 hover:bg-zinc-800 border border-transparent')
+                } ${autoRunPulse ? 'ring-2 ring-green-400/50 ring-offset-1 ring-offset-transparent' : ''}`}
+              >
+                {autoRun ? <ToggleRight className="w-4 h-4 text-green-400" /> : <ToggleLeft className="w-4 h-4" />}
+                Auto-run
+                {autoRun && <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />}
+              </button>
               <RaiseButton variant="ghost" size="sm" onClick={() => setSortPanelOpen(prev => !prev)} className="relative">
                 <ArrowUpDown className="w-3.5 h-3.5 mr-1" /> Sort
                 {activeSortCount > 0 && (
@@ -1868,11 +2000,11 @@ export default function RaiseEnrich() {
                               value={editingValue}
                               onChange={e => setEditingValue(e.target.value)}
                               onBlur={() => {
-                                saveCell(row.id, col.id, editingValue);
+                                saveCellWithAutoRun(row.id, col.id, editingValue);
                                 setEditingCell(null);
                               }}
                               onKeyDown={e => {
-                                if (e.key === 'Enter') { saveCell(row.id, col.id, editingValue); setEditingCell(null); }
+                                if (e.key === 'Enter') { saveCellWithAutoRun(row.id, col.id, editingValue); setEditingCell(null); }
                                 if (e.key === 'Escape') setEditingCell(null);
                               }}
                               className={rt(
@@ -2198,6 +2330,22 @@ export default function RaiseEnrich() {
             />
           )}
         </AnimatePresence>
+
+        {/* Auto-run Confirmation Dialog */}
+        <Dialog open={autoRunConfirmOpen} onOpenChange={setAutoRunConfirmOpen}>
+          <DialogContent className={rt('bg-white max-w-sm', 'bg-zinc-900 border-zinc-800 max-w-sm')}>
+            <DialogHeader>
+              <DialogTitle className={rt('text-gray-900', 'text-zinc-100')}>Enable Auto-run?</DialogTitle>
+            </DialogHeader>
+            <p className={`text-sm ${rt('text-gray-600', 'text-zinc-400')}`}>
+              Auto-run will automatically process enrichments when data changes. This will use credits. Continue?
+            </p>
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setAutoRunConfirmOpen(false)} className={`px-3 py-1.5 rounded-lg text-sm ${rt('text-gray-600 hover:bg-gray-100', 'text-zinc-400 hover:bg-zinc-800')}`}>Cancel</button>
+              <button onClick={confirmAutoRun} className="px-3 py-1.5 rounded-lg text-sm bg-green-600 text-white hover:bg-green-700">Enable</button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Add Column Dialog */}
         <Dialog open={colDialogOpen} onOpenChange={setColDialogOpen}>
