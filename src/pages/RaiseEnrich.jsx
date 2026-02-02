@@ -765,14 +765,10 @@ export default function RaiseEnrich() {
                 </div>
               ) : workspaces.length === 0 ? (
                 <RaiseEmptyState
-                  icon={Table2}
+                  icon={<Table2 className="w-6 h-6" />}
                   title="No workspaces yet"
-                  description="Create your first enrichment workspace to start enriching candidate data"
-                  action={
-                    <RaiseButton onClick={() => setCreateDialogOpen(true)}>
-                      <Plus className="w-4 h-4 mr-1.5" /> Create Workspace
-                    </RaiseButton>
-                  }
+                  message="Create your first enrichment workspace to start enriching candidate data"
+                  action={{ label: 'Create Workspace', onClick: () => setCreateDialogOpen(true) }}
                 />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -945,18 +941,13 @@ export default function RaiseEnrich() {
         ) : rows.length === 0 && columns.length === 0 ? (
           <div className="flex-1 flex items-center justify-center">
             <RaiseEmptyState
-              icon={Table2}
+              icon={<Table2 className="w-6 h-6" />}
               title="Empty workspace"
-              description={workspace?.nest_id ? 'Import candidates from the linked nest to get started' : 'Add columns and rows to begin enriching data'}
-              action={workspace?.nest_id ? (
-                <RaiseButton onClick={importFromNest}>
-                  <Upload className="w-4 h-4 mr-1.5" /> Import from Nest
-                </RaiseButton>
-              ) : (
-                <RaiseButton onClick={() => { setColDialogOpen(true); setColType('field'); setColName(''); setColConfig({}); }}>
-                  <Plus className="w-4 h-4 mr-1.5" /> Add Column
-                </RaiseButton>
-              )}
+              message={workspace?.nest_id ? 'Import candidates from the linked nest to get started' : 'Add columns and rows to begin enriching data'}
+              action={workspace?.nest_id
+                ? { label: 'Import from Nest', onClick: importFromNest }
+                : { label: 'Add Column', onClick: () => { setColDialogOpen(true); setColType('field'); setColName(''); setColConfig({}); } }
+              }
             />
           </div>
         ) : (
