@@ -188,24 +188,6 @@ export default function RaiseEnrich() {
   const resizeStartX = useRef(0);
   const resizeStartW = useRef(0);
 
-  // ─── Permission check ───────────────────────────────────────────────────
-
-  if (!hasPermission('finance.view')) {
-    return (
-      <RaisePageTransition>
-        <div className={rt('min-h-screen bg-gray-50', 'min-h-screen bg-black')}>
-          <div className="max-w-7xl mx-auto px-6 py-12">
-            <div className="text-center py-20">
-              <AlertCircle className="w-12 h-12 text-zinc-500 mx-auto mb-4" />
-              <h2 className="text-lg font-semibold text-white mb-2">Access Denied</h2>
-              <p className="text-zinc-400 text-sm">You do not have permission to view this page.</p>
-            </div>
-          </div>
-        </div>
-      </RaisePageTransition>
-    );
-  }
-
   // ─── Cell key helper ────────────────────────────────────────────────────
 
   const cellKey = useCallback((rowId, colId) => `${rowId}:${colId}`, []);
@@ -731,6 +713,24 @@ export default function RaiseEnrich() {
     if (status === 'complete') return <span className="inline-block w-2 h-2 rounded-full bg-green-400" />;
     return null;
   };
+
+  // ─── Permission check ───────────────────────────────────────────────────
+
+  if (!hasPermission('finance.view')) {
+    return (
+      <RaisePageTransition>
+        <div className={rt('min-h-screen bg-gray-50', 'min-h-screen bg-black')}>
+          <div className="max-w-7xl mx-auto px-6 py-12">
+            <div className="text-center py-20">
+              <AlertCircle className="w-12 h-12 text-zinc-500 mx-auto mb-4" />
+              <h2 className="text-lg font-semibold text-white mb-2">Access Denied</h2>
+              <p className="text-zinc-400 text-sm">You do not have permission to view this page.</p>
+            </div>
+          </div>
+        </div>
+      </RaisePageTransition>
+    );
+  }
 
   // ═══════════════════════════════════════════════════════════════════════
   // RENDER: Workspace List
