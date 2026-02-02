@@ -155,7 +155,7 @@ function AccountSelector({ accounts, accountTypes, value, onChange, ft }) {
 }
 
 // ── Main Page ───────────────────────────────────────────────────────────────
-export default function FinanceJournalEntries() {
+export default function FinanceJournalEntries({ embedded = false }) {
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState([]);
   const [accounts, setAccounts] = useState([]);
@@ -455,6 +455,7 @@ export default function FinanceJournalEntries() {
   };
 
   if (loading || permLoading) {
+    if (embedded) return <div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" /></div>;
     return (
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
@@ -463,6 +464,7 @@ export default function FinanceJournalEntries() {
   }
 
   if (!canView) {
+    if (embedded) return <div className="text-center py-12"><p className={ft('text-slate-500', 'text-zinc-400')}>You don't have permission to view journal entries.</p></div>;
     return (
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex flex-col items-center justify-center text-center p-6`}>
         <AlertCircle className="w-16 h-16 text-red-400 mb-4" />
@@ -472,13 +474,12 @@ export default function FinanceJournalEntries() {
     );
   }
 
-  return (
-    <FinancePageTransition>
-      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
-        <div className="w-full px-4 lg:px-6 py-4 space-y-4">
+  const content = (
+    <>
+        <div className={embedded ? "space-y-4" : "w-full px-4 lg:px-6 py-4 space-y-4"}>
 
           {/* Header */}
-          <PageHeader
+          {!embedded && <PageHeader
             icon={FileText}
             title="Journal Entries"
             subtitle="Record and manage double-entry accounting transactions"
@@ -502,7 +503,7 @@ export default function FinanceJournalEntries() {
                 )}
               </div>
             }
-          />
+          />}
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -1018,7 +1019,15 @@ export default function FinanceJournalEntries() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+    </>
+  );
 
+  if (embedded) return content;
+
+  return (
+    <FinancePageTransition>
+      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
+        {content}
       </div>
     </FinancePageTransition>
   );
