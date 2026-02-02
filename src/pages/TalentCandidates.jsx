@@ -41,6 +41,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { AddCandidateModal, EditCandidateModal, CandidateImportModal, CandidateDetailDrawer, BulkActionBar, AddToCampaignModal, SearchFilterBar } from "@/components/talent";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge, IntelStatusBadge } from "@/components/talent/IntelligenceGauge";
+import EnrichmentProgress from "@/components/talent/EnrichmentProgress";
 import { useCandidateFilters, extractFilterOptions, countActiveFilters, getDefaultFilters } from "@/hooks/useCandidateFilters";
 import { useShortcut } from "@/contexts/KeyboardShortcutsContext";
 
@@ -718,6 +719,9 @@ export default function TalentCandidates() {
               <List className="w-4 h-4" />
             </button>
           </div>
+
+          {/* Enrichment Progress */}
+          <EnrichmentProgress organizationId={user?.organization_id} onComplete={fetchCandidates} />
 
           {/* Refresh */}
           <Button

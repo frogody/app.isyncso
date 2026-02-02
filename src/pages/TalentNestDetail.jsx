@@ -184,6 +184,16 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
               // Don't fail the purchase, intel can be triggered manually later
             } else {
               console.log(`Queued ${insertedCandidates.length} candidates for SYNC Intel`);
+
+              // Trigger the processor edge function (fire-and-forget, it self-chains)
+              fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-sync-intel-queue`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                },
+                body: JSON.stringify({ triggered_by: 'nest_purchase' }),
+              }).catch(() => {});
             }
           }
         }
