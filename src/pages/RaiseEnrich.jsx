@@ -5,7 +5,7 @@ import {
   Sparkles, Plus, Search, ArrowLeft, MoreHorizontal, Play, Download,
   GripVertical, Type, Zap, Brain, FunctionSquare, Columns3, Trash2,
   Edit2, Settings, ChevronDown, Check, X, Loader2, AlertCircle,
-  Table2, Clock, Hash, Upload
+  Table2, Clock, Hash, Upload, FileUp
 } from 'lucide-react';
 import {
   RaiseCard, RaiseCardContent, RaiseCardHeader, RaiseCardTitle,
@@ -182,6 +182,9 @@ export default function RaiseEnrich() {
   // Virtual scroll
   const scrollRef = useRef(null);
   const [scrollTop, setScrollTop] = useState(0);
+
+  // CSV import
+  const csvInputRef = useRef(null);
 
   // Column resize
   const [resizing, setResizing] = useState(null);
@@ -413,6 +416,156 @@ export default function RaiseEnrich() {
       toast.error('Failed to import from nest');
     }
   }, [workspace, loadWorkspaceDetail]);
+
+  // ─── Import CSV ───────────────────────────────────────────────────────
+
+  const parseCSV = useCallback((text) => {
+    const lines = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '"') {
+        if (inQuotes && text[i + 1] === '"') { current += '"'; i++; }
+        else { inQuotes = !inQuotes; }
+      } else if (ch === ',' && !inQuotes) {
+        lines.push(current); current = '';
+      } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
+        if (current || lines.length) { lines.push(current); }
+        if (lines.length) { return { firstRow: lines, rest: text.slice(i + (text[i + 1] === '\n' ? 2 : 1)) }; }
+        current = ''; lines.length = 0;
+      } else {
+        current += ch;
+      }
+    }
+    if (current || lines.length) lines.push(current);
+    return { firstRow: lines, rest: '' };
+  }, []);
+
+  const parseCSVRows = useCallback((text, numCols) => {
+    const rows = [];
+    let remaining = text;
+    while (remaining.trim()) {
+      const cols = [];
+      let current = '';
+      let inQuotes = false;
+      let i = 0;
+      for (; i < remaining.length; i++) {
+        const ch = remaining[i];
+        if (ch === '"') {
+          if (inQuotes && remaining[i + 1] === '"') { current += '"'; i++; }
+          else { inQuotes = !inQuotes; }
+        } else if (ch === ',' && !inQuotes) {
+          cols.push(current); current = '';
+        } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
+          cols.push(current);
+          remaining = remaining.slice(i + (remaining[i + 1] === '\n' ? 2 : 1));
+          break;
+        } else {
+          current += ch;
+        }
+      }
+      if (i >= remaining.length) { cols.push(current); remaining = ''; }
+      if (cols.some(c => c.trim())) rows.push(cols);
+    }
+    return rows;
+  }, []);
+
+  const importCSV = useCallback(async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeWorkspaceId) return;
+    e.target.value = '';
+
+    const loadingToast = toast.loading(`Importing ${file.name}...`);
+    try {
+      const text = await file.text();
+      const { firstRow: headers, rest } = parseCSV(text);
+      if (!headers?.length) throw new Error('No headers found');
+
+      // Clean headers: skip empty first col (like "Find companies")
+      const cleanHeaders = headers.map(h => h.trim()).filter(h => h);
+      const headerIndexMap = headers.map((h, i) => ({ header: h.trim(), index: i })).filter(h => h.header);
+
+      // Parse data rows
+      const dataRows = parseCSVRows(rest, headers.length);
+      if (!dataRows.length) throw new Error('No data rows found');
+
+      // Create columns for each header
+      const colInserts = cleanHeaders.map((h, pos) => ({
+        workspace_id: activeWorkspaceId,
+        name: h,
+        type: 'field',
+        position: pos,
+        config: { source_field: h.toLowerCase().replace(/\s+/g, '_') },
+        width: h.toLowerCase().includes('description') ? 300 : DEFAULT_COL_WIDTH,
+      }));
+      const { data: newCols, error: colErr } = await supabase
+        .from('enrich_columns')
+        .insert(colInserts)
+        .select();
+      if (colErr) throw colErr;
+
+      // Create rows with source_data from CSV
+      const rowInserts = dataRows.map((csvRow, idx) => {
+        const sourceData = {};
+        headerIndexMap.forEach(({ header, index }) => {
+          const key = header.toLowerCase().replace(/\s+/g, '_');
+          sourceData[key] = csvRow[index]?.trim() || '';
+        });
+        // Also store raw named fields
+        headerIndexMap.forEach(({ header, index }) => {
+          sourceData[header] = csvRow[index]?.trim() || '';
+        });
+        return {
+          workspace_id: activeWorkspaceId,
+          source_data: sourceData,
+          position: idx,
+        };
+      });
+
+      // Batch insert rows (max 500 at a time for Supabase)
+      const allNewRows = [];
+      for (let i = 0; i < rowInserts.length; i += 500) {
+        const batch = rowInserts.slice(i, i + 500);
+        const { data: batchRows, error: rwErr } = await supabase
+          .from('enrich_rows')
+          .insert(batch)
+          .select();
+        if (rwErr) throw rwErr;
+        allNewRows.push(...(batchRows || []));
+        toast.loading(`Importing ${file.name}: ${Math.min(i + 500, rowInserts.length)}/${rowInserts.length} rows...`, { id: loadingToast });
+      }
+
+      // Pre-populate cells for field columns
+      const cellInserts = [];
+      for (const row of allNewRows) {
+        for (const col of newCols) {
+          const key = col.config?.source_field;
+          const val = key ? (row.source_data?.[key] || '') : '';
+          if (val) {
+            cellInserts.push({
+              row_id: row.id,
+              column_id: col.id,
+              value: { v: val },
+              status: 'complete',
+            });
+          }
+        }
+      }
+      // Batch insert cells
+      for (let i = 0; i < cellInserts.length; i += 500) {
+        await supabase.from('enrich_cells').upsert(cellInserts.slice(i, i + 500));
+      }
+
+      toast.dismiss(loadingToast);
+      toast.success(`Imported ${allNewRows.length} rows with ${newCols.length} columns from ${file.name}`);
+      loadWorkspaceDetail(activeWorkspaceId);
+    } catch (err) {
+      toast.dismiss(loadingToast);
+      console.error('CSV import error:', err);
+      toast.error(`Failed to import CSV: ${err.message}`);
+    }
+  }, [activeWorkspaceId, parseCSV, parseCSVRows, loadWorkspaceDetail]);
 
   // ─── Add column ────────────────────────────────────────────────────────
 
@@ -920,6 +1073,10 @@ export default function RaiseEnrich() {
                   <Upload className="w-3.5 h-3.5 mr-1" /> Import from Nest
                 </RaiseButton>
               )}
+              <RaiseButton variant="ghost" size="sm" onClick={() => csvInputRef.current?.click()}>
+                <FileUp className="w-3.5 h-3.5 mr-1" /> Import CSV
+              </RaiseButton>
+              <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={importCSV} />
               <RaiseButton variant="ghost" size="sm" onClick={() => { setColDialogOpen(true); setColType('field'); setColName(''); setColConfig({}); }}>
                 <Plus className="w-3.5 h-3.5 mr-1" /> Add Column
               </RaiseButton>
@@ -943,11 +1100,8 @@ export default function RaiseEnrich() {
             <RaiseEmptyState
               icon={<Table2 className="w-6 h-6" />}
               title="Empty workspace"
-              message={workspace?.nest_id ? 'Import candidates from the linked nest to get started' : 'Add columns and rows to begin enriching data'}
-              action={workspace?.nest_id
-                ? { label: 'Import from Nest', onClick: importFromNest }
-                : { label: 'Add Column', onClick: () => { setColDialogOpen(true); setColType('field'); setColName(''); setColConfig({}); } }
-              }
+              message={workspace?.nest_id ? 'Import candidates from the linked nest or upload a CSV file' : 'Upload a CSV file to populate your workspace'}
+              action={{ label: 'Import CSV', onClick: () => csvInputRef.current?.click() }}
             />
           </div>
         ) : (
