@@ -5,12 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import {
   Sparkles,
   Linkedin,
+  Building2,
   Zap,
   Loader2,
   Coins,
 } from 'lucide-react';
 import { useEnrichmentConfig } from '@/hooks/useEnrichmentConfig';
-import { fullEnrichFromLinkedIn } from '@/lib/explorium-api';
+import { fullEnrichFromLinkedIn, enrichCompanyOnly } from '@/lib/explorium-api';
 import { toast } from 'sonner';
 import { supabase } from '@/api/supabaseClient';
 import { cn } from '@/lib/utils';
@@ -18,18 +19,21 @@ import { cn } from '@/lib/utils';
 const ENRICHMENT_ICONS = {
   linkedin_enrich: Linkedin,
   sync_intel: Sparkles,
+  company_enrich: Building2,
   full_package: Zap,
 };
 
 const ENRICHMENT_COLORS = {
   linkedin_enrich: 'border-red-500/30 hover:border-red-500/50 hover:bg-red-500/5',
   sync_intel: 'border-red-500/30 hover:border-red-500/50 hover:bg-red-500/5',
+  company_enrich: 'border-red-500/30 hover:border-red-500/50 hover:bg-red-500/5',
   full_package: 'border-red-500/30 hover:border-red-500/50 hover:bg-red-500/5',
 };
 
 const ENRICHMENT_ICON_COLORS = {
   linkedin_enrich: 'text-red-400',
   sync_intel: 'text-red-400',
+  company_enrich: 'text-red-400',
   full_package: 'text-red-400',
 };
 
@@ -121,6 +125,40 @@ export function EnrichmentOptionsPopover({
               .from('candidates')
               .update(updateData)
               .eq('id', candidate.id);
+          }
+        }
+
+        if (option.key === 'company_enrich' || option.key === 'full_package') {
+          const companyName = candidate.current_company || candidate.company_name;
+          const companyDomain = candidate.company_domain;
+
+          if (companyName || companyDomain) {
+            try {
+              const companyData = await enrichCompanyOnly({ company_name: companyName, domain: companyDomain });
+
+              await supabase
+                .from('candidates')
+                .update({
+                  company_industry: companyData.industry,
+                  company_employee_count: companyData.employee_count,
+                  company_revenue_range: companyData.revenue_range,
+                  company_tech_stack: companyData.tech_stack,
+                  company_latest_funding: companyData.latest_funding,
+                  company_total_funding: companyData.funding_total,
+                  company_hq_location: companyData.hq_location,
+                  company_description: companyData.description,
+                  company_domain: companyData.domain || companyDomain,
+                  explorium_business_id: companyData.business_id,
+                  company_enriched_at: new Date().toISOString(),
+                })
+                .eq('id', candidate.id);
+            } catch (companyErr) {
+              console.error('Company enrichment failed:', companyErr);
+              if (option.key === 'company_enrich') {
+                throw companyErr;
+              }
+              // For full_package, log but continue
+            }
           }
         }
 

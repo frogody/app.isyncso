@@ -58,6 +58,7 @@ import { CompanyIntelligenceReport } from "@/components/shared/CompanyIntelligen
 import { fullEnrichFromLinkedIn } from "@/lib/explorium-api";
 import { usePanelPreferences } from "@/hooks/usePanelPreferences";
 import { EnrichmentOptionsPopover } from "./EnrichmentOptionsPopover";
+import { EnrichmentButtons } from "./EnrichmentButtons";
 import PanelCustomizationModal from "./PanelCustomizationModal";
 import {
   Dialog,
@@ -2075,7 +2076,7 @@ export default function CandidateDetailDrawer({
 
                   {/* Enhanced Quick Actions */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    {/* SYNC INTEL / Enrichment Button */}
+                    {/* Enrichment Buttons */}
                     {candidate.source === 'nest_purchase' ? (
                       <Button
                         onClick={handleSyncIntel}
@@ -2096,7 +2097,7 @@ export default function CandidateDetailDrawer({
                         </Badge>
                       </Button>
                     ) : (
-                      <EnrichmentOptionsPopover
+                      <EnrichmentButtons
                         candidate={candidate}
                         userCredits={user?.credits || 0}
                         userId={user?.id}
@@ -2117,29 +2118,6 @@ export default function CandidateDetailDrawer({
                       <MessageSquare className="w-3 h-3 mr-1.5" />
                       Send SMS
                     </Button>
-
-                    {/* Enrich Button */}
-                    {candidate.linkedin_url && !candidate.enriched_at ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleEnrichContact}
-                        disabled={enrichingContact}
-                        className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                      >
-                        {enrichingContact ? (
-                          <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
-                        ) : (
-                          <Zap className="w-3 h-3 mr-1.5" />
-                        )}
-                        {enrichingContact ? "Enriching..." : "Enrich"}
-                      </Button>
-                    ) : candidate.enriched_at ? (
-                      <div className="flex items-center gap-1 text-[10px] text-red-400 px-2 py-1 bg-red-500/10 rounded border border-red-500/20">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Enriched
-                      </div>
-                    ) : null}
 
                     {/* LinkedIn Button */}
                     {candidate.linkedin_url && (
