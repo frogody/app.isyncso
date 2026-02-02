@@ -1267,12 +1267,54 @@ export default function RaiseEnrich() {
 
   // ─── Status dot component ──────────────────────────────────────────────
 
-  const StatusDot = ({ status }) => {
-    if (status === 'pending') return <span title="Enrichment pending..." className="inline-block w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />;
-    if (status === 'error') return <span title="Error — click to retry" className="inline-block w-2 h-2 rounded-full bg-red-400" />;
+  const StatusDot = ({ status, errorMessage }) => {
+    if (status === 'pending') return <span title="Processing..." className="inline-block w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />;
+    if (status === 'error') return <span title={errorMessage || 'Error — click to retry'} className="inline-block w-2 h-2 rounded-full bg-red-400" />;
     if (status === 'complete') return <span title="Complete" className="inline-block w-2 h-2 rounded-full bg-green-400" />;
     return null;
   };
+
+  // ─── Progress indicators ──────────────────────────────────────────────
+
+  const enrichableColumns = useMemo(() => columns.filter(c => c.type === 'enrichment' || c.type === 'ai'), [columns]);
+
+  const columnProgress = useMemo(() => {
+    const result = {};
+    for (const col of enrichableColumns) {
+      let complete = 0;
+      const total = rows.length;
+      for (const row of rows) {
+        const cell = cells[cellKey(row.id, col.id)];
+        if (cell?.status === 'complete') complete++;
+      }
+      result[col.id] = { complete, total, percentage: total > 0 ? Math.round((complete / total) * 100) : 0 };
+    }
+    return result;
+  }, [enrichableColumns, rows, cells, cellKey]);
+
+  const globalProgress = useMemo(() => {
+    if (enrichableColumns.length === 0) return null;
+    let complete = 0;
+    let total = 0;
+    for (const col of enrichableColumns) {
+      const p = columnProgress[col.id];
+      if (p) { complete += p.complete; total += p.total; }
+    }
+    return { complete, total, percentage: total > 0 ? Math.round((complete / total) * 100) : 0 };
+  }, [enrichableColumns, columnProgress]);
+
+  const rowErrors = useMemo(() => {
+    const result = {};
+    for (const row of rows) {
+      let count = 0;
+      for (const col of columns) {
+        const cell = cells[cellKey(row.id, col.id)];
+        if (cell?.status === 'error') count++;
+      }
+      if (count > 0) result[row.id] = count;
+    }
+    return result;
+  }, [rows, columns, cells, cellKey]);
 
   // ─── Permission check ───────────────────────────────────────────────────
 
@@ -1498,6 +1540,26 @@ export default function RaiseEnrich() {
               {nestName && (
                 <RaiseBadge variant="outline" className="text-[10px]">{nestName}</RaiseBadge>
               )}
+              {/* Global progress ring */}
+              {globalProgress && globalProgress.total > 0 && (
+                <div className="flex items-center gap-1.5" title={`${globalProgress.complete} of ${globalProgress.total} cells enriched`}>
+                  <svg width="20" height="20" viewBox="0 0 20 20" className="flex-shrink-0">
+                    <circle cx="10" cy="10" r="8" fill="none" stroke={rt('#e5e7eb', '#3f3f46')} strokeWidth="2.5" />
+                    <circle
+                      cx="10" cy="10" r="8" fill="none"
+                      stroke={globalProgress.percentage === 100 ? '#4ade80' : globalProgress.percentage > 0 ? '#fbbf24' : '#71717a'}
+                      strokeWidth="2.5"
+                      strokeDasharray={`${globalProgress.percentage * 0.5027} 50.27`}
+                      strokeLinecap="round"
+                      transform="rotate(-90 10 10)"
+                      className="transition-all duration-500"
+                    />
+                  </svg>
+                  <span className={`text-[10px] font-medium ${globalProgress.percentage === 100 ? 'text-green-400' : globalProgress.percentage > 0 ? 'text-amber-400' : 'text-zinc-500'}`}>
+                    {globalProgress.percentage}%
+                  </span>
+                </div>
+              )}
               {/* Global search */}
               <div className="relative flex items-center">
                 <Search className={`absolute left-2.5 w-3.5 h-3.5 pointer-events-none transition-colors ${searchFocused || searchInput ? 'text-orange-400' : 'text-zinc-500'}`} />
@@ -1663,49 +1725,65 @@ export default function RaiseEnrich() {
               {columns.map(col => {
                 const Icon = COLUMN_TYPE_ICONS[col.type] || Type;
                 const sortState = getColumnSortState(col.id);
+                const colProg = columnProgress[col.id];
+                const isEnrichable = col.type === 'enrichment' || col.type === 'ai';
                 return (
                   <div
                     key={col.id}
                     className={rt(
-                      `flex-shrink-0 flex items-center gap-1.5 px-2 text-xs font-medium border-r border-gray-200 relative group cursor-pointer select-none ${sortState ? 'text-orange-600 bg-orange-50/50' : 'text-gray-600'}`,
-                      `flex-shrink-0 flex items-center gap-1.5 px-2 text-xs font-medium border-r border-zinc-800/60 relative group cursor-pointer select-none ${sortState ? 'text-orange-400 bg-orange-500/5' : 'text-zinc-300'}`
+                      `flex-shrink-0 flex flex-col justify-center px-2 text-xs font-medium border-r border-gray-200 relative group cursor-pointer select-none ${sortState ? 'text-orange-600 bg-orange-50/50' : 'text-gray-600'}`,
+                      `flex-shrink-0 flex flex-col justify-center px-2 text-xs font-medium border-r border-zinc-800/60 relative group cursor-pointer select-none ${sortState ? 'text-orange-400 bg-orange-500/5' : 'text-zinc-300'}`
                     )}
                     style={{ width: col.width || DEFAULT_COL_WIDTH, height: ROW_HEIGHT }}
                     onClick={(e) => { if (!e.target.closest('[data-no-sort]')) toggleColumnSort(col.id, e.shiftKey); }}
                   >
-                    <Icon className={`w-3 h-3 flex-shrink-0 ${col.type === 'field' ? 'text-blue-400' : col.type === 'enrichment' ? 'text-amber-400' : col.type === 'ai' ? 'text-purple-400' : 'text-green-400'}`} />
-                    <span className="truncate flex-1">{col.name}</span>
-                    {/* Sort indicator */}
-                    {sortState ? (
-                      <span className="flex items-center gap-0.5 flex-shrink-0">
-                        {sortState.direction === 'asc' ? <ArrowUp className="w-3 h-3 text-orange-400" /> : <ArrowDown className="w-3 h-3 text-orange-400" />}
-                        {sortState.isMulti && <span className="text-[9px] text-orange-400 font-bold">{sortState.priority}</span>}
-                      </span>
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-zinc-500 opacity-0 group-hover:opacity-50 transition-opacity flex-shrink-0" />
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Icon className={`w-3 h-3 flex-shrink-0 ${col.type === 'field' ? 'text-blue-400' : col.type === 'enrichment' ? 'text-amber-400' : col.type === 'ai' ? 'text-purple-400' : 'text-green-400'}`} />
+                      <span className="truncate flex-1">{col.name}</span>
+                      {/* Sort indicator */}
+                      {sortState ? (
+                        <span className="flex items-center gap-0.5 flex-shrink-0">
+                          {sortState.direction === 'asc' ? <ArrowUp className="w-3 h-3 text-orange-400" /> : <ArrowDown className="w-3 h-3 text-orange-400" />}
+                          {sortState.isMulti && <span className="text-[9px] text-orange-400 font-bold">{sortState.priority}</span>}
+                        </span>
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-zinc-500 opacity-0 group-hover:opacity-50 transition-opacity flex-shrink-0" />
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button data-no-sort className="p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-zinc-700/50">
+                            <MoreHorizontal className="w-3 h-3 text-zinc-400" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                          {col.type === 'enrichment' && (
+                            <DropdownMenuItem onClick={() => runEnrichmentColumn(col)} className={rt('', 'text-white hover:bg-zinc-700')}>
+                              <Play className="w-3 h-3 mr-2" /> Run Column
+                            </DropdownMenuItem>
+                          )}
+                          {col.type === 'ai' && (
+                            <DropdownMenuItem onClick={() => runAIColumn(col)} className={rt('', 'text-white hover:bg-zinc-700')}>
+                              <Brain className="w-3 h-3 mr-2" /> Run AI
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={() => deleteColumn(col.id)} className="text-red-400 hover:bg-red-500/10">
+                            <Trash2 className="w-3 h-3 mr-2" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    {/* Column progress bar */}
+                    {isEnrichable && colProg && colProg.total > 0 && (
+                      <div
+                        className={rt('w-full h-[2px] rounded-full bg-gray-200 mt-0.5', 'w-full h-[2px] rounded-full bg-zinc-700 mt-0.5')}
+                        title={`${colProg.percentage}% — ${colProg.complete}/${colProg.total} complete`}
+                      >
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${colProg.percentage === 100 ? 'bg-green-400' : colProg.percentage > 0 ? 'bg-amber-400' : 'bg-zinc-500'}`}
+                          style={{ width: `${colProg.percentage}%` }}
+                        />
+                      </div>
                     )}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button data-no-sort className="p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-zinc-700/50">
-                          <MoreHorizontal className="w-3 h-3 text-zinc-400" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
-                        {col.type === 'enrichment' && (
-                          <DropdownMenuItem onClick={() => runEnrichmentColumn(col)} className={rt('', 'text-white hover:bg-zinc-700')}>
-                            <Play className="w-3 h-3 mr-2" /> Run Column
-                          </DropdownMenuItem>
-                        )}
-                        {col.type === 'ai' && (
-                          <DropdownMenuItem onClick={() => runAIColumn(col)} className={rt('', 'text-white hover:bg-zinc-700')}>
-                            <Brain className="w-3 h-3 mr-2" /> Run AI
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem onClick={() => deleteColumn(col.id)} className="text-red-400 hover:bg-red-500/10">
-                          <Trash2 className="w-3 h-3 mr-2" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
                     {/* Resize handle */}
                     <div
                       data-no-sort
@@ -1741,17 +1819,24 @@ export default function RaiseEnrich() {
                     {/* Row number */}
                     <div
                       className={rt(
-                        'flex-shrink-0 flex items-center justify-center text-xs text-gray-400 border-r border-b border-gray-200 bg-gray-50/50',
-                        'flex-shrink-0 flex items-center justify-center text-xs text-zinc-500 border-r border-b border-zinc-800/60 bg-zinc-950/50'
+                        'flex-shrink-0 flex items-center justify-center gap-1 text-xs text-gray-400 border-r border-b border-gray-200 bg-gray-50/50',
+                        'flex-shrink-0 flex items-center justify-center gap-1 text-xs text-zinc-500 border-r border-b border-zinc-800/60 bg-zinc-950/50'
                       )}
                       style={{ width: ROW_NUM_WIDTH }}
                     >
+                      {rowErrors[row.id] && (
+                        <span
+                          title={`${rowErrors[row.id]} error${rowErrors[row.id] > 1 ? 's' : ''} in this row`}
+                          className="inline-block w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0"
+                        />
+                      )}
                       {rowIdx + 1}
                     </div>
                     {columns.map(col => {
                       const isEditing = editingCell?.rowId === row.id && editingCell?.colId === col.id;
                       const isSelected = selectedCell?.rowId === row.id && selectedCell?.colId === col.id;
-                      const status = getCellStatus(row.id, col.id);
+                      const cellObj = cells[cellKey(row.id, col.id)];
+                      const status = cellObj?.status || 'empty';
                       const displayVal = getCellDisplayValue(row.id, col);
 
                       return (
@@ -1797,14 +1882,14 @@ export default function RaiseEnrich() {
                             />
                           ) : (
                             <div className="flex items-center gap-1.5 w-full min-w-0">
-                              {status !== 'empty' && status !== 'complete' && <StatusDot status={status} />}
+                              {status !== 'empty' && status !== 'complete' && <StatusDot status={status} errorMessage={cellObj?.error_message} />}
                               <span className={rt(
                                 'truncate text-gray-700',
                                 'truncate text-zinc-300'
                               )}>
                                 {debouncedSearch ? highlightMatch(displayVal, debouncedSearch) : displayVal}
                               </span>
-                              {status === 'error' && <StatusDot status="error" />}
+                              {status === 'error' && <StatusDot status="error" errorMessage={cellObj?.error_message} />}
                             </div>
                           )}
                         </div>
