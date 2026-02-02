@@ -238,7 +238,7 @@ export function EnrichmentButtons({
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Contact info, work history, skills, education via Explorium</p>
+            <p>{!hasLinkedIn ? 'No LinkedIn URL available for this candidate' : isLinkedInEnriched ? 'Already enriched via LinkedIn' : 'Contact info, work history, skills, education via Explorium'}</p>
           </TooltipContent>
         </Tooltip>
 
