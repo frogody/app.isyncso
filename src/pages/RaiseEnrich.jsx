@@ -221,6 +221,57 @@ export default function RaiseEnrich() {
   const [colName, setColName] = useState('');
   const [colConfig, setColConfig] = useState({});
 
+  // Slash-command column selector
+  const [slashMenu, setSlashMenu] = useState({ open: false, field: null, caretPos: 0, filter: '' });
+  const promptRef = useRef(null);
+  const formulaRef = useRef(null);
+
+  const handleSlashInput = useCallback((e, field) => {
+    const val = e.target.value;
+    const pos = e.target.selectionStart;
+    // Find the last "/" before cursor
+    const before = val.slice(0, pos);
+    const slashIdx = before.lastIndexOf('/');
+    if (slashIdx !== -1 && (slashIdx === 0 || /[\s,("']/.test(before[slashIdx - 1]))) {
+      const partial = before.slice(slashIdx + 1);
+      if (!/[,)"'\n]/.test(partial)) {
+        setSlashMenu({ open: true, field, caretPos: pos, filter: partial.toLowerCase() });
+        return;
+      }
+    }
+    setSlashMenu(prev => prev.open ? { ...prev, open: false } : prev);
+  }, []);
+
+  const insertColumnRef = useCallback((colName) => {
+    const field = slashMenu.field;
+    const ref = field === 'prompt' ? promptRef.current : formulaRef.current;
+    if (!ref) return;
+    const val = ref.value;
+    const pos = slashMenu.caretPos;
+    const before = val.slice(0, pos);
+    const slashIdx = before.lastIndexOf('/');
+    const newVal = val.slice(0, slashIdx) + '/' + colName + val.slice(pos);
+    if (field === 'prompt') {
+      setColConfig(prev => ({ ...prev, prompt: newVal }));
+    } else {
+      setColConfig({ expression: newVal });
+    }
+    setSlashMenu({ open: false, field: null, caretPos: 0, filter: '' });
+    // Re-focus after React re-render
+    setTimeout(() => {
+      if (ref) {
+        const newPos = slashIdx + 1 + colName.length;
+        ref.focus();
+        ref.setSelectionRange(newPos, newPos);
+      }
+    }, 0);
+  }, [slashMenu]);
+
+  const slashMenuColumns = useMemo(() => {
+    if (!slashMenu.open) return [];
+    return columns.filter(c => c.name.toLowerCase().includes(slashMenu.filter));
+  }, [slashMenu.open, slashMenu.filter, columns]);
+
   // Cell editing
   const [editingCell, setEditingCell] = useState(null); // { rowId, colId }
   const [editingValue, setEditingValue] = useState('');
@@ -1525,16 +1576,32 @@ export default function RaiseEnrich() {
 
               {colType === 'ai' && (
                 <div className="space-y-3">
-                  <div>
+                  <div className="relative">
                     <Label className={rt('text-gray-700', 'text-zinc-300')}>Prompt Template</Label>
                     <Textarea
+                      ref={promptRef}
                       value={colConfig.prompt || ''}
-                      onChange={e => setColConfig(prev => ({ ...prev, prompt: e.target.value }))}
-                      placeholder={'Use /ColumnName to reference other columns.\ne.g. Based on /Company and /Title, write a one-line pitch'}
+                      onChange={e => { setColConfig(prev => ({ ...prev, prompt: e.target.value })); handleSlashInput(e, 'prompt'); }}
+                      onKeyDown={e => {
+                        if (slashMenu.open && slashMenu.field === 'prompt') {
+                          if (e.key === 'Escape') { e.preventDefault(); setSlashMenu(prev => ({ ...prev, open: false })); }
+                          if (e.key === 'Enter' && slashMenuColumns.length > 0) { e.preventDefault(); insertColumnRef(slashMenuColumns[0].name); }
+                        }
+                      }}
+                      placeholder={'Type / to insert a column reference\ne.g. Based on /Company and /Title, write a one-line pitch'}
                       rows={4}
                       className={rt('', 'bg-zinc-800 border-zinc-700 text-white')}
                     />
-                    <p className="text-[10px] text-zinc-500 mt-1">Reference columns with /ColumnName syntax</p>
+                    {slashMenu.open && slashMenu.field === 'prompt' && slashMenuColumns.length > 0 && (
+                      <div className="absolute z-50 left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-800 shadow-xl">
+                        {slashMenuColumns.map(c => (
+                          <button key={c.id} onClick={() => insertColumnRef(c.name)} className="w-full text-left px-3 py-2 text-sm text-white hover:bg-zinc-700 flex items-center gap-2">
+                            <span className="text-cyan-400 font-mono text-xs">/</span>{c.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-[10px] text-zinc-500 mt-1">Type <span className="font-mono text-cyan-400">/</span> to insert column references</p>
                   </div>
                   <div>
                     <Label className={rt('text-gray-700', 'text-zinc-300')}>Input Columns</Label>
@@ -1568,15 +1635,31 @@ export default function RaiseEnrich() {
               )}
 
               {colType === 'formula' && (
-                <div>
+                <div className="relative">
                   <Label className={rt('text-gray-700', 'text-zinc-300')}>Expression</Label>
                   <Input
+                    ref={formulaRef}
                     value={colConfig.expression || ''}
-                    onChange={e => setColConfig({ expression: e.target.value })}
-                    placeholder='=CONCAT(/First Name, " ", /Last Name)'
+                    onChange={e => { setColConfig({ expression: e.target.value }); handleSlashInput(e, 'formula'); }}
+                    onKeyDown={e => {
+                      if (slashMenu.open && slashMenu.field === 'formula') {
+                        if (e.key === 'Escape') { e.preventDefault(); setSlashMenu(prev => ({ ...prev, open: false })); }
+                        if (e.key === 'Enter' && slashMenuColumns.length > 0) { e.preventDefault(); insertColumnRef(slashMenuColumns[0].name); }
+                      }
+                    }}
+                    placeholder='Type / to insert column refs. e.g. =CONCAT(/First Name, " ", /Last Name)'
                     className={rt('font-mono', 'bg-zinc-800 border-zinc-700 text-white font-mono')}
                   />
-                  <p className="text-[10px] text-zinc-500 mt-1">Use /ColumnName for refs. Functions: CONCAT, IF, UPPER, LOWER, TRIM, LEN, LEFT, RIGHT, REPLACE, ROUND, CONTAINS</p>
+                  {slashMenu.open && slashMenu.field === 'formula' && slashMenuColumns.length > 0 && (
+                    <div className="absolute z-50 left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-800 shadow-xl">
+                      {slashMenuColumns.map(c => (
+                        <button key={c.id} onClick={() => insertColumnRef(c.name)} className="w-full text-left px-3 py-2 text-sm text-white hover:bg-zinc-700 flex items-center gap-2">
+                          <span className="text-cyan-400 font-mono text-xs">/</span>{c.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-[10px] text-zinc-500 mt-1">Type <span className="font-mono text-cyan-400">/</span> for column refs. Functions: CONCAT, IF, UPPER, LOWER, TRIM, LEN, LEFT, RIGHT, REPLACE, ROUND, CONTAINS</p>
                 </div>
               )}
 
