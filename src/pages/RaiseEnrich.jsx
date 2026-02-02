@@ -106,6 +106,23 @@ const DATE_FORMATS = [
   { value: 'D MMM YYYY', label: 'D MMM YYYY' },
 ];
 
+const AI_MODELS = [
+  { value: 'moonshotai/Kimi-K2-Instruct', label: 'Kimi K2', speed: 3, quality: 5, desc: 'Best overall — fast & high quality' },
+  { value: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free', label: 'Llama 3.3 70B', speed: 4, quality: 4, desc: 'Fast, free tier available' },
+  { value: 'Qwen/Qwen2.5-72B-Instruct-Turbo', label: 'Qwen 2.5 72B', speed: 3, quality: 4, desc: 'Strong multilingual' },
+  { value: 'deepseek-ai/DeepSeek-V3', label: 'DeepSeek V3', speed: 2, quality: 5, desc: 'Top quality, slower' },
+];
+
+const AI_PROMPT_TEMPLATES = [
+  { id: 'summarize', label: 'Summarize', prompt: 'Summarize the following in 1-2 sentences:', icon: '📝' },
+  { id: 'extract_emails', label: 'Extract emails', prompt: 'Extract all email addresses from the following text. Return only the emails, one per line:', icon: '📧' },
+  { id: 'categorize', label: 'Categorize', prompt: 'Categorize the following into one of these categories: [define categories]. Return only the category name:', icon: '🏷️' },
+  { id: 'sentiment', label: 'Sentiment', prompt: 'Analyze the sentiment of the following text. Return only: Positive, Negative, or Neutral:', icon: '😊' },
+  { id: 'translate', label: 'Translate', prompt: 'Translate the following to English. Return only the translation:', icon: '🌍' },
+  { id: 'extract_data', label: 'Extract data', prompt: 'Extract the key information from the following and return as JSON with relevant fields:', icon: '🔍' },
+  { id: 'clean', label: 'Clean/Format', prompt: 'Clean and format the following data. Fix typos, standardize formatting:', icon: '✨' },
+];
+
 // ─── Formula Engine ──────────────────────────────────────────────────────────
 
 function evaluateFormula(expression, columnMap) {
@@ -1053,18 +1070,129 @@ export default function RaiseEnrich() {
   // ─── Run AI column (placeholder) ───────────────────────────────────────
 
   const runAIColumn = useCallback(async (col) => {
-    const toastId = toast.loading(`Running AI column: ${col.name}...`);
-    for (const row of rows) {
-      const key = cellKey(row.id, col.id);
-      const val = { v: '(AI not yet configured)' };
-      setCells(prev => ({ ...prev, [key]: { ...prev[key], status: 'complete', value: val } }));
-      await supabase.from('enrich_cells').upsert({
-        row_id: row.id, column_id: col.id, status: 'complete', value: val,
-      }, { onConflict: 'row_id,column_id' });
+    if (col.type !== 'ai') return;
+    const cfg = col.config || {};
+    const promptTemplate = cfg.prompt;
+    if (!promptTemplate) { toast.error('No prompt configured for AI column'); return; }
+
+    const model = cfg.model || 'moonshotai/Kimi-K2-Instruct';
+    const temperature = cfg.temperature ?? 0.7;
+    const maxTokens = cfg.max_tokens || 500;
+    const systemPrompt = cfg.system_prompt || '';
+    const outputFormat = cfg.output_format || 'text';
+    const outputPath = cfg.output_path || '';
+    const batchSize = cfg.batch_size || 5;
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxfntqleig.supabase.co';
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
+
+    let formatInstruction = '';
+    if (outputFormat === 'json') formatInstruction = '\n\nRespond ONLY with valid JSON. No other text.';
+    else if (outputFormat === 'list') formatInstruction = '\n\nRespond with a list, one item per line. No numbering or bullets.';
+    else formatInstruction = '\n\nRespond concisely with plain text only.';
+
+    const total = rows.length;
+    let completed = 0;
+    let errors = 0;
+    const toastId = toast.loading(`Running ${col.name}: 0/${total}`);
+
+    for (let i = 0; i < rows.length; i += batchSize) {
+      const batch = rows.slice(i, i + batchSize);
+      await Promise.all(batch.map(async (row) => {
+        const key = cellKey(row.id, col.id);
+        try {
+          setCells(prev => ({ ...prev, [key]: { ...prev[key], status: 'pending' } }));
+          await supabase.from('enrich_cells').upsert({ row_id: row.id, column_id: col.id, status: 'pending', value: null }, { onConflict: 'row_id,column_id' });
+
+          // Build prompt with column refs replaced
+          const filledPrompt = replaceColumnRefs(promptTemplate, row.id);
+          if (!filledPrompt.trim()) { completed++; return; }
+
+          const messages = [];
+          if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+          messages.push({ role: 'user', content: filledPrompt + formatInstruction });
+
+          // Call raise-chat edge function
+          let retries = 0;
+          let result = null;
+          while (retries < 3) {
+            try {
+              const resp = await fetch(`${supabaseUrl}/functions/v1/raise-chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+                body: JSON.stringify({ messages, model, temperature, max_tokens: maxTokens }),
+              });
+              if (resp.status === 429) {
+                retries++;
+                await new Promise(r => setTimeout(r, 2000 * retries));
+                continue;
+              }
+              if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+              // Handle streaming or JSON response
+              const ct = resp.headers.get('content-type') || '';
+              if (ct.includes('text/event-stream')) {
+                const reader = resp.body.getReader();
+                const decoder = new TextDecoder();
+                let content = '';
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  const chunk = decoder.decode(value, { stream: true });
+                  for (const line of chunk.split('\n')) {
+                    if (line.startsWith('data: ') && line.slice(6) !== '[DONE]') {
+                      try {
+                        const d = JSON.parse(line.slice(6));
+                        content += d.choices?.[0]?.delta?.content || '';
+                      } catch {}
+                    }
+                  }
+                }
+                result = content.trim();
+              } else {
+                const data = await resp.json();
+                result = data.choices?.[0]?.message?.content?.trim() || data.content || '';
+              }
+              break;
+            } catch (e) {
+              if (retries >= 2) throw e;
+              retries++;
+              await new Promise(r => setTimeout(r, 1000 * retries));
+            }
+          }
+
+          // Parse output based on format
+          let displayValue = result || '';
+          if (outputFormat === 'json' && outputPath && result) {
+            try {
+              const parsed = JSON.parse(result);
+              displayValue = extractNestedValue(parsed, outputPath);
+              if (typeof displayValue === 'object') displayValue = JSON.stringify(displayValue);
+            } catch { displayValue = result; }
+          } else if (outputFormat === 'list' && cfg.list_separator && result) {
+            displayValue = result.split('\n').filter(Boolean).join(cfg.list_separator);
+          }
+
+          const cellValue = { v: String(displayValue || '') };
+          setCells(prev => ({ ...prev, [key]: { ...prev[key], status: 'complete', value: cellValue } }));
+          await supabase.from('enrich_cells').upsert({
+            row_id: row.id, column_id: col.id, status: 'complete', value: cellValue, updated_at: new Date().toISOString(),
+          }, { onConflict: 'row_id,column_id' });
+          completed++;
+        } catch (err) {
+          errors++;
+          completed++;
+          setCells(prev => ({ ...prev, [key]: { ...prev[key], status: 'error', error_message: err.message } }));
+          await supabase.from('enrich_cells').upsert({
+            row_id: row.id, column_id: col.id, status: 'error', error_message: err.message, updated_at: new Date().toISOString(),
+          }, { onConflict: 'row_id,column_id' });
+        }
+        toast.loading(`Running ${col.name}: ${completed}/${total}`, { id: toastId });
+      }));
     }
     toast.dismiss(toastId);
-    toast.success(`${col.name}: placeholder values set`);
-  }, [rows, cellKey]);
+    if (errors > 0) toast.warning(`${col.name}: ${completed - errors} succeeded, ${errors} failed`);
+    else toast.success(`${col.name}: All ${total} rows processed`);
+  }, [columns, rows, cells, cellKey, replaceColumnRefs]);
 
   // ─── Run waterfall column ─────────────────────────────────────────────
 
@@ -3177,8 +3305,22 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
 
               {colType === 'ai' && (
                 <div className="space-y-3">
+                  {/* Template selector */}
+                  <div>
+                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Quick Templates</Label>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {AI_PROMPT_TEMPLATES.map(t => (
+                        <button key={t.id} onClick={() => setColConfig(prev => ({ ...prev, prompt: t.prompt }))}
+                          className={`text-[10px] px-2.5 py-1 rounded-full border transition-all ${rt('border-gray-200 text-gray-600 hover:border-purple-400 hover:bg-purple-50', 'border-zinc-700 text-zinc-400 hover:border-purple-500/50 hover:bg-purple-500/10')}`}>
+                          {t.icon} {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Prompt */}
                   <div className="relative">
-                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Prompt Template</Label>
+                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Prompt</Label>
                     <Textarea
                       ref={promptRef}
                       value={colConfig.prompt || ''}
@@ -3190,7 +3332,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                         }
                       }}
                       placeholder={'Type / to insert a column reference\ne.g. Based on /Company and /Title, write a one-line pitch'}
-                      rows={4}
+                      rows={3}
                       className={rt('', 'bg-zinc-800 border-zinc-700 text-white')}
                     />
                     {slashMenu.open && slashMenu.field === 'prompt' && slashMenuColumns.length > 0 && (
@@ -3206,34 +3348,141 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     )}
                     <p className="text-[10px] text-zinc-500 mt-1">Type <span className="font-mono text-cyan-400">/</span> to insert column references</p>
                   </div>
+
+                  {/* Model selector */}
+                  <div>
+                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Model</Label>
+                    <div className="grid grid-cols-2 gap-1.5 mt-1">
+                      {AI_MODELS.map(m => (
+                        <button key={m.value} onClick={() => setColConfig(prev => ({ ...prev, model: m.value }))}
+                          className={`text-left p-2 rounded-lg border transition-all ${(colConfig.model || 'moonshotai/Kimi-K2-Instruct') === m.value
+                            ? rt('border-purple-400 bg-purple-50', 'border-purple-500/50 bg-purple-500/10')
+                            : rt('border-gray-200 hover:border-gray-300', 'border-zinc-700 hover:border-zinc-600')}`}>
+                          <div className={`text-xs font-medium ${rt('text-gray-800', 'text-white')}`}>{m.label}</div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[9px] text-zinc-500">Speed</span>
+                            <div className="flex gap-0.5">{[1,2,3,4,5].map(i => <div key={i} className={`w-1 h-1 rounded-full ${i <= m.speed ? 'bg-cyan-400' : rt('bg-gray-200', 'bg-zinc-700')}`} />)}</div>
+                            <span className="text-[9px] text-zinc-500 ml-1">Quality</span>
+                            <div className="flex gap-0.5">{[1,2,3,4,5].map(i => <div key={i} className={`w-1 h-1 rounded-full ${i <= m.quality ? 'bg-purple-400' : rt('bg-gray-200', 'bg-zinc-700')}`} />)}</div>
+                          </div>
+                          <div className="text-[9px] text-zinc-500 mt-0.5">{m.desc}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Input Columns */}
                   <div>
                     <Label className={rt('text-gray-700', 'text-zinc-300')}>Input Columns</Label>
                     <div className="flex flex-wrap gap-1.5 mt-1">
                       {columns.map(c => {
                         const selected = (colConfig.input_columns || []).includes(c.id);
                         return (
-                          <button
-                            key={c.id}
-                            onClick={() => {
-                              setColConfig(prev => ({
-                                ...prev,
-                                input_columns: selected
-                                  ? (prev.input_columns || []).filter(id => id !== c.id)
-                                  : [...(prev.input_columns || []), c.id],
-                              }));
-                            }}
-                            className={`text-[10px] px-2 py-1 rounded-full border transition-all ${
-                              selected
-                                ? rt('border-orange-400 bg-orange-50 text-orange-600', 'border-orange-500/50 bg-orange-500/10 text-orange-400')
-                                : rt('border-gray-200 text-gray-500', 'border-zinc-700 text-zinc-500')
-                            }`}
-                          >
+                          <button key={c.id} onClick={() => setColConfig(prev => ({
+                            ...prev,
+                            input_columns: selected ? (prev.input_columns || []).filter(id => id !== c.id) : [...(prev.input_columns || []), c.id],
+                          }))}
+                            className={`text-[10px] px-2 py-1 rounded-full border transition-all ${selected
+                              ? rt('border-orange-400 bg-orange-50 text-orange-600', 'border-orange-500/50 bg-orange-500/10 text-orange-400')
+                              : rt('border-gray-200 text-gray-500', 'border-zinc-700 text-zinc-500')}`}>
                             {c.name}
                           </button>
                         );
                       })}
                     </div>
                   </div>
+
+                  {/* Advanced options (collapsible) */}
+                  <div className={`rounded-lg border ${rt('border-gray-200', 'border-zinc-700')}`}>
+                    <button onClick={() => setColConfig(prev => ({ ...prev, _showAdvanced: !prev._showAdvanced }))}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-xs ${rt('text-gray-600', 'text-zinc-400')}`}>
+                      <span>Advanced Options</span>
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${colConfig._showAdvanced ? 'rotate-180' : ''}`} />
+                    </button>
+                    {colConfig._showAdvanced && (
+                      <div className="px-3 pb-3 space-y-3 border-t border-zinc-700/50">
+                        {/* System prompt */}
+                        <div className="pt-2">
+                          <Label className={`text-[11px] ${rt('text-gray-600', 'text-zinc-400')}`}>System Prompt</Label>
+                          <Textarea value={colConfig.system_prompt || ''} onChange={e => setColConfig(prev => ({ ...prev, system_prompt: e.target.value }))}
+                            placeholder="Optional system instructions (e.g. You are a data analyst...)" rows={2}
+                            className={`text-xs mt-1 ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`} />
+                        </div>
+                        {/* Temperature */}
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <Label className={`text-[11px] ${rt('text-gray-600', 'text-zinc-400')}`}>Temperature</Label>
+                            <span className={`text-[11px] font-mono ${rt('text-gray-500', 'text-zinc-500')}`}>{(colConfig.temperature ?? 0.7).toFixed(1)}</span>
+                          </div>
+                          <input type="range" min="0" max="1" step="0.1" value={colConfig.temperature ?? 0.7}
+                            onChange={e => setColConfig(prev => ({ ...prev, temperature: parseFloat(e.target.value) }))}
+                            className="w-full h-1.5 mt-1 accent-purple-500" />
+                          <div className="flex justify-between text-[9px] text-zinc-500"><span>Precise</span><span>Creative</span></div>
+                        </div>
+                        {/* Max tokens */}
+                        <div>
+                          <Label className={`text-[11px] ${rt('text-gray-600', 'text-zinc-400')}`}>Max Tokens</Label>
+                          <Select value={String(colConfig.max_tokens || 500)} onValueChange={v => setColConfig(prev => ({ ...prev, max_tokens: parseInt(v) }))}>
+                            <SelectTrigger className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}><SelectValue /></SelectTrigger>
+                            <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                              {[100, 250, 500, 1000, 2000].map(n => <SelectItem key={n} value={String(n)} className={rt('', 'text-white hover:bg-zinc-700')}>{n}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {/* Output format */}
+                        <div>
+                          <Label className={`text-[11px] ${rt('text-gray-600', 'text-zinc-400')}`}>Output Format</Label>
+                          <div className="flex gap-1.5 mt-1">
+                            {['text', 'json', 'list'].map(fmt => (
+                              <button key={fmt} onClick={() => setColConfig(prev => ({ ...prev, output_format: fmt }))}
+                                className={`text-[10px] px-2.5 py-1 rounded-lg border ${(colConfig.output_format || 'text') === fmt
+                                  ? rt('border-purple-400 bg-purple-50 text-purple-600', 'border-purple-500/50 bg-purple-500/10 text-purple-400')
+                                  : rt('border-gray-200 text-gray-500', 'border-zinc-700 text-zinc-500')}`}>
+                                {fmt.charAt(0).toUpperCase() + fmt.slice(1)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        {colConfig.output_format === 'json' && (
+                          <div>
+                            <Label className={`text-[11px] ${rt('text-gray-600', 'text-zinc-400')}`}>JSON Output Path</Label>
+                            <Input value={colConfig.output_path || ''} onChange={e => setColConfig(prev => ({ ...prev, output_path: e.target.value }))}
+                              placeholder="e.g. result.value or items[0].name" className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`} />
+                          </div>
+                        )}
+                        {colConfig.output_format === 'list' && (
+                          <div>
+                            <Label className={`text-[11px] ${rt('text-gray-600', 'text-zinc-400')}`}>List Separator</Label>
+                            <Input value={colConfig.list_separator || ', '} onChange={e => setColConfig(prev => ({ ...prev, list_separator: e.target.value }))}
+                              placeholder=", " className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`} />
+                          </div>
+                        )}
+                        {/* Batch size */}
+                        <div>
+                          <Label className={`text-[11px] ${rt('text-gray-600', 'text-zinc-400')}`}>Batch Size</Label>
+                          <Select value={String(colConfig.batch_size || 5)} onValueChange={v => setColConfig(prev => ({ ...prev, batch_size: parseInt(v) }))}>
+                            <SelectTrigger className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}><SelectValue /></SelectTrigger>
+                            <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                              {[1, 3, 5, 10, 20].map(n => <SelectItem key={n} value={String(n)} className={rt('', 'text-white hover:bg-zinc-700')}>{n} rows at a time</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Live preview */}
+                  {colConfig.prompt && rows.length > 0 && (
+                    <div className={`rounded-lg border p-2.5 ${rt('border-gray-200 bg-gray-50', 'border-zinc-700 bg-zinc-800/50')}`}>
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <Brain className="w-3 h-3 text-purple-400" />
+                        <span className={`text-[10px] font-medium ${rt('text-gray-600', 'text-zinc-400')}`}>Preview (Row 1)</span>
+                      </div>
+                      <p className={`text-[11px] ${rt('text-gray-700', 'text-zinc-300')} whitespace-pre-wrap break-words`}>
+                        {replaceColumnRefs(colConfig.prompt, rows[0]?.id)}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 

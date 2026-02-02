@@ -19,7 +19,8 @@ serve(async (req) => {
       });
     }
 
-    const { messages } = await req.json();
+    const body = await req.json();
+    const { messages, model, temperature, max_tokens, stream: shouldStream } = body;
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "messages array required" }), {
         status: 400,
@@ -27,7 +28,12 @@ serve(async (req) => {
       });
     }
 
-    // Call Together.ai with streaming
+    const selectedModel = model || "moonshotai/Kimi-K2-Instruct";
+    const selectedTemp = temperature ?? 0.7;
+    const selectedMaxTokens = max_tokens || 2048;
+    const wantStream = shouldStream !== false;
+
+    // Call Together.ai
     const response = await fetch("https://api.together.xyz/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -35,18 +41,18 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "moonshotai/Kimi-K2-Instruct",
+        model: selectedModel,
         messages,
-        max_tokens: 2048,
-        temperature: 0.7,
-        stream: true,
+        max_tokens: selectedMaxTokens,
+        temperature: selectedTemp,
+        stream: wantStream,
       }),
     });
 
     if (!response.ok) {
       const errText = await response.text();
       console.error("Together.ai error:", errText);
-      // Fallback to non-streaming
+      // Fallback to non-streaming with free model
       const fallbackResp = await fetch("https://api.together.xyz/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -56,12 +62,20 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
           messages,
-          max_tokens: 2048,
-          temperature: 0.7,
+          max_tokens: selectedMaxTokens,
+          temperature: selectedTemp,
         }),
       });
       const fallbackData = await fallbackResp.json();
       return new Response(JSON.stringify(fallbackData), {
+        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+      });
+    }
+
+    // If non-streaming requested, return JSON directly
+    if (!wantStream) {
+      const data = await response.json();
+      return new Response(JSON.stringify(data), {
         headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
       });
     }
