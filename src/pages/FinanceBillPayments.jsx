@@ -180,7 +180,7 @@ function BankAccountSelector({ accounts, accountTypes, value, onChange, ft }) {
 }
 
 // ── Main Page ───────────────────────────────────────────────────────────────
-export default function FinanceBillPayments() {
+export default function FinanceBillPayments({ embedded = false }) {
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState([]);
   const [bills, setBills] = useState([]);
@@ -461,6 +461,7 @@ export default function FinanceBillPayments() {
   const openDetail = (payment) => { setSelectedPayment(payment); setShowDetailModal(true); };
 
   if (loading || permLoading) {
+    if (embedded) return <div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" /></div>;
     return (
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
@@ -469,6 +470,7 @@ export default function FinanceBillPayments() {
   }
 
   if (!canView) {
+    if (embedded) return <div className="text-center py-12"><p className={ft('text-slate-500', 'text-zinc-400')}>You don't have permission to view bill payments.</p></div>;
     return (
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex flex-col items-center justify-center text-center p-6`}>
         <AlertCircle className="w-16 h-16 text-red-400 mb-4" />
@@ -478,12 +480,11 @@ export default function FinanceBillPayments() {
     );
   }
 
-  return (
-    <FinancePageTransition>
-      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
-        <div className="w-full px-4 lg:px-6 py-4 space-y-4">
+  const content = (
+    <>
+        <div className={embedded ? "space-y-4" : "w-full px-4 lg:px-6 py-4 space-y-4"}>
 
-          <PageHeader
+          {!embedded && <PageHeader
             icon={Wallet}
             title="Bill Payments"
             subtitle="Track and manage payments made against vendor bills"
@@ -511,7 +512,7 @@ export default function FinanceBillPayments() {
                 )}
               </div>
             }
-          />
+          />}
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -998,7 +999,15 @@ export default function FinanceBillPayments() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+    </>
+  );
 
+  if (embedded) return content;
+
+  return (
+    <FinancePageTransition>
+      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
+        {content}
       </div>
     </FinancePageTransition>
   );
