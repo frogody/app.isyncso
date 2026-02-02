@@ -278,7 +278,7 @@ export default function RaiseEnrich() {
         if (!cell) return '';
         const v = cell.value;
         if (v == null) return '';
-        if (typeof v === 'object') return JSON.stringify(v);
+        if (typeof v === 'object') return v.v != null ? String(v.v) : JSON.stringify(v);
         return String(v);
       })(),
     }));
