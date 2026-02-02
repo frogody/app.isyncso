@@ -30,7 +30,8 @@ import CampaignSequenceEditor from "@/components/campaigns/CampaignSequenceEdito
 import CampaignMetricsPanel from "@/components/campaigns/CampaignMetricsPanel";
 import { OutreachPipeline, OutreachQueue, AnalyticsTab, CandidateDetailDrawer, BulkActionBar } from "@/components/talent";
 import { MatchReasonCards } from "@/components/talent/campaign";
-import { INTELLIGENCE_SIGNALS } from "@/components/talent/campaign/SignalMatchingConfig";
+import CriteriaWeightingStep, { DEFAULT_WEIGHTS } from "@/components/talent/campaign/CriteriaWeightingStep";
+import SignalMatchingConfig, { INTELLIGENCE_SIGNALS } from "@/components/talent/campaign/SignalMatchingConfig";
 import {
   Megaphone,
   Settings,
@@ -1415,7 +1416,8 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
 };
 
 // Settings Tab Component
-const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projects, roles }) => {
+const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projects, roles, campaign }) => {
+  const [showMatchingSettings, setShowMatchingSettings] = useState(false);
   // Filter roles based on selected project
   const availableRoles = useMemo(() => {
     if (!formData.project_id) return roles;
@@ -1634,6 +1636,87 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projec
         </div>
       </div>
 
+      {/* Matching Settings (Role Context, Criteria Weights, Signal Filters) */}
+      {!isNew && (
+        <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded-xl space-y-4">
+          <button
+            type="button"
+            onClick={() => setShowMatchingSettings(!showMatchingSettings)}
+            className="w-full flex items-center justify-between"
+          >
+            <div>
+              <h4 className="text-sm font-semibold text-white mb-1 flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-red-400" />
+                Matching Settings
+              </h4>
+              <p className="text-xs text-zinc-500 text-left">
+                Role context, criteria weights, and signal filters for AI matching
+              </p>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${showMatchingSettings ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showMatchingSettings && (
+            <div className="pt-3 border-t border-zinc-700/50 space-y-6">
+              {/* Role Context */}
+              <div className="space-y-4">
+                <h5 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Role Context</h5>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label className="text-zinc-400">Perfect Fit Criteria</Label>
+                    <Textarea
+                      value={formData.role_context_perfect_fit || ""}
+                      onChange={(e) => handleChange("role_context_perfect_fit", e.target.value)}
+                      className="bg-zinc-800/50 border-zinc-700 text-white resize-none"
+                      placeholder="What makes someone a perfect fit for this role..."
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-zinc-400">Selling Points</Label>
+                    <Textarea
+                      value={formData.role_context_selling_points || ""}
+                      onChange={(e) => handleChange("role_context_selling_points", e.target.value)}
+                      className="bg-zinc-800/50 border-zinc-700 text-white resize-none"
+                      placeholder="Why should a candidate join? What makes this opportunity compelling..."
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-zinc-400">Ideal Background</Label>
+                    <Textarea
+                      value={formData.role_context_ideal_background || ""}
+                      onChange={(e) => handleChange("role_context_ideal_background", e.target.value)}
+                      className="bg-zinc-800/50 border-zinc-700 text-white resize-none"
+                      placeholder="Describe the ideal candidate background..."
+                      rows={2}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Criteria Weights */}
+              <div className="space-y-3">
+                <h5 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Criteria Weights</h5>
+                <CriteriaWeightingStep
+                  weights={formData.criteria_weights || DEFAULT_WEIGHTS}
+                  onChange={(weights) => handleChange("criteria_weights", weights)}
+                />
+              </div>
+
+              {/* Signal Filters */}
+              <div className="space-y-3">
+                <h5 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Signal Filters</h5>
+                <SignalMatchingConfig
+                  selectedSignals={formData.signal_filters || []}
+                  onChange={(signals) => handleChange("signal_filters", signals)}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {!isNew && (
         <div className="space-y-2">
           <Label className="text-zinc-400">Status</Label>
@@ -1690,6 +1773,11 @@ export default function TalentCampaignDetail() {
     nest_id: null,
     auto_match_enabled: true,
     min_match_score: 30,
+    role_context_perfect_fit: "",
+    role_context_selling_points: "",
+    role_context_ideal_background: "",
+    criteria_weights: null,
+    signal_filters: [],
   });
 
   const [isMatching, setIsMatching] = useState(false);
@@ -2265,6 +2353,11 @@ export default function TalentCampaignDetail() {
         nest_id: data.nest_id || null,
         auto_match_enabled: data.auto_match_enabled !== false, // Default true
         min_match_score: data.min_match_score || 30,
+        role_context_perfect_fit: data.role_context?.perfect_fit_criteria || "",
+        role_context_selling_points: data.role_context?.selling_points || "",
+        role_context_ideal_background: data.role_context?.ideal_background || "",
+        criteria_weights: data.role_context?.criteria_weights || null,
+        signal_filters: data.role_context?.signal_filters || [],
       });
     } catch (error) {
       console.error("Error fetching campaign:", error);
@@ -2292,8 +2385,23 @@ export default function TalentCampaignDetail() {
 
     setSaving(true);
     try {
+      // Build role_context from separate form fields merged with existing
+      const existingRoleContext = campaign?.role_context || {};
+      const roleContext = {
+        ...existingRoleContext,
+        ...(formData.role_context_perfect_fit ? { perfect_fit_criteria: formData.role_context_perfect_fit } : {}),
+        ...(formData.role_context_selling_points ? { selling_points: formData.role_context_selling_points } : {}),
+        ...(formData.role_context_ideal_background ? { ideal_background: formData.role_context_ideal_background } : {}),
+        ...(formData.criteria_weights ? { criteria_weights: formData.criteria_weights } : {}),
+        signal_filters: formData.signal_filters || [],
+      };
+
+      // Strip the flattened fields before saving
+      const { role_context_perfect_fit, role_context_selling_points, role_context_ideal_background, criteria_weights, signal_filters, ...rest } = formData;
+
       const campaignData = {
-        ...formData,
+        ...rest,
+        role_context: roleContext,
         organization_id: user.organization_id,
       };
 
@@ -2320,6 +2428,18 @@ export default function TalentCampaignDetail() {
         if (error) throw error;
         result = data;
         toast.success("Campaign saved successfully");
+
+        // Prompt re-matching if matching settings were changed
+        if (result.matched_candidates?.length > 0) {
+          toast("Matching settings updated", {
+            description: "Re-run matching to apply new weights and filters?",
+            action: {
+              label: "Re-match",
+              onClick: () => runAutoMatching(result),
+            },
+            duration: 8000,
+          });
+        }
       }
 
       setCampaign(result);
@@ -2698,6 +2818,7 @@ export default function TalentCampaignDetail() {
               isNew={isNew}
               projects={projects}
               roles={roles}
+              campaign={campaign}
             />
           </TabsContent>
 
