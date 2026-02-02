@@ -31,6 +31,7 @@ import {
   Settings,
   ToggleLeft,
   ToggleRight,
+  Factory,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -71,18 +72,21 @@ const NEST_TYPE_ICONS = {
   candidates: Users,
   prospects: Briefcase,
   investors: Building2,
+  companies: Factory,
 };
 
 const NEST_TYPE_LABELS = {
   candidates: 'Candidates',
   prospects: 'Prospects',
   investors: 'Investors',
+  companies: 'Companies',
 };
 
 const NEST_TYPE_COLORS = {
   candidates: 'text-blue-400 bg-blue-500/20',
   prospects: 'text-green-400 bg-green-500/20',
   investors: 'text-purple-400 bg-purple-500/20',
+  companies: 'text-cyan-400 bg-cyan-500/20',
 };
 
 // Format currency
@@ -559,6 +563,10 @@ export default function AdminNests() {
           <TabsTrigger value="investors" className="data-[state=active]:bg-white/10 text-xs h-7 px-2.5">
             <Building2 className="w-3 h-3 mr-1.5" />
             Investor Nests
+          </TabsTrigger>
+          <TabsTrigger value="companies" className="data-[state=active]:bg-white/10 text-xs h-7 px-2.5">
+            <Factory className="w-3 h-3 mr-1.5" />
+            Company Nests
           </TabsTrigger>
         </TabsList>
 

@@ -83,6 +83,23 @@ const NEST_TARGET_FIELDS = {
     { id: 'website', label: 'Website', description: 'Firm website', patterns: ['website', 'url', 'web'] },
     { id: 'location', label: 'Location', description: 'Location/HQ', patterns: ['location', 'city', 'hq', 'headquarters'] },
     { id: 'portfolio', label: 'Portfolio', description: 'Portfolio companies', patterns: ['portfolio', 'investments', 'companies'] },
+  ],
+  companies: [
+    { id: 'company_name', label: 'Company Name', description: 'Company/organization name', patterns: ['name', 'company', 'company_name', 'company name', 'organization', 'bedrijf'] },
+    { id: 'company_description', label: 'Description', description: 'Company description/about', patterns: ['description', 'about', 'overview', 'summary', 'bio'] },
+    { id: 'industry', label: 'Industry', description: 'Primary industry/sector', patterns: ['industry', 'primary industry', 'sector', 'branche', 'vertical'] },
+    { id: 'company_size', label: 'Company Size', description: 'Size range (e.g. 51-200)', patterns: ['size', 'company size', 'company_size', 'organization size'] },
+    { id: 'company_type', label: 'Company Type', description: 'Type (Private, Public, etc)', patterns: ['type', 'company type', 'organization type', 'privately held'] },
+    { id: 'hq_location', label: 'Location', description: 'Headquarters location', patterns: ['location', 'hq', 'headquarters', 'city', 'address', 'hq location'] },
+    { id: 'hq_country', label: 'Country', description: 'Country', patterns: ['country', 'land', 'nation'] },
+    { id: 'domain', label: 'Domain', description: 'Company website domain', patterns: ['domain', 'website', 'url', 'company domain', 'web'] },
+    { id: 'linkedin_url', label: 'LinkedIn URL', description: 'Company LinkedIn page', patterns: ['linkedin', 'linkedin url', 'linkedin_url', 'company linkedin', 'li_url'] },
+    { id: 'employee_count', label: 'Employee Count', description: 'Number of employees', patterns: ['employee count', 'employees', 'headcount', 'staff', 'employee_count'] },
+    { id: 'founded_year', label: 'Founded Year', description: 'Year founded', patterns: ['founded', 'founded year', 'year founded', 'established'] },
+    { id: 'revenue_range', label: 'Revenue Range', description: 'Annual revenue range', patterns: ['revenue', 'annual revenue', 'revenue range', 'turnover'] },
+    { id: 'funding_total', label: 'Total Funding', description: 'Total funding raised', patterns: ['funding', 'total funding', 'raised', 'investment'] },
+    { id: 'tech_stack', label: 'Tech Stack', description: 'Technologies used', patterns: ['tech', 'technology', 'tech stack', 'technologies', 'stack'] },
+    { id: 'tags', label: 'Tags/Focus Areas', description: 'Tags or focus areas', patterns: ['tags', 'focus', 'keywords', 'specialties', 'focus areas'] },
   ]
 };
 
@@ -161,7 +178,17 @@ Only skip columns that are truly duplicates or not useful:
 1. Investor name and firm
 2. Contact information
 3. Investment parameters (check size, focus areas)
-4. Fund type (VC, Angel, PE, etc.)`
+4. Fund type (VC, Angel, PE, etc.)`,
+
+    companies: `You are mapping company/organization data (NOT person data). This is a list of companies, not people. Prioritize:
+1. Company name (the "Name" column is the COMPANY name, not a person)
+2. Domain/website
+3. LinkedIn URL (this is the company's LinkedIn page)
+4. Industry and size
+5. Location and country
+6. Description
+
+IMPORTANT: The "Name" column = company_name (NOT a person's name). "Find companies" column should be skipped.`
   };
 
   return `You are a data mapping assistant for a nest upload system. Analyze these spreadsheet column headers and their sample data to suggest mappings to our ${nestType} database fields.
@@ -211,9 +238,9 @@ serve(async (req) => {
       );
     }
 
-    if (!nestType || !['candidates', 'prospects', 'investors'].includes(nestType)) {
+    if (!nestType || !['candidates', 'prospects', 'investors', 'companies'].includes(nestType)) {
       return new Response(
-        JSON.stringify({ error: 'Valid nestType is required (candidates, prospects, investors)' }),
+        JSON.stringify({ error: 'Valid nestType is required (candidates, prospects, investors, companies)' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

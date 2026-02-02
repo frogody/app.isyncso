@@ -371,6 +371,54 @@ async function createInvestor(supabase: any, row: MappedRow): Promise<string | n
   return data?.id;
 }
 
+// Create company from pre-mapped row data
+async function createCompany(supabase: any, row: MappedRow): Promise<string | null> {
+  const employeeCount = row.employee_count
+    ? parseInt(row.employee_count.toString().replace(/[^0-9]/g, ''), 10) || null
+    : null;
+  const foundedYear = row.founded_year
+    ? parseInt(row.founded_year.toString().replace(/[^0-9]/g, ''), 10) || null
+    : null;
+
+  // Parse tech_stack (comma or semicolon separated)
+  const techStr = row.tech_stack?.toString() || '';
+  const techStack = techStr ? techStr.split(/[,;]/).map((s: string) => s.trim()).filter(Boolean) : [];
+
+  // Parse tags
+  const tagsStr = row.tags?.toString() || '';
+  const tags = tagsStr ? tagsStr.split(/[,;]/).map((s: string) => s.trim()).filter(Boolean) : [];
+
+  const { data, error } = await supabase
+    .from('crm_companies')
+    .insert({
+      name: row.company_name || row.name || '',
+      description: row.company_description || row.description || null,
+      industry: row.industry || null,
+      company_size: row.company_size || null,
+      company_type: row.company_type || null,
+      hq_location: row.hq_location || row.location || null,
+      hq_country: row.hq_country || row.country || null,
+      domain: row.domain || null,
+      linkedin_url: row.linkedin_url || null,
+      employee_count: employeeCount,
+      founded_year: foundedYear,
+      revenue_range: row.revenue_range || null,
+      funding_total: row.funding_total || null,
+      tech_stack: techStack.length ? techStack : null,
+      tags: tags.length ? tags : null,
+      source: 'nest_upload',
+      organization_id: null, // Platform-owned
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error('Failed to create company:', error);
+    return null;
+  }
+  return data?.id;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -498,6 +546,8 @@ serve(async (req) => {
           entityId = await createProspect(supabase, row);
         } else if (nestType === 'investors') {
           entityId = await createInvestor(supabase, row);
+        } else if (nestType === 'companies') {
+          entityId = await createCompany(supabase, row);
         } else {
           throw new Error(`Unknown nest type: ${nestType}`);
         }
@@ -517,6 +567,8 @@ serve(async (req) => {
             itemData.prospect_id = entityId;
           } else if (nestType === 'investors') {
             itemData.investor_id = entityId;
+          } else if (nestType === 'companies') {
+            itemData.company_id = entityId;
           }
 
           const { error: linkError } = await supabase

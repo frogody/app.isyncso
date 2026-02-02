@@ -158,6 +158,23 @@ const NEST_TARGET_FIELDS = {
     { id: 'linkedin', label: 'LinkedIn URL', required: false, description: 'LinkedIn profile' },
     { id: 'website', label: 'Website', required: false, description: 'Firm website' },
   ],
+  companies: [
+    { id: 'company_name', label: 'Company Name', required: false, description: 'Company/organization name' },
+    { id: 'company_description', label: 'Description', required: false, description: 'Company description' },
+    { id: 'industry', label: 'Industry', required: false, description: 'Primary industry' },
+    { id: 'company_size', label: 'Company Size', required: false, description: 'Size range (e.g. 11-50 employees)' },
+    { id: 'company_type', label: 'Company Type', required: false, description: 'Public, Private, etc.' },
+    { id: 'company_hq', label: 'Location', required: false, description: 'Headquarters location' },
+    { id: 'country', label: 'Country', required: false, description: 'Country' },
+    { id: 'company_domain', label: 'Domain', required: false, description: 'Website domain' },
+    { id: 'company_linkedin', label: 'LinkedIn URL', required: false, description: 'Company LinkedIn page' },
+    { id: 'employee_count', label: 'Employee Count', required: false, description: 'Number of employees' },
+    { id: 'founded_year', label: 'Founded Year', required: false, description: 'Year founded' },
+    { id: 'revenue_range', label: 'Revenue Range', required: false, description: 'Revenue range' },
+    { id: 'funding_total', label: 'Total Funding', required: false, description: 'Total funding raised' },
+    { id: 'tech_stack', label: 'Tech Stack', required: false, description: 'Technologies used' },
+    { id: 'focus_areas', label: 'Focus Areas', required: false, description: 'Business focus areas' },
+  ],
 };
 
 const STEPS = [
@@ -271,6 +288,8 @@ export function NestUploadWizard({
       // Check for at least some identifying data
       const hasIdentifier = nestType === 'investors'
         ? (mappedData.name || mappedData.firm || mappedData.email)
+        : nestType === 'companies'
+        ? (mappedData.company_name || mappedData.name || mappedData.domain || mappedData.linkedin_url)
         : (mappedData.first_name || mappedData.last_name || mappedData.email || mappedData.company || mappedData.company_name);
 
       if (!hasIdentifier) {
