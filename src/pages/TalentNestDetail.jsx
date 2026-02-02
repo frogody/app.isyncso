@@ -49,6 +49,9 @@ import {
   ShieldAlert,
   RotateCcw,
   ChevronDown,
+  Factory,
+  Globe,
+  Hash,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
@@ -314,7 +317,7 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
         <DialogHeader>
           <DialogTitle className="text-white">Purchase Nest</DialogTitle>
           <DialogDescription className="text-zinc-400">
-            Unlock full access to {itemCount.toLocaleString()} candidate profiles
+            Unlock full access to {itemCount.toLocaleString()} {nest?.nest_type === 'companies' ? 'companies' : 'candidate profiles'}
           </DialogDescription>
         </DialogHeader>
 
@@ -324,7 +327,7 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
             <span className="text-white">{nest?.name}</span>
           </div>
           <div className="flex items-center justify-between py-3 border-b border-zinc-800">
-            <span className="text-zinc-400">Candidates</span>
+            <span className="text-zinc-400">{nest?.nest_type === 'companies' ? 'Companies' : 'Candidates'}</span>
             <span className="text-white">{itemCount.toLocaleString()}</span>
           </div>
           <div className="flex items-center justify-between py-3">
@@ -746,7 +749,7 @@ export default function TalentNestDetail() {
           <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
             <div className="flex items-center gap-3 mb-4">
               <Badge className="bg-red-500/10 text-red-400 border-red-500/20 px-3 py-1">
-                {nestType === 'candidates' ? 'Talent Dataset' : nestType === 'prospects' ? 'Sales Dataset' : 'Investor Dataset'}
+                {nestType === 'candidates' ? 'Talent Dataset' : nestType === 'prospects' ? 'Sales Dataset' : nestType === 'companies' ? 'Company Dataset' : 'Investor Dataset'}
               </Badge>
               <Badge variant="outline" className="border-zinc-700 text-zinc-400 px-3 py-1">
                 <MapPin className="w-3 h-3 mr-1" />
@@ -764,7 +767,7 @@ export default function TalentNestDetail() {
               <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.05]">
                 <Users className="w-5 h-5 text-red-400 mb-2" />
                 <p className="text-2xl font-bold text-white">{itemCount.toLocaleString()}</p>
-                <p className="text-xs text-zinc-500">Total Profiles</p>
+                <p className="text-xs text-zinc-500">{nestType === 'companies' ? 'Total Companies' : 'Total Profiles'}</p>
               </div>
               <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.05]">
                 <Brain className="w-5 h-5 text-red-400 mb-2" />
@@ -788,14 +791,21 @@ export default function TalentNestDetail() {
           <div>
             <h2 className="text-xl font-semibold text-white mb-4">What's Included</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
+              {(nestType === 'companies' ? [
+                { icon: Factory, title: "Company Intelligence", desc: "Detailed company profiles with industry classification, employee count, revenue data, and growth indicators." },
+                { icon: BarChart3, title: "Industry Analysis", desc: "Deep industry breakdowns, competitive landscape positioning, and market segment insights." },
+                { icon: Zap, title: "Tech Stack Data", desc: "Technology stack intelligence including tools, frameworks, and infrastructure used by each company." },
+                { icon: TrendingUp, title: "Enrichment Ready", desc: "All companies are pre-validated and ready for enrichment with additional data points and contact discovery." },
+                { icon: Globe, title: "Domain & Web Data", desc: "Verified company domains, website data, and online presence information." },
+                { icon: FileText, title: "Export Anytime", desc: "Export company data to CSV or integrate directly with your CRM system." },
+              ] : [
                 { icon: Brain, title: "SYNC Intel Analysis", desc: "Every profile is analyzed for job satisfaction, recruitment urgency, career trajectory, and openness to opportunities." },
                 { icon: Target, title: "Auto-Match to Roles", desc: "Add your open positions and SYNC automatically matches and scores the most relevant candidates." },
                 { icon: MessageSquare, title: "Personalized Outreach", desc: "Generate highly personalized messages for each candidate based on their background and motivations." },
                 { icon: BarChart3, title: "Deep Insights", desc: "View job satisfaction scores, promotion history, company tenure, and recruitment urgency indicators." },
                 { icon: Mail, title: "Contact Details", desc: "Full contact information including email, phone, and LinkedIn profiles for direct outreach." },
                 { icon: FileText, title: "Export Anytime", desc: "Export candidate data to CSV or integrate directly with your ATS system." },
-              ].map((feature, i) => (
+              ]).map((feature, i) => (
                 <div key={i} className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.1] transition-colors">
                   <feature.icon className="w-6 h-6 text-red-400 mb-3" />
                   <h3 className="font-medium text-white mb-1">{feature.title}</h3>
@@ -805,122 +815,204 @@ export default function TalentNestDetail() {
             </div>
           </div>
 
-          {/* Sample Profile Preview */}
+          {/* Sample Preview */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-white">Sample Profile Preview</h2>
+              <h2 className="text-xl font-semibold text-white">{nestType === 'companies' ? 'Sample Company Preview' : 'Sample Profile Preview'}</h2>
               <Badge variant="outline" className="border-zinc-700 text-zinc-500">
                 <Lock className="w-3 h-3 mr-1" />
                 Data anonymized
               </Badge>
             </div>
 
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/[0.08]">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Profile Header & Stats */}
-                <div className="lg:col-span-2 space-y-5">
-                  {/* Header */}
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 flex items-center justify-center border border-red-500/20 flex-shrink-0">
-                      <Users className="w-7 h-7 text-red-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <div className="h-5 w-32 bg-zinc-700 rounded blur-[2px]" />
-                        <div className="h-5 w-24 bg-zinc-700 rounded blur-[2px]" />
+            {nestType === 'companies' ? (
+              /* Company Card Preview */
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/[0.08]">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 space-y-5">
+                    <div className="flex items-start gap-4">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 flex items-center justify-center border border-red-500/20 flex-shrink-0">
+                        <Factory className="w-7 h-7 text-red-400" />
                       </div>
-                      <p className="text-zinc-400 mt-1">Senior Software Engineer at Tech Company</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
-                          Medium Satisfaction
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="h-5 w-40 bg-zinc-700 rounded blur-[2px]" />
+                        </div>
+                        <p className="text-zinc-400 mt-1">Technology / SaaS</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
+                            Series B
+                          </span>
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
+                            201-500 employees
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-3">
+                      {[
+                        { label: "Industry", value: "SaaS" },
+                        { label: "Size", value: "201-500" },
+                        { label: "Location", value: "Amsterdam" },
+                        { label: "Revenue", value: "€10-50M", highlight: true },
+                      ].map((stat, i) => (
+                        <div key={i} className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                          <p className="text-xs text-zinc-500 mb-1">{stat.label}</p>
+                          <p className={`text-lg font-semibold ${stat.highlight ? 'text-red-400' : 'text-white'}`}>{stat.value}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Building2 className="w-4 h-4 text-red-400" />
+                        <span className="text-sm font-medium text-white">Company Description</span>
+                      </div>
+                      <p className="text-sm text-zinc-400 leading-relaxed">
+                        A fast-growing B2B SaaS company specializing in workflow automation for enterprise clients. Recently expanded into the DACH market with a new office in Berlin.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {["React", "Node.js", "AWS", "Kubernetes", "PostgreSQL", "Terraform"].map((tech, i) => (
+                        <span key={i} className="px-3 py-1.5 rounded-lg bg-white/[0.04] text-zinc-400 text-sm border border-white/[0.05]">
+                          {tech}
                         </span>
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
-                          High Priority
-                        </span>
-                      </div>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-4 gap-3">
-                    {[
-                      { label: "Years at Company", value: "2.5" },
-                      { label: "Promotions", value: "1" },
-                      { label: "Company Changes", value: "3" },
-                      { label: "Salary Range", value: "€75-90k", highlight: true },
-                    ].map((stat, i) => (
-                      <div key={i} className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                        <p className="text-xs text-zinc-500 mb-1">{stat.label}</p>
-                        <p className={`text-lg font-semibold ${stat.highlight ? 'text-red-400' : 'text-white'}`}>{stat.value}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Assessment */}
-                  <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Target className="w-4 h-4 text-red-400" />
-                      <span className="text-sm font-medium text-white">Recruitment Assessment</span>
-                    </div>
-                    <p className="text-sm text-zinc-400 leading-relaxed">
-                      This candidate shows signs of being open to new opportunities. They've been in their current role for 2.5 years without significant growth, and their LinkedIn activity suggests active market exploration. High priority for outreach.
-                    </p>
-                  </div>
-
-                  {/* Skills */}
-                  <div className="flex flex-wrap gap-2">
-                    {["Python", "React", "AWS", "PostgreSQL", "Docker", "Kubernetes", "TypeScript", "GraphQL"].map((skill, i) => (
-                      <span key={i} className="px-3 py-1.5 rounded-lg bg-white/[0.04] text-zinc-400 text-sm border border-white/[0.05]">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Right Column - Contact & Outreach */}
-                <div className="space-y-4">
-                  {/* Contact Info */}
-                  <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                    <p className="text-sm font-medium text-white mb-3">Contact Information</p>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <Mail className="w-4 h-4 text-zinc-500" />
-                        <div className="h-4 w-full bg-zinc-700 rounded blur-[3px]" />
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Phone className="w-4 h-4 text-zinc-500" />
-                        <div className="h-4 w-24 bg-zinc-700 rounded blur-[3px]" />
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Linkedin className="w-4 h-4 text-zinc-500" />
-                        <span className="text-sm text-red-400 blur-[2px]">linkedin.com/in/████████</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <MapPin className="w-4 h-4 text-zinc-500" />
-                        <span className="text-sm text-zinc-400">Amsterdam, NL</span>
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                      <p className="text-sm font-medium text-white mb-3">Company Details</p>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <Globe className="w-4 h-4 text-zinc-500" />
+                          <div className="h-4 w-full bg-zinc-700 rounded blur-[3px]" />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <MapPin className="w-4 h-4 text-zinc-500" />
+                          <span className="text-sm text-zinc-400">Amsterdam, NL</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Users className="w-4 h-4 text-zinc-500" />
+                          <span className="text-sm text-zinc-400">201-500 employees</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Hash className="w-4 h-4 text-zinc-500" />
+                          <span className="text-sm text-zinc-400 blur-[2px]">KVK ████████</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* AI Outreach Preview */}
-                  <div className="p-4 rounded-xl bg-gradient-to-br from-red-500/10 to-red-500/5 border border-red-500/20">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Sparkles className="w-4 h-4 text-red-400" />
-                      <span className="text-sm font-medium text-white">AI-Generated Outreach</span>
+                    <div className="flex items-center justify-center gap-2 py-3">
+                      <Lock className="w-4 h-4 text-red-400" />
+                      <span className="text-sm text-zinc-500">Purchase to unlock full data</span>
                     </div>
-                    <p className="text-xs text-zinc-400 leading-relaxed italic">
-                      "Hi [Name], I noticed you've been building impressive data pipelines at Tech Company. We're scaling our engineering team and your experience with AWS and Python would be perfect for our Senior Engineer role..."
-                    </p>
-                  </div>
-
-                  {/* Lock Notice */}
-                  <div className="flex items-center justify-center gap-2 py-3">
-                    <Lock className="w-4 h-4 text-red-400" />
-                    <span className="text-sm text-zinc-500">Purchase to unlock full data</span>
                   </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              /* Profile Card Preview (original) */
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/[0.08]">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 space-y-5">
+                    <div className="flex items-start gap-4">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 flex items-center justify-center border border-red-500/20 flex-shrink-0">
+                        <Users className="w-7 h-7 text-red-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="h-5 w-32 bg-zinc-700 rounded blur-[2px]" />
+                          <div className="h-5 w-24 bg-zinc-700 rounded blur-[2px]" />
+                        </div>
+                        <p className="text-zinc-400 mt-1">Senior Software Engineer at Tech Company</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
+                            Medium Satisfaction
+                          </span>
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
+                            High Priority
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-3">
+                      {[
+                        { label: "Years at Company", value: "2.5" },
+                        { label: "Promotions", value: "1" },
+                        { label: "Company Changes", value: "3" },
+                        { label: "Salary Range", value: "€75-90k", highlight: true },
+                      ].map((stat, i) => (
+                        <div key={i} className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                          <p className="text-xs text-zinc-500 mb-1">{stat.label}</p>
+                          <p className={`text-lg font-semibold ${stat.highlight ? 'text-red-400' : 'text-white'}`}>{stat.value}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Target className="w-4 h-4 text-red-400" />
+                        <span className="text-sm font-medium text-white">Recruitment Assessment</span>
+                      </div>
+                      <p className="text-sm text-zinc-400 leading-relaxed">
+                        This candidate shows signs of being open to new opportunities. They've been in their current role for 2.5 years without significant growth, and their LinkedIn activity suggests active market exploration. High priority for outreach.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {["Python", "React", "AWS", "PostgreSQL", "Docker", "Kubernetes", "TypeScript", "GraphQL"].map((skill, i) => (
+                        <span key={i} className="px-3 py-1.5 rounded-lg bg-white/[0.04] text-zinc-400 text-sm border border-white/[0.05]">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                      <p className="text-sm font-medium text-white mb-3">Contact Information</p>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <Mail className="w-4 h-4 text-zinc-500" />
+                          <div className="h-4 w-full bg-zinc-700 rounded blur-[3px]" />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Phone className="w-4 h-4 text-zinc-500" />
+                          <div className="h-4 w-24 bg-zinc-700 rounded blur-[3px]" />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Linkedin className="w-4 h-4 text-zinc-500" />
+                          <span className="text-sm text-red-400 blur-[2px]">linkedin.com/in/████████</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <MapPin className="w-4 h-4 text-zinc-500" />
+                          <span className="text-sm text-zinc-400">Amsterdam, NL</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-red-500/10 to-red-500/5 border border-red-500/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="w-4 h-4 text-red-400" />
+                        <span className="text-sm font-medium text-white">AI-Generated Outreach</span>
+                      </div>
+                      <p className="text-xs text-zinc-400 leading-relaxed italic">
+                        "Hi [Name], I noticed you've been building impressive data pipelines at Tech Company. We're scaling our engineering team and your experience with AWS and Python would be perfect for our Senior Engineer role..."
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-2 py-3">
+                      <Lock className="w-4 h-4 text-red-400" />
+                      <span className="text-sm text-zinc-500">Purchase to unlock full data</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Ruled Out Candidates (post-purchase) */}
@@ -992,12 +1084,17 @@ export default function TalentNestDetail() {
           <div>
             <h2 className="text-xl font-semibold text-white mb-4">How It Works</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
+              {(nestType === 'companies' ? [
+                { step: 1, icon: CreditCard, title: "Purchase Nest", desc: "Get instant access to all companies" },
+                { step: 2, icon: Factory, title: "Browse Companies", desc: "Explore company profiles and data" },
+                { step: 3, icon: Sparkles, title: "Enrich Data", desc: "Add contacts, tech stack & more" },
+                { step: 4, icon: ExternalLink, title: "Export / Integrate", desc: "Export to CSV or push to CRM" },
+              ] : [
                 { step: 1, icon: CreditCard, title: "Purchase Nest", desc: "Get instant access to all profiles" },
                 { step: 2, icon: Briefcase, title: "Add Your Roles", desc: "Define your open positions" },
                 { step: 3, icon: Sparkles, title: "SYNC Matches", desc: "AI matches & scores candidates" },
                 { step: 4, icon: Rocket, title: "Reach Out", desc: "Send personalized messages" },
-              ].map((item, i) => (
+              ]).map((item, i) => (
                 <div key={i} className="relative p-5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
                   <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold">
                     {item.step}
@@ -1023,7 +1120,7 @@ export default function TalentNestDetail() {
 
               <div className="space-y-3 mb-5">
                 {[
-                  `${itemCount.toLocaleString()} candidate profiles`,
+                  `${itemCount.toLocaleString()} ${nestType === 'companies' ? 'company profiles' : 'candidate profiles'}`,
                   "SYNC Intel auto-matching",
                   "AI personalized outreach",
                   "Full contact details",
@@ -1061,24 +1158,43 @@ export default function TalentNestDetail() {
                     </div>
                   )}
 
-                  {/* Primary: Create Campaign */}
-                  <Button
-                    onClick={handleCreateCampaign}
-                    className="w-full h-11 bg-red-500 hover:bg-red-600 text-white font-medium mb-2"
-                  >
-                    <Megaphone className="w-4 h-4 mr-2" />
-                    Create Campaign
-                  </Button>
-
-                  {/* Secondary: View Candidates */}
-                  <Button
-                    onClick={goToCandidates}
-                    variant="outline"
-                    className="w-full h-10 border-red-600/50 text-red-400 hover:bg-red-600/10"
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    View Candidates
-                  </Button>
+                  {nestType === 'companies' ? (
+                    <>
+                      <Button
+                        onClick={goToCandidates}
+                        className="w-full h-11 bg-red-500 hover:bg-red-600 text-white font-medium mb-2"
+                      >
+                        <Factory className="w-4 h-4 mr-2" />
+                        View Companies
+                      </Button>
+                      <Button
+                        onClick={() => navigate(createPageUrl("TalentEnrich"))}
+                        variant="outline"
+                        className="w-full h-10 border-red-600/50 text-red-400 hover:bg-red-600/10"
+                      >
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Open in Enrich
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        onClick={handleCreateCampaign}
+                        className="w-full h-11 bg-red-500 hover:bg-red-600 text-white font-medium mb-2"
+                      >
+                        <Megaphone className="w-4 h-4 mr-2" />
+                        Create Campaign
+                      </Button>
+                      <Button
+                        onClick={goToCandidates}
+                        variant="outline"
+                        className="w-full h-10 border-red-600/50 text-red-400 hover:bg-red-600/10"
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        View Candidates
+                      </Button>
+                    </>
+                  )}
 
                   <p className="text-xs text-red-500 text-center mt-3">
                     ✓ You own this nest
@@ -1150,7 +1266,7 @@ export default function TalentNestDetail() {
                     </Badge>
                   )}
                 </div>
-                <p className="text-xs text-zinc-500">{itemCount.toLocaleString()} profiles owned</p>
+                <p className="text-xs text-zinc-500">{itemCount.toLocaleString()} {nestType === 'companies' ? 'companies' : 'profiles'} owned</p>
               </>
             ) : (
               <>

@@ -5,7 +5,7 @@ import {
   Sparkles, Plus, Search, ArrowLeft, MoreHorizontal, Play, Download,
   GripVertical, Type, Zap, Brain, FunctionSquare, Columns3, Trash2,
   Edit2, Settings, ChevronDown, Check, X, Loader2, AlertCircle,
-  Table2, Clock, Hash, Upload, FileUp
+  Table2, Clock, Hash, Upload, FileUp, Database, Pencil
 } from 'lucide-react';
 import {
   RaiseCard, RaiseCardContent, RaiseCardHeader, RaiseCardTitle,
@@ -56,12 +56,12 @@ const SOURCE_FIELDS = [
 ];
 
 const ENRICHMENT_FUNCTIONS = [
-  { value: 'fullEnrichFromLinkedIn', label: 'Full Enrich (LinkedIn)', inputType: 'linkedin' },
-  { value: 'fullEnrichFromEmail', label: 'Full Enrich (Email)', inputType: 'email' },
-  { value: 'enrichCompanyOnly', label: 'Company Enrich', inputType: 'company' },
-  { value: 'matchProspect', label: 'Match Prospect', inputType: 'multi' },
-  { value: 'enrichProspectContact', label: 'Prospect Contact', inputType: 'prospect_id' },
-  { value: 'enrichProspectProfile', label: 'Prospect Profile', inputType: 'prospect_id' },
+  { value: 'fullEnrichFromLinkedIn', label: 'Full Enrich (LinkedIn)', inputType: 'linkedin', desc: 'Full profile + company data from LinkedIn URL' },
+  { value: 'fullEnrichFromEmail', label: 'Full Enrich (Email)', inputType: 'email', desc: 'Full profile + company data from email address' },
+  { value: 'enrichCompanyOnly', label: 'Company Enrich', inputType: 'company', desc: 'Company data only (no person info)' },
+  { value: 'matchProspect', label: 'Match Prospect', inputType: 'multi', desc: 'Find matching prospect by name/company' },
+  { value: 'enrichProspectContact', label: 'Prospect Contact', inputType: 'prospect_id', desc: 'Get contact details (email, phone)' },
+  { value: 'enrichProspectProfile', label: 'Prospect Profile', inputType: 'prospect_id', desc: 'Get professional profile data' },
 ];
 
 const COLUMN_TYPES = [
@@ -78,42 +78,89 @@ const COLUMN_TYPE_ICONS = { field: Type, enrichment: Zap, ai: Brain, formula: Fu
 function evaluateFormula(expression, columnMap) {
   if (!expression) return '';
   let resolved = expression;
-  const refPattern = /\{\{(.+?)\}\}/g;
-  let match;
-  while ((match = refPattern.exec(expression)) !== null) {
-    const colName = match[1].trim();
-    const val = columnMap[colName] ?? '';
-    resolved = resolved.replace(match[0], String(val));
-  }
+
+  // Support /ColumnName syntax (primary) and {{ColumnName}} (legacy)
+  // /ColumnName — matches /word characters until space-comma-paren or end
+  resolved = resolved.replace(/\/([A-Za-z0-9_][A-Za-z0-9_ ]*?)(?=\s*[,)"']|$|\s*[><=!])/g, (_, name) => {
+    const val = columnMap[name.trim()] ?? '';
+    return String(val);
+  });
+  // {{ColumnName}} legacy support
+  resolved = resolved.replace(/\{\{(.+?)\}\}/g, (_, name) => {
+    const val = columnMap[name.trim()] ?? '';
+    return String(val);
+  });
+
   resolved = resolved.replace(/^=/, '').trim();
 
-  // CONCAT
-  const concatMatch = resolved.match(/^CONCAT\((.+)\)$/i);
-  if (concatMatch) {
-    return concatMatch[1].split(',').map(s => s.trim().replace(/^"|"$/g, '')).join('');
+  try {
+    // CONCAT
+    const concatMatch = resolved.match(/^CONCAT\((.+)\)$/i);
+    if (concatMatch) {
+      return concatMatch[1].split(',').map(s => s.trim().replace(/^"|"$/g, '')).join('');
+    }
+    // UPPER
+    const upperMatch = resolved.match(/^UPPER\((.+)\)$/i);
+    if (upperMatch) return upperMatch[1].replace(/^"|"$/g, '').toUpperCase();
+    // LOWER
+    const lowerMatch = resolved.match(/^LOWER\((.+)\)$/i);
+    if (lowerMatch) return lowerMatch[1].replace(/^"|"$/g, '').toLowerCase();
+    // TRIM
+    const trimMatch = resolved.match(/^TRIM\((.+)\)$/i);
+    if (trimMatch) return trimMatch[1].replace(/^"|"$/g, '').trim();
+    // LEN
+    const lenMatch = resolved.match(/^LEN\((.+)\)$/i);
+    if (lenMatch) return String(lenMatch[1].replace(/^"|"$/g, '').length);
+    // LEFT
+    const leftMatch = resolved.match(/^LEFT\((.+?),\s*(\d+)\)$/i);
+    if (leftMatch) return leftMatch[1].replace(/^"|"$/g, '').substring(0, parseInt(leftMatch[2]));
+    // RIGHT
+    const rightMatch = resolved.match(/^RIGHT\((.+?),\s*(\d+)\)$/i);
+    if (rightMatch) { const s = rightMatch[1].replace(/^"|"$/g, ''); return s.substring(s.length - parseInt(rightMatch[2])); }
+    // REPLACE
+    const replaceMatch = resolved.match(/^REPLACE\((.+?),\s*(.+?),\s*(.+)\)$/i);
+    if (replaceMatch) {
+      const str = replaceMatch[1].replace(/^"|"$/g, '');
+      const find = replaceMatch[2].trim().replace(/^"|"$/g, '');
+      const rep = replaceMatch[3].trim().replace(/^"|"$/g, '');
+      return str.replaceAll(find, rep);
+    }
+    // ROUND
+    const roundMatch = resolved.match(/^ROUND\((.+?),?\s*(\d*)\)$/i);
+    if (roundMatch) {
+      const num = parseFloat(roundMatch[1]);
+      const dec = parseInt(roundMatch[2] || '0');
+      return isNaN(num) ? '' : num.toFixed(dec);
+    }
+    // CONTAINS
+    const containsMatch = resolved.match(/^CONTAINS\((.+?),\s*(.+)\)$/i);
+    if (containsMatch) {
+      const haystack = containsMatch[1].replace(/^"|"$/g, '');
+      const needle = containsMatch[2].trim().replace(/^"|"$/g, '');
+      return haystack.toLowerCase().includes(needle.toLowerCase()) ? 'TRUE' : 'FALSE';
+    }
+    // IF — supports comparison operators
+    const ifMatch = resolved.match(/^IF\((.+?),\s*(.+?),\s*(.+)\)$/i);
+    if (ifMatch) {
+      let cond = ifMatch[1].trim();
+      const yes = ifMatch[2].trim().replace(/^"|"$/g, '');
+      const no = ifMatch[3].trim().replace(/^"|"$/g, '');
+      // Evaluate comparisons: >, <, >=, <=, ==, !=
+      const cmpMatch = cond.match(/^(.+?)\s*(>=|<=|!=|==|>|<)\s*(.+)$/);
+      if (cmpMatch) {
+        const a = parseFloat(cmpMatch[1]) || cmpMatch[1].replace(/^"|"$/g, '');
+        const b = parseFloat(cmpMatch[3]) || cmpMatch[3].replace(/^"|"$/g, '');
+        const op = cmpMatch[2];
+        const result = op === '>' ? a > b : op === '<' ? a < b : op === '>=' ? a >= b : op === '<=' ? a <= b : op === '==' ? a == b : op === '!=' ? a != b : false;
+        return result ? yes : no;
+      }
+      cond = cond.replace(/^"|"$/g, '');
+      return (cond && cond !== 'FALSE' && cond !== '0' && cond !== '') ? yes : no;
+    }
+    return resolved;
+  } catch (err) {
+    return `#ERROR: ${err.message}`;
   }
-  // UPPER
-  const upperMatch = resolved.match(/^UPPER\((.+)\)$/i);
-  if (upperMatch) return upperMatch[1].replace(/^"|"$/g, '').toUpperCase();
-  // LOWER
-  const lowerMatch = resolved.match(/^LOWER\((.+)\)$/i);
-  if (lowerMatch) return lowerMatch[1].replace(/^"|"$/g, '').toLowerCase();
-  // CONTAINS
-  const containsMatch = resolved.match(/^CONTAINS\((.+?),\s*(.+)\)$/i);
-  if (containsMatch) {
-    const haystack = containsMatch[1].replace(/^"|"$/g, '');
-    const needle = containsMatch[2].trim().replace(/^"|"$/g, '');
-    return haystack.toLowerCase().includes(needle.toLowerCase()) ? 'TRUE' : 'FALSE';
-  }
-  // IF
-  const ifMatch = resolved.match(/^IF\((.+?),\s*(.+?),\s*(.+)\)$/i);
-  if (ifMatch) {
-    const cond = ifMatch[1].trim().replace(/^"|"$/g, '');
-    const yes = ifMatch[2].trim().replace(/^"|"$/g, '');
-    const no = ifMatch[3].trim().replace(/^"|"$/g, '');
-    return (cond && cond !== 'FALSE' && cond !== '0' && cond !== '') ? yes : no;
-  }
-  return resolved;
 }
 
 // ─── Enrichment Runner ───────────────────────────────────────────────────────
@@ -608,6 +655,8 @@ export default function RaiseEnrich() {
   // ─── Delete column ─────────────────────────────────────────────────────
 
   const deleteColumn = useCallback(async (colId) => {
+    const col = columns.find(c => c.id === colId);
+    if (!window.confirm(`Delete column "${col?.name || 'Untitled'}" and all its data?`)) return;
     try {
       await supabase.from('enrich_cells').delete().eq('column_id', colId);
       await supabase.from('enrich_columns').delete().eq('id', colId);
@@ -617,7 +666,7 @@ export default function RaiseEnrich() {
       console.error('Error deleting column:', err);
       toast.error('Failed to delete column');
     }
-  }, [activeWorkspaceId, loadWorkspaceDetail]);
+  }, [activeWorkspaceId, loadWorkspaceDetail, columns]);
 
   // ─── Cell value helpers ────────────────────────────────────────────────
 
@@ -688,6 +737,7 @@ export default function RaiseEnrich() {
       }
     } catch (err) {
       console.error('Error saving cell:', err);
+      toast.error('Failed to save cell');
     }
   }, [cells, cellKey]);
 
@@ -872,9 +922,9 @@ export default function RaiseEnrich() {
   // ─── Status dot component ──────────────────────────────────────────────
 
   const StatusDot = ({ status }) => {
-    if (status === 'pending') return <span className="inline-block w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />;
-    if (status === 'error') return <span className="inline-block w-2 h-2 rounded-full bg-red-400" />;
-    if (status === 'complete') return <span className="inline-block w-2 h-2 rounded-full bg-green-400" />;
+    if (status === 'pending') return <span title="Enrichment pending..." className="inline-block w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />;
+    if (status === 'error') return <span title="Error — click to retry" className="inline-block w-2 h-2 rounded-full bg-red-400" />;
+    if (status === 'complete') return <span title="Complete" className="inline-block w-2 h-2 rounded-full bg-green-400" />;
     return null;
   };
 
@@ -946,8 +996,8 @@ export default function RaiseEnrich() {
                       <div
                         onClick={() => setActiveWorkspaceId(ws.id)}
                         className={rt(
-                          'p-5 rounded-2xl border border-gray-200 bg-white hover:border-orange-300 cursor-pointer transition-all',
-                          'p-5 rounded-2xl border border-zinc-800/60 bg-zinc-900/50 hover:border-orange-500/40 cursor-pointer transition-all'
+                          'p-5 rounded-2xl border border-gray-200 bg-white hover:border-orange-300 cursor-pointer transition-all group/card',
+                          'p-5 rounded-2xl border border-zinc-800/60 bg-zinc-900/50 hover:border-orange-500/40 cursor-pointer transition-all group/card'
                         )}
                       >
                         <div className="flex items-start justify-between mb-3">
@@ -957,6 +1007,29 @@ export default function RaiseEnrich() {
                             </div>
                             <h3 className={rt('text-sm font-semibold text-gray-900', 'text-sm font-semibold text-white')}>{ws.name}</h3>
                           </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!window.confirm(`Delete workspace "${ws.name}" and all its data?`)) return;
+                              (async () => {
+                                try {
+                                  await supabase.from('enrich_cells').delete().eq('row_id', 'dummy').or(`column_id.in.(select id from enrich_columns where workspace_id='${ws.id}')`);
+                                  await supabase.from('enrich_cells').delete().in('row_id', (await supabase.from('enrich_rows').select('id').eq('workspace_id', ws.id)).data?.map(r => r.id) || []);
+                                  await supabase.from('enrich_rows').delete().eq('workspace_id', ws.id);
+                                  await supabase.from('enrich_columns').delete().eq('workspace_id', ws.id);
+                                  await supabase.from('enrich_workspaces').delete().eq('id', ws.id);
+                                  toast.success('Workspace deleted');
+                                  loadWorkspaces();
+                                } catch (err) {
+                                  console.error('Error deleting workspace:', err);
+                                  toast.error('Failed to delete workspace');
+                                }
+                              })();
+                            }}
+                            className="p-1.5 rounded-lg opacity-0 group-hover/card:opacity-100 transition-opacity hover:bg-red-500/10 text-zinc-500 hover:text-red-400"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                         <div className="flex items-center gap-4 text-xs text-zinc-400">
                           <span className="flex items-center gap-1">
@@ -1064,15 +1137,17 @@ export default function RaiseEnrich() {
                   )}
                 />
               ) : (
-                <h2
-                  onClick={() => setEditingName(true)}
-                  className={rt(
-                    'text-sm font-semibold text-gray-900 cursor-pointer hover:text-orange-600',
-                    'text-sm font-semibold text-white cursor-pointer hover:text-orange-400'
-                  )}
-                >
-                  {wsName}
-                </h2>
+                <div className="flex items-center gap-1.5 group/name cursor-pointer" onClick={() => setEditingName(true)}>
+                  <h2
+                    className={rt(
+                      'text-sm font-semibold text-gray-900 hover:text-orange-600',
+                      'text-sm font-semibold text-white hover:text-orange-400'
+                    )}
+                  >
+                    {wsName}
+                  </h2>
+                  <Pencil className="w-3 h-3 text-zinc-500 opacity-0 group-hover/name:opacity-100 transition-opacity" />
+                </div>
               )}
               {nestName && (
                 <RaiseBadge variant="outline" className="text-[10px]">{nestName}</RaiseBadge>
@@ -1097,6 +1172,26 @@ export default function RaiseEnrich() {
               <RaiseButton variant="ghost" size="sm" onClick={exportCSV}>
                 <Download className="w-3.5 h-3.5 mr-1" /> CSV
               </RaiseButton>
+              <RaiseButton variant="ghost" size="sm" onClick={() => {
+                if (!window.confirm(`Delete workspace "${wsName}" and all its data? This cannot be undone.`)) return;
+                (async () => {
+                  try {
+                    const rowIds = rows.map(r => r.id);
+                    if (rowIds.length) await supabase.from('enrich_cells').delete().in('row_id', rowIds);
+                    await supabase.from('enrich_rows').delete().eq('workspace_id', activeWorkspaceId);
+                    await supabase.from('enrich_columns').delete().eq('workspace_id', activeWorkspaceId);
+                    await supabase.from('enrich_workspaces').delete().eq('id', activeWorkspaceId);
+                    toast.success('Workspace deleted');
+                    setActiveWorkspaceId(null); setWorkspace(null); setColumns([]); setRows([]); setCells({});
+                    loadWorkspaces();
+                  } catch (err) {
+                    console.error('Error deleting workspace:', err);
+                    toast.error('Failed to delete workspace');
+                  }
+                })();
+              }} className="text-red-400 hover:text-red-300">
+                <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
+              </RaiseButton>
             </div>
           </div>
         </div>
@@ -1107,13 +1202,49 @@ export default function RaiseEnrich() {
             <Loader2 className="w-6 h-6 text-orange-400 animate-spin" />
           </div>
         ) : rows.length === 0 && columns.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center">
-            <RaiseEmptyState
-              icon={<Table2 className="w-6 h-6" />}
-              title="Empty workspace"
-              message={workspace?.nest_id ? 'Import candidates from the linked nest or upload a CSV file' : 'Upload a CSV file to populate your workspace'}
-              action={{ label: 'Import CSV', onClick: () => csvInputRef.current?.click() }}
-            />
+          <div className="flex-1 flex items-center justify-center px-6">
+            <div className="text-center">
+              <Table2 className={rt('w-10 h-10 text-gray-300 mx-auto mb-3', 'w-10 h-10 text-zinc-600 mx-auto mb-3')} />
+              <h3 className={rt('text-sm font-semibold text-gray-900 mb-1', 'text-sm font-semibold text-white mb-1')}>Empty workspace</h3>
+              <p className="text-xs text-zinc-500 mb-6">Get started by importing data or adding columns</p>
+              <div className="flex items-center gap-3 justify-center">
+                {workspace?.nest_id && (
+                  <button
+                    onClick={importFromNest}
+                    className={rt(
+                      'flex flex-col items-center gap-2 p-5 rounded-2xl border border-gray-200 bg-white hover:border-orange-300 transition-all w-44',
+                      'flex flex-col items-center gap-2 p-5 rounded-2xl border border-zinc-800/60 bg-zinc-900/50 hover:border-orange-500/40 transition-all w-44'
+                    )}
+                  >
+                    <Database className="w-5 h-5 text-orange-400" />
+                    <span className={rt('text-xs font-medium text-gray-900', 'text-xs font-medium text-white')}>Import from Nest</span>
+                    <span className="text-[10px] text-zinc-500">Pull candidates from linked nest</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => csvInputRef.current?.click()}
+                  className={rt(
+                    'flex flex-col items-center gap-2 p-5 rounded-2xl border border-gray-200 bg-white hover:border-orange-300 transition-all w-44',
+                    'flex flex-col items-center gap-2 p-5 rounded-2xl border border-zinc-800/60 bg-zinc-900/50 hover:border-orange-500/40 transition-all w-44'
+                  )}
+                >
+                  <FileUp className="w-5 h-5 text-orange-400" />
+                  <span className={rt('text-xs font-medium text-gray-900', 'text-xs font-medium text-white')}>Upload CSV</span>
+                  <span className="text-[10px] text-zinc-500">Import rows from a CSV file</span>
+                </button>
+                <button
+                  onClick={() => { setColDialogOpen(true); setColType('field'); setColName(''); setColConfig({}); }}
+                  className={rt(
+                    'flex flex-col items-center gap-2 p-5 rounded-2xl border border-gray-200 bg-white hover:border-orange-300 transition-all w-44',
+                    'flex flex-col items-center gap-2 p-5 rounded-2xl border border-zinc-800/60 bg-zinc-900/50 hover:border-orange-500/40 transition-all w-44'
+                  )}
+                >
+                  <Plus className="w-5 h-5 text-orange-400" />
+                  <span className={rt('text-xs font-medium text-gray-900', 'text-xs font-medium text-white')}>Add Column</span>
+                  <span className="text-[10px] text-zinc-500">Start building your schema</span>
+                </button>
+              </div>
+            </div>
           </div>
         ) : (
           <div
@@ -1133,8 +1264,8 @@ export default function RaiseEnrich() {
               {/* Row # header */}
               <div
                 className={rt(
-                  'flex-shrink-0 flex items-center justify-center text-[10px] font-medium text-gray-400 border-r border-gray-200',
-                  'flex-shrink-0 flex items-center justify-center text-[10px] font-medium text-zinc-500 border-r border-zinc-800/60'
+                  'flex-shrink-0 flex items-center justify-center text-xs font-medium text-gray-400 border-r border-gray-200',
+                  'flex-shrink-0 flex items-center justify-center text-xs font-medium text-zinc-500 border-r border-zinc-800/60'
                 )}
                 style={{ width: ROW_NUM_WIDTH, height: ROW_HEIGHT }}
               >
@@ -1151,7 +1282,7 @@ export default function RaiseEnrich() {
                     )}
                     style={{ width: col.width || DEFAULT_COL_WIDTH, height: ROW_HEIGHT }}
                   >
-                    <Icon className="w-3 h-3 text-zinc-500 flex-shrink-0" />
+                    <Icon className={`w-3 h-3 flex-shrink-0 ${col.type === 'field' ? 'text-blue-400' : col.type === 'enrichment' ? 'text-amber-400' : col.type === 'ai' ? 'text-purple-400' : 'text-green-400'}`} />
                     <span className="truncate flex-1">{col.name}</span>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -1178,7 +1309,7 @@ export default function RaiseEnrich() {
                     {/* Resize handle */}
                     <div
                       onMouseDown={(e) => onResizeStart(e, col)}
-                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-orange-500/50 z-10"
+                      className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-orange-500/50 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                     />
                   </div>
                 );
@@ -1209,8 +1340,8 @@ export default function RaiseEnrich() {
                     {/* Row number */}
                     <div
                       className={rt(
-                        'flex-shrink-0 flex items-center justify-center text-[10px] text-gray-400 border-r border-b border-gray-200 bg-gray-50/50',
-                        'flex-shrink-0 flex items-center justify-center text-[10px] text-zinc-500 border-r border-b border-zinc-800/60 bg-zinc-950/50'
+                        'flex-shrink-0 flex items-center justify-center text-xs text-gray-400 border-r border-b border-gray-200 bg-gray-50/50',
+                        'flex-shrink-0 flex items-center justify-center text-xs text-zinc-500 border-r border-b border-zinc-800/60 bg-zinc-950/50'
                       )}
                       style={{ width: ROW_NUM_WIDTH }}
                     >
@@ -1227,8 +1358,8 @@ export default function RaiseEnrich() {
                           key={col.id}
                           className={`flex-shrink-0 flex items-center px-2 font-mono text-sm border-r border-b ${
                             rt(
-                              `border-gray-200 ${isSelected ? 'ring-2 ring-orange-400/50 ring-inset bg-orange-50/20' : 'bg-white'}`,
-                              `border-zinc-800/60 ${isSelected ? 'ring-2 ring-orange-500/50 ring-inset bg-orange-500/5' : ''}`
+                              `border-gray-200 ${isEditing ? 'ring-2 ring-cyan-400 ring-inset bg-cyan-50/20' : isSelected ? 'ring-2 ring-cyan-400 ring-inset bg-cyan-50/10' : 'bg-white'}`,
+                              `border-zinc-800/60 ${isEditing ? 'ring-2 ring-cyan-400 ring-inset bg-white/10' : isSelected ? 'ring-2 ring-cyan-400 ring-inset bg-cyan-500/5' : ''}`
                             )
                           }`}
                           style={{ width: col.width || DEFAULT_COL_WIDTH }}
@@ -1363,6 +1494,9 @@ export default function RaiseEnrich() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {colConfig.function && (
+                      <p className="text-[10px] text-zinc-500 mt-1">{ENRICHMENT_FUNCTIONS.find(f => f.value === colConfig.function)?.desc}</p>
+                    )}
                   </div>
                   <div>
                     <Label className={rt('text-gray-700', 'text-zinc-300')}>Input Column</Label>
@@ -1396,11 +1530,11 @@ export default function RaiseEnrich() {
                     <Textarea
                       value={colConfig.prompt || ''}
                       onChange={e => setColConfig(prev => ({ ...prev, prompt: e.target.value }))}
-                      placeholder={'Use {{ColumnName}} to reference other columns.\ne.g. Based on {{Company}} and {{Title}}, write a one-line pitch'}
+                      placeholder={'Use /ColumnName to reference other columns.\ne.g. Based on /Company and /Title, write a one-line pitch'}
                       rows={4}
                       className={rt('', 'bg-zinc-800 border-zinc-700 text-white')}
                     />
-                    <p className="text-[10px] text-zinc-500 mt-1">Reference columns with {'{{ColumnName}}'} syntax</p>
+                    <p className="text-[10px] text-zinc-500 mt-1">Reference columns with /ColumnName syntax</p>
                   </div>
                   <div>
                     <Label className={rt('text-gray-700', 'text-zinc-300')}>Input Columns</Label>
@@ -1439,10 +1573,10 @@ export default function RaiseEnrich() {
                   <Input
                     value={colConfig.expression || ''}
                     onChange={e => setColConfig({ expression: e.target.value })}
-                    placeholder='=CONCAT({{First Name}}, " ", {{Last Name}})'
+                    placeholder='=CONCAT(/First Name, " ", /Last Name)'
                     className={rt('font-mono', 'bg-zinc-800 border-zinc-700 text-white font-mono')}
                   />
-                  <p className="text-[10px] text-zinc-500 mt-1">Supported: CONCAT, IF, UPPER, LOWER, CONTAINS. Use {'{{ColumnName}}'} for refs.</p>
+                  <p className="text-[10px] text-zinc-500 mt-1">Use /ColumnName for refs. Functions: CONCAT, IF, UPPER, LOWER, TRIM, LEN, LEFT, RIGHT, REPLACE, ROUND, CONTAINS</p>
                 </div>
               )}
 

@@ -25,6 +25,7 @@ import {
   Sparkles,
   X,
   Star,
+  Factory,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +70,12 @@ const NEST_TYPE_CONFIG = {
     label: 'Investor Nests',
     description: 'Investor contacts for fundraising',
     color: 'text-red-400 bg-red-500/20 border-red-500/30',
+  },
+  companies: {
+    icon: Factory,
+    label: 'Company Nests',
+    description: 'Curated company datasets for account-based strategies',
+    color: 'text-cyan-400 bg-cyan-500/20 border-cyan-500/30',
   },
 };
 
@@ -246,41 +253,73 @@ function NestPreviewModal({ nest, open, onOpenChange }) {
     }
   }, [open, nest?.id]);
 
+  const isCompanyNest = nest?.nest_type === 'companies';
+
   const fetchPreview = async () => {
     setLoading(true);
     try {
-      // Try to get preview candidates from nest_items with is_preview flag
-      const { data } = await supabase
-        .from('nest_items')
-        .select('preview_data, candidate_id')
-        .eq('nest_id', nest.id)
-        .eq('is_preview', true)
-        .limit(5);
-
-      if (data?.length > 0) {
-        setPreviewCandidates(data.map(d => d.preview_data).filter(Boolean));
-      } else {
-        // Fallback: get sample from candidates linked to this nest
-        const { data: candidateData } = await supabase
-          .from('candidates')
-          .select('id, full_name, title, company, location, skills')
-          .eq('import_source', `nest:${nest.id}`)
+      if (isCompanyNest) {
+        // Fetch company preview items
+        const { data } = await supabase
+          .from('nest_items')
+          .select('preview_data, company_id, crm_companies(*)')
+          .eq('nest_id', nest.id)
+          .eq('is_preview', true)
+          .not('company_id', 'is', null)
           .limit(5);
 
-        if (candidateData?.length > 0) {
-          setPreviewCandidates(candidateData.map(c => ({
-            name: c.full_name,
-            title: c.title,
-            company: c.company,
-            location: c.location,
-            skills: c.skills || [],
-          })));
+        if (data?.length > 0) {
+          setPreviewCandidates(data.map(d => {
+            if (d.preview_data) return d.preview_data;
+            const c = d.crm_companies;
+            if (!c) return null;
+            return {
+              name: c.name,
+              industry: c.industry,
+              company_size: c.company_size,
+              hq_location: c.hq_location,
+              domain: c.domain,
+              linkedin_url: c.linkedin_url,
+            };
+          }).filter(Boolean));
         } else {
-          // Generate mock preview data for demo
           setPreviewCandidates([
-            { name: 'Sample Candidate', title: 'Senior Engineer', location: 'Remote', skills: ['React', 'Node.js'] },
-            { name: 'Another Candidate', title: 'Product Manager', location: 'New York', skills: ['Agile', 'Strategy'] },
+            { name: 'Sample Company', industry: 'Technology', hq_location: 'Amsterdam', domain: 'example.com' },
           ]);
+        }
+      } else {
+        // Try to get preview candidates from nest_items with is_preview flag
+        const { data } = await supabase
+          .from('nest_items')
+          .select('preview_data, candidate_id')
+          .eq('nest_id', nest.id)
+          .eq('is_preview', true)
+          .limit(5);
+
+        if (data?.length > 0) {
+          setPreviewCandidates(data.map(d => d.preview_data).filter(Boolean));
+        } else {
+          // Fallback: get sample from candidates linked to this nest
+          const { data: candidateData } = await supabase
+            .from('candidates')
+            .select('id, full_name, title, company, location, skills')
+            .eq('import_source', `nest:${nest.id}`)
+            .limit(5);
+
+          if (candidateData?.length > 0) {
+            setPreviewCandidates(candidateData.map(c => ({
+              name: c.full_name,
+              title: c.title,
+              company: c.company,
+              location: c.location,
+              skills: c.skills || [],
+            })));
+          } else {
+            setPreviewCandidates([
+              { name: 'Sample Candidate', title: 'Senior Engineer', location: 'Remote', skills: ['React', 'Node.js'] },
+              { name: 'Another Candidate', title: 'Product Manager', location: 'New York', skills: ['Agile', 'Strategy'] },
+            ]);
+          }
         }
       }
     } catch (err) {
@@ -296,7 +335,7 @@ function NestPreviewModal({ nest, open, onOpenChange }) {
         <DialogHeader>
           <DialogTitle className="text-white">{nest?.name}</DialogTitle>
           <DialogDescription className="text-zinc-400">
-            Preview of sample candidates in this nest
+            Preview of sample {isCompanyNest ? 'companies' : 'candidates'} in this nest
           </DialogDescription>
         </DialogHeader>
 
@@ -306,38 +345,64 @@ function NestPreviewModal({ nest, open, onOpenChange }) {
               <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
             </div>
           ) : previewCandidates.length > 0 ? (
-            previewCandidates.map((candidate, i) => (
+            previewCandidates.map((item, i) => (
               <div key={i} className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-700">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                    {candidate.name?.split(' ').map(n => n[0]).join('').substring(0, 2) || '??'}
+                {isCompanyNest ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                      <Factory className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-white truncate">{item.name || 'Unknown Company'}</p>
+                      <p className="text-sm text-zinc-400 truncate">
+                        {[item.industry, item.company_size].filter(Boolean).join(' · ') || 'Company'}
+                      </p>
+                      {item.hq_location && (
+                        <p className="text-xs text-zinc-500 truncate">{item.hq_location}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {item.domain && (
+                        <Badge className="bg-zinc-700 text-zinc-300 text-xs">
+                          {item.domain}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-white truncate">{candidate.name || 'Anonymous'}</p>
-                    <p className="text-sm text-zinc-400 truncate">{candidate.title || 'Professional'}</p>
-                    {candidate.company && (
-                      <p className="text-xs text-zinc-500 truncate">at {candidate.company}</p>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                        {item.name?.split(' ').map(n => n[0]).join('').substring(0, 2) || '??'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-white truncate">{item.name || 'Anonymous'}</p>
+                        <p className="text-sm text-zinc-400 truncate">{item.title || 'Professional'}</p>
+                        {item.company && (
+                          <p className="text-xs text-zinc-500 truncate">at {item.company}</p>
+                        )}
+                      </div>
+                      {item.location && (
+                        <Badge className="bg-zinc-700 text-zinc-300 text-xs shrink-0">
+                          {item.location}
+                        </Badge>
+                      )}
+                    </div>
+                    {item.skills?.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {item.skills.slice(0, 4).map((skill, j) => (
+                          <Badge key={j} className="bg-red-500/20 text-red-400 text-[10px]">
+                            {skill}
+                          </Badge>
+                        ))}
+                        {item.skills.length > 4 && (
+                          <Badge className="bg-zinc-700 text-zinc-400 text-[10px]">
+                            +{item.skills.length - 4}
+                          </Badge>
+                        )}
+                      </div>
                     )}
-                  </div>
-                  {candidate.location && (
-                    <Badge className="bg-zinc-700 text-zinc-300 text-xs shrink-0">
-                      {candidate.location}
-                    </Badge>
-                  )}
-                </div>
-                {candidate.skills?.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {candidate.skills.slice(0, 4).map((skill, j) => (
-                      <Badge key={j} className="bg-red-500/20 text-red-400 text-[10px]">
-                        {skill}
-                      </Badge>
-                    ))}
-                    {candidate.skills.length > 4 && (
-                      <Badge className="bg-zinc-700 text-zinc-400 text-[10px]">
-                        +{candidate.skills.length - 4}
-                      </Badge>
-                    )}
-                  </div>
+                  </>
                 )}
               </div>
             ))
@@ -348,7 +413,7 @@ function NestPreviewModal({ nest, open, onOpenChange }) {
 
         <div className="flex justify-between pt-4 border-t border-zinc-800">
           <p className="text-sm text-zinc-400">
-            {nest?.item_count || 0} total candidates
+            {nest?.item_count || 0} total {isCompanyNest ? 'companies' : 'candidates'}
           </p>
           <Button
             onClick={() => {
@@ -629,6 +694,7 @@ export default function NestsMarketplace() {
     candidates: nests.filter(n => n.nest_type === 'candidates').length,
     prospects: nests.filter(n => n.nest_type === 'prospects').length,
     investors: nests.filter(n => n.nest_type === 'investors').length,
+    companies: nests.filter(n => n.nest_type === 'companies').length,
   };
 
   return (
@@ -730,6 +796,10 @@ export default function NestsMarketplace() {
               <TabsTrigger value="investors" className="data-[state=active]:bg-white/10">
                 <Building2 className="w-4 h-4 mr-2" />
                 Investors
+              </TabsTrigger>
+              <TabsTrigger value="companies" className="data-[state=active]:bg-white/10">
+                <Factory className="w-4 h-4 mr-2" />
+                Companies
               </TabsTrigger>
             </TabsList>
           </Tabs>

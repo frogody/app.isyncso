@@ -30,6 +30,7 @@ import {
   Sparkles,
   FileSpreadsheet,
   X,
+  Download,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FileUploader } from '@/components/import/FileUploader';
@@ -85,53 +86,53 @@ function formatErrorMessage(error) {
 // Target fields for each nest type - must match map-nest-columns edge function
 const NEST_TARGET_FIELDS = {
   candidates: [
-    // Person basic info
-    { id: 'first_name', label: 'First Name', required: false, description: 'Person\'s first name' },
-    { id: 'last_name', label: 'Last Name', required: false, description: 'Person\'s last name' },
-    { id: 'email', label: 'Email', required: false, description: 'Person\'s email address' },
-    { id: 'phone', label: 'Phone', required: false, description: 'Phone number' },
-    { id: 'linkedin_profile', label: 'LinkedIn Profile', required: false, description: 'Person\'s LinkedIn profile URL' },
-    { id: 'profile_image_url', label: 'Profile Image', required: false, description: 'Profile photo URL' },
+    // Contact
+    { id: 'first_name', label: 'First Name', required: false, description: 'Person\'s first name', group: 'Contact' },
+    { id: 'last_name', label: 'Last Name', required: false, description: 'Person\'s last name', group: 'Contact' },
+    { id: 'email', label: 'Email', required: false, description: 'Person\'s email address', group: 'Contact' },
+    { id: 'phone', label: 'Phone', required: false, description: 'Phone number', group: 'Contact' },
+    { id: 'linkedin_profile', label: 'LinkedIn Profile', required: false, description: 'Person\'s LinkedIn profile URL', group: 'Contact' },
+    { id: 'profile_image_url', label: 'Profile Image', required: false, description: 'Profile photo URL', group: 'Contact' },
 
-    // Person professional info
-    { id: 'job_title', label: 'Job Title', required: false, description: 'Current job title/position' },
-    { id: 'skills', label: 'Skills', required: false, description: 'Technical or professional skills' },
-    { id: 'years_experience', label: 'Years Experience', required: false, description: 'Years of experience' },
-    { id: 'education', label: 'Education', required: false, description: 'Educational background' },
-    { id: 'salary_range', label: 'Salary Range', required: false, description: 'Expected or current salary' },
+    // Professional
+    { id: 'job_title', label: 'Job Title', required: false, description: 'Current job title/position', group: 'Professional' },
+    { id: 'skills', label: 'Skills', required: false, description: 'Technical or professional skills', group: 'Professional' },
+    { id: 'years_experience', label: 'Years Experience', required: false, description: 'Years of experience', group: 'Professional' },
+    { id: 'education', label: 'Education', required: false, description: 'Educational background', group: 'Professional' },
+    { id: 'salary_range', label: 'Salary Range', required: false, description: 'Expected or current salary', group: 'Professional' },
 
-    // Person location
-    { id: 'person_home_location', label: 'Person Location', required: false, description: 'Home location/city' },
-    { id: 'work_address', label: 'Work Address', required: false, description: 'Work/office address' },
+    // Location
+    { id: 'person_home_location', label: 'Person Location', required: false, description: 'Home location/city', group: 'Location' },
+    { id: 'work_address', label: 'Work Address', required: false, description: 'Work/office address', group: 'Location' },
 
-    // Company info
-    { id: 'company_name', label: 'Company Name', required: false, description: 'Current employer' },
-    { id: 'company_domain', label: 'Company Domain', required: false, description: 'Company website domain' },
-    { id: 'company_hq', label: 'Company HQ', required: false, description: 'Company headquarters' },
-    { id: 'company_linkedin', label: 'Company LinkedIn', required: false, description: 'Company LinkedIn page' },
-    { id: 'company_description', label: 'Company Description', required: false, description: 'Description of company' },
-    { id: 'company_type', label: 'Company Type', required: false, description: 'Private, Public, etc' },
-    { id: 'industry', label: 'Industry', required: false, description: 'Industry sector' },
-    { id: 'company_size', label: 'Company Size', required: false, description: 'Size category (51-200)' },
-    { id: 'employee_count', label: 'Employee Count', required: false, description: 'Number of employees' },
+    // Company
+    { id: 'company_name', label: 'Company Name', required: false, description: 'Current employer', group: 'Company' },
+    { id: 'company_domain', label: 'Company Domain', required: false, description: 'Company website domain', group: 'Company' },
+    { id: 'company_hq', label: 'Company HQ', required: false, description: 'Company headquarters', group: 'Company' },
+    { id: 'company_linkedin', label: 'Company LinkedIn', required: false, description: 'Company LinkedIn page', group: 'Company' },
+    { id: 'company_description', label: 'Company Description', required: false, description: 'Description of company', group: 'Company' },
+    { id: 'company_type', label: 'Company Type', required: false, description: 'Private, Public, etc', group: 'Company' },
+    { id: 'industry', label: 'Industry', required: false, description: 'Industry sector', group: 'Company' },
+    { id: 'company_size', label: 'Company Size', required: false, description: 'Size category (51-200)', group: 'Company' },
+    { id: 'employee_count', label: 'Employee Count', required: false, description: 'Number of employees', group: 'Company' },
 
-    // Enrichment data (field names match TalentCandidateProfile.jsx)
-    { id: 'times_promoted', label: 'Times Promoted', required: false, description: 'Promotions at current company' },
-    { id: 'times_company_hopped', label: 'Company Changes', required: false, description: 'Number of job changes/company hops' },
-    { id: 'years_at_company', label: 'Years at Company', required: false, description: 'Years at current company' },
-    { id: 'job_satisfaction', label: 'Job Satisfaction', required: false, description: 'Satisfaction level' },
-    { id: 'estimated_age_range', label: 'Estimated Age', required: false, description: 'Estimated age range' },
-    { id: 'market_position', label: 'Market Position', required: false, description: 'Market position analysis' },
-    { id: 'employee_growth_rate', label: 'Employee Growth', required: false, description: 'Company growth rate' },
-    { id: 'recruitment_urgency', label: 'Recruitment Urgency', required: false, description: 'Urgency level' },
+    // Enrichment
+    { id: 'times_promoted', label: 'Times Promoted', required: false, description: 'Promotions at current company', group: 'Enrichment' },
+    { id: 'times_company_hopped', label: 'Company Changes', required: false, description: 'Number of job changes/company hops', group: 'Enrichment' },
+    { id: 'years_at_company', label: 'Years at Company', required: false, description: 'Years at current company', group: 'Enrichment' },
+    { id: 'job_satisfaction', label: 'Job Satisfaction', required: false, description: 'Satisfaction level', group: 'Enrichment' },
+    { id: 'estimated_age_range', label: 'Estimated Age', required: false, description: 'Estimated age range', group: 'Enrichment' },
+    { id: 'market_position', label: 'Market Position', required: false, description: 'Market position analysis', group: 'Enrichment' },
+    { id: 'employee_growth_rate', label: 'Employee Growth', required: false, description: 'Company growth rate', group: 'Enrichment' },
+    { id: 'recruitment_urgency', label: 'Recruitment Urgency', required: false, description: 'Urgency level', group: 'Enrichment' },
 
-    // Analysis/Report fields (displayed on profile)
-    { id: 'experience_report', label: 'Experience Report', required: false, description: 'Career experience analysis' },
-    { id: 'experience_analysis', label: 'Experience Analysis', required: false, description: 'Professional experience analysis' },
-    { id: 'job_satisfaction_analysis', label: 'Job Satisfaction Analysis', required: false, description: 'Detailed satisfaction analysis' },
-    { id: 'avg_promotion_threshold', label: 'Avg Promotion Time', required: false, description: 'Average years between promotions' },
-    { id: 'outreach_urgency_reasoning', label: 'Outreach Urgency Reasoning', required: false, description: 'Reasoning for urgency level' },
-    { id: 'recent_ma_news', label: 'Recent M&A News', required: false, description: 'Recent merger/acquisition news' },
+    // Analysis
+    { id: 'experience_report', label: 'Experience Report', required: false, description: 'Career experience analysis', group: 'Analysis' },
+    { id: 'experience_analysis', label: 'Experience Analysis', required: false, description: 'Professional experience analysis', group: 'Analysis' },
+    { id: 'job_satisfaction_analysis', label: 'Job Satisfaction Analysis', required: false, description: 'Detailed satisfaction analysis', group: 'Analysis' },
+    { id: 'avg_promotion_threshold', label: 'Avg Promotion Time', required: false, description: 'Average years between promotions', group: 'Analysis' },
+    { id: 'outreach_urgency_reasoning', label: 'Outreach Urgency Reasoning', required: false, description: 'Reasoning for urgency level', group: 'Analysis' },
+    { id: 'recent_ma_news', label: 'Recent M&A News', required: false, description: 'Recent merger/acquisition news', group: 'Analysis' },
   ],
   prospects: [
     { id: 'first_name', label: 'First Name', required: false, description: 'Person\'s first name' },
@@ -159,21 +160,21 @@ const NEST_TARGET_FIELDS = {
     { id: 'website', label: 'Website', required: false, description: 'Firm website' },
   ],
   companies: [
-    { id: 'company_name', label: 'Company Name', required: false, description: 'Company/organization name' },
-    { id: 'company_description', label: 'Description', required: false, description: 'Company description' },
-    { id: 'industry', label: 'Industry', required: false, description: 'Primary industry' },
-    { id: 'company_size', label: 'Company Size', required: false, description: 'Size range (e.g. 11-50 employees)' },
-    { id: 'company_type', label: 'Company Type', required: false, description: 'Public, Private, etc.' },
-    { id: 'company_hq', label: 'Location', required: false, description: 'Headquarters location' },
-    { id: 'country', label: 'Country', required: false, description: 'Country' },
-    { id: 'company_domain', label: 'Domain', required: false, description: 'Website domain' },
-    { id: 'company_linkedin', label: 'LinkedIn URL', required: false, description: 'Company LinkedIn page' },
-    { id: 'employee_count', label: 'Employee Count', required: false, description: 'Number of employees' },
-    { id: 'founded_year', label: 'Founded Year', required: false, description: 'Year founded' },
-    { id: 'revenue_range', label: 'Revenue Range', required: false, description: 'Revenue range' },
-    { id: 'funding_total', label: 'Total Funding', required: false, description: 'Total funding raised' },
-    { id: 'tech_stack', label: 'Tech Stack', required: false, description: 'Technologies used' },
-    { id: 'focus_areas', label: 'Focus Areas', required: false, description: 'Business focus areas' },
+    { id: 'company_name', label: 'Company Name', required: false, description: 'Company/organization name', group: 'Identity' },
+    { id: 'company_description', label: 'Description', required: false, description: 'Company description', group: 'Identity' },
+    { id: 'company_domain', label: 'Domain', required: false, description: 'Website domain', group: 'Identity' },
+    { id: 'company_linkedin', label: 'LinkedIn URL', required: false, description: 'Company LinkedIn page', group: 'Identity' },
+    { id: 'industry', label: 'Industry', required: false, description: 'Primary industry', group: 'Details' },
+    { id: 'company_size', label: 'Company Size', required: false, description: 'Size range (e.g. 11-50 employees)', group: 'Details' },
+    { id: 'company_type', label: 'Company Type', required: false, description: 'Public, Private, etc.', group: 'Details' },
+    { id: 'employee_count', label: 'Employee Count', required: false, description: 'Number of employees', group: 'Details' },
+    { id: 'founded_year', label: 'Founded Year', required: false, description: 'Year founded', group: 'Details' },
+    { id: 'company_hq', label: 'Location', required: false, description: 'Headquarters location', group: 'Location' },
+    { id: 'country', label: 'Country', required: false, description: 'Country', group: 'Location' },
+    { id: 'revenue_range', label: 'Revenue Range', required: false, description: 'Revenue range', group: 'Financial' },
+    { id: 'funding_total', label: 'Total Funding', required: false, description: 'Total funding raised', group: 'Financial' },
+    { id: 'tech_stack', label: 'Tech Stack', required: false, description: 'Technologies used', group: 'Other' },
+    { id: 'focus_areas', label: 'Focus Areas', required: false, description: 'Business focus areas', group: 'Other' },
   ],
 };
 
@@ -316,8 +317,17 @@ export function NestUploadWizard({
     }
 
     setIsImporting(true);
-    setImportProgress({ current: 0, total: validation.validRows.length });
+    const totalRows = validation.validRows.length;
+    setImportProgress({ current: 0, total: totalRows });
     setCurrentStep(3);
+
+    // Simulate progress while waiting for server response
+    const progressInterval = setInterval(() => {
+      setImportProgress(prev => ({
+        ...prev,
+        current: Math.min(prev.current + Math.ceil(totalRows / 20), totalRows - 1),
+      }));
+    }, 500);
 
     try {
       // Send all rows to the edge function for batch processing
@@ -337,6 +347,9 @@ export function NestUploadWizard({
           })
         }
       );
+
+      clearInterval(progressInterval);
+      setImportProgress({ current: totalRows, total: totalRows });
 
       const result = await response.json();
 
@@ -366,6 +379,7 @@ export function NestUploadWizard({
       }
 
     } catch (error) {
+      clearInterval(progressInterval);
       console.error('Import error:', error);
       toast.error(error.message || 'Import failed');
       setImportResults({
@@ -508,17 +522,17 @@ export function NestUploadWizard({
             {/* Preview Table */}
             <div className="rounded-lg border border-white/10 overflow-hidden">
               <div className="bg-zinc-900/50 px-4 py-2 border-b border-white/10">
-                <span className="text-sm font-medium text-white">Preview (first 5 rows)</span>
+                <span className="text-sm font-medium text-white">Preview (first {Math.min(20, validation.validRows.length)} of {validation.validRows.length} rows)</span>
               </div>
-              <div className="overflow-x-auto">
+              <div className="max-h-[300px] overflow-auto">
                 <table className="w-full">
-                  <thead>
-                    <tr className="bg-zinc-800/50">
-                      {Object.entries(mappings).slice(0, 6).map(([source, target]) => {
+                  <thead className="sticky top-0 z-10">
+                    <tr className="bg-zinc-800">
+                      {Object.entries(mappings).map(([source, target]) => {
                         if (target === 'skip') return null;
                         const field = targetFields.find(f => f.id === target);
                         return (
-                          <th key={source} className="px-3 py-2 text-left text-xs font-medium text-zinc-400">
+                          <th key={source} className="px-3 py-2 text-left text-xs font-medium text-zinc-400 whitespace-nowrap">
                             {field?.label || target}
                           </th>
                         );
@@ -526,12 +540,12 @@ export function NestUploadWizard({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {validation.validRows.slice(0, 5).map((row, i) => (
+                    {validation.validRows.slice(0, 20).map((row, i) => (
                       <tr key={i} className="hover:bg-white/5">
-                        {Object.entries(mappings).slice(0, 6).map(([source, target]) => {
+                        {Object.entries(mappings).map(([source, target]) => {
                           if (target === 'skip') return null;
                           return (
-                            <td key={source} className="px-3 py-2 text-sm text-zinc-300 max-w-[150px] truncate">
+                            <td key={source} className="px-3 py-2 text-sm text-zinc-300 max-w-[200px] truncate">
                               {row.data[target] || '-'}
                             </td>
                           );
@@ -571,6 +585,14 @@ export function NestUploadWizard({
                   <p className="text-sm text-zinc-500 mt-1">
                     Please wait while we import your data
                   </p>
+                  {importProgress.total > 0 && (
+                    <>
+                      <div className="w-full bg-zinc-800 rounded-full h-2 mt-3">
+                        <div className="bg-cyan-500 h-2 rounded-full transition-all" style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }} />
+                      </div>
+                      <p className="text-xs text-zinc-400 mt-1">Processing row {importProgress.current} of {importProgress.total}...</p>
+                    </>
+                  )}
                 </>
               ) : importResults ? (
                 <>
@@ -627,24 +649,41 @@ export function NestUploadWizard({
             {/* Error details */}
             {importResults?.errors?.length > 0 && (
               <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertCircle className="w-4 h-4 text-red-400" />
-                  <span className="text-sm font-medium text-red-400">
-                    {importResults.failed} row{importResults.failed !== 1 ? 's' : ''} failed to import
-                  </span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-400" />
+                    <span className="text-sm font-medium text-red-400">
+                      {importResults.errors.length} error{importResults.errors.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 text-xs"
+                    onClick={() => {
+                      const csv = 'Row,Error\n' + importResults.errors.map((err, i) =>
+                        `${i + 1},"${formatErrorMessage(err).replace(/"/g, '""')}"`
+                      ).join('\n');
+                      const blob = new Blob([csv], { type: 'text/csv' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `import-errors-${new Date().toISOString().slice(0,10)}.csv`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                  >
+                    <Download className="w-3 h-3 mr-1" />
+                    Export Errors
+                  </Button>
                 </div>
-                <div className="max-h-32 overflow-y-auto space-y-1">
+                <div className="max-h-[200px] overflow-y-auto space-y-1">
                   {importResults.errors.map((error, i) => (
                     <p key={i} className="text-xs text-red-300/80">
                       {formatErrorMessage(error)}
                     </p>
                   ))}
                 </div>
-                {importResults.failed > importResults.errors.length && (
-                  <p className="text-xs text-zinc-500 mt-2">
-                    ...and {importResults.failed - importResults.errors.length} more errors
-                  </p>
-                )}
               </div>
             )}
 

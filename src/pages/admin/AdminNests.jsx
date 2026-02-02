@@ -4,13 +4,13 @@
  * for Candidates (Talent), Prospects (Growth), and Investors (Raise)
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Package,
   Plus,
   Search,
-  Filter,
   MoreVertical,
   Eye,
   Edit,
@@ -110,8 +110,10 @@ function formatDate(dateString) {
 }
 
 export default function AdminNests() {
-  // State
-  const [activeTab, setActiveTab] = useState('candidates');
+  // State - persist active tab in URL
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'candidates';
+  const setActiveTab = useCallback((tab) => setSearchParams({ tab }), [setSearchParams]);
   const [nests, setNests] = useState([]);
   const [stats, setStats] = useState({
     total_nests: 0,
@@ -255,10 +257,15 @@ export default function AdminNests() {
     fetchStats();
   }, [fetchStats]);
 
-  // Fetch nests when tab changes
+  // Fetch nests when tab or search changes (debounced for search)
+  const debounceRef = useRef(null);
   useEffect(() => {
-    fetchNests();
-  }, [fetchNests]);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetchNests();
+    }, searchQuery ? 300 : 0);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [activeTab, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle create nest
   const handleCreateNest = () => {
@@ -585,15 +592,6 @@ export default function AdminNests() {
                     className="pl-8 bg-white/5 border-white/10"
                   />
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={fetchNests}
-                  className="border-white/10 bg-white/5"
-                >
-                  <Filter className="w-3 h-3 mr-1.5" />
-                  Filter
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -799,7 +797,7 @@ export default function AdminNests() {
                   className="w-full h-8 rounded-md bg-white/5 border border-white/10 px-2.5 text-white text-xs"
                 >
                   <option value="EUR">EUR</option>
-                  <option value="EUR">EUR</option>
+                  <option value="USD">USD</option>
                   <option value="GBP">GBP</option>
                 </select>
               </div>

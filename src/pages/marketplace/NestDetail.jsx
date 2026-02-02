@@ -23,6 +23,8 @@ import {
   Linkedin,
   Euro,
   Rocket,
+  Factory,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +62,12 @@ const NEST_TYPE_CONFIG = {
     label: 'Investors',
     color: 'text-red-400 bg-red-500/20 border-red-500/30',
     destination: '/raise/investors',
+  },
+  companies: {
+    icon: Factory,
+    label: 'Companies',
+    color: 'text-cyan-400 bg-cyan-500/20 border-cyan-500/30',
+    destination: '/RaiseEnrich',
   },
 };
 
@@ -103,6 +111,16 @@ function getItemDisplayInfo(item, nestType) {
       email: i.profile?.email,
       location: null,
       linkedin: i.profile?.linkedin,
+    };
+  }
+  if (nestType === 'companies' && item.crm_companies) {
+    const c = item.crm_companies;
+    return {
+      name: c.name || 'Unknown Company',
+      subtitle: [c.industry, c.hq_location].filter(Boolean).join(' · ') || 'Company',
+      email: c.domain,
+      location: c.hq_location,
+      linkedin: c.linkedin_url,
     };
   }
   return { name: 'Unknown', subtitle: '', email: '', location: '', linkedin: '' };
@@ -156,16 +174,27 @@ export default function NestDetail() {
       }
 
       // Fetch items (RLS will filter based on preview/purchased status)
-      const { data: itemsData, error: itemsError } = await supabase
-        .from('nest_items')
-        .select(`
-          *,
-          candidates(*),
-          prospects(*),
-          raise_investors(*)
-        `)
-        .eq('nest_id', nestId)
-        .order('item_order', { ascending: true });
+      let itemsQuery;
+      if (nestData.nest_type === 'companies') {
+        itemsQuery = supabase
+          .from('nest_items')
+          .select('*, crm_companies(*)')
+          .not('company_id', 'is', null)
+          .eq('nest_id', nestId)
+          .order('item_order', { ascending: true });
+      } else {
+        itemsQuery = supabase
+          .from('nest_items')
+          .select(`
+            *,
+            candidates(*),
+            prospects(*),
+            raise_investors(*)
+          `)
+          .eq('nest_id', nestId)
+          .order('item_order', { ascending: true });
+      }
+      const { data: itemsData, error: itemsError } = await itemsQuery;
 
       if (!itemsError) {
         setItems(itemsData || []);
@@ -385,10 +414,21 @@ export default function NestDetail() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-white/10">
-                    <TableHead className="text-zinc-400">Name</TableHead>
-                    <TableHead className="text-zinc-400">Title / Company</TableHead>
-                    <TableHead className="text-zinc-400">Contact</TableHead>
-                    <TableHead className="text-zinc-400">Links</TableHead>
+                    {nest.nest_type === 'companies' ? (
+                      <>
+                        <TableHead className="text-zinc-400">Company Name</TableHead>
+                        <TableHead className="text-zinc-400">Industry / Location</TableHead>
+                        <TableHead className="text-zinc-400">Domain</TableHead>
+                        <TableHead className="text-zinc-400">LinkedIn</TableHead>
+                      </>
+                    ) : (
+                      <>
+                        <TableHead className="text-zinc-400">Name</TableHead>
+                        <TableHead className="text-zinc-400">Title / Company</TableHead>
+                        <TableHead className="text-zinc-400">Contact</TableHead>
+                        <TableHead className="text-zinc-400">Links</TableHead>
+                      </>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -403,20 +443,29 @@ export default function NestDetail() {
                           {info.subtitle}
                         </TableCell>
                         <TableCell>
-                          <div className="space-y-1">
-                            {info.email && (
+                          {nest.nest_type === 'companies' ? (
+                            info.email && (
                               <div className="flex items-center gap-1 text-xs text-zinc-500">
-                                <Mail className="w-3 h-3" />
+                                <Globe className="w-3 h-3" />
                                 {info.email}
                               </div>
-                            )}
-                            {info.location && (
-                              <div className="flex items-center gap-1 text-xs text-zinc-500">
-                                <MapPin className="w-3 h-3" />
-                                {info.location}
-                              </div>
-                            )}
-                          </div>
+                            )
+                          ) : (
+                            <div className="space-y-1">
+                              {info.email && (
+                                <div className="flex items-center gap-1 text-xs text-zinc-500">
+                                  <Mail className="w-3 h-3" />
+                                  {info.email}
+                                </div>
+                              )}
+                              {info.location && (
+                                <div className="flex items-center gap-1 text-xs text-zinc-500">
+                                  <MapPin className="w-3 h-3" />
+                                  {info.location}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell>
                           {info.linkedin && (

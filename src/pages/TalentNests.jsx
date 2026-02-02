@@ -30,6 +30,7 @@ import {
   ChevronRight,
   Megaphone,
   ShoppingBag,
+  Factory,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { supabase } from "@/api/supabaseClient";
@@ -43,6 +44,7 @@ const CATEGORIES = [
   { id: "candidates", label: "Candidates" },
   { id: "prospects", label: "Prospects" },
   { id: "investors", label: "Investors" },
+  { id: "companies", label: "Companies" },
 ];
 
 // ============================================================================
@@ -77,7 +79,7 @@ const NestCard = ({ nest, onClick }) => {
           <div className="flex items-center gap-3">
             <span className="text-lg font-semibold text-white">€{price.toFixed(0)}</span>
             <span className="text-xs text-zinc-500">
-              {itemCount.toLocaleString()} profiles
+              {itemCount.toLocaleString()} {nest.nest_type === 'companies' ? 'companies' : 'profiles'}
             </span>
           </div>
           <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-red-400 transition-colors" />
@@ -345,7 +347,7 @@ export default function TalentNests() {
               </div>
               <div>
                 <p className="text-white font-medium">Ready to start recruiting?</p>
-                <p className="text-zinc-400 text-sm">Purchase a nest to unlock candidates, then launch a targeted campaign</p>
+                <p className="text-zinc-400 text-sm">Purchase a nest to unlock data, then launch a targeted campaign or enrich</p>
               </div>
             </div>
             <div className="flex gap-2">
