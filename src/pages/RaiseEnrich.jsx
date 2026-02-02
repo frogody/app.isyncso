@@ -6,7 +6,7 @@ import {
   GripVertical, Type, Zap, Brain, FunctionSquare, Columns3, Trash2,
   Edit2, Settings, ChevronDown, Check, X, Loader2, AlertCircle,
   Table2, Clock, Hash, Upload, FileUp, Database, Pencil, Filter, XCircle,
-  ArrowUp, ArrowDown, ArrowUpDown, ToggleLeft, ToggleRight, Layers
+  ArrowUp, ArrowDown, ArrowUpDown, ToggleLeft, ToggleRight, Layers, Globe
 } from 'lucide-react';
 import {
   RaiseCard, RaiseCardContent, RaiseCardHeader, RaiseCardTitle,
@@ -71,9 +71,10 @@ const COLUMN_TYPES = [
   { value: 'ai', label: 'AI', icon: Brain, desc: 'AI-generated content' },
   { value: 'formula', label: 'Formula', icon: FunctionSquare, desc: 'Calculated value' },
   { value: 'waterfall', label: 'Waterfall', icon: Layers, desc: 'Try multiple sources in order' },
+  { value: 'http', label: 'HTTP API', icon: Globe, desc: 'Call custom API endpoints' },
 ];
 
-const COLUMN_TYPE_ICONS = { field: Type, enrichment: Zap, ai: Brain, formula: FunctionSquare, waterfall: Layers };
+const COLUMN_TYPE_ICONS = { field: Type, enrichment: Zap, ai: Brain, formula: FunctionSquare, waterfall: Layers, http: Globe };
 
 // ─── Formula Engine ──────────────────────────────────────────────────────────
 
@@ -222,6 +223,7 @@ export default function RaiseEnrich() {
   const [colType, setColType] = useState('field');
   const [colName, setColName] = useState('');
   const [colConfig, setColConfig] = useState({});
+  const [httpTestResult, setHttpTestResult] = useState(null); // { loading, data, error }
 
   // Slash-command column selector
   const [slashMenu, setSlashMenu] = useState({ open: false, field: null, caretPos: 0, filter: '' });
@@ -736,6 +738,7 @@ export default function RaiseEnrich() {
       setColName('');
       setColType('field');
       setColConfig({});
+      setHttpTestResult(null);
       loadWorkspaceDetail(activeWorkspaceId);
     } catch (err) {
       console.error('Error adding column:', err);
@@ -1021,6 +1024,98 @@ export default function RaiseEnrich() {
     else toast.success(`${col.name}: All ${total} rows enriched via waterfall`);
   }, [columns, rows, cells, cellKey, getCellRawValue]);
 
+  // ─── HTTP column ref replacer ─────────────────────────────────────────
+
+  const replaceColumnRefs = useCallback((template, rowId) => {
+    if (!template) return template;
+    return template.replace(/\/([A-Za-z0-9_ -]+)/g, (match, colName) => {
+      const col = columns.find(c => c.name === colName);
+      if (!col) return match;
+      return getCellRawValue(rowId, col) || '';
+    });
+  }, [columns, getCellRawValue]);
+
+  // ─── Run HTTP column ────────────────────────────────────────────────
+
+  const runHTTPColumn = useCallback(async (col) => {
+    if (col.type !== 'http') return;
+    const cfg = col.config || {};
+    if (!cfg.url) { toast.error('No URL configured'); return; }
+
+    const total = rows.length;
+    let completed = 0;
+    let errors = 0;
+    const toastId = toast.loading(`Running ${col.name}: 0/${total}`);
+
+    for (let i = 0; i < rows.length; i += ENRICHMENT_BATCH_SIZE) {
+      const batch = rows.slice(i, i + ENRICHMENT_BATCH_SIZE);
+      await Promise.all(batch.map(async (row) => {
+        const key = cellKey(row.id, col.id);
+        try {
+          setCells(prev => ({ ...prev, [key]: { ...prev[key], status: 'pending' } }));
+          await supabase.from('enrich_cells').upsert({ row_id: row.id, column_id: col.id, status: 'pending', value: null }, { onConflict: 'row_id,column_id' });
+
+          // Build request
+          const url = replaceColumnRefs(cfg.url, row.id);
+          const method = cfg.method || 'GET';
+          const headers = {};
+          for (const h of (cfg.headers || [])) {
+            if (h.key) headers[replaceColumnRefs(h.key, row.id)] = replaceColumnRefs(h.value, row.id);
+          }
+          // Auth
+          if (cfg.auth?.type === 'bearer' && cfg.auth.token) {
+            headers['Authorization'] = `Bearer ${cfg.auth.token}`;
+          } else if (cfg.auth?.type === 'basic' && cfg.auth.username) {
+            headers['Authorization'] = `Basic ${btoa(`${cfg.auth.username}:${cfg.auth.password || ''}`)}`;
+          }
+
+          const fetchOpts = { method, headers };
+          if ((method === 'POST' || method === 'PUT') && cfg.body) {
+            fetchOpts.body = replaceColumnRefs(cfg.body, row.id);
+            if (!headers['Content-Type']) headers['Content-Type'] = 'application/json';
+          }
+
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 30000);
+          fetchOpts.signal = controller.signal;
+
+          const resp = await fetch(url, fetchOpts);
+          clearTimeout(timeout);
+
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+
+          let result;
+          const ct = resp.headers.get('content-type') || '';
+          if (ct.includes('application/json')) result = await resp.json();
+          else result = { v: await resp.text() };
+
+          let displayValue = result;
+          if (cfg.outputPath && result) displayValue = extractNestedValue(result, cfg.outputPath);
+
+          const cellValue = displayValue != null ? (typeof displayValue === 'object' ? displayValue : { v: String(displayValue) }) : { v: '' };
+
+          setCells(prev => ({ ...prev, [key]: { ...prev[key], status: 'complete', value: cellValue } }));
+          await supabase.from('enrich_cells').upsert({
+            row_id: row.id, column_id: col.id, status: 'complete', value: cellValue, updated_at: new Date().toISOString(),
+          }, { onConflict: 'row_id,column_id' });
+          completed++;
+        } catch (err) {
+          errors++;
+          completed++;
+          const msg = err.name === 'AbortError' ? 'Request timed out (30s)' : err.message;
+          setCells(prev => ({ ...prev, [key]: { ...prev[key], status: 'error', error_message: msg } }));
+          await supabase.from('enrich_cells').upsert({
+            row_id: row.id, column_id: col.id, status: 'error', error_message: msg, updated_at: new Date().toISOString(),
+          }, { onConflict: 'row_id,column_id' });
+        }
+        toast.loading(`Running ${col.name}: ${completed}/${total}`, { id: toastId });
+      }));
+    }
+    toast.dismiss(toastId);
+    if (errors > 0) toast.warning(`${col.name}: ${completed - errors} succeeded, ${errors} failed`);
+    else toast.success(`${col.name}: All ${total} rows completed`);
+  }, [columns, rows, cells, cellKey, replaceColumnRefs]);
+
   // ─── Run all columns ───────────────────────────────────────────────────
 
   const runAllColumns = useCallback(async () => {
@@ -1028,8 +1123,9 @@ export default function RaiseEnrich() {
       if (col.type === 'enrichment') await runEnrichmentColumn(col);
       else if (col.type === 'ai') await runAIColumn(col);
       else if (col.type === 'waterfall') await runWaterfallColumn(col);
+      else if (col.type === 'http') await runHTTPColumn(col);
     }
-  }, [columns, runEnrichmentColumn, runAIColumn, runWaterfallColumn]);
+  }, [columns, runEnrichmentColumn, runAIColumn, runWaterfallColumn, runHTTPColumn]);
 
   // ─── Auto-run ──────────────────────────────────────────────────────────
 
@@ -1054,7 +1150,7 @@ export default function RaiseEnrich() {
 
   const runIncompleteEnrichments = useCallback(async () => {
     if (autoRunRunningRef.current) return;
-    const enrichCols = columns.filter(c => c.type === 'enrichment' || c.type === 'ai' || c.type === 'waterfall');
+    const enrichCols = columns.filter(c => c.type === 'enrichment' || c.type === 'ai' || c.type === 'waterfall' || c.type === 'http');
     if (enrichCols.length === 0) return;
 
     // Find rows with incomplete cells
@@ -1098,17 +1194,18 @@ export default function RaiseEnrich() {
         if (col.type === 'enrichment') await runEnrichmentColumn(col);
         else if (col.type === 'ai') await runAIColumn(col);
         else if (col.type === 'waterfall') await runWaterfallColumn(col);
+        else if (col.type === 'http') await runHTTPColumn(col);
       }
     } finally {
       autoRunRunningRef.current = false;
     }
-  }, [columns, rows, cells, cellKey, getCellRawValue, runEnrichmentColumn, runAIColumn, runWaterfallColumn]);
+  }, [columns, rows, cells, cellKey, getCellRawValue, runEnrichmentColumn, runAIColumn, runWaterfallColumn, runHTTPColumn]);
 
   // Watch for changes that should trigger auto-run
   useEffect(() => {
     if (!autoRun || !activeWorkspaceId) return;
     const currentRowCount = rows.length;
-    const enrichColCount = columns.filter(c => c.type === 'enrichment' || c.type === 'ai' || c.type === 'waterfall').length;
+    const enrichColCount = columns.filter(c => c.type === 'enrichment' || c.type === 'ai' || c.type === 'waterfall' || c.type === 'http').length;
 
     const rowsAdded = currentRowCount > prevRowCountRef.current && prevRowCountRef.current > 0;
     const colsAdded = enrichColCount > prevColCountRef.current && prevColCountRef.current > 0;
@@ -1132,7 +1229,7 @@ export default function RaiseEnrich() {
     if (!autoRun) return;
     // Check if this column is an input to any enrichment column
     const dependentCols = columns.filter(c =>
-      (c.type === 'enrichment' || c.type === 'ai' || c.type === 'waterfall') && c.config?.input_column_id === colId
+      (c.type === 'enrichment' || c.type === 'ai' || c.type === 'waterfall' || c.type === 'http') && c.config?.input_column_id === colId
     );
     if (dependentCols.length > 0) {
       clearTimeout(autoRunTimerRef.current);
@@ -1485,7 +1582,7 @@ export default function RaiseEnrich() {
 
   // ─── Progress indicators ──────────────────────────────────────────────
 
-  const enrichableColumns = useMemo(() => columns.filter(c => c.type === 'enrichment' || c.type === 'ai' || c.type === 'waterfall'), [columns]);
+  const enrichableColumns = useMemo(() => columns.filter(c => c.type === 'enrichment' || c.type === 'ai' || c.type === 'waterfall' || c.type === 'http'), [columns]);
 
   const columnProgress = useMemo(() => {
     const result = {};
@@ -1947,7 +2044,7 @@ export default function RaiseEnrich() {
                 const Icon = COLUMN_TYPE_ICONS[col.type] || Type;
                 const sortState = getColumnSortState(col.id);
                 const colProg = columnProgress[col.id];
-                const isEnrichable = col.type === 'enrichment' || col.type === 'ai' || col.type === 'waterfall';
+                const isEnrichable = col.type === 'enrichment' || col.type === 'ai' || col.type === 'waterfall' || col.type === 'http';
                 return (
                   <div
                     key={col.id}
@@ -1959,7 +2056,7 @@ export default function RaiseEnrich() {
                     onClick={(e) => { if (!e.target.closest('[data-no-sort]')) toggleColumnSort(col.id, e.shiftKey); }}
                   >
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <Icon className={`w-3 h-3 flex-shrink-0 ${col.type === 'field' ? 'text-blue-400' : col.type === 'enrichment' ? 'text-amber-400' : col.type === 'ai' ? 'text-purple-400' : col.type === 'waterfall' ? 'text-cyan-400' : 'text-green-400'}`} />
+                      <Icon className={`w-3 h-3 flex-shrink-0 ${col.type === 'field' ? 'text-blue-400' : col.type === 'enrichment' ? 'text-amber-400' : col.type === 'ai' ? 'text-purple-400' : col.type === 'waterfall' ? 'text-cyan-400' : col.type === 'http' ? 'text-emerald-400' : 'text-green-400'}`} />
                       <span className="truncate flex-1">{col.name}</span>
                       {/* Sort indicator */}
                       {sortState ? (
@@ -1990,6 +2087,11 @@ export default function RaiseEnrich() {
                           {col.type === 'waterfall' && (
                             <DropdownMenuItem onClick={() => runWaterfallColumn(col)} className={rt('', 'text-white hover:bg-zinc-700')}>
                               <Layers className="w-3 h-3 mr-2" /> Run Waterfall
+                            </DropdownMenuItem>
+                          )}
+                          {col.type === 'http' && (
+                            <DropdownMenuItem onClick={() => runHTTPColumn(col)} className={rt('', 'text-white hover:bg-zinc-700')}>
+                              <Globe className="w-3 h-3 mr-2" /> Run HTTP
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuItem onClick={() => deleteColumn(col.id)} className="text-red-400 hover:bg-red-500/10">
@@ -2467,7 +2569,7 @@ export default function RaiseEnrich() {
               {/* Type selector */}
               <div>
                 <Label className={rt('text-gray-700', 'text-zinc-300')}>Type</Label>
-                <div className="grid grid-cols-2 gap-2 mt-1.5">
+                <div className="grid grid-cols-3 gap-2 mt-1.5">
                   {COLUMN_TYPES.map(ct => {
                     const CTIcon = ct.icon;
                     return (
@@ -2639,6 +2741,207 @@ export default function RaiseEnrich() {
                     </div>
                   )}
                   <p className="text-[10px] text-zinc-500 mt-1">Type <span className="font-mono text-cyan-400">/</span> for column refs. Functions: CONCAT, IF, UPPER, LOWER, TRIM, LEN, LEFT, RIGHT, REPLACE, ROUND, CONTAINS</p>
+                </div>
+              )}
+
+              {colType === 'http' && (
+                <div className="space-y-3">
+                  {/* URL */}
+                  <div>
+                    <Label className={rt('text-gray-700', 'text-zinc-300')}>URL</Label>
+                    <Input
+                      value={colConfig.url || ''}
+                      onChange={e => setColConfig(prev => ({ ...prev, url: e.target.value }))}
+                      placeholder="https://api.example.com/endpoint?id=/CompanyId"
+                      className={rt('font-mono text-xs', 'bg-zinc-800 border-zinc-700 text-white font-mono text-xs')}
+                    />
+                    <p className="text-[10px] text-zinc-500 mt-1">Use <span className="font-mono text-cyan-400">/ColumnName</span> to insert column values</p>
+                  </div>
+
+                  {/* Method */}
+                  <div>
+                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Method</Label>
+                    <Select value={colConfig.method || 'GET'} onValueChange={v => setColConfig(prev => ({ ...prev, method: v }))}>
+                      <SelectTrigger className={rt('', 'bg-zinc-800 border-zinc-700 text-white')}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                        {['GET', 'POST', 'PUT'].map(m => (
+                          <SelectItem key={m} value={m} className={rt('', 'text-white hover:bg-zinc-700')}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Headers */}
+                  <div>
+                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Headers</Label>
+                    <div className="space-y-1.5 mt-1">
+                      {(colConfig.headers || []).map((h, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5">
+                          <Input
+                            value={h.key}
+                            onChange={e => setColConfig(prev => ({ ...prev, headers: prev.headers.map((hh, i) => i === idx ? { ...hh, key: e.target.value } : hh) }))}
+                            placeholder="Key"
+                            className={`h-8 text-xs flex-1 ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}
+                          />
+                          <Input
+                            value={h.value}
+                            onChange={e => setColConfig(prev => ({ ...prev, headers: prev.headers.map((hh, i) => i === idx ? { ...hh, value: e.target.value } : hh) }))}
+                            placeholder="Value"
+                            className={`h-8 text-xs flex-1 ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}
+                          />
+                          <button onClick={() => setColConfig(prev => ({ ...prev, headers: prev.headers.filter((_, i) => i !== idx) }))} className="p-1 text-zinc-500 hover:text-red-400"><X className="w-3 h-3" /></button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 mt-1.5">
+                      <button
+                        onClick={() => setColConfig(prev => ({ ...prev, headers: [...(prev.headers || []), { key: '', value: '' }] }))}
+                        className={`text-[10px] px-2 py-1 rounded border ${rt('border-gray-200 text-gray-600', 'border-zinc-700 text-zinc-400')}`}
+                      >
+                        + Add Header
+                      </button>
+                      <button
+                        onClick={() => setColConfig(prev => ({
+                          ...prev,
+                          headers: [...(prev.headers || []).filter(h => h.key !== 'Content-Type'), { key: 'Content-Type', value: 'application/json' }],
+                        }))}
+                        className={`text-[10px] px-2 py-1 rounded border ${rt('border-gray-200 text-gray-600', 'border-zinc-700 text-zinc-400')}`}
+                      >
+                        + JSON Content-Type
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Body (POST/PUT only) */}
+                  {(colConfig.method === 'POST' || colConfig.method === 'PUT') && (
+                    <div>
+                      <Label className={rt('text-gray-700', 'text-zinc-300')}>Request Body</Label>
+                      <Textarea
+                        value={colConfig.body || ''}
+                        onChange={e => setColConfig(prev => ({ ...prev, body: e.target.value }))}
+                        placeholder={'{\n  "email": "/Email",\n  "company": "/Company"\n}'}
+                        rows={4}
+                        className={rt('font-mono text-xs', 'bg-zinc-800 border-zinc-700 text-white font-mono text-xs')}
+                      />
+                    </div>
+                  )}
+
+                  {/* Authentication */}
+                  <div>
+                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Authentication</Label>
+                    <Select value={colConfig.auth?.type || 'none'} onValueChange={v => setColConfig(prev => ({ ...prev, auth: { ...prev.auth, type: v } }))}>
+                      <SelectTrigger className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                        <SelectItem value="none" className={rt('', 'text-white hover:bg-zinc-700')}>None</SelectItem>
+                        <SelectItem value="bearer" className={rt('', 'text-white hover:bg-zinc-700')}>Bearer Token</SelectItem>
+                        <SelectItem value="basic" className={rt('', 'text-white hover:bg-zinc-700')}>Basic Auth</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {colConfig.auth?.type === 'bearer' && (
+                      <Input
+                        value={colConfig.auth?.token || ''}
+                        onChange={e => setColConfig(prev => ({ ...prev, auth: { ...prev.auth, token: e.target.value } }))}
+                        placeholder="Bearer token"
+                        type="password"
+                        className={`mt-1.5 h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}
+                      />
+                    )}
+                    {colConfig.auth?.type === 'basic' && (
+                      <div className="flex gap-1.5 mt-1.5">
+                        <Input
+                          value={colConfig.auth?.username || ''}
+                          onChange={e => setColConfig(prev => ({ ...prev, auth: { ...prev.auth, username: e.target.value } }))}
+                          placeholder="Username"
+                          className={`h-8 text-xs flex-1 ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}
+                        />
+                        <Input
+                          value={colConfig.auth?.password || ''}
+                          onChange={e => setColConfig(prev => ({ ...prev, auth: { ...prev.auth, password: e.target.value } }))}
+                          placeholder="Password"
+                          type="password"
+                          className={`h-8 text-xs flex-1 ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Output Path */}
+                  <div>
+                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Output Path</Label>
+                    <Input
+                      value={colConfig.outputPath || ''}
+                      onChange={e => setColConfig(prev => ({ ...prev, outputPath: e.target.value }))}
+                      placeholder="data.result.email"
+                      className={`h-8 text-xs font-mono ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}
+                    />
+                    <p className="text-[10px] text-zinc-500 mt-1">Use dot notation to extract nested values from the JSON response</p>
+                  </div>
+
+                  {/* Test Request */}
+                  <div>
+                    <button
+                      onClick={async () => {
+                        if (!colConfig.url) { toast.error('Enter a URL first'); return; }
+                        const firstRow = rows[0];
+                        if (!firstRow) { toast.error('No rows to test with'); return; }
+                        setHttpTestResult({ loading: true });
+                        try {
+                          const url = replaceColumnRefs(colConfig.url, firstRow.id);
+                          const method = colConfig.method || 'GET';
+                          const headers = {};
+                          for (const h of (colConfig.headers || [])) {
+                            if (h.key) headers[replaceColumnRefs(h.key, firstRow.id)] = replaceColumnRefs(h.value, firstRow.id);
+                          }
+                          if (colConfig.auth?.type === 'bearer' && colConfig.auth.token) headers['Authorization'] = `Bearer ${colConfig.auth.token}`;
+                          else if (colConfig.auth?.type === 'basic' && colConfig.auth.username) headers['Authorization'] = `Basic ${btoa(`${colConfig.auth.username}:${colConfig.auth.password || ''}`)}`;
+                          const opts = { method, headers };
+                          if ((method === 'POST' || method === 'PUT') && colConfig.body) {
+                            opts.body = replaceColumnRefs(colConfig.body, firstRow.id);
+                            if (!headers['Content-Type']) headers['Content-Type'] = 'application/json';
+                          }
+                          const resp = await fetch(url, opts);
+                          const text = await resp.text();
+                          let parsed;
+                          try { parsed = JSON.parse(text); } catch { parsed = text; }
+                          let extracted = parsed;
+                          if (colConfig.outputPath && typeof parsed === 'object') extracted = extractNestedValue(parsed, colConfig.outputPath);
+                          setHttpTestResult({ loading: false, status: resp.status, data: parsed, extracted });
+                        } catch (err) {
+                          setHttpTestResult({ loading: false, error: err.message });
+                        }
+                      }}
+                      disabled={httpTestResult?.loading}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${rt('border-gray-200 text-gray-600 hover:bg-gray-50', 'border-zinc-700 text-zinc-400 hover:bg-zinc-800')}`}
+                    >
+                      {httpTestResult?.loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
+                      Test Request (Row 1)
+                    </button>
+                    {httpTestResult && !httpTestResult.loading && (
+                      <div className={`mt-2 p-2 rounded-lg text-xs font-mono max-h-32 overflow-auto ${httpTestResult.error ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-zinc-800/50 border border-zinc-700 text-zinc-300'}`}>
+                        {httpTestResult.error ? (
+                          <span>Error: {httpTestResult.error}</span>
+                        ) : (
+                          <div>
+                            <div className="text-zinc-500 mb-1">Status: {httpTestResult.status}</div>
+                            {colConfig.outputPath && (
+                              <div className="mb-1"><span className="text-emerald-400">Extracted:</span> {JSON.stringify(httpTestResult.extracted, null, 2)}</div>
+                            )}
+                            <div className="text-zinc-500">Full: {JSON.stringify(httpTestResult.data, null, 2).slice(0, 500)}</div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Security note */}
+                  <div className={`flex items-start gap-2 p-2 rounded-lg text-[10px] ${rt('bg-amber-50 text-amber-700', 'bg-amber-500/5 text-amber-400/80')}`}>
+                    <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                    <span>API credentials are stored in your workspace. Use environment variables for sensitive tokens when possible.</span>
+                  </div>
                 </div>
               )}
 
