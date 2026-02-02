@@ -371,10 +371,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Expenses', path: createPageUrl('FinanceExpensesConsolidated'), icon: CreditCard },
         { label: 'Ledger', path: createPageUrl('FinanceLedger'), icon: BookOpen },
         { label: 'Payables', path: createPageUrl('FinancePayables'), icon: ScrollText },
-        { label: 'Profit & Loss', path: createPageUrl('FinanceReportPL'), icon: TrendingUp },
-        { label: 'Balance Sheet', path: createPageUrl('FinanceReportBS'), icon: Scale },
-        { label: 'Trial Balance', path: createPageUrl('FinanceReportTB'), icon: FileSpreadsheet },
-        { label: 'Aging Reports', path: createPageUrl('FinanceReportAging'), icon: Clock },
+        { label: 'Reports', path: createPageUrl('FinanceReports'), icon: BarChart3 },
       ]
     };
   }

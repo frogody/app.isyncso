@@ -113,7 +113,7 @@ const PERIOD_BUTTONS = [
   { key: 'custom', label: 'Custom' },
 ];
 
-export default function FinanceReportPL() {
+export default function FinanceReportPL({ embedded = false }) {
   const [dateRange, setDateRange] = useState(getMonthRange);
   const [activePeriod, setActivePeriod] = useState('this_month');
   const [compare, setCompare] = useState(false);
@@ -264,6 +264,7 @@ export default function FinanceReportPL() {
   };
 
   if (permLoading) {
+    if (embedded) return <div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" /></div>;
     return (
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
@@ -272,6 +273,7 @@ export default function FinanceReportPL() {
   }
 
   if (!canView) {
+    if (embedded) return <div className="text-center py-12"><p className={ft('text-slate-500', 'text-zinc-400')}>You don't have permission to view financial reports.</p></div>;
     return (
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex flex-col items-center justify-center text-center p-6`}>
         <AlertCircle className="w-16 h-16 text-red-400 mb-4" />
@@ -281,13 +283,12 @@ export default function FinanceReportPL() {
     );
   }
 
-  return (
-    <FinancePageTransition>
-      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
-        <div className="w-full px-4 lg:px-6 py-4 space-y-4">
+  const content = (
+    <>
+        <div className={embedded ? "space-y-4" : "w-full px-4 lg:px-6 py-4 space-y-4"}>
 
           {/* Header */}
-          <div className="print:hidden">
+          {!embedded && <div className="print:hidden">
             <PageHeader
               icon={TrendingUp}
               title="Profit & Loss Statement"
@@ -301,7 +302,7 @@ export default function FinanceReportPL() {
                 </div>
               }
             />
-          </div>
+          </div>}
 
           {/* Report Controls */}
           <Card className={`print:hidden ${ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}`}>
@@ -714,7 +715,6 @@ export default function FinanceReportPL() {
             </div>
           )}
         </div>
-      </div>
 
       {/* Print styles */}
       <style>{`
@@ -725,6 +725,16 @@ export default function FinanceReportPL() {
           body { background: white !important; -webkit-print-color-adjust: exact; }
         }
       `}</style>
+    </>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <FinancePageTransition>
+      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
+        {content}
+      </div>
     </FinancePageTransition>
   );
 }
