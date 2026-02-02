@@ -419,6 +419,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Pitch Decks', path: createPageUrl('RaisePitchDecks'), icon: Presentation },
         { label: 'Data Room', path: createPageUrl('RaiseDataRoom'), icon: FolderKey },
         { label: 'Campaigns', path: createPageUrl('RaiseCampaigns'), icon: Rocket },
+        { label: 'Enrich', path: createPageUrl('RaiseEnrich'), icon: FileSpreadsheet },
       ]
     };
   }

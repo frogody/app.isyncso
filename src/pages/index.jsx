@@ -212,6 +212,8 @@ import RaiseDataRoom from "./RaiseDataRoom";
 
 import RaiseCampaigns from "./RaiseCampaigns";
 
+import RaiseEnrich from "./RaiseEnrich";
+
 import TeamManagement from "./TeamManagement";
 
 import AgentDetail from "./AgentDetail";
@@ -517,6 +519,8 @@ const PAGES = {
     RaiseDataRoom: RaiseDataRoom,
 
     RaiseCampaigns: RaiseCampaigns,
+
+    RaiseEnrich: RaiseEnrich,
 
     TeamManagement: TeamManagement,
 
@@ -893,6 +897,7 @@ function PagesContent() {
                 <Route path="/RaiseDataRoom" element={<RaiseDataRoom />} />
 
                 <Route path="/RaiseCampaigns" element={<RaiseCampaigns />} />
+                <Route path="/RaiseEnrich" element={<RaiseEnrich />} />
 
                 <Route path="/TeamManagement" element={<TeamManagement />} />
 
