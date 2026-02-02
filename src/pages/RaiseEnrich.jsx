@@ -272,7 +272,15 @@ export default function RaiseEnrich() {
     const firstRow = rows[0];
     return columns.filter(c => c.name.toLowerCase().includes(slashMenu.filter)).map(c => ({
       ...c,
-      sampleValue: firstRow ? (cells[`${firstRow.id}:${c.id}`]?.value || '') : '',
+      sampleValue: (() => {
+        if (!firstRow) return '';
+        const cell = cells[`${firstRow.id}:${c.id}`];
+        if (!cell) return '';
+        const v = cell.value;
+        if (v == null) return '';
+        if (typeof v === 'object') return JSON.stringify(v);
+        return String(v);
+      })(),
     }));
   }, [slashMenu.open, slashMenu.filter, columns, rows, cells]);
 
