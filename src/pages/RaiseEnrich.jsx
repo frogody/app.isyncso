@@ -7,7 +7,7 @@ import {
   Edit2, Settings, ChevronDown, Check, X, Loader2, AlertCircle,
   Table2, Clock, Hash, Upload, FileUp, Database, Pencil, Filter, XCircle,
   ArrowUp, ArrowDown, ArrowUpDown, ToggleLeft, ToggleRight, Layers, Globe,
-  Calendar, DollarSign, Link, Mail, CheckSquare, ListOrdered
+  Calendar, DollarSign, Link, Mail, CheckSquare, ListOrdered, Merge
 } from 'lucide-react';
 import {
   RaiseCard, RaiseCardContent, RaiseCardHeader, RaiseCardTitle,
@@ -73,9 +73,10 @@ const COLUMN_TYPES = [
   { value: 'formula', label: 'Formula', icon: FunctionSquare, desc: 'Calculated value' },
   { value: 'waterfall', label: 'Waterfall', icon: Layers, desc: 'Try multiple sources in order' },
   { value: 'http', label: 'HTTP API', icon: Globe, desc: 'Call custom API endpoints' },
+  { value: 'merge', label: 'Merge', icon: Merge, desc: 'Combine multiple columns' },
 ];
 
-const COLUMN_TYPE_ICONS = { field: Type, enrichment: Zap, ai: Brain, formula: FunctionSquare, waterfall: Layers, http: Globe };
+const COLUMN_TYPE_ICONS = { field: Type, enrichment: Zap, ai: Brain, formula: FunctionSquare, waterfall: Layers, http: Globe, merge: Merge };
 
 const FIELD_DATA_TYPES = [
   { value: 'text', label: 'Text', icon: Type },
@@ -880,6 +881,28 @@ export default function RaiseEnrich() {
         columnMap[c.name] = cv;
       });
       return evaluateFormula(col.config?.expression, columnMap);
+    }
+    if (col.type === 'merge') {
+      const srcColIds = col.config?.source_columns || [];
+      const separator = col.config?.separator ?? ', ';
+      const emptyHandling = col.config?.empty_handling || 'skip';
+      const placeholder = col.config?.placeholder || '';
+      const outputFormat = col.config?.output_format || 'plain';
+      const values = srcColIds.map(cid => {
+        const srcCol = columns.find(c => c.id === cid);
+        if (!srcCol) return null;
+        return getCellRawValue(rowId, srcCol);
+      });
+      const processed = values.map(v => {
+        if (!v && v !== 0) {
+          if (emptyHandling === 'skip') return null;
+          if (emptyHandling === 'placeholder') return placeholder;
+          return '';
+        }
+        return String(v);
+      }).filter(v => v !== null);
+      if (outputFormat === 'bulleted') return processed.map(v => `• ${v}`).join('\n');
+      return processed.join(separator);
     }
     if (cell?.value) {
       return typeof cell.value === 'object' ? (cell.value.v ?? JSON.stringify(cell.value)) : String(cell.value);
@@ -2174,7 +2197,7 @@ export default function RaiseEnrich() {
                     onClick={(e) => { if (!e.target.closest('[data-no-sort]')) toggleColumnSort(col.id, e.shiftKey); }}
                   >
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <Icon className={`w-3 h-3 flex-shrink-0 ${col.type === 'field' ? 'text-blue-400' : col.type === 'enrichment' ? 'text-amber-400' : col.type === 'ai' ? 'text-purple-400' : col.type === 'waterfall' ? 'text-cyan-400' : col.type === 'http' ? 'text-emerald-400' : 'text-green-400'}`} />
+                      <Icon className={`w-3 h-3 flex-shrink-0 ${col.type === 'field' ? 'text-blue-400' : col.type === 'enrichment' ? 'text-amber-400' : col.type === 'ai' ? 'text-purple-400' : col.type === 'waterfall' ? 'text-cyan-400' : col.type === 'http' ? 'text-emerald-400' : col.type === 'merge' ? 'text-pink-400' : 'text-green-400'}`} />
                       <span className="truncate flex-1">{col.name}</span>
                       {/* Sort indicator */}
                       {sortState ? (
@@ -2305,7 +2328,7 @@ export default function RaiseEnrich() {
                             }
                           }}
                           onDoubleClick={() => {
-                            if (col.type === 'formula') return;
+                            if (col.type === 'formula' || col.type === 'merge') return;
                             if (col.type === 'field' && col.config?.data_type === 'checkbox') return;
                             setEditingCell({ rowId: row.id, colId: col.id });
                             // For editing, use raw value (not formatted)
@@ -3220,6 +3243,148 @@ export default function RaiseEnrich() {
                     <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
                     <span>API credentials are stored in your workspace. Use environment variables for sensitive tokens when possible.</span>
                   </div>
+                </div>
+              )}
+
+              {colType === 'merge' && (
+                <div className="space-y-3">
+                  {/* Source columns */}
+                  <div>
+                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Source Columns</Label>
+                    <p className={`text-[10px] ${rt('text-gray-500', 'text-zinc-500')} mb-2`}>Select columns to merge. Drag to reorder.</p>
+                    {/* Selected columns as draggable badges */}
+                    <div className="flex flex-wrap gap-1.5 mb-2 min-h-[28px]">
+                      {(colConfig.source_columns || []).map((cid, idx) => {
+                        const srcCol = columns.find(c => c.id === cid);
+                        if (!srcCol) return null;
+                        return (
+                          <span
+                            key={cid}
+                            draggable
+                            onDragStart={e => e.dataTransfer.setData('mergeIdx', String(idx))}
+                            onDragOver={e => e.preventDefault()}
+                            onDrop={e => {
+                              const fromIdx = parseInt(e.dataTransfer.getData('mergeIdx'));
+                              if (isNaN(fromIdx)) return;
+                              setColConfig(prev => {
+                                const arr = [...(prev.source_columns || [])];
+                                const [item] = arr.splice(fromIdx, 1);
+                                arr.splice(idx, 0, item);
+                                return { ...prev, source_columns: arr };
+                              });
+                            }}
+                            className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full cursor-grab active:cursor-grabbing ${rt('bg-orange-50 text-orange-700 border border-orange-200', 'bg-orange-500/10 text-orange-400 border border-orange-500/30')}`}
+                          >
+                            <GripVertical className="w-2.5 h-2.5 opacity-50" />
+                            {srcCol.name}
+                            <button onClick={() => setColConfig(prev => ({ ...prev, source_columns: prev.source_columns.filter(id => id !== cid) }))} className="hover:text-red-400"><X className="w-2.5 h-2.5" /></button>
+                          </span>
+                        );
+                      })}
+                      {(colConfig.source_columns || []).length === 0 && (
+                        <span className="text-[10px] text-zinc-500 italic">No columns selected</span>
+                      )}
+                    </div>
+                    {/* Available columns to add */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {columns.filter(c => !(colConfig.source_columns || []).includes(c.id)).map(c => (
+                        <button
+                          key={c.id}
+                          onClick={() => setColConfig(prev => ({ ...prev, source_columns: [...(prev.source_columns || []), c.id] }))}
+                          className={`text-[10px] px-2 py-1 rounded-full border transition-all ${rt('border-gray-200 text-gray-500 hover:border-gray-400', 'border-zinc-700 text-zinc-500 hover:border-zinc-500')}`}
+                        >
+                          + {c.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Separator */}
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <Label className={rt('text-gray-700', 'text-zinc-300')}>Separator</Label>
+                      <Input
+                        value={colConfig.separator ?? ', '}
+                        onChange={e => setColConfig(prev => ({ ...prev, separator: e.target.value }))}
+                        placeholder=", "
+                        className={`h-8 text-xs font-mono ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Label className={rt('text-gray-700', 'text-zinc-300')}>Output Format</Label>
+                      <Select value={colConfig.output_format || 'plain'} onValueChange={v => setColConfig(prev => ({ ...prev, output_format: v }))}>
+                        <SelectTrigger className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}><SelectValue /></SelectTrigger>
+                        <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                          <SelectItem value="plain" className={rt('', 'text-white hover:bg-zinc-700')}>Plain text</SelectItem>
+                          <SelectItem value="bulleted" className={rt('', 'text-white hover:bg-zinc-700')}>Bulleted list</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Empty handling */}
+                  <div>
+                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Empty Values</Label>
+                    <Select value={colConfig.empty_handling || 'skip'} onValueChange={v => setColConfig(prev => ({ ...prev, empty_handling: v }))}>
+                      <SelectTrigger className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}><SelectValue /></SelectTrigger>
+                      <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                        <SelectItem value="skip" className={rt('', 'text-white hover:bg-zinc-700')}>Skip empty</SelectItem>
+                        <SelectItem value="include" className={rt('', 'text-white hover:bg-zinc-700')}>Include empty</SelectItem>
+                        <SelectItem value="placeholder" className={rt('', 'text-white hover:bg-zinc-700')}>Use placeholder</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {colConfig.empty_handling === 'placeholder' && (
+                      <Input
+                        value={colConfig.placeholder || ''}
+                        onChange={e => setColConfig(prev => ({ ...prev, placeholder: e.target.value }))}
+                        placeholder="e.g. N/A"
+                        className={`mt-1.5 h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}
+                      />
+                    )}
+                  </div>
+
+                  {/* Live preview */}
+                  {(colConfig.source_columns || []).length > 0 && rows.length > 0 && (
+                    <div>
+                      <Label className={rt('text-gray-700', 'text-zinc-300')}>Preview (Row 1)</Label>
+                      <div className={`mt-1 p-2 rounded-lg text-xs font-mono whitespace-pre-wrap ${rt('bg-gray-50 border border-gray-200 text-gray-700', 'bg-zinc-800/50 border border-zinc-700 text-zinc-300')}`}>
+                        {(() => {
+                          const srcVals = (colConfig.source_columns || []).map(cid => {
+                            const srcCol = columns.find(c => c.id === cid);
+                            if (!srcCol) return null;
+                            return getCellRawValue(rows[0].id, srcCol);
+                          });
+                          const sep = colConfig.separator ?? ', ';
+                          const eh = colConfig.empty_handling || 'skip';
+                          const ph = colConfig.placeholder || '';
+                          const processed = srcVals.map(v => {
+                            if (!v && v !== 0) {
+                              if (eh === 'skip') return null;
+                              if (eh === 'placeholder') return ph;
+                              return '';
+                            }
+                            return String(v);
+                          }).filter(v => v !== null);
+                          if (processed.length === 0) return <span className="text-zinc-500 italic">No values</span>;
+                          if (colConfig.output_format === 'bulleted') return processed.map(v => `• ${v}`).join('\n');
+                          return processed.join(sep);
+                        })()}
+                      </div>
+                      {/* Template */}
+                      <div className="mt-1.5 flex items-center gap-1 text-[10px] text-zinc-500">
+                        <span>Template:</span>
+                        {(colConfig.source_columns || []).map((cid, i) => {
+                          const srcCol = columns.find(c => c.id === cid);
+                          return (
+                            <span key={cid}>
+                              {i > 0 && <span className="text-cyan-400 font-mono mx-0.5">{colConfig.output_format === 'bulleted' ? ' • ' : (colConfig.separator ?? ', ')}</span>}
+                              <span className="text-orange-400 font-mono">/{srcCol?.name || '?'}</span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
