@@ -709,35 +709,67 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
     )}
 
     {/* Contact Information */}
-    {isSectionEnabled('profile', 'contact_info') && (
-      <Section title="Contact Information">
-        <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
-          <InfoRow icon={Mail} label="Email" value={candidate.verified_email || candidate.email} copyable />
-          {candidate.verified_email && candidate.email && candidate.verified_email !== candidate.email && (
-            <InfoRow icon={Mail} label="Personal Email" value={candidate.email} copyable />
-          )}
-          <InfoRow icon={Phone} label="Phone" value={candidate.verified_phone || candidate.phone} copyable />
-          {candidate.verified_mobile && (
-            <InfoRow icon={Phone} label="Mobile" value={candidate.verified_mobile} copyable />
-          )}
-          <InfoRow icon={Linkedin} label="LinkedIn" value={candidate.linkedin_url} link />
-          {candidate.website && (
-            <InfoRow icon={ExternalLink} label="Website" value={candidate.website} link />
-          )}
+    {isSectionEnabled('profile', 'contact_info') && ((() => {
+      const hasContactData = candidate.verified_email || candidate.email || candidate.personal_email ||
+        candidate.verified_phone || candidate.phone || candidate.verified_mobile || candidate.mobile_phone || candidate.work_phone ||
+        candidate.linkedin_url || candidate.website || candidate.location ||
+        candidate.location_city || candidate.current_title || candidate.current_company;
+      if (!hasContactData) return null;
+      return (
+        <Section title="Contact Information">
+          <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
+            <InfoRow icon={Mail} label="Email" value={candidate.verified_email || candidate.email} copyable />
+            {candidate.personal_email && candidate.personal_email !== (candidate.verified_email || candidate.email) && (
+              <InfoRow icon={Mail} label="Personal Email" value={candidate.personal_email} copyable />
+            )}
+            {candidate.verified_email && candidate.email && candidate.verified_email !== candidate.email && !candidate.personal_email && (
+              <InfoRow icon={Mail} label="Personal Email" value={candidate.email} copyable />
+            )}
+            <InfoRow icon={Phone} label="Phone" value={candidate.verified_phone || candidate.phone} copyable />
+            {candidate.verified_mobile && (
+              <InfoRow icon={Phone} label="Mobile" value={candidate.verified_mobile} copyable />
+            )}
+            {candidate.mobile_phone && candidate.mobile_phone !== candidate.verified_mobile && (
+              <InfoRow icon={Phone} label="Mobile" value={candidate.mobile_phone} copyable />
+            )}
+            {candidate.work_phone && (
+              <InfoRow icon={Phone} label="Work Phone" value={candidate.work_phone} copyable />
+            )}
+            <InfoRow icon={Linkedin} label="LinkedIn" value={candidate.linkedin_url} link />
+            {candidate.website && (
+              <InfoRow icon={ExternalLink} label="Website" value={candidate.website} link />
+            )}
+            <InfoRow icon={MapPin} label="Location" value={
+              candidate.location ||
+              [candidate.location_city, candidate.location_region, candidate.location_country].filter(Boolean).join(', ') ||
+              null
+            } />
+            <InfoRow icon={Briefcase} label="Title" value={candidate.current_title} />
+            <InfoRow icon={Building2} label="Company" value={candidate.current_company} />
+            {candidate.job_department && (
+              <InfoRow icon={Layers} label="Department" value={candidate.job_department} />
+            )}
+            {candidate.job_seniority_level && (
+              <InfoRow icon={TrendingUp} label="Seniority" value={candidate.job_seniority_level} />
+            )}
+            {candidate.age_group && (
+              <InfoRow icon={Users} label="Age Group" value={candidate.age_group} />
+            )}
 
-          {/* Enrichment status indicator */}
-          {candidate.enriched_at && (
-            <div className="mt-3 pt-3 border-t border-zinc-700/50">
-              <div className="flex items-center gap-2 text-xs text-red-400">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Verified via {candidate.enrichment_source || "Explorium"}</span>
-                <span className="text-zinc-500">• {new Date(candidate.enriched_at).toLocaleDateString()}</span>
+            {/* Enrichment status indicator */}
+            {candidate.enriched_at && (
+              <div className="mt-3 pt-3 border-t border-zinc-700/50">
+                <div className="flex items-center gap-2 text-xs text-red-400">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Verified via {candidate.enrichment_source || "Explorium"}</span>
+                  <span className="text-zinc-500">• {new Date(candidate.enriched_at).toLocaleDateString()}</span>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </Section>
-    )}
+            )}
+          </div>
+        </Section>
+      );
+    })())}
 
     {/* Professional Summary */}
     {isSectionEnabled('profile', 'professional_summary') && candidate.summary && (
@@ -905,7 +937,7 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
     )}
 
     {/* Additional Info */}
-    {isSectionEnabled('profile', 'additional_info') && (
+    {isSectionEnabled('profile', 'additional_info') && (candidate.years_experience || candidate.current_salary || candidate.desired_salary || candidate.notice_period) && (
       <Section title="Additional Information">
         <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30 space-y-2">
           {candidate.years_experience && (
