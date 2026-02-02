@@ -7,7 +7,7 @@ import {
   Edit2, Settings, ChevronDown, Check, X, Loader2, AlertCircle,
   Table2, Clock, Hash, Upload, FileUp, Database, Pencil, Filter, XCircle,
   ArrowUp, ArrowDown, ArrowUpDown, ToggleLeft, ToggleRight, Layers, Globe,
-  Calendar, DollarSign, Link, Mail, CheckSquare, ListOrdered, Merge
+  Calendar, DollarSign, Link, Mail, CheckSquare, ListOrdered, Merge, Send, Bot, Trash
 } from 'lucide-react';
 import {
   RaiseCard, RaiseCardContent, RaiseCardHeader, RaiseCardTitle,
@@ -419,6 +419,14 @@ export default function RaiseEnrich() {
   const autoRunRunningRef = useRef(false);
   const prevRowCountRef = useRef(0);
   const prevColCountRef = useRef(0);
+
+  // AI Chat assistant
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]); // [{ role: 'user'|'assistant', content, actions?, timestamp }]
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef(null);
+  const chatInputRef = useRef(null);
 
   // Column resize
   const [resizing, setResizing] = useState(null);
@@ -1720,6 +1728,219 @@ export default function RaiseEnrich() {
     if (status === 'complete') return <span title="Complete" className="inline-block w-2 h-2 rounded-full bg-green-400" />;
     return null;
   };
+
+  // ─── AI Chat assistant ────────────────────────────────────────────────
+
+  // Load chat history from DB
+  useEffect(() => {
+    if (!activeWorkspaceId) return;
+    supabase.from('enrich_workspaces').select('chat_history').eq('id', activeWorkspaceId).single()
+      .then(({ data }) => {
+        if (data?.chat_history && Array.isArray(data.chat_history)) setChatMessages(data.chat_history);
+      });
+  }, [activeWorkspaceId]);
+
+  // Save chat history to DB
+  const saveChatHistory = useCallback(async (messages) => {
+    if (!activeWorkspaceId) return;
+    await supabase.from('enrich_workspaces').update({ chat_history: messages, updated_at: new Date().toISOString() }).eq('id', activeWorkspaceId);
+  }, [activeWorkspaceId]);
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages, chatLoading]);
+
+  // Build workspace context for AI
+  const buildChatContext = useCallback(() => {
+    const colSummary = columns.map(c => {
+      let desc = `"${c.name}" (type: ${c.type}`;
+      if (c.type === 'field' && c.config?.data_type) desc += `, data_type: ${c.config.data_type}`;
+      if (c.type === 'field' && c.config?.source_field) desc += `, source: ${c.config.source_field}`;
+      if (c.type === 'enrichment' && c.config?.function) desc += `, function: ${c.config.function}`;
+      if (c.type === 'formula' && c.config?.expression) desc += `, expr: ${c.config.expression}`;
+      if (c.type === 'merge' && c.config?.source_columns) {
+        const names = c.config.source_columns.map(id => columns.find(cc => cc.id === id)?.name).filter(Boolean);
+        desc += `, merging: [${names.join(', ')}]`;
+      }
+      desc += ')';
+      return desc;
+    }).join('\n  ');
+    const sampleRow = rows[0];
+    let sampleData = '';
+    if (sampleRow) {
+      sampleData = columns.map(c => `${c.name}: "${getCellDisplayValue(sampleRow.id, c)}"`).join(', ');
+    }
+    return {
+      workspace: workspace?.name || 'Untitled',
+      columnCount: columns.length,
+      rowCount: rows.length,
+      columns: colSummary,
+      sampleRow: sampleData,
+      availableTypes: 'field, enrichment, ai, formula, waterfall, http, merge',
+      enrichmentFunctions: 'fullEnrichFromLinkedIn, fullEnrichFromEmail, enrichCompanyOnly, matchProspect, enrichProspectContact, enrichProspectProfile',
+      fieldDataTypes: 'text, number, currency, date, url, email, checkbox, select',
+    };
+  }, [columns, rows, workspace, getCellDisplayValue]);
+
+  const CHAT_QUICK_PROMPTS = [
+    { label: 'Add a column', prompt: 'Suggest a useful column I could add to enrich this data further.' },
+    { label: 'Create a formula', prompt: 'Help me create a formula column. What formulas would be useful given my current columns?' },
+    { label: 'Enrich this data', prompt: 'What enrichment columns should I add to get more value from my data?' },
+    { label: 'Filter rows', prompt: 'Suggest filters I should apply to clean up or focus my data.' },
+  ];
+
+  const sendChatMessage = useCallback(async (content) => {
+    if (!content.trim() || chatLoading) return;
+    const userMsg = { role: 'user', content: content.trim(), timestamp: Date.now() };
+    const updated = [...chatMessages, userMsg];
+    setChatMessages(updated);
+    setChatInput('');
+    setChatLoading(true);
+
+    try {
+      const ctx = buildChatContext();
+      const systemPrompt = `You are Sculptor, an AI assistant for the RaiseEnrich data enrichment workspace. You help users build and configure their enrichment table.
+
+Current workspace: "${ctx.workspace}"
+Rows: ${ctx.rowCount} | Columns: ${ctx.columnCount}
+
+Columns:
+  ${ctx.columns}
+
+${ctx.sampleRow ? `Sample row data: ${ctx.sampleRow}` : 'No data rows yet.'}
+
+Available column types: ${ctx.availableTypes}
+Available enrichment functions: ${ctx.enrichmentFunctions}
+Field data types: ${ctx.fieldDataTypes}
+
+You can suggest:
+- Adding columns (specify type, name, and config)
+- Creating formulas (use /ColumnName syntax for column references)
+- Setting up enrichments with specific functions
+- Applying filters
+- Building waterfall or HTTP API columns
+- Merging columns together
+
+When suggesting an action, include a JSON block with the action details:
+\`\`\`action
+{"type": "add_column", "name": "...", "column_type": "...", "config": {...}}
+\`\`\`
+or
+\`\`\`action
+{"type": "add_filter", "column": "...", "operator": "...", "value": "..."}
+\`\`\`
+
+Keep responses concise and practical. Focus on actionable suggestions.`;
+
+      const messagesPayload = [
+        { role: 'system', content: systemPrompt },
+        ...updated.slice(-20).map(m => ({ role: m.role, content: m.content })),
+      ];
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxfntqleig.supabase.co';
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
+
+      const resp = await fetch(`${supabaseUrl}/functions/v1/raise-chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+        body: JSON.stringify({ messages: messagesPayload }),
+      });
+
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+      // Try streaming
+      let assistantContent = '';
+      if (resp.headers.get('content-type')?.includes('text/event-stream')) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        const assistantMsg = { role: 'assistant', content: '', timestamp: Date.now() };
+        setChatMessages(prev => [...prev, assistantMsg]);
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') break;
+              try {
+                const parsed = JSON.parse(data);
+                const delta = parsed.choices?.[0]?.delta?.content || parsed.content || '';
+                assistantContent += delta;
+                setChatMessages(prev => {
+                  const copy = [...prev];
+                  copy[copy.length - 1] = { ...copy[copy.length - 1], content: assistantContent };
+                  return copy;
+                });
+              } catch {}
+            }
+          }
+        }
+      } else {
+        const data = await resp.json();
+        assistantContent = data.choices?.[0]?.message?.content || data.content || data.message || 'Sorry, I couldn\'t generate a response.';
+        setChatMessages(prev => [...prev, { role: 'assistant', content: assistantContent, timestamp: Date.now() }]);
+      }
+
+      // Parse actions from response
+      const actionMatch = assistantContent.match(/```action\n([\s\S]*?)\n```/);
+      if (actionMatch) {
+        try {
+          const action = JSON.parse(actionMatch[1]);
+          setChatMessages(prev => {
+            const copy = [...prev];
+            copy[copy.length - 1] = { ...copy[copy.length - 1], action };
+            return copy;
+          });
+        } catch {}
+      }
+
+      // Save history
+      const finalMessages = [...updated, { role: 'assistant', content: assistantContent, timestamp: Date.now() }];
+      saveChatHistory(finalMessages);
+    } catch (err) {
+      console.error('Chat error:', err);
+      const errMsg = { role: 'assistant', content: `Sorry, I encountered an error: ${err.message}. Make sure the raise-chat edge function is deployed.`, timestamp: Date.now() };
+      setChatMessages(prev => [...prev, errMsg]);
+    } finally {
+      setChatLoading(false);
+    }
+  }, [chatMessages, chatLoading, buildChatContext, saveChatHistory]);
+
+  const applyChatAction = useCallback(async (action) => {
+    try {
+      if (action.type === 'add_column') {
+        const pos = columns.length;
+        const { error } = await supabase.from('enrich_columns').insert({
+          workspace_id: activeWorkspaceId,
+          name: action.name,
+          type: action.column_type,
+          position: pos,
+          config: action.config || {},
+          width: DEFAULT_COL_WIDTH,
+        });
+        if (error) throw error;
+        toast.success(`Column "${action.name}" added`);
+        loadWorkspaceDetail(activeWorkspaceId);
+      } else if (action.type === 'add_filter') {
+        const col = columns.find(c => c.name === action.column);
+        if (col) {
+          setFilters(prev => [...prev, { id: crypto.randomUUID(), columnId: col.id, operator: action.operator || 'contains', value: action.value || '' }]);
+          toast.success('Filter applied');
+        }
+      }
+    } catch (err) {
+      toast.error(`Failed to apply: ${err.message}`);
+    }
+  }, [columns, activeWorkspaceId, loadWorkspaceDetail]);
+
+  const clearChat = useCallback(() => {
+    setChatMessages([]);
+    saveChatHistory([]);
+  }, [saveChatHistory]);
 
   // ─── Progress indicators ──────────────────────────────────────────────
 
@@ -3483,6 +3704,160 @@ export default function RaiseEnrich() {
             </div>
           </DialogContent>
         </Dialog>
+        {/* AI Chat Floating Button */}
+        <button
+          onClick={() => { setChatOpen(prev => !prev); setTimeout(() => chatInputRef.current?.focus(), 100); }}
+          className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all ${
+            chatOpen
+              ? rt('bg-gray-200 text-gray-600', 'bg-zinc-700 text-zinc-300')
+              : rt('bg-gradient-to-br from-purple-500 to-pink-500 text-white hover:shadow-xl hover:scale-105', 'bg-gradient-to-br from-purple-500 to-pink-500 text-white hover:shadow-xl hover:scale-105')
+          }`}
+        >
+          {chatOpen ? <X className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
+        </button>
+
+        {/* AI Chat Panel */}
+        <AnimatePresence>
+          {chatOpen && (
+            <motion.div
+              initial={{ x: '100%', opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: '100%', opacity: 0 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 300 }}
+              className={`fixed top-0 right-0 h-full w-[400px] z-40 flex flex-col shadow-2xl ${rt('bg-white border-l border-gray-200', 'bg-zinc-950 border-l border-zinc-800')}`}
+            >
+              {/* Header */}
+              <div className={`flex items-center justify-between px-4 py-3 border-b ${rt('border-gray-200', 'border-zinc-800')}`}>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                    <Sparkles className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className={`text-sm font-semibold ${rt('text-gray-900', 'text-white')}`}>Sculptor</h3>
+                    <p className="text-[10px] text-zinc-500">AI workspace assistant</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button onClick={clearChat} title="Clear conversation" className={`p-1.5 rounded-lg transition-colors ${rt('hover:bg-gray-100 text-gray-400', 'hover:bg-zinc-800 text-zinc-500')}`}>
+                    <Trash className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => setChatOpen(false)} className={`p-1.5 rounded-lg transition-colors ${rt('hover:bg-gray-100 text-gray-400', 'hover:bg-zinc-800 text-zinc-500')}`}>
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+                {chatMessages.length === 0 && (
+                  <div className="text-center py-8">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mx-auto mb-3">
+                      <Bot className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <h4 className={`text-sm font-medium mb-1 ${rt('text-gray-900', 'text-white')}`}>Hi, I'm Sculptor</h4>
+                    <p className={`text-xs mb-4 ${rt('text-gray-500', 'text-zinc-500')}`}>I can help you build and configure your enrichment workspace.</p>
+                    <div className="space-y-2">
+                      {CHAT_QUICK_PROMPTS.map((qp, i) => (
+                        <button
+                          key={i}
+                          onClick={() => sendChatMessage(qp.prompt)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all ${rt('bg-gray-50 hover:bg-gray-100 text-gray-700', 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300')} border ${rt('border-gray-200', 'border-zinc-800')}`}
+                        >
+                          <span className="text-purple-400 mr-1">→</span> {qp.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {chatMessages.map((msg, idx) => (
+                  <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed ${
+                      msg.role === 'user'
+                        ? rt('bg-purple-500 text-white', 'bg-purple-600 text-white')
+                        : rt('bg-gray-100 text-gray-800', 'bg-zinc-900 text-zinc-200')
+                    }`}>
+                      {/* Render message with basic markdown */}
+                      <div className="whitespace-pre-wrap break-words">
+                        {msg.content.split('```').map((block, bi) => {
+                          if (bi % 2 === 1) {
+                            const lines = block.split('\n');
+                            const lang = lines[0];
+                            const code = lang === 'action' ? lines.slice(1).join('\n') : block;
+                            if (lang === 'action') return null; // hide action blocks
+                            return <pre key={bi} className={`my-1.5 p-2 rounded text-[10px] font-mono overflow-x-auto ${rt('bg-gray-200', 'bg-zinc-800')}`}>{code}</pre>;
+                          }
+                          return <span key={bi}>{block}</span>;
+                        })}
+                      </div>
+                      {/* Action button */}
+                      {msg.action && (
+                        <button
+                          onClick={() => applyChatAction(msg.action)}
+                          className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-purple-500 text-white hover:bg-purple-600 transition-colors"
+                        >
+                          <Check className="w-3 h-3" />
+                          Apply: {msg.action.type === 'add_column' ? `Add "${msg.action.name}"` : msg.action.type === 'add_filter' ? 'Apply Filter' : 'Apply'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {chatLoading && (
+                  <div className="flex justify-start">
+                    <div className={`rounded-2xl px-3 py-2 ${rt('bg-gray-100', 'bg-zinc-900')}`}>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div ref={chatEndRef} />
+              </div>
+
+              {/* Quick prompts when conversation exists */}
+              {chatMessages.length > 0 && (
+                <div className={`px-4 py-2 flex gap-1.5 overflow-x-auto border-t ${rt('border-gray-100', 'border-zinc-800/50')}`}>
+                  {CHAT_QUICK_PROMPTS.map((qp, i) => (
+                    <button
+                      key={i}
+                      onClick={() => sendChatMessage(qp.prompt)}
+                      className={`flex-shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-all ${rt('border-gray-200 text-gray-500 hover:bg-gray-50', 'border-zinc-800 text-zinc-500 hover:bg-zinc-900')}`}
+                    >
+                      {qp.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Input */}
+              <div className={`px-4 py-3 border-t ${rt('border-gray-200', 'border-zinc-800')}`}>
+                <div className={`flex items-center gap-2 rounded-xl px-3 py-2 ${rt('bg-gray-50 border border-gray-200', 'bg-zinc-900 border border-zinc-800')}`}>
+                  <input
+                    ref={chatInputRef}
+                    value={chatInput}
+                    onChange={e => setChatInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(chatInput); } }}
+                    placeholder="Ask Sculptor anything..."
+                    disabled={chatLoading}
+                    className={`flex-1 bg-transparent outline-none text-xs ${rt('text-gray-900 placeholder:text-gray-400', 'text-white placeholder:text-zinc-600')}`}
+                  />
+                  <button
+                    onClick={() => sendChatMessage(chatInput)}
+                    disabled={!chatInput.trim() || chatLoading}
+                    className={`p-1.5 rounded-lg transition-colors ${chatInput.trim() ? 'bg-purple-500 text-white hover:bg-purple-600' : rt('text-gray-300', 'text-zinc-700')}`}
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </RaisePageTransition>
   );

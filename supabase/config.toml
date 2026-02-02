@@ -1,3 +1,6 @@
+[functions.raise-chat]
+verify_jwt = false
+
 [functions.sync]
 verify_jwt = false
 
