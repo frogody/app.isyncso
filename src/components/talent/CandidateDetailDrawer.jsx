@@ -60,6 +60,7 @@ import { usePanelPreferences } from "@/hooks/usePanelPreferences";
 import { EnrichmentOptionsPopover } from "./EnrichmentOptionsPopover";
 import { EnrichmentButtons } from "./EnrichmentButtons";
 import PanelCustomizationModal from "./PanelCustomizationModal";
+import IntelligencePreferencesModal from "./IntelligencePreferencesModal";
 import {
   Dialog,
   DialogContent,
@@ -1396,6 +1397,7 @@ export default function CandidateDetailDrawer({
 
   // SMS Modal state
   const [showSMSModal, setShowSMSModal] = useState(false);
+  const [showIntelPrefs, setShowIntelPrefs] = useState(false);
   const [smsMessage, setSmsMessage] = useState("");
   const [sendingFromNumber, setSendingFromNumber] = useState("");
   const [availableNumbers, setAvailableNumbers] = useState([]);
@@ -2201,14 +2203,25 @@ export default function CandidateDetailDrawer({
                     />
                   )}
                   {activeTab === "intelligence" && (
-                    <IntelligenceReport
-                      candidate={candidate}
-                      singleColumn
-                      onGenerate={handleSyncIntel}
-                      isGenerating={generatingIntelligence}
-                      syncStatus={syncStatus}
-                      isSectionEnabled={isSectionEnabled}
-                    />
+                    <div>
+                      <div className="flex justify-end mb-3">
+                        <button
+                          onClick={() => setShowIntelPrefs(true)}
+                          className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-red-400 transition-colors px-2 py-1 rounded-lg hover:bg-zinc-800/50"
+                        >
+                          <Settings className="w-3.5 h-3.5" />
+                          AI Preferences
+                        </button>
+                      </div>
+                      <IntelligenceReport
+                        candidate={candidate}
+                        singleColumn
+                        onGenerate={handleSyncIntel}
+                        isGenerating={generatingIntelligence}
+                        syncStatus={syncStatus}
+                        isSectionEnabled={isSectionEnabled}
+                      />
+                    </div>
                   )}
                   {activeTab === "company" && (
                     <div className="space-y-4">
@@ -2366,6 +2379,12 @@ export default function CandidateDetailDrawer({
         preferences={preferences}
         onSave={savePreferences}
         saving={preferencesSaving}
+      />
+
+      {/* Intelligence Preferences Modal */}
+      <IntelligencePreferencesModal
+        open={showIntelPrefs}
+        onOpenChange={setShowIntelPrefs}
       />
 
       {/* SMS Modal */}

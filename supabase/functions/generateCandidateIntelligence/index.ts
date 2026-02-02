@@ -280,8 +280,73 @@ function filterCompanyCorrelations(correlations: CompanyCorrelation[], jobTitle:
   });
 }
 
+// Build preferences section for prompt injection
+function buildPreferencesSection(prefs: any): string {
+  const sections: string[] = [];
+
+  // Industry & role context
+  if (prefs.industry_context) {
+    sections.push(`RECRUITER INDUSTRY CONTEXT:\n${prefs.industry_context}`);
+  }
+  if (prefs.role_context) {
+    sections.push(`RECRUITER ROLE CONTEXT:\n${prefs.role_context}`);
+  }
+
+  // Custom signals
+  if (prefs.custom_signals?.length > 0) {
+    const signalLines = prefs.custom_signals
+      .filter((s: any) => s.name)
+      .map((s: any) => `- ${s.name}: ${s.description || 'No description'} (Impact: ${s.impact || 'positive'}, Weight: ${s.weight || 10})`)
+      .join('\n');
+    if (signalLines) {
+      sections.push(`CUSTOM SIGNALS TO LOOK FOR (from recruiter):\n${signalLines}`);
+    }
+  }
+
+  // Company rules
+  if (prefs.company_rules?.length > 0) {
+    const ruleLines = prefs.company_rules
+      .filter((r: any) => r.company)
+      .map((r: any) => `- ${r.company}: ${r.rule}${r.reason ? ` (reason: ${r.reason})` : ''}`)
+      .join('\n');
+    if (ruleLines) {
+      sections.push(`COMPANY-SPECIFIC RULES:\n${ruleLines}`);
+    }
+  }
+
+  // Signal weight overrides
+  if (prefs.signal_weights && Object.keys(prefs.signal_weights).length > 0) {
+    const weightLines = Object.entries(prefs.signal_weights)
+      .map(([key, val]) => `- ${key.replace(/_/g, ' ')}: weight ${val}`)
+      .join('\n');
+    sections.push(`SIGNAL WEIGHT OVERRIDES (adjust your scoring accordingly):\n${weightLines}`);
+  }
+
+  // Timing preferences
+  if (prefs.timing_preferences) {
+    const tp = prefs.timing_preferences;
+    const timingNotes: string[] = [];
+    if (tp.ignore_recent_promotions) {
+      timingNotes.push(`Deprioritize candidates promoted within the last ${tp.ignore_recent_promotions_months || 6} months`);
+    }
+    if (tp.anniversary_boost) {
+      timingNotes.push('Boost candidates at 2, 3, or 5 year tenure anniversaries');
+    }
+    if (tp.q1_q4_seasonal_boost) {
+      timingNotes.push('Apply seasonal boost for Q1 (Jan-Feb) and Q4 (Oct-Dec) periods');
+    }
+    if (timingNotes.length > 0) {
+      sections.push(`TIMING PREFERENCES:\n${timingNotes.map(n => `- ${n}`).join('\n')}`);
+    }
+  }
+
+  return sections.length > 0
+    ? `\n---\nRECRUITER CUSTOMIZATION (apply these preferences to your analysis):\n\n${sections.join('\n\n')}\n---\n`
+    : '';
+}
+
 // Build the analysis prompt
-function buildPrompt(candidate: CandidateData, companyIntel?: CompanyIntelligence): string {
+function buildPrompt(candidate: CandidateData, companyIntel?: CompanyIntelligence, intelPrefs?: any): string {
   const name = `${candidate.first_name || ''} ${candidate.last_name || ''}`.trim() || 'Unknown';
 
   // Build company intelligence section if available
@@ -474,6 +539,7 @@ Analyze ALL the data above and generate a comprehensive recruiter intelligence r
    - Recent layoffs at their company
    - Post-acquisition uncertainty (6-18 months after M&A)
 
+${intelPrefs ? buildPreferencesSection(intelPrefs) : ''}
 RESPOND WITH VALID JSON ONLY (no markdown, no explanation outside JSON):
 {
   "intelligence_score": <0-100 number, higher = more likely to respond>,
@@ -1029,13 +1095,28 @@ serve(async (req) => {
       );
     }
 
+    // Fetch intelligence preferences for this organization
+    let intelPrefs: any = null;
+    try {
+      const { data: prefsData } = await supabase
+        .from('intelligence_preferences')
+        .select('*')
+        .eq('organization_id', organization_id)
+        .eq('is_active', true)
+        .is('user_id', null)
+        .maybeSingle();
+      intelPrefs = prefsData;
+    } catch (prefErr) {
+      console.log('Could not load intelligence preferences, using defaults:', prefErr);
+    }
+
     const results: Array<{ id: string; success: boolean; intelligence?: IntelligenceResult; error?: string }> = [];
 
     for (const candidate of candidates) {
       try {
         // Try LLM first, fall back to rules
         // Pass company_intelligence for enriched correlations
-        const prompt = buildPrompt(candidate, company_intelligence as CompanyIntelligence | undefined);
+        const prompt = buildPrompt(candidate, company_intelligence as CompanyIntelligence | undefined, intelPrefs);
         let intelligence = await callLLM(prompt);
 
         if (!intelligence) {
