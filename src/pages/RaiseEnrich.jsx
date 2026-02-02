@@ -6,7 +6,8 @@ import {
   GripVertical, Type, Zap, Brain, FunctionSquare, Columns3, Trash2,
   Edit2, Settings, ChevronDown, Check, X, Loader2, AlertCircle,
   Table2, Clock, Hash, Upload, FileUp, Database, Pencil, Filter, XCircle,
-  ArrowUp, ArrowDown, ArrowUpDown, ToggleLeft, ToggleRight, Layers, Globe
+  ArrowUp, ArrowDown, ArrowUpDown, ToggleLeft, ToggleRight, Layers, Globe,
+  Calendar, DollarSign, Link, Mail, CheckSquare, ListOrdered
 } from 'lucide-react';
 import {
   RaiseCard, RaiseCardContent, RaiseCardHeader, RaiseCardTitle,
@@ -75,6 +76,34 @@ const COLUMN_TYPES = [
 ];
 
 const COLUMN_TYPE_ICONS = { field: Type, enrichment: Zap, ai: Brain, formula: FunctionSquare, waterfall: Layers, http: Globe };
+
+const FIELD_DATA_TYPES = [
+  { value: 'text', label: 'Text', icon: Type },
+  { value: 'number', label: 'Number', icon: Hash },
+  { value: 'currency', label: 'Currency', icon: DollarSign },
+  { value: 'date', label: 'Date', icon: Calendar },
+  { value: 'url', label: 'URL', icon: Link },
+  { value: 'email', label: 'Email', icon: Mail },
+  { value: 'checkbox', label: 'Checkbox', icon: CheckSquare },
+  { value: 'select', label: 'Select', icon: ListOrdered },
+];
+
+const FIELD_DATA_TYPE_ICONS = { text: Type, number: Hash, currency: DollarSign, date: Calendar, url: Link, email: Mail, checkbox: CheckSquare, select: ListOrdered };
+
+const CURRENCY_CODES = [
+  { value: 'USD', symbol: '$' }, { value: 'EUR', symbol: '€' }, { value: 'GBP', symbol: '£' },
+  { value: 'JPY', symbol: '¥' }, { value: 'CAD', symbol: 'C$' }, { value: 'AUD', symbol: 'A$' },
+  { value: 'CHF', symbol: 'CHF' }, { value: 'CNY', symbol: '¥' }, { value: 'INR', symbol: '₹' },
+  { value: 'BRL', symbol: 'R$' }, { value: 'SEK', symbol: 'kr' }, { value: 'NOK', symbol: 'kr' },
+];
+
+const DATE_FORMATS = [
+  { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY' },
+  { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
+  { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD' },
+  { value: 'MMM D, YYYY', label: 'MMM D, YYYY' },
+  { value: 'D MMM YYYY', label: 'D MMM YYYY' },
+];
 
 // ─── Formula Engine ──────────────────────────────────────────────────────────
 
@@ -186,6 +215,71 @@ function extractNestedValue(obj, path) {
     current = current[part];
   }
   return current;
+}
+
+// ─── Field Data Type Formatting ──────────────────────────────────────────────
+
+function formatFieldValue(rawValue, config) {
+  const dataType = config?.data_type || 'text';
+  const str = (rawValue ?? '').toString();
+  if (!str) return str;
+
+  switch (dataType) {
+    case 'number': {
+      const num = parseFloat(str);
+      if (isNaN(num)) return str;
+      const decimals = config?.decimals ?? 0;
+      const useSeparator = config?.thousands_separator !== false;
+      const formatted = num.toFixed(decimals);
+      if (!useSeparator) return formatted;
+      const [int, dec] = formatted.split('.');
+      const withSep = int.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      return dec !== undefined ? `${withSep}.${dec}` : withSep;
+    }
+    case 'currency': {
+      const num = parseFloat(str);
+      if (isNaN(num)) return str;
+      const code = config?.currency_code || 'USD';
+      const curr = CURRENCY_CODES.find(c => c.value === code);
+      const symbol = curr?.symbol || code;
+      const decimals = config?.decimals ?? 2;
+      const formatted = num.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      return config?.symbol_position === 'after' ? `${formatted} ${symbol}` : `${symbol}${formatted}`;
+    }
+    case 'date': {
+      const d = new Date(str);
+      if (isNaN(d.getTime())) return str;
+      const fmt = config?.date_format || 'YYYY-MM-DD';
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = String(d.getFullYear());
+      switch (fmt) {
+        case 'MM/DD/YYYY': return `${mm}/${dd}/${yyyy}`;
+        case 'DD/MM/YYYY': return `${dd}/${mm}/${yyyy}`;
+        case 'MMM D, YYYY': return `${months[d.getMonth()]} ${d.getDate()}, ${yyyy}`;
+        case 'D MMM YYYY': return `${d.getDate()} ${months[d.getMonth()]} ${yyyy}`;
+        default: return `${yyyy}-${mm}-${dd}`;
+      }
+    }
+    case 'checkbox':
+      return str === 'true' || str === '1' || str === 'yes' ? 'true' : 'false';
+    default:
+      return str;
+  }
+}
+
+function getFieldSortValue(rawValue, config) {
+  const dataType = config?.data_type || 'text';
+  const str = (rawValue ?? '').toString();
+  if (!str) return str;
+  switch (dataType) {
+    case 'number':
+    case 'currency': return parseFloat(str) || 0;
+    case 'date': return new Date(str).getTime() || 0;
+    case 'checkbox': return str === 'true' || str === '1' || str === 'yes' ? 1 : 0;
+    default: return str.toLowerCase();
+  }
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
@@ -767,13 +861,16 @@ export default function RaiseEnrich() {
   const getCellDisplayValue = useCallback((rowId, col) => {
     const cell = cells[cellKey(rowId, col.id)];
     if (col.type === 'field') {
-      if (cell?.value) return typeof cell.value === 'object' ? (cell.value.v ?? JSON.stringify(cell.value)) : String(cell.value);
-      const row = rows.find(r => r.id === rowId);
-      if (row?.source_data && col.config?.source_field) {
-        const val = row.source_data[col.config.source_field];
-        if (val != null) return typeof val === 'object' ? JSON.stringify(val) : String(val);
+      let raw = '';
+      if (cell?.value) raw = typeof cell.value === 'object' ? (cell.value.v ?? JSON.stringify(cell.value)) : String(cell.value);
+      else {
+        const row = rows.find(r => r.id === rowId);
+        if (row?.source_data && col.config?.source_field) {
+          const val = row.source_data[col.config.source_field];
+          if (val != null) raw = typeof val === 'object' ? JSON.stringify(val) : String(val);
+        }
       }
-      return '';
+      return col.config?.data_type && col.config.data_type !== 'text' ? formatFieldValue(raw, col.config) : raw;
     }
     if (col.type === 'formula') {
       const row = rows.find(r => r.id === rowId);
@@ -1347,6 +1444,14 @@ export default function RaiseEnrich() {
         const num = parseFloat(v);
         return num >= parseFloat(fv) && num <= parseFloat(filter.valueTo ?? '');
       }
+      case 'is_true': return v === 'true' || v === '1' || v === 'yes';
+      case 'is_false': return v !== 'true' && v !== '1' && v !== 'yes';
+      case 'date_before': return new Date(v).getTime() < new Date(fv).getTime();
+      case 'date_after': return new Date(v).getTime() > new Date(fv).getTime();
+      case 'date_between': {
+        const dt = new Date(v).getTime();
+        return dt >= new Date(fv).getTime() && dt <= new Date(filter.valueTo ?? '').getTime();
+      }
       default: return true;
     }
   }, []);
@@ -1542,14 +1647,27 @@ export default function RaiseEnrich() {
       for (const sort of sorts) {
         const col = columns.find(c => c.id === sort.columnId);
         if (!col) continue;
-        const valA = getCellDisplayValue(rowA.id, col);
-        const valB = getCellDisplayValue(rowB.id, col);
-        const cmp = compareValues(valA, valB, sort.direction);
-        if (cmp !== 0) return cmp;
+        // Use typed sort values for field columns with data_type
+        if (col.type === 'field' && col.config?.data_type && col.config.data_type !== 'text') {
+          const rawA = getCellRawValue(rowA.id, col);
+          const rawB = getCellRawValue(rowB.id, col);
+          if (rawA === '' && rawB === '') continue;
+          if (rawA === '') return 1;
+          if (rawB === '') return -1;
+          const sA = getFieldSortValue(rawA, col.config);
+          const sB = getFieldSortValue(rawB, col.config);
+          const cmp = typeof sA === 'number' && typeof sB === 'number' ? sA - sB : String(sA).localeCompare(String(sB));
+          if (cmp !== 0) return sort.direction === 'desc' ? -cmp : cmp;
+        } else {
+          const valA = getCellDisplayValue(rowA.id, col);
+          const valB = getCellDisplayValue(rowB.id, col);
+          const cmp = compareValues(valA, valB, sort.direction);
+          if (cmp !== 0) return cmp;
+        }
       }
       return 0;
     });
-  }, [searchFilteredRows, sorts, columns, getCellDisplayValue, compareValues]);
+  }, [searchFilteredRows, sorts, columns, getCellDisplayValue, getCellRawValue, compareValues]);
 
   const activeSortCount = sorts.length;
 
@@ -2041,7 +2159,7 @@ export default function RaiseEnrich() {
                 #
               </div>
               {columns.map(col => {
-                const Icon = COLUMN_TYPE_ICONS[col.type] || Type;
+                const Icon = col.type === 'field' && col.config?.data_type ? (FIELD_DATA_TYPE_ICONS[col.config.data_type] || Type) : (COLUMN_TYPE_ICONS[col.type] || Type);
                 const sortState = getColumnSortState(col.id);
                 const colProg = columnProgress[col.id];
                 const isEnrichable = col.type === 'enrichment' || col.type === 'ai' || col.type === 'waterfall' || col.type === 'http';
@@ -2179,20 +2297,55 @@ export default function RaiseEnrich() {
                           style={{ width: col.width || DEFAULT_COL_WIDTH }}
                           onClick={() => {
                             setSelectedCell({ rowId: row.id, colId: col.id });
-                            if (col.type === 'field' || col.type === 'enrichment' || col.type === 'ai') {
-                              // allow editing on click for non-formula
+                            // Checkbox toggle on single click
+                            if (col.type === 'field' && col.config?.data_type === 'checkbox') {
+                              const raw = getCellRawValue(row.id, col);
+                              const next = (raw === 'true' || raw === '1' || raw === 'yes') ? 'false' : 'true';
+                              saveCellWithAutoRun(row.id, col.id, next);
                             }
                           }}
                           onDoubleClick={() => {
-                            if (col.type !== 'formula') {
-                              setEditingCell({ rowId: row.id, colId: col.id });
-                              setEditingValue(displayVal);
-                            }
+                            if (col.type === 'formula') return;
+                            if (col.type === 'field' && col.config?.data_type === 'checkbox') return;
+                            setEditingCell({ rowId: row.id, colId: col.id });
+                            // For editing, use raw value (not formatted)
+                            const rawVal = getCellRawValue(row.id, col);
+                            setEditingValue(rawVal || displayVal);
                           }}
                         >
-                          {isEditing ? (
+                          {/* Checkbox type - inline toggle */}
+                          {col.type === 'field' && col.config?.data_type === 'checkbox' ? (
+                            <div className="flex items-center justify-center w-full">
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-colors ${
+                                (getCellRawValue(row.id, col) === 'true' || getCellRawValue(row.id, col) === '1' || getCellRawValue(row.id, col) === 'yes')
+                                  ? rt('bg-cyan-500 border-cyan-500', 'bg-cyan-500 border-cyan-500')
+                                  : rt('border-gray-300', 'border-zinc-600')
+                              }`}>
+                                {(getCellRawValue(row.id, col) === 'true' || getCellRawValue(row.id, col) === '1' || getCellRawValue(row.id, col) === 'yes') && <Check className="w-3 h-3 text-white" />}
+                              </div>
+                            </div>
+                          ) : isEditing && col.type === 'field' && col.config?.data_type === 'select' ? (
+                            /* Select type - dropdown editing */
+                            <select
+                              autoFocus
+                              value={editingValue}
+                              onChange={e => { saveCellWithAutoRun(row.id, col.id, e.target.value); setEditingCell(null); }}
+                              onBlur={() => { saveCellWithAutoRun(row.id, col.id, editingValue); setEditingCell(null); }}
+                              onKeyDown={e => { if (e.key === 'Escape') setEditingCell(null); }}
+                              className={rt(
+                                'w-full h-full bg-transparent outline-none text-sm font-mono text-gray-900',
+                                'w-full h-full bg-zinc-900 outline-none text-sm font-mono text-white border-none'
+                              )}
+                            >
+                              <option value="">—</option>
+                              {(col.config?.select_options || []).map(opt => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : isEditing ? (
                             <input
                               autoFocus
+                              type={col.type === 'field' && (col.config?.data_type === 'number' || col.config?.data_type === 'currency') ? 'number' : col.type === 'field' && col.config?.data_type === 'date' ? 'date' : 'text'}
                               value={editingValue}
                               onChange={e => setEditingValue(e.target.value)}
                               onBlur={() => {
@@ -2211,12 +2364,16 @@ export default function RaiseEnrich() {
                           ) : (
                             <div className="flex items-center gap-1.5 w-full min-w-0">
                               {status !== 'empty' && status !== 'complete' && <StatusDot status={status} errorMessage={cellObj?.error_message} />}
-                              <span className={rt(
-                                'truncate text-gray-700',
-                                'truncate text-zinc-300'
-                              )}>
-                                {debouncedSearch ? highlightMatch(displayVal, debouncedSearch) : displayVal}
-                              </span>
+                              {/* URL type - clickable */}
+                              {col.type === 'field' && col.config?.data_type === 'url' && displayVal ? (
+                                <a href={displayVal.startsWith('http') ? displayVal : `https://${displayVal}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="truncate text-cyan-400 hover:underline">{debouncedSearch ? highlightMatch(displayVal, debouncedSearch) : displayVal}</a>
+                              ) : col.type === 'field' && col.config?.data_type === 'email' && displayVal ? (
+                                <a href={`mailto:${displayVal}`} onClick={e => e.stopPropagation()} className="truncate text-cyan-400 hover:underline">{debouncedSearch ? highlightMatch(displayVal, debouncedSearch) : displayVal}</a>
+                              ) : (
+                                <span className={`truncate ${col.type === 'field' && (col.config?.data_type === 'number' || col.config?.data_type === 'currency') ? 'tabular-nums text-right w-full' : ''} ${rt('text-gray-700', 'text-zinc-300')}`}>
+                                  {debouncedSearch ? highlightMatch(displayVal, debouncedSearch) : displayVal}
+                                </span>
+                              )}
                               {status === 'error' && <StatusDot status="error" errorMessage={cellObj?.error_message} />}
                               {col.type === 'waterfall' && cellObj?.value?._meta?.source_used && (
                                 <span title={`Source: ${cellObj.value._meta.source_used} (${cellObj.value._meta.attempts} tried)`} className="ml-auto text-[9px] px-1 py-0.5 rounded bg-cyan-500/10 text-cyan-400 flex-shrink-0">
@@ -2595,18 +2752,139 @@ export default function RaiseEnrich() {
 
               {/* Type-specific config */}
               {colType === 'field' && (
-                <div>
-                  <Label className={rt('text-gray-700', 'text-zinc-300')}>Source Field</Label>
-                  <Select value={colConfig.source_field || ''} onValueChange={v => setColConfig({ source_field: v })}>
-                    <SelectTrigger className={rt('', 'bg-zinc-800 border-zinc-700 text-white')}>
-                      <SelectValue placeholder="Select field" />
-                    </SelectTrigger>
-                    <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
-                      {SOURCE_FIELDS.map(f => (
-                        <SelectItem key={f.value} value={f.value} className={rt('', 'text-white hover:bg-zinc-700')}>{f.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-3">
+                  <div>
+                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Source Field</Label>
+                    <Select value={colConfig.source_field || ''} onValueChange={v => setColConfig(prev => ({ ...prev, source_field: v }))}>
+                      <SelectTrigger className={rt('', 'bg-zinc-800 border-zinc-700 text-white')}>
+                        <SelectValue placeholder="Select field" />
+                      </SelectTrigger>
+                      <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                        {SOURCE_FIELDS.map(f => (
+                          <SelectItem key={f.value} value={f.value} className={rt('', 'text-white hover:bg-zinc-700')}>{f.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Data Type</Label>
+                    <div className="grid grid-cols-4 gap-1.5 mt-1.5">
+                      {FIELD_DATA_TYPES.map(dt => {
+                        const DTIcon = dt.icon;
+                        const selected = (colConfig.data_type || 'text') === dt.value;
+                        return (
+                          <button
+                            key={dt.value}
+                            onClick={() => setColConfig(prev => ({ ...prev, data_type: dt.value }))}
+                            className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-center transition-all ${
+                              selected
+                                ? rt('border-orange-400 bg-orange-50', 'border-orange-500/50 bg-orange-500/10')
+                                : rt('border-gray-200 hover:border-gray-300', 'border-zinc-700 hover:border-zinc-600')
+                            }`}
+                          >
+                            <DTIcon className={`w-3.5 h-3.5 ${selected ? 'text-orange-400' : 'text-zinc-500'}`} />
+                            <span className={`text-[10px] ${selected ? rt('text-orange-600', 'text-orange-400') : 'text-zinc-500'}`}>{dt.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Number options */}
+                  {colConfig.data_type === 'number' && (
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <Label className={`text-[11px] ${rt('text-gray-600', 'text-zinc-400')}`}>Decimal Places</Label>
+                        <Select value={String(colConfig.decimals ?? 0)} onValueChange={v => setColConfig(prev => ({ ...prev, decimals: parseInt(v) }))}>
+                          <SelectTrigger className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}><SelectValue /></SelectTrigger>
+                          <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                            {[0,1,2,3,4].map(n => <SelectItem key={n} value={String(n)} className={rt('', 'text-white hover:bg-zinc-700')}>{n}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <label className="flex items-center gap-2 cursor-pointer pt-5">
+                        <input type="checkbox" checked={colConfig.thousands_separator !== false} onChange={e => setColConfig(prev => ({ ...prev, thousands_separator: e.target.checked }))} className="rounded border-zinc-600" />
+                        <span className={`text-xs ${rt('text-gray-700', 'text-zinc-300')}`}>Thousands separator</span>
+                      </label>
+                    </div>
+                  )}
+
+                  {/* Currency options */}
+                  {colConfig.data_type === 'currency' && (
+                    <div className="space-y-2">
+                      <div className="flex gap-3">
+                        <div className="flex-1">
+                          <Label className={`text-[11px] ${rt('text-gray-600', 'text-zinc-400')}`}>Currency</Label>
+                          <Select value={colConfig.currency_code || 'USD'} onValueChange={v => setColConfig(prev => ({ ...prev, currency_code: v }))}>
+                            <SelectTrigger className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}><SelectValue /></SelectTrigger>
+                            <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                              {CURRENCY_CODES.map(c => <SelectItem key={c.value} value={c.value} className={rt('', 'text-white hover:bg-zinc-700')}>{c.symbol} {c.value}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex-1">
+                          <Label className={`text-[11px] ${rt('text-gray-600', 'text-zinc-400')}`}>Decimals</Label>
+                          <Select value={String(colConfig.decimals ?? 2)} onValueChange={v => setColConfig(prev => ({ ...prev, decimals: parseInt(v) }))}>
+                            <SelectTrigger className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}><SelectValue /></SelectTrigger>
+                            <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                              {[0,1,2,3,4].map(n => <SelectItem key={n} value={String(n)} className={rt('', 'text-white hover:bg-zinc-700')}>{n}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className={`text-[11px] ${rt('text-gray-600', 'text-zinc-400')}`}>Symbol Position</Label>
+                        <div className="flex gap-2 mt-1">
+                          {['before', 'after'].map(pos => (
+                            <button key={pos} onClick={() => setColConfig(prev => ({ ...prev, symbol_position: pos }))} className={`text-xs px-3 py-1 rounded-lg border ${(colConfig.symbol_position || 'before') === pos ? rt('border-orange-400 bg-orange-50 text-orange-600', 'border-orange-500/50 bg-orange-500/10 text-orange-400') : rt('border-gray-200 text-gray-500', 'border-zinc-700 text-zinc-500')}`}>
+                              {pos === 'before' ? `${(CURRENCY_CODES.find(c => c.value === (colConfig.currency_code || 'USD'))?.symbol || '$')}100` : `100 ${CURRENCY_CODES.find(c => c.value === (colConfig.currency_code || 'USD'))?.symbol || '$'}`}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Date options */}
+                  {colConfig.data_type === 'date' && (
+                    <div>
+                      <Label className={`text-[11px] ${rt('text-gray-600', 'text-zinc-400')}`}>Display Format</Label>
+                      <Select value={colConfig.date_format || 'YYYY-MM-DD'} onValueChange={v => setColConfig(prev => ({ ...prev, date_format: v }))}>
+                        <SelectTrigger className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}><SelectValue /></SelectTrigger>
+                        <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                          {DATE_FORMATS.map(f => <SelectItem key={f.value} value={f.value} className={rt('', 'text-white hover:bg-zinc-700')}>{f.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Select options */}
+                  {colConfig.data_type === 'select' && (
+                    <div>
+                      <Label className={`text-[11px] ${rt('text-gray-600', 'text-zinc-400')}`}>Options</Label>
+                      <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {(colConfig.select_options || []).map((opt, idx) => (
+                          <span key={idx} className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${rt('bg-gray-100 text-gray-700', 'bg-zinc-800 text-zinc-300')}`}>
+                            {opt}
+                            <button onClick={() => setColConfig(prev => ({ ...prev, select_options: prev.select_options.filter((_, i) => i !== idx) }))} className="text-zinc-500 hover:text-red-400"><X className="w-2.5 h-2.5" /></button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-1.5 mt-1.5">
+                        <Input
+                          placeholder="New option"
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && e.target.value.trim()) {
+                              setColConfig(prev => ({ ...prev, select_options: [...(prev.select_options || []), e.target.value.trim()] }));
+                              e.target.value = '';
+                            }
+                          }}
+                          className={`h-8 text-xs flex-1 ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}
+                        />
+                        <p className="text-[10px] text-zinc-500 self-center">Press Enter to add</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
