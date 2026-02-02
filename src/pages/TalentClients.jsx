@@ -10,7 +10,8 @@ import { createPageUrl } from "@/utils";
 import {
   Plus, Building2, User, Euro, Mail, Phone, ExternalLink, Trash2,
   Search, Edit2, Eye, Loader2, MoreHorizontal, MapPin, Globe, Briefcase,
-  Users, TrendingUp, Calendar, Filter, X, Grid3X3, List, ArrowUpDown, Sparkles
+  Users, TrendingUp, Calendar, Filter, X, Grid3X3, List, ArrowUpDown, Sparkles,
+  ShieldAlert, Tag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +63,9 @@ const emptyForm = {
   recruitment_fee_percentage: '20',
   recruitment_fee_flat: '',
   notes: '',
+  exclude_candidates: false,
+  company_aliases: [],
+  aliasInput: '',
 };
 
 function ClientCard({ client, onEdit, onDelete, onView }) {
@@ -307,37 +311,68 @@ export default function TalentClients() {
         recruitment_fee_flat: formData.recruitment_fee_flat ? parseFloat(formData.recruitment_fee_flat) : null,
         notes: formData.notes || null,
         is_recruitment_client: true,
+        exclude_candidates: formData.exclude_candidates || false,
+        company_aliases: formData.company_aliases || [],
       };
 
       console.log('Submitting client:', JSON.stringify(clientData, null, 2));
 
+      let savedClient;
       if (selectedClient) {
         const { data, error } = await supabase
           .from('prospects')
           .update(clientData)
           .eq('id', selectedClient.id)
-          .select();
+          .select()
+          .single();
 
-        console.log('Update result:', JSON.stringify({ data, error }, null, 2));
-
-        if (error) {
-          console.error('Update error details:', JSON.stringify(error, null, 2));
-          throw error;
-        }
+        if (error) throw error;
+        savedClient = data;
         toast.success('Client updated successfully');
       } else {
         const { data, error } = await supabase
           .from('prospects')
           .insert(clientData)
-          .select();
+          .select()
+          .single();
 
-        console.log('Insert result:', JSON.stringify({ data, error }, null, 2));
-
-        if (error) {
-          console.error('Insert error details:', JSON.stringify(error, null, 2));
-          throw error;
-        }
+        if (error) throw error;
+        savedClient = data;
         toast.success('Client created successfully');
+      }
+
+      // Retroactive exclusion: if exclude_candidates was just turned on, mark matching candidates
+      if (savedClient?.exclude_candidates && savedClient?.id) {
+        const wasExcluding = selectedClient?.exclude_candidates || false;
+        if (!wasExcluding || !selectedClient) {
+          try {
+            const { data: countResult } = await supabase.rpc('exclude_candidates_for_client', {
+              p_client_id: savedClient.id,
+              p_organization_id: user.organization_id,
+            });
+            if (countResult && countResult > 0) {
+              toast.info(`${countResult} candidate${countResult > 1 ? 's' : ''} from ${savedClient.company} ruled out`);
+            }
+          } catch (err) {
+            console.error('Retroactive exclusion failed:', err);
+          }
+        }
+      }
+
+      // If exclusion was turned OFF, recover candidates
+      if (selectedClient?.exclude_candidates && !formData.exclude_candidates) {
+        try {
+          const { error: recoverError } = await supabase
+            .from('candidates')
+            .update({ excluded_reason: null, excluded_client_id: null, excluded_at: null })
+            .eq('excluded_client_id', selectedClient.id)
+            .eq('organization_id', user.organization_id);
+          if (!recoverError) {
+            toast.info(`Candidates from ${savedClient.company} recovered`);
+          }
+        } catch (err) {
+          console.error('Recovery failed:', err);
+        }
       }
 
       setShowModal(false);
@@ -385,6 +420,9 @@ export default function TalentClients() {
       recruitment_fee_percentage: client.recruitment_fee_percentage?.toString() || '20',
       recruitment_fee_flat: client.recruitment_fee_flat?.toString() || '',
       notes: client.notes || '',
+      exclude_candidates: client.exclude_candidates || false,
+      company_aliases: client.company_aliases || [],
+      aliasInput: '',
     });
     setShowModal(true);
   };
@@ -886,6 +924,89 @@ export default function TalentClients() {
                   rows={3}
                   placeholder="Add any relevant notes about this client..."
                 />
+              </div>
+
+              {/* Candidate Exclusion */}
+              <div className={`p-3 rounded-lg border space-y-3 ${formData.exclude_candidates ? 'bg-red-500/5 border-red-500/30' : 'bg-zinc-800/30 border-zinc-700/50'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className={`w-4 h-4 ${formData.exclude_candidates ? 'text-red-400' : 'text-zinc-500'}`} />
+                    <div>
+                      <p className="text-sm font-medium text-white">Exclude Candidates</p>
+                      <p className="text-xs text-zinc-500">Never contact candidates from this company</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, exclude_candidates: !formData.exclude_candidates })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      formData.exclude_candidates ? 'bg-red-500' : 'bg-zinc-700'
+                    }`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      formData.exclude_candidates ? 'translate-x-6' : 'translate-x-1'
+                    }`} />
+                  </button>
+                </div>
+
+                {formData.exclude_candidates && (
+                  <div className="pt-2 border-t border-red-500/20 space-y-2">
+                    <label className="text-zinc-400 text-xs block">Company Aliases (also known as)</label>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {(formData.company_aliases || []).map((alias, i) => (
+                        <span key={i} className="flex items-center gap-1 px-2 py-0.5 bg-red-500/10 text-red-400 rounded-md text-xs border border-red-500/20">
+                          {alias}
+                          <button
+                            type="button"
+                            onClick={() => setFormData({
+                              ...formData,
+                              company_aliases: formData.company_aliases.filter((_, j) => j !== i),
+                            })}
+                            className="hover:text-red-300"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        value={formData.aliasInput || ''}
+                        onChange={(e) => setFormData({ ...formData, aliasInput: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && formData.aliasInput?.trim()) {
+                            e.preventDefault();
+                            setFormData({
+                              ...formData,
+                              company_aliases: [...(formData.company_aliases || []), formData.aliasInput.trim()],
+                              aliasInput: '',
+                            });
+                          }
+                        }}
+                        className="bg-zinc-800/50 border-zinc-700 text-white text-xs h-8"
+                        placeholder="e.g. Deloitte Nederland B.V."
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 border-zinc-700 text-zinc-400 hover:text-white"
+                        onClick={() => {
+                          if (formData.aliasInput?.trim()) {
+                            setFormData({
+                              ...formData,
+                              company_aliases: [...(formData.company_aliases || []), formData.aliasInput.trim()],
+                              aliasInput: '',
+                            });
+                          }
+                        }}
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <p className="text-[10px] text-zinc-600">Press Enter to add. Include all known variations of the company name.</p>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -444,6 +444,7 @@ export default function TalentCandidates() {
         .from("candidates")
         .select("*")
         .eq("organization_id", user.organization_id)
+        .is("excluded_reason", null)
         .order("created_date", { ascending: false });
 
       if (error) throw error;

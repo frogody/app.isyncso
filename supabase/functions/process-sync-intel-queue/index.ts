@@ -313,6 +313,22 @@ serve(async (req) => {
     let failCount = 0;
 
     for (const item of queueItems as QueueItem[]) {
+      // Skip excluded candidates (belt-and-suspenders guard)
+      const { data: candidate } = await supabase
+        .from('candidates')
+        .select('excluded_reason')
+        .eq('id', item.candidate_id)
+        .single();
+
+      if (candidate?.excluded_reason) {
+        await supabase
+          .from('sync_intel_queue')
+          .update({ status: 'completed', current_stage: 'skipped_excluded', completed_at: new Date().toISOString() })
+          .eq('id', item.id);
+        console.log(`Skipped excluded candidate ${item.candidate_id}`);
+        continue;
+      }
+
       // Mark as processing
       await supabase
         .from('sync_intel_queue')

@@ -46,6 +46,9 @@ import {
   Megaphone,
   PartyPopper,
   ChevronRight,
+  ShieldAlert,
+  RotateCcw,
+  ChevronDown,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
@@ -55,8 +58,71 @@ import { createPageUrl } from "@/utils";
 const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
   const [purchasing, setPurchasing] = useState(false);
   const [error, setError] = useState(null);
+  const [exclusionPreview, setExclusionPreview] = useState(null);
+  const [checkingExclusions, setCheckingExclusions] = useState(false);
   const itemCount = nest?.item_count || 0;
   const price = parseFloat(nest?.price) || 0;
+
+  // Check for exclusions when dialog opens
+  useEffect(() => {
+    if (!isOpen || !user?.organization_id || !nest?.id) {
+      setExclusionPreview(null);
+      return;
+    }
+    (async () => {
+      setCheckingExclusions(true);
+      try {
+        // Get nest items with company names
+        const { data: nestItems } = await supabase
+          .from('nest_items')
+          .select('candidate_id, candidates(company_name)')
+          .eq('nest_id', nest.id);
+
+        if (!nestItems?.length) { setCheckingExclusions(false); return; }
+
+        // Get excluded clients for this org
+        const { data: excludedClients } = await supabase
+          .from('prospects')
+          .select('id, company, company_aliases')
+          .eq('organization_id', user.organization_id)
+          .eq('exclude_candidates', true)
+          .eq('is_recruitment_client', true);
+
+        if (!excludedClients?.length) { setCheckingExclusions(false); return; }
+
+        // Check each candidate's company against excluded clients using the DB function
+        const companyNames = [...new Set(
+          nestItems.map(i => i.candidates?.company_name).filter(Boolean)
+        )];
+
+        const exclusionMap = {}; // client_company -> count
+        for (const companyName of companyNames) {
+          const { data: match } = await supabase.rpc('match_excluded_client', {
+            p_company_name: companyName,
+            p_organization_id: user.organization_id,
+          });
+          if (match?.length > 0) {
+            const clientCompany = match[0].client_company;
+            const count = nestItems.filter(i => i.candidates?.company_name === companyName).length;
+            exclusionMap[clientCompany] = (exclusionMap[clientCompany] || 0) + count;
+          }
+        }
+
+        const totalExcluded = Object.values(exclusionMap).reduce((s, c) => s + c, 0);
+        if (totalExcluded > 0) {
+          setExclusionPreview({
+            total: totalExcluded,
+            byClient: exclusionMap,
+            activeCount: itemCount - totalExcluded,
+          });
+        }
+      } catch (err) {
+        console.error('Exclusion preview error:', err);
+      } finally {
+        setCheckingExclusions(false);
+      }
+    })();
+  }, [isOpen, user?.organization_id, nest?.id]);
 
   const handlePurchase = async () => {
     if (!user?.id || !user?.company_id) {
@@ -134,66 +200,93 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
           existingCandidates?.map(c => c.linkedin_profile?.toLowerCase()).filter(Boolean) || []
         );
 
-        // Copy candidates to buyer's organization (with deduplication)
-        const candidatesToCopy = nestItems
+        // Check each candidate for exclusion before copying
+        const deduped = nestItems
           .filter(item => item.candidate_id && item.candidates)
           .filter(item => {
-            // Skip if already exists by email or linkedin
             const email = item.candidates.email?.toLowerCase();
             const linkedin = item.candidates.linkedin_profile?.toLowerCase();
             if (email && existingEmails.has(email)) return false;
             if (linkedin && existingLinkedins.has(linkedin)) return false;
             return true;
-          })
-          .map(item => {
-            // Remove id and dates so new ones are generated
-            const { id, created_date, updated_date, organization_id, ...candidateData } = item.candidates;
-            return {
-              ...candidateData,
-              organization_id: user.organization_id,
-              source: 'nest_purchase',
-              import_source: `nest:${nest.id}`,
-            };
           });
 
-        if (candidatesToCopy.length > 0) {
+        // Build exclusion map for each candidate's company
+        const exclusionResults = {};
+        const uniqueCompanies = [...new Set(deduped.map(i => i.candidates.company_name).filter(Boolean))];
+        for (const companyName of uniqueCompanies) {
+          const { data: match } = await supabase.rpc('match_excluded_client', {
+            p_company_name: companyName,
+            p_organization_id: user.organization_id,
+          });
+          if (match?.length > 0) {
+            exclusionResults[companyName] = match[0];
+          }
+        }
+
+        const activeCandidates = [];
+        const excludedCandidates = [];
+
+        for (const item of deduped) {
+          const { id, created_date, updated_date, organization_id, ...candidateData } = item.candidates;
+          const base = {
+            ...candidateData,
+            organization_id: user.organization_id,
+            source: 'nest_purchase',
+            import_source: `nest:${nest.id}`,
+          };
+          const match = exclusionResults[candidateData.company_name];
+          if (match) {
+            excludedCandidates.push({
+              ...base,
+              excluded_reason: 'client_company_match',
+              excluded_client_id: match.client_id,
+              excluded_at: new Date().toISOString(),
+            });
+          } else {
+            activeCandidates.push(base);
+          }
+        }
+
+        // Insert all candidates (active + excluded)
+        const allToInsert = [...activeCandidates, ...excludedCandidates];
+        if (allToInsert.length > 0) {
           const { data: insertedCandidates, error: copyError } = await supabase
             .from('candidates')
-            .insert(candidatesToCopy)
-            .select('id');
+            .insert(allToInsert)
+            .select('id, excluded_reason');
 
           if (copyError) {
             console.error('Error copying candidates:', copyError);
-            // Don't fail the purchase, just log the error
           } else if (insertedCandidates && insertedCandidates.length > 0) {
-            // Queue all copied candidates for SYNC Intel processing (FREE for nest purchases)
-            const queueItems = insertedCandidates.map(candidate => ({
-              candidate_id: candidate.id,
-              organization_id: user.organization_id,
-              source: 'nest_purchase',
-              priority: 2, // Lower priority (1=highest, 3=lowest) for batch processing
-              status: 'pending',
-            }));
+            // Only queue NON-excluded candidates for intel
+            const activeInserted = insertedCandidates.filter(c => !c.excluded_reason);
+            if (activeInserted.length > 0) {
+              const queueItems = activeInserted.map(candidate => ({
+                candidate_id: candidate.id,
+                organization_id: user.organization_id,
+                source: 'nest_purchase',
+                priority: 2,
+                status: 'pending',
+              }));
 
-            const { error: queueError } = await supabase
-              .from('sync_intel_queue')
-              .insert(queueItems);
+              const { error: queueError } = await supabase
+                .from('sync_intel_queue')
+                .insert(queueItems);
 
-            if (queueError) {
-              console.error('Error queueing SYNC Intel:', queueError);
-              // Don't fail the purchase, intel can be triggered manually later
-            } else {
-              console.log(`Queued ${insertedCandidates.length} candidates for SYNC Intel`);
-
-              // Trigger the processor edge function (fire-and-forget, it self-chains)
-              fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-sync-intel-queue`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-                },
-                body: JSON.stringify({ triggered_by: 'nest_purchase' }),
-              }).catch(() => {});
+              if (queueError) {
+                console.error('Error queueing SYNC Intel:', queueError);
+              } else {
+                console.log(`Queued ${activeInserted.length} candidates for SYNC Intel (${insertedCandidates.length - activeInserted.length} excluded)`);
+                fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-sync-intel-queue`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                  },
+                  body: JSON.stringify({ triggered_by: 'nest_purchase' }),
+                }).catch(() => {});
+              }
             }
           }
         }
@@ -255,6 +348,36 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
               </div>
             ))}
           </div>
+
+          {/* Exclusion Preview */}
+          {checkingExclusions && (
+            <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-700 text-zinc-400 text-sm flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Checking for client exclusions...
+            </div>
+          )}
+          {exclusionPreview && (
+            <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <ShieldAlert className="w-4 h-4 text-amber-400" />
+                <span className="text-sm font-medium text-amber-400">Client Exclusions</span>
+              </div>
+              <p className="text-sm text-zinc-300 mb-2">
+                {exclusionPreview.total} candidate{exclusionPreview.total !== 1 ? 's' : ''} work for your excluded clients and will be ruled out:
+              </p>
+              <div className="space-y-1 mb-2">
+                {Object.entries(exclusionPreview.byClient).map(([client, count]) => (
+                  <div key={client} className="flex items-center justify-between text-sm">
+                    <span className="text-zinc-400">• {client}</span>
+                    <span className="text-amber-400 font-medium">{count}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-zinc-400">
+                You will receive <span className="text-white font-medium">{exclusionPreview.activeCount}</span> active candidates.
+              </p>
+            </div>
+          )}
 
           {error && (
             <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
@@ -486,6 +609,49 @@ export default function TalentNestDetail() {
     } finally {
       setIsSyncing(false);
     }
+  };
+
+  // Ruled out candidates
+  const [ruledOut, setRuledOut] = useState([]);
+  const [ruledOutExpanded, setRuledOutExpanded] = useState(false);
+  const [loadingRuledOut, setLoadingRuledOut] = useState(false);
+
+  // Fetch ruled out candidates after purchase
+  useEffect(() => {
+    if (!hasPurchased || !user?.organization_id || !nestId) return;
+    (async () => {
+      setLoadingRuledOut(true);
+      const { data } = await supabase
+        .from('candidates')
+        .select('id, full_name, company_name, job_title, excluded_reason, excluded_client_id, excluded_at, prospects:excluded_client_id(company)')
+        .eq('organization_id', user.organization_id)
+        .eq('import_source', `nest:${nestId}`)
+        .not('excluded_reason', 'is', null)
+        .order('excluded_at', { ascending: false });
+      setRuledOut(data || []);
+      setLoadingRuledOut(false);
+    })();
+  }, [hasPurchased, user?.organization_id, nestId]);
+
+  const handleRecoverCandidate = async (candidateId) => {
+    const { error } = await supabase
+      .from('candidates')
+      .update({ excluded_reason: null, excluded_client_id: null, excluded_at: null })
+      .eq('id', candidateId);
+    if (error) { toast.error('Failed to recover candidate'); return; }
+    setRuledOut(prev => prev.filter(c => c.id !== candidateId));
+    toast.success('Candidate recovered');
+  };
+
+  const handleRecoverAll = async () => {
+    const ids = ruledOut.map(c => c.id);
+    const { error } = await supabase
+      .from('candidates')
+      .update({ excluded_reason: null, excluded_client_id: null, excluded_at: null })
+      .in('id', ids);
+    if (error) { toast.error('Failed to recover candidates'); return; }
+    setRuledOut([]);
+    toast.success(`${ids.length} candidates recovered`);
   };
 
   // State for post-purchase success dialog
@@ -756,6 +922,71 @@ export default function TalentNestDetail() {
               </div>
             </div>
           </div>
+
+          {/* Ruled Out Candidates (post-purchase) */}
+          {hasPurchased && ruledOut.length > 0 && (
+            <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+              <button
+                onClick={() => setRuledOutExpanded(!ruledOutExpanded)}
+                className="w-full flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <ShieldAlert className="w-5 h-5 text-amber-400" />
+                  <h2 className="text-lg font-semibold text-white">Ruled Out Candidates</h2>
+                  <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                    {ruledOut.length}
+                  </Badge>
+                </div>
+                <ChevronDown className={`w-5 h-5 text-zinc-400 transition-transform ${ruledOutExpanded ? 'rotate-180' : ''}`} />
+              </button>
+
+              {ruledOutExpanded && (
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-zinc-400">
+                      These candidates work for your excluded clients and were automatically ruled out.
+                    </p>
+                    <Button
+                      onClick={handleRecoverAll}
+                      variant="outline"
+                      size="sm"
+                      className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                    >
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      Recover All
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                    {ruledOut.map(candidate => (
+                      <div key={candidate.id} className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white truncate">
+                            {candidate.full_name || 'Unknown'}
+                          </p>
+                          <p className="text-xs text-zinc-500">
+                            {candidate.job_title} at {candidate.company_name}
+                            {candidate.prospects?.company && (
+                              <span className="text-amber-400"> — matched to {candidate.prospects.company}</span>
+                            )}
+                          </p>
+                        </div>
+                        <Button
+                          onClick={() => handleRecoverCandidate(candidate.id)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-zinc-400 hover:text-white ml-2"
+                        >
+                          <RotateCcw className="w-3 h-3 mr-1" />
+                          Recover
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* How It Works */}
           <div>

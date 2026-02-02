@@ -915,7 +915,8 @@ serve(async (req) => {
     let candidateQuery = supabase
       .from("candidates")
       .select("*")
-      .eq("organization_id", organization_id);
+      .eq("organization_id", organization_id)
+      .is("excluded_reason", null);
 
     // NEW: Filter by specific candidate_ids if provided
     if (candidate_ids && Array.isArray(candidate_ids) && candidate_ids.length > 0) {
