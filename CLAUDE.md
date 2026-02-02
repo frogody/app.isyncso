@@ -2152,3 +2152,166 @@ Search for all framer-motion and animated.js usage in /src/components/sentinel/ 
 ---
 
 <!-- SENTINEL_ANALYSIS_END -->
+
+## Client Candidate Exclusion System (Feb 2, 2026)
+
+### Overview
+
+Prevents recruiters from contacting candidates who work for their clients. Candidates from excluded client companies are separated into a "Ruled Out" section — never enriched, never matched, never outreached.
+
+### Database Schema
+
+```sql
+-- Added to prospects (clients) table
+ALTER TABLE prospects ADD COLUMN exclude_candidates BOOLEAN DEFAULT false;
+ALTER TABLE prospects ADD COLUMN company_aliases TEXT[] DEFAULT '{}';
+
+-- Added to candidates table
+ALTER TABLE candidates ADD COLUMN excluded_reason TEXT;
+ALTER TABLE candidates ADD COLUMN excluded_client_id UUID REFERENCES prospects(id);
+ALTER TABLE candidates ADD COLUMN excluded_at TIMESTAMPTZ;
+```
+
+### Smart Company Matching Functions
+
+| Function | Purpose |
+|----------|---------|
+| `normalize_company_name(TEXT)` | Lowercase, strip suffixes (inc, llc, b.v., gmbh, etc.) |
+| `match_excluded_client(p_company_name, p_organization_id)` | 4-tier matching: exact → alias → fuzzy (trigram >0.4) → fuzzy_alias. Returns `client_id, client_company, match_type` |
+| `exclude_candidates_for_client(p_client_id, p_organization_id)` | Bulk retroactive exclusion — marks all matching candidates |
+
+Requires `pg_trgm` extension for trigram similarity.
+
+### Client UI (`src/pages/TalentClients.jsx`)
+
+- **Toggle:** "Exclude candidates from this company" (`exclude_candidates` boolean)
+- **Aliases:** Tag-style input for `company_aliases` (e.g. "Google Inc.", "Alphabet")
+- **Retroactive:** Toggling ON calls `exclude_candidates_for_client` RPC to mark existing candidates
+- **Recovery:** Toggling OFF clears `excluded_*` fields on all affected candidates
+
+### Nest Purchase Flow (`src/pages/TalentNestDetail.jsx`)
+
+- **Pre-purchase preview:** Shows which clients' candidates will be ruled out and count
+- **During copy:** Excluded candidates get `excluded_reason = 'client_company_match'`, `excluded_client_id`, `excluded_at` set
+- **Excluded candidates NOT queued** for intel processing (saves credits)
+- **"Ruled Out" section:** Collapsible post-purchase section with per-candidate and bulk "Recover" buttons
+
+### Guards (Exclusion Filters)
+
+| Location | Filter |
+|----------|--------|
+| `TalentCandidates.jsx` fetch | `.is("excluded_reason", null)` |
+| `analyzeCampaignProject/index.ts` | `.is("excluded_reason", null)` on candidate query |
+| `process-sync-intel-queue/index.ts` | Skip candidates with `excluded_reason` during processing |
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `supabase/migrations/20260202170000_client_candidate_exclusion.sql` | Schema + matching functions |
+| `src/pages/TalentClients.jsx` | Exclusion toggle + aliases UI |
+| `src/pages/TalentNestDetail.jsx` | Purchase preview + ruled-out section |
+| `src/pages/TalentCandidates.jsx` | Filter excluded from main list |
+| `supabase/functions/analyzeCampaignProject/index.ts` | Exclude from matching |
+| `supabase/functions/process-sync-intel-queue/index.ts` | Skip excluded in queue |
+
+---
+
+## Explorium Enrichment Cache System (Feb 2, 2026)
+
+### Overview
+
+Global caching layer that stores Explorium API responses to avoid duplicate API calls. Shared across ALL organizations — when Org A enriches "Google", Org B gets cached data automatically.
+
+### Architecture
+
+```
+Frontend → explorium-enrich edge fn → [CHECK CACHE] → hit? return cached
+                                                    → miss? call Explorium → save to cache → return
+```
+
+Cache operates entirely server-side in edge functions. No frontend changes needed. Credits charged same as fresh enrichment.
+
+### Database Tables
+
+```sql
+-- Prospect/LinkedIn cache (90-day freshness)
+enrichment_cache_prospects (
+  id UUID PRIMARY KEY,
+  linkedin_url TEXT,               -- unique partial index
+  email TEXT,                      -- unique partial index
+  enrichment_data JSONB NOT NULL,  -- full normalized response from fullEnrich()
+  explorium_prospect_id TEXT,
+  explorium_business_id TEXT,
+  created_at, updated_at, expires_at TIMESTAMPTZ,
+  hit_count INTEGER DEFAULT 1,
+  last_hit_at TIMESTAMPTZ
+)
+
+-- Company intelligence cache (180-day freshness)
+enrichment_cache_companies (
+  id UUID PRIMARY KEY,
+  normalized_name TEXT,            -- unique partial index
+  domain TEXT,                     -- unique partial index
+  intelligence_data JSONB NOT NULL, -- full response from generateCompanyIntelligence()
+  explorium_business_id TEXT,
+  created_at, updated_at, expires_at TIMESTAMPTZ,
+  hit_count INTEGER DEFAULT 1,
+  last_hit_at TIMESTAMPTZ
+)
+```
+
+No RLS — tables accessed only by edge functions via service_role.
+
+### Cache Logic
+
+**`explorium-enrich/index.ts`** — caches `full_enrich` action:
+1. Normalize key (linkedin_url or email, lowercased/trimmed)
+2. Query `enrichment_cache_prospects` where key matches AND `expires_at > NOW()`
+3. **Hit:** increment `hit_count`, return `cached.enrichment_data`
+4. **Miss:** call Explorium `fullEnrich()`, upsert result with 90-day expiry
+
+**`generateCompanyIntelligence/index.ts`** — caches full company intelligence:
+1. Normalize company name (lowercase, strip inc/llc/b.v./etc.)
+2. Query `enrichment_cache_companies` by name or domain where `expires_at > NOW()`
+3. **Hit:** increment counter, still save to entity if `entityId` provided, return cached
+4. **Miss:** make 9 parallel Explorium API calls, upsert with 180-day expiry
+
+### Freshness Rules
+
+| Data Type | TTL | Rationale |
+|-----------|-----|-----------|
+| Prospect/LinkedIn | 90 days | People change jobs ~quarterly |
+| Company intelligence | 180 days | Company data changes slowly |
+
+### Cache Stats Query
+
+```sql
+-- Prospect cache stats
+SELECT COUNT(*) as entries, SUM(hit_count) as total_hits,
+  SUM(hit_count) - COUNT(*) as api_calls_saved
+FROM enrichment_cache_prospects;
+
+-- Company cache stats
+SELECT COUNT(*) as entries, SUM(hit_count) as total_hits,
+  SUM(hit_count) - COUNT(*) as api_calls_saved
+FROM enrichment_cache_companies;
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `supabase/migrations/20260202180000_enrichment_cache.sql` | Cache tables + indexes |
+| `supabase/functions/explorium-enrich/index.ts` | Prospect cache check/save around `full_enrich` |
+| `supabase/functions/generateCompanyIntelligence/index.ts` | Company cache check/save |
+
+### Design Decisions
+
+- **Full JSONB blobs** — no individual columns, flexible if Explorium adds fields
+- **Edge function level** — single insertion point, all callers benefit automatically
+- **Expired entries kept** — filtered by `gt('expires_at', now)`, available for future stale-while-revalidate
+- **Upsert on key** — re-enrichment refreshes cache instead of duplicating
+- **No cleanup cron** — expired rows ignored; can add periodic cleanup later if table grows
+
+---
