@@ -340,17 +340,21 @@ async function createInvestor(supabase: any, row: MappedRow): Promise<string | n
   const focusAreas = focusAreasStr ? focusAreasStr.split(/[,;]/).map(s => s.trim()).filter(Boolean) : [];
 
   const profile = {
-    name: row.name || '',
+    name: row.name || row.company_name || '',
     firm: row.firm || '',
     email: row.email || null,
-    type: row.investor_type || 'VC',
+    type: row.investor_type || row.company_type || 'VC',
     check_size_min: checkSizeMin,
     check_size_max: checkSizeMax,
     focus_areas: focusAreas,
-    linkedin: row.linkedin || null,
-    website: row.website || null,
-    location: row.location || null,
+    linkedin: row.linkedin || row.linkedin_url || row.company_linkedin || null,
+    website: row.website || row.domain || row.company_domain || null,
+    location: row.location || row.hq_location || row.company_hq || null,
     portfolio: row.portfolio || null,
+    description: row.company_description || row.description || null,
+    industry: row.industry || null,
+    company_size: row.company_size || null,
+    country: row.country || row.hq_country || null,
   };
 
   const { data, error } = await supabase

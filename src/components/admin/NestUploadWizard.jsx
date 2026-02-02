@@ -237,7 +237,7 @@ export function NestUploadWizard({
             headers: headers.map(h => h.name),
             sampleData: headers.map(h => h.samples?.slice(0, 3).join(' | ') || ''),
             detectedTypes: headers.map(h => h.detectedType || 'unknown'),
-            nestType: nestType
+            nestType: nestType || 'candidates'
           })
         }
       );
@@ -331,7 +331,7 @@ export function NestUploadWizard({
           },
           body: JSON.stringify({
             nest_id: nestId,
-            nest_type: nestType,
+            nest_type: nestType || 'candidates',
             mappings: mappings,
             rows: validation.validRows.map(r => r.data)
           })
