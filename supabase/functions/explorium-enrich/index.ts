@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,6 +38,12 @@ serve(async (req) => {
 
     const body: EnrichRequest = await req.json();
     console.log("Explorium enrich request:", body.action);
+
+    // Supabase admin client for cache operations
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") || "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+    );
 
     // Match prospect by LinkedIn, email, or name+company
     // Updated to use new Explorium API endpoints (/v1/prospects/ instead of /v1/contacts/)
@@ -537,12 +544,57 @@ serve(async (req) => {
     let result: any;
 
     switch (body.action) {
-      case "full_enrich":
+      case "full_enrich": {
         if (!body.linkedin && !body.email) {
           throw new Error("Must provide linkedin or email for full_enrich");
         }
+
+        // Check prospect cache first
+        const cacheKey = (body.linkedin || body.email)!.toLowerCase().trim();
+        const cacheField = body.linkedin ? "linkedin_url" : "email";
+
+        const { data: cached } = await supabaseAdmin
+          .from("enrichment_cache_prospects")
+          .select("*")
+          .eq(cacheField, cacheKey)
+          .gt("expires_at", new Date().toISOString())
+          .single();
+
+        if (cached) {
+          console.log(`Cache HIT for ${cacheField}=${cacheKey} (hits: ${cached.hit_count})`);
+          await supabaseAdmin
+            .from("enrichment_cache_prospects")
+            .update({ hit_count: cached.hit_count + 1, last_hit_at: new Date().toISOString() })
+            .eq("id", cached.id);
+          result = cached.enrichment_data;
+          break;
+        }
+
+        console.log(`Cache MISS for ${cacheField}=${cacheKey}, calling Explorium`);
         result = await fullEnrich(body);
+
+        // Save to cache (fire-and-forget)
+        const upsertData: Record<string, any> = {
+          enrichment_data: result,
+          explorium_prospect_id: result.explorium_prospect_id || null,
+          explorium_business_id: result.explorium_business_id || null,
+          updated_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+          hit_count: 1,
+          last_hit_at: new Date().toISOString(),
+        };
+        if (body.linkedin) upsertData.linkedin_url = body.linkedin.toLowerCase().trim();
+        if (body.email) upsertData.email = body.email.toLowerCase().trim();
+        if (result.linkedin_url && !upsertData.linkedin_url) upsertData.linkedin_url = result.linkedin_url.toLowerCase().trim();
+        if (result.email && !upsertData.email) upsertData.email = result.email.toLowerCase().trim();
+
+        supabaseAdmin
+          .from("enrichment_cache_prospects")
+          .upsert(upsertData, { onConflict: cacheField })
+          .then(({ error }) => { if (error) console.error("Cache save error:", error); });
+
         break;
+      }
 
       case "match_prospect":
       case "match_contact": // Legacy support

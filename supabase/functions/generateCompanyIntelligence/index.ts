@@ -358,6 +358,62 @@ Deno.serve(async (req) => {
 
     console.log(`=== Generating company intelligence for: ${companyName} ===`);
 
+    // Check company cache first
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+
+    const normalizedName = companyName?.toLowerCase().trim()
+      .replace(/\s*(inc\.?|llc\.?|ltd\.?|b\.?v\.?|n\.?v\.?|gmbh|ag|s\.?a\.?|plc|co\.?|corp\.?|limited|holding|group)\s*$/gi, '')
+      .replace(/\s+/g, ' ').trim() || null;
+    const normalizedDomain = companyDomain?.toLowerCase().trim() || null;
+
+    // Try cache by name first, then domain
+    let cached: any = null;
+    if (normalizedName) {
+      const { data } = await supabaseAdmin
+        .from("enrichment_cache_companies")
+        .select("*")
+        .eq("normalized_name", normalizedName)
+        .gt("expires_at", new Date().toISOString())
+        .single();
+      cached = data;
+    }
+    if (!cached && normalizedDomain) {
+      const { data } = await supabaseAdmin
+        .from("enrichment_cache_companies")
+        .select("*")
+        .eq("domain", normalizedDomain)
+        .gt("expires_at", new Date().toISOString())
+        .single();
+      cached = data;
+    }
+
+    if (cached) {
+      console.log(`Company cache HIT for ${companyName} (hits: ${cached.hit_count})`);
+      await supabaseAdmin
+        .from("enrichment_cache_companies")
+        .update({ hit_count: cached.hit_count + 1, last_hit_at: new Date().toISOString() })
+        .eq("id", cached.id);
+
+      const intelligence = cached.intelligence_data;
+
+      // Still save to entity if requested
+      if (entityType && entityId) {
+        const updateData = { company_intelligence: intelligence, company_intelligence_updated_at: new Date().toISOString() };
+        const table = entityType === "candidate" ? "candidates" : entityType === "prospect" ? "prospects" : "contacts";
+        await supabaseAdmin.from(table).update(updateData).eq("id", entityId);
+        console.log(`Saved cached intelligence for ${entityType} ${entityId}`);
+      }
+
+      return new Response(
+        JSON.stringify({ intelligence, success: true, _cache_hit: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`Company cache MISS for ${companyName}, calling Explorium`);
+
     // Step 1: Match the business
     const businessId = await matchBusiness({ name: companyName, domain: companyDomain });
 
@@ -497,11 +553,26 @@ Deno.serve(async (req) => {
     console.log("=== Intelligence summary ===");
     console.log("Data quality:", JSON.stringify(intelligence.data_quality));
 
+    // Save to company cache (fire-and-forget)
+    const cacheUpsert: Record<string, any> = {
+      intelligence_data: intelligence,
+      explorium_business_id: businessId,
+      updated_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+      hit_count: 1,
+      last_hit_at: new Date().toISOString(),
+    };
+    if (normalizedName) cacheUpsert.normalized_name = normalizedName;
+    if (normalizedDomain) cacheUpsert.domain = normalizedDomain;
+    const cacheConflict = normalizedName ? "normalized_name" : "domain";
+    supabaseAdmin
+      .from("enrichment_cache_companies")
+      .upsert(cacheUpsert, { onConflict: cacheConflict })
+      .then(({ error }) => { if (error) console.error("Company cache save error:", error); });
+
     // Step 4: Optionally store in database if entityType and entityId provided
     if (entityType && entityId) {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const supabase = createClient(supabaseUrl, supabaseKey);
+      const supabase = supabaseAdmin;
 
       const updateData = {
         company_intelligence: intelligence,
