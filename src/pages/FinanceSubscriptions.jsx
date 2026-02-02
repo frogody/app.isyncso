@@ -46,7 +46,7 @@ const CATEGORIES = [
   { value: 'other', label: 'Other', icon: Package }
 ];
 
-export default function FinanceSubscriptions() {
+export default function FinanceSubscriptions({ embedded = false }) {
   const [loading, setLoading] = useState(true);
   const [subscriptions, setSubscriptions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -246,6 +246,7 @@ export default function FinanceSubscriptions() {
   };
 
   if (loading || permLoading) {
+    if (embedded) return <div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" /></div>;
     return (
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
@@ -254,6 +255,7 @@ export default function FinanceSubscriptions() {
   }
 
   if (!canView) {
+    if (embedded) return <div className="text-center py-12"><p className={ft('text-slate-500', 'text-zinc-400')}>You don't have permission to view subscriptions.</p></div>;
     return (
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex flex-col items-center justify-center text-center p-6`}>
         <AlertCircle className="w-16 h-16 text-red-400 mb-4" />
@@ -263,13 +265,10 @@ export default function FinanceSubscriptions() {
     );
   }
 
-  return (
-    <FinancePageTransition>
-      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
-
-        <div className="w-full px-6 lg:px-8 py-6 space-y-6">
+  const content = (
+        <div className={embedded ? "space-y-6" : "w-full px-6 lg:px-8 py-6 space-y-6"}>
           {/* Header */}
-          <div className="flex items-center justify-between">
+          {!embedded && <div className="flex items-center justify-between">
             <div className="flex-1">
               <PageHeader
                 icon={CreditCard}
@@ -303,7 +302,7 @@ export default function FinanceSubscriptions() {
                 }
               />
             </div>
-          </div>
+          </div>}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -598,6 +597,14 @@ export default function FinanceSubscriptions() {
             </DialogContent>
           </Dialog>
         </div>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <FinancePageTransition>
+      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
+        {content}
       </div>
     </FinancePageTransition>
   );

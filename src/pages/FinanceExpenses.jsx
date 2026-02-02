@@ -41,7 +41,7 @@ const EXPENSE_CATEGORIES = [
   { value: 'other', label: 'Other', color: 'zinc', icon: Package }
 ];
 
-export default function FinanceExpenses() {
+export default function FinanceExpenses({ embedded = false }) {
   const [loading, setLoading] = useState(true);
   const [expenses, setExpenses] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -292,6 +292,7 @@ export default function FinanceExpenses() {
   }, [hasPermission, permLoading]);
 
   if (loading || permLoading) {
+    if (embedded) return <div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" /></div>;
     return (
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
@@ -299,13 +300,11 @@ export default function FinanceExpenses() {
     );
   }
 
-  return (
-    <FinancePageTransition>
-      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
-
-        <div className="w-full px-4 lg:px-6 py-4 space-y-4">
+  const content = (
+    <>
+        <div className={embedded ? "space-y-4" : "w-full px-4 lg:px-6 py-4 space-y-4"}>
           {/* Header */}
-          <div className="flex items-center justify-between">
+          {!embedded && <div className="flex items-center justify-between">
             <div className="flex-1">
               <PageHeader
                 icon={CreditCard}
@@ -339,7 +338,7 @@ export default function FinanceExpenses() {
                 }
               />
             </div>
-          </div>
+          </div>}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -738,6 +737,15 @@ export default function FinanceExpenses() {
             </form>
           </DialogContent>
         </Dialog>
+    </>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <FinancePageTransition>
+      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
+        {content}
       </div>
     </FinancePageTransition>
   );
