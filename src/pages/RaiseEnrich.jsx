@@ -5,7 +5,8 @@ import {
   Sparkles, Plus, Search, ArrowLeft, MoreHorizontal, Play, Download,
   GripVertical, Type, Zap, Brain, FunctionSquare, Columns3, Trash2,
   Edit2, Settings, ChevronDown, Check, X, Loader2, AlertCircle,
-  Table2, Clock, Hash, Upload, FileUp, Database, Pencil
+  Table2, Clock, Hash, Upload, FileUp, Database, Pencil, Filter, XCircle,
+  ArrowUp, ArrowDown, ArrowUpDown
 } from 'lucide-react';
 import {
   RaiseCard, RaiseCardContent, RaiseCardHeader, RaiseCardTitle,
@@ -295,6 +296,15 @@ export default function RaiseEnrich() {
 
   // CSV import
   const csvInputRef = useRef(null);
+
+  // Filters
+  const [filters, setFilters] = useState([]); // [{ id, columnId, operator, value, valueTo }]
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+
+  // Sorts
+  const [sorts, setSorts] = useState([]); // [{ id, columnId, direction: 'asc'|'desc' }]
+  const [sortPanelOpen, setSortPanelOpen] = useState(false);
+  const [dragSort, setDragSort] = useState(null); // index being dragged
 
   // Column resize
   const [resizing, setResizing] = useState(null);
@@ -964,13 +974,203 @@ export default function RaiseEnrich() {
     document.addEventListener('mouseup', onUp);
   }, []);
 
+  // ─── Filter helpers ────────────────────────────────────────────────────
+
+  const TEXT_OPERATORS = [
+    { value: 'contains', label: 'Contains' },
+    { value: 'equals', label: 'Equals' },
+    { value: 'starts_with', label: 'Starts with' },
+    { value: 'ends_with', label: 'Ends with' },
+    { value: 'is_empty', label: 'Is empty' },
+    { value: 'is_not_empty', label: 'Is not empty' },
+  ];
+
+  const NUMBER_OPERATORS = [
+    { value: 'eq', label: 'Equals' },
+    { value: 'gt', label: 'Greater than' },
+    { value: 'lt', label: 'Less than' },
+    { value: 'between', label: 'Between' },
+  ];
+
+  const addFilter = useCallback(() => {
+    const firstCol = columns[0];
+    if (!firstCol) return;
+    setFilters(prev => [...prev, {
+      id: crypto.randomUUID(),
+      columnId: firstCol.id,
+      operator: 'contains',
+      value: '',
+      valueTo: '',
+    }]);
+  }, [columns]);
+
+  const updateFilter = useCallback((id, updates) => {
+    setFilters(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f));
+  }, []);
+
+  const removeFilter = useCallback((id) => {
+    setFilters(prev => prev.filter(f => f.id !== id));
+  }, []);
+
+  const clearAllFilters = useCallback(() => {
+    setFilters([]);
+  }, []);
+
+  const applyFilter = useCallback((cellValue, filter) => {
+    const v = (cellValue ?? '').toString().toLowerCase();
+    const fv = (filter.value ?? '').toString().toLowerCase();
+
+    switch (filter.operator) {
+      case 'contains': return v.includes(fv);
+      case 'equals': return v === fv;
+      case 'starts_with': return v.startsWith(fv);
+      case 'ends_with': return v.endsWith(fv);
+      case 'is_empty': return v === '';
+      case 'is_not_empty': return v !== '';
+      case 'eq': return parseFloat(v) === parseFloat(fv);
+      case 'gt': return parseFloat(v) > parseFloat(fv);
+      case 'lt': return parseFloat(v) < parseFloat(fv);
+      case 'between': {
+        const num = parseFloat(v);
+        return num >= parseFloat(fv) && num <= parseFloat(filter.valueTo ?? '');
+      }
+      default: return true;
+    }
+  }, []);
+
+  const filteredRows = useMemo(() => {
+    if (filters.length === 0) return rows;
+    return rows.filter(row => {
+      return filters.every(filter => {
+        const col = columns.find(c => c.id === filter.columnId);
+        if (!col) return true;
+        const cellValue = getCellDisplayValue(row.id, col);
+        return applyFilter(cellValue, filter);
+      });
+    });
+  }, [rows, filters, columns, getCellDisplayValue, applyFilter]);
+
+  const activeFilterCount = filters.length;
+
+  // ─── Sort helpers ─────────────────────────────────────────────────────
+
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}|^\d{1,2}\/\d{1,2}\/\d{2,4}/;
+
+  const detectValueType = useCallback((val) => {
+    if (val === '' || val == null) return 'text';
+    if (!isNaN(parseFloat(val)) && isFinite(val)) return 'number';
+    if (DATE_RE.test(String(val))) return 'date';
+    return 'text';
+  }, []);
+
+  const compareValues = useCallback((a, b, direction) => {
+    const aStr = (a ?? '').toString();
+    const bStr = (b ?? '').toString();
+    const typeA = detectValueType(aStr);
+    const typeB = detectValueType(bStr);
+
+    // Empty values always sort last
+    if (aStr === '' && bStr === '') return 0;
+    if (aStr === '') return 1;
+    if (bStr === '') return -1;
+
+    let result = 0;
+    if (typeA === 'number' && typeB === 'number') {
+      result = parseFloat(aStr) - parseFloat(bStr);
+    } else if (typeA === 'date' && typeB === 'date') {
+      result = new Date(aStr).getTime() - new Date(bStr).getTime();
+    } else {
+      result = aStr.toLowerCase().localeCompare(bStr.toLowerCase());
+    }
+    return direction === 'desc' ? -result : result;
+  }, [detectValueType]);
+
+  const toggleColumnSort = useCallback((colId, shiftKey) => {
+    setSorts(prev => {
+      const existing = prev.find(s => s.columnId === colId);
+      if (existing) {
+        // Cycle: asc → desc → remove
+        if (existing.direction === 'asc') {
+          return prev.map(s => s.columnId === colId ? { ...s, direction: 'desc' } : s);
+        }
+        return prev.filter(s => s.columnId !== colId);
+      }
+      const newSort = { id: crypto.randomUUID(), columnId: colId, direction: 'asc' };
+      if (shiftKey) {
+        return [...prev, newSort]; // multi-column
+      }
+      return [newSort]; // replace
+    });
+  }, []);
+
+  const addSortFromPanel = useCallback(() => {
+    const firstCol = columns[0];
+    if (!firstCol) return;
+    setSorts(prev => [...prev, { id: crypto.randomUUID(), columnId: firstCol.id, direction: 'asc' }]);
+  }, [columns]);
+
+  const updateSort = useCallback((id, updates) => {
+    setSorts(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+  }, []);
+
+  const removeSort = useCallback((id) => {
+    setSorts(prev => prev.filter(s => s.id !== id));
+  }, []);
+
+  const clearAllSorts = useCallback(() => {
+    setSorts([]);
+  }, []);
+
+  const handleSortDragStart = useCallback((idx) => {
+    setDragSort(idx);
+  }, []);
+
+  const handleSortDragOver = useCallback((e, idx) => {
+    e.preventDefault();
+    if (dragSort === null || dragSort === idx) return;
+    setSorts(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(dragSort, 1);
+      next.splice(idx, 0, moved);
+      return next;
+    });
+    setDragSort(idx);
+  }, [dragSort]);
+
+  const handleSortDragEnd = useCallback(() => {
+    setDragSort(null);
+  }, []);
+
+  const getColumnSortState = useCallback((colId) => {
+    const idx = sorts.findIndex(s => s.columnId === colId);
+    if (idx === -1) return null;
+    return { direction: sorts[idx].direction, priority: idx + 1, isMulti: sorts.length > 1 };
+  }, [sorts]);
+
+  const sortedRows = useMemo(() => {
+    if (sorts.length === 0) return filteredRows;
+    return [...filteredRows].sort((rowA, rowB) => {
+      for (const sort of sorts) {
+        const col = columns.find(c => c.id === sort.columnId);
+        if (!col) continue;
+        const valA = getCellDisplayValue(rowA.id, col);
+        const valB = getCellDisplayValue(rowB.id, col);
+        const cmp = compareValues(valA, valB, sort.direction);
+        if (cmp !== 0) return cmp;
+      }
+      return 0;
+    });
+  }, [filteredRows, sorts, columns, getCellDisplayValue, compareValues]);
+
+  const activeSortCount = sorts.length;
+
   // ─── Virtual scroll ────────────────────────────────────────────────────
 
-  const totalHeight = rows.length * ROW_HEIGHT;
+  const totalHeight = sortedRows.length * ROW_HEIGHT;
   const containerHeight = scrollRef.current?.clientHeight || 600;
   const startIdx = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - VISIBLE_BUFFER);
-  const endIdx = Math.min(rows.length, Math.ceil((scrollTop + containerHeight) / ROW_HEIGHT) + VISIBLE_BUFFER);
-  const visibleRows = rows.slice(startIdx, endIdx);
+  const endIdx = Math.min(sortedRows.length, Math.ceil((scrollTop + containerHeight) / ROW_HEIGHT) + VISIBLE_BUFFER);
+  const visibleRows = sortedRows.slice(startIdx, endIdx);
 
   const onScroll = useCallback((e) => {
     setScrollTop(e.target.scrollTop);
@@ -1232,6 +1432,22 @@ export default function RaiseEnrich() {
               <RaiseButton variant="ghost" size="sm" onClick={runAllColumns}>
                 <Play className="w-3.5 h-3.5 mr-1" /> Run All
               </RaiseButton>
+              <RaiseButton variant="ghost" size="sm" onClick={() => setSortPanelOpen(prev => !prev)} className="relative">
+                <ArrowUpDown className="w-3.5 h-3.5 mr-1" /> Sort
+                {activeSortCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-orange-500 text-[10px] font-bold text-white flex items-center justify-center">
+                    {activeSortCount}
+                  </span>
+                )}
+              </RaiseButton>
+              <RaiseButton variant="ghost" size="sm" onClick={() => setFilterPanelOpen(prev => !prev)} className="relative">
+                <Filter className="w-3.5 h-3.5 mr-1" /> Filters
+                {activeFilterCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-orange-500 text-[10px] font-bold text-white flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </RaiseButton>
               <RaiseButton variant="ghost" size="sm" onClick={exportCSV}>
                 <Download className="w-3.5 h-3.5 mr-1" /> CSV
               </RaiseButton>
@@ -1336,20 +1552,31 @@ export default function RaiseEnrich() {
               </div>
               {columns.map(col => {
                 const Icon = COLUMN_TYPE_ICONS[col.type] || Type;
+                const sortState = getColumnSortState(col.id);
                 return (
                   <div
                     key={col.id}
                     className={rt(
-                      'flex-shrink-0 flex items-center gap-1.5 px-2 text-xs font-medium text-gray-600 border-r border-gray-200 relative group',
-                      'flex-shrink-0 flex items-center gap-1.5 px-2 text-xs font-medium text-zinc-300 border-r border-zinc-800/60 relative group'
+                      `flex-shrink-0 flex items-center gap-1.5 px-2 text-xs font-medium border-r border-gray-200 relative group cursor-pointer select-none ${sortState ? 'text-orange-600 bg-orange-50/50' : 'text-gray-600'}`,
+                      `flex-shrink-0 flex items-center gap-1.5 px-2 text-xs font-medium border-r border-zinc-800/60 relative group cursor-pointer select-none ${sortState ? 'text-orange-400 bg-orange-500/5' : 'text-zinc-300'}`
                     )}
                     style={{ width: col.width || DEFAULT_COL_WIDTH, height: ROW_HEIGHT }}
+                    onClick={(e) => { if (!e.target.closest('[data-no-sort]')) toggleColumnSort(col.id, e.shiftKey); }}
                   >
                     <Icon className={`w-3 h-3 flex-shrink-0 ${col.type === 'field' ? 'text-blue-400' : col.type === 'enrichment' ? 'text-amber-400' : col.type === 'ai' ? 'text-purple-400' : 'text-green-400'}`} />
                     <span className="truncate flex-1">{col.name}</span>
+                    {/* Sort indicator */}
+                    {sortState ? (
+                      <span className="flex items-center gap-0.5 flex-shrink-0">
+                        {sortState.direction === 'asc' ? <ArrowUp className="w-3 h-3 text-orange-400" /> : <ArrowDown className="w-3 h-3 text-orange-400" />}
+                        {sortState.isMulti && <span className="text-[9px] text-orange-400 font-bold">{sortState.priority}</span>}
+                      </span>
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-zinc-500 opacity-0 group-hover:opacity-50 transition-opacity flex-shrink-0" />
+                    )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className="p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-zinc-700/50">
+                        <button data-no-sort className="p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-zinc-700/50">
                           <MoreHorizontal className="w-3 h-3 text-zinc-400" />
                         </button>
                       </DropdownMenuTrigger>
@@ -1371,6 +1598,7 @@ export default function RaiseEnrich() {
                     </DropdownMenu>
                     {/* Resize handle */}
                     <div
+                      data-no-sort
                       onMouseDown={(e) => onResizeStart(e, col)}
                       className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-orange-500/50 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                     />
@@ -1393,7 +1621,7 @@ export default function RaiseEnrich() {
             {/* Body with virtual scrolling */}
             <div style={{ height: totalHeight, position: 'relative', minWidth: totalGridWidth }}>
               {visibleRows.map((row) => {
-                const rowIdx = rows.indexOf(row);
+                const rowIdx = sortedRows.indexOf(row);
                 return (
                   <div
                     key={row.id}
@@ -1480,6 +1708,301 @@ export default function RaiseEnrich() {
             </div>
           </div>
         )}
+
+        {/* Filter Panel - slides in from right */}
+        <AnimatePresence>
+          {filterPanelOpen && (
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 300 }}
+              className={rt(
+                'fixed top-0 right-0 h-full w-80 z-50 border-l border-gray-200 bg-white shadow-xl flex flex-col',
+                'fixed top-0 right-0 h-full w-80 z-50 border-l border-zinc-800 bg-zinc-950 shadow-xl flex flex-col'
+              )}
+            >
+              {/* Header */}
+              <div className={rt(
+                'flex items-center justify-between px-4 py-3 border-b border-gray-200',
+                'flex items-center justify-between px-4 py-3 border-b border-zinc-800'
+              )}>
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-orange-400" />
+                  <span className={rt('text-sm font-semibold text-gray-900', 'text-sm font-semibold text-white')}>Filters</span>
+                  {activeFilterCount > 0 && (
+                    <RaiseBadge className="text-[10px]">{activeFilterCount} active</RaiseBadge>
+                  )}
+                </div>
+                <button onClick={() => setFilterPanelOpen(false)} className={rt('p-1 rounded-lg hover:bg-gray-100 text-gray-500', 'p-1 rounded-lg hover:bg-zinc-800 text-zinc-400')}>
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Filter list */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {filters.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Filter className={rt('w-8 h-8 text-gray-300 mx-auto mb-2', 'w-8 h-8 text-zinc-600 mx-auto mb-2')} />
+                    <p className="text-xs text-zinc-500">No filters applied</p>
+                    <p className="text-[10px] text-zinc-600 mt-1">Add a filter to narrow down rows</p>
+                  </div>
+                ) : (
+                  filters.map((filter, idx) => {
+                    const col = columns.find(c => c.id === filter.columnId);
+                    const isNumberOp = ['eq', 'gt', 'lt', 'between'].includes(filter.operator);
+                    const needsValue = !['is_empty', 'is_not_empty'].includes(filter.operator);
+                    return (
+                      <div
+                        key={filter.id}
+                        className={rt(
+                          'p-3 rounded-xl border border-gray-200 bg-gray-50 space-y-2',
+                          'p-3 rounded-xl border border-zinc-800 bg-zinc-900/60 space-y-2'
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{idx === 0 ? 'Where' : 'And'}</span>
+                          <button onClick={() => removeFilter(filter.id)} className="p-0.5 rounded hover:bg-red-500/10 text-zinc-500 hover:text-red-400">
+                            <XCircle className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        {/* Column select */}
+                        <Select value={filter.columnId} onValueChange={v => updateFilter(filter.id, { columnId: v })}>
+                          <SelectTrigger className={rt('h-8 text-xs', 'h-8 text-xs bg-zinc-800 border-zinc-700 text-white')}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                            {columns.map(c => (
+                              <SelectItem key={c.id} value={c.id} className={rt('text-xs', 'text-xs text-white hover:bg-zinc-700')}>{c.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {/* Operator select */}
+                        <Select
+                          value={filter.operator}
+                          onValueChange={v => updateFilter(filter.id, { operator: v })}
+                        >
+                          <SelectTrigger className={rt('h-8 text-xs', 'h-8 text-xs bg-zinc-800 border-zinc-700 text-white')}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                            <SelectItem value="_text_label" disabled className="text-[10px] text-zinc-500 font-semibold">Text</SelectItem>
+                            {TEXT_OPERATORS.map(op => (
+                              <SelectItem key={op.value} value={op.value} className={rt('text-xs', 'text-xs text-white hover:bg-zinc-700')}>{op.label}</SelectItem>
+                            ))}
+                            <SelectItem value="_num_label" disabled className="text-[10px] text-zinc-500 font-semibold">Number</SelectItem>
+                            {NUMBER_OPERATORS.map(op => (
+                              <SelectItem key={op.value} value={op.value} className={rt('text-xs', 'text-xs text-white hover:bg-zinc-700')}>{op.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {/* Value input(s) */}
+                        {needsValue && (
+                          <div className={filter.operator === 'between' ? 'flex items-center gap-2' : ''}>
+                            <Input
+                              value={filter.value}
+                              onChange={e => updateFilter(filter.id, { value: e.target.value })}
+                              placeholder={isNumberOp ? '0' : 'Value...'}
+                              type={isNumberOp ? 'number' : 'text'}
+                              className={rt('h-8 text-xs', 'h-8 text-xs bg-zinc-800 border-zinc-700 text-white')}
+                            />
+                            {filter.operator === 'between' && (
+                              <>
+                                <span className="text-xs text-zinc-500">to</span>
+                                <Input
+                                  value={filter.valueTo}
+                                  onChange={e => updateFilter(filter.id, { valueTo: e.target.value })}
+                                  placeholder="0"
+                                  type="number"
+                                  className={rt('h-8 text-xs', 'h-8 text-xs bg-zinc-800 border-zinc-700 text-white')}
+                                />
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className={rt(
+                'flex-shrink-0 px-4 py-3 border-t border-gray-200 space-y-2',
+                'flex-shrink-0 px-4 py-3 border-t border-zinc-800 space-y-2'
+              )}>
+                <RaiseButton variant="ghost" size="sm" className="w-full justify-center" onClick={addFilter}>
+                  <Plus className="w-3.5 h-3.5 mr-1" /> Add Filter
+                </RaiseButton>
+                {activeFilterCount > 0 && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="w-full text-center text-xs text-red-400 hover:text-red-300 py-1"
+                  >
+                    Clear all filters
+                  </button>
+                )}
+                {activeFilterCount > 0 && (
+                  <div className="text-center text-[10px] text-zinc-500">
+                    Showing {filteredRows.length} of {rows.length} rows
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Backdrop for filter panel */}
+        <AnimatePresence>
+          {filterPanelOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/30"
+              onClick={() => setFilterPanelOpen(false)}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Sort Panel - slides in from right */}
+        <AnimatePresence>
+          {sortPanelOpen && (
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 300 }}
+              className={rt(
+                'fixed top-0 right-0 h-full w-80 z-50 border-l border-gray-200 bg-white shadow-xl flex flex-col',
+                'fixed top-0 right-0 h-full w-80 z-50 border-l border-zinc-800 bg-zinc-950 shadow-xl flex flex-col'
+              )}
+            >
+              {/* Header */}
+              <div className={rt(
+                'flex items-center justify-between px-4 py-3 border-b border-gray-200',
+                'flex items-center justify-between px-4 py-3 border-b border-zinc-800'
+              )}>
+                <div className="flex items-center gap-2">
+                  <ArrowUpDown className="w-4 h-4 text-orange-400" />
+                  <span className={rt('text-sm font-semibold text-gray-900', 'text-sm font-semibold text-white')}>Sort</span>
+                  {activeSortCount > 0 && (
+                    <RaiseBadge className="text-[10px]">{activeSortCount} active</RaiseBadge>
+                  )}
+                </div>
+                <button onClick={() => setSortPanelOpen(false)} className={rt('p-1 rounded-lg hover:bg-gray-100 text-gray-500', 'p-1 rounded-lg hover:bg-zinc-800 text-zinc-400')}>
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Sort list */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {sorts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ArrowUpDown className={rt('w-8 h-8 text-gray-300 mx-auto mb-2', 'w-8 h-8 text-zinc-600 mx-auto mb-2')} />
+                    <p className="text-xs text-zinc-500">No sorts applied</p>
+                    <p className="text-[10px] text-zinc-600 mt-1">Click column headers or add a sort below</p>
+                  </div>
+                ) : (
+                  sorts.map((sort, idx) => {
+                    const col = columns.find(c => c.id === sort.columnId);
+                    return (
+                      <div
+                        key={sort.id}
+                        draggable
+                        onDragStart={() => handleSortDragStart(idx)}
+                        onDragOver={(e) => handleSortDragOver(e, idx)}
+                        onDragEnd={handleSortDragEnd}
+                        className={rt(
+                          `p-3 rounded-xl border bg-gray-50 space-y-2 transition-all ${dragSort === idx ? 'border-orange-400 opacity-70' : 'border-gray-200'}`,
+                          `p-3 rounded-xl border bg-zinc-900/60 space-y-2 transition-all ${dragSort === idx ? 'border-orange-500 opacity-70' : 'border-zinc-800'}`
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <GripVertical className="w-3 h-3 text-zinc-500 cursor-grab active:cursor-grabbing" />
+                            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{idx === 0 ? 'Sort by' : 'Then by'}</span>
+                          </div>
+                          <button onClick={() => removeSort(sort.id)} className="p-0.5 rounded hover:bg-red-500/10 text-zinc-500 hover:text-red-400">
+                            <XCircle className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        {/* Column select */}
+                        <Select value={sort.columnId} onValueChange={v => updateSort(sort.id, { columnId: v })}>
+                          <SelectTrigger className={rt('h-8 text-xs', 'h-8 text-xs bg-zinc-800 border-zinc-700 text-white')}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                            {columns.map(c => (
+                              <SelectItem key={c.id} value={c.id} className={rt('text-xs', 'text-xs text-white hover:bg-zinc-700')}>{c.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {/* Direction toggle */}
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => updateSort(sort.id, { direction: 'asc' })}
+                            className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                              sort.direction === 'asc'
+                                ? rt('bg-orange-100 text-orange-600 border border-orange-300', 'bg-orange-500/15 text-orange-400 border border-orange-500/40')
+                                : rt('bg-gray-100 text-gray-500 border border-gray-200', 'bg-zinc-800 text-zinc-500 border border-zinc-700')
+                            }`}
+                          >
+                            <ArrowUp className="w-3 h-3" /> Asc
+                          </button>
+                          <button
+                            onClick={() => updateSort(sort.id, { direction: 'desc' })}
+                            className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                              sort.direction === 'desc'
+                                ? rt('bg-orange-100 text-orange-600 border border-orange-300', 'bg-orange-500/15 text-orange-400 border border-orange-500/40')
+                                : rt('bg-gray-100 text-gray-500 border border-gray-200', 'bg-zinc-800 text-zinc-500 border border-zinc-700')
+                            }`}
+                          >
+                            <ArrowDown className="w-3 h-3" /> Desc
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className={rt(
+                'flex-shrink-0 px-4 py-3 border-t border-gray-200 space-y-2',
+                'flex-shrink-0 px-4 py-3 border-t border-zinc-800 space-y-2'
+              )}>
+                <RaiseButton variant="ghost" size="sm" className="w-full justify-center" onClick={addSortFromPanel}>
+                  <Plus className="w-3.5 h-3.5 mr-1" /> Add Sort
+                </RaiseButton>
+                {activeSortCount > 0 && (
+                  <button
+                    onClick={clearAllSorts}
+                    className="w-full text-center text-xs text-red-400 hover:text-red-300 py-1"
+                  >
+                    Clear all sorts
+                  </button>
+                )}
+                {activeSortCount > 0 && (
+                  <p className="text-[10px] text-zinc-500 text-center">Drag to reorder priority. Shift+click headers for multi-sort.</p>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Backdrop for sort panel */}
+        <AnimatePresence>
+          {sortPanelOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/30"
+              onClick={() => setSortPanelOpen(false)}
+            />
+          )}
+        </AnimatePresence>
 
         {/* Add Column Dialog */}
         <Dialog open={colDialogOpen} onOpenChange={setColDialogOpen}>
