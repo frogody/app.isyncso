@@ -269,8 +269,12 @@ export default function RaiseEnrich() {
 
   const slashMenuColumns = useMemo(() => {
     if (!slashMenu.open) return [];
-    return columns.filter(c => c.name.toLowerCase().includes(slashMenu.filter));
-  }, [slashMenu.open, slashMenu.filter, columns]);
+    const firstRow = rows[0];
+    return columns.filter(c => c.name.toLowerCase().includes(slashMenu.filter)).map(c => ({
+      ...c,
+      sampleValue: firstRow ? (cells[`${firstRow.id}:${c.id}`]?.value || '') : '',
+    }));
+  }, [slashMenu.open, slashMenu.filter, columns, rows, cells]);
 
   // Cell editing
   const [editingCell, setEditingCell] = useState(null); // { rowId, colId }
@@ -1595,8 +1599,10 @@ export default function RaiseEnrich() {
                     {slashMenu.open && slashMenu.field === 'prompt' && slashMenuColumns.length > 0 && (
                       <div className="absolute z-50 left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-800 shadow-xl">
                         {slashMenuColumns.map(c => (
-                          <button key={c.id} onClick={() => insertColumnRef(c.name)} className="w-full text-left px-3 py-2 text-sm text-white hover:bg-zinc-700 flex items-center gap-2">
-                            <span className="text-cyan-400 font-mono text-xs">/</span>{c.name}
+                          <button key={c.id} onClick={() => insertColumnRef(c.name)} className="w-full text-left px-3 py-2 text-sm text-white hover:bg-zinc-700 flex items-center gap-2 min-w-0">
+                            <span className="text-cyan-400 font-mono text-xs shrink-0">/</span>
+                            <span className="shrink-0">{c.name}</span>
+                            {c.sampleValue && <span className="text-zinc-500 text-xs truncate ml-auto">{String(c.sampleValue).slice(0, 40)}</span>}
                           </button>
                         ))}
                       </div>
