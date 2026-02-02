@@ -306,6 +306,13 @@ export default function RaiseEnrich() {
   const [sortPanelOpen, setSortPanelOpen] = useState(false);
   const [dragSort, setDragSort] = useState(null); // index being dragged
 
+  // Global search
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchRef = useRef(null);
+  const searchTimerRef = useRef(null);
+
   // Column resize
   const [resizing, setResizing] = useState(null);
   const resizeStartX = useRef(0);
@@ -1052,6 +1059,82 @@ export default function RaiseEnrich() {
 
   const activeFilterCount = filters.length;
 
+  // ─── Global search ────────────────────────────────────────────────────
+
+  // Debounce search input
+  useEffect(() => {
+    clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(searchInput.trim().toLowerCase());
+    }, 300);
+    return () => clearTimeout(searchTimerRef.current);
+  }, [searchInput]);
+
+  // Cmd/Ctrl+F keyboard shortcut
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  const clearSearch = useCallback(() => {
+    setSearchInput('');
+    setDebouncedSearch('');
+    searchRef.current?.blur();
+  }, []);
+
+  // Apply search to filteredRows → searchFilteredRows
+  const searchFilteredRows = useMemo(() => {
+    if (!debouncedSearch) return filteredRows;
+    return filteredRows.filter(row =>
+      columns.some(col => {
+        const val = getCellDisplayValue(row.id, col);
+        return val.toString().toLowerCase().includes(debouncedSearch);
+      })
+    );
+  }, [filteredRows, debouncedSearch, columns, getCellDisplayValue]);
+
+  // Match stats
+  const searchMatchStats = useMemo(() => {
+    if (!debouncedSearch) return null;
+    let matchingCells = 0;
+    for (const row of searchFilteredRows) {
+      for (const col of columns) {
+        const val = getCellDisplayValue(row.id, col);
+        if (val.toString().toLowerCase().includes(debouncedSearch)) matchingCells++;
+      }
+    }
+    return { rows: searchFilteredRows.length, cells: matchingCells };
+  }, [debouncedSearch, searchFilteredRows, columns, getCellDisplayValue]);
+
+  // Highlight helper — splits text into fragments with match spans
+  const highlightMatch = useCallback((text, term) => {
+    if (!term || !text) return text;
+    const str = String(text);
+    const lower = str.toLowerCase();
+    const idx = lower.indexOf(term);
+    if (idx === -1) return str;
+    const parts = [];
+    let last = 0;
+    let pos = idx;
+    // Find all occurrences
+    while (pos !== -1) {
+      if (pos > last) parts.push(<span key={`t${last}`}>{str.slice(last, pos)}</span>);
+      parts.push(
+        <mark key={`m${pos}`} className="bg-orange-400/30 text-inherit rounded-sm px-px">{str.slice(pos, pos + term.length)}</mark>
+      );
+      last = pos + term.length;
+      pos = lower.indexOf(term, last);
+    }
+    if (last < str.length) parts.push(<span key={`t${last}`}>{str.slice(last)}</span>);
+    return parts;
+  }, []);
+
   // ─── Sort helpers ─────────────────────────────────────────────────────
 
   const DATE_RE = /^\d{4}-\d{2}-\d{2}|^\d{1,2}\/\d{1,2}\/\d{2,4}/;
@@ -1148,8 +1231,8 @@ export default function RaiseEnrich() {
   }, [sorts]);
 
   const sortedRows = useMemo(() => {
-    if (sorts.length === 0) return filteredRows;
-    return [...filteredRows].sort((rowA, rowB) => {
+    if (sorts.length === 0) return searchFilteredRows;
+    return [...searchFilteredRows].sort((rowA, rowB) => {
       for (const sort of sorts) {
         const col = columns.find(c => c.id === sort.columnId);
         if (!col) continue;
@@ -1160,7 +1243,7 @@ export default function RaiseEnrich() {
       }
       return 0;
     });
-  }, [filteredRows, sorts, columns, getCellDisplayValue, compareValues]);
+  }, [searchFilteredRows, sorts, columns, getCellDisplayValue, compareValues]);
 
   const activeSortCount = sorts.length;
 
@@ -1415,6 +1498,33 @@ export default function RaiseEnrich() {
               {nestName && (
                 <RaiseBadge variant="outline" className="text-[10px]">{nestName}</RaiseBadge>
               )}
+              {/* Global search */}
+              <div className="relative flex items-center">
+                <Search className={`absolute left-2.5 w-3.5 h-3.5 pointer-events-none transition-colors ${searchFocused || searchInput ? 'text-orange-400' : 'text-zinc-500'}`} />
+                <input
+                  ref={searchRef}
+                  value={searchInput}
+                  onChange={e => setSearchInput(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
+                  onKeyDown={e => { if (e.key === 'Escape') clearSearch(); }}
+                  placeholder="Search..."
+                  className={rt(
+                    `pl-8 pr-8 py-1.5 text-xs rounded-lg border border-gray-200 bg-gray-50 outline-none transition-all placeholder:text-gray-400 text-gray-900 focus:border-orange-400 focus:ring-1 focus:ring-orange-400/30 ${searchFocused || searchInput ? 'w-64' : 'w-40'}`,
+                    `pl-8 pr-8 py-1.5 text-xs rounded-lg border border-zinc-700 bg-zinc-800/60 outline-none transition-all placeholder:text-zinc-500 text-white focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20 ${searchFocused || searchInput ? 'w-64' : 'w-40'}`
+                  )}
+                />
+                {searchInput && (
+                  <button onClick={clearSearch} className="absolute right-2 p-0.5 rounded hover:bg-zinc-700/50 text-zinc-400 hover:text-zinc-200">
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+                {searchMatchStats && (
+                  <div className="absolute -bottom-5 left-0 whitespace-nowrap">
+                    <span className="text-[10px] text-orange-400/80">{searchMatchStats.cells} matches in {searchMatchStats.rows} rows</span>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {workspace?.nest_id && rows.length === 0 && (
@@ -1692,7 +1802,7 @@ export default function RaiseEnrich() {
                                 'truncate text-gray-700',
                                 'truncate text-zinc-300'
                               )}>
-                                {displayVal}
+                                {debouncedSearch ? highlightMatch(displayVal, debouncedSearch) : displayVal}
                               </span>
                               {status === 'error' && <StatusDot status="error" />}
                             </div>
