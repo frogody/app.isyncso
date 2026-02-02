@@ -286,14 +286,15 @@ export function NestUploadWizard({
       });
 
       // Check for at least some identifying data
-      const hasIdentifier = nestType === 'investors'
-        ? (mappedData.name || mappedData.firm || mappedData.email)
-        : nestType === 'companies'
-        ? (mappedData.company_name || mappedData.name || mappedData.domain || mappedData.linkedin_url)
-        : (mappedData.first_name || mappedData.last_name || mappedData.email || mappedData.company || mappedData.company_name);
+      // Universal identifier check — accept any name, email, company, or domain field
+      const hasIdentifier =
+        mappedData.name || mappedData.first_name || mappedData.last_name ||
+        mappedData.email || mappedData.company || mappedData.company_name ||
+        mappedData.firm || mappedData.domain || mappedData.linkedin_url ||
+        mappedData.linkedin_profile || mappedData.linkedin || mappedData.company_domain;
 
       if (!hasIdentifier) {
-        errors.push('Row must have at least a name, email, or company');
+        errors.push('Row must have at least a name, email, company, or domain');
       }
 
       if (errors.length > 0) {
