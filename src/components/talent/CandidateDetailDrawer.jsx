@@ -2109,36 +2109,16 @@ export default function CandidateDetailDrawer({
                   {/* Enhanced Quick Actions */}
                   <div className="flex items-center gap-2 flex-wrap">
                     {/* Enrichment Buttons */}
-                    {candidate.source === 'nest_purchase' ? (
-                      <Button
-                        onClick={handleSyncIntel}
-                        disabled={generatingIntelligence}
-                        size="sm"
-                        className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
-                      >
-                        {generatingIntelligence ? (
-                          <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
-                        ) : (
-                          <Sparkles className="w-3 h-3 mr-1.5" />
-                        )}
-                        {syncStatus === "company" ? "SYNCING..." :
-                         syncStatus === "candidate" ? "ANALYZING..." :
-                         "SYNC INTEL"}
-                        <Badge className="ml-1.5 bg-red-500/20 text-red-400 text-[10px] px-1.5 py-0">
-                          Included
-                        </Badge>
-                      </Button>
-                    ) : (
-                      <EnrichmentButtons
-                        candidate={candidate}
-                        userCredits={user?.credits || 0}
-                        userId={user?.id}
-                        organizationId={user?.organization_id}
-                        onEnrichmentComplete={() => fetchCandidateDetails()}
-                        onCreditsUpdated={() => {}}
-                        disabled={generatingIntelligence}
-                      />
-                    )}
+                    <EnrichmentButtons
+                      candidate={candidate}
+                      userCredits={user?.credits || 0}
+                      userId={user?.id}
+                      organizationId={user?.organization_id}
+                      onEnrichmentComplete={() => fetchCandidateDetails()}
+                      onCreditsUpdated={() => {}}
+                      disabled={generatingIntelligence}
+                      freeEnrichment={candidate.source === 'nest_purchase'}
+                    />
 
                     {/* Send SMS Button */}
                     <Button

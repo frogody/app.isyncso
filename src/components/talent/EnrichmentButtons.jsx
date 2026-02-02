@@ -16,6 +16,7 @@ export function EnrichmentButtons({
   onEnrichmentComplete,
   onCreditsUpdated,
   disabled = false,
+  freeEnrichment = false,
 }) {
   const { config } = useEnrichmentConfig();
   const [processing, setProcessing] = useState(null);
@@ -41,7 +42,7 @@ export function EnrichmentButtons({
   // LinkedIn Enrichment (Explorium)
   const handleLinkedInEnrich = async () => {
     const creditCost = config.linkedin_enrich?.credits || 5;
-    if (userCredits < creditCost) {
+    if (!freeEnrichment && userCredits < creditCost) {
       toast.error('Insufficient credits', { description: `Need ${creditCost} credits` });
       return;
     }
@@ -54,7 +55,10 @@ export function EnrichmentButtons({
 
     setProcessing('linkedin');
     try {
-      const newBalance = await deductCredits('linkedin_enrich', creditCost, 'LinkedIn Enrichment');
+      let newBalance = userCredits;
+      if (!freeEnrichment) {
+        newBalance = await deductCredits('linkedin_enrich', creditCost, 'LinkedIn Enrichment');
+      }
       const enriched = await fullEnrichFromLinkedIn(linkedinUrl);
 
       await supabase.from('candidates').update({
@@ -86,9 +90,9 @@ export function EnrichmentButtons({
         company_domain: enriched.company_domain || candidate.company_domain,
       }).eq('id', candidate.id);
 
-      toast.success('LinkedIn enriched!', { description: `${creditCost} credits deducted` });
+      toast.success('LinkedIn enriched!', { description: freeEnrichment ? 'Included with nest' : `${creditCost} credits deducted` });
       onEnrichmentComplete?.();
-      onCreditsUpdated?.(newBalance);
+      if (!freeEnrichment) onCreditsUpdated?.(newBalance);
     } catch (err) {
       toast.error('LinkedIn enrichment failed', { description: err.message });
     } finally {
@@ -99,7 +103,7 @@ export function EnrichmentButtons({
   // Company Enrichment (Explorium)
   const handleCompanyEnrich = async () => {
     const creditCost = config.company_enrich?.credits || 3;
-    if (userCredits < creditCost) {
+    if (!freeEnrichment && userCredits < creditCost) {
       toast.error('Insufficient credits', { description: `Need ${creditCost} credits` });
       return;
     }
@@ -113,7 +117,10 @@ export function EnrichmentButtons({
 
     setProcessing('company');
     try {
-      const newBalance = await deductCredits('company_enrich', creditCost, 'Company Enrichment');
+      let newBalance = userCredits;
+      if (!freeEnrichment) {
+        newBalance = await deductCredits('company_enrich', creditCost, 'Company Enrichment');
+      }
       const companyData = await enrichCompanyOnly({ company_name: companyName, domain: companyDomain });
 
       await supabase.from('candidates').update({
@@ -130,9 +137,9 @@ export function EnrichmentButtons({
         company_enriched_at: new Date().toISOString(),
       }).eq('id', candidate.id);
 
-      toast.success('Company enriched!', { description: `${creditCost} credits deducted` });
+      toast.success('Company enriched!', { description: freeEnrichment ? 'Included with nest' : `${creditCost} credits deducted` });
       onEnrichmentComplete?.();
-      onCreditsUpdated?.(newBalance);
+      if (!freeEnrichment) onCreditsUpdated?.(newBalance);
     } catch (err) {
       toast.error('Company enrichment failed', { description: err.message });
     } finally {
@@ -143,14 +150,17 @@ export function EnrichmentButtons({
   // SYNC Intel (AI Intelligence)
   const handleSyncIntel = async () => {
     const creditCost = config.sync_intel?.credits || 10;
-    if (userCredits < creditCost) {
+    if (!freeEnrichment && userCredits < creditCost) {
       toast.error('Insufficient credits', { description: `Need ${creditCost} credits` });
       return;
     }
 
     setProcessing('sync');
     try {
-      const newBalance = await deductCredits('sync_intel', creditCost, 'SYNC Intelligence');
+      let newBalance = userCredits;
+      if (!freeEnrichment) {
+        newBalance = await deductCredits('sync_intel', creditCost, 'SYNC Intelligence');
+      }
 
       // Generate Company Intelligence (AI)
       const companyName = candidate.current_company || candidate.company_name;
@@ -183,9 +193,9 @@ export function EnrichmentButtons({
         }),
       });
 
-      toast.success('Intelligence generated!', { description: `${creditCost} credits deducted` });
+      toast.success('Intelligence generated!', { description: freeEnrichment ? 'Included with nest' : `${creditCost} credits deducted` });
       onEnrichmentComplete?.();
-      onCreditsUpdated?.(newBalance);
+      if (!freeEnrichment) onCreditsUpdated?.(newBalance);
     } catch (err) {
       toast.error('Intelligence generation failed', { description: err.message });
     } finally {
@@ -221,8 +231,8 @@ export function EnrichmentButtons({
               )}
               {isLinkedInEnriched ? 'LinkedIn ✓' : 'LinkedIn'}
               {!isLinkedInEnriched && (
-                <Badge className="ml-1.5 bg-blue-500/20 text-blue-400 text-[10px] px-1 py-0">
-                  {config.linkedin_enrich?.credits || 5}
+                <Badge className={`ml-1.5 text-[10px] px-1 py-0 ${freeEnrichment ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                  {freeEnrichment ? 'Free' : config.linkedin_enrich?.credits || 5}
                 </Badge>
               )}
             </Button>
@@ -252,8 +262,8 @@ export function EnrichmentButtons({
               )}
               {isCompanyEnriched ? 'Company ✓' : 'Company'}
               {!isCompanyEnriched && (
-                <Badge className="ml-1.5 bg-orange-500/20 text-orange-400 text-[10px] px-1 py-0">
-                  {config.company_enrich?.credits || 3}
+                <Badge className={`ml-1.5 text-[10px] px-1 py-0 ${freeEnrichment ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                  {freeEnrichment ? 'Free' : config.company_enrich?.credits || 3}
                 </Badge>
               )}
             </Button>
@@ -278,8 +288,8 @@ export function EnrichmentButtons({
                 <Sparkles className="w-3 h-3 mr-1.5" />
               )}
               SYNC Intel
-              <Badge className="ml-1.5 bg-red-500/30 text-white text-[10px] px-1 py-0">
-                {config.sync_intel?.credits || 10}
+              <Badge className={`ml-1.5 text-[10px] px-1 py-0 ${freeEnrichment ? 'bg-green-500/30 text-green-400' : 'bg-red-500/30 text-white'}`}>
+                {freeEnrichment ? 'Free' : config.sync_intel?.credits || 10}
               </Badge>
             </Button>
           </TooltipTrigger>
@@ -289,10 +299,12 @@ export function EnrichmentButtons({
         </Tooltip>
 
         {/* Credits Display */}
-        <div className="flex items-center gap-1 text-xs text-zinc-500 ml-2">
-          <Coins className="w-3 h-3" />
-          <span>{userCredits}</span>
-        </div>
+        {!freeEnrichment && (
+          <div className="flex items-center gap-1 text-xs text-zinc-500 ml-2">
+            <Coins className="w-3 h-3" />
+            <span>{userCredits}</span>
+          </div>
+        )}
       </div>
     </TooltipProvider>
   );
