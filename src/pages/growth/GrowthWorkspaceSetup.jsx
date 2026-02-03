@@ -39,7 +39,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { useUser } from '@/components/context/UserContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/api/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
 
 // Animation variants
