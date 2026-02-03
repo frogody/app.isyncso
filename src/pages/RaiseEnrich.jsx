@@ -1149,7 +1149,18 @@ export default function RaiseEnrich() {
     }
   }, [columns, rows, cells, cellKey, getCellRawValue]);
 
-  // ─── Run AI column (placeholder) ───────────────────────────────────────
+  // ─── Column ref replacer (used by AI + HTTP columns) ──────────────────
+
+  const replaceColumnRefs = useCallback((template, rowId) => {
+    if (!template) return template;
+    return template.replace(/\/([A-Za-z0-9_ -]+)/g, (match, colName) => {
+      const col = columns.find(c => c.name === colName);
+      if (!col) return match;
+      return getCellRawValue(rowId, col) || '';
+    });
+  }, [columns, getCellRawValue]);
+
+  // ─── Run AI column ───────────────────────────────────────────────────
 
   const runAIColumn = useCallback(async (col) => {
     if (col.type !== 'ai') return;
@@ -1361,17 +1372,6 @@ export default function RaiseEnrich() {
     if (errors > 0) toast.warning(`${col.name}: ${completed - errors} succeeded, ${errors} failed`);
     else toast.success(`${col.name}: All ${total} rows enriched via waterfall`);
   }, [columns, rows, cells, cellKey, getCellRawValue]);
-
-  // ─── HTTP column ref replacer ─────────────────────────────────────────
-
-  const replaceColumnRefs = useCallback((template, rowId) => {
-    if (!template) return template;
-    return template.replace(/\/([A-Za-z0-9_ -]+)/g, (match, colName) => {
-      const col = columns.find(c => c.name === colName);
-      if (!col) return match;
-      return getCellRawValue(rowId, col) || '';
-    });
-  }, [columns, getCellRawValue]);
 
   // ─── Run HTTP column ────────────────────────────────────────────────
 
