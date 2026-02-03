@@ -354,6 +354,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Prospects', path: createPageUrl('GrowthProspects'), icon: Users },
         { label: 'Campaigns', path: createPageUrl('GrowthCampaigns'), icon: Megaphone },
         { label: 'Signals', path: createPageUrl('GrowthSignals'), icon: Radio },
+        { label: 'Data Nests', path: createPageUrl('GrowthNestsMarketplace'), icon: Package },
       ]
     };
   }

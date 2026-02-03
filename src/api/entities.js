@@ -61,6 +61,8 @@ export const GrowthMetric = db.entities.GrowthMetric;
 export const GrowthCampaign = db.entities.GrowthCampaign;
 export const GrowthOpportunity = db.entities.GrowthOpportunity;
 export const GrowthSignal = db.entities.GrowthSignal;
+export const GrowthNest = db.entities.GrowthNest;
+export const GrowthNestPurchase = db.entities.GrowthNestPurchase;
 
 // === Gamification & Achievements ===
 export const UserGamification = db.entities.UserGamification;

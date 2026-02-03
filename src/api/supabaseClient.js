@@ -74,6 +74,8 @@ const tableNameMap = {
   'GrowthCampaign': 'growth_campaigns',
   'GrowthOpportunity': 'growth_opportunities',
   'GrowthSignal': 'growth_signals',
+  'GrowthNest': 'growth_nests',
+  'GrowthNestPurchase': 'growth_nest_purchases',
 
   // === Gamification & Achievements ===
   'UserGamification': 'user_gamifications',

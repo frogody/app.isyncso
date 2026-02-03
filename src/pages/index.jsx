@@ -91,6 +91,8 @@ import GrowthSignals from "./GrowthSignals";
 
 import GrowthTemplates from "./GrowthTemplates";
 
+import GrowthNestsMarketplace from "./growth/GrowthNestsMarketplace";
+
 import Home from "./Home";
 
 import Inbox from "./Inbox";
@@ -294,6 +296,7 @@ import PlatformAdminContent from "./admin/AdminContent";
 import PlatformAdminSupport from "./admin/AdminSupport";
 import PlatformAdminAI from "./admin/AdminAI";
 import PlatformAdminCredits from "./admin/AdminCredits";
+import PlatformAdminGrowthNests from "./admin/AdminGrowthNests";
 
 // Providers needed for admin routes (since they don't use main Layout)
 import { UserProvider } from "@/components/context/UserContext";
@@ -403,7 +406,9 @@ const PAGES = {
     GrowthSignals: GrowthSignals,
     
     GrowthTemplates: GrowthTemplates,
-    
+
+    GrowthNestsMarketplace: GrowthNestsMarketplace,
+
     Home: Home,
     
     Inbox: Inbox,
@@ -670,6 +675,7 @@ function PagesContent() {
                             <Route path="support" element={<PlatformAdminSupport />} />
                             <Route path="ai" element={<PlatformAdminAI />} />
                             <Route path="credits" element={<PlatformAdminCredits />} />
+                            <Route path="growth-nests" element={<PlatformAdminGrowthNests />} />
                         </Route>
                     </Routes>
                 </PermissionProvider>
@@ -778,7 +784,9 @@ function PagesContent() {
                 <Route path="/GrowthSignals" element={<GrowthSignals />} />
                 
                 <Route path="/GrowthTemplates" element={<GrowthTemplates />} />
-                
+
+                <Route path="/GrowthNestsMarketplace" element={<GrowthNestsMarketplace />} />
+
                 <Route path="/Home" element={<Home />} />
                 
                 <Route path="/Inbox" element={<Inbox />} />

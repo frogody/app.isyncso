@@ -38,6 +38,7 @@ const adminNavItems = [
   { title: 'Organizations', href: '/admin/organizations', icon: Building2 },
   { title: 'Marketplace', href: '/admin/marketplace', icon: Store },
   { title: 'Nests', href: '/admin/nests', icon: Package },
+  { title: 'Growth Nests', href: '/admin/growth-nests', icon: Package },
   { title: 'Apps', href: '/admin/apps', icon: AppWindow },
   { title: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { divider: true },
