@@ -40,7 +40,7 @@ import {
 } from '@/components/ui/dialog';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 // Animation variants
 const containerVariants = {
