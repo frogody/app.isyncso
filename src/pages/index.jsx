@@ -101,6 +101,8 @@ import GrowthCampaignWizard from "./growth/GrowthCampaignWizard";
 
 import GrowthNestRecommendations from "./growth/GrowthNestRecommendations";
 
+import GrowthWorkspaceSetup from "./growth/GrowthWorkspaceSetup";
+
 import Home from "./Home";
 
 import Inbox from "./Inbox";
@@ -424,6 +426,8 @@ const PAGES = {
     GrowthCampaignWizard: GrowthCampaignWizard,
 
     GrowthNestRecommendations: GrowthNestRecommendations,
+
+    GrowthWorkspaceSetup: GrowthWorkspaceSetup,
 
     Home: Home,
     
@@ -813,6 +817,9 @@ function PagesContent() {
 
                 <Route path="/GrowthNestRecommendations" element={<GrowthNestRecommendations />} />
                 <Route path="/growth/nests" element={<GrowthNestRecommendations />} />
+
+                <Route path="/GrowthWorkspaceSetup" element={<GrowthWorkspaceSetup />} />
+                <Route path="/growth/workspace/setup" element={<GrowthWorkspaceSetup />} />
 
                 <Route path="/Home" element={<Home />} />
                 
