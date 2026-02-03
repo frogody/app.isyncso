@@ -56,7 +56,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 // Badge configuration
 const BADGE_CONFIG = {
   popular: { icon: Star, color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
-  new: { icon: Sparkles, color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' },
+  new: { icon: Sparkles, color: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' },
   best_value: { icon: Tag, color: 'bg-green-500/20 text-green-400 border-green-500/30' },
 };
 
@@ -98,7 +98,7 @@ function NestCard({ nest, isPurchased, onPreview, onPurchase }) {
       animate={{ opacity: 1, y: 0 }}
       className="group"
     >
-      <GlassCard className="p-4 h-full flex flex-col hover:border-cyan-500/30 transition-all">
+      <GlassCard className="p-4 h-full flex flex-col hover:border-indigo-500/30 transition-all">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <Badge className="bg-zinc-800 text-zinc-300 text-xs">
@@ -112,7 +112,7 @@ function NestCard({ nest, isPurchased, onPreview, onPurchase }) {
               </Badge>
             )}
             {isPurchased && (
-              <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+              <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30">
                 <Check className="w-3 h-3 mr-1" />
                 Owned
               </Badge>
@@ -121,12 +121,12 @@ function NestCard({ nest, isPurchased, onPreview, onPurchase }) {
         </div>
 
         {/* Icon */}
-        <div className="w-full h-20 rounded-lg bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 flex items-center justify-center mb-3">
-          <Package className="w-8 h-8 text-cyan-400" />
+        <div className="w-full h-20 rounded-lg bg-gradient-to-br from-indigo-500/10 to-blue-500/10 border border-indigo-500/20 flex items-center justify-center mb-3">
+          <Package className="w-8 h-8 text-indigo-400" />
         </div>
 
         {/* Title and Description */}
-        <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-cyan-400 transition-colors">
+        <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-indigo-400 transition-colors">
           {nest.name}
         </h3>
         <p className="text-sm text-zinc-400 line-clamp-2 mb-3">
@@ -140,7 +140,7 @@ function NestCard({ nest, isPurchased, onPreview, onPurchase }) {
             <p className="text-[10px] text-zinc-500">Leads</p>
           </div>
           <div className="text-center p-2 rounded bg-zinc-800/50">
-            <p className="text-lg font-bold text-cyan-400">{nest.price_credits}</p>
+            <p className="text-lg font-bold text-indigo-400">{nest.price_credits}</p>
             <p className="text-[10px] text-zinc-500">Credits</p>
           </div>
         </div>
@@ -174,7 +174,7 @@ function NestCard({ nest, isPurchased, onPreview, onPurchase }) {
             variant="outline"
             size="sm"
             onClick={() => onPreview(nest)}
-            className="flex-1 border-zinc-700 hover:border-cyan-500/50"
+            className="flex-1 border-zinc-700 hover:border-indigo-500/50"
           >
             <Eye className="w-4 h-4 mr-1" />
             Preview
@@ -192,7 +192,7 @@ function NestCard({ nest, isPurchased, onPreview, onPurchase }) {
             <Button
               size="sm"
               onClick={() => onPurchase(nest)}
-              className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-black"
+              className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-black"
             >
               <ShoppingCart className="w-4 h-4 mr-1" />
               Buy
@@ -216,7 +216,7 @@ function PreviewModal({ nest, open, onClose }) {
       <DialogContent className="bg-zinc-900 border-zinc-800 max-w-4xl max-h-[80vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-2">
-            <Eye className="w-5 h-5 text-cyan-400" />
+            <Eye className="w-5 h-5 text-indigo-400" />
             Preview: {nest.name}
           </DialogTitle>
         </DialogHeader>
@@ -258,8 +258,8 @@ function PreviewModal({ nest, open, onClose }) {
             </div>
           )}
 
-          <div className="mt-4 p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
-            <p className="text-cyan-400 text-sm flex items-center gap-2">
+          <div className="mt-4 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+            <p className="text-indigo-400 text-sm flex items-center gap-2">
               <ShoppingCart className="w-4 h-4" />
               Purchase to unlock the full dataset of {(nest.lead_count || 0).toLocaleString()} leads
             </p>
@@ -287,7 +287,7 @@ function PurchaseModal({ nest, open, onClose, onConfirm, userCredits, loading })
       <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-2">
-            <ShoppingCart className="w-5 h-5 text-cyan-400" />
+            <ShoppingCart className="w-5 h-5 text-indigo-400" />
             Purchase Nest
           </DialogTitle>
         </DialogHeader>
@@ -298,7 +298,7 @@ function PurchaseModal({ nest, open, onClose, onConfirm, userCredits, loading })
             <p className="text-sm text-zinc-400">{nest.short_description}</p>
             <div className="flex items-center gap-4 mt-3">
               <div>
-                <span className="text-2xl font-bold text-cyan-400">{nest.price_credits}</span>
+                <span className="text-2xl font-bold text-indigo-400">{nest.price_credits}</span>
                 <span className="text-zinc-500 ml-1">credits</span>
               </div>
               <span className="text-zinc-600">or</span>
@@ -340,7 +340,7 @@ function PurchaseModal({ nest, open, onClose, onConfirm, userCredits, loading })
           <Button
             onClick={onConfirm}
             disabled={!hasEnoughCredits || loading}
-            className="bg-cyan-500 hover:bg-cyan-600 text-black"
+            className="bg-indigo-500 hover:bg-indigo-600 text-black"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -508,7 +508,7 @@ export default function GrowthNestsMarketplace() {
   return (
     <GrowthPageTransition>
       <div className="min-h-screen bg-black text-white p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full">
           {/* Header */}
           <PageHeader
             title="Data Nests"
@@ -557,7 +557,7 @@ export default function GrowthNestsMarketplace() {
                 </SelectContent>
               </Select>
               <div className="flex items-center gap-2 px-3 py-2 bg-zinc-800/50 rounded-lg border border-zinc-700">
-                <Coins className="w-4 h-4 text-cyan-400" />
+                <Coins className="w-4 h-4 text-indigo-400" />
                 <span className="text-white font-medium">{userCredits.toLocaleString()}</span>
                 <span className="text-zinc-500">credits</span>
               </div>
@@ -567,7 +567,7 @@ export default function GrowthNestsMarketplace() {
           {/* Loading */}
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+              <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
             </div>
           ) : (
             <>
@@ -595,7 +595,7 @@ export default function GrowthNestsMarketplace() {
               {/* All Nests */}
               <div>
                 <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                  <Package className="w-5 h-5 text-cyan-400" />
+                  <Package className="w-5 h-5 text-indigo-400" />
                   All Data Nests
                 </h2>
                 {regularNests.length > 0 ? (

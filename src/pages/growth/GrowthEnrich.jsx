@@ -327,7 +327,7 @@ const HISTORY_ACTION_ICONS = {
 };
 
 const HISTORY_ACTION_COLORS = {
-  add_column: 'text-cyan-400', delete_column: 'text-red-400', edit_column: 'text-blue-400',
+  add_column: 'text-cyan-400', delete_column: 'text-red-400', edit_column: 'text-indigo-400',
   add_row: 'text-cyan-400', delete_row: 'text-red-400', edit_cell: 'text-amber-400',
   import_csv: 'text-green-400', import_nest: 'text-green-400', run_all: 'text-purple-400',
   run_column: 'text-purple-400', clear_data: 'text-red-400', snapshot_restore: 'text-amber-400',
@@ -2838,7 +2838,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
     return (
       <GrowthPageTransition>
         <div className={rt('min-h-screen bg-gray-50', 'min-h-screen bg-black')}>
-          <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="w-full px-6 py-12">
             <div className="text-center py-20">
               <AlertCircle className="w-12 h-12 text-zinc-500 mx-auto mb-4" />
               <h2 className="text-lg font-semibold text-white mb-2">Access Denied</h2>
@@ -2858,16 +2858,16 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
     return (
       <GrowthPageTransition>
         <div className={rt('min-h-screen bg-gray-50', 'min-h-screen bg-black')}>
-          <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="w-full px-6 py-6">
             <PageHeader
               title="Enrich"
-              subtitle="Clay-like enrichment workspaces for your candidate data"
+              subtitle="Clay-like enrichment workspaces for your lead data"
               icon={Sparkles}
-              color="orange"
+              color="indigo"
               actions={
-                <RaiseButton onClick={() => setCreateDialogOpen(true)}>
+                <Button onClick={() => setCreateDialogOpen(true)}>
                   <Plus className="w-4 h-4 mr-1.5" /> New Workspace
-                </RaiseButton>
+                </Button>
               }
             />
 
@@ -2995,8 +2995,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   </Select>
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
-                  <RaiseButton variant="ghost" onClick={() => setCreateDialogOpen(false)}>Cancel</RaiseButton>
-                  <RaiseButton onClick={handleCreateWorkspace}>Create</RaiseButton>
+                  <Button variant="ghost" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={handleCreateWorkspace}>Create</Button>
                 </div>
               </div>
             </DialogContent>
@@ -3260,20 +3260,20 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
             </div>
             <div className="flex items-center gap-2 overflow-x-auto flex-shrink min-w-0" style={{ scrollbarWidth: 'none' }}>
               {workspace?.nest_id && rows.length === 0 && (
-                <RaiseButton variant="ghost" size="sm" onClick={importFromNest} className="flex-shrink-0">
+                <Button variant="ghost" size="sm" onClick={importFromNest} className="flex-shrink-0">
                   <Upload className="w-3.5 h-3.5 mr-1" /> Import from Nest
-                </RaiseButton>
+                </Button>
               )}
-              <RaiseButton variant="ghost" size="sm" onClick={() => csvInputRef.current?.click()} title="Import CSV file" className="flex-shrink-0">
+              <Button variant="ghost" size="sm" onClick={() => csvInputRef.current?.click()} title="Import CSV file" className="flex-shrink-0">
                 <FileUp className="w-3.5 h-3.5 mr-1" /> <span className="hidden xl:inline">Import</span> CSV
-              </RaiseButton>
+              </Button>
               <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={importCSV} />
-              <RaiseButton variant="ghost" size="sm" onClick={() => { setColDialogOpen(true); setColType('field'); setColName(''); setColConfig({}); setFilterPanelOpen(false); setSortPanelOpen(false); }} title="Add a new column" className="flex-shrink-0">
+              <Button variant="ghost" size="sm" onClick={() => { setColDialogOpen(true); setColType('field'); setColName(''); setColConfig({}); setFilterPanelOpen(false); setSortPanelOpen(false); }} title="Add a new column" className="flex-shrink-0">
                 <Plus className="w-3.5 h-3.5 mr-1" /> <span className="hidden lg:inline">Add</span> Column
-              </RaiseButton>
-              <RaiseButton variant="ghost" size="sm" onClick={runAllColumns} title="Run all enrichment columns (Ctrl+Enter)" className="flex-shrink-0">
+              </Button>
+              <Button variant="ghost" size="sm" onClick={runAllColumns} title="Run all enrichment columns (Ctrl+Enter)" className="flex-shrink-0">
                 <Play className="w-3.5 h-3.5 mr-1" /> Run All
-              </RaiseButton>
+              </Button>
               <button
                 onClick={toggleAutoRun}
                 className={`flex-shrink-0 whitespace-nowrap flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
@@ -3317,30 +3317,30 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   </button>
                 </>
               )}
-              <RaiseButton variant="ghost" size="sm" onClick={() => { setSortPanelOpen(prev => !prev); setFilterPanelOpen(false); setColDialogOpen(false); }} className="relative flex-shrink-0" title="Sort columns">
+              <Button variant="ghost" size="sm" onClick={() => { setSortPanelOpen(prev => !prev); setFilterPanelOpen(false); setColDialogOpen(false); }} className="relative flex-shrink-0" title="Sort columns">
                 <ArrowUpDown className="w-3.5 h-3.5 mr-1" /> Sort
                 {activeSortCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-orange-500 text-[10px] font-bold text-white flex items-center justify-center">
                     {activeSortCount}
                   </span>
                 )}
-              </RaiseButton>
-              <RaiseButton variant="ghost" size="sm" onClick={() => { setFilterPanelOpen(prev => !prev); setSortPanelOpen(false); setColDialogOpen(false); }} className="relative flex-shrink-0" title="Filter rows">
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => { setFilterPanelOpen(prev => !prev); setSortPanelOpen(false); setColDialogOpen(false); }} className="relative flex-shrink-0" title="Filter rows">
                 <Filter className="w-3.5 h-3.5 mr-1" /> Filters
                 {activeFilterCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-orange-500 text-[10px] font-bold text-white flex items-center justify-center">
                     {activeFilterCount}
                   </span>
                 )}
-              </RaiseButton>
+              </Button>
               {/* More menu (Export, History, Delete) */}
               <div className="relative flex-shrink-0" ref={moreMenuRef}>
-                <RaiseButton variant="ghost" size="sm" onClick={() => setMoreMenuOpen(prev => !prev)} title="More actions" className="relative">
+                <Button variant="ghost" size="sm" onClick={() => setMoreMenuOpen(prev => !prev)} title="More actions" className="relative">
                   <MoreHorizontal className="w-4 h-4" />
                   {historyEntries.length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-blue-500" />
+                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-indigo-500" />
                   )}
-                </RaiseButton>
+                </Button>
                 {moreMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setMoreMenuOpen(false)} />
@@ -3359,7 +3359,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                         'w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left text-zinc-300 hover:bg-zinc-800'
                       )}>
                         <History className="w-4 h-4 text-zinc-500" /> History
-                        {historyEntries.length > 0 && <span className="ml-auto text-[10px] text-blue-400">{historyEntries.length}</span>}
+                        {historyEntries.length > 0 && <span className="ml-auto text-[10px] text-indigo-400">{historyEntries.length}</span>}
                       </button>
                       <div className={rt('border-t border-gray-100 my-1', 'border-t border-zinc-800 my-1')} />
                       <button onClick={() => {
@@ -3483,7 +3483,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   >
                     <div className="flex items-center gap-1.5 min-w-0">
                       <Icon
-                        className={`w-3.5 h-3.5 flex-shrink-0 ${col.type === 'field' ? 'text-blue-400' : col.type === 'enrichment' ? 'text-amber-400' : col.type === 'ai' ? 'text-purple-400' : col.type === 'waterfall' ? 'text-cyan-400' : col.type === 'http' ? 'text-emerald-400' : col.type === 'merge' ? 'text-pink-400' : 'text-green-400'}`}
+                        className={`w-3.5 h-3.5 flex-shrink-0 ${col.type === 'field' ? 'text-indigo-400' : col.type === 'enrichment' ? 'text-amber-400' : col.type === 'ai' ? 'text-purple-400' : col.type === 'waterfall' ? 'text-cyan-400' : col.type === 'http' ? 'text-emerald-400' : col.type === 'merge' ? 'text-pink-400' : 'text-green-400'}`}
                         title={col.type === 'field' && col.config?.data_type ? FIELD_DATA_TYPE_LABELS[col.config.data_type] || col.config.data_type : COLUMN_TYPE_LABELS[col.type] || col.type}
                       />
                       <span className="truncate flex-1">{col.name}</span>
@@ -3920,9 +3920,9 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                 'flex-shrink-0 px-4 py-3 border-t border-gray-200 space-y-2',
                 'flex-shrink-0 px-4 py-3 border-t border-zinc-800 space-y-2'
               )}>
-                <RaiseButton variant="ghost" size="sm" className="w-full justify-center" onClick={addFilter}>
+                <Button variant="ghost" size="sm" className="w-full justify-center" onClick={addFilter}>
                   <Plus className="w-3.5 h-3.5 mr-1" /> Add Filter
-                </RaiseButton>
+                </Button>
                 {activeFilterCount > 0 && (
                   <button
                     onClick={clearAllFilters}
@@ -4061,9 +4061,9 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                 'flex-shrink-0 px-4 py-3 border-t border-gray-200 space-y-2',
                 'flex-shrink-0 px-4 py-3 border-t border-zinc-800 space-y-2'
               )}>
-                <RaiseButton variant="ghost" size="sm" className="w-full justify-center" onClick={addSortFromPanel}>
+                <Button variant="ghost" size="sm" className="w-full justify-center" onClick={addSortFromPanel}>
                   <Plus className="w-3.5 h-3.5 mr-1" /> Add Sort
-                </RaiseButton>
+                </Button>
                 {activeSortCount > 0 && (
                   <button
                     onClick={clearAllSorts}
@@ -5115,8 +5115,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               )}
 
               <div className="flex justify-end gap-2 pt-2">
-                <RaiseButton variant="ghost" onClick={() => setColDialogOpen(false)}>Cancel</RaiseButton>
-                <RaiseButton onClick={handleAddColumn}>Add Column</RaiseButton>
+                <Button variant="ghost" onClick={() => setColDialogOpen(false)}>Cancel</Button>
+                <Button onClick={handleAddColumn}>Add Column</Button>
               </div>
             </div>
             </motion.div>
@@ -5136,7 +5136,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               {/* Header */}
               <div className={`flex items-center justify-between px-4 py-3 border-b ${rt('border-gray-200', 'border-zinc-800')}`}>
                 <div className="flex items-center gap-2">
-                  <History className="w-4 h-4 text-blue-400" />
+                  <History className="w-4 h-4 text-indigo-400" />
                   <h3 className={`text-sm font-semibold ${rt('text-gray-900', 'text-white')}`}>History & Snapshots</h3>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -5157,14 +5157,14 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     <div className="space-y-1.5">
                       {snapshots.map(snap => (
                         <div key={snap.id} className={`flex items-center gap-2 p-2 rounded-lg ${rt('bg-gray-50 hover:bg-gray-100', 'bg-zinc-900 hover:bg-zinc-800/80')} transition-colors group`}>
-                          <BookmarkPlus className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                          <BookmarkPlus className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             <div className={`text-xs font-medium truncate ${rt('text-gray-800', 'text-zinc-200')}`}>{snap.name}</div>
                             {snap.description && <div className="text-[10px] text-zinc-500 truncate">{snap.description}</div>}
                             <div className="text-[10px] text-zinc-500">{relativeTime(snap.created_at)}</div>
                           </div>
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                            <button onClick={() => restoreSnapshot(snap.id)} className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20" title="Restore">
+                            <button onClick={() => restoreSnapshot(snap.id)} className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20" title="Restore">
                               <RotateCcw className="w-3 h-3" />
                             </button>
                             <button onClick={() => deleteSnapshot(snap.id)} className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20" title="Delete">
@@ -5180,7 +5180,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                 {/* Create snapshot CTA when empty */}
                 {snapshots.length === 0 && (
                   <div className={`px-4 py-3 border-b ${rt('border-gray-100', 'border-zinc-800/50')}`}>
-                    <button onClick={() => setSnapshotDialogOpen(true)} className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-dashed text-xs ${rt('border-gray-300 text-gray-500 hover:border-blue-400 hover:text-blue-600', 'border-zinc-700 text-zinc-500 hover:border-blue-500/50 hover:text-blue-400')} transition-colors`}>
+                    <button onClick={() => setSnapshotDialogOpen(true)} className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-dashed text-xs ${rt('border-gray-300 text-gray-500 hover:border-indigo-400 hover:text-indigo-600', 'border-zinc-700 text-zinc-500 hover:border-indigo-500/50 hover:text-indigo-400')} transition-colors`}>
                       <Camera className="w-3.5 h-3.5" /> Create your first snapshot
                     </button>
                   </div>
@@ -5269,7 +5269,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
           <DialogContent className={rt('bg-white max-w-sm', 'bg-zinc-900 border-zinc-800 max-w-sm')}>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Camera className="w-5 h-5 text-blue-400" />
+                <Camera className="w-5 h-5 text-indigo-400" />
                 <span className={rt('text-gray-900', 'text-zinc-100')}>Create Snapshot</span>
               </DialogTitle>
             </DialogHeader>
@@ -5288,7 +5288,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
             </div>
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={() => setSnapshotDialogOpen(false)} className={`px-3 py-1.5 rounded-lg text-sm ${rt('text-gray-600 hover:bg-gray-100', 'text-zinc-400 hover:bg-zinc-800')}`}>Cancel</button>
-              <button onClick={createSnapshot} disabled={!snapshotName.trim()} className={`px-3 py-1.5 rounded-lg text-sm bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40`}>Create Snapshot</button>
+              <button onClick={createSnapshot} disabled={!snapshotName.trim()} className={`px-3 py-1.5 rounded-lg text-sm bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40`}>Create Snapshot</button>
             </div>
           </DialogContent>
         </Dialog>
