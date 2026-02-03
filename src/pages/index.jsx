@@ -97,6 +97,8 @@ import GrowthEnrich from "./growth/GrowthEnrich";
 
 import GrowthDashboard from "./growth/GrowthDashboard";
 
+import GrowthCampaignWizard from "./growth/GrowthCampaignWizard";
+
 import Home from "./Home";
 
 import Inbox from "./Inbox";
@@ -416,6 +418,8 @@ const PAGES = {
     GrowthEnrich: GrowthEnrich,
 
     GrowthDashboard: GrowthDashboard,
+
+    GrowthCampaignWizard: GrowthCampaignWizard,
 
     Home: Home,
     
@@ -799,6 +803,9 @@ function PagesContent() {
 
                 <Route path="/GrowthDashboard" element={<GrowthDashboard />} />
                 <Route path="/growth/dashboard" element={<GrowthDashboard />} />
+
+                <Route path="/GrowthCampaignWizard" element={<GrowthCampaignWizard />} />
+                <Route path="/growth/campaign/new" element={<GrowthCampaignWizard />} />
 
                 <Route path="/Home" element={<Home />} />
                 
