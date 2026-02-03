@@ -193,11 +193,11 @@ const ENGINE_ITEMS_CONFIG = {
   },
   growth: {
     title: "Growth",
-    url: createPageUrl("Growth"),
+    url: "/growth/dashboard",
     icon: Rocket,
     id: 'growth',
     permission: "analytics.view", // Growth analytics
-    matchPatterns: ["/growth", "/sequences", "/deals", "/leads", "/insights", "/prospect", "/research", "/pipeline"],
+    matchPatterns: ["/growth", "/Growth", "/sequences", "/deals", "/leads", "/insights", "/prospect", "/research", "/pipeline"],
   },
   learn: {
     title: "Learn",
@@ -341,7 +341,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   }
 
   // GROWTH routes
-  if (path.startsWith('/growth') || path.startsWith('/sequences') || path.startsWith('/deals') ||
+  if (path.startsWith('/growth') || path.startsWith('/Growth') || path.startsWith('/sequences') || path.startsWith('/deals') ||
       path.startsWith('/leads') || path.startsWith('/insights') || path.startsWith('/prospect') ||
       path.startsWith('/research') || path.startsWith('/pipeline')) {
     return {
@@ -349,12 +349,11 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       color: 'indigo',
       agent: 'growth',
       items: [
-        { label: 'Dashboard', path: createPageUrl('Growth'), icon: LayoutDashboard },
-        { label: 'Pipeline', path: createPageUrl('GrowthPipeline'), icon: Kanban },
-        { label: 'Prospects', path: createPageUrl('GrowthProspects'), icon: Users },
-        { label: 'Campaigns', path: createPageUrl('GrowthCampaigns'), icon: Megaphone },
-        { label: 'Signals', path: createPageUrl('GrowthSignals'), icon: Radio },
+        { label: 'Dashboard', path: '/growth/dashboard', icon: LayoutDashboard },
+        { label: 'New Campaign', path: '/growth/campaign/new', icon: Megaphone },
         { label: 'Data Nests', path: createPageUrl('GrowthNestsMarketplace'), icon: Package },
+        { label: 'Customer Signals', path: '/growth/signals', icon: Radio },
+        { label: 'Opportunities', path: '/growth/opportunities', icon: Target },
       ]
     };
   }

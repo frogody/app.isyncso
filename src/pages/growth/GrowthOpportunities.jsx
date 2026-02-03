@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   TrendingUp,
   Plus,
@@ -39,6 +39,7 @@ import {
   Users,
   BarChart3,
   Timer,
+  Rocket,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 
@@ -921,7 +922,7 @@ const OpportunityModal = ({ opportunity, isOpen, onClose, onUpdate, onDelete }) 
 };
 
 // Create Opportunity Modal
-const CreateOpportunityModal = ({ isOpen, onClose, onCreate }) => {
+const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer }) => {
   const [formData, setFormData] = useState({
     customerId: "",
     type: "upsell",
@@ -932,6 +933,19 @@ const CreateOpportunityModal = ({ isOpen, onClose, onCreate }) => {
     ownerId: "",
   });
   const [customerSearch, setCustomerSearch] = useState("");
+
+  // Handle prefilled customer
+  useEffect(() => {
+    if (prefilledCustomer && isOpen) {
+      setFormData((prev) => ({
+        ...prev,
+        customerId: prefilledCustomer.id,
+        source: "signal",
+        signal: prefilledCustomer.signal || "",
+      }));
+      setCustomerSearch(prefilledCustomer.name);
+    }
+  }, [prefilledCustomer, isOpen]);
 
   const filteredCustomers = MOCK_CUSTOMERS.filter((c) =>
     c.name.toLowerCase().includes(customerSearch.toLowerCase())
@@ -1300,6 +1314,7 @@ const FiltersPanel = ({ filters, setFilters, isOpen, onClose }) => {
 // Main Component
 export default function GrowthOpportunities() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [opportunities, setOpportunities] = useState(MOCK_OPPORTUNITIES);
   const [selectedOpp, setSelectedOpp] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -1309,6 +1324,22 @@ export default function GrowthOpportunities() {
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [draggedOpp, setDraggedOpp] = useState(null);
+  const [prefilledCustomer, setPrefilledCustomer] = useState(null);
+
+  // Check for prefilled customer from Customer Signals page
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('action') === 'create') {
+      const customer = sessionStorage.getItem('newOppCustomer');
+      if (customer) {
+        setPrefilledCustomer(JSON.parse(customer));
+        sessionStorage.removeItem('newOppCustomer');
+      }
+      setShowCreateModal(true);
+      // Clean up URL
+      navigate('/growth/opportunities', { replace: true });
+    }
+  }, [location.search, navigate]);
 
   // Filter opportunities
   const filteredOpportunities = useMemo(() => {
@@ -1435,6 +1466,19 @@ export default function GrowthOpportunities() {
       {/* Header */}
       <div className="border-b border-zinc-800 bg-zinc-900/50">
         <div className="max-w-[1800px] mx-auto px-6 py-4">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-sm text-zinc-400 mb-3">
+            <button
+              onClick={() => navigate('/growth/dashboard')}
+              className="flex items-center gap-1.5 hover:text-cyan-400 transition-colors"
+            >
+              <Rocket className="w-4 h-4" />
+              Growth
+            </button>
+            <ChevronRight className="w-4 h-4 text-zinc-600" />
+            <span className="text-white">Opportunities</span>
+          </div>
+
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">Expansion Opportunities</h1>
@@ -1542,8 +1586,12 @@ export default function GrowthOpportunities() {
         {showCreateModal && (
           <CreateOpportunityModal
             isOpen={showCreateModal}
-            onClose={() => setShowCreateModal(false)}
+            onClose={() => {
+              setShowCreateModal(false);
+              setPrefilledCustomer(null);
+            }}
             onCreate={handleCreate}
+            prefilledCustomer={prefilledCustomer}
           />
         )}
       </AnimatePresence>

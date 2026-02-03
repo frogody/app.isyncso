@@ -24,6 +24,8 @@ import {
   Clock,
   ChevronRight,
   Coins,
+  Search,
+  BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -137,6 +139,26 @@ function ActionCard({
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
+      </GlassCard>
+    </motion.div>
+  );
+}
+
+// Quick action card component
+function QuickActionCard({ icon: Icon, label, description, link }) {
+  const navigate = useNavigate();
+  return (
+    <motion.div
+      variants={itemVariants}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => navigate(link)}
+      className="cursor-pointer"
+    >
+      <GlassCard className="p-4 hover:border-cyan-500/30 transition-all">
+        <Icon className="w-5 h-5 text-cyan-400 mb-2" />
+        <p className="text-sm font-medium text-white">{label}</p>
+        <p className="text-xs text-zinc-500">{description}</p>
       </GlassCard>
     </motion.div>
   );
@@ -354,8 +376,8 @@ export default function GrowthDashboard() {
             ]}
             ctaText="View Opportunities"
             ctaLink="/growth/opportunities"
-            secondaryText="Import Customers"
-            secondaryLink="/growth/customers/import"
+            secondaryText="Monitor Signals"
+            secondaryLink="/growth/signals"
           />
         </motion.div>
 
@@ -386,6 +408,34 @@ export default function GrowthDashboard() {
             value={`$${(stats.expansionRevenue / 1000).toFixed(0)}k`}
             trend="15%"
             trendUp={true}
+          />
+        </motion.div>
+
+        {/* Quick Actions */}
+        <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <QuickActionCard
+            icon={Search}
+            label="Research Prospects"
+            description="Open research workspace"
+            link="/growth/research"
+          />
+          <QuickActionCard
+            icon={Mail}
+            label="Create Sequence"
+            description="Build outreach campaign"
+            link="/growth/outreach/new"
+          />
+          <QuickActionCard
+            icon={BarChart3}
+            label="Customer Signals"
+            description="Monitor expansion signals"
+            link="/growth/signals"
+          />
+          <QuickActionCard
+            icon={Target}
+            label="Opportunities"
+            description="View pipeline"
+            link="/growth/opportunities"
           />
         </motion.div>
 

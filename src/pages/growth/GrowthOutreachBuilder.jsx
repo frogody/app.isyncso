@@ -26,6 +26,7 @@ import {
   Edit3,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   Loader2,
   AlertCircle,
   Star,
@@ -37,6 +38,7 @@ import {
   RefreshCw,
   Copy,
   Zap,
+  Rocket,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -963,15 +965,23 @@ Use these variables for personalization:
       <div className="flex-shrink-0 h-14 border-b border-zinc-800 flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/growth/dashboard')}
             className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div>
-            <h1 className="text-lg font-semibold text-white">Create Outreach Sequence</h1>
+          <div className="flex items-center gap-2 text-sm">
+            <button
+              onClick={() => navigate('/growth/dashboard')}
+              className="flex items-center gap-1.5 text-zinc-400 hover:text-cyan-400 transition-colors"
+            >
+              <Rocket className="w-4 h-4" />
+              Growth
+            </button>
+            <ChevronRight className="w-4 h-4 text-zinc-600" />
+            <span className="text-white font-medium">Create Sequence</span>
             {workspace && (
-              <p className="text-xs text-zinc-500">{workspace.name}</p>
+              <span className="text-zinc-500">/ {workspace.name}</span>
             )}
           </div>
         </div>

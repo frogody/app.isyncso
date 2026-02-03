@@ -49,6 +49,8 @@ import {
   Sparkles,
   ArrowUpRight,
   ArrowDownRight,
+  ArrowLeft,
+  Rocket,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -445,7 +447,7 @@ function SignalConfigPanel({ config, onChange, isOpen, onToggle }) {
 }
 
 // Customer row component
-function CustomerRow({ customer, onSelect, onExpand, expandedSignalType }) {
+function CustomerRow({ customer, onSelect, onExpand, expandedSignalType, onCreateOpportunity }) {
   const signalsByType = useMemo(() => {
     const grouped = {};
     customer.signals.forEach((signal) => {
@@ -544,7 +546,7 @@ function CustomerRow({ customer, onSelect, onExpand, expandedSignalType }) {
                 <Eye className="w-4 h-4 mr-2" />
                 View Details
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onCreateOpportunity(customer)}>
                 <Target className="w-4 h-4 mr-2" />
                 Create Opportunity
               </DropdownMenuItem>
@@ -1076,9 +1078,33 @@ export default function GrowthCustomerSignals() {
     );
   }
 
+  // Create opportunity from signal
+  const handleCreateOpportunity = (customer, signal = null) => {
+    sessionStorage.setItem('newOppCustomer', JSON.stringify({
+      id: customer.id,
+      name: customer.name,
+      industry: customer.industry,
+      signal: signal?.name || 'Manual opportunity',
+    }));
+    navigate('/growth/opportunities?action=create');
+  };
+
   return (
     <div className="min-h-screen bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-zinc-400 mb-4">
+          <button
+            onClick={() => navigate('/growth/dashboard')}
+            className="flex items-center gap-1.5 hover:text-cyan-400 transition-colors"
+          >
+            <Rocket className="w-4 h-4" />
+            Growth
+          </button>
+          <ChevronRight className="w-4 h-4 text-zinc-600" />
+          <span className="text-white">Customer Signals</span>
+        </div>
+
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
@@ -1091,6 +1117,14 @@ export default function GrowthCustomerSignals() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              className="border-zinc-700"
+              onClick={() => navigate('/growth/opportunities')}
+            >
+              <Target className="w-4 h-4 mr-2" />
+              View Opportunities
+            </Button>
             <Button variant="outline" className="border-zinc-700">
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh Signals
@@ -1190,6 +1224,7 @@ export default function GrowthCustomerSignals() {
                 onSelect={setSelectedCustomer}
                 onExpand={handleExpandSignals}
                 expandedSignalType={expandedSignals[customer.id]}
+                onCreateOpportunity={handleCreateOpportunity}
               />
             ))}
           </div>

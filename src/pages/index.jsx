@@ -828,6 +828,7 @@ function PagesContent() {
 
                 <Route path="/GrowthDashboard" element={<GrowthDashboard />} />
                 <Route path="/growth/dashboard" element={<GrowthDashboard />} />
+                <Route path="/growth" element={<Navigate to="/growth/dashboard" replace />} />
 
                 <Route path="/GrowthCampaignWizard" element={<GrowthCampaignWizard />} />
                 <Route path="/growth/campaign/new" element={<GrowthCampaignWizard />} />

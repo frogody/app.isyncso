@@ -61,6 +61,7 @@ import {
   Link2,
   Mail,
   Phone,
+  Rocket,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1046,12 +1047,18 @@ export default function GrowthResearchWorkspace() {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="flex items-center gap-3">
-              <h1 className="text-lg font-semibold text-white">
-                {workspace.name}
-              </h1>
+            <div className="flex items-center gap-2 text-sm">
+              <button
+                onClick={() => navigate('/growth/dashboard')}
+                className="flex items-center gap-1.5 text-zinc-400 hover:text-cyan-400 transition-colors"
+              >
+                <Rocket className="w-4 h-4" />
+                Growth
+              </button>
+              <ChevronRight className="w-4 h-4 text-zinc-600" />
+              <span className="text-white font-medium">{workspace.name}</span>
               {campaign && (
-                <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                <Badge className="ml-2 bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
                   <Target className="w-3 h-3 mr-1" />
                   {campaign.name}
                 </Badge>
@@ -1103,6 +1110,15 @@ export default function GrowthResearchWorkspace() {
             >
               <Download className="w-4 h-4 mr-1" />
               Export
+            </Button>
+
+            <Button
+              onClick={() => navigate(`/growth/outreach/${workspaceId}`)}
+              size="sm"
+              className="bg-cyan-600 hover:bg-cyan-500 h-9"
+            >
+              <Mail className="w-4 h-4 mr-1" />
+              Create Outreach
             </Button>
 
             {/* Sidebar Toggle */}
