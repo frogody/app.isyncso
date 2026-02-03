@@ -99,6 +99,8 @@ import GrowthDashboard from "./growth/GrowthDashboard";
 
 import GrowthCampaignWizard from "./growth/GrowthCampaignWizard";
 
+import GrowthNestRecommendations from "./growth/GrowthNestRecommendations";
+
 import Home from "./Home";
 
 import Inbox from "./Inbox";
@@ -420,6 +422,8 @@ const PAGES = {
     GrowthDashboard: GrowthDashboard,
 
     GrowthCampaignWizard: GrowthCampaignWizard,
+
+    GrowthNestRecommendations: GrowthNestRecommendations,
 
     Home: Home,
     
@@ -806,6 +810,9 @@ function PagesContent() {
 
                 <Route path="/GrowthCampaignWizard" element={<GrowthCampaignWizard />} />
                 <Route path="/growth/campaign/new" element={<GrowthCampaignWizard />} />
+
+                <Route path="/GrowthNestRecommendations" element={<GrowthNestRecommendations />} />
+                <Route path="/growth/nests" element={<GrowthNestRecommendations />} />
 
                 <Route path="/Home" element={<Home />} />
                 
