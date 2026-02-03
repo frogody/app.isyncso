@@ -1604,15 +1604,6 @@ export default function RaiseEnrich() {
 
   // ─── Export CSV ────────────────────────────────────────────────────────
 
-  const exportCSV = useCallback(() => {
-    // Warn if sandbox data present
-    if (sandboxMode && Object.keys(sandboxCells).length > 0) {
-      setSandboxExportWarn(true);
-      return;
-    }
-    doExportCSV();
-  }, [sandboxMode, sandboxCells]);
-
   const doExportCSV = useCallback(() => {
     const headers = columns.map(c => c.name);
     const csvRows = [headers.join(',')];
@@ -1638,6 +1629,14 @@ export default function RaiseEnrich() {
     URL.revokeObjectURL(url);
     toast.success(sandboxMode ? 'CSV exported (contains sandbox data)' : 'CSV exported');
   }, [columns, rows, getCellDisplayValue, workspace, sandboxMode, sandboxCells, cellKey]);
+
+  const exportCSV = useCallback(() => {
+    if (sandboxMode && Object.keys(sandboxCells).length > 0) {
+      setSandboxExportWarn(true);
+      return;
+    }
+    doExportCSV();
+  }, [sandboxMode, sandboxCells, doExportCSV]);
 
   // ─── Column resize handlers ────────────────────────────────────────────
 
