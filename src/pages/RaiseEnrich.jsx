@@ -77,10 +77,12 @@ const COLUMN_TYPES = [
   { value: 'waterfall', label: 'Waterfall', icon: Layers, desc: 'Try multiple sources in order' },
   { value: 'http', label: 'HTTP API', icon: Globe, desc: 'Call custom API endpoints' },
   { value: 'merge', label: 'Merge', icon: Merge, desc: 'Combine multiple columns' },
+  { value: 'push_to_table', label: 'Push Data', icon: Send, desc: 'Push rows to another table' },
+  { value: 'pull_from_table', label: 'Pull Data', icon: Database, desc: 'Pull data from another table (VLOOKUP)' },
 ];
 
-const COLUMN_TYPE_ICONS = { field: Type, enrichment: Zap, ai: Brain, formula: FunctionSquare, waterfall: Layers, http: Globe, merge: Merge };
-const COLUMN_TYPE_LABELS = { field: 'Field', enrichment: 'Enrichment', ai: 'AI', formula: 'Formula', waterfall: 'Waterfall', http: 'HTTP', merge: 'Merge' };
+const COLUMN_TYPE_ICONS = { field: Type, enrichment: Zap, ai: Brain, formula: FunctionSquare, waterfall: Layers, http: Globe, merge: Merge, push_to_table: Send, pull_from_table: Database };
+const COLUMN_TYPE_LABELS = { field: 'Field', enrichment: 'Enrichment', ai: 'AI', formula: 'Formula', waterfall: 'Waterfall', http: 'HTTP', merge: 'Merge', push_to_table: 'Push', pull_from_table: 'Pull' };
 const FIELD_DATA_TYPE_LABELS = { text: 'Text', number: 'Number', currency: 'Currency', date: 'Date', url: 'URL', email: 'Email', checkbox: 'Checkbox', select: 'Select' };
 
 const FIELD_DATA_TYPES = [
@@ -498,6 +500,16 @@ export default function RaiseEnrich() {
   const [viewHasUnsaved, setViewHasUnsaved] = useState(false);
   const viewDropdownRef = useRef(null);
 
+  // Multi-table tabs
+  const [tables, setTables] = useState([]);
+  const [activeTableId, setActiveTableId] = useState(null);
+  const [tabContextMenu, setTabContextMenu] = useState(null); // { tableId, x, y }
+  const [renamingTabId, setRenamingTabId] = useState(null);
+  const [renameTabValue, setRenameTabValue] = useState('');
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const moreMenuRef = useRef(null);
+  const [targetTableCols, setTargetTableCols] = useState([]); // for push/pull config
+
   // AI Chat assistant
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([]); // [{ role: 'user'|'assistant', content, actions?, timestamp }]
@@ -765,24 +777,51 @@ export default function RaiseEnrich() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [viewDropdownOpen]);
 
-  // Close panels on Escape
+  // Close more menu on outside click
   useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key !== 'Escape') return;
-      if (colDialogOpen) { setColDialogOpen(false); return; }
-      if (filterPanelOpen) { setFilterPanelOpen(false); return; }
-      if (sortPanelOpen) { setSortPanelOpen(false); return; }
+    if (!moreMenuOpen) return;
+    const handleClick = (e) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target)) setMoreMenuOpen(false);
     };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [colDialogOpen, filterPanelOpen, sortPanelOpen]);
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [moreMenuOpen]);
+
+  // Close panels on Escape + table keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (tabContextMenu) { setTabContextMenu(null); return; }
+        if (moreMenuOpen) { setMoreMenuOpen(false); return; }
+        if (colDialogOpen) { setColDialogOpen(false); return; }
+        if (filterPanelOpen) { setFilterPanelOpen(false); return; }
+        if (sortPanelOpen) { setSortPanelOpen(false); return; }
+      }
+      // Table shortcuts
+      if (e.ctrlKey && e.key === 'PageUp' && tables.length > 1) {
+        e.preventDefault();
+        const idx = tables.findIndex(t => t.id === activeTableId);
+        if (idx > 0) switchTable(tables[idx - 1].id);
+      }
+      if (e.ctrlKey && e.key === 'PageDown' && tables.length > 1) {
+        e.preventDefault();
+        const idx = tables.findIndex(t => t.id === activeTableId);
+        if (idx < tables.length - 1) switchTable(tables[idx + 1].id);
+      }
+      if (e.ctrlKey && e.key === 't') {
+        e.preventDefault();
+        createNewTable();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [colDialogOpen, filterPanelOpen, sortPanelOpen, tabContextMenu, moreMenuOpen, tables, activeTableId, switchTable, createNewTable]);
 
   // ─── Load workspace detail (moved before snapshot/revert to avoid forward ref) ───
 
-  const loadWorkspaceDetail = useCallback(async (wsId) => {
+  const loadWorkspaceDetail = useCallback(async (wsId, forceTableId) => {
     setWsLoading(true);
     try {
-      // Fetch workspace
       const { data: ws, error: wsErr } = await supabase
         .from('enrich_workspaces')
         .select('*')
@@ -793,25 +832,42 @@ export default function RaiseEnrich() {
       setWsName(ws.name);
       setAutoRun(ws.auto_run === true);
 
-      // Fetch columns
+      // Fetch tables
+      const { data: tbls, error: tblErr } = await supabase
+        .from('enrich_tables')
+        .select('*')
+        .eq('workspace_id', wsId)
+        .order('position', { ascending: true });
+      if (tblErr) throw tblErr;
+      setTables(tbls || []);
+
+      // Determine active table
+      const targetTableId = forceTableId || (tbls?.find(t => t.id === activeTableId) ? activeTableId : tbls?.[0]?.id);
+      if (targetTableId && targetTableId !== activeTableId) setActiveTableId(targetTableId);
+      if (!targetTableId) {
+        setColumns([]); setRows([]); setCells({}); setWsLoading(false);
+        return;
+      }
+
+      // Fetch columns for active table
       const { data: cols, error: colErr } = await supabase
         .from('enrich_columns')
         .select('*')
-        .eq('workspace_id', wsId)
+        .eq('table_id', targetTableId)
         .order('position', { ascending: true });
       if (colErr) throw colErr;
       setColumns(cols || []);
 
-      // Fetch rows
+      // Fetch rows for active table
       const { data: rws, error: rwErr } = await supabase
         .from('enrich_rows')
         .select('*')
-        .eq('workspace_id', wsId)
+        .eq('table_id', targetTableId)
         .order('position', { ascending: true });
       if (rwErr) throw rwErr;
       setRows(rws || []);
 
-      // Fetch all cells for these rows
+      // Fetch cells
       if (rws?.length && cols?.length) {
         const rowIds = rws.map(r => r.id);
         const { data: cellData, error: cellErr } = await supabase
@@ -820,9 +876,7 @@ export default function RaiseEnrich() {
           .in('row_id', rowIds);
         if (cellErr) throw cellErr;
         const cellMap = {};
-        (cellData || []).forEach(c => {
-          cellMap[`${c.row_id}:${c.column_id}`] = c;
-        });
+        (cellData || []).forEach(c => { cellMap[`${c.row_id}:${c.column_id}`] = c; });
         setCells(cellMap);
       } else {
         setCells({});
@@ -833,7 +887,82 @@ export default function RaiseEnrich() {
     } finally {
       setWsLoading(false);
     }
+  }, [activeTableId]);
+
+  // ─── Multi-table management ───────────────────────────────────────────────
+
+  const switchTable = useCallback(async (tableId) => {
+    if (!activeWorkspaceId || !tableId || tableId === activeTableId) return;
+    setActiveTableId(tableId);
+    try {
+      const { data: cols } = await supabase.from('enrich_columns').select('*').eq('table_id', tableId).order('position', { ascending: true });
+      setColumns(cols || []);
+      const { data: rws } = await supabase.from('enrich_rows').select('*').eq('table_id', tableId).order('position', { ascending: true });
+      setRows(rws || []);
+      if (rws?.length && cols?.length) {
+        const { data: cellData } = await supabase.from('enrich_cells').select('*').in('row_id', rws.map(r => r.id));
+        const cellMap = {};
+        (cellData || []).forEach(c => { cellMap[`${c.row_id}:${c.column_id}`] = c; });
+        setCells(cellMap);
+      } else { setCells({}); }
+    } catch (err) { console.error('Switch table error:', err); toast.error('Failed to switch table'); }
+  }, [activeWorkspaceId, activeTableId]);
+
+  const createNewTable = useCallback(async () => {
+    if (!activeWorkspaceId) return;
+    try {
+      const { data: newTable, error } = await supabase.from('enrich_tables').insert({
+        workspace_id: activeWorkspaceId, name: `Table ${tables.length + 1}`, position: tables.length,
+      }).select().single();
+      if (error) throw error;
+      setTables(prev => [...prev, newTable]);
+      switchTable(newTable.id);
+      toast.success(`Created ${newTable.name}`);
+    } catch (err) { console.error('Create table error:', err); toast.error('Failed to create table'); }
+  }, [activeWorkspaceId, tables.length, switchTable]);
+
+  const renameTable = useCallback(async (tableId, newName) => {
+    if (!newName?.trim()) return;
+    try {
+      await supabase.from('enrich_tables').update({ name: newName.trim(), updated_at: new Date().toISOString() }).eq('id', tableId);
+      setTables(prev => prev.map(t => t.id === tableId ? { ...t, name: newName.trim() } : t));
+    } catch (err) { toast.error('Failed to rename table'); }
   }, []);
+
+  const duplicateTable = useCallback(async (tableId) => {
+    const src = tables.find(t => t.id === tableId);
+    if (!src) return;
+    try {
+      const { data: newTable, error } = await supabase.from('enrich_tables').insert({
+        workspace_id: activeWorkspaceId, name: `${src.name} (Copy)`, position: tables.length,
+      }).select().single();
+      if (error) throw error;
+      // Copy columns
+      const { data: srcCols } = await supabase.from('enrich_columns').select('*').eq('table_id', tableId);
+      if (srcCols?.length) {
+        await supabase.from('enrich_columns').insert(srcCols.map(({ id, created_at, updated_at, ...c }) => ({ ...c, table_id: newTable.id })));
+      }
+      // Copy rows
+      const { data: srcRows } = await supabase.from('enrich_rows').select('*').eq('table_id', tableId);
+      if (srcRows?.length) {
+        await supabase.from('enrich_rows').insert(srcRows.map(({ id, created_at, updated_at, ...r }) => ({ ...r, table_id: newTable.id })));
+      }
+      setTables(prev => [...prev, newTable]);
+      toast.success('Table duplicated');
+    } catch (err) { console.error('Duplicate table error:', err); toast.error('Failed to duplicate table'); }
+  }, [tables, activeWorkspaceId]);
+
+  const deleteTable = useCallback(async (tableId) => {
+    if (tables.length <= 1) { toast.error('Cannot delete the last table'); return; }
+    if (!window.confirm('Delete this table and all its data?')) return;
+    try {
+      await supabase.from('enrich_tables').delete().eq('id', tableId);
+      const remaining = tables.filter(t => t.id !== tableId);
+      setTables(remaining);
+      if (activeTableId === tableId) switchTable(remaining[0].id);
+      toast.success('Table deleted');
+    } catch (err) { toast.error('Failed to delete table'); }
+  }, [tables, activeTableId, switchTable]);
 
   const createSnapshot = useCallback(async () => {
     if (!snapshotName.trim() || !activeWorkspaceId) return;
@@ -1020,6 +1149,8 @@ export default function RaiseEnrich() {
         .select()
         .single();
       if (error) throw error;
+      // Auto-create Table 1
+      await supabase.from('enrich_tables').insert({ workspace_id: data.id, name: 'Table 1', position: 0 });
       toast.success('Workspace created');
       setCreateDialogOpen(false);
       setNewWsName('');
@@ -1299,6 +1430,7 @@ export default function RaiseEnrich() {
       const pos = columns.length;
       const { error } = await supabase.from('enrich_columns').insert({
         workspace_id: activeWorkspaceId,
+        table_id: activeTableId,
         name: colName.trim(),
         type: colType,
         position: pos,
@@ -3195,37 +3327,60 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   </span>
                 )}
               </RaiseButton>
-              <RaiseButton variant="ghost" size="sm" onClick={exportCSV} title="Export to CSV" className="flex-shrink-0">
-                <Download className="w-3.5 h-3.5 mr-1" /> CSV
-              </RaiseButton>
-              <RaiseButton variant="ghost" size="sm" onClick={() => { setHistoryPanelOpen(prev => !prev); if (!historyPanelOpen) { loadHistory(); loadSnapshots(); } }} className="relative">
-                <History className="w-3.5 h-3.5 mr-1" /> History
-                {historyEntries.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500 text-[10px] font-bold text-white flex items-center justify-center">
-                    {historyEntries.length > 99 ? '99' : historyEntries.length}
-                  </span>
+              {/* More menu (Export, History, Delete) */}
+              <div className="relative flex-shrink-0" ref={moreMenuRef}>
+                <RaiseButton variant="ghost" size="sm" onClick={() => setMoreMenuOpen(prev => !prev)} title="More actions" className="relative">
+                  <MoreHorizontal className="w-4 h-4" />
+                  {historyEntries.length > 0 && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-blue-500" />
+                  )}
+                </RaiseButton>
+                {moreMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setMoreMenuOpen(false)} />
+                    <div className={rt(
+                      'absolute top-full right-0 mt-1 w-52 rounded-xl border border-gray-200 bg-white shadow-lg z-50 py-1',
+                      'absolute top-full right-0 mt-1 w-52 rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl z-50 py-1'
+                    )}>
+                      <button onClick={() => { exportCSV(); setMoreMenuOpen(false); }} className={rt(
+                        'w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left hover:bg-gray-50',
+                        'w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left text-zinc-300 hover:bg-zinc-800'
+                      )}>
+                        <Download className="w-4 h-4 text-zinc-500" /> Export CSV
+                      </button>
+                      <button onClick={() => { setHistoryPanelOpen(prev => !prev); if (!historyPanelOpen) { loadHistory(); loadSnapshots(); } setMoreMenuOpen(false); }} className={rt(
+                        'w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left hover:bg-gray-50',
+                        'w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left text-zinc-300 hover:bg-zinc-800'
+                      )}>
+                        <History className="w-4 h-4 text-zinc-500" /> History
+                        {historyEntries.length > 0 && <span className="ml-auto text-[10px] text-blue-400">{historyEntries.length}</span>}
+                      </button>
+                      <div className={rt('border-t border-gray-100 my-1', 'border-t border-zinc-800 my-1')} />
+                      <button onClick={() => {
+                        setMoreMenuOpen(false);
+                        if (!window.confirm(`Delete workspace "${wsName}" and all its data? This cannot be undone.`)) return;
+                        (async () => {
+                          try {
+                            const rowIds = rows.map(r => r.id);
+                            if (rowIds.length) await supabase.from('enrich_cells').delete().in('row_id', rowIds);
+                            await supabase.from('enrich_rows').delete().eq('workspace_id', activeWorkspaceId);
+                            await supabase.from('enrich_columns').delete().eq('workspace_id', activeWorkspaceId);
+                            await supabase.from('enrich_workspaces').delete().eq('id', activeWorkspaceId);
+                            toast.success('Workspace deleted');
+                            setActiveWorkspaceId(null); setWorkspace(null); setColumns([]); setRows([]); setCells({});
+                            loadWorkspaces();
+                          } catch (err) { toast.error('Failed to delete workspace'); }
+                        })();
+                      }} className={rt(
+                        'w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left text-red-600 hover:bg-red-50',
+                        'w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left text-red-400 hover:bg-red-500/10'
+                      )}>
+                        <Trash2 className="w-4 h-4" /> Delete Workspace
+                      </button>
+                    </div>
+                  </>
                 )}
-              </RaiseButton>
-              <RaiseButton variant="ghost" size="sm" onClick={() => {
-                if (!window.confirm(`Delete workspace "${wsName}" and all its data? This cannot be undone.`)) return;
-                (async () => {
-                  try {
-                    const rowIds = rows.map(r => r.id);
-                    if (rowIds.length) await supabase.from('enrich_cells').delete().in('row_id', rowIds);
-                    await supabase.from('enrich_rows').delete().eq('workspace_id', activeWorkspaceId);
-                    await supabase.from('enrich_columns').delete().eq('workspace_id', activeWorkspaceId);
-                    await supabase.from('enrich_workspaces').delete().eq('id', activeWorkspaceId);
-                    toast.success('Workspace deleted');
-                    setActiveWorkspaceId(null); setWorkspace(null); setColumns([]); setRows([]); setCells({});
-                    loadWorkspaces();
-                  } catch (err) {
-                    console.error('Error deleting workspace:', err);
-                    toast.error('Failed to delete workspace');
-                  }
-                })();
-              }} className="text-red-400 hover:text-red-300">
-                <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
-              </RaiseButton>
+              </div>
             </div>
           </div>
         </div>
@@ -3553,6 +3708,86 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               })}
             </div>
           </div>
+        )}
+
+        {/* Table Tabs Bar */}
+        {activeWorkspaceId && tables.length > 0 && (
+          <div className={rt(
+            'flex-shrink-0 border-t border-gray-200 bg-white px-2',
+            'flex-shrink-0 border-t border-zinc-800 bg-zinc-950 px-2'
+          )}>
+            <div className="flex items-center gap-0.5 overflow-x-auto py-1" style={{ scrollbarWidth: 'none' }}>
+              {tables.map((table) => {
+                const isActive = table.id === activeTableId;
+                return (
+                  <button
+                    key={table.id}
+                    onClick={() => switchTable(table.id)}
+                    onDoubleClick={() => { setRenamingTabId(table.id); setRenameTabValue(table.name); }}
+                    onContextMenu={(e) => { e.preventDefault(); setTabContextMenu({ tableId: table.id, x: e.clientX, y: e.clientY }); }}
+                    className={rt(
+                      `relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-t-lg transition-all whitespace-nowrap ${isActive ? 'text-orange-600 bg-orange-50 border-b-2 border-orange-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`,
+                      `relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-t-lg transition-all whitespace-nowrap ${isActive ? 'text-orange-400 bg-orange-500/10 border-b-2 border-orange-500' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'}`
+                    )}
+                  >
+                    {renamingTabId === table.id ? (
+                      <input
+                        autoFocus
+                        value={renameTabValue}
+                        onChange={e => setRenameTabValue(e.target.value)}
+                        onBlur={() => { renameTable(table.id, renameTabValue); setRenamingTabId(null); }}
+                        onKeyDown={e => { if (e.key === 'Enter') { renameTable(table.id, renameTabValue); setRenamingTabId(null); } if (e.key === 'Escape') setRenamingTabId(null); }}
+                        onClick={e => e.stopPropagation()}
+                        className={`bg-transparent border-b outline-none text-xs w-20 ${rt('border-orange-400 text-gray-900', 'border-orange-400 text-white')}`}
+                      />
+                    ) : (
+                      <>
+                        <Table2 className="w-3 h-3" />
+                        <span>{table.name}</span>
+                        {isActive && rows.length > 0 && <span className={rt('text-[10px] text-gray-400', 'text-[10px] text-zinc-600')}>({rows.length})</span>}
+                      </>
+                    )}
+                  </button>
+                );
+              })}
+              <button
+                onClick={createNewTable}
+                className={rt(
+                  'flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-400 hover:text-orange-600 hover:bg-gray-50 rounded-lg transition-colors whitespace-nowrap',
+                  'flex items-center gap-1 px-2.5 py-1.5 text-xs text-zinc-600 hover:text-orange-400 hover:bg-zinc-800 rounded-lg transition-colors whitespace-nowrap'
+                )}
+                title="New Table (Ctrl+T)"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Tab Context Menu */}
+        {tabContextMenu && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setTabContextMenu(null)} />
+            <div
+              className={rt(
+                'fixed z-50 w-44 rounded-lg border border-gray-200 bg-white shadow-xl py-1',
+                'fixed z-50 w-44 rounded-lg border border-zinc-700 bg-zinc-900 shadow-2xl py-1'
+              )}
+              style={{ left: tabContextMenu.x, top: tabContextMenu.y - 120 }}
+            >
+              <button onClick={() => { const t = tables.find(t => t.id === tabContextMenu.tableId); setRenamingTabId(t.id); setRenameTabValue(t.name); setTabContextMenu(null); }} className={rt('w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-50', 'w-full flex items-center gap-2 px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-800')}>
+                <Edit2 className="w-3.5 h-3.5" /> Rename
+              </button>
+              <button onClick={() => { duplicateTable(tabContextMenu.tableId); setTabContextMenu(null); }} className={rt('w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-50', 'w-full flex items-center gap-2 px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-800')}>
+                <Copy className="w-3.5 h-3.5" /> Duplicate
+              </button>
+              {tables.length > 1 && (
+                <button onClick={() => { deleteTable(tabContextMenu.tableId); setTabContextMenu(null); }} className={rt('w-full flex items-center gap-2 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50', 'w-full flex items-center gap-2 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10')}>
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </button>
+              )}
+            </div>
+          </>
         )}
 
         {/* Filter Panel - slides in from right */}
@@ -4777,6 +5012,99 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     />
                     <span className={`text-xs ${rt('text-gray-700', 'text-zinc-300')}`}>Stop on first success</span>
                   </label>
+                </div>
+              )}
+
+              {colType === 'push_to_table' && (
+                <div className="space-y-3">
+                  <div>
+                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Target Table</Label>
+                    <Select value={colConfig.target_table_id || ''} onValueChange={async (val) => {
+                      setColConfig(prev => ({ ...prev, target_table_id: val, column_mapping: {} }));
+                      const { data } = await supabase.from('enrich_columns').select('*').eq('table_id', val).order('position');
+                      setTargetTableCols(data || []);
+                    }}>
+                      <SelectTrigger className={rt('', 'bg-zinc-800 border-zinc-700')}><SelectValue placeholder="Select table" /></SelectTrigger>
+                      <SelectContent>
+                        {tables.filter(t => t.id !== activeTableId).map(t => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {colConfig.target_table_id && targetTableCols.length > 0 && (
+                    <div>
+                      <Label className={rt('text-gray-700', 'text-zinc-300')}>Column Mapping</Label>
+                      <div className="space-y-2 mt-1">
+                        {columns.filter(c => c.type !== 'push_to_table' && c.type !== 'pull_from_table').map(col => (
+                          <div key={col.id} className="flex items-center gap-2 text-xs">
+                            <span className={`flex-1 truncate ${rt('text-gray-600', 'text-zinc-400')}`}>{col.name}</span>
+                            <span className="text-zinc-600">&rarr;</span>
+                            <Select value={colConfig.column_mapping?.[col.id] || '_skip'} onValueChange={(val) => setColConfig(prev => ({ ...prev, column_mapping: { ...prev.column_mapping, [col.id]: val } }))}>
+                              <SelectTrigger className={`w-36 h-7 text-xs ${rt('', 'bg-zinc-800 border-zinc-700')}`}><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="_skip">Skip</SelectItem>
+                                {targetTableCols.map(tc => <SelectItem key={tc.id} value={tc.id}>{tc.name}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <p className={`text-[10px] ${rt('text-gray-400', 'text-zinc-600')}`}>Use "Push Selected" or "Push All" from the toolbar after creating this column.</p>
+                </div>
+              )}
+
+              {colType === 'pull_from_table' && (
+                <div className="space-y-3">
+                  <div>
+                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Source Table</Label>
+                    <Select value={colConfig.source_table_id || ''} onValueChange={async (val) => {
+                      setColConfig(prev => ({ ...prev, source_table_id: val, match_column_id: '', value_column_id: '' }));
+                      const { data } = await supabase.from('enrich_columns').select('*').eq('table_id', val).order('position');
+                      setTargetTableCols(data || []);
+                    }}>
+                      <SelectTrigger className={rt('', 'bg-zinc-800 border-zinc-700')}><SelectValue placeholder="Select table" /></SelectTrigger>
+                      <SelectContent>
+                        {tables.filter(t => t.id !== activeTableId).map(t => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {colConfig.source_table_id && (
+                    <>
+                      <div>
+                        <Label className={rt('text-gray-700', 'text-zinc-300')}>Match Column (this table)</Label>
+                        <Select value={colConfig.match_column_id || ''} onValueChange={(val) => setColConfig(prev => ({ ...prev, match_column_id: val }))}>
+                          <SelectTrigger className={rt('', 'bg-zinc-800 border-zinc-700')}><SelectValue placeholder="Column to match on" /></SelectTrigger>
+                          <SelectContent>
+                            {columns.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className={rt('text-gray-700', 'text-zinc-300')}>Match Column (source table)</Label>
+                        <Select value={colConfig.source_match_column_id || ''} onValueChange={(val) => setColConfig(prev => ({ ...prev, source_match_column_id: val }))}>
+                          <SelectTrigger className={rt('', 'bg-zinc-800 border-zinc-700')}><SelectValue placeholder="Column to match against" /></SelectTrigger>
+                          <SelectContent>
+                            {targetTableCols.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className={rt('text-gray-700', 'text-zinc-300')}>Value Column (to pull)</Label>
+                        <Select value={colConfig.value_column_id || ''} onValueChange={(val) => setColConfig(prev => ({ ...prev, value_column_id: val }))}>
+                          <SelectTrigger className={rt('', 'bg-zinc-800 border-zinc-700')}><SelectValue placeholder="Column to pull value from" /></SelectTrigger>
+                          <SelectContent>
+                            {targetTableCols.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
+                  <p className={`text-[10px] ${rt('text-gray-400', 'text-zinc-600')}`}>Works like VLOOKUP -- matches rows by a key column and pulls the value.</p>
                 </div>
               )}
 
