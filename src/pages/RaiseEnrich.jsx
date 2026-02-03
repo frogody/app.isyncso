@@ -79,6 +79,8 @@ const COLUMN_TYPES = [
 ];
 
 const COLUMN_TYPE_ICONS = { field: Type, enrichment: Zap, ai: Brain, formula: FunctionSquare, waterfall: Layers, http: Globe, merge: Merge };
+const COLUMN_TYPE_LABELS = { field: 'Field', enrichment: 'Enrichment', ai: 'AI', formula: 'Formula', waterfall: 'Waterfall', http: 'HTTP', merge: 'Merge' };
+const FIELD_DATA_TYPE_LABELS = { text: 'Text', number: 'Number', currency: 'Currency', date: 'Date', url: 'URL', email: 'Email', checkbox: 'Checkbox', select: 'Select' };
 
 const FIELD_DATA_TYPES = [
   { value: 'text', label: 'Text', icon: Type },
@@ -2913,13 +2915,13 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                 <button
                   onClick={() => setViewDropdownOpen(prev => !prev)}
                   className={rt(
-                    `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${activeViewId ? 'bg-orange-50 text-orange-700 border-orange-200' : 'text-gray-500 hover:bg-gray-100 border-gray-200'}`,
-                    `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${activeViewId ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' : 'text-zinc-400 hover:bg-zinc-800 border-zinc-700'}`
+                    `relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${activeViewId ? 'bg-orange-50 text-orange-700 border-orange-200' : 'text-gray-500 hover:bg-gray-100 border-gray-200'}`,
+                    `relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${activeViewId ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' : 'text-zinc-400 hover:bg-zinc-800 border-zinc-700'}`
                   )}
                 >
                   <Eye className="w-3.5 h-3.5" />
                   {activeView ? activeView.name : 'Default View'}
-                  {viewHasUnsaved && <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />}
+                  {viewHasUnsaved && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-orange-400 animate-pulse" />}
                   <ChevronDown className={`w-3 h-3 transition-transform ${viewDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {viewDropdownOpen && (
@@ -3058,7 +3060,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               )}
               {/* Global progress ring */}
               {globalProgress && globalProgress.total > 0 && (
-                <div className="flex items-center gap-1.5" title={`${globalProgress.complete} of ${globalProgress.total} cells enriched`}>
+                <div className="flex items-center gap-1.5" title={`${globalProgress.complete} of ${globalProgress.total} rows complete (${globalProgress.percentage}%)`}>
                   <svg width="20" height="20" viewBox="0 0 20 20" className="flex-shrink-0">
                     <circle cx="10" cy="10" r="8" fill="none" stroke={rt('#e5e7eb', '#3f3f46')} strokeWidth="2.5" />
                     <circle
@@ -3068,7 +3070,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                       strokeDasharray={`${globalProgress.percentage * 0.5027} 50.27`}
                       strokeLinecap="round"
                       transform="rotate(-90 10 10)"
-                      className="transition-all duration-500"
+                      className="transition-all duration-700 ease-out"
                     />
                   </svg>
                   <span className={`text-[10px] font-medium ${globalProgress.percentage === 100 ? 'text-green-400' : globalProgress.percentage > 0 ? 'text-amber-400' : 'text-zinc-500'}`}>
@@ -3110,14 +3112,14 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   <Upload className="w-3.5 h-3.5 mr-1" /> Import from Nest
                 </RaiseButton>
               )}
-              <RaiseButton variant="ghost" size="sm" onClick={() => csvInputRef.current?.click()}>
+              <RaiseButton variant="ghost" size="sm" onClick={() => csvInputRef.current?.click()} title="Import CSV file">
                 <FileUp className="w-3.5 h-3.5 mr-1" /> Import CSV
               </RaiseButton>
               <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={importCSV} />
-              <RaiseButton variant="ghost" size="sm" onClick={() => { setColDialogOpen(true); setColType('field'); setColName(''); setColConfig({}); }}>
+              <RaiseButton variant="ghost" size="sm" onClick={() => { setColDialogOpen(true); setColType('field'); setColName(''); setColConfig({}); }} title="Add a new column">
                 <Plus className="w-3.5 h-3.5 mr-1" /> Add Column
               </RaiseButton>
-              <RaiseButton variant="ghost" size="sm" onClick={runAllColumns}>
+              <RaiseButton variant="ghost" size="sm" onClick={runAllColumns} title="Run all enrichment columns (Ctrl+Enter)">
                 <Play className="w-3.5 h-3.5 mr-1" /> Run All
               </RaiseButton>
               <button
@@ -3163,7 +3165,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   </button>
                 </>
               )}
-              <RaiseButton variant="ghost" size="sm" onClick={() => setSortPanelOpen(prev => !prev)} className="relative">
+              <RaiseButton variant="ghost" size="sm" onClick={() => setSortPanelOpen(prev => !prev)} className="relative" title="Sort columns">
                 <ArrowUpDown className="w-3.5 h-3.5 mr-1" /> Sort
                 {activeSortCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-orange-500 text-[10px] font-bold text-white flex items-center justify-center">
@@ -3171,7 +3173,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   </span>
                 )}
               </RaiseButton>
-              <RaiseButton variant="ghost" size="sm" onClick={() => setFilterPanelOpen(prev => !prev)} className="relative">
+              <RaiseButton variant="ghost" size="sm" onClick={() => setFilterPanelOpen(prev => !prev)} className="relative" title="Filter rows">
                 <Filter className="w-3.5 h-3.5 mr-1" /> Filters
                 {activeFilterCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-orange-500 text-[10px] font-bold text-white flex items-center justify-center">
@@ -3179,7 +3181,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   </span>
                 )}
               </RaiseButton>
-              <RaiseButton variant="ghost" size="sm" onClick={exportCSV}>
+              <RaiseButton variant="ghost" size="sm" onClick={exportCSV} title="Export to CSV">
                 <Download className="w-3.5 h-3.5 mr-1" /> CSV
               </RaiseButton>
               <RaiseButton variant="ghost" size="sm" onClick={() => { setHistoryPanelOpen(prev => !prev); if (!historyPanelOpen) { loadHistory(); loadSnapshots(); } }} className="relative">
@@ -3305,7 +3307,10 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     onClick={(e) => { if (!e.target.closest('[data-no-sort]')) toggleColumnSort(col.id, e.shiftKey); }}
                   >
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <Icon className={`w-3 h-3 flex-shrink-0 ${col.type === 'field' ? 'text-blue-400' : col.type === 'enrichment' ? 'text-amber-400' : col.type === 'ai' ? 'text-purple-400' : col.type === 'waterfall' ? 'text-cyan-400' : col.type === 'http' ? 'text-emerald-400' : col.type === 'merge' ? 'text-pink-400' : 'text-green-400'}`} />
+                      <Icon
+                        className={`w-3.5 h-3.5 flex-shrink-0 ${col.type === 'field' ? 'text-blue-400' : col.type === 'enrichment' ? 'text-amber-400' : col.type === 'ai' ? 'text-purple-400' : col.type === 'waterfall' ? 'text-cyan-400' : col.type === 'http' ? 'text-emerald-400' : col.type === 'merge' ? 'text-pink-400' : 'text-green-400'}`}
+                        title={col.type === 'field' && col.config?.data_type ? FIELD_DATA_TYPE_LABELS[col.config.data_type] || col.config.data_type : COLUMN_TYPE_LABELS[col.type] || col.type}
+                      />
                       <span className="truncate flex-1">{col.name}</span>
                       {/* Sort indicator */}
                       {sortState ? (
@@ -3545,8 +3550,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 26, stiffness: 300 }}
               className={rt(
-                'fixed top-0 right-0 h-full w-80 z-50 border-l border-gray-200 bg-white shadow-xl flex flex-col',
-                'fixed top-0 right-0 h-full w-80 z-50 border-l border-zinc-800 bg-zinc-950 shadow-xl flex flex-col'
+                'fixed top-0 right-0 h-full min-w-[320px] w-80 z-50 border-l border-gray-200 bg-white shadow-xl flex flex-col',
+                'fixed top-0 right-0 h-full min-w-[320px] w-80 z-50 border-l border-zinc-800 bg-zinc-950 shadow-xl flex flex-col'
               )}
             >
               {/* Header */}
@@ -3567,7 +3572,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               </div>
 
               {/* Filter list */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {filters.length === 0 ? (
                   <div className="text-center py-8">
                     <Filter className={rt('w-8 h-8 text-gray-300 mx-auto mb-2', 'w-8 h-8 text-zinc-600 mx-auto mb-2')} />
@@ -3580,8 +3585,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     const isNumberOp = ['eq', 'gt', 'lt', 'between'].includes(filter.operator);
                     const needsValue = !['is_empty', 'is_not_empty'].includes(filter.operator);
                     return (
+                      <React.Fragment key={filter.id}>
                       <div
-                        key={filter.id}
                         className={rt(
                           'p-3 rounded-xl border border-gray-200 bg-gray-50 space-y-2',
                           'p-3 rounded-xl border border-zinc-800 bg-zinc-900/60 space-y-2'
@@ -3648,6 +3653,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                           </div>
                         )}
                       </div>
+                      {idx < filters.length - 1 && <div className={rt('border-b border-gray-100 mt-1', 'border-b border-zinc-800/40 mt-1')} />}
+                      </React.Fragment>
                     );
                   })
                 )}
@@ -4975,7 +4982,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-              className={`fixed top-0 right-0 h-full w-[400px] z-40 flex flex-col shadow-2xl ${rt('bg-white border-l border-gray-200', 'bg-zinc-950 border-l border-zinc-800')}`}
+              className={`fixed top-0 right-0 h-full w-[420px] z-40 flex flex-col shadow-2xl ${rt('bg-white border-l border-gray-200', 'bg-zinc-950 border-l border-zinc-800')}`}
             >
               {/* Header */}
               <div className={`flex items-center justify-between px-4 py-3 border-b ${rt('border-gray-200', 'border-zinc-800')}`}>
@@ -5012,7 +5019,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                         <button
                           key={i}
                           onClick={() => sendChatMessage(qp.prompt)}
-                          className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all ${rt('bg-gray-50 hover:bg-gray-100 text-gray-700', 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300')} border ${rt('border-gray-200', 'border-zinc-800')}`}
+                          className={`w-full text-left px-3 py-2.5 rounded-lg text-xs transition-all truncate ${rt('bg-gray-50 hover:bg-gray-100 text-gray-700', 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300')} border ${rt('border-gray-200', 'border-zinc-800')}`}
+                          title={qp.prompt}
                         >
                           <span className="text-purple-400 mr-1">→</span> {qp.label}
                         </button>
