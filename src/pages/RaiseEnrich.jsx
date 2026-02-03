@@ -7,7 +7,8 @@ import {
   Edit2, Settings, ChevronDown, Check, X, Loader2, AlertCircle,
   Table2, Clock, Hash, Upload, FileUp, Database, Pencil, Filter, XCircle,
   ArrowUp, ArrowDown, ArrowUpDown, ToggleLeft, ToggleRight, Layers, Globe,
-  Calendar, DollarSign, Link, Mail, CheckSquare, ListOrdered, Merge, Send, Bot, Trash
+  Calendar, DollarSign, Link, Mail, CheckSquare, ListOrdered, Merge, Send, Bot, Trash,
+  FlaskConical, ShieldAlert, RotateCcw
 } from 'lucide-react';
 import {
   RaiseCard, RaiseCardContent, RaiseCardHeader, RaiseCardTitle,
@@ -436,6 +437,11 @@ export default function RaiseEnrich() {
   const autoRunRunningRef = useRef(false);
   const prevRowCountRef = useRef(0);
   const prevColCountRef = useRef(0);
+
+  // Sandbox mode
+  const [sandboxMode, setSandboxMode] = useState(false);
+  const [sandboxCells, setSandboxCells] = useState({});
+  const [sandboxExportWarn, setSandboxExportWarn] = useState(false);
 
   // AI Chat assistant
   const [chatOpen, setChatOpen] = useState(false);
@@ -980,6 +986,82 @@ export default function RaiseEnrich() {
     }
   }, [cells, cellKey]);
 
+  // ─── Sandbox mock data generator ──────────────────────────────────────
+
+  const generateMockData = useCallback((col, rowId, rowIdx) => {
+    const seed = `${rowId}-${col.id}`;
+    const hash = seed.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
+    const pick = (arr) => arr[Math.abs(hash) % arr.length];
+    const num = (min, max) => min + (Math.abs(hash) % (max - min));
+
+    const fnName = col.config?.function || '';
+    const colName = col.name.toLowerCase();
+
+    if (col.type === 'enrichment') {
+      const outputField = col.config?.output_field || '';
+      const of = outputField.toLowerCase();
+      if (of.includes('email') || colName.includes('email')) return { v: pick(['j.smith', 'a.jones', 'm.lee', 'r.patel', 's.chen']) + '@' + pick(['acme.com', 'globex.io', 'initech.co', 'hooli.com', 'piedpiper.net']) };
+      if (of.includes('phone') || colName.includes('phone')) return { v: `+1 (${num(200,999)}) ${num(100,999)}-${num(1000,9999)}` };
+      if (of.includes('title') || of.includes('job') || colName.includes('title')) return { v: pick(['VP of Engineering', 'Head of Growth', 'Senior PM', 'CTO', 'Director of Sales', 'Staff Engineer', 'Chief of Staff']) };
+      if (of.includes('company') || of.includes('employer') || colName.includes('company')) return { v: pick(['Acme Corp', 'Globex Inc', 'Initech', 'Hooli', 'Pied Piper', 'Umbrella Co', 'Stark Industries']) };
+      if (of.includes('industry')) return { v: pick(['SaaS', 'FinTech', 'Healthcare', 'E-commerce', 'AI/ML', 'Cybersecurity', 'EdTech']) };
+      if (of.includes('employee') || of.includes('size')) return { v: String(pick([50, 120, 350, 800, 2500, 5000, 15000])) };
+      if (of.includes('revenue')) return { v: `$${pick([1, 5, 12, 25, 50, 100])}M` };
+      if (of.includes('location') || of.includes('city') || colName.includes('location')) return { v: pick(['San Francisco, CA', 'New York, NY', 'Austin, TX', 'London, UK', 'Amsterdam, NL', 'Berlin, DE']) };
+      if (of.includes('linkedin')) return { v: `https://linkedin.com/in/${pick(['jsmith', 'ajones', 'mlee', 'rpatel'])}${num(100,999)}` };
+      return { v: `Mock: ${pick(['Alpha', 'Beta', 'Gamma', 'Delta'])} ${num(100, 999)}` };
+    }
+
+    if (col.type === 'ai') {
+      const prompt = (col.config?.prompt || '').toLowerCase();
+      if (prompt.includes('summar')) return { v: pick(['A seasoned leader with 10+ years in SaaS growth.', 'Technical expert focused on scalable infrastructure.', 'Results-driven PM with track record in product-led growth.', 'Cross-functional leader experienced in AI/ML deployment.']) };
+      if (prompt.includes('sentiment')) return { v: pick(['Positive', 'Neutral', 'Negative']) };
+      if (prompt.includes('categor')) return { v: pick(['Category A', 'Category B', 'Category C', 'Uncategorized']) };
+      if (prompt.includes('extract') && prompt.includes('email')) return { v: pick(['john@example.com', 'info@company.io, sales@company.io', 'no emails found']) };
+      if (prompt.includes('translat')) return { v: pick(['The meeting is scheduled for tomorrow.', 'Please review the attached document.', 'We look forward to the collaboration.']) };
+      return { v: pick(['AI-generated sample output for testing.', 'This is sandbox data — not a real AI response.', 'Mock result based on prompt template configuration.', 'Sample output for workflow validation purposes.']) };
+    }
+
+    if (col.type === 'waterfall') {
+      const sources = col.config?.sources || [];
+      const sourceUsed = sources.length > 0 ? pick(sources.map(s => s.label || s.function || 'Source')) : 'Mock Source';
+      return { v: pick(['Data from fallback', 'Primary source hit', 'Secondary enrichment result']), _meta: { source_used: sourceUsed, attempts: num(1, sources.length + 1) } };
+    }
+
+    if (col.type === 'http') {
+      return { v: `{ "status": "ok", "id": ${num(1000, 9999)}, "sandbox": true }` };
+    }
+
+    return { v: `sandbox-${num(100, 999)}` };
+  }, []);
+
+  const runSandboxColumn = useCallback(async (col) => {
+    const total = rows.length;
+    const toastId = toast.loading(`Sandbox: ${col.name} 0/${total}`);
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const key = cellKey(row.id, col.id);
+      const mockValue = generateMockData(col, row.id, i);
+
+      setSandboxCells(prev => ({ ...prev, [key]: { status: 'complete', value: mockValue, _sandbox: true } }));
+
+      // Simulate slight delay for realism
+      if (i % 5 === 4) await new Promise(r => setTimeout(r, 80));
+      toast.loading(`Sandbox: ${col.name} ${i + 1}/${total}`, { id: toastId });
+    }
+
+    toast.dismiss(toastId);
+    toast.success(`Sandbox: ${col.name} — ${total} rows filled with mock data`);
+  }, [rows, cellKey, generateMockData]);
+
+  const clearSandboxData = useCallback(() => {
+    setSandboxCells({});
+    toast.success('Sandbox data cleared');
+  }, []);
+
+  // convertSandboxToLive is defined after runAllColumns — see below
+
   // ─── Run enrichment column ─────────────────────────────────────────────
 
   const runEnrichmentColumn = useCallback(async (col) => {
@@ -1375,12 +1457,35 @@ export default function RaiseEnrich() {
   // ─── Run all columns ───────────────────────────────────────────────────
 
   const runAllColumns = useCallback(async () => {
+    if (sandboxMode) {
+      for (const col of columns) {
+        if (col.type === 'enrichment' || col.type === 'ai' || col.type === 'waterfall' || col.type === 'http') {
+          await runSandboxColumn(col);
+        }
+      }
+      return;
+    }
     for (const col of columns) {
       if (col.type === 'enrichment') await runEnrichmentColumn(col);
       else if (col.type === 'ai') await runAIColumn(col);
       else if (col.type === 'waterfall') await runWaterfallColumn(col);
       else if (col.type === 'http') await runHTTPColumn(col);
     }
+  }, [columns, sandboxMode, runSandboxColumn, runEnrichmentColumn, runAIColumn, runWaterfallColumn, runHTTPColumn]);
+
+  const convertSandboxToLive = useCallback(async () => {
+    setSandboxCells({});
+    setSandboxMode(false);
+    toast.info('Sandbox off — running live enrichments...');
+    // Small delay so state updates before runAllColumns triggers
+    setTimeout(async () => {
+      for (const col of columns) {
+        if (col.type === 'enrichment') await runEnrichmentColumn(col);
+        else if (col.type === 'ai') await runAIColumn(col);
+        else if (col.type === 'waterfall') await runWaterfallColumn(col);
+        else if (col.type === 'http') await runHTTPColumn(col);
+      }
+    }, 100);
   }, [columns, runEnrichmentColumn, runAIColumn, runWaterfallColumn, runHTTPColumn]);
 
   // ─── Auto-run ──────────────────────────────────────────────────────────
@@ -1447,7 +1552,9 @@ export default function RaiseEnrich() {
 
     try {
       for (const { col } of Object.values(colGroups)) {
-        if (col.type === 'enrichment') await runEnrichmentColumn(col);
+        if (sandboxMode) {
+          await runSandboxColumn(col);
+        } else if (col.type === 'enrichment') await runEnrichmentColumn(col);
         else if (col.type === 'ai') await runAIColumn(col);
         else if (col.type === 'waterfall') await runWaterfallColumn(col);
         else if (col.type === 'http') await runHTTPColumn(col);
@@ -1455,7 +1562,7 @@ export default function RaiseEnrich() {
     } finally {
       autoRunRunningRef.current = false;
     }
-  }, [columns, rows, cells, cellKey, getCellRawValue, runEnrichmentColumn, runAIColumn, runWaterfallColumn, runHTTPColumn]);
+  }, [columns, rows, cells, cellKey, getCellRawValue, sandboxMode, runSandboxColumn, runEnrichmentColumn, runAIColumn, runWaterfallColumn, runHTTPColumn]);
 
   // Watch for changes that should trigger auto-run
   useEffect(() => {
@@ -1498,10 +1605,25 @@ export default function RaiseEnrich() {
   // ─── Export CSV ────────────────────────────────────────────────────────
 
   const exportCSV = useCallback(() => {
+    // Warn if sandbox data present
+    if (sandboxMode && Object.keys(sandboxCells).length > 0) {
+      setSandboxExportWarn(true);
+      return;
+    }
+    doExportCSV();
+  }, [sandboxMode, sandboxCells]);
+
+  const doExportCSV = useCallback(() => {
     const headers = columns.map(c => c.name);
     const csvRows = [headers.join(',')];
     for (const row of rows) {
       const vals = columns.map(col => {
+        const ck = cellKey(row.id, col.id);
+        const sbCell = sandboxCells[ck];
+        if (sbCell) {
+          const sv = typeof sbCell.value === 'object' && sbCell.value?.v != null ? String(sbCell.value.v) : String(sbCell.value || '');
+          return `"${sv.replace(/"/g, '""')}"`;
+        }
         const v = getCellDisplayValue(row.id, col);
         return `"${String(v).replace(/"/g, '""')}"`;
       });
@@ -1511,11 +1633,11 @@ export default function RaiseEnrich() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${workspace?.name || 'enrich'}-export.csv`;
+    a.download = `${workspace?.name || 'enrich'}${sandboxMode ? '-SANDBOX' : ''}-export.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('CSV exported');
-  }, [columns, rows, getCellDisplayValue, workspace]);
+    toast.success(sandboxMode ? 'CSV exported (contains sandbox data)' : 'CSV exported');
+  }, [columns, rows, getCellDisplayValue, workspace, sandboxMode, sandboxCells, cellKey]);
 
   // ─── Column resize handlers ────────────────────────────────────────────
 
@@ -2336,6 +2458,11 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               {nestName && (
                 <RaiseBadge variant="outline" className="text-[10px]">{nestName}</RaiseBadge>
               )}
+              {sandboxMode && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 animate-pulse">
+                  <FlaskConical className="w-3 h-3" /> SANDBOX
+                </span>
+              )}
               {/* Global progress ring */}
               {globalProgress && globalProgress.total > 0 && (
                 <div className="flex items-center gap-1.5" title={`${globalProgress.complete} of ${globalProgress.total} cells enriched`}>
@@ -2412,6 +2539,37 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                 Auto-run
                 {autoRun && <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />}
               </button>
+              {/* Sandbox toggle */}
+              <button
+                onClick={() => {
+                  if (!sandboxMode) {
+                    setSandboxMode(true);
+                    toast.success('Sandbox mode ON — enrichments use mock data');
+                  } else {
+                    setSandboxMode(false);
+                    toast.info('Sandbox mode OFF');
+                  }
+                }}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  sandboxMode
+                    ? rt('bg-amber-50 text-amber-700 border border-amber-300', 'bg-amber-500/10 text-amber-400 border border-amber-500/40')
+                    : rt('text-gray-500 hover:bg-gray-100 border border-transparent', 'text-zinc-500 hover:bg-zinc-800 border border-transparent')
+                }`}
+              >
+                <FlaskConical className={`w-3.5 h-3.5 ${sandboxMode ? 'text-amber-400' : ''}`} />
+                Sandbox
+                {sandboxMode && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />}
+              </button>
+              {sandboxMode && (
+                <>
+                  <button onClick={clearSandboxData} className={`text-[10px] px-2 py-1 rounded-lg ${rt('text-gray-500 hover:bg-gray-100', 'text-zinc-500 hover:bg-zinc-800')}`} title="Clear all sandbox data">
+                    <Trash className="w-3 h-3" />
+                  </button>
+                  <button onClick={convertSandboxToLive} className={`text-[10px] px-2 py-1.5 rounded-lg flex items-center gap-1 ${rt('text-cyan-600 hover:bg-cyan-50 border border-cyan-200', 'text-cyan-400 hover:bg-cyan-500/10 border border-cyan-500/30')}`} title="Clear sandbox data and run live enrichments">
+                    <RotateCcw className="w-3 h-3" /> Go Live
+                  </button>
+                </>
+              )}
               <RaiseButton variant="ghost" size="sm" onClick={() => setSortPanelOpen(prev => !prev)} className="relative">
                 <ArrowUpDown className="w-3.5 h-3.5 mr-1" /> Sort
                 {activeSortCount > 0 && (
@@ -2509,7 +2667,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
           <div
             ref={scrollRef}
             onScroll={onScroll}
-            className="flex-1 overflow-auto"
+            className={`flex-1 overflow-auto ${sandboxMode ? 'ring-2 ring-amber-500/40 ring-inset rounded-lg' : ''}`}
             style={{ position: 'relative' }}
           >
             {/* Header */}
@@ -2565,23 +2723,23 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
                           {col.type === 'enrichment' && (
-                            <DropdownMenuItem onClick={() => runEnrichmentColumn(col)} className={rt('', 'text-white hover:bg-zinc-700')}>
-                              <Play className="w-3 h-3 mr-2" /> Run Column
+                            <DropdownMenuItem onClick={() => sandboxMode ? runSandboxColumn(col) : runEnrichmentColumn(col)} className={rt('', 'text-white hover:bg-zinc-700')}>
+                              <Play className="w-3 h-3 mr-2" /> {sandboxMode ? 'Run (Sandbox)' : 'Run Column'}
                             </DropdownMenuItem>
                           )}
                           {col.type === 'ai' && (
-                            <DropdownMenuItem onClick={() => runAIColumn(col)} className={rt('', 'text-white hover:bg-zinc-700')}>
-                              <Brain className="w-3 h-3 mr-2" /> Run AI
+                            <DropdownMenuItem onClick={() => sandboxMode ? runSandboxColumn(col) : runAIColumn(col)} className={rt('', 'text-white hover:bg-zinc-700')}>
+                              <Brain className="w-3 h-3 mr-2" /> {sandboxMode ? 'Run (Sandbox)' : 'Run AI'}
                             </DropdownMenuItem>
                           )}
                           {col.type === 'waterfall' && (
-                            <DropdownMenuItem onClick={() => runWaterfallColumn(col)} className={rt('', 'text-white hover:bg-zinc-700')}>
-                              <Layers className="w-3 h-3 mr-2" /> Run Waterfall
+                            <DropdownMenuItem onClick={() => sandboxMode ? runSandboxColumn(col) : runWaterfallColumn(col)} className={rt('', 'text-white hover:bg-zinc-700')}>
+                              <Layers className="w-3 h-3 mr-2" /> {sandboxMode ? 'Run (Sandbox)' : 'Run Waterfall'}
                             </DropdownMenuItem>
                           )}
                           {col.type === 'http' && (
-                            <DropdownMenuItem onClick={() => runHTTPColumn(col)} className={rt('', 'text-white hover:bg-zinc-700')}>
-                              <Globe className="w-3 h-3 mr-2" /> Run HTTP
+                            <DropdownMenuItem onClick={() => sandboxMode ? runSandboxColumn(col) : runHTTPColumn(col)} className={rt('', 'text-white hover:bg-zinc-700')}>
+                              <Globe className="w-3 h-3 mr-2" /> {sandboxMode ? 'Run (Sandbox)' : 'Run HTTP'}
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuItem onClick={() => deleteColumn(col.id)} className="text-red-400 hover:bg-red-500/10">
@@ -2653,19 +2811,30 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     {columns.map(col => {
                       const isEditing = editingCell?.rowId === row.id && editingCell?.colId === col.id;
                       const isSelected = selectedCell?.rowId === row.id && selectedCell?.colId === col.id;
-                      const cellObj = cells[cellKey(row.id, col.id)];
+                      const ck = cellKey(row.id, col.id);
+                      const sandboxCell = sandboxCells[ck];
+                      const cellObj = sandboxCell || cells[ck];
                       const status = cellObj?.status || 'empty';
-                      const displayVal = getCellDisplayValue(row.id, col);
+                      const isSandboxData = !!sandboxCell;
+                      const displayVal = isSandboxData
+                        ? (typeof sandboxCell.value === 'object' && sandboxCell.value?.v != null ? String(sandboxCell.value.v) : typeof sandboxCell.value === 'object' ? JSON.stringify(sandboxCell.value) : String(sandboxCell.value || ''))
+                        : getCellDisplayValue(row.id, col);
 
                       return (
                         <div
                           key={col.id}
                           className={`flex-shrink-0 flex items-center px-2 font-mono text-sm border-r border-b ${
-                            rt(
-                              `border-gray-200 ${isEditing ? 'ring-2 ring-cyan-400 ring-inset bg-cyan-50/20' : isSelected ? 'ring-2 ring-cyan-400 ring-inset bg-cyan-50/10' : 'bg-white'}`,
-                              `border-zinc-800/60 ${isEditing ? 'ring-2 ring-cyan-400 ring-inset bg-white/10' : isSelected ? 'ring-2 ring-cyan-400 ring-inset bg-cyan-500/5' : ''}`
-                            )
+                            isSandboxData
+                              ? rt(
+                                  'border-amber-300 border-dashed bg-amber-50/30',
+                                  'border-amber-500/30 border-dashed bg-amber-500/5'
+                                )
+                              : rt(
+                                  `border-gray-200 ${isEditing ? 'ring-2 ring-cyan-400 ring-inset bg-cyan-50/20' : isSelected ? 'ring-2 ring-cyan-400 ring-inset bg-cyan-50/10' : 'bg-white'}`,
+                                  `border-zinc-800/60 ${isEditing ? 'ring-2 ring-cyan-400 ring-inset bg-white/10' : isSelected ? 'ring-2 ring-cyan-400 ring-inset bg-cyan-500/5' : ''}`
+                                )
                           }`}
+                          title={isSandboxData ? 'Sandbox data — not real' : undefined}
                           style={{ width: col.width || DEFAULT_COL_WIDTH }}
                           onClick={() => {
                             setSelectedCell({ rowId: row.id, colId: col.id });
@@ -3073,6 +3242,25 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={() => setAutoRunConfirmOpen(false)} className={`px-3 py-1.5 rounded-lg text-sm ${rt('text-gray-600 hover:bg-gray-100', 'text-zinc-400 hover:bg-zinc-800')}`}>Cancel</button>
               <button onClick={confirmAutoRun} className="px-3 py-1.5 rounded-lg text-sm bg-green-600 text-white hover:bg-green-700">Enable</button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Sandbox Export Warning Dialog */}
+        <Dialog open={sandboxExportWarn} onOpenChange={setSandboxExportWarn}>
+          <DialogContent className={rt('bg-white max-w-sm', 'bg-zinc-900 border-zinc-800 max-w-sm')}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-amber-400" />
+                <span className={rt('text-gray-900', 'text-zinc-100')}>Export contains sandbox data</span>
+              </DialogTitle>
+            </DialogHeader>
+            <p className={`text-sm ${rt('text-gray-600', 'text-zinc-400')}`}>
+              Some cells contain mock sandbox data that is not real. The exported CSV will include "SANDBOX" in the filename. Continue?
+            </p>
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setSandboxExportWarn(false)} className={`px-3 py-1.5 rounded-lg text-sm ${rt('text-gray-600 hover:bg-gray-100', 'text-zinc-400 hover:bg-zinc-800')}`}>Cancel</button>
+              <button onClick={() => { setSandboxExportWarn(false); doExportCSV(); }} className="px-3 py-1.5 rounded-lg text-sm bg-amber-600 text-white hover:bg-amber-700">Export Anyway</button>
             </div>
           </DialogContent>
         </Dialog>
