@@ -8,7 +8,7 @@ import {
   Table2, Clock, Hash, Upload, FileUp, Database, Pencil, Filter, XCircle,
   ArrowUp, ArrowDown, ArrowUpDown, ToggleLeft, ToggleRight, Layers, Globe,
   Calendar, DollarSign, Link, Mail, CheckSquare, ListOrdered, Merge, Send, Bot, Trash,
-  FlaskConical, ShieldAlert, RotateCcw
+  FlaskConical, ShieldAlert, RotateCcw, History, Camera, Undo2, ChevronRight, BookmarkPlus
 } from 'lucide-react';
 import {
   RaiseCard, RaiseCardContent, RaiseCardHeader, RaiseCardTitle,
@@ -301,6 +301,34 @@ function getFieldSortValue(rawValue, config) {
   }
 }
 
+function relativeTime(dateStr) {
+  const now = Date.now();
+  const d = new Date(dateStr).getTime();
+  const diff = Math.max(0, now - d);
+  const secs = Math.floor(diff / 1000);
+  if (secs < 60) return 'just now';
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
+const HISTORY_ACTION_ICONS = {
+  add_column: Plus, delete_column: Trash2, edit_column: Settings,
+  add_row: Plus, delete_row: Trash2, edit_cell: Edit2,
+  import_csv: Upload, import_nest: Database, run_all: Play,
+  run_column: Zap, clear_data: Trash, snapshot_restore: RotateCcw,
+};
+
+const HISTORY_ACTION_COLORS = {
+  add_column: 'text-cyan-400', delete_column: 'text-red-400', edit_column: 'text-blue-400',
+  add_row: 'text-cyan-400', delete_row: 'text-red-400', edit_cell: 'text-amber-400',
+  import_csv: 'text-green-400', import_nest: 'text-green-400', run_all: 'text-purple-400',
+  run_column: 'text-purple-400', clear_data: 'text-red-400', snapshot_restore: 'text-amber-400',
+};
+
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function RaiseEnrich() {
@@ -443,6 +471,17 @@ export default function RaiseEnrich() {
   const [sandboxCells, setSandboxCells] = useState({});
   const [sandboxExportWarn, setSandboxExportWarn] = useState(false);
 
+  // History & snapshots
+  const [historyPanelOpen, setHistoryPanelOpen] = useState(false);
+  const [historyEntries, setHistoryEntries] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [snapshots, setSnapshots] = useState([]);
+  const [snapshotDialogOpen, setSnapshotDialogOpen] = useState(false);
+  const [snapshotName, setSnapshotName] = useState('');
+  const [snapshotDesc, setSnapshotDesc] = useState('');
+  const [expandedHistory, setExpandedHistory] = useState({});
+  const historyGroupRef = useRef(null); // current group_id for batch ops
+
   // AI Chat assistant
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([]); // [{ role: 'user'|'assistant', content, actions?, timestamp }]
@@ -459,6 +498,173 @@ export default function RaiseEnrich() {
   // ─── Cell key helper ────────────────────────────────────────────────────
 
   const cellKey = useCallback((rowId, colId) => `${rowId}:${colId}`, []);
+
+  // ─── History tracking ─────────────────────────────────────────────────
+
+  const trackChange = useCallback(async (actionType, description, { beforeValue, afterValue, metadata, groupId } = {}) => {
+    if (!activeWorkspaceId) return;
+    const entry = {
+      workspace_id: activeWorkspaceId,
+      action_type: actionType,
+      description,
+      group_id: groupId || historyGroupRef.current || null,
+      before_value: beforeValue || null,
+      after_value: afterValue || null,
+      metadata: metadata || {},
+    };
+    // Optimistic local add
+    const tempId = crypto.randomUUID();
+    const localEntry = { ...entry, id: tempId, created_at: new Date().toISOString() };
+    setHistoryEntries(prev => [localEntry, ...prev].slice(0, 100));
+    // Persist
+    try {
+      await supabase.from('enrich_history').insert(entry);
+    } catch (err) {
+      console.error('History track error:', err);
+    }
+  }, [activeWorkspaceId]);
+
+  const loadHistory = useCallback(async () => {
+    if (!activeWorkspaceId) return;
+    setHistoryLoading(true);
+    try {
+      const { data } = await supabase
+        .from('enrich_history')
+        .select('*')
+        .eq('workspace_id', activeWorkspaceId)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      setHistoryEntries(data || []);
+    } catch (err) {
+      console.error('Load history error:', err);
+    }
+    setHistoryLoading(false);
+  }, [activeWorkspaceId]);
+
+  const loadSnapshots = useCallback(async () => {
+    if (!activeWorkspaceId) return;
+    try {
+      const { data } = await supabase
+        .from('enrich_snapshots')
+        .select('id, name, description, created_at')
+        .eq('workspace_id', activeWorkspaceId)
+        .order('created_at', { ascending: false });
+      setSnapshots(data || []);
+    } catch (err) {
+      console.error('Load snapshots error:', err);
+    }
+  }, [activeWorkspaceId]);
+
+  const createSnapshot = useCallback(async () => {
+    if (!snapshotName.trim() || !activeWorkspaceId) return;
+    try {
+      const snapshotData = {
+        columns: columns.map(c => ({ id: c.id, name: c.name, type: c.type, config: c.config, position: c.position, width: c.width })),
+        rows: rows.map(r => ({ id: r.id, position: r.position })),
+        cells: { ...cells },
+      };
+      await supabase.from('enrich_snapshots').insert({
+        workspace_id: activeWorkspaceId,
+        name: snapshotName.trim(),
+        description: snapshotDesc.trim() || null,
+        snapshot_data: snapshotData,
+      });
+      toast.success(`Snapshot "${snapshotName}" created`);
+      setSnapshotDialogOpen(false);
+      setSnapshotName('');
+      setSnapshotDesc('');
+      loadSnapshots();
+      trackChange('snapshot_create', `Created snapshot "${snapshotName}"`);
+    } catch (err) {
+      console.error('Create snapshot error:', err);
+      toast.error('Failed to create snapshot');
+    }
+  }, [snapshotName, snapshotDesc, activeWorkspaceId, columns, rows, cells, loadSnapshots, trackChange]);
+
+  const restoreSnapshot = useCallback(async (snapshotId) => {
+    if (!window.confirm('Restore this snapshot? Current data will be overwritten.')) return;
+    try {
+      const { data: snap } = await supabase.from('enrich_snapshots').select('*').eq('id', snapshotId).single();
+      if (!snap?.snapshot_data) { toast.error('Snapshot data not found'); return; }
+      const sd = snap.snapshot_data;
+
+      // Delete current data
+      const rowIds = rows.map(r => r.id);
+      if (rowIds.length) await supabase.from('enrich_cells').delete().in('row_id', rowIds);
+      await supabase.from('enrich_rows').delete().eq('workspace_id', activeWorkspaceId);
+      await supabase.from('enrich_columns').delete().eq('workspace_id', activeWorkspaceId);
+
+      // Restore columns
+      if (sd.columns?.length) {
+        await supabase.from('enrich_columns').insert(sd.columns.map(c => ({ ...c, workspace_id: activeWorkspaceId })));
+      }
+      // Restore rows
+      if (sd.rows?.length) {
+        await supabase.from('enrich_rows').insert(sd.rows.map(r => ({ ...r, workspace_id: activeWorkspaceId })));
+      }
+      // Restore cells — flatten cells object into array
+      const cellArr = [];
+      for (const [, cellData] of Object.entries(sd.cells || {})) {
+        if (cellData?.row_id && cellData?.column_id) {
+          cellArr.push({ row_id: cellData.row_id, column_id: cellData.column_id, value: cellData.value, status: cellData.status || 'complete' });
+        }
+      }
+      if (cellArr.length) {
+        // Batch insert cells in chunks
+        for (let i = 0; i < cellArr.length; i += 50) {
+          await supabase.from('enrich_cells').insert(cellArr.slice(i, i + 50));
+        }
+      }
+
+      toast.success(`Restored snapshot "${snap.name}"`);
+      trackChange('snapshot_restore', `Restored snapshot "${snap.name}"`);
+      loadWorkspaceDetail(activeWorkspaceId);
+    } catch (err) {
+      console.error('Restore snapshot error:', err);
+      toast.error('Failed to restore snapshot');
+    }
+  }, [activeWorkspaceId, rows, trackChange, loadWorkspaceDetail]);
+
+  const deleteSnapshot = useCallback(async (snapshotId) => {
+    if (!window.confirm('Delete this snapshot?')) return;
+    await supabase.from('enrich_snapshots').delete().eq('id', snapshotId);
+    loadSnapshots();
+    toast.success('Snapshot deleted');
+  }, [loadSnapshots]);
+
+  const revertChange = useCallback(async (entry) => {
+    if (!entry.before_value && !entry.after_value) {
+      toast.error('No revert data available for this change');
+      return;
+    }
+    const meta = entry.metadata || {};
+
+    if (entry.action_type === 'edit_cell' && meta.row_id && meta.column_id) {
+      const oldVal = entry.before_value?.v ?? '';
+      const key = cellKey(meta.row_id, meta.column_id);
+      setCells(prev => ({ ...prev, [key]: { ...prev[key], value: { v: oldVal }, status: 'complete' } }));
+      await supabase.from('enrich_cells').upsert({
+        row_id: meta.row_id, column_id: meta.column_id, value: { v: oldVal }, status: 'complete', updated_at: new Date().toISOString(),
+      }, { onConflict: 'row_id,column_id' });
+      toast.success('Cell reverted');
+      trackChange('edit_cell', `Reverted: ${entry.description}`, { beforeValue: entry.after_value, afterValue: entry.before_value, metadata: meta });
+    } else if (entry.action_type === 'delete_column' && entry.before_value) {
+      // Re-add deleted column
+      const colData = entry.before_value;
+      await supabase.from('enrich_columns').insert({ workspace_id: activeWorkspaceId, name: colData.name, type: colData.type, config: colData.config, position: colData.position, width: colData.width });
+      toast.success(`Column "${colData.name}" restored`);
+      loadWorkspaceDetail(activeWorkspaceId);
+      trackChange('add_column', `Restored column "${colData.name}" (undo)`);
+    } else if (entry.action_type === 'add_column' && meta.column_id) {
+      await supabase.from('enrich_cells').delete().eq('column_id', meta.column_id);
+      await supabase.from('enrich_columns').delete().eq('id', meta.column_id);
+      toast.success('Column addition reverted');
+      loadWorkspaceDetail(activeWorkspaceId);
+      trackChange('delete_column', `Reverted: ${entry.description}`);
+    } else {
+      toast.info('This change type cannot be individually reverted');
+    }
+  }, [cellKey, activeWorkspaceId, loadWorkspaceDetail, trackChange]);
 
   // ─── Load workspaces ───────────────────────────────────────────────────
 
@@ -605,8 +811,12 @@ export default function RaiseEnrich() {
   }, []);
 
   useEffect(() => {
-    if (activeWorkspaceId) loadWorkspaceDetail(activeWorkspaceId);
-  }, [activeWorkspaceId, loadWorkspaceDetail]);
+    if (activeWorkspaceId) {
+      loadWorkspaceDetail(activeWorkspaceId);
+      loadHistory();
+      loadSnapshots();
+    }
+  }, [activeWorkspaceId, loadWorkspaceDetail, loadHistory, loadSnapshots]);
 
   // ─── Update workspace name ─────────────────────────────────────────────
 
@@ -836,13 +1046,14 @@ export default function RaiseEnrich() {
 
       toast.dismiss(loadingToast);
       toast.success(`Imported ${allNewRows.length} rows with ${newCols.length} columns from ${file.name}`);
+      trackChange('import_csv', `Imported CSV "${file.name}" — ${allNewRows.length} rows, ${newCols.length} columns`, { metadata: { filename: file.name, rows: allNewRows.length, columns: newCols.length } });
       loadWorkspaceDetail(activeWorkspaceId);
     } catch (err) {
       toast.dismiss(loadingToast);
       console.error('CSV import error:', err);
       toast.error(`Failed to import CSV: ${err.message}`);
     }
-  }, [activeWorkspaceId, parseCSV, parseCSVRows, loadWorkspaceDetail]);
+  }, [activeWorkspaceId, parseCSV, parseCSVRows, loadWorkspaceDetail, trackChange]);
 
   // ─── Add column ────────────────────────────────────────────────────────
 
@@ -860,6 +1071,7 @@ export default function RaiseEnrich() {
       });
       if (error) throw error;
       toast.success('Column added');
+      trackChange('add_column', `Added column "${colName.trim()}" (${colType})`, { afterValue: { name: colName.trim(), type: colType, config: colConfig } });
       setColDialogOpen(false);
       setColName('');
       setColType('field');
@@ -870,7 +1082,7 @@ export default function RaiseEnrich() {
       console.error('Error adding column:', err);
       toast.error('Failed to add column');
     }
-  }, [colName, colType, colConfig, columns.length, activeWorkspaceId, loadWorkspaceDetail]);
+  }, [colName, colType, colConfig, columns.length, activeWorkspaceId, loadWorkspaceDetail, trackChange]);
 
   // ─── Delete column ─────────────────────────────────────────────────────
 
@@ -881,12 +1093,13 @@ export default function RaiseEnrich() {
       await supabase.from('enrich_cells').delete().eq('column_id', colId);
       await supabase.from('enrich_columns').delete().eq('id', colId);
       toast.success('Column deleted');
+      trackChange('delete_column', `Deleted column "${col?.name}"`, { beforeValue: col ? { name: col.name, type: col.type, config: col.config, position: col.position, width: col.width } : null, metadata: { column_id: colId } });
       loadWorkspaceDetail(activeWorkspaceId);
     } catch (err) {
       console.error('Error deleting column:', err);
       toast.error('Failed to delete column');
     }
-  }, [activeWorkspaceId, loadWorkspaceDetail, columns]);
+  }, [activeWorkspaceId, loadWorkspaceDetail, columns, trackChange]);
 
   // ─── Cell value helpers ────────────────────────────────────────────────
 
@@ -963,6 +1176,7 @@ export default function RaiseEnrich() {
   const saveCell = useCallback(async (rowId, colId, value) => {
     const key = cellKey(rowId, colId);
     const existing = cells[key];
+    const oldValue = existing?.value?.v ?? (typeof existing?.value === 'object' ? JSON.stringify(existing?.value) : existing?.value);
     const newCell = {
       row_id: rowId,
       column_id: colId,
@@ -980,11 +1194,20 @@ export default function RaiseEnrich() {
         const { data } = await supabase.from('enrich_cells').upsert(newCell, { onConflict: 'row_id,column_id' }).select().single();
         if (data) setCells(prev => ({ ...prev, [key]: data }));
       }
+      // Track manual cell edits
+      const col = columns.find(c => c.id === colId);
+      const rowIdx = rows.findIndex(r => r.id === rowId);
+      if (col && oldValue !== value) {
+        trackChange('edit_cell', `Edited row ${rowIdx + 1}, column "${col.name}"`, {
+          beforeValue: { v: oldValue || '' }, afterValue: { v: value },
+          metadata: { row_id: rowId, column_id: colId, column_name: col.name, row_index: rowIdx + 1 },
+        });
+      }
     } catch (err) {
       console.error('Error saving cell:', err);
       toast.error('Failed to save cell');
     }
-  }, [cells, cellKey]);
+  }, [cells, cellKey, columns, rows, trackChange]);
 
   // ─── Sandbox mock data generator ──────────────────────────────────────
 
@@ -1457,21 +1680,23 @@ export default function RaiseEnrich() {
   // ─── Run all columns ───────────────────────────────────────────────────
 
   const runAllColumns = useCallback(async () => {
+    const enrichCols = columns.filter(c => c.type === 'enrichment' || c.type === 'ai' || c.type === 'waterfall' || c.type === 'http');
+    if (enrichCols.length === 0) return;
+    const gId = `run_all_${Date.now()}`;
+    historyGroupRef.current = gId;
+    trackChange('run_all', `Run All — ${enrichCols.length} column${enrichCols.length > 1 ? 's' : ''} × ${rows.length} rows${sandboxMode ? ' (sandbox)' : ''}`, { groupId: gId, metadata: { column_count: enrichCols.length, row_count: rows.length, sandbox: sandboxMode } });
     if (sandboxMode) {
+      for (const col of enrichCols) await runSandboxColumn(col);
+    } else {
       for (const col of columns) {
-        if (col.type === 'enrichment' || col.type === 'ai' || col.type === 'waterfall' || col.type === 'http') {
-          await runSandboxColumn(col);
-        }
+        if (col.type === 'enrichment') await runEnrichmentColumn(col);
+        else if (col.type === 'ai') await runAIColumn(col);
+        else if (col.type === 'waterfall') await runWaterfallColumn(col);
+        else if (col.type === 'http') await runHTTPColumn(col);
       }
-      return;
     }
-    for (const col of columns) {
-      if (col.type === 'enrichment') await runEnrichmentColumn(col);
-      else if (col.type === 'ai') await runAIColumn(col);
-      else if (col.type === 'waterfall') await runWaterfallColumn(col);
-      else if (col.type === 'http') await runHTTPColumn(col);
-    }
-  }, [columns, sandboxMode, runSandboxColumn, runEnrichmentColumn, runAIColumn, runWaterfallColumn, runHTTPColumn]);
+    historyGroupRef.current = null;
+  }, [columns, rows.length, sandboxMode, runSandboxColumn, runEnrichmentColumn, runAIColumn, runWaterfallColumn, runHTTPColumn, trackChange]);
 
   const convertSandboxToLive = useCallback(async () => {
     setSandboxCells({});
@@ -2587,6 +2812,14 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               </RaiseButton>
               <RaiseButton variant="ghost" size="sm" onClick={exportCSV}>
                 <Download className="w-3.5 h-3.5 mr-1" /> CSV
+              </RaiseButton>
+              <RaiseButton variant="ghost" size="sm" onClick={() => { setHistoryPanelOpen(prev => !prev); if (!historyPanelOpen) { loadHistory(); loadSnapshots(); } }} className="relative">
+                <History className="w-3.5 h-3.5 mr-1" /> History
+                {historyEntries.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500 text-[10px] font-bold text-white flex items-center justify-center">
+                    {historyEntries.length > 99 ? '99' : historyEntries.length}
+                  </span>
+                )}
               </RaiseButton>
               <RaiseButton variant="ghost" size="sm" onClick={() => {
                 if (!window.confirm(`Delete workspace "${wsName}" and all its data? This cannot be undone.`)) return;
@@ -4140,6 +4373,176 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
             </div>
           </DialogContent>
         </Dialog>
+        {/* History Panel */}
+        <AnimatePresence>
+          {historyPanelOpen && (
+            <motion.div
+              initial={{ x: '-100%', opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: '-100%', opacity: 0 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 300 }}
+              className={`fixed top-0 left-0 h-full w-[380px] z-40 flex flex-col shadow-2xl ${rt('bg-white border-r border-gray-200', 'bg-zinc-950 border-r border-zinc-800')}`}
+            >
+              {/* Header */}
+              <div className={`flex items-center justify-between px-4 py-3 border-b ${rt('border-gray-200', 'border-zinc-800')}`}>
+                <div className="flex items-center gap-2">
+                  <History className="w-4 h-4 text-blue-400" />
+                  <h3 className={`text-sm font-semibold ${rt('text-gray-900', 'text-white')}`}>History & Snapshots</h3>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button onClick={() => setSnapshotDialogOpen(true)} className={`p-1.5 rounded-lg transition-colors ${rt('hover:bg-gray-100 text-gray-600', 'hover:bg-zinc-800 text-zinc-400')}`} title="Create snapshot">
+                    <Camera className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setHistoryPanelOpen(false)} className={`p-1.5 rounded-lg transition-colors ${rt('hover:bg-gray-100', 'hover:bg-zinc-800')}`}>
+                    <X className={`w-4 h-4 ${rt('text-gray-500', 'text-zinc-400')}`} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto">
+                {/* Snapshots section */}
+                {snapshots.length > 0 && (
+                  <div className={`px-4 py-3 border-b ${rt('border-gray-100', 'border-zinc-800/50')}`}>
+                    <h4 className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${rt('text-gray-500', 'text-zinc-500')}`}>Snapshots</h4>
+                    <div className="space-y-1.5">
+                      {snapshots.map(snap => (
+                        <div key={snap.id} className={`flex items-center gap-2 p-2 rounded-lg ${rt('bg-gray-50 hover:bg-gray-100', 'bg-zinc-900 hover:bg-zinc-800/80')} transition-colors group`}>
+                          <BookmarkPlus className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-xs font-medium truncate ${rt('text-gray-800', 'text-zinc-200')}`}>{snap.name}</div>
+                            {snap.description && <div className="text-[10px] text-zinc-500 truncate">{snap.description}</div>}
+                            <div className="text-[10px] text-zinc-500">{relativeTime(snap.created_at)}</div>
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                            <button onClick={() => restoreSnapshot(snap.id)} className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20" title="Restore">
+                              <RotateCcw className="w-3 h-3" />
+                            </button>
+                            <button onClick={() => deleteSnapshot(snap.id)} className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20" title="Delete">
+                              <Trash className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Create snapshot CTA when empty */}
+                {snapshots.length === 0 && (
+                  <div className={`px-4 py-3 border-b ${rt('border-gray-100', 'border-zinc-800/50')}`}>
+                    <button onClick={() => setSnapshotDialogOpen(true)} className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-dashed text-xs ${rt('border-gray-300 text-gray-500 hover:border-blue-400 hover:text-blue-600', 'border-zinc-700 text-zinc-500 hover:border-blue-500/50 hover:text-blue-400')} transition-colors`}>
+                      <Camera className="w-3.5 h-3.5" /> Create your first snapshot
+                    </button>
+                  </div>
+                )}
+
+                {/* History entries */}
+                <div className="px-4 py-3">
+                  <h4 className={`text-[11px] font-semibold uppercase tracking-wider mb-2 ${rt('text-gray-500', 'text-zinc-500')}`}>Changes</h4>
+                  {historyLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-5 h-5 animate-spin text-zinc-500" />
+                    </div>
+                  ) : historyEntries.length === 0 ? (
+                    <div className={`text-center py-8 text-xs ${rt('text-gray-400', 'text-zinc-500')}`}>
+                      No changes recorded yet
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {historyEntries.map(entry => {
+                        const ActionIcon = HISTORY_ACTION_ICONS[entry.action_type] || Edit2;
+                        const iconColor = HISTORY_ACTION_COLORS[entry.action_type] || 'text-zinc-400';
+                        const isExpanded = expandedHistory[entry.id];
+                        const hasDetails = entry.before_value || entry.after_value;
+                        const canRevert = entry.action_type === 'edit_cell' || entry.action_type === 'delete_column' || entry.action_type === 'add_column';
+
+                        return (
+                          <div key={entry.id} className={`rounded-lg border transition-colors ${rt('border-gray-100 hover:border-gray-200', 'border-zinc-800/50 hover:border-zinc-700')}`}>
+                            <div className="flex items-start gap-2 p-2.5 cursor-pointer" onClick={() => hasDetails && setExpandedHistory(prev => ({ ...prev, [entry.id]: !prev[entry.id] }))}>
+                              <div className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5 ${rt('bg-gray-100', 'bg-zinc-800')}`}>
+                                <ActionIcon className={`w-3 h-3 ${iconColor}`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-xs leading-snug ${rt('text-gray-700', 'text-zinc-300')}`}>{entry.description}</p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[10px] text-zinc-500">{relativeTime(entry.created_at)}</span>
+                                  {entry.group_id && <span className="text-[9px] px-1 py-0.5 rounded bg-purple-500/10 text-purple-400">batch</span>}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                {canRevert && (
+                                  <button
+                                    onClick={e => { e.stopPropagation(); revertChange(entry); }}
+                                    className={`p-1 rounded transition-colors ${rt('hover:bg-gray-100 text-gray-400 hover:text-gray-600', 'hover:bg-zinc-800 text-zinc-600 hover:text-zinc-300')}`}
+                                    title="Undo this change"
+                                  >
+                                    <Undo2 className="w-3 h-3" />
+                                  </button>
+                                )}
+                                {hasDetails && (
+                                  <ChevronRight className={`w-3 h-3 text-zinc-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                                )}
+                              </div>
+                            </div>
+                            {/* Expanded detail */}
+                            {isExpanded && hasDetails && (
+                              <div className={`px-2.5 pb-2.5 ml-8`}>
+                                <div className={`rounded-md p-2 text-[11px] font-mono space-y-1 ${rt('bg-gray-50', 'bg-zinc-900')}`}>
+                                  {entry.before_value && (
+                                    <div className="flex gap-2">
+                                      <span className="text-red-400 flex-shrink-0">−</span>
+                                      <span className={rt('text-gray-600', 'text-zinc-400')}>{typeof entry.before_value === 'object' ? (entry.before_value.v ?? JSON.stringify(entry.before_value)) : String(entry.before_value)}</span>
+                                    </div>
+                                  )}
+                                  {entry.after_value && (
+                                    <div className="flex gap-2">
+                                      <span className="text-green-400 flex-shrink-0">+</span>
+                                      <span className={rt('text-gray-600', 'text-zinc-400')}>{typeof entry.after_value === 'object' ? (entry.after_value.v ?? JSON.stringify(entry.after_value)) : String(entry.after_value)}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Snapshot Create Dialog */}
+        <Dialog open={snapshotDialogOpen} onOpenChange={setSnapshotDialogOpen}>
+          <DialogContent className={rt('bg-white max-w-sm', 'bg-zinc-900 border-zinc-800 max-w-sm')}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Camera className="w-5 h-5 text-blue-400" />
+                <span className={rt('text-gray-900', 'text-zinc-100')}>Create Snapshot</span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 mt-2">
+              <div>
+                <Label className={rt('text-gray-700', 'text-zinc-300')}>Name</Label>
+                <Input value={snapshotName} onChange={e => setSnapshotName(e.target.value)} placeholder="e.g. Before enrichment run" className={rt('', 'bg-zinc-800 border-zinc-700 text-white')} />
+              </div>
+              <div>
+                <Label className={rt('text-gray-700', 'text-zinc-300')}>Description (optional)</Label>
+                <Textarea value={snapshotDesc} onChange={e => setSnapshotDesc(e.target.value)} placeholder="What state does this capture?" rows={2} className={rt('', 'bg-zinc-800 border-zinc-700 text-white')} />
+              </div>
+              <div className={`rounded-lg p-2.5 ${rt('bg-gray-50', 'bg-zinc-800/50')}`}>
+                <p className="text-[11px] text-zinc-500">This will save the current state: {columns.length} columns, {rows.length} rows, {Object.keys(cells).length} cells</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setSnapshotDialogOpen(false)} className={`px-3 py-1.5 rounded-lg text-sm ${rt('text-gray-600 hover:bg-gray-100', 'text-zinc-400 hover:bg-zinc-800')}`}>Cancel</button>
+              <button onClick={createSnapshot} disabled={!snapshotName.trim()} className={`px-3 py-1.5 rounded-lg text-sm bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40`}>Create Snapshot</button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* AI Chat Floating Button */}
         <button
           onClick={() => { setChatOpen(prev => !prev); setTimeout(() => chatInputRef.current?.focus(), 100); }}
