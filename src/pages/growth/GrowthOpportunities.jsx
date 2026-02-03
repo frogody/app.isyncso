@@ -356,7 +356,7 @@ const OpportunityCard = ({ opportunity, onDragStart, onDragEnd, isDragging, onCl
       className={`
         bg-zinc-800 border border-zinc-700 rounded-lg p-4 cursor-grab active:cursor-grabbing
         hover:border-zinc-600 transition-colors group
-        ${isDragging ? "opacity-50 ring-2 ring-cyan-500 shadow-xl scale-[1.02]" : ""}
+        ${isDragging ? "opacity-50 ring-2 ring-indigo-500 shadow-xl scale-[1.02]" : ""}
       `}
       whileHover={{ y: -2 }}
       initial={{ opacity: 0, y: 20 }}
@@ -405,7 +405,7 @@ const OpportunityCard = ({ opportunity, onDragStart, onDragEnd, isDragging, onCl
           </div>
         </div>
         {opportunity.nextAction && (
-          <div className="flex items-center gap-1 text-cyan-400">
+          <div className="flex items-center gap-1 text-indigo-400">
             <CalendarClock className="w-3 h-3" />
             <span className="truncate max-w-[80px]">{formatDate(opportunity.nextActionDate)}</span>
           </div>
@@ -446,7 +446,7 @@ const KanbanColumn = ({ stage, opportunities, onDrop, draggedOpp, onCardClick, o
       className={`
         flex-shrink-0 w-[300px] bg-zinc-900/30 rounded-xl p-4 flex flex-col
         transition-all duration-200
-        ${isOver ? "bg-cyan-500/10 border-2 border-dashed border-cyan-500" : "border border-zinc-800"}
+        ${isOver ? "bg-indigo-500/10 border-2 border-dashed border-indigo-500" : "border border-zinc-800"}
       `}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -516,7 +516,7 @@ const LostReasonModal = ({ isOpen, onClose, onConfirm }) => {
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="e.g., Budget constraints, Chose competitor, Not a priority..."
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
           rows={3}
         />
 
@@ -624,7 +624,7 @@ const OpportunityModal = ({ opportunity, isOpen, onClose, onUpdate, onDelete }) 
                   className={`
                     flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
                     ${activeTab === tab.id
-                      ? "bg-cyan-500/20 text-cyan-400"
+                      ? "bg-indigo-500/20 text-indigo-400"
                       : "text-zinc-400 hover:text-white hover:bg-zinc-800"
                     }
                   `}
@@ -688,7 +688,7 @@ const OpportunityModal = ({ opportunity, isOpen, onClose, onUpdate, onDelete }) 
                   <Zap className="w-5 h-5 text-amber-400 flex-shrink-0" />
                   <div>
                     <p className="text-white">{opportunity.signal}</p>
-                    <button className="text-sm text-cyan-400 hover:text-cyan-300 mt-2 flex items-center gap-1">
+                    <button className="text-sm text-indigo-400 hover:text-indigo-300 mt-2 flex items-center gap-1">
                       View in Customer Signals <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -713,7 +713,7 @@ const OpportunityModal = ({ opportunity, isOpen, onClose, onUpdate, onDelete }) 
                             <div className="flex items-center gap-2">
                               <span className="font-medium text-white">{stageConfig?.name || entry.stage}</span>
                               {!entry.exitedAt && (
-                                <span className="text-xs bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded">Current</span>
+                                <span className="text-xs bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded">Current</span>
                               )}
                             </div>
                             <div className="text-xs text-zinc-500 mt-1">
@@ -736,7 +736,7 @@ const OpportunityModal = ({ opportunity, isOpen, onClose, onUpdate, onDelete }) 
                 <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Activity Feed</h3>
                 <button
                   onClick={() => setShowActivityForm(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   Add Activity
@@ -759,7 +759,7 @@ const OpportunityModal = ({ opportunity, isOpen, onClose, onUpdate, onDelete }) 
                           className={`
                             flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors
                             ${newActivity.type === type
-                              ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
+                              ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
                               : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"
                             }
                           `}
@@ -774,7 +774,7 @@ const OpportunityModal = ({ opportunity, isOpen, onClose, onUpdate, onDelete }) 
                     value={newActivity.description}
                     onChange={(e) => setNewActivity({ ...newActivity, description: e.target.value })}
                     placeholder="Add a note, log a call, or record an email..."
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                     rows={3}
                   />
                   <div className="flex justify-end gap-2 mt-3">
@@ -787,7 +787,7 @@ const OpportunityModal = ({ opportunity, isOpen, onClose, onUpdate, onDelete }) 
                     <button
                       onClick={handleAddActivity}
                       disabled={!newActivity.description.trim()}
-                      className="px-3 py-1.5 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg disabled:opacity-50 transition-colors"
+                      className="px-3 py-1.5 text-sm bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg disabled:opacity-50 transition-colors"
                     >
                       Add
                     </button>
@@ -829,7 +829,7 @@ const OpportunityModal = ({ opportunity, isOpen, onClose, onUpdate, onDelete }) 
                 <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Scheduled Actions</h3>
                 <button
                   onClick={() => setShowActionForm(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   Add Action
@@ -837,11 +837,11 @@ const OpportunityModal = ({ opportunity, isOpen, onClose, onUpdate, onDelete }) 
               </div>
 
               {opportunity.nextAction && (
-                <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-4">
+                <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-cyan-500/20 rounded-lg">
-                        <CalendarClock className="w-5 h-5 text-cyan-400" />
+                      <div className="p-2 bg-indigo-500/20 rounded-lg">
+                        <CalendarClock className="w-5 h-5 text-indigo-400" />
                       </div>
                       <div>
                         <p className="font-medium text-white">{opportunity.nextAction}</p>
@@ -1026,7 +1026,7 @@ const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer }
                 value={customerSearch}
                 onChange={(e) => setCustomerSearch(e.target.value)}
                 placeholder="Search customers..."
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               {customerSearch && filteredCustomers.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-zinc-800 border border-zinc-700 rounded-lg max-h-40 overflow-y-auto z-10">
@@ -1086,7 +1086,7 @@ const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer }
                 value={formData.value}
                 onChange={(e) => setFormData({ ...formData, value: e.target.value })}
                 placeholder="25000"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-10 pr-4 py-2.5 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-10 pr-4 py-2.5 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required
               />
             </div>
@@ -1102,7 +1102,7 @@ const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer }
                 className={`
                   flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
                   ${formData.source === "manual"
-                    ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
+                    ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
                     : "bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700"
                   }
                 `}
@@ -1139,7 +1139,7 @@ const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer }
                 })
               }
               placeholder={formData.source === "manual" ? "Add any relevant notes..." : "Describe the triggering signal..."}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
               rows={3}
             />
           </div>
@@ -1150,7 +1150,7 @@ const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer }
             <select
               value={formData.ownerId}
               onChange={(e) => setFormData({ ...formData, ownerId: e.target.value })}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="">Select owner...</option>
               {MOCK_TEAM.map((user) => (
@@ -1171,7 +1171,7 @@ const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer }
             <button
               type="submit"
               disabled={!formData.customerId || !formData.value}
-              className="px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              className="px-4 py-2 text-sm bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Create Opportunity
@@ -1253,7 +1253,7 @@ const FiltersPanel = ({ filters, setFilters, isOpen, onClose }) => {
           <select
             value={filters.owner || ""}
             onChange={(e) => setFilters({ ...filters, owner: e.target.value || null })}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="">All Owners</option>
             {MOCK_TEAM.map((user) => (
@@ -1270,7 +1270,7 @@ const FiltersPanel = ({ filters, setFilters, isOpen, onClose }) => {
               onClick={() => setFilters({ ...filters, myOpportunities: !filters.myOpportunities })}
               className={`
                 w-full px-3 py-2 rounded-lg text-sm text-left transition-colors flex items-center gap-2
-                ${filters.myOpportunities ? "bg-cyan-500/20 text-cyan-400" : "bg-zinc-800 text-zinc-400 hover:text-white"}
+                ${filters.myOpportunities ? "bg-indigo-500/20 text-indigo-400" : "bg-zinc-800 text-zinc-400 hover:text-white"}
               `}
             >
               <User className="w-4 h-4" />
@@ -1470,7 +1470,7 @@ export default function GrowthOpportunities() {
           <div className="flex items-center gap-2 text-sm text-zinc-400 mb-3">
             <button
               onClick={() => navigate('/growth/dashboard')}
-              className="flex items-center gap-1.5 hover:text-cyan-400 transition-colors"
+              className="flex items-center gap-1.5 hover:text-indigo-400 transition-colors"
             >
               <Rocket className="w-4 h-4" />
               Growth
@@ -1495,7 +1495,7 @@ export default function GrowthOpportunities() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search customers..."
-                  className="bg-zinc-800 border border-zinc-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 w-64"
+                  className="bg-zinc-800 border border-zinc-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64"
                 />
               </div>
 
@@ -1506,7 +1506,7 @@ export default function GrowthOpportunities() {
                   className={`
                     flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
                     ${showFilters || activeFiltersCount > 0
-                      ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
+                      ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
                       : "bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700"
                     }
                   `}
@@ -1514,7 +1514,7 @@ export default function GrowthOpportunities() {
                   <Filter className="w-4 h-4" />
                   Filters
                   {activeFiltersCount > 0 && (
-                    <span className="w-5 h-5 rounded-full bg-cyan-500 text-white text-xs flex items-center justify-center">
+                    <span className="w-5 h-5 rounded-full bg-indigo-500 text-white text-xs flex items-center justify-center">
                       {activeFiltersCount}
                     </span>
                   )}
@@ -1534,7 +1534,7 @@ export default function GrowthOpportunities() {
               {/* Create Button */}
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg text-sm font-medium transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Create Opportunity

@@ -58,10 +58,10 @@ const GlassCard = ({ children, className = '' }) => (
 function StatCard({ icon: Icon, label, value, trend, trendUp }) {
   return (
     <motion.div variants={itemVariants}>
-      <GlassCard className="p-4 hover:border-cyan-500/30 transition-all">
+      <GlassCard className="p-4 hover:border-indigo-500/30 transition-all">
         <div className="flex items-center justify-between mb-2">
-          <div className="p-2 rounded-lg bg-cyan-500/10">
-            <Icon className="w-5 h-5 text-cyan-400" />
+          <div className="p-2 rounded-lg bg-indigo-500/10">
+            <Icon className="w-5 h-5 text-indigo-400" />
           </div>
           {trend && (
             <Badge
@@ -98,14 +98,14 @@ function ActionCard({
 
   return (
     <motion.div variants={itemVariants} className="h-full">
-      <GlassCard className="p-6 h-full flex flex-col hover:border-cyan-500/30 transition-all group">
+      <GlassCard className="p-6 h-full flex flex-col hover:border-indigo-500/30 transition-all group">
         {/* Header */}
         <div className="flex items-start gap-4 mb-4">
           <div className={`p-3 rounded-xl ${iconColor}`}>
             <Icon className="w-6 h-6" />
           </div>
           <div className="flex-1">
-            <h3 className="text-xl font-semibold text-white group-hover:text-cyan-400 transition-colors">
+            <h3 className="text-xl font-semibold text-white group-hover:text-indigo-400 transition-colors">
               {title}
             </h3>
             <p className="text-sm text-zinc-400 mt-1">{description}</p>
@@ -126,14 +126,14 @@ function ActionCard({
         <div className="space-y-2">
           <Button
             onClick={() => navigate(ctaLink)}
-            className="w-full bg-cyan-600 hover:bg-cyan-500 text-white"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white"
           >
             {ctaText}
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
           <button
             onClick={() => navigate(secondaryLink)}
-            className="w-full text-sm text-zinc-400 hover:text-cyan-400 transition-colors flex items-center justify-center gap-1 py-2"
+            className="w-full text-sm text-zinc-400 hover:text-indigo-400 transition-colors flex items-center justify-center gap-1 py-2"
           >
             {secondaryText}
             <ChevronRight className="w-4 h-4" />
@@ -155,8 +155,8 @@ function QuickActionCard({ icon: Icon, label, description, link }) {
       onClick={() => navigate(link)}
       className="cursor-pointer"
     >
-      <GlassCard className="p-4 hover:border-cyan-500/30 transition-all">
-        <Icon className="w-5 h-5 text-cyan-400 mb-2" />
+      <GlassCard className="p-4 hover:border-indigo-500/30 transition-all">
+        <Icon className="w-5 h-5 text-indigo-400 mb-2" />
         <p className="text-sm font-medium text-white">{label}</p>
         <p className="text-xs text-zinc-500">{description}</p>
       </GlassCard>
@@ -265,7 +265,7 @@ export default function GrowthDashboard() {
             description: '150 prospects reached',
             created_at: new Date(Date.now() - 1800000),
             icon: Mail,
-            iconBg: 'bg-cyan-500/10 text-cyan-400',
+            iconBg: 'bg-indigo-500/10 text-indigo-400',
           },
           {
             id: 2,
@@ -317,7 +317,7 @@ export default function GrowthDashboard() {
   return (
     <div className="min-h-screen bg-black">
       <motion.div
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        className="w-full px-6 lg:px-8 xl:px-12 py-8"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -326,8 +326,8 @@ export default function GrowthDashboard() {
         <motion.div variants={itemVariants} className="mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
-                <Rocket className="w-8 h-8 text-cyan-400" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/30">
+                <Rocket className="w-8 h-8 text-indigo-400" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-white">Growth</h1>
@@ -352,7 +352,7 @@ export default function GrowthDashboard() {
         <motion.div variants={itemVariants} className="grid md:grid-cols-2 gap-6 mb-8">
           <ActionCard
             icon={UserPlus}
-            iconColor="bg-cyan-500/10 text-cyan-400"
+            iconColor="bg-indigo-500/10 text-indigo-400"
             title="Find New Customers"
             description="Research prospects, find correlations with your product, and launch outreach campaigns"
             stats={[
@@ -444,12 +444,12 @@ export default function GrowthDashboard() {
           <GlassCard className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Activity className="w-5 h-5 text-cyan-400" />
+                <Activity className="w-5 h-5 text-indigo-400" />
                 <h2 className="text-lg font-semibold text-white">Recent Activity</h2>
               </div>
               <button
                 onClick={() => navigate('/growth/activity')}
-                className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1"
+                className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
               >
                 View all
                 <ChevronRight className="w-4 h-4" />

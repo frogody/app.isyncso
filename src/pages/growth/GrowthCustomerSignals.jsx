@@ -290,7 +290,7 @@ function SignalBadge({ type, count, onClick, expanded }) {
     <button
       onClick={onClick}
       className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-all ${style.bg} ${style.text} ${style.border} ${
-        expanded ? 'ring-2 ring-offset-2 ring-offset-black ring-cyan-500' : 'hover:opacity-80'
+        expanded ? 'ring-2 ring-offset-2 ring-offset-black ring-indigo-500' : 'hover:opacity-80'
       }`}
     >
       <Icon className="w-3.5 h-3.5" />
@@ -345,8 +345,8 @@ function SignalConfigPanel({ config, onChange, isOpen, onToggle }) {
         className="w-full flex items-center justify-between p-4 hover:bg-zinc-800/50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-cyan-500/20">
-            <Settings className="w-5 h-5 text-cyan-400" />
+          <div className="p-2 rounded-lg bg-indigo-500/20">
+            <Settings className="w-5 h-5 text-indigo-400" />
           </div>
           <div className="text-left">
             <h3 className="font-medium text-white">Signal Configuration</h3>
@@ -468,7 +468,7 @@ function CustomerRow({ customer, onSelect, onExpand, expandedSignalType, onCreat
       <div className="flex items-center gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 transition-all">
         {/* Company info */}
         <div className="flex items-center gap-3 w-64 min-w-0">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center text-cyan-400 font-semibold">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-violet-500/20 flex items-center justify-center text-indigo-400 font-semibold">
             {customer.name.charAt(0)}
           </div>
           <div className="min-w-0">
@@ -616,7 +616,7 @@ function CustomerDrawer({ customer, isOpen, onClose }) {
             {/* Header */}
             <div className="flex items-start justify-between p-6 border-b border-zinc-800">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center text-2xl text-cyan-400 font-semibold">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 flex items-center justify-center text-2xl text-indigo-400 font-semibold">
                   {customer.name.charAt(0)}
                 </div>
                 <div>
@@ -627,7 +627,7 @@ function CustomerDrawer({ customer, isOpen, onClose }) {
                       href={`https://${customer.domain}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-cyan-400 hover:underline flex items-center gap-1"
+                      className="text-sm text-indigo-400 hover:underline flex items-center gap-1"
                     >
                       {customer.domain}
                       <ExternalLink className="w-3 h-3" />
@@ -762,7 +762,7 @@ function CustomerDrawer({ customer, isOpen, onClose }) {
                       placeholder="Add internal notes about this customer..."
                       className="bg-zinc-800 border-zinc-700 min-h-[100px]"
                     />
-                    <Button className="w-full bg-cyan-600 hover:bg-cyan-500">
+                    <Button className="w-full bg-indigo-600 hover:bg-indigo-500">
                       <StickyNote className="w-4 h-4 mr-2" />
                       Save Note
                     </Button>
@@ -773,7 +773,7 @@ function CustomerDrawer({ customer, isOpen, onClose }) {
 
             {/* Footer Actions */}
             <div className="p-6 border-t border-zinc-800 space-y-3">
-              <Button className="w-full bg-cyan-600 hover:bg-cyan-500">
+              <Button className="w-full bg-indigo-600 hover:bg-indigo-500">
                 <Target className="w-4 h-4 mr-2" />
                 Create Expansion Opportunity
               </Button>
@@ -829,7 +829,7 @@ function AddCustomerModal({ isOpen, onClose, onAdd }) {
       <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-2">
-            <Plus className="w-5 h-5 text-cyan-400" />
+            <Plus className="w-5 h-5 text-indigo-400" />
             Add Customers
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
@@ -900,7 +900,7 @@ function AddCustomerModal({ isOpen, onClose, onAdd }) {
                 className="bg-zinc-800 border-zinc-700"
               />
             </div>
-            <Button onClick={handleManualAdd} className="w-full bg-cyan-600 hover:bg-cyan-500">
+            <Button onClick={handleManualAdd} className="w-full bg-indigo-600 hover:bg-indigo-500">
               <Plus className="w-4 h-4 mr-2" />
               Add Customer
             </Button>
@@ -917,7 +917,7 @@ function AddCustomerModal({ isOpen, onClose, onAdd }) {
               </Button>
             </div>
             <div className="mt-4 flex justify-center">
-              <Button variant="ghost" className="text-cyan-400">
+              <Button variant="ghost" className="text-indigo-400">
                 <Download className="w-4 h-4 mr-2" />
                 Download Template
               </Button>
@@ -1073,7 +1073,7 @@ export default function GrowthCustomerSignals() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
       </div>
     );
   }
@@ -1091,12 +1091,12 @@ export default function GrowthCustomerSignals() {
 
   return (
     <div className="min-h-screen bg-black">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-6 lg:px-8 xl:px-12 py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-zinc-400 mb-4">
           <button
             onClick={() => navigate('/growth/dashboard')}
-            className="flex items-center gap-1.5 hover:text-cyan-400 transition-colors"
+            className="flex items-center gap-1.5 hover:text-indigo-400 transition-colors"
           >
             <Rocket className="w-4 h-4" />
             Growth
@@ -1108,7 +1108,7 @@ export default function GrowthCustomerSignals() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-green-500/20 to-cyan-500/20 border border-green-500/30">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-green-500/20 to-indigo-500/20 border border-green-500/30">
               <TrendingUp className="w-8 h-8 text-green-400" />
             </div>
             <div>
@@ -1129,7 +1129,7 @@ export default function GrowthCustomerSignals() {
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh Signals
             </Button>
-            <Button onClick={() => setShowAddModal(true)} className="bg-cyan-600 hover:bg-cyan-500">
+            <Button onClick={() => setShowAddModal(true)} className="bg-indigo-600 hover:bg-indigo-500">
               <Plus className="w-4 h-4 mr-2" />
               Add Customers
             </Button>
@@ -1140,7 +1140,7 @@ export default function GrowthCustomerSignals() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
             <div className="flex items-center gap-2 mb-2">
-              <Users className="w-5 h-5 text-cyan-400" />
+              <Users className="w-5 h-5 text-indigo-400" />
               <span className="text-sm text-zinc-400">Customers</span>
             </div>
             <p className="text-2xl font-bold text-white">{customers.length}</p>
@@ -1236,7 +1236,7 @@ export default function GrowthCustomerSignals() {
             <p className="text-zinc-400 mb-6 max-w-md mx-auto">
               Import your customer list to start monitoring for expansion signals and upsell opportunities.
             </p>
-            <Button onClick={() => setShowAddModal(true)} className="bg-cyan-600 hover:bg-cyan-500">
+            <Button onClick={() => setShowAddModal(true)} className="bg-indigo-600 hover:bg-indigo-500">
               <Plus className="w-4 h-4 mr-2" />
               Add Your First Customer
             </Button>

@@ -134,7 +134,7 @@ function ProspectRow({ prospect, isSelected, onToggle }) {
     <div
       className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
         isSelected
-          ? 'bg-cyan-500/10 border border-cyan-500/30'
+          ? 'bg-indigo-500/10 border border-indigo-500/30'
           : 'bg-zinc-800/50 border border-transparent hover:bg-zinc-800'
       }`}
       onClick={() => onToggle(prospect.id)}
@@ -142,7 +142,7 @@ function ProspectRow({ prospect, isSelected, onToggle }) {
       <Checkbox
         checked={isSelected}
         onCheckedChange={() => onToggle(prospect.id)}
-        className="data-[state=checked]:bg-cyan-600"
+        className="data-[state=checked]:bg-indigo-600"
       />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
@@ -181,7 +181,7 @@ function EmailStepCard({ step, index, isActive, onEdit, onDelete, totalSteps }) 
       <div
         className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
           isActive
-            ? 'bg-cyan-500/10 border-cyan-500/50 ring-2 ring-cyan-500/30'
+            ? 'bg-indigo-500/10 border-indigo-500/50 ring-2 ring-indigo-500/30'
             : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700'
         }`}
         onClick={onEdit}
@@ -193,9 +193,9 @@ function EmailStepCard({ step, index, isActive, onEdit, onDelete, totalSteps }) 
 
         {/* Step icon */}
         <div className={`p-2 rounded-lg ${
-          isActive ? 'bg-cyan-500/20' : 'bg-zinc-800'
+          isActive ? 'bg-indigo-500/20' : 'bg-zinc-800'
         }`}>
-          <Mail className={`w-5 h-5 ${isActive ? 'text-cyan-400' : 'text-zinc-400'}`} />
+          <Mail className={`w-5 h-5 ${isActive ? 'text-indigo-400' : 'text-zinc-400'}`} />
         </div>
 
         {/* Content */}
@@ -467,7 +467,7 @@ function EmailEditor({
     EMAIL_VARIABLES.forEach((v) => {
       const regex = new RegExp(`\\{${v.key}\\}`, 'g');
       const value = sampleProspect?.[v.key] || v.example;
-      rendered = rendered.replace(regex, `<span class="text-cyan-400">${value}</span>`);
+      rendered = rendered.replace(regex, `<span class="text-indigo-400">${value}</span>`);
     });
 
     return rendered;
@@ -486,7 +486,7 @@ function EmailEditor({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-zinc-800">
         <div className="flex items-center gap-2">
-          <Mail className="w-5 h-5 text-cyan-400" />
+          <Mail className="w-5 h-5 text-indigo-400" />
           <span className="font-medium text-white">{step.name || 'Email'}</span>
         </div>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -577,8 +577,8 @@ function EmailEditor({
 
             {/* Sample prospect info */}
             {sampleProspect && (
-              <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-                <p className="text-xs text-cyan-400 mb-1">Previewing with sample prospect:</p>
+              <div className="p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                <p className="text-xs text-indigo-400 mb-1">Previewing with sample prospect:</p>
                 <p className="text-sm text-white">
                   {sampleProspect.full_name || sampleProspect.name} at {sampleProspect.company}
                 </p>
@@ -954,7 +954,7 @@ Use these variables for personalization:
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
       </div>
     );
   }
@@ -973,7 +973,7 @@ Use these variables for personalization:
           <div className="flex items-center gap-2 text-sm">
             <button
               onClick={() => navigate('/growth/dashboard')}
-              className="flex items-center gap-1.5 text-zinc-400 hover:text-cyan-400 transition-colors"
+              className="flex items-center gap-1.5 text-zinc-400 hover:text-indigo-400 transition-colors"
             >
               <Rocket className="w-4 h-4" />
               Growth
@@ -994,7 +994,7 @@ Use these variables for personalization:
           <Button
             onClick={launchSequence}
             disabled={launching || selectedProspectIds.size === 0}
-            className="bg-cyan-600 hover:bg-cyan-500"
+            className="bg-indigo-600 hover:bg-indigo-500"
           >
             {launching ? (
               <>
@@ -1028,7 +1028,7 @@ Use these variables for personalization:
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-zinc-400">Min Fit Score</span>
-                <span className="text-xs text-cyan-400">{filters.minScore}+</span>
+                <span className="text-xs text-indigo-400">{filters.minScore}+</span>
               </div>
               <Slider
                 value={[filters.minScore]}
@@ -1081,13 +1081,13 @@ Use these variables for personalization:
           {/* Selection controls */}
           <div className="px-4 py-2 border-b border-zinc-800 flex items-center justify-between">
             <span className="text-sm text-zinc-400">
-              <span className="text-cyan-400 font-medium">{selectedProspectIds.size}</span> of{' '}
+              <span className="text-indigo-400 font-medium">{selectedProspectIds.size}</span> of{' '}
               {filteredProspects.length} selected
             </span>
             <div className="flex gap-2">
               <button
                 onClick={selectAll}
-                className="text-xs text-cyan-400 hover:underline"
+                className="text-xs text-indigo-400 hover:underline"
               >
                 Select all
               </button>
@@ -1184,7 +1184,7 @@ Use these variables for personalization:
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4 text-cyan-400" />
+                  <Users className="w-4 h-4 text-indigo-400" />
                   <span className="text-white">{sequenceStats.prospects} prospects</span>
                 </div>
                 <div className="flex items-center gap-1">

@@ -80,7 +80,7 @@ function StepIndicator({ currentStep, totalSteps }) {
           <div
             className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
               i + 1 <= currentStep
-                ? 'bg-cyan-600 text-white'
+                ? 'bg-indigo-600 text-white'
                 : 'bg-zinc-800 text-zinc-500'
             }`}
           >
@@ -93,7 +93,7 @@ function StepIndicator({ currentStep, totalSteps }) {
           {i < totalSteps - 1 && (
             <div
               className={`w-8 h-0.5 ${
-                i + 1 < currentStep ? 'bg-cyan-600' : 'bg-zinc-800'
+                i + 1 < currentStep ? 'bg-indigo-600' : 'bg-zinc-800'
               }`}
             />
           )}
@@ -118,7 +118,7 @@ function NestCard({ nest, onRemove, isRemoving }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h4 className="font-medium text-white truncate">{nest.name}</h4>
-            <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs">
+            <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30 text-xs">
               {nest.industry}
             </Badge>
           </div>
@@ -180,7 +180,7 @@ function PurchaseProgressModal({
           <DialogTitle className="text-white flex items-center gap-2">
             {!isComplete ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
+                <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
                 Purchasing Nests...
               </>
             ) : hasFailures ? (
@@ -262,7 +262,7 @@ function PurchaseProgressModal({
                 </Button>
                 <Button
                   onClick={onRetry}
-                  className="flex-1 bg-cyan-600 hover:bg-cyan-500"
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-500"
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Retry All
@@ -280,7 +280,7 @@ function PurchaseProgressModal({
                 </Button>
                 <Button
                   onClick={onContinue}
-                  className="flex-1 bg-cyan-600 hover:bg-cyan-500"
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-500"
                 >
                   Continue with {successCount}
                   <ChevronRight className="w-4 h-4 ml-1" />
@@ -324,14 +324,14 @@ function SuccessModal({ isOpen, workspaceId, leadsCount, onNavigate }) {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', bounce: 0.5 }}
-            className="mx-auto mb-6 w-20 h-20 rounded-full bg-gradient-to-br from-green-500/20 to-cyan-500/20 flex items-center justify-center"
+            className="mx-auto mb-6 w-20 h-20 rounded-full bg-gradient-to-br from-green-500/20 to-indigo-500/20 flex items-center justify-center"
           >
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ delay: 0.2, type: 'spring' }}
             >
-              <Rocket className="w-10 h-10 text-cyan-400" />
+              <Rocket className="w-10 h-10 text-indigo-400" />
             </motion.div>
           </motion.div>
 
@@ -372,7 +372,7 @@ function SuccessModal({ isOpen, workspaceId, leadsCount, onNavigate }) {
           </DialogTitle>
           <DialogDescription className="text-zinc-400 text-base">
             Your research workspace is ready with{' '}
-            <span className="text-cyan-400 font-semibold">
+            <span className="text-indigo-400 font-semibold">
               {leadsCount.toLocaleString()} leads
             </span>{' '}
             to explore.
@@ -381,7 +381,7 @@ function SuccessModal({ isOpen, workspaceId, leadsCount, onNavigate }) {
           <div className="mt-6 space-y-3">
             <Button
               onClick={onNavigate}
-              className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500"
+              className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500"
             >
               Open Workspace
               <ExternalLink className="w-4 h-4 ml-2" />
@@ -412,7 +412,7 @@ function EmptyState({ onGoBack }) {
         You haven't selected any nests for your campaign yet.
         Go back to browse and select data nests that match your target audience.
       </p>
-      <Button onClick={onGoBack} className="bg-cyan-600 hover:bg-cyan-500">
+      <Button onClick={onGoBack} className="bg-indigo-600 hover:bg-indigo-500">
         <ArrowLeft className="w-4 h-4 mr-2" />
         Browse Nests
       </Button>
@@ -722,7 +722,7 @@ export default function GrowthWorkspaceSetup() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
       </div>
     );
   }
@@ -752,7 +752,7 @@ export default function GrowthWorkspaceSetup() {
 
   return (
     <div className="min-h-screen bg-black">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-6 lg:px-8 xl:px-12 py-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -789,7 +789,7 @@ export default function GrowthWorkspaceSetup() {
             <GlassCard className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <ShoppingCart className="w-5 h-5 text-cyan-400" />
+                  <ShoppingCart className="w-5 h-5 text-indigo-400" />
                   <h2 className="text-lg font-semibold text-white">
                     Selected Nests ({selectedNests.length})
                   </h2>
@@ -946,7 +946,7 @@ export default function GrowthWorkspaceSetup() {
                 <Button
                   onClick={handlePurchase}
                   disabled={hasInsufficientCredits || purchasing || selectedNests.length === 0}
-                  className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {purchasing ? (
                     <>

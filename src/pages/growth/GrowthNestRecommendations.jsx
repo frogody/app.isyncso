@@ -377,7 +377,7 @@ function NestCard({
       <GlassCard
         className={`p-4 h-full flex flex-col transition-all ${
           isSelected
-            ? 'border-cyan-500/50 ring-1 ring-cyan-500/30'
+            ? 'border-indigo-500/50 ring-1 ring-indigo-500/30'
             : 'hover:border-zinc-700'
         }`}
       >
@@ -409,7 +409,7 @@ function NestCard({
             <p className="text-xs text-zinc-500">Leads</p>
           </div>
           <div className="p-2 rounded-lg bg-zinc-800/50">
-            <p className="text-lg font-bold text-cyan-400">{nest.price_credits}</p>
+            <p className="text-lg font-bold text-indigo-400">{nest.price_credits}</p>
             <p className="text-xs text-zinc-500">Credits</p>
           </div>
         </div>
@@ -551,7 +551,7 @@ function NestCard({
               onClick={() => onSelect(nest.id)}
               className={`flex-1 ${
                 isSelected
-                  ? 'bg-cyan-600 hover:bg-cyan-500'
+                  ? 'bg-indigo-600 hover:bg-indigo-500'
                   : 'bg-zinc-700 hover:bg-zinc-600'
               } text-white`}
             >
@@ -619,7 +619,7 @@ function PreviewModal({ nest, isOpen, onClose }) {
               <p className="text-xs text-zinc-500">Total Leads</p>
             </div>
             <div className="p-3 rounded-lg bg-zinc-800/50 text-center">
-              <p className="text-xl font-bold text-cyan-400">{nest.price_credits}</p>
+              <p className="text-xl font-bold text-indigo-400">{nest.price_credits}</p>
               <p className="text-xs text-zinc-500">Credits</p>
             </div>
             <div className="p-3 rounded-lg bg-zinc-800/50 text-center">
@@ -692,7 +692,7 @@ function SelectedNestsSidebar({
   return (
     <GlassCard className="p-4 sticky top-4">
       <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-        <ShoppingCart className="w-5 h-5 text-cyan-400" />
+        <ShoppingCart className="w-5 h-5 text-indigo-400" />
         Selected Nests
       </h3>
 
@@ -736,7 +736,7 @@ function SelectedNestsSidebar({
         </div>
         <div className="flex items-center justify-between text-sm">
           <span className="text-zinc-400">Total Credits</span>
-          <span className="text-cyan-400 font-medium">{totalCredits}</span>
+          <span className="text-indigo-400 font-medium">{totalCredits}</span>
         </div>
         <div className="flex items-center justify-between text-sm">
           <span className="text-zinc-400">Your Credits</span>
@@ -754,7 +754,7 @@ function SelectedNestsSidebar({
       <Button
         onClick={onContinue}
         disabled={selectedNests.length === 0}
-        className="w-full mt-4 bg-cyan-600 hover:bg-cyan-500 text-white"
+        className="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 text-white"
       >
         Continue with {selectedNests.length} Nest{selectedNests.length !== 1 ? 's' : ''}
       </Button>
@@ -930,7 +930,7 @@ export default function GrowthNestRecommendations() {
 
   return (
     <div className="min-h-screen bg-black">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="w-full px-6 lg:px-8 xl:px-12 py-8">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-4 mb-4">
@@ -948,7 +948,7 @@ export default function GrowthNestRecommendations() {
               </h1>
               <p className="text-zinc-400">
                 AI-matched to your campaign:{' '}
-                <span className="text-cyan-400">
+                <span className="text-indigo-400">
                   {campaignConfig?.campaignName || 'Your Campaign'}
                 </span>
               </p>
@@ -1091,7 +1091,7 @@ export default function GrowthNestRecommendations() {
                     setFilterIndustry('all');
                     setFilterRegion('all');
                   }}
-                  className="mt-2 text-cyan-400"
+                  className="mt-2 text-indigo-400"
                 >
                   Clear filters
                 </Button>
@@ -1116,7 +1116,7 @@ export default function GrowthNestRecommendations() {
         {/* Mobile Selected Nests Bar */}
         {selectedNests.length > 0 && (
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-zinc-900 border-t border-zinc-800 lg:hidden">
-            <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div className="flex items-center justify-between w-full">
               <div>
                 <p className="text-white font-medium">
                   {selectedNests.length} nest{selectedNests.length !== 1 ? 's' : ''}{' '}
@@ -1131,7 +1131,7 @@ export default function GrowthNestRecommendations() {
               </div>
               <Button
                 onClick={handleContinue}
-                className="bg-cyan-600 hover:bg-cyan-500 text-white"
+                className="bg-indigo-600 hover:bg-indigo-500 text-white"
               >
                 Continue
               </Button>

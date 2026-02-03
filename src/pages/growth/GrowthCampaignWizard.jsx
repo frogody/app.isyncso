@@ -267,7 +267,7 @@ function ChipSelect({ options, selected, onChange, renderLabel }) {
             onClick={() => toggleOption(value)}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
               isSelected
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/50'
                 : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700 hover:border-zinc-600'
             }`}
           >
@@ -327,13 +327,13 @@ function TagInput({ tags, onChange, placeholder }) {
           {tags.map((tag) => (
             <Badge
               key={tag}
-              className="bg-cyan-500/20 text-cyan-400 border-cyan-500/50 pl-2 pr-1 py-1"
+              className="bg-indigo-500/20 text-indigo-400 border-indigo-500/50 pl-2 pr-1 py-1"
             >
               {tag}
               <button
                 type="button"
                 onClick={() => removeTag(tag)}
-                className="ml-1 hover:text-cyan-300"
+                className="ml-1 hover:text-indigo-300"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -360,9 +360,9 @@ function ProgressIndicator({ currentStep, steps }) {
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                   isCompleted
-                    ? 'bg-cyan-500 text-white'
+                    ? 'bg-indigo-500 text-white'
                     : isActive
-                    ? 'bg-cyan-500/20 text-cyan-400 border-2 border-cyan-500'
+                    ? 'bg-indigo-500/20 text-indigo-400 border-2 border-indigo-500'
                     : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
                 }`}
               >
@@ -374,7 +374,7 @@ function ProgressIndicator({ currentStep, steps }) {
               </div>
               <span
                 className={`text-xs mt-1 hidden md:block ${
-                  isActive ? 'text-cyan-400' : 'text-zinc-500'
+                  isActive ? 'text-indigo-400' : 'text-zinc-500'
                 }`}
               >
                 {step.title}
@@ -383,7 +383,7 @@ function ProgressIndicator({ currentStep, steps }) {
             {index < steps.length - 1 && (
               <div
                 className={`w-8 md:w-16 h-0.5 ${
-                  isCompleted ? 'bg-cyan-500' : 'bg-zinc-700'
+                  isCompleted ? 'bg-indigo-500' : 'bg-zinc-700'
                 }`}
               />
             )}
@@ -502,7 +502,7 @@ function Step2ICP({ formData, setFormData }) {
       {/* Company Criteria */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-cyan-400" />
+          <Building2 className="w-5 h-5 text-indigo-400" />
           Company Criteria
         </h3>
 
@@ -549,7 +549,7 @@ function Step2ICP({ formData, setFormData }) {
       {/* Contact Criteria */}
       <div className="space-y-4 pt-4 border-t border-zinc-800">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          <Briefcase className="w-5 h-5 text-cyan-400" />
+          <Briefcase className="w-5 h-5 text-indigo-400" />
           Contact Criteria
         </h3>
 
@@ -612,12 +612,12 @@ function Step3Goals({ formData, setFormData }) {
                 onClick={() => setFormData({ ...formData, primaryGoal: goal.value })}
                 className={`p-4 rounded-xl border transition-all text-left ${
                   isSelected
-                    ? 'bg-cyan-500/10 border-cyan-500/50 text-white'
+                    ? 'bg-indigo-500/10 border-indigo-500/50 text-white'
                     : 'bg-zinc-900/30 border-zinc-700 text-zinc-400 hover:border-zinc-600'
                 }`}
               >
                 <GoalIcon
-                  className={`w-5 h-5 mb-2 ${isSelected ? 'text-cyan-400' : ''}`}
+                  className={`w-5 h-5 mb-2 ${isSelected ? 'text-indigo-400' : ''}`}
                 />
                 <span className="text-sm font-medium">{goal.label}</span>
               </button>
@@ -629,7 +629,7 @@ function Step3Goals({ formData, setFormData }) {
       {/* Target Metrics */}
       <div className="space-y-4 pt-4 border-t border-zinc-800">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          <Target className="w-5 h-5 text-cyan-400" />
+          <Target className="w-5 h-5 text-indigo-400" />
           Target Metrics
         </h3>
 
@@ -655,7 +655,7 @@ function Step3Goals({ formData, setFormData }) {
         <div>
           <div className="flex items-center justify-between mb-2">
             <Label className="text-zinc-300">Target Response Rate</Label>
-            <span className="text-cyan-400 font-medium">
+            <span className="text-indigo-400 font-medium">
               {formData.targetResponseRate}%
             </span>
           </div>
@@ -675,8 +675,8 @@ function Step3Goals({ formData, setFormData }) {
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/30">
-          <div className="flex items-center gap-2 text-cyan-400">
+        <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30">
+          <div className="flex items-center gap-2 text-indigo-400">
             <Calendar className="w-5 h-5" />
             <span className="font-medium">Estimated Meetings</span>
           </div>
@@ -792,19 +792,19 @@ function Step4Correlations({ formData, setFormData }) {
                 }}
                 className={`p-3 rounded-xl border transition-all text-left flex items-center gap-3 ${
                   isSelected
-                    ? 'bg-cyan-500/10 border-cyan-500/50'
+                    ? 'bg-indigo-500/10 border-indigo-500/50'
                     : 'bg-zinc-900/30 border-zinc-700 hover:border-zinc-600'
                 }`}
               >
                 <SignalIcon
                   className={`w-5 h-5 ${
-                    isSelected ? 'text-cyan-400' : 'text-zinc-500'
+                    isSelected ? 'text-indigo-400' : 'text-zinc-500'
                   }`}
                 />
                 <span className={isSelected ? 'text-white' : 'text-zinc-400'}>
                   {signal.label}
                 </span>
-                {isSelected && <Check className="w-4 h-4 text-cyan-400 ml-auto" />}
+                {isSelected && <Check className="w-4 h-4 text-indigo-400 ml-auto" />}
               </button>
             );
           })}
@@ -835,7 +835,7 @@ function Step4Correlations({ formData, setFormData }) {
             variant="ghost"
             size="sm"
             onClick={addCustomQuestion}
-            className="text-cyan-400 hover:text-cyan-300"
+            className="text-indigo-400 hover:text-indigo-300"
           >
             <Plus className="w-4 h-4 mr-1" />
             Add Question
@@ -1040,7 +1040,7 @@ function Step5Review({ formData, setFormData }) {
             </p>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold text-cyan-400">{estimatedCredits}</p>
+            <p className="text-2xl font-bold text-indigo-400">{estimatedCredits}</p>
             <p className="text-xs text-zinc-500">credits</p>
           </div>
         </div>
@@ -1055,21 +1055,21 @@ function Step5Review({ formData, setFormData }) {
             onClick={() => setFormData({ ...formData, dataSource: 'find_new' })}
             className={`w-full p-4 rounded-xl border transition-all text-left flex items-center gap-4 ${
               formData.dataSource === 'find_new'
-                ? 'bg-cyan-500/10 border-cyan-500/50'
+                ? 'bg-indigo-500/10 border-indigo-500/50'
                 : 'bg-zinc-900/30 border-zinc-700 hover:border-zinc-600'
             }`}
           >
             <div
               className={`p-2 rounded-lg ${
                 formData.dataSource === 'find_new'
-                  ? 'bg-cyan-500/20'
+                  ? 'bg-indigo-500/20'
                   : 'bg-zinc-800'
               }`}
             >
               <Search
                 className={`w-5 h-5 ${
                   formData.dataSource === 'find_new'
-                    ? 'text-cyan-400'
+                    ? 'text-indigo-400'
                     : 'text-zinc-500'
                 }`}
               />
@@ -1087,21 +1087,21 @@ function Step5Review({ formData, setFormData }) {
             onClick={() => setFormData({ ...formData, dataSource: 'existing_nest' })}
             className={`w-full p-4 rounded-xl border transition-all text-left flex items-center gap-4 ${
               formData.dataSource === 'existing_nest'
-                ? 'bg-cyan-500/10 border-cyan-500/50'
+                ? 'bg-indigo-500/10 border-indigo-500/50'
                 : 'bg-zinc-900/30 border-zinc-700 hover:border-zinc-600'
             }`}
           >
             <div
               className={`p-2 rounded-lg ${
                 formData.dataSource === 'existing_nest'
-                  ? 'bg-cyan-500/20'
+                  ? 'bg-indigo-500/20'
                   : 'bg-zinc-800'
               }`}
             >
               <Database
                 className={`w-5 h-5 ${
                   formData.dataSource === 'existing_nest'
-                    ? 'text-cyan-400'
+                    ? 'text-indigo-400'
                     : 'text-zinc-500'
                 }`}
               />
@@ -1141,21 +1141,21 @@ function Step5Review({ formData, setFormData }) {
             onClick={() => setFormData({ ...formData, dataSource: 'upload_csv' })}
             className={`w-full p-4 rounded-xl border transition-all text-left flex items-center gap-4 ${
               formData.dataSource === 'upload_csv'
-                ? 'bg-cyan-500/10 border-cyan-500/50'
+                ? 'bg-indigo-500/10 border-indigo-500/50'
                 : 'bg-zinc-900/30 border-zinc-700 hover:border-zinc-600'
             }`}
           >
             <div
               className={`p-2 rounded-lg ${
                 formData.dataSource === 'upload_csv'
-                  ? 'bg-cyan-500/20'
+                  ? 'bg-indigo-500/20'
                   : 'bg-zinc-800'
               }`}
             >
               <Upload
                 className={`w-5 h-5 ${
                   formData.dataSource === 'upload_csv'
-                    ? 'text-cyan-400'
+                    ? 'text-indigo-400'
                     : 'text-zinc-500'
                 }`}
               />
@@ -1319,7 +1319,7 @@ export default function GrowthCampaignWizard() {
 
   return (
     <div className="min-h-screen bg-black">
-      <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="w-full px-6 lg:px-8 xl:px-12 max-w-[1800px] mx-auto py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
@@ -1396,7 +1396,7 @@ export default function GrowthCampaignWizard() {
                 <Button
                   onClick={handleContinue}
                   disabled={!isStepValid() || saving}
-                  className="bg-cyan-600 hover:bg-cyan-500 text-white"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white"
                 >
                   {saving ? 'Saving...' : 'Continue to Prospect Selection'}
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -1406,7 +1406,7 @@ export default function GrowthCampaignWizard() {
               <Button
                 onClick={goNext}
                 disabled={!isStepValid()}
-                className="bg-cyan-600 hover:bg-cyan-500 text-white"
+                className="bg-indigo-600 hover:bg-indigo-500 text-white"
               >
                 Next
                 <ArrowRight className="w-4 h-4 ml-2" />

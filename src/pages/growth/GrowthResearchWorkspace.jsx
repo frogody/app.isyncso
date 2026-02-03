@@ -119,7 +119,7 @@ const COLUMN_TYPE_COLORS = {
   enrichment: 'text-blue-400',
   ai: 'text-purple-400',
   formula: 'text-amber-400',
-  waterfall: 'text-cyan-400',
+  waterfall: 'text-indigo-400',
   http_api: 'text-green-400',
   merge: 'text-pink-400',
   fit_score: 'text-yellow-400',
@@ -294,7 +294,7 @@ function CampaignContextSidebar({ campaign, isOpen, onToggle, onAddAIColumn, onF
             {/* Campaign Summary */}
             <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
               <div className="flex items-center gap-2 mb-3">
-                <Target className="w-5 h-5 text-cyan-400" />
+                <Target className="w-5 h-5 text-indigo-400" />
                 <h3 className="font-semibold text-white">Campaign Context</h3>
               </div>
               <div className="space-y-3 text-sm">
@@ -364,7 +364,7 @@ function CampaignContextSidebar({ campaign, isOpen, onToggle, onAddAIColumn, onF
               <Button
                 onClick={onFindBestFits}
                 variant="outline"
-                className="w-full justify-start border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                className="w-full justify-start border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10"
               >
                 <Zap className="w-4 h-4 mr-2" />
                 Find Best Fits
@@ -663,7 +663,7 @@ function InsightsView({ rows, columns, campaign }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
           <div className="flex items-center gap-2 mb-2">
-            <Users className="w-5 h-5 text-cyan-400" />
+            <Users className="w-5 h-5 text-indigo-400" />
             <span className="text-sm text-zinc-400">Total Prospects</span>
           </div>
           <p className="text-2xl font-bold text-white">{stats.total}</p>
@@ -698,7 +698,7 @@ function InsightsView({ rows, columns, campaign }) {
         {/* Top Prospects */}
         <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-cyan-400" />
+            <TrendingUp className="w-5 h-5 text-indigo-400" />
             Top Prospects
           </h3>
           <div className="space-y-2">
@@ -753,7 +753,7 @@ function InsightsView({ rows, columns, campaign }) {
       </div>
 
       {/* Ready for Outreach */}
-      <div className="p-6 rounded-xl bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20">
+      <div className="p-6 rounded-xl bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/20">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-white mb-1">Ready for Outreach</h3>
@@ -761,7 +761,7 @@ function InsightsView({ rows, columns, campaign }) {
               {stats.hotLeads + stats.warmLeads} prospects scored 50+ are ready for your campaign
             </p>
           </div>
-          <Button className="bg-cyan-600 hover:bg-cyan-500">
+          <Button className="bg-indigo-600 hover:bg-indigo-500">
             <Send className="w-4 h-4 mr-2" />
             Start Outreach
           </Button>
@@ -1016,7 +1016,7 @@ export default function GrowthResearchWorkspace() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
       </div>
     );
   }
@@ -1028,7 +1028,7 @@ export default function GrowthResearchWorkspace() {
         <AlertCircle className="w-12 h-12 text-zinc-600 mb-4" />
         <h2 className="text-xl font-semibold text-white mb-2">Workspace Not Found</h2>
         <p className="text-zinc-400 mb-6">This workspace doesn't exist or you don't have access.</p>
-        <Button onClick={() => navigate('/growth/dashboard')} className="bg-cyan-600 hover:bg-cyan-500">
+        <Button onClick={() => navigate('/growth/dashboard')} className="bg-indigo-600 hover:bg-indigo-500">
           Go to Dashboard
         </Button>
       </div>
@@ -1050,7 +1050,7 @@ export default function GrowthResearchWorkspace() {
             <div className="flex items-center gap-2 text-sm">
               <button
                 onClick={() => navigate('/growth/dashboard')}
-                className="flex items-center gap-1.5 text-zinc-400 hover:text-cyan-400 transition-colors"
+                className="flex items-center gap-1.5 text-zinc-400 hover:text-indigo-400 transition-colors"
               >
                 <Rocket className="w-4 h-4" />
                 Growth
@@ -1058,7 +1058,7 @@ export default function GrowthResearchWorkspace() {
               <ChevronRight className="w-4 h-4 text-zinc-600" />
               <span className="text-white font-medium">{workspace.name}</span>
               {campaign && (
-                <Badge className="ml-2 bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                <Badge className="ml-2 bg-indigo-500/20 text-indigo-400 border-indigo-500/30">
                   <Target className="w-3 h-3 mr-1" />
                   {campaign.name}
                 </Badge>
@@ -1115,7 +1115,7 @@ export default function GrowthResearchWorkspace() {
             <Button
               onClick={() => navigate(`/growth/outreach/${workspaceId}`)}
               size="sm"
-              className="bg-cyan-600 hover:bg-cyan-500 h-9"
+              className="bg-indigo-600 hover:bg-indigo-500 h-9"
             >
               <Mail className="w-4 h-4 mr-1" />
               Create Outreach
