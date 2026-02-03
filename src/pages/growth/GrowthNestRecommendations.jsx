@@ -693,14 +693,14 @@ export default function GrowthNestRecommendations() {
         }
       }
 
-      // Fetch available nests from marketplace or database
+      // Fetch available nests from growth_nests marketplace
       if (orgId) {
         try {
           const { data: nestsData, error } = await supabase
-            .from('nests')
+            .from('growth_nests')
             .select('*')
-            .or(`organization_id.is.null,organization_id.eq.${orgId}`)
-            .eq('is_marketplace', true)
+            .eq('is_active', true)
+            .order('is_featured', { ascending: false })
             .order('lead_count', { ascending: false });
 
           if (!error && nestsData) {
@@ -708,15 +708,18 @@ export default function GrowthNestRecommendations() {
               id: n.id,
               name: n.name,
               industry: n.industry || 'General',
-              region: n.region || 'global',
-              lead_count: n.lead_count || n.candidates_count || 0,
-              price_credits: n.price_credits || 100,
+              region: n.region || 'Global',
+              lead_count: n.lead_count || 0,
+              price_credits: n.price_credits || 99,
               company_sizes: n.company_sizes || [],
               titles: n.titles || [],
-              description: n.description || '',
-              sample_companies: n.sample_companies || [],
-              data_freshness: n.data_freshness || 'Unknown',
-              verified_rate: n.verified_rate || 80,
+              description: n.description || n.short_description || '',
+              sample_companies: n.preview_data || [],
+              data_freshness: 'Recent',
+              verified_rate: 85,
+              badge: n.badge,
+              is_featured: n.is_featured,
+              included_fields: n.included_fields || [],
             })));
           }
         } catch (error) {
@@ -752,9 +755,6 @@ export default function GrowthNestRecommendations() {
 
     fetchCredits();
   }, [user?.id]);
-
-  // TODO: Fetch nests from growth_nests table
-  // TODO: Fetch purchased nests from growth_nest_purchases
 
   // Calculate match scores and sort
   const scoredNests = useMemo(() => {

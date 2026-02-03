@@ -1192,16 +1192,21 @@ export default function GrowthCampaignWizard() {
 
       setNestsLoading(true);
       try {
+        // Fetch from growth_nests marketplace (shared nests available for purchase)
         const { data, error } = await supabase
-          .from('nests')
-          .select('id, name, lead_count, candidates_count')
-          .eq('organization_id', orgId);
+          .from('growth_nests')
+          .select('id, name, lead_count, industry, region, price_credits')
+          .eq('is_active', true)
+          .order('is_featured', { ascending: false });
 
         if (!error && data) {
           setNests(data.map(n => ({
             id: n.id,
             name: n.name,
-            lead_count: n.lead_count || n.candidates_count || 0,
+            lead_count: n.lead_count || 0,
+            industry: n.industry,
+            region: n.region,
+            price_credits: n.price_credits,
           })));
         }
       } catch (error) {
@@ -1271,15 +1276,46 @@ export default function GrowthCampaignWizard() {
 
     setSaving(true);
     try {
-      // TODO: Save to growth_campaigns table
-      // const { error } = await supabase.from('growth_campaigns').upsert({
-      //   organization_id: user.organization_id,
-      //   user_id: user.id,
-      //   name: formData.campaignName || 'Untitled Campaign',
-      //   status: 'draft',
-      //   config: formData,
-      //   updated_at: new Date().toISOString(),
-      // });
+      const campaignData = {
+        organization_id: orgId,
+        name: formData.campaignName || 'Untitled Campaign',
+        description: formData.productDescription || null,
+        status: 'draft',
+        campaign_type: 'new_business',
+        target_audience: {
+          industries: formData.industries || [],
+          company_sizes: formData.companySizes || [],
+          job_titles: formData.jobTitles || [],
+          regions: formData.regions || [],
+          revenue_range: formData.revenueRange || null,
+        },
+        campaign_goals: {
+          primary_goal: formData.primaryGoal || null,
+          target_meetings: formData.targetMeetings || 0,
+          target_responses: formData.targetResponses || 0,
+          channels: formData.channels || {},
+          price_range: formData.priceRange || null,
+          sales_cycle: formData.salesCycle || null,
+        },
+        role_context: {
+          product_description: formData.productDescription || null,
+          problem_solved: formData.problemSolved || null,
+          ideal_customer: formData.idealCustomer || null,
+          buying_signals: formData.buyingSignals || [],
+          research_questions: formData.researchQuestions || [],
+          personalization_context: formData.personalizationContext || null,
+          data_source: formData.dataSource || null,
+          selected_nest_id: formData.selectedNestId || null,
+        },
+        created_by: user.id,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('growth_campaigns')
+        .upsert(campaignData, { onConflict: 'id' });
+
+      if (error) throw error;
 
       toast.success('Draft saved');
     } catch (error) {
@@ -1288,7 +1324,7 @@ export default function GrowthCampaignWizard() {
     } finally {
       setSaving(false);
     }
-  }, [formData, user]);
+  }, [formData, user, orgId]);
 
   // Save and continue
   const handleContinue = async () => {
@@ -1296,14 +1332,47 @@ export default function GrowthCampaignWizard() {
 
     setSaving(true);
     try {
-      // TODO: Save campaign to database
-      // const { data, error } = await supabase.from('growth_campaigns').insert({
-      //   organization_id: user.organization_id,
-      //   user_id: user.id,
-      //   name: formData.campaignName,
-      //   status: 'draft',
-      //   config: formData,
-      // }).select().single();
+      const campaignData = {
+        organization_id: orgId,
+        name: formData.campaignName || 'Untitled Campaign',
+        description: formData.productDescription || null,
+        status: formData.dataSource === 'existing_data' ? 'active' : 'draft',
+        campaign_type: 'new_business',
+        target_audience: {
+          industries: formData.industries || [],
+          company_sizes: formData.companySizes || [],
+          job_titles: formData.jobTitles || [],
+          regions: formData.regions || [],
+          revenue_range: formData.revenueRange || null,
+        },
+        campaign_goals: {
+          primary_goal: formData.primaryGoal || null,
+          target_meetings: formData.targetMeetings || 0,
+          target_responses: formData.targetResponses || 0,
+          channels: formData.channels || {},
+          price_range: formData.priceRange || null,
+          sales_cycle: formData.salesCycle || null,
+        },
+        role_context: {
+          product_description: formData.productDescription || null,
+          problem_solved: formData.problemSolved || null,
+          ideal_customer: formData.idealCustomer || null,
+          buying_signals: formData.buyingSignals || [],
+          research_questions: formData.researchQuestions || [],
+          personalization_context: formData.personalizationContext || null,
+          data_source: formData.dataSource || null,
+          selected_nest_id: formData.selectedNestId || null,
+        },
+        created_by: user.id,
+      };
+
+      const { data, error } = await supabase
+        .from('growth_campaigns')
+        .insert(campaignData)
+        .select()
+        .single();
+
+      if (error) throw error;
 
       // Clear localStorage on successful save
       localStorage.removeItem(STORAGE_KEY);
