@@ -107,6 +107,8 @@ import GrowthResearchWorkspace from "./growth/GrowthResearchWorkspace";
 
 import GrowthOutreachBuilder from "./growth/GrowthOutreachBuilder";
 
+import GrowthCustomerSignals from "./growth/GrowthCustomerSignals";
+
 import Home from "./Home";
 
 import Inbox from "./Inbox";
@@ -436,6 +438,8 @@ const PAGES = {
     GrowthResearchWorkspace: GrowthResearchWorkspace,
 
     GrowthOutreachBuilder: GrowthOutreachBuilder,
+
+    GrowthCustomerSignals: GrowthCustomerSignals,
 
     Home: Home,
     
@@ -838,6 +842,10 @@ function PagesContent() {
                 <Route path="/GrowthOutreachBuilder/:workspaceId" element={<GrowthOutreachBuilder />} />
                 <Route path="/growth/outreach/new" element={<GrowthOutreachBuilder />} />
                 <Route path="/growth/outreach/:workspaceId" element={<GrowthOutreachBuilder />} />
+
+                <Route path="/GrowthCustomerSignals" element={<GrowthCustomerSignals />} />
+                <Route path="/growth/signals" element={<GrowthCustomerSignals />} />
+                <Route path="/growth/customers" element={<GrowthCustomerSignals />} />
 
                 <Route path="/Home" element={<Home />} />
                 
