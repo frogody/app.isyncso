@@ -40,155 +40,14 @@ import {
   BarChart3,
   Timer,
   Rocket,
+  Loader2,
+  FolderOpen,
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import { supabase } from "@/api/supabaseClient";
+import { useUser } from "@/components/context/UserContext";
 
-// Mock data for opportunities
-const MOCK_OPPORTUNITIES = [
-  {
-    id: "opp-1",
-    customer: { id: "cust-1", name: "Acme Corp", avatar: null, industry: "Technology", currentPlan: "Professional", arr: 48000 },
-    type: "upsell",
-    value: 50000,
-    signal: "Hiring surge detected - 15 new engineering roles",
-    signalId: "sig-1",
-    owner: { id: "user-1", name: "John Smith", avatar: null },
-    stage: "qualified",
-    priority: "high",
-    nextAction: "Schedule demo call",
-    nextActionDate: "2026-02-05",
-    createdAt: "2026-01-28",
-    daysInStage: 3,
-    activities: [
-      { id: "act-1", type: "note", description: "Initial outreach sent", user: "John Smith", timestamp: "2026-01-28T10:00:00Z" },
-      { id: "act-2", type: "stage_change", description: "Moved from New to Qualified", user: "John Smith", timestamp: "2026-01-30T14:00:00Z" },
-    ],
-    stageHistory: [
-      { stage: "new", enteredAt: "2026-01-28T08:00:00Z", exitedAt: "2026-01-30T14:00:00Z" },
-      { stage: "qualified", enteredAt: "2026-01-30T14:00:00Z", exitedAt: null },
-    ],
-  },
-  {
-    id: "opp-2",
-    customer: { id: "cust-2", name: "TechFlow Inc", avatar: null, industry: "SaaS", currentPlan: "Starter", arr: 12000 },
-    type: "cross-sell",
-    value: 15000,
-    signal: "High feature usage - Analytics module interest",
-    signalId: "sig-2",
-    owner: { id: "user-2", name: "Sarah Chen", avatar: null },
-    stage: "engaged",
-    priority: "medium",
-    nextAction: "Send proposal",
-    nextActionDate: "2026-02-06",
-    createdAt: "2026-01-20",
-    daysInStage: 5,
-    activities: [
-      { id: "act-3", type: "call", description: "Discovery call - interested in analytics", user: "Sarah Chen", timestamp: "2026-01-25T15:00:00Z" },
-      { id: "act-4", type: "email", description: "Sent feature comparison doc", user: "Sarah Chen", timestamp: "2026-01-27T09:00:00Z" },
-    ],
-    stageHistory: [
-      { stage: "new", enteredAt: "2026-01-20T10:00:00Z", exitedAt: "2026-01-22T11:00:00Z" },
-      { stage: "qualified", enteredAt: "2026-01-22T11:00:00Z", exitedAt: "2026-01-25T15:30:00Z" },
-      { stage: "engaged", enteredAt: "2026-01-25T15:30:00Z", exitedAt: null },
-    ],
-  },
-  {
-    id: "opp-3",
-    customer: { id: "cust-3", name: "DataPro", avatar: null, industry: "Data Analytics", currentPlan: "Enterprise", arr: 120000 },
-    type: "expansion",
-    value: 75000,
-    signal: "Multi-region expansion announced",
-    signalId: "sig-3",
-    owner: { id: "user-1", name: "John Smith", avatar: null },
-    stage: "proposal",
-    priority: "high",
-    nextAction: "Follow up on proposal",
-    nextActionDate: "2026-02-04",
-    createdAt: "2026-01-15",
-    daysInStage: 7,
-    activities: [
-      { id: "act-5", type: "call", description: "Expansion requirements gathering", user: "John Smith", timestamp: "2026-01-18T14:00:00Z" },
-      { id: "act-6", type: "email", description: "Sent multi-region proposal", user: "John Smith", timestamp: "2026-01-25T10:00:00Z" },
-    ],
-    stageHistory: [
-      { stage: "new", enteredAt: "2026-01-15T09:00:00Z", exitedAt: "2026-01-16T10:00:00Z" },
-      { stage: "qualified", enteredAt: "2026-01-16T10:00:00Z", exitedAt: "2026-01-18T14:30:00Z" },
-      { stage: "engaged", enteredAt: "2026-01-18T14:30:00Z", exitedAt: "2026-01-25T10:00:00Z" },
-      { stage: "proposal", enteredAt: "2026-01-25T10:00:00Z", exitedAt: null },
-    ],
-  },
-  {
-    id: "opp-4",
-    customer: { id: "cust-4", name: "CloudFirst", avatar: null, industry: "Cloud Infrastructure", currentPlan: "Team", arr: 24000 },
-    type: "upsell",
-    value: 8000,
-    signal: "Team size doubled in 30 days",
-    signalId: "sig-4",
-    owner: { id: "user-2", name: "Sarah Chen", avatar: null },
-    stage: "new",
-    priority: "medium",
-    nextAction: "Initial outreach",
-    nextActionDate: "2026-02-03",
-    createdAt: "2026-02-01",
-    daysInStage: 2,
-    activities: [],
-    stageHistory: [
-      { stage: "new", enteredAt: "2026-02-01T08:00:00Z", exitedAt: null },
-    ],
-  },
-  {
-    id: "opp-5",
-    customer: { id: "cust-5", name: "GlobalTech", avatar: null, industry: "Enterprise Software", currentPlan: "Enterprise", arr: 96000 },
-    type: "expansion",
-    value: 120000,
-    signal: "New subsidiary acquired",
-    signalId: "sig-5",
-    owner: { id: "user-1", name: "John Smith", avatar: null },
-    stage: "won",
-    priority: "high",
-    nextAction: null,
-    nextActionDate: null,
-    createdAt: "2026-01-05",
-    daysInStage: 0,
-    closedAt: "2026-01-30",
-    closedValue: 115000,
-    activities: [
-      { id: "act-7", type: "stage_change", description: "Deal closed - Won!", user: "John Smith", timestamp: "2026-01-30T16:00:00Z" },
-    ],
-    stageHistory: [
-      { stage: "new", enteredAt: "2026-01-05T09:00:00Z", exitedAt: "2026-01-06T10:00:00Z" },
-      { stage: "qualified", enteredAt: "2026-01-06T10:00:00Z", exitedAt: "2026-01-10T11:00:00Z" },
-      { stage: "engaged", enteredAt: "2026-01-10T11:00:00Z", exitedAt: "2026-01-20T14:00:00Z" },
-      { stage: "proposal", enteredAt: "2026-01-20T14:00:00Z", exitedAt: "2026-01-30T16:00:00Z" },
-      { stage: "won", enteredAt: "2026-01-30T16:00:00Z", exitedAt: null },
-    ],
-  },
-  {
-    id: "opp-6",
-    customer: { id: "cust-6", name: "StartupX", avatar: null, industry: "Fintech", currentPlan: "Starter", arr: 6000 },
-    type: "upsell",
-    value: 12000,
-    signal: "Funding round completed",
-    signalId: "sig-6",
-    owner: { id: "user-2", name: "Sarah Chen", avatar: null },
-    stage: "lost",
-    priority: "low",
-    nextAction: null,
-    nextActionDate: null,
-    createdAt: "2026-01-10",
-    daysInStage: 0,
-    lostReason: "Budget constraints - revisit in Q3",
-    activities: [
-      { id: "act-8", type: "stage_change", description: "Moved to Lost - Budget constraints", user: "Sarah Chen", timestamp: "2026-01-28T11:00:00Z" },
-    ],
-    stageHistory: [
-      { stage: "new", enteredAt: "2026-01-10T10:00:00Z", exitedAt: "2026-01-12T09:00:00Z" },
-      { stage: "qualified", enteredAt: "2026-01-12T09:00:00Z", exitedAt: "2026-01-20T14:00:00Z" },
-      { stage: "engaged", enteredAt: "2026-01-20T14:00:00Z", exitedAt: "2026-01-28T11:00:00Z" },
-      { stage: "lost", enteredAt: "2026-01-28T11:00:00Z", exitedAt: null },
-    ],
-  },
-];
+// No mock data - opportunities are loaded from database
 
 const DEFAULT_STAGES = [
   { id: "new", name: "New", color: "zinc", icon: Sparkles },
@@ -228,21 +87,7 @@ const ACTIVITY_ICONS = {
   task: CheckCircle2,
 };
 
-// Mock customers for the create modal
-const MOCK_CUSTOMERS = [
-  { id: "cust-1", name: "Acme Corp", industry: "Technology" },
-  { id: "cust-2", name: "TechFlow Inc", industry: "SaaS" },
-  { id: "cust-3", name: "DataPro", industry: "Data Analytics" },
-  { id: "cust-4", name: "CloudFirst", industry: "Cloud Infrastructure" },
-  { id: "cust-7", name: "InnovateCo", industry: "AI/ML" },
-  { id: "cust-8", name: "ScaleUp Ltd", industry: "E-commerce" },
-];
-
-const MOCK_TEAM = [
-  { id: "user-1", name: "John Smith" },
-  { id: "user-2", name: "Sarah Chen" },
-  { id: "user-3", name: "Mike Johnson" },
-];
+// Customers and team are loaded from database
 
 // Format currency
 const formatCurrency = (value) => {
@@ -922,7 +767,7 @@ const OpportunityModal = ({ opportunity, isOpen, onClose, onUpdate, onDelete }) 
 };
 
 // Create Opportunity Modal
-const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer }) => {
+const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer, customers = [], team = [] }) => {
   const [formData, setFormData] = useState({
     customerId: "",
     type: "upsell",
@@ -947,14 +792,14 @@ const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer }
     }
   }, [prefilledCustomer, isOpen]);
 
-  const filteredCustomers = MOCK_CUSTOMERS.filter((c) =>
+  const filteredCustomers = customers.filter((c) =>
     c.name.toLowerCase().includes(customerSearch.toLowerCase())
   );
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const customer = MOCK_CUSTOMERS.find((c) => c.id === formData.customerId);
-    const owner = MOCK_TEAM.find((u) => u.id === formData.ownerId) || MOCK_TEAM[0];
+    const customer = customers.find((c) => c.id === formData.customerId);
+    const owner = team.find((u) => u.id === formData.ownerId) || team[0];
 
     const newOpp = {
       id: `opp-${Date.now()}`,
@@ -1153,8 +998,8 @@ const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer }
               className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="">Select owner...</option>
-              {MOCK_TEAM.map((user) => (
-                <option key={user.id} value={user.id}>{user.name}</option>
+              {team.map((member) => (
+                <option key={member.id} value={member.id}>{member.name}</option>
               ))}
             </select>
           </div>
@@ -1184,7 +1029,7 @@ const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer }
 };
 
 // Filters Panel
-const FiltersPanel = ({ filters, setFilters, isOpen, onClose }) => {
+const FiltersPanel = ({ filters, setFilters, isOpen, onClose, team = [] }) => {
   if (!isOpen) return null;
 
   return (
@@ -1256,8 +1101,8 @@ const FiltersPanel = ({ filters, setFilters, isOpen, onClose }) => {
             className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="">All Owners</option>
-            {MOCK_TEAM.map((user) => (
-              <option key={user.id} value={user.id}>{user.name}</option>
+            {team.map((member) => (
+              <option key={member.id} value={member.id}>{member.name}</option>
             ))}
           </select>
         </div>
@@ -1315,7 +1160,11 @@ const FiltersPanel = ({ filters, setFilters, isOpen, onClose }) => {
 export default function GrowthOpportunities() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [opportunities, setOpportunities] = useState(MOCK_OPPORTUNITIES);
+  const { user } = useUser();
+  const [opportunities, setOpportunities] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [team, setTeam] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedOpp, setSelectedOpp] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showLostModal, setShowLostModal] = useState(false);
@@ -1325,6 +1174,94 @@ export default function GrowthOpportunities() {
   const [searchQuery, setSearchQuery] = useState("");
   const [draggedOpp, setDraggedOpp] = useState(null);
   const [prefilledCustomer, setPrefilledCustomer] = useState(null);
+
+  const orgId = user?.organization_id || user?.company_id;
+
+  // Fetch opportunities, customers, and team from database
+  useEffect(() => {
+    async function fetchData() {
+      if (!user?.id || !orgId) return;
+
+      setLoading(true);
+      try {
+        // Fetch opportunities
+        const { data: oppsData, error: oppsError } = await supabase
+          .from('growth_opportunities')
+          .select('*')
+          .eq('organization_id', orgId)
+          .order('created_at', { ascending: false });
+
+        if (oppsError) throw oppsError;
+
+        // Transform opportunities to match expected format
+        const transformedOpps = (oppsData || []).map(opp => ({
+          id: opp.id,
+          customer: {
+            id: opp.customer_id,
+            name: opp.customer_name,
+            avatar: null,
+            industry: opp.customer_industry,
+            currentPlan: opp.customer_current_plan,
+            arr: opp.customer_arr || 0,
+          },
+          type: opp.type,
+          value: opp.value || 0,
+          signal: opp.signal_description,
+          signalId: opp.signal_id,
+          owner: {
+            id: opp.owner_id,
+            name: opp.owner_name || 'Unassigned',
+            avatar: null,
+          },
+          stage: opp.stage,
+          priority: opp.priority,
+          nextAction: opp.next_action,
+          nextActionDate: opp.next_action_date,
+          createdAt: opp.created_at,
+          daysInStage: opp.days_in_stage || 0,
+          activities: opp.activities || [],
+          stageHistory: opp.stage_history || [{ stage: opp.stage, enteredAt: opp.created_at, exitedAt: null }],
+          lostReason: opp.lost_reason,
+          closedAt: opp.closed_at,
+          closedValue: opp.closed_value,
+        }));
+
+        setOpportunities(transformedOpps);
+
+        // Fetch customers (from prospects table or companies)
+        const { data: customersData } = await supabase
+          .from('prospects')
+          .select('id, company_name, industry')
+          .eq('organization_id', orgId)
+          .limit(50);
+
+        setCustomers((customersData || []).map(c => ({
+          id: c.id,
+          name: c.company_name || 'Unknown Company',
+          industry: c.industry || 'Unknown',
+        })));
+
+        // Fetch team members
+        const { data: teamData } = await supabase
+          .from('users')
+          .select('id, full_name, email')
+          .or(`organization_id.eq.${orgId},company_id.eq.${orgId}`)
+          .limit(20);
+
+        setTeam((teamData || []).map(t => ({
+          id: t.id,
+          name: t.full_name || t.email || 'Unknown User',
+        })));
+
+      } catch (error) {
+        console.error('Error fetching opportunities data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [user?.id, orgId]);
 
   // Check for prefilled customer from Customer Signals page
   useEffect(() => {
@@ -1358,8 +1295,8 @@ export default function GrowthOpportunities() {
       if (filters.highPriority && opp.priority !== "high") return false;
       // Stale quick filter
       if (filters.stale && opp.daysInStage <= 14) return false;
-      // My opportunities (mock - would use current user)
-      if (filters.myOpportunities && opp.owner.id !== "user-1") return false;
+      // My opportunities - filter by current user
+      if (filters.myOpportunities && opp.owner.id !== user?.id) return false;
 
       return true;
     });
@@ -1446,17 +1383,86 @@ export default function GrowthOpportunities() {
     setPendingLostOpp(null);
   };
 
-  const handleCreate = (newOpp) => {
+  const handleCreate = async (newOpp) => {
+    // Optimistically add to local state
     setOpportunities((prev) => [...prev, newOpp]);
+
+    // Save to database
+    try {
+      const { error } = await supabase
+        .from('growth_opportunities')
+        .insert({
+          organization_id: orgId,
+          customer_id: newOpp.customer.id,
+          customer_name: newOpp.customer.name,
+          customer_industry: newOpp.customer.industry,
+          customer_current_plan: newOpp.customer.currentPlan,
+          customer_arr: newOpp.customer.arr,
+          type: newOpp.type,
+          value: newOpp.value,
+          stage: newOpp.stage,
+          priority: newOpp.priority,
+          signal_description: newOpp.signal,
+          owner_id: newOpp.owner.id,
+          owner_name: newOpp.owner.name,
+          next_action: newOpp.nextAction,
+          next_action_date: newOpp.nextActionDate,
+          days_in_stage: 0,
+          stage_history: newOpp.stageHistory,
+          activities: newOpp.activities,
+        });
+
+      if (error) {
+        console.error('Error creating opportunity:', error);
+        // Rollback on error
+        setOpportunities((prev) => prev.filter((o) => o.id !== newOpp.id));
+      }
+    } catch (error) {
+      console.error('Error creating opportunity:', error);
+    }
   };
 
-  const handleUpdate = (updatedOpp) => {
+  const handleUpdate = async (updatedOpp) => {
+    // Optimistically update local state
     setOpportunities((prev) => prev.map((o) => (o.id === updatedOpp.id ? updatedOpp : o)));
     setSelectedOpp(updatedOpp);
+
+    // Save to database
+    try {
+      await supabase
+        .from('growth_opportunities')
+        .update({
+          stage: updatedOpp.stage,
+          priority: updatedOpp.priority,
+          next_action: updatedOpp.nextAction,
+          next_action_date: updatedOpp.nextActionDate,
+          days_in_stage: updatedOpp.daysInStage,
+          stage_history: updatedOpp.stageHistory,
+          activities: updatedOpp.activities,
+          lost_reason: updatedOpp.lostReason,
+          closed_at: updatedOpp.closedAt,
+          closed_value: updatedOpp.closedValue,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', updatedOpp.id);
+    } catch (error) {
+      console.error('Error updating opportunity:', error);
+    }
   };
 
-  const handleDelete = (oppId) => {
+  const handleDelete = async (oppId) => {
+    // Optimistically remove from local state
     setOpportunities((prev) => prev.filter((o) => o.id !== oppId));
+
+    // Delete from database
+    try {
+      await supabase
+        .from('growth_opportunities')
+        .delete()
+        .eq('id', oppId);
+    } catch (error) {
+      console.error('Error deleting opportunity:', error);
+    }
   };
 
   const activeFiltersCount = Object.values(filters).filter(Boolean).length;
@@ -1526,6 +1532,7 @@ export default function GrowthOpportunities() {
                       setFilters={setFilters}
                       isOpen={showFilters}
                       onClose={() => setShowFilters(false)}
+                      team={team}
                     />
                   )}
                 </AnimatePresence>
@@ -1551,22 +1558,45 @@ export default function GrowthOpportunities() {
 
       {/* Kanban Board */}
       <div className="px-6 pb-6">
-        <div className="overflow-x-auto">
-          <div className="flex gap-4 min-w-max pb-4">
-            {DEFAULT_STAGES.map((stage) => (
-              <KanbanColumn
-                key={stage.id}
-                stage={stage}
-                opportunities={opportunitiesByStage[stage.id] || []}
-                onDrop={handleDrop}
-                draggedOpp={draggedOpp}
-                onCardClick={setSelectedOpp}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-              />
-            ))}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
           </div>
-        </div>
+        ) : opportunities.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="p-4 rounded-full bg-zinc-800/50 mb-4">
+              <FolderOpen className="w-12 h-12 text-zinc-500" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">No opportunities yet</h3>
+            <p className="text-zinc-400 mb-6 max-w-md">
+              Opportunities appear when you detect expansion signals from existing customers or create them manually.
+            </p>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create First Opportunity
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <div className="flex gap-4 min-w-max pb-4">
+              {DEFAULT_STAGES.map((stage) => (
+                <KanbanColumn
+                  key={stage.id}
+                  stage={stage}
+                  opportunities={opportunitiesByStage[stage.id] || []}
+                  onDrop={handleDrop}
+                  draggedOpp={draggedOpp}
+                  onCardClick={setSelectedOpp}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modals */}
@@ -1592,6 +1622,8 @@ export default function GrowthOpportunities() {
             }}
             onCreate={handleCreate}
             prefilledCustomer={prefilledCustomer}
+            customers={customers}
+            team={team}
           />
         )}
       </AnimatePresence>

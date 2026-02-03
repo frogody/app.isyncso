@@ -135,95 +135,7 @@ const DEFAULT_SIGNAL_CONFIG = {
   },
 };
 
-// Mock customer data
-const MOCK_CUSTOMERS = [
-  {
-    id: '1',
-    name: 'Acme Corp',
-    domain: 'acme.com',
-    industry: 'Technology',
-    plan: 'Enterprise',
-    arr: 120000,
-    healthScore: 85,
-    startDate: '2024-03-15',
-    renewalDate: '2025-03-15',
-    signals: [
-      { id: 's1', type: 'growth', signalId: 'hiring_surge', title: 'Hiring 15 new engineers', detectedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), priority: 'high' },
-      { id: 's2', type: 'growth', signalId: 'funding_round', title: 'Series C funding announced ($50M)', detectedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), priority: 'high' },
-      { id: 's3', type: 'growth', signalId: 'expansion_news', title: 'Opening new office in Austin', detectedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), priority: 'medium' },
-    ],
-    contacts: [
-      { name: 'John Smith', title: 'VP of Engineering', email: 'john@acme.com' },
-    ],
-  },
-  {
-    id: '2',
-    name: 'TechFlow Inc',
-    domain: 'techflow.io',
-    industry: 'SaaS',
-    plan: 'Professional',
-    arr: 48000,
-    healthScore: 72,
-    startDate: '2024-06-01',
-    renewalDate: '2025-06-01',
-    signals: [
-      { id: 's4', type: 'engagement', signalId: 'renewal_approaching', title: 'Contract renewal in 45 days', detectedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), priority: 'high' },
-    ],
-    contacts: [
-      { name: 'Sarah Chen', title: 'Head of Operations', email: 'sarah@techflow.io' },
-    ],
-  },
-  {
-    id: '3',
-    name: 'DataPro Systems',
-    domain: 'datapro.com',
-    industry: 'Data Analytics',
-    plan: 'Enterprise',
-    arr: 180000,
-    healthScore: 91,
-    startDate: '2023-11-01',
-    renewalDate: '2024-11-01',
-    signals: [
-      { id: 's5', type: 'usage', signalId: 'login_increase', title: 'Login frequency up 75% this week', detectedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), priority: 'medium' },
-      { id: 's6', type: 'usage', signalId: 'feature_adoption', title: 'Started using advanced analytics', detectedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), priority: 'medium' },
-    ],
-    contacts: [
-      { name: 'Mike Johnson', title: 'CTO', email: 'mike@datapro.com' },
-    ],
-  },
-  {
-    id: '4',
-    name: 'CloudFirst',
-    domain: 'cloudfirst.co',
-    industry: 'Cloud Services',
-    plan: 'Starter',
-    arr: 12000,
-    healthScore: 65,
-    startDate: '2024-09-01',
-    renewalDate: '2025-09-01',
-    signals: [],
-    contacts: [
-      { name: 'Emily Brown', title: 'Product Manager', email: 'emily@cloudfirst.co' },
-    ],
-  },
-  {
-    id: '5',
-    name: 'FinanceHub',
-    domain: 'financehub.com',
-    industry: 'FinTech',
-    plan: 'Professional',
-    arr: 36000,
-    healthScore: 78,
-    startDate: '2024-04-15',
-    renewalDate: '2025-04-15',
-    signals: [
-      { id: 's7', type: 'external', signalId: 'news_mention', title: 'Featured in TechCrunch article', detectedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000), priority: 'low' },
-    ],
-    contacts: [
-      { name: 'David Lee', title: 'CEO', email: 'david@financehub.com' },
-    ],
-  },
-];
+// Customers are loaded from database
 
 // Signal type styles
 const SIGNAL_STYLES = {
@@ -978,15 +890,78 @@ export default function GrowthCustomerSignals() {
   });
   const [sortBy, setSortBy] = useState('signals');
 
-  // Load customers
+  const orgId = user?.organization_id || user?.company_id;
+
+  // Load customers and signals from database
   useEffect(() => {
-    setLoading(true);
-    // Simulate loading
-    setTimeout(() => {
-      setCustomers(MOCK_CUSTOMERS);
-      setLoading(false);
-    }, 500);
-  }, []);
+    async function fetchCustomersAndSignals() {
+      if (!user?.id || !orgId) return;
+
+      setLoading(true);
+      try {
+        // Fetch prospects/customers
+        const { data: customersData, error: customersError } = await supabase
+          .from('prospects')
+          .select('*')
+          .eq('organization_id', orgId)
+          .order('company_name', { ascending: true });
+
+        if (customersError) throw customersError;
+
+        // Fetch signals for these customers
+        const { data: signalsData, error: signalsError } = await supabase
+          .from('customer_signals')
+          .select('*')
+          .eq('organization_id', orgId)
+          .is('acknowledged_at', null);
+
+        if (signalsError) throw signalsError;
+
+        // Group signals by customer
+        const signalsByCustomer = (signalsData || []).reduce((acc, signal) => {
+          const customerId = signal.customer_id;
+          if (!acc[customerId]) acc[customerId] = [];
+          acc[customerId].push({
+            id: signal.id,
+            type: signal.signal_type || 'external',
+            signalId: signal.signal_name,
+            title: signal.description || signal.signal_name,
+            detectedAt: new Date(signal.detected_at),
+            priority: signal.priority || 'medium',
+          });
+          return acc;
+        }, {});
+
+        // Transform to component format
+        const transformedCustomers = (customersData || []).map(c => ({
+          id: c.id,
+          name: c.company_name || 'Unknown Company',
+          domain: c.company_website || '',
+          industry: c.industry || 'Unknown',
+          plan: c.customer_plan || 'Standard',
+          arr: c.arr || 0,
+          healthScore: c.health_score || 50,
+          startDate: c.created_at,
+          renewalDate: c.renewal_date,
+          signals: signalsByCustomer[c.id] || [],
+          contacts: c.contacts || [],
+        }));
+
+        setCustomers(transformedCustomers);
+      } catch (error) {
+        console.error('Error fetching customer signals:', error);
+        toast({
+          title: 'Error loading customers',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchCustomersAndSignals();
+  }, [user?.id, orgId, toast]);
 
   // Stats
   const stats = useMemo(() => {

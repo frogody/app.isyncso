@@ -166,12 +166,7 @@ const BUYING_SIGNALS = [
   { id: 'competitor_mention', label: 'Competitor mentioned in news', icon: TrendingUp },
 ];
 
-// Mock data for nests dropdown
-const MOCK_NESTS = [
-  { id: '1', name: 'Tech Leaders - Series B+', lead_count: 1250 },
-  { id: '2', name: 'Healthcare Decision Makers', lead_count: 890 },
-  { id: '3', name: 'E-commerce Growth Companies', lead_count: 2100 },
-];
+// Nests are loaded from database
 
 // Initial form state
 const getInitialState = () => ({
@@ -908,7 +903,7 @@ function Step4Correlations({ formData, setFormData }) {
 }
 
 // Step 5: Review & Launch
-function Step5Review({ formData, setFormData }) {
+function Step5Review({ formData, setFormData, nests = [] }) {
   const estimatedCredits = Math.round(
     formData.prospectCount * ENRICHMENT_COST_PER_PROSPECT
   );
@@ -1126,11 +1121,17 @@ function Step5Review({ formData, setFormData }) {
                   <SelectValue placeholder="Select a Nest" />
                 </SelectTrigger>
                 <SelectContent>
-                  {MOCK_NESTS.map((nest) => (
-                    <SelectItem key={nest.id} value={nest.id}>
-                      {nest.name} ({nest.lead_count.toLocaleString()} leads)
+                  {nests.length > 0 ? (
+                    nests.map((nest) => (
+                      <SelectItem key={nest.id} value={nest.id}>
+                        {nest.name} ({nest.lead_count?.toLocaleString() || 0} leads)
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="" disabled>
+                      No nests available
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -1179,6 +1180,39 @@ export default function GrowthCampaignWizard() {
   const [direction, setDirection] = useState(1);
   const [formData, setFormData] = useState(getInitialState);
   const [saving, setSaving] = useState(false);
+  const [nests, setNests] = useState([]);
+  const [nestsLoading, setNestsLoading] = useState(false);
+
+  const orgId = user?.organization_id || user?.company_id;
+
+  // Fetch available nests
+  useEffect(() => {
+    async function fetchNests() {
+      if (!orgId) return;
+
+      setNestsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('nests')
+          .select('id, name, lead_count, candidates_count')
+          .eq('organization_id', orgId);
+
+        if (!error && data) {
+          setNests(data.map(n => ({
+            id: n.id,
+            name: n.name,
+            lead_count: n.lead_count || n.candidates_count || 0,
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching nests:', error);
+      } finally {
+        setNestsLoading(false);
+      }
+    }
+
+    fetchNests();
+  }, [orgId]);
 
   // Load draft from localStorage on mount
   useEffect(() => {
@@ -1311,7 +1345,7 @@ export default function GrowthCampaignWizard() {
       case 4:
         return <Step4Correlations formData={formData} setFormData={setFormData} />;
       case 5:
-        return <Step5Review formData={formData} setFormData={setFormData} />;
+        return <Step5Review formData={formData} setFormData={setFormData} nests={nests} />;
       default:
         return null;
     }

@@ -57,121 +57,7 @@ import { toast } from 'sonner';
 // Constants
 const STORAGE_KEY = 'growth_campaign_draft';
 
-// Mock nests data (replace with actual database query)
-const MOCK_NESTS = [
-  {
-    id: '1',
-    name: 'SaaS Tech Leaders - Series B+',
-    industry: 'Technology',
-    region: 'north_america',
-    lead_count: 2450,
-    price_credits: 150,
-    company_sizes: ['51-200', '201-500'],
-    titles: ['VP Sales', 'CTO', 'VP Engineering', 'Head of Growth', 'CEO'],
-    description: 'Decision makers at well-funded SaaS companies in growth stage.',
-    sample_companies: ['Notion', 'Figma', 'Linear', 'Vercel', 'Railway'],
-    data_freshness: '2 weeks ago',
-    verified_rate: 92,
-  },
-  {
-    id: '2',
-    name: 'Healthcare IT Decision Makers',
-    industry: 'Healthcare',
-    region: 'north_america',
-    lead_count: 1850,
-    price_credits: 200,
-    company_sizes: ['201-500', '501-1000', '1000+'],
-    titles: ['CIO', 'VP IT', 'Director of Technology', 'CISO'],
-    description: 'IT leaders at healthcare organizations driving digital transformation.',
-    sample_companies: ['Epic Systems', 'Cerner', 'Medidata', 'Veeva Systems'],
-    data_freshness: '1 week ago',
-    verified_rate: 89,
-  },
-  {
-    id: '3',
-    name: 'E-commerce Growth Teams',
-    industry: 'E-commerce',
-    region: 'europe',
-    lead_count: 3200,
-    price_credits: 175,
-    company_sizes: ['11-50', '51-200'],
-    titles: ['Head of Growth', 'CMO', 'VP Marketing', 'Director of E-commerce'],
-    description: 'Marketing and growth leaders at fast-growing e-commerce brands.',
-    sample_companies: ['Gymshark', 'ASOS', 'Zalando', 'Farfetch'],
-    data_freshness: '3 days ago',
-    verified_rate: 94,
-  },
-  {
-    id: '4',
-    name: 'FinTech Executives APAC',
-    industry: 'Finance',
-    region: 'apac',
-    lead_count: 1200,
-    price_credits: 225,
-    company_sizes: ['51-200', '201-500'],
-    titles: ['CEO', 'CFO', 'Head of Product', 'VP Operations'],
-    description: 'C-suite and VP-level contacts at emerging FinTech companies in Asia-Pacific.',
-    sample_companies: ['Grab', 'GoTo', 'Razorpay', 'PhonePe'],
-    data_freshness: '1 week ago',
-    verified_rate: 87,
-  },
-  {
-    id: '5',
-    name: 'Manufacturing Digital Leaders',
-    industry: 'Manufacturing',
-    region: 'north_america',
-    lead_count: 980,
-    price_credits: 130,
-    company_sizes: ['501-1000', '1000+'],
-    titles: ['VP Operations', 'Director of IT', 'Plant Manager', 'COO'],
-    description: 'Operations and technology leaders driving Industry 4.0 initiatives.',
-    sample_companies: ['Caterpillar', 'John Deere', '3M', 'Rockwell Automation'],
-    data_freshness: '2 weeks ago',
-    verified_rate: 85,
-  },
-  {
-    id: '6',
-    name: 'Professional Services Partners',
-    industry: 'Professional Services',
-    region: 'europe',
-    lead_count: 750,
-    price_credits: 180,
-    company_sizes: ['201-500', '501-1000'],
-    titles: ['Managing Partner', 'Director', 'Head of Digital', 'CTO'],
-    description: 'Senior partners and directors at consulting and professional services firms.',
-    sample_companies: ['McKinsey', 'BCG', 'Deloitte', 'PwC'],
-    data_freshness: '5 days ago',
-    verified_rate: 91,
-  },
-  {
-    id: '7',
-    name: 'Retail Tech Buyers',
-    industry: 'Retail',
-    region: 'north_america',
-    lead_count: 1650,
-    price_credits: 145,
-    company_sizes: ['201-500', '501-1000', '1000+'],
-    titles: ['VP Technology', 'Head of E-commerce', 'CIO', 'Director of Digital'],
-    description: 'Technology decision makers at major retail chains and brands.',
-    sample_companies: ['Target', 'Walmart', 'Best Buy', 'Home Depot'],
-    data_freshness: '1 week ago',
-    verified_rate: 88,
-  },
-  {
-    id: '8',
-    name: 'EdTech Growth Leaders',
-    industry: 'Education',
-    region: 'north_america',
-    lead_count: 890,
-    price_credits: 120,
-    company_sizes: ['11-50', '51-200'],
-    titles: ['CEO', 'VP Sales', 'Head of Growth', 'CMO'],
-    description: 'Founders and growth leaders at educational technology companies.',
-    sample_companies: ['Coursera', 'Duolingo', 'Khan Academy', 'Udemy'],
-    data_freshness: '4 days ago',
-    verified_rate: 93,
-  },
-];
+// Nests are loaded from database/marketplace
 
 // Related industries mapping
 const RELATED_INDUSTRIES = {
@@ -776,10 +662,10 @@ export default function GrowthNestRecommendations() {
 
   // State
   const [campaignConfig, setCampaignConfig] = useState(null);
-  const [nests, setNests] = useState(MOCK_NESTS);
+  const [nests, setNests] = useState([]);
   const [selectedNests, setSelectedNests] = useState([]);
   const [purchasedNests, setPurchasedNests] = useState([]);
-  const [userCredits, setUserCredits] = useState(500);
+  const [userCredits, setUserCredits] = useState(0);
   const [previewNest, setPreviewNest] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -789,19 +675,60 @@ export default function GrowthNestRecommendations() {
   const [filterIndustry, setFilterIndustry] = useState('all');
   const [filterRegion, setFilterRegion] = useState('all');
 
-  // Load campaign config from localStorage
+  const orgId = user?.organization_id || user?.company_id;
+
+  // Load campaign config from localStorage and fetch nests
   useEffect(() => {
-    const savedDraft = localStorage.getItem(STORAGE_KEY);
-    if (savedDraft) {
-      try {
-        const parsed = JSON.parse(savedDraft);
-        setCampaignConfig(parsed);
-      } catch (e) {
-        console.error('Failed to parse campaign config:', e);
+    async function loadData() {
+      setLoading(true);
+
+      // Load campaign config
+      const savedDraft = localStorage.getItem(STORAGE_KEY);
+      if (savedDraft) {
+        try {
+          const parsed = JSON.parse(savedDraft);
+          setCampaignConfig(parsed);
+        } catch (e) {
+          console.error('Failed to parse campaign config:', e);
+        }
       }
+
+      // Fetch available nests from marketplace or database
+      if (orgId) {
+        try {
+          const { data: nestsData, error } = await supabase
+            .from('nests')
+            .select('*')
+            .or(`organization_id.is.null,organization_id.eq.${orgId}`)
+            .eq('is_marketplace', true)
+            .order('lead_count', { ascending: false });
+
+          if (!error && nestsData) {
+            setNests(nestsData.map(n => ({
+              id: n.id,
+              name: n.name,
+              industry: n.industry || 'General',
+              region: n.region || 'global',
+              lead_count: n.lead_count || n.candidates_count || 0,
+              price_credits: n.price_credits || 100,
+              company_sizes: n.company_sizes || [],
+              titles: n.titles || [],
+              description: n.description || '',
+              sample_companies: n.sample_companies || [],
+              data_freshness: n.data_freshness || 'Unknown',
+              verified_rate: n.verified_rate || 80,
+            })));
+          }
+        } catch (error) {
+          console.error('Error fetching nests:', error);
+        }
+      }
+
+      setLoading(false);
     }
-    setLoading(false);
-  }, []);
+
+    loadData();
+  }, [orgId]);
 
   // Fetch user credits
   useEffect(() => {

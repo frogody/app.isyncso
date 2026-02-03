@@ -212,9 +212,23 @@ export default function GrowthDashboard() {
   });
   const [activities, setActivities] = useState([]);
 
+  // Map activity types to icons and colors
+  const ACTIVITY_CONFIG = {
+    campaign_sent: { icon: Mail, iconBg: 'bg-indigo-500/10 text-indigo-400' },
+    meeting_booked: { icon: Calendar, iconBg: 'bg-green-500/10 text-green-400' },
+    signal_detected: { icon: Zap, iconBg: 'bg-amber-500/10 text-amber-400' },
+    prospect_replied: { icon: Bell, iconBg: 'bg-indigo-500/10 text-indigo-400' },
+    call_scheduled: { icon: Phone, iconBg: 'bg-blue-500/10 text-blue-400' },
+    opportunity_created: { icon: Target, iconBg: 'bg-green-500/10 text-green-400' },
+    opportunity_won: { icon: DollarSign, iconBg: 'bg-green-500/10 text-green-400' },
+    default: { icon: Activity, iconBg: 'bg-zinc-500/10 text-zinc-400' },
+  };
+
   useEffect(() => {
     async function fetchDashboardData() {
       if (!user?.id) return;
+
+      const orgId = user.organization_id || user.company_id;
 
       try {
         setLoading(true);
@@ -230,89 +244,81 @@ export default function GrowthDashboard() {
           setCredits(userData.credits || 0);
         }
 
-        // TODO: Replace with actual queries once tables exist
-        // Fetch campaign stats from growth_campaigns table
-        // const { data: campaignData } = await supabase
-        //   .from('growth_campaigns')
-        //   .select('*')
-        //   .eq('organization_id', user.organization_id)
-        //   .eq('status', 'active');
+        // Fetch real campaign stats
+        const { data: campaigns } = await supabase
+          .from('growth_campaigns')
+          .select('*')
+          .eq('organization_id', orgId);
 
-        // TODO: Fetch activity from growth_activity table
-        // const { data: activityData } = await supabase
-        //   .from('growth_activity')
-        //   .select('*')
-        //   .eq('organization_id', user.organization_id)
-        //   .order('created_at', { ascending: false })
-        //   .limit(5);
+        // Fetch real opportunities
+        const { data: opportunities } = await supabase
+          .from('growth_opportunities')
+          .select('*')
+          .eq('organization_id', orgId);
 
-        // Placeholder data - replace with actual DB queries
+        // Fetch real signals
+        const { data: signals } = await supabase
+          .from('customer_signals')
+          .select('*')
+          .eq('organization_id', orgId)
+          .is('acknowledged_at', null);
+
+        // Fetch recent activities
+        const { data: activityData } = await supabase
+          .from('growth_activities')
+          .select('*')
+          .eq('organization_id', orgId)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        // Calculate stats from real data
+        const activeCampaigns = campaigns?.filter(c => c.status === 'active') || [];
+        const wonOpportunities = opportunities?.filter(o => o.stage === 'won') || [];
+        const thisWeekStart = new Date();
+        thisWeekStart.setDate(thisWeekStart.getDate() - 7);
+        const recentOpportunities = opportunities?.filter(o =>
+          new Date(o.created_at) >= thisWeekStart
+        ) || [];
+
         setStats({
-          prospectsResearched: 247,
-          campaignsActive: 3,
-          meetingsBooked: 12,
-          expansionRevenue: 45000,
-          activeSignals: 28,
-          opportunitiesThisWeek: 7,
+          prospectsResearched: campaigns?.reduce((sum, c) => sum + (c.prospects_count || 0), 0) || 0,
+          campaignsActive: activeCampaigns.length,
+          meetingsBooked: campaigns?.reduce((sum, c) => sum + (c.meetings_booked || 0), 0) || 0,
+          expansionRevenue: wonOpportunities.reduce((sum, o) => sum + (o.closed_value || o.value || 0), 0),
+          activeSignals: signals?.length || 0,
+          opportunitiesThisWeek: recentOpportunities.length,
         });
 
-        // Placeholder activities - replace with growth_activity table
-        setActivities([
-          {
-            id: 1,
-            type: 'campaign_sent',
-            title: 'Campaign "Q1 Tech Leaders" sent',
-            description: '150 prospects reached',
-            created_at: new Date(Date.now() - 1800000),
-            icon: Mail,
-            iconBg: 'bg-indigo-500/10 text-indigo-400',
-          },
-          {
-            id: 2,
-            type: 'meeting_booked',
-            title: 'Meeting booked with Acme Corp',
-            description: 'John Smith - VP Engineering',
-            created_at: new Date(Date.now() - 7200000),
-            icon: Calendar,
-            iconBg: 'bg-green-500/10 text-green-400',
-          },
-          {
-            id: 3,
-            type: 'signal_detected',
-            title: 'Expansion signal detected',
-            description: 'TechCo Inc. showing growth patterns',
-            created_at: new Date(Date.now() - 14400000),
-            icon: Zap,
-            iconBg: 'bg-amber-500/10 text-amber-400',
-          },
-          {
-            id: 4,
-            type: 'prospect_replied',
-            title: 'Prospect replied',
-            description: 'Sarah Chen interested in demo',
-            created_at: new Date(Date.now() - 28800000),
-            icon: Bell,
-            iconBg: 'bg-indigo-500/10 text-indigo-400',
-          },
-          {
-            id: 5,
-            type: 'call_scheduled',
-            title: 'Discovery call scheduled',
-            description: 'DataFlow Systems - Tomorrow 2pm',
-            created_at: new Date(Date.now() - 43200000),
-            icon: Phone,
-            iconBg: 'bg-blue-500/10 text-blue-400',
-          },
-        ]);
+        // Map activities with icons
+        const mappedActivities = (activityData || []).map(activity => {
+          const config = ACTIVITY_CONFIG[activity.activity_type] || ACTIVITY_CONFIG.default;
+          return {
+            ...activity,
+            icon: config.icon,
+            iconBg: config.iconBg,
+          };
+        });
+
+        setActivities(mappedActivities);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        // Set empty stats on error
+        setStats({
+          prospectsResearched: 0,
+          campaignsActive: 0,
+          meetingsBooked: 0,
+          expansionRevenue: 0,
+          activeSignals: 0,
+          opportunitiesThisWeek: 0,
+        });
+        setActivities([]);
       } finally {
         setLoading(false);
       }
     }
 
     fetchDashboardData();
-  }, [user?.id, user?.organization_id]);
+  }, [user?.id, user?.organization_id, user?.company_id]);
 
   return (
     <div className="min-h-screen bg-black">
