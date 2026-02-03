@@ -120,3 +120,6 @@ verify_jwt = false
 
 [functions.assemble-video]
 verify_jwt = false
+
+[functions.growth-ai-execute]
+verify_jwt = false
