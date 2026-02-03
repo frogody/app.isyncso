@@ -51,7 +51,7 @@ import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 import { GrowthPageTransition } from '@/components/growth/ui';
-import PageHeader from '@/components/ui/PageHeader';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 // Badge configuration
 const BADGE_CONFIG = {

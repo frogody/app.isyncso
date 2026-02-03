@@ -66,7 +66,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
-import PageHeader from '@/components/ui/PageHeader';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 // Badge color mapping
 const BADGE_COLORS = {
