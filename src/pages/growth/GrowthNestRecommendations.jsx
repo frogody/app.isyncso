@@ -893,9 +893,9 @@ export default function GrowthNestRecommendations() {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedConfig));
 
-    // TODO: Navigate to purchase flow or campaign workspace
+    // Navigate to workspace setup/purchase flow
     toast.success(`Selected ${selectedNests.length} nests for your campaign`);
-    navigate('/growth/campaigns');
+    navigate('/growth/workspace/setup');
   };
 
   // ICP summary badges

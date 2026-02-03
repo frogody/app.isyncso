@@ -105,6 +105,8 @@ import GrowthWorkspaceSetup from "./growth/GrowthWorkspaceSetup";
 
 import GrowthResearchWorkspace from "./growth/GrowthResearchWorkspace";
 
+import GrowthOutreachBuilder from "./growth/GrowthOutreachBuilder";
+
 import Home from "./Home";
 
 import Inbox from "./Inbox";
@@ -432,6 +434,8 @@ const PAGES = {
     GrowthWorkspaceSetup: GrowthWorkspaceSetup,
 
     GrowthResearchWorkspace: GrowthResearchWorkspace,
+
+    GrowthOutreachBuilder: GrowthOutreachBuilder,
 
     Home: Home,
     
@@ -794,7 +798,8 @@ function PagesContent() {
                 <Route path="/GrowthAssistant" element={<GrowthAssistant />} />
                 
                 <Route path="/GrowthCampaigns" element={<GrowthCampaigns />} />
-                
+                <Route path="/growth/campaigns" element={<GrowthCampaigns />} />
+
                 <Route path="/GrowthPipeline" element={<GrowthPipeline />} />
                 
                 <Route path="/GrowthProspects" element={<GrowthProspects />} />
@@ -828,6 +833,11 @@ function PagesContent() {
                 <Route path="/GrowthResearchWorkspace/:workspaceId" element={<GrowthResearchWorkspace />} />
                 <Route path="/growth/research/:workspaceId" element={<GrowthResearchWorkspace />} />
                 <Route path="/growth/research" element={<GrowthResearchWorkspace />} />
+
+                <Route path="/GrowthOutreachBuilder" element={<GrowthOutreachBuilder />} />
+                <Route path="/GrowthOutreachBuilder/:workspaceId" element={<GrowthOutreachBuilder />} />
+                <Route path="/growth/outreach/new" element={<GrowthOutreachBuilder />} />
+                <Route path="/growth/outreach/:workspaceId" element={<GrowthOutreachBuilder />} />
 
                 <Route path="/Home" element={<Home />} />
                 
