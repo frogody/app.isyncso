@@ -787,35 +787,19 @@ export default function RaiseEnrich() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [moreMenuOpen]);
 
-  // Close panels on Escape + table keyboard shortcuts
+  // Close panels on Escape
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        if (tabContextMenu) { setTabContextMenu(null); return; }
-        if (moreMenuOpen) { setMoreMenuOpen(false); return; }
-        if (colDialogOpen) { setColDialogOpen(false); return; }
-        if (filterPanelOpen) { setFilterPanelOpen(false); return; }
-        if (sortPanelOpen) { setSortPanelOpen(false); return; }
-      }
-      // Table shortcuts
-      if (e.ctrlKey && e.key === 'PageUp' && tables.length > 1) {
-        e.preventDefault();
-        const idx = tables.findIndex(t => t.id === activeTableId);
-        if (idx > 0) switchTable(tables[idx - 1].id);
-      }
-      if (e.ctrlKey && e.key === 'PageDown' && tables.length > 1) {
-        e.preventDefault();
-        const idx = tables.findIndex(t => t.id === activeTableId);
-        if (idx < tables.length - 1) switchTable(tables[idx + 1].id);
-      }
-      if (e.ctrlKey && e.key === 't') {
-        e.preventDefault();
-        createNewTable();
-      }
+    const handleEsc = (e) => {
+      if (e.key !== 'Escape') return;
+      if (tabContextMenu) { setTabContextMenu(null); return; }
+      if (moreMenuOpen) { setMoreMenuOpen(false); return; }
+      if (colDialogOpen) { setColDialogOpen(false); return; }
+      if (filterPanelOpen) { setFilterPanelOpen(false); return; }
+      if (sortPanelOpen) { setSortPanelOpen(false); return; }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [colDialogOpen, filterPanelOpen, sortPanelOpen, tabContextMenu, moreMenuOpen, tables, activeTableId, switchTable, createNewTable]);
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [colDialogOpen, filterPanelOpen, sortPanelOpen, tabContextMenu, moreMenuOpen]);
 
   // ─── Load workspace detail (moved before snapshot/revert to avoid forward ref) ───
 
@@ -963,6 +947,28 @@ export default function RaiseEnrich() {
       toast.success('Table deleted');
     } catch (err) { toast.error('Failed to delete table'); }
   }, [tables, activeTableId, switchTable]);
+
+  // Table keyboard shortcuts (must be after switchTable/createNewTable definitions)
+  useEffect(() => {
+    const handleTableKeys = (e) => {
+      if (e.ctrlKey && e.key === 'PageUp' && tables.length > 1) {
+        e.preventDefault();
+        const idx = tables.findIndex(t => t.id === activeTableId);
+        if (idx > 0) switchTable(tables[idx - 1].id);
+      }
+      if (e.ctrlKey && e.key === 'PageDown' && tables.length > 1) {
+        e.preventDefault();
+        const idx = tables.findIndex(t => t.id === activeTableId);
+        if (idx < tables.length - 1) switchTable(tables[idx + 1].id);
+      }
+      if (e.ctrlKey && e.key === 't') {
+        e.preventDefault();
+        createNewTable();
+      }
+    };
+    window.addEventListener('keydown', handleTableKeys);
+    return () => window.removeEventListener('keydown', handleTableKeys);
+  }, [tables, activeTableId, switchTable, createNewTable]);
 
   const createSnapshot = useCallback(async () => {
     if (!snapshotName.trim() || !activeWorkspaceId) return;
