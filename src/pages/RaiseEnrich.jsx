@@ -555,6 +555,64 @@ export default function RaiseEnrich() {
     }
   }, [activeWorkspaceId]);
 
+  // ─── Load workspace detail (moved before snapshot/revert to avoid forward ref) ───
+
+  const loadWorkspaceDetail = useCallback(async (wsId) => {
+    setWsLoading(true);
+    try {
+      // Fetch workspace
+      const { data: ws, error: wsErr } = await supabase
+        .from('enrich_workspaces')
+        .select('*')
+        .eq('id', wsId)
+        .single();
+      if (wsErr) throw wsErr;
+      setWorkspace(ws);
+      setWsName(ws.name);
+      setAutoRun(ws.auto_run === true);
+
+      // Fetch columns
+      const { data: cols, error: colErr } = await supabase
+        .from('enrich_columns')
+        .select('*')
+        .eq('workspace_id', wsId)
+        .order('position', { ascending: true });
+      if (colErr) throw colErr;
+      setColumns(cols || []);
+
+      // Fetch rows
+      const { data: rws, error: rwErr } = await supabase
+        .from('enrich_rows')
+        .select('*')
+        .eq('workspace_id', wsId)
+        .order('position', { ascending: true });
+      if (rwErr) throw rwErr;
+      setRows(rws || []);
+
+      // Fetch all cells for these rows
+      if (rws?.length && cols?.length) {
+        const rowIds = rws.map(r => r.id);
+        const { data: cellData, error: cellErr } = await supabase
+          .from('enrich_cells')
+          .select('*')
+          .in('row_id', rowIds);
+        if (cellErr) throw cellErr;
+        const cellMap = {};
+        (cellData || []).forEach(c => {
+          cellMap[`${c.row_id}:${c.column_id}`] = c;
+        });
+        setCells(cellMap);
+      } else {
+        setCells({});
+      }
+    } catch (err) {
+      console.error('Error loading workspace:', err);
+      toast.error('Failed to load workspace');
+    } finally {
+      setWsLoading(false);
+    }
+  }, []);
+
   const createSnapshot = useCallback(async () => {
     if (!snapshotName.trim() || !activeWorkspaceId) return;
     try {
@@ -751,64 +809,6 @@ export default function RaiseEnrich() {
       toast.error('Failed to create workspace');
     }
   }, [newWsName, newWsNestId, orgId, user?.id, loadWorkspaces]);
-
-  // ─── Load workspace detail ─────────────────────────────────────────────
-
-  const loadWorkspaceDetail = useCallback(async (wsId) => {
-    setWsLoading(true);
-    try {
-      // Fetch workspace
-      const { data: ws, error: wsErr } = await supabase
-        .from('enrich_workspaces')
-        .select('*')
-        .eq('id', wsId)
-        .single();
-      if (wsErr) throw wsErr;
-      setWorkspace(ws);
-      setWsName(ws.name);
-      setAutoRun(ws.auto_run === true);
-
-      // Fetch columns
-      const { data: cols, error: colErr } = await supabase
-        .from('enrich_columns')
-        .select('*')
-        .eq('workspace_id', wsId)
-        .order('position', { ascending: true });
-      if (colErr) throw colErr;
-      setColumns(cols || []);
-
-      // Fetch rows
-      const { data: rws, error: rwErr } = await supabase
-        .from('enrich_rows')
-        .select('*')
-        .eq('workspace_id', wsId)
-        .order('position', { ascending: true });
-      if (rwErr) throw rwErr;
-      setRows(rws || []);
-
-      // Fetch all cells for these rows
-      if (rws?.length && cols?.length) {
-        const rowIds = rws.map(r => r.id);
-        const { data: cellData, error: cellErr } = await supabase
-          .from('enrich_cells')
-          .select('*')
-          .in('row_id', rowIds);
-        if (cellErr) throw cellErr;
-        const cellMap = {};
-        (cellData || []).forEach(c => {
-          cellMap[`${c.row_id}:${c.column_id}`] = c;
-        });
-        setCells(cellMap);
-      } else {
-        setCells({});
-      }
-    } catch (err) {
-      console.error('Error loading workspace:', err);
-      toast.error('Failed to load workspace');
-    } finally {
-      setWsLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     if (activeWorkspaceId) {
