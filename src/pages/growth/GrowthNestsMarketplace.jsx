@@ -459,7 +459,7 @@ export default function GrowthNestsMarketplace() {
 
       // Navigate to the new workspace
       if (result.workspace_id) {
-        navigate(`/growthenrich?workspace=${result.workspace_id}`);
+        navigate(`/GrowthEnrich?workspace=${result.workspace_id}`);
       }
     } catch (err) {
       console.error('Purchase failed:', err);

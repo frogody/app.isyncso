@@ -93,6 +93,8 @@ import GrowthTemplates from "./GrowthTemplates";
 
 import GrowthNestsMarketplace from "./growth/GrowthNestsMarketplace";
 
+import GrowthEnrich from "./growth/GrowthEnrich";
+
 import Home from "./Home";
 
 import Inbox from "./Inbox";
@@ -408,6 +410,8 @@ const PAGES = {
     GrowthTemplates: GrowthTemplates,
 
     GrowthNestsMarketplace: GrowthNestsMarketplace,
+
+    GrowthEnrich: GrowthEnrich,
 
     Home: Home,
     
@@ -786,6 +790,8 @@ function PagesContent() {
                 <Route path="/GrowthTemplates" element={<GrowthTemplates />} />
 
                 <Route path="/GrowthNestsMarketplace" element={<GrowthNestsMarketplace />} />
+
+                <Route path="/GrowthEnrich" element={<GrowthEnrich />} />
 
                 <Route path="/Home" element={<Home />} />
                 
