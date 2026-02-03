@@ -764,6 +764,18 @@ export default function RaiseEnrich() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [viewDropdownOpen]);
 
+  // Close panels on Escape
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key !== 'Escape') return;
+      if (colDialogOpen) { setColDialogOpen(false); return; }
+      if (filterPanelOpen) { setFilterPanelOpen(false); return; }
+      if (sortPanelOpen) { setSortPanelOpen(false); return; }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [colDialogOpen, filterPanelOpen, sortPanelOpen]);
+
   // ─── Load workspace detail (moved before snapshot/revert to avoid forward ref) ───
 
   const loadWorkspaceDetail = useCallback(async (wsId) => {
@@ -2497,7 +2509,7 @@ export default function RaiseEnrich() {
 
     try {
       const ctx = buildChatContext();
-      const systemPrompt = `You are Sculptor, an AI assistant for the RaiseEnrich data enrichment workspace. You help users build and configure their enrichment table.
+      const systemPrompt = `You are Sync, an AI assistant for the RaiseEnrich data enrichment workspace. You help users build and configure their enrichment table.
 
 Current workspace: "${ctx.workspace}"
 Rows: ${ctx.rowCount} | Columns: ${ctx.columnCount}
@@ -3106,25 +3118,25 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 overflow-x-auto flex-shrink min-w-0" style={{ scrollbarWidth: 'none' }}>
               {workspace?.nest_id && rows.length === 0 && (
-                <RaiseButton variant="ghost" size="sm" onClick={importFromNest}>
+                <RaiseButton variant="ghost" size="sm" onClick={importFromNest} className="flex-shrink-0">
                   <Upload className="w-3.5 h-3.5 mr-1" /> Import from Nest
                 </RaiseButton>
               )}
-              <RaiseButton variant="ghost" size="sm" onClick={() => csvInputRef.current?.click()} title="Import CSV file">
-                <FileUp className="w-3.5 h-3.5 mr-1" /> Import CSV
+              <RaiseButton variant="ghost" size="sm" onClick={() => csvInputRef.current?.click()} title="Import CSV file" className="flex-shrink-0">
+                <FileUp className="w-3.5 h-3.5 mr-1" /> <span className="hidden xl:inline">Import</span> CSV
               </RaiseButton>
               <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={importCSV} />
-              <RaiseButton variant="ghost" size="sm" onClick={() => { setColDialogOpen(true); setColType('field'); setColName(''); setColConfig({}); }} title="Add a new column">
-                <Plus className="w-3.5 h-3.5 mr-1" /> Add Column
+              <RaiseButton variant="ghost" size="sm" onClick={() => { setColDialogOpen(true); setColType('field'); setColName(''); setColConfig({}); setFilterPanelOpen(false); setSortPanelOpen(false); }} title="Add a new column" className="flex-shrink-0">
+                <Plus className="w-3.5 h-3.5 mr-1" /> <span className="hidden lg:inline">Add</span> Column
               </RaiseButton>
-              <RaiseButton variant="ghost" size="sm" onClick={runAllColumns} title="Run all enrichment columns (Ctrl+Enter)">
+              <RaiseButton variant="ghost" size="sm" onClick={runAllColumns} title="Run all enrichment columns (Ctrl+Enter)" className="flex-shrink-0">
                 <Play className="w-3.5 h-3.5 mr-1" /> Run All
               </RaiseButton>
               <button
                 onClick={toggleAutoRun}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                className={`flex-shrink-0 whitespace-nowrap flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   autoRun
                     ? rt('bg-green-50 text-green-700 border border-green-200', 'bg-green-500/10 text-green-400 border border-green-500/30')
                     : rt('text-gray-500 hover:bg-gray-100 border border-transparent', 'text-zinc-500 hover:bg-zinc-800 border border-transparent')
@@ -3145,7 +3157,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     toast.info('Sandbox mode OFF');
                   }
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                className={`flex-shrink-0 whitespace-nowrap flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   sandboxMode
                     ? rt('bg-amber-50 text-amber-700 border border-amber-300', 'bg-amber-500/10 text-amber-400 border border-amber-500/40')
                     : rt('text-gray-500 hover:bg-gray-100 border border-transparent', 'text-zinc-500 hover:bg-zinc-800 border border-transparent')
@@ -3165,7 +3177,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   </button>
                 </>
               )}
-              <RaiseButton variant="ghost" size="sm" onClick={() => setSortPanelOpen(prev => !prev)} className="relative" title="Sort columns">
+              <RaiseButton variant="ghost" size="sm" onClick={() => { setSortPanelOpen(prev => !prev); setFilterPanelOpen(false); setColDialogOpen(false); }} className="relative flex-shrink-0" title="Sort columns">
                 <ArrowUpDown className="w-3.5 h-3.5 mr-1" /> Sort
                 {activeSortCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-orange-500 text-[10px] font-bold text-white flex items-center justify-center">
@@ -3173,7 +3185,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   </span>
                 )}
               </RaiseButton>
-              <RaiseButton variant="ghost" size="sm" onClick={() => setFilterPanelOpen(prev => !prev)} className="relative" title="Filter rows">
+              <RaiseButton variant="ghost" size="sm" onClick={() => { setFilterPanelOpen(prev => !prev); setSortPanelOpen(false); setColDialogOpen(false); }} className="relative flex-shrink-0" title="Filter rows">
                 <Filter className="w-3.5 h-3.5 mr-1" /> Filters
                 {activeFilterCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-orange-500 text-[10px] font-bold text-white flex items-center justify-center">
@@ -3181,7 +3193,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   </span>
                 )}
               </RaiseButton>
-              <RaiseButton variant="ghost" size="sm" onClick={exportCSV} title="Export to CSV">
+              <RaiseButton variant="ghost" size="sm" onClick={exportCSV} title="Export to CSV" className="flex-shrink-0">
                 <Download className="w-3.5 h-3.5 mr-1" /> CSV
               </RaiseButton>
               <RaiseButton variant="ghost" size="sm" onClick={() => { setHistoryPanelOpen(prev => !prev); if (!historyPanelOpen) { loadHistory(); loadSnapshots(); } }} className="relative">
@@ -3873,13 +3885,37 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
           </DialogContent>
         </Dialog>
 
-        {/* Add Column Dialog */}
-        <Dialog open={colDialogOpen} onOpenChange={setColDialogOpen}>
-          <DialogContent className={rt('bg-white max-w-lg', 'bg-zinc-900 border-zinc-800 max-w-lg')}>
-            <DialogHeader>
-              <DialogTitle className={rt('text-gray-900', 'text-white')}>Add Column</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 mt-2">
+        {/* Add Column Panel - slides in from right */}
+        <AnimatePresence>
+          {colDialogOpen && (
+            <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[49]"
+              onClick={() => setColDialogOpen(false)}
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 300 }}
+              className={rt(
+                'fixed top-0 right-0 h-full w-[450px] z-50 border-l border-gray-200 bg-white shadow-xl flex flex-col',
+                'fixed top-0 right-0 h-full w-[450px] z-50 border-l border-zinc-800 bg-zinc-950 shadow-xl flex flex-col'
+              )}
+            >
+              {/* Header */}
+              <div className={`flex items-center justify-between px-4 py-3 border-b ${rt('border-gray-200', 'border-zinc-800')}`}>
+                <div className="flex items-center gap-2">
+                  <Plus className="w-4 h-4 text-orange-400" />
+                  <h3 className={`text-sm font-semibold ${rt('text-gray-900', 'text-white')}`}>Add Column</h3>
+                </div>
+                <button onClick={() => setColDialogOpen(false)} className={`p-1.5 rounded-lg transition-colors ${rt('hover:bg-gray-100 text-gray-400', 'hover:bg-zinc-800 text-zinc-500')}`}>
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {/* Column name */}
               <div>
                 <Label className={rt('text-gray-700', 'text-zinc-300')}>Column Name</Label>
@@ -4747,8 +4783,10 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                 <RaiseButton onClick={handleAddColumn}>Add Column</RaiseButton>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
+            </motion.div>
+            </>
+          )}
+        </AnimatePresence>
         {/* History Panel */}
         <AnimatePresence>
           {historyPanelOpen && (
@@ -4971,7 +5009,12 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               : rt('bg-gradient-to-br from-purple-500 to-pink-500 text-white hover:shadow-xl hover:scale-105', 'bg-gradient-to-br from-purple-500 to-pink-500 text-white hover:shadow-xl hover:scale-105')
           }`}
         >
-          {chatOpen ? <X className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
+          {chatOpen ? <X className="w-5 h-5" /> : (
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 3c-1.2 0-2.4.6-3 1.7A3.6 3.6 0 0 0 4.6 9c-1 .6-1.7 1.8-1.7 3s.7 2.4 1.7 3c-.3 1.2 0 2.5.9 3.4.8.8 2.1 1.2 3.3.9.6 1 1.8 1.7 3 1.7s2.4-.6 3-1.7c1.2.3 2.5 0 3.4-.9.8-.8 1.2-2.1.9-3.3 1-1 1.7-1.8 1.7-3s-.7-2.4-1.7-3c.3-1.2 0-2.5-.9-3.4-.8-.8-2.1-1.2-3.3-.9A3.6 3.6 0 0 0 12 3Z" />
+              <circle cx="12" cy="12" r="2" fill="currentColor" />
+            </svg>
+          )}
         </button>
 
         {/* AI Chat Panel */}
@@ -4987,12 +5030,15 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               {/* Header */}
               <div className={`flex items-center justify-between px-4 py-3 border-b ${rt('border-gray-200', 'border-zinc-800')}`}>
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                    <Sparkles className="w-3.5 h-3.5 text-white" />
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center">
+                    <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 3c-1.2 0-2.4.6-3 1.7A3.6 3.6 0 0 0 4.6 9c-1 .6-1.7 1.8-1.7 3s.7 2.4 1.7 3c-.3 1.2 0 2.5.9 3.4.8.8 2.1 1.2 3.3.9.6 1 1.8 1.7 3 1.7s2.4-.6 3-1.7c1.2.3 2.5 0 3.4-.9.8-.8 1.2-2.1.9-3.3 1-1 1.7-1.8 1.7-3s-.7-2.4-1.7-3c.3-1.2 0-2.5-.9-3.4-.8-.8-2.1-1.2-3.3-.9A3.6 3.6 0 0 0 12 3Z" />
+                      <circle cx="12" cy="12" r="2" fill="currentColor" />
+                    </svg>
                   </div>
                   <div>
-                    <h3 className={`text-sm font-semibold ${rt('text-gray-900', 'text-white')}`}>Sculptor</h3>
-                    <p className="text-[10px] text-zinc-500">AI workspace assistant</p>
+                    <h3 className={`text-sm font-semibold ${rt('text-gray-900', 'text-white')}`}>Sync</h3>
+                    <p className="text-[10px] text-zinc-500">Your AI workspace assistant</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -5009,11 +5055,14 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
                 {chatMessages.length === 0 && (
                   <div className="text-center py-8">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mx-auto mb-3">
-                      <Bot className="w-6 h-6 text-purple-400" />
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/20 to-violet-500/20 flex items-center justify-center mx-auto mb-3">
+                      <svg className="w-6 h-6 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 3c-1.2 0-2.4.6-3 1.7A3.6 3.6 0 0 0 4.6 9c-1 .6-1.7 1.8-1.7 3s.7 2.4 1.7 3c-.3 1.2 0 2.5.9 3.4.8.8 2.1 1.2 3.3.9.6 1 1.8 1.7 3 1.7s2.4-.6 3-1.7c1.2.3 2.5 0 3.4-.9.8-.8 1.2-2.1.9-3.3 1-1 1.7-1.8 1.7-3s-.7-2.4-1.7-3c.3-1.2 0-2.5-.9-3.4-.8-.8-2.1-1.2-3.3-.9A3.6 3.6 0 0 0 12 3Z" />
+                        <circle cx="12" cy="12" r="2" fill="currentColor" />
+                      </svg>
                     </div>
-                    <h4 className={`text-sm font-medium mb-1 ${rt('text-gray-900', 'text-white')}`}>Hi, I'm Sculptor</h4>
-                    <p className={`text-xs mb-4 ${rt('text-gray-500', 'text-zinc-500')}`}>I can help you build and configure your enrichment workspace.</p>
+                    <h4 className={`text-sm font-medium mb-1 ${rt('text-gray-900', 'text-white')}`}>Hi, I'm Sync</h4>
+                    <p className={`text-xs mb-4 ${rt('text-gray-500', 'text-zinc-500')}`}>Your AI workspace assistant. I can help you build and configure enrichments.</p>
                     <div className="space-y-2">
                       {CHAT_QUICK_PROMPTS.map((qp, i) => (
                         <button
@@ -5101,7 +5150,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     value={chatInput}
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(chatInput); } }}
-                    placeholder="Ask Sculptor anything..."
+                    placeholder="Ask Sync anything..."
                     disabled={chatLoading}
                     className={`flex-1 bg-transparent outline-none text-xs ${rt('text-gray-900 placeholder:text-gray-400', 'text-white placeholder:text-zinc-600')}`}
                   />
