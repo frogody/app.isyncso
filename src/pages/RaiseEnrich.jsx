@@ -8,7 +8,8 @@ import {
   Table2, Clock, Hash, Upload, FileUp, Database, Pencil, Filter, XCircle,
   ArrowUp, ArrowDown, ArrowUpDown, ToggleLeft, ToggleRight, Layers, Globe,
   Calendar, DollarSign, Link, Mail, CheckSquare, ListOrdered, Merge, Send, Bot, Trash,
-  FlaskConical, ShieldAlert, RotateCcw, History, Camera, Undo2, ChevronRight, BookmarkPlus
+  FlaskConical, ShieldAlert, RotateCcw, History, Camera, Undo2, ChevronRight, BookmarkPlus,
+  Eye, Copy, Star, Save
 } from 'lucide-react';
 import {
   RaiseCard, RaiseCardContent, RaiseCardHeader, RaiseCardTitle,
@@ -482,6 +483,18 @@ export default function RaiseEnrich() {
   const [expandedHistory, setExpandedHistory] = useState({});
   const historyGroupRef = useRef(null); // current group_id for batch ops
 
+  // Views
+  const [views, setViews] = useState([]);
+  const [activeViewId, setActiveViewId] = useState(null); // null = Default View
+  const [viewDropdownOpen, setViewDropdownOpen] = useState(false);
+  const [viewSaveDialogOpen, setViewSaveDialogOpen] = useState(false);
+  const [viewSaveName, setViewSaveName] = useState('');
+  const [viewSaveMode, setViewSaveMode] = useState('new'); // 'new' | 'overwrite'
+  const [viewRenamingId, setViewRenamingId] = useState(null);
+  const [viewRenameValue, setViewRenameValue] = useState('');
+  const [viewHasUnsaved, setViewHasUnsaved] = useState(false);
+  const viewDropdownRef = useRef(null);
+
   // AI Chat assistant
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([]); // [{ role: 'user'|'assistant', content, actions?, timestamp }]
@@ -554,6 +567,200 @@ export default function RaiseEnrich() {
       console.error('Load snapshots error:', err);
     }
   }, [activeWorkspaceId]);
+
+  // ─── Views system ─────────────────────────────────────────────────────────
+
+  const buildViewConfig = useCallback(() => ({
+    visible_columns: columns.map(c => c.id),
+    column_order: columns.map(c => c.id),
+    column_widths: columns.reduce((acc, c) => { if (c.width) acc[c.id] = c.width; return acc; }, {}),
+    filters,
+    sorts,
+    search: searchInput || '',
+  }), [columns, filters, sorts, searchInput]);
+
+  const loadViews = useCallback(async () => {
+    if (!activeWorkspaceId) return;
+    try {
+      const { data, error } = await supabase
+        .from('enrich_views')
+        .select('*')
+        .eq('workspace_id', activeWorkspaceId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      setViews(data || []);
+    } catch (err) {
+      console.error('Load views error:', err);
+    }
+  }, [activeWorkspaceId]);
+
+  const applyViewConfig = useCallback((config) => {
+    if (!config) return;
+    // Apply filters
+    if (Array.isArray(config.filters)) setFilters(config.filters);
+    else setFilters([]);
+    // Apply sorts
+    if (Array.isArray(config.sorts)) setSorts(config.sorts);
+    else setSorts([]);
+    // Apply search
+    if (typeof config.search === 'string') setSearchInput(config.search);
+    else setSearchInput('');
+    // Apply column widths
+    if (config.column_widths && typeof config.column_widths === 'object') {
+      setColumns(prev => prev.map(c => ({
+        ...c,
+        width: config.column_widths[c.id] || c.width,
+      })));
+    }
+    // Apply column order
+    if (Array.isArray(config.column_order) && config.column_order.length > 0) {
+      setColumns(prev => {
+        const colMap = {};
+        prev.forEach(c => { colMap[c.id] = c; });
+        const ordered = config.column_order
+          .filter(id => colMap[id])
+          .map(id => colMap[id]);
+        // Append any columns not in the saved order (new columns added since view was saved)
+        prev.forEach(c => { if (!config.column_order.includes(c.id)) ordered.push(c); });
+        return ordered;
+      });
+    }
+  }, []);
+
+  const saveView = useCallback(async (name, viewId) => {
+    if (!activeWorkspaceId) return;
+    const config = buildViewConfig();
+    try {
+      if (viewId) {
+        // Update existing view
+        await supabase.from('enrich_views').update({ config, updated_at: new Date().toISOString() }).eq('id', viewId);
+        setViews(prev => prev.map(v => v.id === viewId ? { ...v, config, updated_at: new Date().toISOString() } : v));
+        toast.success('View saved');
+      } else {
+        // Create new view
+        const { data, error } = await supabase.from('enrich_views').insert({
+          workspace_id: activeWorkspaceId,
+          name: name || 'Untitled View',
+          config,
+        }).select().single();
+        if (error) throw error;
+        setViews(prev => [...prev, data]);
+        setActiveViewId(data.id);
+        toast.success(`View "${data.name}" created`);
+      }
+      setViewHasUnsaved(false);
+    } catch (err) {
+      console.error('Save view error:', err);
+      toast.error('Failed to save view');
+    }
+  }, [activeWorkspaceId, buildViewConfig]);
+
+  const deleteView = useCallback(async (viewId) => {
+    try {
+      await supabase.from('enrich_views').delete().eq('id', viewId);
+      setViews(prev => prev.filter(v => v.id !== viewId));
+      if (activeViewId === viewId) {
+        setActiveViewId(null);
+        // Reset to default
+        setFilters([]);
+        setSorts([]);
+        setSearchInput('');
+      }
+      toast.success('View deleted');
+    } catch (err) {
+      console.error('Delete view error:', err);
+      toast.error('Failed to delete view');
+    }
+  }, [activeViewId]);
+
+  const renameView = useCallback(async (viewId, newName) => {
+    if (!newName.trim()) return;
+    try {
+      await supabase.from('enrich_views').update({ name: newName.trim(), updated_at: new Date().toISOString() }).eq('id', viewId);
+      setViews(prev => prev.map(v => v.id === viewId ? { ...v, name: newName.trim() } : v));
+      setViewRenamingId(null);
+    } catch (err) {
+      console.error('Rename view error:', err);
+    }
+  }, []);
+
+  const setDefaultView = useCallback(async (viewId) => {
+    if (!activeWorkspaceId) return;
+    try {
+      // Clear existing default
+      await supabase.from('enrich_views').update({ is_default: false }).eq('workspace_id', activeWorkspaceId);
+      // Set new default
+      if (viewId) {
+        await supabase.from('enrich_views').update({ is_default: true }).eq('id', viewId);
+      }
+      setViews(prev => prev.map(v => ({ ...v, is_default: v.id === viewId })));
+      toast.success(viewId ? 'Default view updated' : 'Default view cleared');
+    } catch (err) {
+      console.error('Set default view error:', err);
+    }
+  }, [activeWorkspaceId]);
+
+  const duplicateView = useCallback(async (viewId) => {
+    const view = views.find(v => v.id === viewId);
+    if (!view) return;
+    await saveView(`${view.name} (copy)`, null);
+  }, [views, saveView]);
+
+  const switchView = useCallback((viewId) => {
+    if (viewId === null) {
+      // Default view — reset everything
+      setActiveViewId(null);
+      setFilters([]);
+      setSorts([]);
+      setSearchInput('');
+      setViewHasUnsaved(false);
+    } else {
+      const view = views.find(v => v.id === viewId);
+      if (!view) return;
+      setActiveViewId(viewId);
+      applyViewConfig(view.config);
+      setViewHasUnsaved(false);
+    }
+    setViewDropdownOpen(false);
+  }, [views, applyViewConfig]);
+
+  // Detect unsaved changes
+  const activeView = useMemo(() => views.find(v => v.id === activeViewId), [views, activeViewId]);
+  useEffect(() => {
+    if (!activeViewId || !activeView) { setViewHasUnsaved(false); return; }
+    const current = buildViewConfig();
+    const saved = activeView.config;
+    const changed = JSON.stringify(current.filters) !== JSON.stringify(saved.filters || [])
+      || JSON.stringify(current.sorts) !== JSON.stringify(saved.sorts || [])
+      || current.search !== (saved.search || '');
+    setViewHasUnsaved(changed);
+  }, [activeViewId, activeView, filters, sorts, searchInput, buildViewConfig]);
+
+  // Keyboard shortcuts: Ctrl+1..5 for first 5 views, Ctrl+0 for default
+  useEffect(() => {
+    if (!activeWorkspaceId) return;
+    const handleKeyDown = (e) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      if (e.key === '0') { e.preventDefault(); switchView(null); return; }
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= 5 && views[num - 1]) {
+        e.preventDefault();
+        switchView(views[num - 1].id);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeWorkspaceId, views, switchView]);
+
+  // Close view dropdown on outside click
+  useEffect(() => {
+    if (!viewDropdownOpen) return;
+    const handleClick = (e) => {
+      if (viewDropdownRef.current && !viewDropdownRef.current.contains(e.target)) setViewDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [viewDropdownOpen]);
 
   // ─── Load workspace detail (moved before snapshot/revert to avoid forward ref) ───
 
@@ -815,8 +1022,22 @@ export default function RaiseEnrich() {
       loadWorkspaceDetail(activeWorkspaceId);
       loadHistory();
       loadSnapshots();
+      loadViews().then(() => {
+        // Apply default view if one exists (after views loaded)
+      });
     }
-  }, [activeWorkspaceId, loadWorkspaceDetail, loadHistory, loadSnapshots]);
+  }, [activeWorkspaceId, loadWorkspaceDetail, loadHistory, loadSnapshots, loadViews]);
+
+  // Apply default view after views load
+  useEffect(() => {
+    if (views.length > 0 && !activeViewId && columns.length > 0) {
+      const defaultView = views.find(v => v.is_default);
+      if (defaultView) {
+        setActiveViewId(defaultView.id);
+        applyViewConfig(defaultView.config);
+      }
+    }
+  }, [views, columns.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Update workspace name ─────────────────────────────────────────────
 
@@ -2687,6 +2908,154 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   <FlaskConical className="w-3 h-3" /> SANDBOX
                 </span>
               )}
+              {/* Views dropdown */}
+              <div className="relative" ref={viewDropdownRef}>
+                <button
+                  onClick={() => setViewDropdownOpen(prev => !prev)}
+                  className={rt(
+                    `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${activeViewId ? 'bg-orange-50 text-orange-700 border-orange-200' : 'text-gray-500 hover:bg-gray-100 border-gray-200'}`,
+                    `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${activeViewId ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' : 'text-zinc-400 hover:bg-zinc-800 border-zinc-700'}`
+                  )}
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  {activeView ? activeView.name : 'Default View'}
+                  {viewHasUnsaved && <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />}
+                  <ChevronDown className={`w-3 h-3 transition-transform ${viewDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {viewDropdownOpen && (
+                  <div className={rt(
+                    'absolute top-full left-0 mt-1 w-72 rounded-xl border border-gray-200 bg-white shadow-lg z-50 overflow-hidden',
+                    'absolute top-full left-0 mt-1 w-72 rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl z-50 overflow-hidden'
+                  )}>
+                    {/* Default View */}
+                    <button
+                      onClick={() => switchView(null)}
+                      className={rt(
+                        `w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${!activeViewId ? 'bg-orange-50 text-orange-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`,
+                        `w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${!activeViewId ? 'bg-orange-500/10 text-orange-400 font-medium' : 'text-zinc-300 hover:bg-zinc-800'}`
+                      )}
+                    >
+                      <Table2 className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span className="flex-1">Default View</span>
+                      {!activeViewId && <Check className="w-3.5 h-3.5 text-orange-400" />}
+                      <span className={rt('text-[10px] text-gray-400', 'text-[10px] text-zinc-500')}>Ctrl+0</span>
+                    </button>
+                    {views.length > 0 && (
+                      <div className={rt('border-t border-gray-100', 'border-t border-zinc-800')}>
+                        {views.map((view, idx) => (
+                          <div
+                            key={view.id}
+                            className={rt(
+                              `flex items-center gap-2 px-3 py-2 text-xs transition-colors group ${activeViewId === view.id ? 'bg-orange-50 text-orange-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`,
+                              `flex items-center gap-2 px-3 py-2 text-xs transition-colors group ${activeViewId === view.id ? 'bg-orange-500/10 text-orange-400 font-medium' : 'text-zinc-300 hover:bg-zinc-800'}`
+                            )}
+                          >
+                            {view.is_default && <Star className="w-3 h-3 text-amber-400 fill-amber-400 flex-shrink-0" />}
+                            {!view.is_default && <Eye className="w-3 h-3 flex-shrink-0 text-zinc-500" />}
+                            {viewRenamingId === view.id ? (
+                              <input
+                                autoFocus
+                                value={viewRenameValue}
+                                onChange={e => setViewRenameValue(e.target.value)}
+                                onBlur={() => renameView(view.id, viewRenameValue)}
+                                onKeyDown={e => { if (e.key === 'Enter') renameView(view.id, viewRenameValue); if (e.key === 'Escape') setViewRenamingId(null); }}
+                                className={rt(
+                                  'flex-1 bg-transparent border-b border-orange-400 outline-none text-xs px-0.5',
+                                  'flex-1 bg-transparent border-b border-orange-400 outline-none text-xs px-0.5 text-white'
+                                )}
+                                onClick={e => e.stopPropagation()}
+                              />
+                            ) : (
+                              <button onClick={() => switchView(view.id)} className="flex-1 text-left truncate">
+                                {view.name}
+                              </button>
+                            )}
+                            {activeViewId === view.id && <Check className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />}
+                            {idx < 5 && <span className={rt('text-[10px] text-gray-400', 'text-[10px] text-zinc-500')}>Ctrl+{idx + 1}</span>}
+                            {/* Hover actions */}
+                            <div className="hidden group-hover:flex items-center gap-0.5 flex-shrink-0">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setViewRenamingId(view.id); setViewRenameValue(view.name); }}
+                                className={rt('p-0.5 rounded hover:bg-gray-200', 'p-0.5 rounded hover:bg-zinc-700')}
+                                title="Rename"
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); duplicateView(view.id); }}
+                                className={rt('p-0.5 rounded hover:bg-gray-200', 'p-0.5 rounded hover:bg-zinc-700')}
+                                title="Duplicate"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setDefaultView(view.is_default ? null : view.id); }}
+                                className={rt('p-0.5 rounded hover:bg-gray-200', 'p-0.5 rounded hover:bg-zinc-700')}
+                                title={view.is_default ? 'Remove as default' : 'Set as default'}
+                              >
+                                <Star className={`w-3 h-3 ${view.is_default ? 'text-amber-400 fill-amber-400' : ''}`} />
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); if (window.confirm(`Delete view "${view.name}"?`)) deleteView(view.id); }}
+                                className="p-0.5 rounded hover:bg-red-500/20 text-red-400"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {/* Actions */}
+                    <div className={rt('border-t border-gray-100 p-1.5', 'border-t border-zinc-800 p-1.5')}>
+                      {viewHasUnsaved && activeViewId && (
+                        <button
+                          onClick={() => { saveView(null, activeViewId); setViewDropdownOpen(false); }}
+                          className={rt(
+                            'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-orange-600 hover:bg-orange-50 font-medium',
+                            'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-orange-400 hover:bg-orange-500/10 font-medium'
+                          )}
+                        >
+                          <Save className="w-3.5 h-3.5" /> Save Changes
+                        </button>
+                      )}
+                      <button
+                        onClick={() => { setViewSaveMode('new'); setViewSaveName(''); setViewSaveDialogOpen(true); setViewDropdownOpen(false); }}
+                        className={rt(
+                          'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-gray-600 hover:bg-gray-50',
+                          'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-zinc-300 hover:bg-zinc-800'
+                        )}
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Save as New View
+                      </button>
+                      {activeViewId && (
+                        <button
+                          onClick={() => switchView(null)}
+                          className={rt(
+                            'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-gray-500 hover:bg-gray-50',
+                            'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-zinc-500 hover:bg-zinc-800'
+                          )}
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" /> Reset to Default
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              {/* Save indicator for unsaved view changes */}
+              {viewHasUnsaved && activeViewId && (
+                <button
+                  onClick={() => saveView(null, activeViewId)}
+                  className={rt(
+                    'flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-orange-600 bg-orange-50 border border-orange-200 hover:bg-orange-100 transition-colors',
+                    'flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-orange-400 bg-orange-500/10 border border-orange-500/30 hover:bg-orange-500/20 transition-colors'
+                  )}
+                >
+                  <Save className="w-3 h-3" /> Save
+                </button>
+              )}
               {/* Global progress ring */}
               {globalProgress && globalProgress.total > 0 && (
                 <div className="flex items-center gap-1.5" title={`${globalProgress.complete} of ${globalProgress.total} cells enriched`}>
@@ -4539,6 +4908,49 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={() => setSnapshotDialogOpen(false)} className={`px-3 py-1.5 rounded-lg text-sm ${rt('text-gray-600 hover:bg-gray-100', 'text-zinc-400 hover:bg-zinc-800')}`}>Cancel</button>
               <button onClick={createSnapshot} disabled={!snapshotName.trim()} className={`px-3 py-1.5 rounded-lg text-sm bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40`}>Create Snapshot</button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Save View Dialog */}
+        <Dialog open={viewSaveDialogOpen} onOpenChange={setViewSaveDialogOpen}>
+          <DialogContent className={rt('bg-white max-w-sm', 'bg-zinc-900 border-zinc-800 max-w-sm')}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5 text-orange-400" />
+                <span className={rt('text-gray-900', 'text-zinc-100')}>Save View</span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 mt-2">
+              <div>
+                <Label className={rt('text-gray-700', 'text-zinc-300')}>View name</Label>
+                <Input
+                  value={viewSaveName}
+                  onChange={e => setViewSaveName(e.target.value)}
+                  placeholder="e.g. Enriched Only, Missing Emails"
+                  className={rt('', 'bg-zinc-800 border-zinc-700 text-white')}
+                  autoFocus
+                  onKeyDown={e => { if (e.key === 'Enter' && viewSaveName.trim()) { saveView(viewSaveName.trim()); setViewSaveDialogOpen(false); }}}
+                />
+              </div>
+              <div className={`rounded-lg p-2.5 ${rt('bg-gray-50', 'bg-zinc-800/50')}`}>
+                <p className="text-[11px] text-zinc-500">
+                  Saves: {filters.length > 0 ? `${filters.length} filter${filters.length > 1 ? 's' : ''}` : 'no filters'}
+                  {sorts.length > 0 ? `, ${sorts.length} sort${sorts.length > 1 ? 's' : ''}` : ''}
+                  {searchInput ? `, search "${searchInput}"` : ''}
+                  , column order & widths
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setViewSaveDialogOpen(false)} className={`px-3 py-1.5 rounded-lg text-sm ${rt('text-gray-600 hover:bg-gray-100', 'text-zinc-400 hover:bg-zinc-800')}`}>Cancel</button>
+              <button
+                onClick={() => { saveView(viewSaveName.trim()); setViewSaveDialogOpen(false); }}
+                disabled={!viewSaveName.trim()}
+                className="px-3 py-1.5 rounded-lg text-sm bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-40"
+              >
+                Save View
+              </button>
             </div>
           </DialogContent>
         </Dialog>
