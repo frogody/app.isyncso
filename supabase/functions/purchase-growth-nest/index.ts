@@ -165,6 +165,7 @@ serve(async (req) => {
         organization_id: userData.organization_id,
         name: `${nest.name} - Leads`,
         created_by: user.id,
+        module: 'growth',
       })
       .select('id')
       .single();

@@ -1089,6 +1089,7 @@ export default function GrowthEnrich() {
         .from('enrich_workspaces')
         .select('*, enrich_columns(count), enrich_rows(count)')
         .eq('organization_id', orgId)
+        .eq('module', 'growth')
         .order('updated_at', { ascending: false });
       if (error) throw error;
       setWorkspaces(data || []);
@@ -1108,11 +1109,11 @@ export default function GrowthEnrich() {
     if (!orgId) return;
     setNestsLoading(true);
     try {
-      // Get nests the org has purchased
+      // Get nests the user has purchased
       const { data: purchases } = await supabase
         .from('growth_nest_purchases')
         .select('nest_id')
-        .eq('organization_id', orgId)
+        .eq('user_id', user?.id)
         .eq('status', 'completed');
       const purchasedNestIds = (purchases || []).map(p => p.nest_id);
 
@@ -1149,6 +1150,7 @@ export default function GrowthEnrich() {
           name: newWsName.trim(),
           nest_id: newWsNestId || null,
           created_by: user?.id,
+          module: 'growth',
         })
         .select()
         .single();
