@@ -32,6 +32,7 @@ import { RaisePageTransition } from '@/components/raise/RaisePageTransition';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { useUser } from '@/components/context/UserContext';
 import { usePermissions } from '@/components/context/PermissionContext';
+import SyncAvatarMini from '@/components/icons/SyncAvatarMini';
 import {
   fullEnrichFromLinkedIn, fullEnrichFromEmail, enrichCompanyOnly,
   matchProspect, enrichProspectContact, enrichProspectProfile,
@@ -2926,15 +2927,16 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               <div className="relative" ref={viewDropdownRef}>
                 <button
                   onClick={() => setViewDropdownOpen(prev => !prev)}
+                  title={activeView ? activeView.name : 'Views'}
                   className={rt(
-                    `relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${activeViewId ? 'bg-orange-50 text-orange-700 border-orange-200' : 'text-gray-500 hover:bg-gray-100 border-gray-200'}`,
-                    `relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${activeViewId ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' : 'text-zinc-400 hover:bg-zinc-800 border-zinc-700'}`
+                    `relative flex items-center gap-1 px-1.5 py-1 rounded-md text-[11px] font-medium border transition-all ${activeViewId ? 'bg-orange-50 text-orange-700 border-orange-200' : 'text-gray-500 hover:bg-gray-100 border-gray-200'}`,
+                    `relative flex items-center gap-1 px-1.5 py-1 rounded-md text-[11px] font-medium border transition-all ${activeViewId ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' : 'text-zinc-400 hover:bg-zinc-800 border-zinc-700'}`
                   )}
                 >
-                  <Eye className="w-3.5 h-3.5" />
-                  {activeView ? activeView.name : 'Default View'}
-                  {viewHasUnsaved && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-orange-400 animate-pulse" />}
-                  <ChevronDown className={`w-3 h-3 transition-transform ${viewDropdownOpen ? 'rotate-180' : ''}`} />
+                  <Eye className="w-3 h-3" />
+                  {activeView ? activeView.name : 'Views'}
+                  {viewHasUnsaved && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />}
+                  <ChevronDown className={`w-2.5 h-2.5 transition-transform ${viewDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {viewDropdownOpen && (
                   <div className={rt(
@@ -5006,14 +5008,11 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
           className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all ${
             chatOpen
               ? rt('bg-gray-200 text-gray-600', 'bg-zinc-700 text-zinc-300')
-              : rt('bg-gradient-to-br from-purple-500 to-pink-500 text-white hover:shadow-xl hover:scale-105', 'bg-gradient-to-br from-purple-500 to-pink-500 text-white hover:shadow-xl hover:scale-105')
+              : 'hover:shadow-xl hover:scale-105'
           }`}
         >
           {chatOpen ? <X className="w-5 h-5" /> : (
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3c-1.2 0-2.4.6-3 1.7A3.6 3.6 0 0 0 4.6 9c-1 .6-1.7 1.8-1.7 3s.7 2.4 1.7 3c-.3 1.2 0 2.5.9 3.4.8.8 2.1 1.2 3.3.9.6 1 1.8 1.7 3 1.7s2.4-.6 3-1.7c1.2.3 2.5 0 3.4-.9.8-.8 1.2-2.1.9-3.3 1-1 1.7-1.8 1.7-3s-.7-2.4-1.7-3c.3-1.2 0-2.5-.9-3.4-.8-.8-2.1-1.2-3.3-.9A3.6 3.6 0 0 0 12 3Z" />
-              <circle cx="12" cy="12" r="2" fill="currentColor" />
-            </svg>
+            <SyncAvatarMini size={48} state="idle" />
           )}
         </button>
 
