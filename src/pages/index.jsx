@@ -103,6 +103,8 @@ import GrowthNestRecommendations from "./growth/GrowthNestRecommendations";
 
 import GrowthWorkspaceSetup from "./growth/GrowthWorkspaceSetup";
 
+import GrowthResearchWorkspace from "./growth/GrowthResearchWorkspace";
+
 import Home from "./Home";
 
 import Inbox from "./Inbox";
@@ -428,6 +430,8 @@ const PAGES = {
     GrowthNestRecommendations: GrowthNestRecommendations,
 
     GrowthWorkspaceSetup: GrowthWorkspaceSetup,
+
+    GrowthResearchWorkspace: GrowthResearchWorkspace,
 
     Home: Home,
     
@@ -820,6 +824,10 @@ function PagesContent() {
 
                 <Route path="/GrowthWorkspaceSetup" element={<GrowthWorkspaceSetup />} />
                 <Route path="/growth/workspace/setup" element={<GrowthWorkspaceSetup />} />
+
+                <Route path="/GrowthResearchWorkspace/:workspaceId" element={<GrowthResearchWorkspace />} />
+                <Route path="/growth/research/:workspaceId" element={<GrowthResearchWorkspace />} />
+                <Route path="/growth/research" element={<GrowthResearchWorkspace />} />
 
                 <Route path="/Home" element={<Home />} />
                 
