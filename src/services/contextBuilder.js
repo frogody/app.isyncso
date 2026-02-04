@@ -56,18 +56,24 @@ export async function buildContext({
   });
   const knowledgeResults = knowledgeResult.success ? knowledgeResult.results : [];
 
-  // 3. Get prospect-specific intelligence
-  const prospectIntelResult = await getProspectIntelligence(workspaceId, prospect.id);
-  const prospectIntel = prospectIntelResult.success ? prospectIntelResult.intelligence : {};
+  // 3. Get prospect-specific intelligence (skip for sheet-based pseudo-prospects)
+  let prospectIntel = {};
+  if (prospect?.id && !prospect._from_sheet) {
+    const prospectIntelResult = await getProspectIntelligence(workspaceId, prospect.id);
+    prospectIntel = prospectIntelResult.success ? prospectIntelResult.intelligence : {};
+  }
 
-  // 4. Get past interactions with this prospect
-  const memoriesResult = await searchMemories({
-    workspaceId,
-    query: `interactions with ${prospect.company || prospect.name}`,
-    prospectId: prospect.id,
-    limit: 5
-  });
-  const prospectMemories = memoriesResult.success ? memoriesResult.results : [];
+  // 4. Get past interactions with this prospect (skip for sheet-based pseudo-prospects)
+  let prospectMemories = [];
+  if (prospect?.id && !prospect._from_sheet) {
+    const memoriesResult = await searchMemories({
+      workspaceId,
+      query: `interactions with ${prospect.company || prospect.name}`,
+      prospectId: prospect.id,
+      limit: 5
+    });
+    prospectMemories = memoriesResult.success ? memoriesResult.results : [];
+  }
 
   // 5. Get relevant successful patterns
   const patternsResult = await searchPatterns({

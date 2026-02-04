@@ -165,10 +165,19 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
       // Check if the Composio tool execution itself failed (e.g. auth scope issues)
       if (result?.data?.successful === false || result?.successful === false) {
         const errData = result?.data?.data || result?.data;
-        const errMsg = typeof errData?.message === 'string' ? errData.message
+        const rawMsg = typeof errData?.message === 'string' ? errData.message
+          : typeof errData?.http_error === 'string' ? errData.http_error
           : typeof errData === 'string' ? errData
           : 'Composio tool execution failed';
-        throw new Error(errMsg);
+
+        // Provide user-friendly messages for common Google API errors
+        if (rawMsg.includes('PERMISSION_DENIED') || rawMsg.includes('does not have permission') || (errData?.status_code === 403 && !rawMsg.includes('scope'))) {
+          throw new Error('Your Google account does not have access to this spreadsheet. Make sure the spreadsheet is shared with the Google account you connected.');
+        }
+        if (rawMsg.includes('insufficient authentication scopes') || rawMsg.includes('scope')) {
+          throw new Error('Google Sheets permission scopes are insufficient. Please reconnect Google Sheets in Settings > Integrations.');
+        }
+        throw new Error(rawMsg);
       }
 
       // Parse the sheet data — Composio response can come in different formats:

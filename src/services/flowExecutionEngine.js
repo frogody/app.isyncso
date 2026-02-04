@@ -476,7 +476,18 @@ export async function executeNode(executionId, nodeId) {
     }
 
     const flow = execution.outreach_flows;
-    const prospect = execution.prospects;
+    // For Google Sheets flows, there's no database prospect — build one from execution context
+    const prospect = execution.prospects || {
+      id: executionId,
+      name: execution.context?.name || execution.context?.full_name || execution.context?.prospect_name || 'Unknown',
+      full_name: execution.context?.full_name || execution.context?.name || '',
+      email: execution.context?.email || execution.context?.prospect_email || '',
+      company: execution.context?.company || execution.context?.company_name || '',
+      company_name: execution.context?.company_name || execution.context?.company || '',
+      title: execution.context?.title || '',
+      industry: execution.context?.industry || '',
+      _from_sheet: true
+    };
     const nodes = flow.nodes || [];
     const node = nodes.find(n => n.id === nodeId);
 
@@ -1474,7 +1485,7 @@ async function handleGmailNode(ctx) {
 
     const emailContent = parseEmailFromResponse(aiResult.response);
     const toolArgs = {
-      recipient_email: interpolateVariables(node.data?.recipient || prospect.email, execution.context),
+      recipient_email: interpolateVariables(node.data?.recipient || prospect?.email || execution.context?.email || execution.context?.prospect_email, execution.context),
       subject: emailContent.subject || interpolateVariables(node.data?.subject || '', execution.context),
       body: emailContent.body
     };
@@ -1500,7 +1511,7 @@ async function handleGmailNode(ctx) {
   const toolArgs = action === 'fetch_emails'
     ? { query: node.data?.body_prompt || '' }
     : {
-        recipient_email: interpolateVariables(node.data?.recipient || prospect.email, execution.context),
+        recipient_email: interpolateVariables(node.data?.recipient || prospect?.email || execution.context?.email || execution.context?.prospect_email, execution.context),
         subject: interpolateVariables(node.data?.subject || '', execution.context),
         body: interpolateVariables(node.data?.body_prompt || '', execution.context)
       };
