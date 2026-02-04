@@ -350,13 +350,31 @@ async function executeTool(
   supabase: ReturnType<typeof createClient>,
   maxRetries = 2
 ) {
+  // v3 requires user_id alongside connected_account_id — fetch it from the account
+  let composioUserId: string | undefined;
+  const accountInfo = await composioFetch<{
+    user_id?: string;
+  }>(`/connected_accounts/${connectedAccountId}`, {}, true);
+  if (accountInfo.success && accountInfo.data?.user_id) {
+    composioUserId = accountInfo.data.user_id;
+  }
+  console.log(`[executeTool] Resolved user_id=${composioUserId} for account ${connectedAccountId}`);
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const startTime = Date.now();
 
     // v3 API: /tools/execute/{tool_slug}
-    console.log(`[executeTool] Calling v3: /tools/execute/${toolSlug}`, {
+    const executeBody: Record<string, unknown> = {
       connected_account_id: connectedAccountId,
       arguments: args,
+    };
+    if (composioUserId) {
+      executeBody.entity_id = composioUserId;
+      executeBody.user_id = composioUserId;
+    }
+
+    console.log(`[executeTool] Calling v3: /tools/execute/${toolSlug}`, {
+      ...executeBody,
       attempt,
     });
 
@@ -372,10 +390,7 @@ async function executeTool(
       `/tools/execute/${toolSlug}`,
       {
         method: "POST",
-        body: JSON.stringify({
-          connected_account_id: connectedAccountId,
-          arguments: args,
-        }),
+        body: JSON.stringify(executeBody),
       },
       true // useV3
     );
