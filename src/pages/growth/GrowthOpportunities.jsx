@@ -44,6 +44,7 @@ import {
   FolderOpen,
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import { toast } from "sonner";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 
@@ -1231,14 +1232,14 @@ export default function GrowthOpportunities() {
         // Fetch customers (from prospects table or companies)
         const { data: customersData } = await supabase
           .from('prospects')
-          .select('id, company_name, industry')
+          .select('id, company, first_name, last_name, industry, company_industry')
           .eq('organization_id', orgId)
           .limit(50);
 
         setCustomers((customersData || []).map(c => ({
           id: c.id,
-          name: c.company_name || 'Unknown Company',
-          industry: c.industry || 'Unknown',
+          name: c.company || `${c.first_name || ''} ${c.last_name || ''}`.trim() || 'Unknown Company',
+          industry: c.industry || c.company_industry || 'Unknown',
         })));
 
         // Fetch team members
@@ -1384,41 +1385,55 @@ export default function GrowthOpportunities() {
   };
 
   const handleCreate = async (newOpp) => {
+    // Use temporary ID for optimistic update
+    const tempId = newOpp.id;
+
     // Optimistically add to local state
     setOpportunities((prev) => [...prev, newOpp]);
 
     // Save to database
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('growth_opportunities')
         .insert({
           organization_id: orgId,
-          customer_id: newOpp.customer.id,
-          customer_name: newOpp.customer.name,
-          customer_industry: newOpp.customer.industry,
-          customer_current_plan: newOpp.customer.currentPlan,
-          customer_arr: newOpp.customer.arr,
+          customer_id: newOpp.customer?.id || null,
+          customer_name: newOpp.customer?.name || 'Unknown',
+          customer_industry: newOpp.customer?.industry || null,
+          customer_current_plan: newOpp.customer?.currentPlan || null,
+          customer_arr: newOpp.customer?.arr || 0,
           type: newOpp.type,
-          value: newOpp.value,
-          stage: newOpp.stage,
-          priority: newOpp.priority,
-          signal_description: newOpp.signal,
-          owner_id: newOpp.owner.id,
-          owner_name: newOpp.owner.name,
-          next_action: newOpp.nextAction,
-          next_action_date: newOpp.nextActionDate,
+          value: newOpp.value || 0,
+          stage: newOpp.stage || 'new',
+          priority: newOpp.priority || 'medium',
+          signal_description: newOpp.signal || null,
+          owner_id: newOpp.owner?.id || null,
+          owner_name: newOpp.owner?.name || null,
+          next_action: newOpp.nextAction || null,
+          next_action_date: newOpp.nextActionDate || null,
           days_in_stage: 0,
-          stage_history: newOpp.stageHistory,
-          activities: newOpp.activities,
-        });
+          stage_history: newOpp.stageHistory || [],
+          activities: newOpp.activities || [],
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error('Error creating opportunity:', error);
         // Rollback on error
-        setOpportunities((prev) => prev.filter((o) => o.id !== newOpp.id));
+        setOpportunities((prev) => prev.filter((o) => o.id !== tempId));
+        toast.error('Failed to create opportunity');
+      } else if (data) {
+        // Replace temp ID with real database ID
+        setOpportunities((prev) => prev.map((o) =>
+          o.id === tempId ? { ...newOpp, id: data.id } : o
+        ));
+        toast.success('Opportunity created');
       }
     } catch (error) {
       console.error('Error creating opportunity:', error);
+      setOpportunities((prev) => prev.filter((o) => o.id !== tempId));
+      toast.error('Failed to create opportunity');
     }
   };
 

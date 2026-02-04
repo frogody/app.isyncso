@@ -845,6 +845,7 @@ function PagesContent() {
 
                 <Route path="/GrowthOutreachBuilder" element={<GrowthOutreachBuilder />} />
                 <Route path="/GrowthOutreachBuilder/:workspaceId" element={<GrowthOutreachBuilder />} />
+                <Route path="/growth/outreach" element={<Navigate to="/growth/outreach/new" replace />} />
                 <Route path="/growth/outreach/new" element={<GrowthOutreachBuilder />} />
                 <Route path="/growth/outreach/:workspaceId" element={<GrowthOutreachBuilder />} />
 

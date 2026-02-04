@@ -904,7 +904,7 @@ export default function GrowthCustomerSignals() {
           .from('prospects')
           .select('*')
           .eq('organization_id', orgId)
-          .order('company_name', { ascending: true });
+          .order('company', { ascending: true });
 
         if (customersError) throw customersError;
 
@@ -935,7 +935,7 @@ export default function GrowthCustomerSignals() {
         // Transform to component format
         const transformedCustomers = (customersData || []).map(c => ({
           id: c.id,
-          name: c.company_name || 'Unknown Company',
+          name: c.company || c.first_name || 'Unknown Company',
           domain: c.company_website || '',
           industry: c.industry || 'Unknown',
           plan: c.customer_plan || 'Standard',
