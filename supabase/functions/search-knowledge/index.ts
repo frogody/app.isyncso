@@ -279,7 +279,7 @@ async function searchPatterns(
     p_workspace_id: workspaceId,
     p_query_embedding: queryEmbedding,
     p_pattern_type: patternType,
-    p_min_effectiveness: minEffectiveness,
+    p_min_success_rate: minEffectiveness,
     p_limit: limit
   });
 
