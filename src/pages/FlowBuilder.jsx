@@ -55,7 +55,7 @@ export default function FlowBuilder() {
   const { user } = useUser();
   const { toast } = useToast();
 
-  const isNewFlow = flowId === 'new';
+  const isNewFlow = !flowId || flowId === 'new';
   const templateType = searchParams.get('template');
 
   // Flow state

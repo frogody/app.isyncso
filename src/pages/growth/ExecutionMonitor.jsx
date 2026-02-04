@@ -196,7 +196,7 @@ function ExecutionRow({ execution, isExpanded, onToggle, onAction }) {
           <div className="flex items-center gap-1.5 w-24 flex-shrink-0">
             <Clock className="w-3.5 h-3.5 text-zinc-500" />
             <span className="text-xs text-zinc-400">
-              {formatDuration(execution.started_at || execution.created_at, execution.completed_at)}
+              {formatDuration(execution.started_at, execution.completed_at)}
             </span>
           </div>
 
@@ -325,7 +325,7 @@ export default function ExecutionMonitor() {
           node_executions(id, node_id, status, started_at, completed_at, error_message)
         `)
         .eq('workspace_id', workspaceId)
-        .order('created_at', { ascending: false })
+        .order('started_at', { ascending: false })
         .limit(100);
 
       if (error) throw error;

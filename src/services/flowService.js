@@ -22,7 +22,7 @@ export async function getFlowsWithStats(workspaceId = null) {
         flow_executions(
           id,
           status,
-          created_at,
+          started_at,
           completed_at
         )
       `)
@@ -48,12 +48,12 @@ export async function getFlowsWithStats(workspaceId = null) {
 
       // Calculate average completion time for completed executions
       const completedWithTime = executions.filter(e =>
-        e.status === 'completed' && e.created_at && e.completed_at
+        e.status === 'completed' && e.started_at && e.completed_at
       );
       let avgCompletionTime = null;
       if (completedWithTime.length > 0) {
         const totalTime = completedWithTime.reduce((sum, e) => {
-          return sum + (new Date(e.completed_at) - new Date(e.created_at));
+          return sum + (new Date(e.completed_at) - new Date(e.started_at));
         }, 0);
         avgCompletionTime = totalTime / completedWithTime.length; // in ms
       }
@@ -293,7 +293,7 @@ export async function getFlowExecutions(flowId, limit = 10) {
         prospects(id, name, company, email)
       `)
       .eq('flow_id', flowId)
-      .order('created_at', { ascending: false })
+      .order('started_at', { ascending: false })
       .limit(limit);
 
     if (error) {
