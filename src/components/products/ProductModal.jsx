@@ -1733,8 +1733,8 @@ export default function ProductModal({
                             onChange={(e) => updateCtx('brandVoice', 'tone', e.target.value)}
                             className={cn(`px-3 py-2 ${t('bg-slate-50', 'bg-white/[0.05]')} border ${t('border-slate-300', 'border-white/[0.08]')} rounded-lg ${t('text-slate-900', 'text-white')} text-sm focus:outline-none focus:border-cyan-500/50`)}
                           >
-                            {['professional', 'casual', 'technical', 'friendly', 'authoritative', 'playful'].map(t => (
-                              <option key={t} value={t} className={t('bg-white', 'bg-zinc-800')}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                            {['professional', 'casual', 'technical', 'friendly', 'authoritative', 'playful'].map(tone => (
+                              <option key={tone} value={tone} className={t('bg-white', 'bg-zinc-800')}>{tone.charAt(0).toUpperCase() + tone.slice(1)}</option>
                             ))}
                           </select>
                         </div>
@@ -1742,8 +1742,8 @@ export default function ProductModal({
                           <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Keywords</label>
                           <TagInput
                             tags={aiContext.brandVoice.keywords}
-                            onAdd={(t) => updateCtx('brandVoice', 'keywords', [...aiContext.brandVoice.keywords, t])}
-                            onRemove={(t) => updateCtx('brandVoice', 'keywords', aiContext.brandVoice.keywords.filter(x => x !== t))}
+                            onAdd={(tag) => updateCtx('brandVoice', 'keywords', [...aiContext.brandVoice.keywords, tag])}
+                            onRemove={(tag) => updateCtx('brandVoice', 'keywords', aiContext.brandVoice.keywords.filter(x => x !== tag))}
                             placeholder="e.g. compliance"
                           />
                         </div>
@@ -1751,8 +1751,8 @@ export default function ProductModal({
                           <label className={cn(`${t('text-slate-500', 'text-zinc-400')} text-xs mb-1 block`)}>Words to Avoid</label>
                           <TagInput
                             tags={aiContext.brandVoice.avoidWords}
-                            onAdd={(t) => updateCtx('brandVoice', 'avoidWords', [...aiContext.brandVoice.avoidWords, t])}
-                            onRemove={(t) => updateCtx('brandVoice', 'avoidWords', aiContext.brandVoice.avoidWords.filter(x => x !== t))}
+                            onAdd={(tag) => updateCtx('brandVoice', 'avoidWords', [...aiContext.brandVoice.avoidWords, tag])}
+                            onRemove={(tag) => updateCtx('brandVoice', 'avoidWords', aiContext.brandVoice.avoidWords.filter(x => x !== tag))}
                             placeholder="e.g. simple"
                           />
                         </div>
