@@ -362,6 +362,33 @@ export async function executeNode(executionId, nodeId) {
         result = await handleSMSNode(nodeContext);
         break;
 
+      case 'gmail':
+        result = await handleGmailNode(nodeContext);
+        break;
+
+      case 'googleSheets':
+      case 'google_sheets':
+        result = await handleGoogleSheetsNode(nodeContext);
+        break;
+
+      case 'slack':
+        result = await handleSlackNode(nodeContext);
+        break;
+
+      case 'hubspot':
+        result = await handleHubSpotNode(nodeContext);
+        break;
+
+      case 'webhookTrigger':
+      case 'webhook_trigger':
+        result = await handleWebhookTriggerNode(nodeContext);
+        break;
+
+      case 'aiAgent':
+      case 'ai_agent':
+        result = await handleAIAgentNode(nodeContext);
+        break;
+
       case 'end':
         result = { success: true, output: { completed: true }, isEnd: true };
         break;
@@ -1160,6 +1187,412 @@ async function handleGenericNode(ctx) {
       node_data: node.data,
       pass_through: true
     }
+  };
+}
+
+// ============================================================================
+// Composio Integration Helpers
+// ============================================================================
+
+/**
+ * Look up a user's Composio connected account for a given toolkit
+ */
+async function getUserComposioConnection(userId, toolkitSlug) {
+  const { data, error } = await supabase
+    .from('user_integrations')
+    .select('composio_connected_account_id, status')
+    .eq('user_id', userId)
+    .eq('toolkit_slug', toolkitSlug)
+    .eq('status', 'active')
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+  return data.composio_connected_account_id;
+}
+
+/**
+ * Execute a Composio tool via the composio-connect edge function
+ */
+async function handleComposioToolExecution(toolkitSlug, toolSlug, args, execution) {
+  const userId = execution.prospects?.user_id || execution.context?.user_id;
+  const connectedAccountId = await getUserComposioConnection(userId, toolkitSlug);
+
+  if (!connectedAccountId) {
+    return {
+      success: false,
+      error: `No active ${toolkitSlug} connection found. Connect ${toolkitSlug} in Settings > Integrations first.`
+    };
+  }
+
+  try {
+    const { data, error } = await functions.invoke('composio-connect', {
+      body: {
+        action: 'executeTool',
+        toolSlug,
+        connectedAccountId,
+        arguments: args
+      }
+    });
+
+    if (error) {
+      return { success: false, error: error.message || `Composio tool execution failed: ${toolSlug}` };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+// ============================================================================
+// Composio Node Handlers
+// ============================================================================
+
+/**
+ * Handle Gmail node - Send/read emails via Composio
+ */
+async function handleGmailNode(ctx) {
+  const { node, execution, prospect, flow } = ctx;
+  const action = node.data?.action || 'send_email';
+
+  // If AI mode, generate content first
+  if (node.data?.use_ai && node.data?.body_prompt) {
+    const context = await buildContext({ node, execution, prospect, flow });
+    context.nodePrompt = node.data.body_prompt;
+    const aiResult = await callClaudeWithRAG(node, context, prospect, execution);
+    if (!aiResult.success) return aiResult;
+
+    const emailContent = parseEmailFromResponse(aiResult.response);
+    const toolArgs = {
+      recipient_email: interpolateVariables(node.data?.recipient || prospect.email, execution.context),
+      subject: emailContent.subject || interpolateVariables(node.data?.subject || '', execution.context),
+      body: emailContent.body
+    };
+
+    const toolSlug = action === 'create_draft' ? 'GMAIL_CREATE_EMAIL_DRAFT' : 'GMAIL_SEND_EMAIL';
+    const result = await handleComposioToolExecution('gmail', toolSlug, toolArgs, execution);
+
+    return {
+      success: result.success,
+      output: { action, ...toolArgs, composio_result: result.data, ai_generated: true },
+      error: result.error,
+      tokensUsed: aiResult.tokensUsed
+    };
+  }
+
+  // Direct mode
+  const TOOL_MAP = {
+    send_email: 'GMAIL_SEND_EMAIL',
+    fetch_emails: 'GMAIL_FETCH_EMAILS',
+    create_draft: 'GMAIL_CREATE_EMAIL_DRAFT'
+  };
+
+  const toolArgs = action === 'fetch_emails'
+    ? { query: node.data?.body_prompt || '' }
+    : {
+        recipient_email: interpolateVariables(node.data?.recipient || prospect.email, execution.context),
+        subject: interpolateVariables(node.data?.subject || '', execution.context),
+        body: interpolateVariables(node.data?.body_prompt || '', execution.context)
+      };
+
+  const result = await handleComposioToolExecution('gmail', TOOL_MAP[action] || 'GMAIL_SEND_EMAIL', toolArgs, execution);
+
+  return {
+    success: result.success,
+    output: { action, ...toolArgs, composio_result: result.data },
+    error: result.error
+  };
+}
+
+/**
+ * Handle Google Sheets node - Read/write spreadsheet data
+ */
+async function handleGoogleSheetsNode(ctx) {
+  const { node, execution } = ctx;
+  const action = node.data?.action || 'get_values';
+
+  const TOOL_MAP = {
+    add_row: 'GOOGLESHEETS_BATCH_UPDATE',
+    get_values: 'GOOGLESHEETS_GET_SPREADSHEET_VALUES',
+    update_cell: 'GOOGLESHEETS_BATCH_UPDATE',
+    search: 'GOOGLESHEETS_GET_SPREADSHEET_VALUES'
+  };
+
+  const toolArgs = {
+    spreadsheet_id: node.data?.spreadsheet_id,
+    range: node.data?.range || 'A1',
+    ...(node.data?.sheet_name && { sheet_name: node.data.sheet_name })
+  };
+
+  if (action === 'add_row' || action === 'update_cell') {
+    toolArgs.values = interpolateVariables(node.data?.values_prompt || '', execution.context);
+  }
+
+  const result = await handleComposioToolExecution(
+    'googlesheets', TOOL_MAP[action] || 'GOOGLESHEETS_GET_SPREADSHEET_VALUES', toolArgs, execution
+  );
+
+  return {
+    success: result.success,
+    output: { action, spreadsheet_id: node.data?.spreadsheet_id, composio_result: result.data },
+    error: result.error
+  };
+}
+
+/**
+ * Handle Slack node - Send messages to channels
+ */
+async function handleSlackNode(ctx) {
+  const { node, execution, prospect, flow } = ctx;
+  const action = node.data?.action || 'send_message';
+
+  let message = interpolateVariables(node.data?.message_prompt || '', execution.context);
+
+  // If AI mode, generate message
+  if (node.data?.use_ai && node.data?.message_prompt) {
+    const context = await buildContext({ node, execution, prospect, flow });
+    context.nodePrompt = node.data.message_prompt;
+    const aiResult = await callClaudeWithRAG(node, context, prospect, execution);
+    if (!aiResult.success) return aiResult;
+    message = aiResult.response;
+  }
+
+  const TOOL_MAP = {
+    send_message: 'SLACK_SENDS_A_MESSAGE_TO_A_SLACK_CHANNEL',
+    create_channel: 'SLACK_CREATE_A_CHANNEL'
+  };
+
+  const toolArgs = action === 'create_channel'
+    ? { name: node.data?.channel }
+    : { channel: node.data?.channel, text: message };
+
+  const result = await handleComposioToolExecution('slack', TOOL_MAP[action], toolArgs, execution);
+
+  return {
+    success: result.success,
+    output: { action, channel: node.data?.channel, message, composio_result: result.data },
+    error: result.error
+  };
+}
+
+/**
+ * Handle HubSpot node - CRM operations
+ */
+async function handleHubSpotNode(ctx) {
+  const { node, execution } = ctx;
+  const action = node.data?.action || 'create_contact';
+  const ec = execution.context || {};
+
+  const TOOL_MAP = {
+    create_contact: 'HUBSPOT_CREATE_CONTACT',
+    create_deal: 'HUBSPOT_CREATE_DEAL',
+    send_email: 'HUBSPOT_SEND_EMAIL'
+  };
+
+  let toolArgs = {};
+  if (action === 'create_contact' || action === 'send_email') {
+    toolArgs = {
+      email: interpolateVariables(node.data?.email || '', ec),
+      firstname: interpolateVariables(node.data?.first_name || '', ec),
+      lastname: interpolateVariables(node.data?.last_name || '', ec),
+      company: interpolateVariables(node.data?.company || '', ec)
+    };
+  } else if (action === 'create_deal') {
+    toolArgs = {
+      dealname: interpolateVariables(node.data?.deal_name || '', ec),
+      amount: node.data?.amount || 0
+    };
+  }
+
+  const result = await handleComposioToolExecution('hubspot', TOOL_MAP[action], toolArgs, execution);
+
+  return {
+    success: result.success,
+    output: { action, ...toolArgs, composio_result: result.data },
+    error: result.error
+  };
+}
+
+/**
+ * Handle Webhook Trigger node - Subscribe to Composio triggers
+ */
+async function handleWebhookTriggerNode(ctx) {
+  const { node, execution } = ctx;
+  const integration = node.data?.integration;
+  const triggerType = node.data?.trigger_type;
+
+  if (!integration || !triggerType) {
+    return { success: false, error: 'Webhook trigger requires integration and trigger type' };
+  }
+
+  const userId = execution.prospects?.user_id || execution.context?.user_id;
+  const connectedAccountId = await getUserComposioConnection(userId, integration);
+
+  if (!connectedAccountId) {
+    return {
+      success: false,
+      error: `No active ${integration} connection. Connect in Settings > Integrations.`
+    };
+  }
+
+  try {
+    const { data, error } = await functions.invoke('composio-connect', {
+      body: {
+        action: 'subscribeTrigger',
+        triggerSlug: triggerType,
+        connectedAccountId,
+        config: node.data?.filter_config ? JSON.parse(node.data.filter_config) : {}
+      }
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      output: {
+        integration,
+        trigger_type: triggerType,
+        subscription: data,
+        waiting_for_trigger: true
+      },
+      waitUntil: null // Webhook triggers resume asynchronously
+    };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Handle AI Agent node - Autonomous agent with RAG + Composio tool calling
+ */
+async function handleAIAgentNode(ctx) {
+  const { node, execution, prospect, flow } = ctx;
+  const maxIterations = node.data?.max_iterations || 10;
+  const allowedIntegrations = node.data?.allowed_integrations || [];
+
+  // 1. Build full RAG context
+  const context = await buildContext({ node, execution, prospect, flow });
+  context.nodePrompt = node.data?.prompt || 'You are an autonomous agent. Complete the task using available tools.';
+
+  // 2. Get base tools for this node type
+  const baseTools = getToolsForNodeType('aiAgent');
+
+  // 3. Fetch user's active Composio connections and build extended tool list
+  const userId = execution.prospects?.user_id || execution.context?.user_id;
+  const composioTools = [];
+
+  for (const toolkit of allowedIntegrations) {
+    const connId = await getUserComposioConnection(userId, toolkit);
+    if (connId) {
+      try {
+        const { data } = await functions.invoke('composio-connect', {
+          body: { action: 'listTools', toolkitSlug: toolkit }
+        });
+        if (data?.tools) {
+          composioTools.push(...data.tools.map(t => ({
+            name: `composio_${toolkit}_${t.name}`,
+            description: t.description,
+            input_schema: t.inputSchema || { type: 'object', properties: {} },
+            _composio: { toolkit, toolSlug: t.name, connectedAccountId: connId }
+          })));
+        }
+      } catch (err) {
+        console.warn(`[flowEngine] Failed to list tools for ${toolkit}:`, err.message);
+      }
+    }
+  }
+
+  const allTools = [...(baseTools || []), ...composioTools];
+
+  // 4. Call Claude with extended tools in an agentic loop
+  const formattedContext = trimContextToFit(context, 12000);
+  const messages = [{ role: 'user', content: formattedContext }];
+  const toolCallResults = [];
+  let totalTokens = 0;
+  let finalResponse = '';
+
+  for (let i = 0; i < maxIterations; i++) {
+    const { data, error } = await withTimeout(
+      functions.invoke('execute-ai-node', {
+        systemPrompt: context.systemPrompt,
+        messages,
+        tools: allTools,
+        nodeType: 'aiAgent',
+        nodeConfig: node.data,
+        prospectId: prospect.id,
+        executionId: execution.id,
+        workspaceId: execution.workspace_id
+      }),
+      AI_TIMEOUT_MS,
+      'AI Agent call timed out'
+    );
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    totalTokens += data.tokensUsed || 0;
+
+    // If no tool calls, we're done
+    if (!data.toolCalls || data.toolCalls.length === 0) {
+      finalResponse = data.response;
+      break;
+    }
+
+    // Process tool calls
+    for (const tc of data.toolCalls) {
+      let toolResult;
+
+      if (tc.name?.startsWith('composio_')) {
+        // Route to Composio
+        const composioTool = composioTools.find(t => t.name === tc.name);
+        if (composioTool) {
+          const execResult = await handleComposioToolExecution(
+            composioTool._composio.toolkit,
+            composioTool._composio.toolSlug,
+            tc.input || {},
+            execution
+          );
+          toolResult = execResult.success ? execResult.data : { error: execResult.error };
+        } else {
+          toolResult = { error: `Unknown composio tool: ${tc.name}` };
+        }
+      } else {
+        // Route to internal tools
+        try {
+          toolResult = await executeToolCall(tc.name, tc.input, {
+            prospectId: prospect.id,
+            workspaceId: execution.workspace_id,
+            executionId: execution.id
+          });
+        } catch (err) {
+          toolResult = { error: err.message };
+        }
+      }
+
+      toolCallResults.push({ tool: tc.name, input: tc.input, result: toolResult });
+
+      // Add tool result to messages for next iteration
+      messages.push({ role: 'assistant', content: data.response, tool_calls: [tc] });
+      messages.push({ role: 'tool', content: JSON.stringify(toolResult), tool_call_id: tc.id });
+    }
+
+    finalResponse = data.response;
+  }
+
+  return {
+    success: true,
+    output: {
+      agent_response: finalResponse,
+      tool_calls: toolCallResults,
+      iterations: toolCallResults.length,
+      tokens_used: totalTokens
+    },
+    tokensUsed: totalTokens
   };
 }
 

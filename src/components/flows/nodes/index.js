@@ -13,6 +13,12 @@ import SMSNode from './SMSNode';
 import FollowUpNode from './FollowUpNode';
 import UpdateStatusNode from './UpdateStatusNode';
 import EndNode from './EndNode';
+import GmailNode from './GmailNode';
+import GoogleSheetsNode from './GoogleSheetsNode';
+import SlackNode from './SlackNode';
+import HubSpotNode from './HubSpotNode';
+import WebhookTriggerNode from './WebhookTriggerNode';
+import AIAgentNode from './AIAgentNode';
 
 // Re-export components
 export {
@@ -25,7 +31,13 @@ export {
   SMSNode,
   FollowUpNode,
   UpdateStatusNode,
-  EndNode
+  EndNode,
+  GmailNode,
+  GoogleSheetsNode,
+  SlackNode,
+  HubSpotNode,
+  WebhookTriggerNode,
+  AIAgentNode
 };
 
 // Node type mapping for React Flow
@@ -60,7 +72,20 @@ export const nodeTypes = {
   update_status: UpdateStatusNode,
 
   // Termination
-  end: EndNode
+  end: EndNode,
+
+  // Composio Integrations
+  gmail: GmailNode,
+  googleSheets: GoogleSheetsNode,
+  google_sheets: GoogleSheetsNode,
+  slack: SlackNode,
+  hubspot: HubSpotNode,
+  webhookTrigger: WebhookTriggerNode,
+  webhook_trigger: WebhookTriggerNode,
+
+  // AI Agent
+  aiAgent: AIAgentNode,
+  ai_agent: AIAgentNode
 };
 
 // Node palette configuration
@@ -137,6 +162,52 @@ export const nodePaletteConfig = [
         label: 'Follow Up',
         description: 'Multi-step follow-up',
         color: 'indigo'
+      }
+    ]
+  },
+  {
+    category: 'AI & Agents',
+    nodes: [
+      {
+        type: 'aiAgent',
+        label: 'AI Agent',
+        description: 'Autonomous agent with tools',
+        color: 'fuchsia'
+      }
+    ]
+  },
+  {
+    category: 'Integrations',
+    nodes: [
+      {
+        type: 'gmail',
+        label: 'Gmail',
+        description: 'Read/send emails',
+        color: 'gmail'
+      },
+      {
+        type: 'googleSheets',
+        label: 'Google Sheets',
+        description: 'Read/write spreadsheet data',
+        color: 'sheets'
+      },
+      {
+        type: 'slack',
+        label: 'Slack',
+        description: 'Send Slack messages',
+        color: 'slack'
+      },
+      {
+        type: 'hubspot',
+        label: 'HubSpot',
+        description: 'CRM operations',
+        color: 'hubspot'
+      },
+      {
+        type: 'webhookTrigger',
+        label: 'Webhook Trigger',
+        description: 'Start from external event',
+        color: 'cyan'
       }
     ]
   },

@@ -7,7 +7,8 @@ import React, { useState } from 'react';
 import {
   Play, Brain, Mail, Clock, GitBranch, Linkedin,
   MessageSquare, Layers, Edit3, Square, Search,
-  ChevronDown, ChevronRight, GripVertical
+  ChevronDown, ChevronRight, GripVertical,
+  Table, Hash, Users, Webhook, Bot
 } from 'lucide-react';
 import { nodePaletteConfig } from './nodes';
 
@@ -22,7 +23,13 @@ const NODE_ICONS = {
   linkedin: Linkedin,
   sms: MessageSquare,
   followUp: Layers,
-  updateStatus: Edit3
+  updateStatus: Edit3,
+  gmail: Mail,
+  googleSheets: Table,
+  slack: Hash,
+  hubspot: Users,
+  webhookTrigger: Webhook,
+  aiAgent: Bot
 };
 
 const COLOR_CLASSES = {
@@ -35,7 +42,13 @@ const COLOR_CLASSES = {
   linkedin: 'bg-[#0A66C2]/20 text-[#0A66C2] border-[#0A66C2]/30 hover:bg-[#0A66C2]/30',
   teal: 'bg-teal-500/20 text-teal-400 border-teal-500/30 hover:bg-teal-500/30',
   indigo: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/30',
-  zinc: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30 hover:bg-zinc-500/30'
+  zinc: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30 hover:bg-zinc-500/30',
+  cyan: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/30',
+  fuchsia: 'bg-fuchsia-500/20 text-fuchsia-400 border-fuchsia-500/30 hover:bg-fuchsia-500/30',
+  gmail: 'bg-[#EA4335]/20 text-[#EA4335] border-[#EA4335]/30 hover:bg-[#EA4335]/30',
+  sheets: 'bg-[#0F9D58]/20 text-[#0F9D58] border-[#0F9D58]/30 hover:bg-[#0F9D58]/30',
+  slack: 'bg-[#4A154B]/20 text-[#E01E5A] border-[#4A154B]/30 hover:bg-[#4A154B]/30',
+  hubspot: 'bg-[#FF7A59]/20 text-[#FF7A59] border-[#FF7A59]/30 hover:bg-[#FF7A59]/30'
 };
 
 function DraggableNode({ node }) {

@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import {
   X, Play, Brain, Mail, Clock, GitBranch,
   Linkedin, MessageSquare, Layers, Edit3, Square,
-  Plus, Trash2
+  Plus, Trash2, Table, Hash, Users, Webhook, Bot
 } from 'lucide-react';
 
 const NODE_ICONS = {
@@ -29,7 +29,16 @@ const NODE_ICONS = {
   follow_up: Layers,
   updateStatus: Edit3,
   update_status: Edit3,
-  end: Square
+  end: Square,
+  gmail: Mail,
+  googleSheets: Table,
+  google_sheets: Table,
+  slack: Hash,
+  hubspot: Users,
+  webhookTrigger: Webhook,
+  webhook_trigger: Webhook,
+  aiAgent: Bot,
+  ai_agent: Bot
 };
 
 const NODE_TITLES = {
@@ -51,7 +60,16 @@ const NODE_TITLES = {
   follow_up: 'Follow-up Settings',
   updateStatus: 'Status Update Settings',
   update_status: 'Status Update Settings',
-  end: 'End Node Settings'
+  end: 'End Node Settings',
+  gmail: 'Gmail Settings',
+  googleSheets: 'Google Sheets Settings',
+  google_sheets: 'Google Sheets Settings',
+  slack: 'Slack Settings',
+  hubspot: 'HubSpot Settings',
+  webhookTrigger: 'Webhook Trigger Settings',
+  webhook_trigger: 'Webhook Trigger Settings',
+  aiAgent: 'AI Agent Settings',
+  ai_agent: 'AI Agent Settings'
 };
 
 // Form field components
@@ -471,6 +489,311 @@ function EndConfig({ data, onChange }) {
   );
 }
 
+function GmailConfig({ data, onChange }) {
+  return (
+    <div className="space-y-4">
+      <TextField
+        label="Name"
+        value={data.name}
+        onChange={(v) => onChange({ ...data, name: v })}
+        placeholder="e.g., Send Welcome Email"
+      />
+      <SelectField
+        label="Action"
+        value={data.action}
+        onChange={(v) => onChange({ ...data, action: v })}
+        options={[
+          { value: '', label: 'Select action...' },
+          { value: 'send_email', label: 'Send Email' },
+          { value: 'fetch_emails', label: 'Read Emails' },
+          { value: 'create_draft', label: 'Create Draft' }
+        ]}
+      />
+      {data.action === 'send_email' && (
+        <>
+          <TextField
+            label="Recipient"
+            value={data.recipient}
+            onChange={(v) => onChange({ ...data, recipient: v })}
+            placeholder="email@example.com or {{prospect.email}}"
+          />
+          <TextField
+            label="Subject"
+            value={data.subject}
+            onChange={(v) => onChange({ ...data, subject: v })}
+            placeholder="Email subject line"
+          />
+        </>
+      )}
+      <TextField
+        label="Body / AI Prompt"
+        value={data.body_prompt}
+        onChange={(v) => onChange({ ...data, body_prompt: v })}
+        placeholder={data.action === 'fetch_emails' ? 'Search query or filter...' : 'Email body or AI prompt to generate it...'}
+        multiline
+      />
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={data.use_ai || false}
+          onChange={(e) => onChange({ ...data, use_ai: e.target.checked })}
+          className="rounded bg-zinc-800 border-zinc-700 text-cyan-500 focus:ring-cyan-500/30"
+        />
+        <label className="text-xs text-zinc-400">Use AI to generate content</label>
+      </div>
+    </div>
+  );
+}
+
+function GoogleSheetsConfig({ data, onChange }) {
+  return (
+    <div className="space-y-4">
+      <TextField
+        label="Name"
+        value={data.name}
+        onChange={(v) => onChange({ ...data, name: v })}
+        placeholder="e.g., Log to Sheet"
+      />
+      <SelectField
+        label="Action"
+        value={data.action}
+        onChange={(v) => onChange({ ...data, action: v })}
+        options={[
+          { value: '', label: 'Select action...' },
+          { value: 'add_row', label: 'Add Row' },
+          { value: 'get_values', label: 'Get Values' },
+          { value: 'update_cell', label: 'Update Cell' },
+          { value: 'search', label: 'Search Rows' }
+        ]}
+      />
+      <TextField
+        label="Spreadsheet ID"
+        value={data.spreadsheet_id}
+        onChange={(v) => onChange({ ...data, spreadsheet_id: v })}
+        placeholder="From the spreadsheet URL"
+      />
+      <TextField
+        label="Sheet Name"
+        value={data.sheet_name}
+        onChange={(v) => onChange({ ...data, sheet_name: v })}
+        placeholder="e.g., Sheet1"
+      />
+      <TextField
+        label="Range"
+        value={data.range}
+        onChange={(v) => onChange({ ...data, range: v })}
+        placeholder="e.g., A1:D10"
+      />
+      {(data.action === 'add_row' || data.action === 'update_cell') && (
+        <TextField
+          label="Values / Prompt"
+          value={data.values_prompt}
+          onChange={(v) => onChange({ ...data, values_prompt: v })}
+          placeholder="Values to write or AI prompt..."
+          multiline
+        />
+      )}
+    </div>
+  );
+}
+
+function SlackConfig({ data, onChange }) {
+  return (
+    <div className="space-y-4">
+      <TextField
+        label="Name"
+        value={data.name}
+        onChange={(v) => onChange({ ...data, name: v })}
+        placeholder="e.g., Notify Sales Channel"
+      />
+      <SelectField
+        label="Action"
+        value={data.action}
+        onChange={(v) => onChange({ ...data, action: v })}
+        options={[
+          { value: '', label: 'Select action...' },
+          { value: 'send_message', label: 'Send Message' },
+          { value: 'create_channel', label: 'Create Channel' }
+        ]}
+      />
+      <TextField
+        label="Channel"
+        value={data.channel}
+        onChange={(v) => onChange({ ...data, channel: v })}
+        placeholder="e.g., #sales-alerts"
+      />
+      <TextField
+        label="Message / Prompt"
+        value={data.message_prompt}
+        onChange={(v) => onChange({ ...data, message_prompt: v })}
+        placeholder="Message text or AI prompt..."
+        multiline
+      />
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={data.use_ai || false}
+          onChange={(e) => onChange({ ...data, use_ai: e.target.checked })}
+          className="rounded bg-zinc-800 border-zinc-700 text-cyan-500 focus:ring-cyan-500/30"
+        />
+        <label className="text-xs text-zinc-400">Use AI to generate message</label>
+      </div>
+    </div>
+  );
+}
+
+function HubSpotConfig({ data, onChange }) {
+  return (
+    <div className="space-y-4">
+      <TextField
+        label="Name"
+        value={data.name}
+        onChange={(v) => onChange({ ...data, name: v })}
+        placeholder="e.g., Create CRM Contact"
+      />
+      <SelectField
+        label="Action"
+        value={data.action}
+        onChange={(v) => onChange({ ...data, action: v })}
+        options={[
+          { value: '', label: 'Select action...' },
+          { value: 'create_contact', label: 'Create Contact' },
+          { value: 'create_deal', label: 'Create Deal' },
+          { value: 'send_email', label: 'Send CRM Email' }
+        ]}
+      />
+      {(data.action === 'create_contact' || data.action === 'send_email') && (
+        <>
+          <TextField
+            label="Email"
+            value={data.email}
+            onChange={(v) => onChange({ ...data, email: v })}
+            placeholder="{{prospect.email}}"
+          />
+          <TextField
+            label="First Name"
+            value={data.first_name}
+            onChange={(v) => onChange({ ...data, first_name: v })}
+            placeholder="{{prospect.first_name}}"
+          />
+          <TextField
+            label="Last Name"
+            value={data.last_name}
+            onChange={(v) => onChange({ ...data, last_name: v })}
+            placeholder="{{prospect.last_name}}"
+          />
+          <TextField
+            label="Company"
+            value={data.company}
+            onChange={(v) => onChange({ ...data, company: v })}
+            placeholder="{{prospect.company}}"
+          />
+        </>
+      )}
+      {data.action === 'create_deal' && (
+        <>
+          <TextField
+            label="Deal Name"
+            value={data.deal_name}
+            onChange={(v) => onChange({ ...data, deal_name: v })}
+            placeholder="e.g., {{prospect.company}} - Outreach"
+          />
+          <NumberField
+            label="Amount"
+            value={data.amount}
+            onChange={(v) => onChange({ ...data, amount: v })}
+            min={0}
+            placeholder="Deal value"
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+function WebhookTriggerConfig({ data, onChange }) {
+  return (
+    <div className="space-y-4">
+      <TextField
+        label="Name"
+        value={data.name}
+        onChange={(v) => onChange({ ...data, name: v })}
+        placeholder="e.g., On New Email"
+      />
+      <SelectField
+        label="Integration"
+        value={data.integration}
+        onChange={(v) => onChange({ ...data, integration: v })}
+        options={[
+          { value: '', label: 'Select integration...' },
+          { value: 'gmail', label: 'Gmail' },
+          { value: 'slack', label: 'Slack' },
+          { value: 'hubspot', label: 'HubSpot' },
+          { value: 'google_sheets', label: 'Google Sheets' },
+          { value: 'github', label: 'GitHub' },
+          { value: 'stripe', label: 'Stripe' }
+        ]}
+      />
+      <TextField
+        label="Trigger Type"
+        value={data.trigger_type}
+        onChange={(v) => onChange({ ...data, trigger_type: v })}
+        placeholder="e.g., new_email, message_received"
+      />
+      <TextField
+        label="Filter (optional)"
+        value={data.filter_config}
+        onChange={(v) => onChange({ ...data, filter_config: v })}
+        placeholder="JSON filter expression..."
+        multiline
+      />
+    </div>
+  );
+}
+
+function AIAgentConfig({ data, onChange }) {
+  return (
+    <div className="space-y-4">
+      <TextField
+        label="Agent Name"
+        value={data.name}
+        onChange={(v) => onChange({ ...data, name: v })}
+        placeholder="e.g., Outreach Agent"
+      />
+      <TextField
+        label="Agent Prompt"
+        value={data.prompt}
+        onChange={(v) => onChange({ ...data, prompt: v })}
+        placeholder="Describe what this agent should accomplish..."
+        multiline
+      />
+      <NumberField
+        label="Max Iterations"
+        value={data.max_iterations || 10}
+        onChange={(v) => onChange({ ...data, max_iterations: v })}
+        min={1}
+        max={15}
+        placeholder="10"
+      />
+      <SelectField
+        label="Model"
+        value={data.model}
+        onChange={(v) => onChange({ ...data, model: v })}
+        options={[
+          { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet (recommended)' },
+          { value: 'claude-3-haiku-20240307', label: 'Claude Haiku (faster)' }
+        ]}
+      />
+      <TextField
+        label="Allowed Integrations"
+        value={(data.allowed_integrations || []).join(', ')}
+        onChange={(v) => onChange({ ...data, allowed_integrations: v.split(',').map(s => s.trim()).filter(Boolean) })}
+        placeholder="gmail, slack, hubspot (comma-separated)"
+      />
+    </div>
+  );
+}
+
 // Config component map
 const CONFIG_COMPONENTS = {
   trigger: TriggerConfig,
@@ -491,7 +814,16 @@ const CONFIG_COMPONENTS = {
   follow_up: FollowUpConfig,
   updateStatus: UpdateStatusConfig,
   update_status: UpdateStatusConfig,
-  end: EndConfig
+  end: EndConfig,
+  gmail: GmailConfig,
+  googleSheets: GoogleSheetsConfig,
+  google_sheets: GoogleSheetsConfig,
+  slack: SlackConfig,
+  hubspot: HubSpotConfig,
+  webhookTrigger: WebhookTriggerConfig,
+  webhook_trigger: WebhookTriggerConfig,
+  aiAgent: AIAgentConfig,
+  ai_agent: AIAgentConfig
 };
 
 export default function NodeConfigPanel({
