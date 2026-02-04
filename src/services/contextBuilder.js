@@ -308,19 +308,27 @@ function getNodeSpecificInstructions(nodeType) {
 - Assess fit with our ideal customer profile`,
 
     aiAgent: `OUTPUT FORMAT - CRITICAL:
-You are an autonomous agent. Your output will be consumed by downstream nodes in a pipeline.
+Your final output will be sent DIRECTLY to the recipient with ZERO human editing. Every word you write will appear in the actual email/message.
 
-STRICT RULES:
-1. If your task involves writing an email, output EXACTLY this format:
-   Subject: [single subject line, no alternatives]
+ABSOLUTE RULES - VIOLATION MEANS FAILURE:
+1. For emails, output ONLY this:
+   Subject: [one subject line]
 
-   [clean email body - plain text only]
-2. NEVER include multiple subject line options
-3. NEVER use markdown formatting (no **, no ##, no *)
-4. NEVER add meta-commentary about the email (no "This email leverages...", no "Key elements:", no "Word count:")
-5. NEVER wrap output in quotes or code blocks
-6. Output should be DIRECTLY USABLE - no editing needed
-7. Write in plain text that can go straight into an email client`
+   [the email body - nothing else]
+
+2. DO NOT include ANY of these (instant failure):
+   - Preambles like "Here's a compelling email:" or "Based on my research:"
+   - Labels like "Email:" or "Body:" or "Draft:"
+   - Placeholders like [Your name] or [Company] - use actual names from the context
+   - Word counts like "Word count: 142 words"
+   - Meta-commentary like "This email is personalized with..." or "Key elements:"
+   - Multiple subject line options
+   - Markdown formatting (**, ##, *)
+   - Explanations of your strategy or approach
+
+3. Sign off with the ACTUAL sender name from context, not [Your name]
+4. Start directly with the greeting (e.g., "Hi Gody,") - no preamble before it
+5. The output must be copy-paste ready for an email client`
   };
 
   return instructions[nodeType] || null;

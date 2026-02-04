@@ -2115,33 +2115,43 @@ function parseEmailFromResponse(response) {
     text = text.replace(subjectMatch[0], '').trim();
   }
 
-  // 3. Strip markdown formatting artifacts
+  // 3. Strip markdown bold/italic first (before other patterns, so we match clean text)
+  text = text.replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1');
+
+  // 4. Strip AI preambles (lines before the actual email starts)
+  // e.g. "Based on the research and guidance, here's a compelling personalized cold sales email:"
+  // e.g. "Here is the email:" / "Here's a draft email for..."
+  text = text
+    .replace(/^.*(?:here(?:'s| is) (?:a |the )?(?:compelling |personalized |draft |revised )?(?:cold )?(?:sales )?(?:email|message|outreach|draft)).*?:\s*\n*/im, '')
+    .replace(/^.*(?:I've (?:crafted|written|composed|drafted|prepared)).*?:\s*\n*/im, '')
+    .replace(/^.*(?:Below is|Here you go|As requested).*?:\s*\n*/im, '');
+
+  // 5. Strip labels like "Email:" / "Body:" / "Draft:" / "Message:"
   let body = text
-    // Remove **Email:** / **Body:** / **Message:** headers
-    .replace(/^\*{1,2}(?:Email|Body|Message|Draft)\s*:?\*{1,2}\s*/im, '')
-    // Remove plain Body:/Email:/Message: headers
-    .replace(/^(?:Body|BODY|Email|EMAIL|Message|MESSAGE|Draft|DRAFT)\s*:\s*/im, '')
-    // Remove word count annotations
-    .replace(/\*?\(?(?:Word\s*count|Words?|Length)\s*:?\s*~?\d+\s*(?:words?)?\)?\*?\s*/gi, '')
-    // Remove meta-commentary lines ("This email leverages...", "Note: ...", "Key elements:")
-    .replace(/^(?:This (?:email|message) (?:leverages|uses|incorporates|focuses|aims|is designed).*$)/gm, '')
+    .replace(/^(?:Email|Body|Message|Draft|Content)\s*:\s*\n?/im, '')
+    // Remove word count annotations (handles "Word count:** 142 words", "Word count: ~150 words", etc.)
+    .replace(/^.*(?:Word\s*count|Words?|Character\s*count|Length)\s*:?\*{0,2}\s*~?\d+\s*(?:words?|characters?)?\s*$/gim, '')
+    // Remove meta-commentary lines
+    .replace(/^(?:This (?:email|message|draft|outreach) (?:leverages|uses|incorporates|focuses|aims|is designed|is personalized|addresses|targets|highlights|includes|maintains|demonstrates).*$)/gim, '')
     .replace(/^(?:Note\s*:.*$)/gim, '')
-    .replace(/^(?:Key elements?\s*:.*$)/gim, '')
+    .replace(/^(?:Key (?:elements?|points?|features?)\s*:.*$)/gim, '')
+    .replace(/^(?:The (?:email|message|tone|approach) (?:is|was|aims|focuses|maintains).*$)/gim, '')
+    .replace(/^(?:I (?:focused|aimed|tried|made sure|included|used|kept|avoided).*$)/gim, '')
     .replace(/^(?:---+)\s*$/gm, '')
-    // Remove markdown bold/italic markers
-    .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
     // Remove markdown headers (### etc)
     .replace(/^#{1,4}\s+/gm, '')
+    // Replace [Your name] / [Your Name] / [Sender name] placeholders with empty (will be caught by signature)
+    .replace(/\[(?:Your|Sender|My)\s*(?:name|Name|signature)\]/gi, '')
     // Collapse multiple blank lines
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  // 4. Strip leading/trailing quotes if the entire body is wrapped
+  // 6. Strip leading/trailing quotes if the entire body is wrapped
   if (body.startsWith('"') && body.endsWith('"')) {
     body = body.slice(1, -1).trim();
   }
 
-  // 5. Clean subject line too
+  // 7. Clean subject line too
   subject = subject
     .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
     .replace(/^["']|["']$/g, '')
