@@ -1732,91 +1732,54 @@ async function handleAIAgentNode(ctx) {
 
   const allTools = [...(baseTools || []), ...composioTools];
 
-  // 4. Call Claude with extended tools in an agentic loop
+  // 4. Call execute-ai-node edge function which runs the FULL tool loop server-side
+  // The edge function calls Claude, processes tool_use blocks (search_knowledge,
+  // research_company, etc.), loops until Claude returns a final text response,
+  // then returns { response, toolCalls (log), tokensUsed }.
   const formattedContext = trimContextToFit(context, 12000);
   const messages = [{ role: 'user', content: formattedContext }];
-  const toolCallResults = [];
-  let totalTokens = 0;
-  let finalResponse = '';
 
-  for (let i = 0; i < maxIterations; i++) {
-    const { data, error } = await withTimeout(
-      functions.invoke('execute-ai-node', {
-        systemPrompt: context.systemPrompt,
-        messages,
-        tools: allTools,
-        nodeType: 'aiAgent',
-        nodeConfig: node.data,
-        prospectId: prospect.id,
-        executionId: execution.id,
-        workspaceId: execution.workspace_id
-      }),
-      AI_TIMEOUT_MS,
-      'AI Agent call timed out'
-    );
+  const { data, error } = await withTimeout(
+    functions.invoke('execute-ai-node', {
+      systemPrompt: context.systemPrompt,
+      messages,
+      tools: allTools,
+      nodeType: 'aiAgent',
+      nodeConfig: node.data,
+      prospectId: prospect.id,
+      executionId: execution.id,
+      workspaceId: execution.workspace_id
+    }),
+    AI_TIMEOUT_MS * 3, // Allow up to 3 minutes for full agentic loop
+    'AI Agent call timed out'
+  );
 
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    totalTokens += data.tokensUsed || 0;
-
-    // If no tool calls, we're done
-    if (!data.toolCalls || data.toolCalls.length === 0) {
-      finalResponse = data.response;
-      break;
-    }
-
-    // Process tool calls
-    for (const tc of data.toolCalls) {
-      let toolResult;
-
-      if (tc.name?.startsWith('composio_')) {
-        // Route to Composio
-        const composioTool = composioTools.find(t => t.name === tc.name);
-        if (composioTool) {
-          const execResult = await handleComposioToolExecution(
-            composioTool._composio.toolkit,
-            composioTool._composio.toolSlug,
-            tc.input || {},
-            execution
-          );
-          toolResult = execResult.success ? execResult.data : { error: execResult.error };
-        } else {
-          toolResult = { error: `Unknown composio tool: ${tc.name}` };
-        }
-      } else {
-        // Route to internal tools
-        try {
-          toolResult = await executeToolCall(tc.name, tc.input, {
-            prospectId: prospect.id,
-            workspaceId: execution.workspace_id,
-            executionId: execution.id
-          });
-        } catch (err) {
-          toolResult = { error: err.message };
-        }
-      }
-
-      toolCallResults.push({ tool: tc.name, input: tc.input, result: toolResult });
-
-      // Add tool result to messages for next iteration
-      messages.push({ role: 'assistant', content: data.response, tool_calls: [tc] });
-      messages.push({ role: 'tool', content: JSON.stringify(toolResult), tool_call_id: tc.id });
-    }
-
-    finalResponse = data.response;
+  if (error) {
+    console.error('[flowEngine] AI Agent error:', error);
+    return { success: false, error: error.message };
   }
+
+  const toolCallResults = (data.toolCalls || []).map(tc => ({
+    tool: tc.name,
+    input: tc.input,
+    result: 'processed server-side'
+  }));
+
+  console.log('[flowEngine] AI Agent completed', {
+    response: data.response?.slice(0, 100),
+    toolCalls: toolCallResults.length,
+    tokensUsed: data.tokensUsed
+  });
 
   return {
     success: true,
     output: {
-      agent_response: finalResponse,
+      agent_response: data.response || '',
       tool_calls: toolCallResults,
       iterations: toolCallResults.length,
-      tokens_used: totalTokens
+      tokens_used: data.tokensUsed || 0
     },
-    tokensUsed: totalTokens
+    tokensUsed: data.tokensUsed || 0
   };
 }
 

@@ -17,7 +17,8 @@ const EMBEDDING_MODEL = 'BAAI/bge-large-en-v1.5';
 const TOGETHER_API_URL = 'https://api.together.xyz/v1/embeddings';
 const MAX_CHUNK_SIZE = 6000;
 const CHUNK_OVERLAP = 200;
-const MAX_INPUT_LENGTH = 8000;
+// BAAI/bge-large-en-v1.5 has a 512 token limit (~1500 chars for English text)
+const MAX_EMBEDDING_INPUT_LENGTH = 1500;
 
 const ALLOWED_ORIGINS = [
   'https://app.isyncso.com',
@@ -59,7 +60,7 @@ async function getEmbedding(text: string): Promise<number[]> {
     },
     body: JSON.stringify({
       model: EMBEDDING_MODEL,
-      input: text.slice(0, MAX_INPUT_LENGTH),
+      input: text.slice(0, MAX_EMBEDDING_INPUT_LENGTH),
     }),
   });
 

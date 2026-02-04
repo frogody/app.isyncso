@@ -589,7 +589,8 @@ async function generateEmbedding(text: string): Promise<number[]> {
     },
     body: JSON.stringify({
       model: 'BAAI/bge-large-en-v1.5',
-      input: text.slice(0, 8000)
+      // BAAI/bge-large-en-v1.5 has a 512 token limit (~1500 chars)
+      input: text.slice(0, 1500)
     })
   });
 
