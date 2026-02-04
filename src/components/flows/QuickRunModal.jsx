@@ -124,7 +124,7 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
         .select('composio_connected_account_id')
         .eq('user_id', user.id)
         .eq('toolkit_slug', 'googlesheets')
-        .eq('status', 'active')
+        .ilike('status', 'active')
         .single();
 
       if (connError || !connection?.composio_connected_account_id) {

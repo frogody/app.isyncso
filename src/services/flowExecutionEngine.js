@@ -1413,7 +1413,7 @@ async function getUserComposioConnection(userId, toolkitSlug) {
     .select('composio_connected_account_id, status')
     .eq('user_id', userId)
     .eq('toolkit_slug', toolkitSlug)
-    .eq('status', 'active')
+    .ilike('status', 'active')
     .single();
 
   if (error || !data) {
