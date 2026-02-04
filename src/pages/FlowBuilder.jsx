@@ -624,7 +624,7 @@ export default function FlowBuilder() {
       <QuickRunModal
         open={showTestRunModal}
         onOpenChange={setShowTestRunModal}
-        flow={{ id: flowId, name: flowName }}
+        flow={{ id: flowId, name: flowName, nodes, edges }}
         onSuccess={(prospect) => {
           handleTestRun(prospect);
         }}
