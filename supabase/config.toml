@@ -123,3 +123,12 @@ verify_jwt = false
 
 [functions.growth-ai-execute]
 verify_jwt = false
+
+[functions.embed-document]
+verify_jwt = false
+
+[functions.search-knowledge]
+verify_jwt = false
+
+[functions.scrape-embed]
+verify_jwt = false
