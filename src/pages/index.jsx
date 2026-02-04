@@ -107,6 +107,8 @@ import GrowthResearchWorkspace from "./growth/GrowthResearchWorkspace";
 
 import GrowthOutreachBuilder from "./growth/GrowthOutreachBuilder";
 
+import FlowBuilder from "./FlowBuilder";
+
 import GrowthCustomerSignals from "./growth/GrowthCustomerSignals";
 
 import GrowthOpportunities from "./growth/GrowthOpportunities";
@@ -440,6 +442,7 @@ const PAGES = {
     GrowthResearchWorkspace: GrowthResearchWorkspace,
 
     GrowthOutreachBuilder: GrowthOutreachBuilder,
+    FlowBuilder: FlowBuilder,
 
     GrowthCustomerSignals: GrowthCustomerSignals,
 
@@ -848,6 +851,12 @@ function PagesContent() {
                 <Route path="/growth/outreach" element={<Navigate to="/growth/outreach/new" replace />} />
                 <Route path="/growth/outreach/new" element={<GrowthOutreachBuilder />} />
                 <Route path="/growth/outreach/:workspaceId" element={<GrowthOutreachBuilder />} />
+
+                <Route path="/growth/flows" element={<Navigate to="/growth/flows/new" replace />} />
+                <Route path="/growth/flows/new" element={<FlowBuilder />} />
+                <Route path="/growth/flows/:flowId" element={<FlowBuilder />} />
+                <Route path="/FlowBuilder" element={<FlowBuilder />} />
+                <Route path="/FlowBuilder/:flowId" element={<FlowBuilder />} />
 
                 <Route path="/GrowthCustomerSignals" element={<GrowthCustomerSignals />} />
                 <Route path="/growth/signals" element={<GrowthCustomerSignals />} />
