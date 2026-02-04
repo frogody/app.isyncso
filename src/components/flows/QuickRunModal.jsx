@@ -150,12 +150,25 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
         }
       });
 
+      // Debug: Log the full response to understand the structure
+      console.log('[QuickRunModal] Composio response:', JSON.stringify(result, null, 2));
+      console.log('[QuickRunModal] Fetch error:', fetchError);
+
       if (fetchError) {
         const msg = typeof fetchError === 'string' ? fetchError
           : typeof fetchError.message === 'string' ? fetchError.message
           : typeof fetchError.error === 'string' ? fetchError.error
           : JSON.stringify(fetchError);
         throw new Error(msg || 'Failed to fetch sheet data');
+      }
+
+      // Check if the Composio tool execution itself failed (e.g. auth scope issues)
+      if (result?.data?.successful === false || result?.successful === false) {
+        const errData = result?.data?.data || result?.data;
+        const errMsg = typeof errData?.message === 'string' ? errData.message
+          : typeof errData === 'string' ? errData
+          : 'Composio tool execution failed';
+        throw new Error(errMsg);
       }
 
       // Parse the sheet data - v3 BATCH_GET returns:
