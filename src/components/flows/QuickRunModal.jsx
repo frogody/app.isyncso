@@ -147,7 +147,11 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
       });
 
       if (fetchError) {
-        throw new Error(fetchError.message || 'Failed to fetch sheet data');
+        const msg = typeof fetchError === 'string' ? fetchError
+          : typeof fetchError.message === 'string' ? fetchError.message
+          : typeof fetchError.error === 'string' ? fetchError.error
+          : JSON.stringify(fetchError);
+        throw new Error(msg || 'Failed to fetch sheet data');
       }
 
       // Parse the sheet data - Composio returns values in a specific format
@@ -167,7 +171,10 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
       }
     } catch (error) {
       console.error('Failed to fetch sheet data:', error);
-      setSheetError(error.message || 'Failed to load spreadsheet data');
+      const errMsg = typeof error?.message === 'string' ? error.message
+        : typeof error === 'string' ? error
+        : 'Failed to load spreadsheet data';
+      setSheetError(errMsg);
     } finally {
       setSheetLoading(false);
     }

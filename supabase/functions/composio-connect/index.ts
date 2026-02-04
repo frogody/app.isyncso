@@ -122,12 +122,23 @@ async function composioFetch<T = unknown>(
     }
 
     if (!response.ok) {
-      const errorMsg =
-        (data as Record<string, unknown>)?.message ||
-        (data as Record<string, unknown>)?.error ||
-        `HTTP ${response.status}: ${response.statusText}`;
+      const raw = data as Record<string, unknown>;
+      // Extract error message — v3 may return { error: { message: "..." } } or { message: "..." }
+      let errorMsg: string;
+      if (typeof raw?.message === "string") {
+        errorMsg = raw.message;
+      } else if (typeof raw?.error === "string") {
+        errorMsg = raw.error;
+      } else if (typeof raw?.error === "object" && raw.error !== null) {
+        errorMsg = (raw.error as Record<string, unknown>)?.message as string
+          || JSON.stringify(raw.error);
+      } else if (raw) {
+        errorMsg = JSON.stringify(raw);
+      } else {
+        errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+      }
       console.error(`Composio API error: ${endpoint}`, errorMsg);
-      return { success: false, error: String(errorMsg) };
+      return { success: false, error: errorMsg };
     }
 
     return { success: true, data };
@@ -343,6 +354,12 @@ async function executeTool(
     const startTime = Date.now();
 
     // v3 API: /tools/execute/{tool_slug}
+    console.log(`[executeTool] Calling v3: /tools/execute/${toolSlug}`, {
+      connected_account_id: connectedAccountId,
+      arguments: args,
+      attempt,
+    });
+
     const result = await composioFetch<{
       successful?: boolean;
       execution_details?: {
@@ -364,6 +381,7 @@ async function executeTool(
     );
 
     const executionTime = Date.now() - startTime;
+    console.log(`[executeTool] v3 response (${executionTime}ms):`, JSON.stringify(result).slice(0, 500));
 
     if (!result.success) {
       // Check for auth errors that might need token refresh

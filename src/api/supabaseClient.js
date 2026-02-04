@@ -772,11 +772,24 @@ export const functions = {
       }
 
       if (!response.ok) {
-        const errorMessage = typeof responseData === 'object'
-          ? responseData.error || responseData.message || `HTTP ${response.status}`
-          : responseData || `HTTP ${response.status}`;
+        let errorMessage;
+        if (typeof responseData === 'object' && responseData !== null) {
+          // Extract string error — handle nested { error: { message: "..." } }
+          const rawError = responseData.error;
+          if (typeof rawError === 'string') {
+            errorMessage = rawError;
+          } else if (typeof rawError === 'object' && rawError !== null) {
+            errorMessage = rawError.message || JSON.stringify(rawError);
+          } else if (typeof responseData.message === 'string') {
+            errorMessage = responseData.message;
+          } else {
+            errorMessage = `HTTP ${response.status}`;
+          }
+        } else {
+          errorMessage = responseData || `HTTP ${response.status}`;
+        }
         console.error(`[supabaseClient] functions.invoke(${functionName}) error:`, errorMessage);
-        return { data: null, error: { message: errorMessage } };
+        return { data: null, error: { message: String(errorMessage) } };
       }
 
       return { data: responseData, error: null };
