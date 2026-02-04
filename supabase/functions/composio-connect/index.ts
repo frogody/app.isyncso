@@ -50,6 +50,7 @@ type ComposioAction =
   | "disconnectAccount"
   | "refreshConnection"
   | "executeTool"
+  | "createAuthConfig"
   | "listTools"
   | "listTriggers"
   | "subscribeTrigger"
@@ -1018,6 +1019,31 @@ serve(async (req) => {
           body.arguments || {},
           supabase
         );
+        break;
+      }
+
+      case "createAuthConfig": {
+        if (!body.toolkitSlug) {
+          return new Response(
+            JSON.stringify({ success: false, error: "Missing toolkitSlug" }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+        const authConfigPayload: Record<string, unknown> = {
+          toolkit: { slug: body.toolkitSlug },
+          auth_config: {
+            type: "use_composio_managed_auth",
+            name: body.mcpServerName || `${body.toolkitSlug} Integration`,
+            ...(body.triggerConfig && { credentials: body.triggerConfig }),
+          },
+        };
+        result = await composioFetch(`/auth_configs`, {
+          method: "POST",
+          body: JSON.stringify(authConfigPayload),
+        }, true);
         break;
       }
 
