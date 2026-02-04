@@ -1278,12 +1278,6 @@ function parseEmailFromResponse(response) {
 // ============================================================================
 
 export {
-  executeNode,
-  resumeExecution,
-  pauseExecution,
-  cancelExecution,
-  getExecutionStatus,
-  getExecutionHistory,
   EXECUTION_STATUS,
   NODE_STATUS
 };

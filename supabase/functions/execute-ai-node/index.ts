@@ -495,29 +495,30 @@ async function executeToolServer(
 }
 
 // ============================================================================
-// Embedding Generation (for search)
+// Embedding Generation (for search) - Together.ai BAAI/bge-large-en-v1.5 (1024 dimensions)
 // ============================================================================
 
 async function generateEmbedding(text: string): Promise<number[]> {
-  const openaiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!openaiKey) {
-    throw new Error('OPENAI_API_KEY not configured for embeddings');
+  const togetherKey = Deno.env.get('TOGETHER_API_KEY');
+  if (!togetherKey) {
+    throw new Error('TOGETHER_API_KEY not configured for embeddings');
   }
 
-  const response = await fetch('https://api.openai.com/v1/embeddings', {
+  const response = await fetch('https://api.together.xyz/v1/embeddings', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${openaiKey}`
+      'Authorization': `Bearer ${togetherKey}`
     },
     body: JSON.stringify({
-      model: 'text-embedding-3-small',
-      input: text.slice(0, 8191)
+      model: 'BAAI/bge-large-en-v1.5',
+      input: text.slice(0, 8000)
     })
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI embedding error: ${response.status}`);
+    const errorText = await response.text();
+    throw new Error(`Together.ai embedding error (${response.status}): ${errorText}`);
   }
 
   const result = await response.json();

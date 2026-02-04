@@ -8,7 +8,7 @@
  * - Searching interaction memories
  *
  * All operations call Supabase Edge Functions which handle the actual
- * embedding generation via OpenAI API to keep API keys secure.
+ * embedding generation via Together.ai (BAAI/bge-large-en-v1.5, 1024 dimensions).
  */
 
 import { supabase, functions } from '@/api/supabaseClient';

@@ -2,25 +2,58 @@
  * Scrape and Embed Edge Function
  *
  * Fetches content from a URL, extracts text, and embeds it in the knowledge base.
+ *
+ * Embeddings: Together.ai BAAI/bge-large-en-v1.5 (1024 dimensions)
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.2';
-import OpenAI from 'https://esm.sh/openai@4.28.0';
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const EMBEDDING_MODEL = 'text-embedding-3-small';
+const EMBEDDING_MODEL = 'BAAI/bge-large-en-v1.5';
+const TOGETHER_API_URL = 'https://api.together.xyz/v1/embeddings';
 const MAX_CHUNK_SIZE = 6000;
 const CHUNK_OVERLAP = 200;
-const MAX_INPUT_LENGTH = 8191;
+const MAX_INPUT_LENGTH = 8000;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// ============================================================================
+// Together.ai Embedding
+// ============================================================================
+
+async function getEmbedding(text: string): Promise<number[]> {
+  const togetherKey = Deno.env.get('TOGETHER_API_KEY');
+  if (!togetherKey) {
+    throw new Error('TOGETHER_API_KEY not configured');
+  }
+
+  const response = await fetch(TOGETHER_API_URL, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${togetherKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: EMBEDDING_MODEL,
+      input: text.slice(0, MAX_INPUT_LENGTH),
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Together.ai embedding error (${response.status}): ${errorText}`);
+  }
+
+  const data = await response.json();
+  return data.data[0].embedding;
+}
 
 // ============================================================================
 // Text Processing
@@ -55,34 +88,20 @@ function chunkText(text: string, maxSize = MAX_CHUNK_SIZE, overlap = CHUNK_OVERL
 }
 
 function extractTextFromHtml(html: string): string {
-  // Remove script tags and their content
   let text = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-
-  // Remove style tags and their content
   text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-
-  // Remove HTML comments
   text = text.replace(/<!--[\s\S]*?-->/g, '');
-
-  // Replace common block elements with newlines
   text = text.replace(/<\/(p|div|h[1-6]|li|tr|br|hr)[^>]*>/gi, '\n');
-
-  // Remove all remaining HTML tags
   text = text.replace(/<[^>]+>/g, ' ');
-
-  // Decode HTML entities
   text = text.replace(/&nbsp;/g, ' ');
   text = text.replace(/&amp;/g, '&');
   text = text.replace(/&lt;/g, '<');
   text = text.replace(/&gt;/g, '>');
   text = text.replace(/&quot;/g, '"');
   text = text.replace(/&#39;/g, "'");
-
-  // Normalize whitespace
   text = text.replace(/\s+/g, ' ');
   text = text.replace(/\n\s+/g, '\n');
   text = text.replace(/\n+/g, '\n');
-
   return text.trim();
 }
 
@@ -96,7 +115,6 @@ function extractTitleFromHtml(html: string): string | null {
 // ============================================================================
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -109,7 +127,6 @@ serve(async (req) => {
       metadata = {}
     } = await req.json();
 
-    // Validate required fields
     if (!workspaceId || !url || !collection) {
       return new Response(
         JSON.stringify({ error: 'workspaceId, url, and collection are required' }),
@@ -117,7 +134,6 @@ serve(async (req) => {
       );
     }
 
-    // Validate URL
     let parsedUrl: URL;
     try {
       parsedUrl = new URL(url);
@@ -128,22 +144,10 @@ serve(async (req) => {
       );
     }
 
-    // Initialize clients
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
-
-    if (!openaiKey) {
-      return new Response(
-        JSON.stringify({ error: 'OpenAI API key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const openai = new OpenAI({ apiKey: openaiKey });
 
-    // Fetch the URL
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; iSyncSO Knowledge Bot/1.0)',
@@ -159,8 +163,6 @@ serve(async (req) => {
     }
 
     const html = await response.text();
-
-    // Extract text and title
     const text = extractTextFromHtml(html);
     const title = extractTitleFromHtml(html) || parsedUrl.hostname;
 
@@ -171,12 +173,10 @@ serve(async (req) => {
       );
     }
 
-    // Chunk the content
     const chunks = chunkText(text);
     const documents = [];
     let parentId: string | null = null;
 
-    // Create parent document if multiple chunks
     if (chunks.length > 1) {
       const { data: parent, error: parentError } = await supabase
         .from('knowledge_documents')
@@ -199,18 +199,10 @@ serve(async (req) => {
       parentId = parent.id;
     }
 
-    // Embed and store each chunk
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
+      const embedding = await getEmbedding(chunk.text);
 
-      // Generate embedding
-      const embeddingResponse = await openai.embeddings.create({
-        model: EMBEDDING_MODEL,
-        input: chunk.text.slice(0, MAX_INPUT_LENGTH)
-      });
-      const embedding = embeddingResponse.data[0].embedding;
-
-      // Store document with embedding
       const { data, error } = await supabase
         .from('knowledge_documents')
         .insert({
