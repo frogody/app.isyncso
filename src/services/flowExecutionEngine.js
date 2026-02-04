@@ -525,7 +525,7 @@ export async function getExecutionHistory(filters = {}) {
         outreach_flows(name),
         prospects(name, company)
       `)
-      .order('created_at', { ascending: false });
+      .order('started_at', { ascending: false });
 
     if (filters.prospectId) query = query.eq('prospect_id', filters.prospectId);
     if (filters.campaignId) query = query.eq('campaign_id', filters.campaignId);

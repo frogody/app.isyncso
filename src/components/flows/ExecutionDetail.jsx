@@ -354,7 +354,7 @@ export default function ExecutionDetail({ execution }) {
           <p className="text-sm text-white">
             {execution.started_at
               ? new Date(execution.started_at).toLocaleString()
-              : new Date(execution.created_at).toLocaleString()
+              : 'Not started'
             }
           </p>
         </div>
@@ -362,7 +362,7 @@ export default function ExecutionDetail({ execution }) {
           <h4 className="text-xs font-medium text-zinc-500 mb-1">Duration</h4>
           <p className="text-sm text-white">
             {formatDuration(
-              execution.started_at || execution.created_at,
+              execution.started_at,
               execution.completed_at
             )}
           </p>
