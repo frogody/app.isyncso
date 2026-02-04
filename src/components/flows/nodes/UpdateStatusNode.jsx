@@ -11,7 +11,7 @@ function UpdateStatusNode({ data, selected }) {
   return (
     <div
       className={`
-        relative min-w-[180px] rounded-xl border-2 transition-all duration-200
+        relative w-[200px] rounded-xl border-2 transition-all duration-200
         ${selected
           ? 'border-zinc-400 shadow-lg shadow-zinc-500/20 ring-2 ring-zinc-400/30'
           : 'border-zinc-500/50 hover:border-zinc-400'

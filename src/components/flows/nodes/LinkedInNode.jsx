@@ -21,7 +21,7 @@ function LinkedInNode({ data, selected }) {
   return (
     <div
       className={`
-        relative min-w-[200px] rounded-xl border-2 transition-all duration-200
+        relative w-[200px] rounded-xl border-2 transition-all duration-200
         ${selected
           ? 'border-[#0A66C2] shadow-lg shadow-[#0A66C2]/20 ring-2 ring-[#0A66C2]/30'
           : 'border-[#0A66C2]/50 hover:border-[#0A66C2]'

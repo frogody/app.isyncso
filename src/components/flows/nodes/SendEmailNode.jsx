@@ -11,7 +11,7 @@ function SendEmailNode({ data, selected }) {
   return (
     <div
       className={`
-        relative min-w-[200px] rounded-xl border-2 transition-all duration-200
+        relative w-[200px] rounded-xl border-2 transition-all duration-200
         ${selected
           ? 'border-blue-400 shadow-lg shadow-blue-500/20 ring-2 ring-blue-400/30'
           : 'border-blue-500/50 hover:border-blue-400'

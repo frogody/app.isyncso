@@ -11,7 +11,7 @@ function AIAnalysisNode({ data, selected }) {
   return (
     <div
       className={`
-        relative min-w-[200px] rounded-xl border-2 transition-all duration-200
+        relative w-[200px] rounded-xl border-2 transition-all duration-200
         ${selected
           ? 'border-purple-400 shadow-lg shadow-purple-500/20 ring-2 ring-purple-400/30'
           : 'border-purple-500/50 hover:border-purple-400'

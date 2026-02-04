@@ -16,7 +16,7 @@ function SMSNode({ data, selected }) {
   return (
     <div
       className={`
-        relative min-w-[180px] rounded-xl border-2 transition-all duration-200
+        relative w-[200px] rounded-xl border-2 transition-all duration-200
         ${selected
           ? 'border-teal-400 shadow-lg shadow-teal-500/20 ring-2 ring-teal-400/30'
           : 'border-teal-500/50 hover:border-teal-400'

@@ -172,6 +172,7 @@ function FlowCanvasInner({
         defaultEdgeOptions={defaultEdgeOptions}
         connectionLineStyle={connectionLineStyle}
         fitView
+        fitViewOptions={{ maxZoom: 1, padding: 0.2 }}
         snapToGrid
         snapGrid={[15, 15]}
         deleteKeyCode={readOnly ? null : ['Backspace', 'Delete']}

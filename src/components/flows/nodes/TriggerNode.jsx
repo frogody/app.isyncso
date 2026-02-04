@@ -22,7 +22,7 @@ function TriggerNode({ data, selected }) {
   return (
     <div
       className={`
-        relative min-w-[180px] rounded-xl border-2 transition-all duration-200
+        relative w-[200px] rounded-xl border-2 transition-all duration-200
         ${selected
           ? 'border-emerald-400 shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-400/30'
           : 'border-emerald-500/50 hover:border-emerald-400'

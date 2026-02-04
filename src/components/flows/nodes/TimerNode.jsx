@@ -23,7 +23,7 @@ function TimerNode({ data, selected }) {
   return (
     <div
       className={`
-        relative min-w-[160px] rounded-xl border-2 transition-all duration-200
+        relative w-[180px] rounded-xl border-2 transition-all duration-200
         ${selected
           ? 'border-orange-400 shadow-lg shadow-orange-500/20 ring-2 ring-orange-400/30'
           : 'border-orange-500/50 hover:border-orange-400'

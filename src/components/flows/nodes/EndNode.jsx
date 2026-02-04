@@ -11,7 +11,7 @@ function EndNode({ data, selected }) {
   return (
     <div
       className={`
-        relative min-w-[140px] rounded-xl border-2 transition-all duration-200
+        relative w-[160px] rounded-xl border-2 transition-all duration-200
         ${selected
           ? 'border-red-400 shadow-lg shadow-red-500/20 ring-2 ring-red-400/30'
           : 'border-red-500/50 hover:border-red-400'
