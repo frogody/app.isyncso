@@ -140,15 +140,13 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
       const sheetName = googleSheetsNode.data.sheet_name;
       const fullRange = sheetName ? `${sheetName}!${baseRange}` : baseRange;
 
-      // Use GOOGLESHEETS_GET_VALUES with singular `range` (not BATCH_GET with ranges array)
-      // This matches the Composio tool definition in lib/composio.js
       const { data: result, error: fetchError } = await functions.invoke('composio-connect', {
         action: 'executeTool',
-        toolSlug: 'GOOGLESHEETS_GET_VALUES',
+        toolSlug: 'GOOGLESHEETS_BATCH_GET',
         connectedAccountId: connection.composio_connected_account_id,
         arguments: {
           spreadsheet_id: googleSheetsNode.data.spreadsheet_id,
-          range: fullRange
+          ranges: [fullRange]
         }
       });
 
