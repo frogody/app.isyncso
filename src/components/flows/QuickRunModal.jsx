@@ -133,16 +133,16 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
       }
 
       // Fetch sheet values via Composio
+      // Note: functions.invoke serializes the entire params object as the body,
+      // so pass the payload directly (not wrapped in { body: ... })
       const { data: result, error: fetchError } = await functions.invoke('composio-connect', {
-        body: {
-          action: 'executeTool',
-          toolSlug: 'GOOGLESHEETS_GET_SPREADSHEET_VALUES',
-          connectedAccountId: connection.composio_connected_account_id,
-          arguments: {
-            spreadsheet_id: googleSheetsNode.data.spreadsheet_id,
-            range: googleSheetsNode.data.range || 'A1:Z100',
-            ...(googleSheetsNode.data.sheet_name && { sheet_name: googleSheetsNode.data.sheet_name })
-          }
+        action: 'executeTool',
+        toolSlug: 'GOOGLESHEETS_GET_SPREADSHEET_VALUES',
+        connectedAccountId: connection.composio_connected_account_id,
+        arguments: {
+          spreadsheet_id: googleSheetsNode.data.spreadsheet_id,
+          range: googleSheetsNode.data.range || 'A1:Z100',
+          ...(googleSheetsNode.data.sheet_name && { sheet_name: googleSheetsNode.data.sheet_name })
         }
       });
 

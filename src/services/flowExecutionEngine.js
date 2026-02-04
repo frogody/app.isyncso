@@ -1438,12 +1438,10 @@ async function handleComposioToolExecution(toolkitSlug, toolSlug, args, executio
 
   try {
     const { data, error } = await functions.invoke('composio-connect', {
-      body: {
-        action: 'executeTool',
-        toolSlug,
-        connectedAccountId,
-        arguments: args
-      }
+      action: 'executeTool',
+      toolSlug,
+      connectedAccountId,
+      arguments: args
     });
 
     if (error) {
@@ -1649,12 +1647,10 @@ async function handleWebhookTriggerNode(ctx) {
 
   try {
     const { data, error } = await functions.invoke('composio-connect', {
-      body: {
-        action: 'subscribeTrigger',
-        triggerSlug: triggerType,
-        connectedAccountId,
-        config: node.data?.filter_config ? JSON.parse(node.data.filter_config) : {}
-      }
+      action: 'subscribeTrigger',
+      triggerSlug: triggerType,
+      connectedAccountId,
+      config: node.data?.filter_config ? JSON.parse(node.data.filter_config) : {}
     });
 
     if (error) {
@@ -1700,7 +1696,7 @@ async function handleAIAgentNode(ctx) {
     if (connId) {
       try {
         const { data } = await functions.invoke('composio-connect', {
-          body: { action: 'listTools', toolkitSlug: toolkit }
+          action: 'listTools', toolkitSlug: toolkit
         });
         if (data?.tools) {
           composioTools.push(...data.tools.map(t => ({
