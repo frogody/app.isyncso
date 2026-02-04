@@ -330,7 +330,7 @@ async function refreshConnection(connectedAccountId: string) {
 
 /**
  * Execute a Composio tool
- * v1 API uses /actions/{actionName}/execute endpoint
+ * v3 API uses /tools/execute/{tool_slug} endpoint
  */
 async function executeTool(
   toolSlug: string,
@@ -342,7 +342,7 @@ async function executeTool(
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const startTime = Date.now();
 
-    // v1 API: /actions/{actionName}/execute
+    // v3 API: /tools/execute/{tool_slug}
     const result = await composioFetch<{
       successful?: boolean;
       execution_details?: {
@@ -351,13 +351,17 @@ async function executeTool(
       response_data?: unknown;
       data?: unknown;
       error?: string;
-    }>(`/actions/${toolSlug}/execute`, {
-      method: "POST",
-      body: JSON.stringify({
-        connectedAccountId: connectedAccountId,
-        input: args,
-      }),
-    });
+    }>(
+      `/tools/execute/${toolSlug}`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          connected_account_id: connectedAccountId,
+          arguments: args,
+        }),
+      },
+      true // useV3
+    );
 
     const executionTime = Date.now() - startTime;
 
@@ -399,12 +403,14 @@ async function executeTool(
 
 /**
  * List available tools for a toolkit
- * v1 API uses /actions endpoint
+ * v3 API uses /tools endpoint
  */
 async function listTools(toolkitSlug: string) {
-  // v1 API: /actions with appNames parameter
+  // v3 API: /tools with toolkit_slug parameter
   const result = await composioFetch<{ items?: unknown[] }>(
-    `/actions?appNames=${toolkitSlug}`
+    `/tools?toolkit_slug=${toolkitSlug}`,
+    {},
+    true // useV3
   );
 
   if (!result.success) {
