@@ -414,18 +414,31 @@ function Step1Product({ formData, setFormData, products, productsLoading, onProd
     price: '',
   });
   const { user } = useUser();
-  const orgId = user?.organization_id || user?.company_id;
 
-  const handleSelectProduct = (product) => {
+  const handleSelectProduct = async (product) => {
     if (formData.productId === product.id) {
       setFormData({ ...formData, productId: null, selectedProduct: null, productDescription: '' });
     } else {
+      // Also fetch digital product details if it's a digital product
+      let enrichedProduct = { ...product };
+      if (product.type === 'digital') {
+        try {
+          const { data: dpData } = await supabase
+            .from('digital_products')
+            .select('pricing_model, features, trial_available, trial_days, demo_url, packages, integrations, ai_context')
+            .eq('product_id', product.id)
+            .single();
+          if (dpData) {
+            enrichedProduct.digitalDetails = dpData;
+          }
+        } catch (e) { /* optional enrichment, ignore errors */ }
+      }
       setFormData({
         ...formData,
         productId: product.id,
-        selectedProduct: product,
+        selectedProduct: enrichedProduct,
         productDescription: product.description || product.short_description || '',
-        problemSolved: product.short_description || formData.problemSolved || '',
+        problemSolved: product.tagline || product.short_description || formData.problemSolved || '',
       });
       setShowAddForm(false);
     }
@@ -440,7 +453,7 @@ function Step1Product({ formData, setFormData, products, productsLoading, onProd
       const { data, error } = await supabase
         .from('products')
         .insert({
-          company_id: orgId,
+          company_id: user?.company_id,
           name: newProduct.name.trim(),
           slug,
           type: newProduct.type,
@@ -449,7 +462,7 @@ function Step1Product({ formData, setFormData, products, productsLoading, onProd
           price: newProduct.price ? parseFloat(newProduct.price) : null,
           status: 'published',
         })
-        .select('id, name, type, description, short_description, price, featured_image, status')
+        .select('id, name, type, description, short_description, price, featured_image, status, tagline, features, category')
         .single();
 
       if (error) throw error;
@@ -539,8 +552,8 @@ function Step1Product({ formData, setFormData, products, productsLoading, onProd
                         </span>
                       )}
                     </div>
-                    {product.short_description && (
-                      <p className="text-sm text-zinc-400 mt-0.5 line-clamp-2">{product.short_description}</p>
+                    {(product.tagline || product.short_description) && (
+                      <p className="text-sm text-zinc-400 mt-0.5 line-clamp-2">{product.tagline || product.short_description}</p>
                     )}
                     {product.price != null && (
                       <p className="text-xs text-zinc-500 mt-1">
@@ -1441,16 +1454,17 @@ export default function GrowthCampaignWizard() {
     fetchNests();
   }, [orgId]);
 
-  // Fetch available products
+  // Fetch available products (use company_id which is what products table uses)
+  const companyId = user?.company_id;
   useEffect(() => {
     async function fetchProducts() {
-      if (!orgId) return;
+      if (!companyId) return;
       setProductsLoading(true);
       try {
         const { data, error } = await supabase
           .from('products')
-          .select('id, name, type, description, short_description, price, featured_image, status')
-          .eq('company_id', orgId)
+          .select('id, name, type, description, short_description, price, featured_image, status, tagline, features, category')
+          .eq('company_id', companyId)
           .order('updated_at', { ascending: false });
         if (!error && data) setProducts(data);
       } catch (e) {
@@ -1460,7 +1474,7 @@ export default function GrowthCampaignWizard() {
       }
     }
     fetchProducts();
-  }, [orgId]);
+  }, [companyId]);
 
   // Load draft from localStorage on mount
   useEffect(() => {
@@ -1549,6 +1563,26 @@ export default function GrowthCampaignWizard() {
           personalization_context: formData.personalizationContext || null,
           data_source: formData.dataSource || null,
           selected_nest_id: formData.selectedNestId || null,
+          product: formData.selectedProduct ? {
+            id: formData.selectedProduct.id,
+            name: formData.selectedProduct.name,
+            type: formData.selectedProduct.type,
+            description: formData.selectedProduct.description,
+            short_description: formData.selectedProduct.short_description,
+            tagline: formData.selectedProduct.tagline,
+            features: formData.selectedProduct.features,
+            category: formData.selectedProduct.category,
+            price: formData.selectedProduct.price,
+            ...(formData.selectedProduct.digitalDetails ? {
+              pricing_model: formData.selectedProduct.digitalDetails.pricing_model,
+              digital_features: formData.selectedProduct.digitalDetails.features,
+              trial_available: formData.selectedProduct.digitalDetails.trial_available,
+              trial_days: formData.selectedProduct.digitalDetails.trial_days,
+              demo_url: formData.selectedProduct.digitalDetails.demo_url,
+              integrations: formData.selectedProduct.digitalDetails.integrations,
+              ai_context: formData.selectedProduct.digitalDetails.ai_context,
+            } : {}),
+          } : null,
         },
         created_by: user.id,
         updated_at: new Date().toISOString(),
@@ -1607,6 +1641,26 @@ export default function GrowthCampaignWizard() {
           personalization_context: formData.personalizationContext || null,
           data_source: formData.dataSource || null,
           selected_nest_id: formData.selectedNestId || null,
+          product: formData.selectedProduct ? {
+            id: formData.selectedProduct.id,
+            name: formData.selectedProduct.name,
+            type: formData.selectedProduct.type,
+            description: formData.selectedProduct.description,
+            short_description: formData.selectedProduct.short_description,
+            tagline: formData.selectedProduct.tagline,
+            features: formData.selectedProduct.features,
+            category: formData.selectedProduct.category,
+            price: formData.selectedProduct.price,
+            ...(formData.selectedProduct.digitalDetails ? {
+              pricing_model: formData.selectedProduct.digitalDetails.pricing_model,
+              digital_features: formData.selectedProduct.digitalDetails.features,
+              trial_available: formData.selectedProduct.digitalDetails.trial_available,
+              trial_days: formData.selectedProduct.digitalDetails.trial_days,
+              demo_url: formData.selectedProduct.digitalDetails.demo_url,
+              integrations: formData.selectedProduct.digitalDetails.integrations,
+              ai_context: formData.selectedProduct.digitalDetails.ai_context,
+            } : {}),
+          } : null,
         },
         created_by: user.id,
       };
