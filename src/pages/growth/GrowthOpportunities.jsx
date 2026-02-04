@@ -779,6 +779,7 @@ const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer, 
     ownerId: "",
   });
   const [customerSearch, setCustomerSearch] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
 
   // Handle prefilled customer
   useEffect(() => {
@@ -799,8 +800,20 @@ const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer, 
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Validate required fields
+    if (!formData.customerId) {
+      console.error('No customer selected');
+      return;
+    }
+
     const customer = customers.find((c) => c.id === formData.customerId);
-    const owner = team.find((u) => u.id === formData.ownerId) || team[0];
+    if (!customer) {
+      console.error('Customer not found:', formData.customerId);
+      return;
+    }
+
+    const owner = team.find((u) => u.id === formData.ownerId) || team[0] || { id: null, name: 'Unassigned' };
 
     const newOpp = {
       id: `opp-${Date.now()}`,
@@ -808,7 +821,7 @@ const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer, 
         id: customer.id,
         name: customer.name,
         avatar: null,
-        industry: customer.industry,
+        industry: customer.industry || 'Unknown',
         currentPlan: "Unknown",
         arr: 0,
       },
@@ -816,7 +829,7 @@ const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer, 
       value: parseInt(formData.value) || 0,
       signal: formData.source === "manual" ? formData.notes : formData.signal,
       signalId: null,
-      owner: { id: owner.id, name: owner.name, avatar: null },
+      owner: { id: owner?.id || null, name: owner?.name || 'Unassigned', avatar: null },
       stage: "new",
       priority: "medium",
       nextAction: "Initial qualification",
@@ -839,6 +852,8 @@ const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer, 
       notes: "",
       ownerId: "",
     });
+    setCustomerSearch("");
+    setShowDropdown(false);
     onClose();
   };
 
@@ -866,33 +881,70 @@ const CreateOpportunityModal = ({ isOpen, onClose, onCreate, prefilledCustomer, 
           {/* Customer */}
           <div>
             <label className="block text-sm font-medium text-zinc-400 mb-2">Customer *</label>
-            <div className="relative">
-              <input
-                type="text"
-                value={customerSearch}
-                onChange={(e) => setCustomerSearch(e.target.value)}
-                placeholder="Search customers..."
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              {customerSearch && filteredCustomers.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-zinc-800 border border-zinc-700 rounded-lg max-h-40 overflow-y-auto z-10">
-                  {filteredCustomers.map((customer) => (
-                    <button
-                      key={customer.id}
-                      type="button"
-                      onClick={() => {
-                        setFormData({ ...formData, customerId: customer.id });
-                        setCustomerSearch(customer.name);
-                      }}
-                      className="w-full px-4 py-2 text-left text-white hover:bg-zinc-700 flex items-center justify-between"
-                    >
-                      <span>{customer.name}</span>
-                      <span className="text-xs text-zinc-500">{customer.industry}</span>
-                    </button>
-                  ))}
+            {formData.customerId ? (
+              // Show selected customer
+              <div className="flex items-center justify-between bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5">
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-indigo-400" />
+                  <span className="text-white">{customers.find(c => c.id === formData.customerId)?.name || customerSearch}</span>
                 </div>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData({ ...formData, customerId: "" });
+                    setCustomerSearch("");
+                    setShowDropdown(false);
+                  }}
+                  className="text-zinc-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              // Show search input
+              <div className="relative">
+                <input
+                  type="text"
+                  value={customerSearch}
+                  onChange={(e) => {
+                    setCustomerSearch(e.target.value);
+                    setShowDropdown(true);
+                  }}
+                  onFocus={() => setShowDropdown(true)}
+                  placeholder={customers.length > 0 ? "Search customers..." : "No customers found - add in CRM first"}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                {showDropdown && filteredCustomers.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-zinc-800 border border-zinc-700 rounded-lg max-h-40 overflow-y-auto z-10">
+                    {filteredCustomers.map((customer) => (
+                      <button
+                        key={customer.id}
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, customerId: customer.id });
+                          setCustomerSearch(customer.name);
+                          setShowDropdown(false);
+                        }}
+                        className="w-full px-4 py-2 text-left text-white hover:bg-zinc-700 flex items-center justify-between"
+                      >
+                        <span>{customer.name}</span>
+                        <span className="text-xs text-zinc-500">{customer.industry}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {showDropdown && customerSearch && filteredCustomers.length === 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-zinc-400 text-sm">
+                    No customers match "{customerSearch}"
+                  </div>
+                )}
+              </div>
+            )}
+            {customers.length === 0 && (
+              <p className="mt-2 text-xs text-amber-400">
+                Add customers in the CRM module first, or create prospects to select from.
+              </p>
+            )}
           </div>
 
           {/* Type */}
