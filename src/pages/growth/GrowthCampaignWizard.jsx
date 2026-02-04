@@ -38,6 +38,7 @@ import {
   Zap,
   Search,
   HelpCircle,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -391,50 +392,95 @@ function ProgressIndicator({ currentStep, steps }) {
   );
 }
 
+// Product types for the quick-add form
+const PRODUCT_TYPES = [
+  { value: 'saas', label: 'SaaS' },
+  { value: 'digital', label: 'Digital Product' },
+  { value: 'service', label: 'Service' },
+  { value: 'physical', label: 'Physical Product' },
+  { value: 'consulting', label: 'Consulting' },
+  { value: 'course', label: 'Course / Training' },
+];
+
 // Step 1: Product/Service
-function Step1Product({ formData, setFormData, products, productsLoading }) {
-  const [manualMode, setManualMode] = useState(false);
+function Step1Product({ formData, setFormData, products, productsLoading, onProductCreated }) {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    name: '',
+    type: 'saas',
+    description: '',
+    short_description: '',
+    price: '',
+  });
+  const { user } = useUser();
+  const orgId = user?.organization_id || user?.company_id;
 
   const handleSelectProduct = (product) => {
     if (formData.productId === product.id) {
-      // Deselect
-      setFormData({
-        ...formData,
-        productId: null,
-        selectedProduct: null,
-        productDescription: '',
-      });
+      setFormData({ ...formData, productId: null, selectedProduct: null, productDescription: '' });
     } else {
-      // Select
       setFormData({
         ...formData,
         productId: product.id,
         selectedProduct: product,
         productDescription: product.description || product.short_description || '',
+        problemSolved: product.short_description || formData.problemSolved || '',
       });
-      setManualMode(false);
+      setShowAddForm(false);
     }
   };
 
-  const handleSwitchToManual = () => {
-    setManualMode(true);
-    setFormData({
-      ...formData,
-      productId: null,
-      selectedProduct: null,
-    });
+  const handleCreateProduct = async () => {
+    if (!newProduct.name.trim()) { toast.error('Product name is required'); return; }
+    if (!newProduct.description.trim()) { toast.error('Product description is required'); return; }
+    setSaving(true);
+    try {
+      const slug = newProduct.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const { data, error } = await supabase
+        .from('products')
+        .insert({
+          company_id: orgId,
+          name: newProduct.name.trim(),
+          slug,
+          type: newProduct.type,
+          description: newProduct.description.trim(),
+          short_description: newProduct.short_description.trim() || null,
+          price: newProduct.price ? parseFloat(newProduct.price) : null,
+          status: 'published',
+        })
+        .select('id, name, type, description, short_description, price, featured_image, status')
+        .single();
+
+      if (error) throw error;
+
+      toast.success(`${data.name} added to your products`);
+      setShowAddForm(false);
+      setNewProduct({ name: '', type: 'saas', description: '', short_description: '', price: '' });
+      // Add to products list and select it
+      if (onProductCreated) onProductCreated(data);
+      setFormData({
+        ...formData,
+        productId: data.id,
+        selectedProduct: data,
+        productDescription: data.description || '',
+        problemSolved: data.short_description || formData.problemSolved || '',
+      });
+    } catch (err) {
+      console.error('Error creating product:', err);
+      toast.error('Failed to create product');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const showProductSelector = products.length > 0 && !manualMode;
   const hasSelectedProduct = formData.productId && formData.selectedProduct;
 
   return (
     <div className="space-y-6">
       {/* Campaign Name */}
       <div>
-        <Label htmlFor="campaignName" className="text-zinc-300">
-          Campaign Name *
-        </Label>
+        <Label htmlFor="campaignName" className="text-zinc-300">Campaign Name *</Label>
         <Input
           id="campaignName"
           value={formData.campaignName}
@@ -444,157 +490,178 @@ function Step1Product({ formData, setFormData, products, productsLoading }) {
         />
       </div>
 
-      {/* Product Selection Section */}
+      {/* Product Selection */}
       <div>
-        <Label className="text-zinc-300 mb-3 block">Product / Service *</Label>
+        <Label className="text-zinc-300 mb-3 block">Select your Product / Service *</Label>
+        <p className="text-sm text-zinc-500 mb-4">Choose which product you're selling in this campaign, or add a new one.</p>
 
-        {/* Loading state */}
+        {/* Loading */}
         {productsLoading && (
           <div className="grid md:grid-cols-2 gap-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse bg-zinc-800/50 rounded-xl h-32" />
+              <div key={i} className="animate-pulse bg-zinc-800/50 rounded-xl h-28" />
             ))}
           </div>
         )}
 
-        {/* Product cards grid */}
-        {!productsLoading && showProductSelector && (
-          <>
-            <div className="grid md:grid-cols-2 gap-3">
-              {products.map((product) => {
-                const isSelected = formData.productId === product.id;
-                return (
-                  <button
-                    key={product.id}
-                    type="button"
-                    onClick={() => handleSelectProduct(product)}
-                    className={`relative p-4 rounded-xl border transition-all text-left flex gap-3 ${
-                      isSelected
-                        ? 'border-cyan-500/50 bg-cyan-500/5'
-                        : 'border-zinc-700 hover:border-zinc-600'
-                    }`}
-                  >
-                    {/* Product image or icon */}
-                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center overflow-hidden">
-                      {product.featured_image ? (
-                        <img
-                          src={product.featured_image}
-                          alt={product.name}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      ) : (
-                        <Package className="w-5 h-5 text-zinc-500" />
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-white truncate">{product.name}</span>
-                        {product.type && (
-                          <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                            {product.type}
-                          </span>
-                        )}
-                      </div>
-                      {product.short_description && (
-                        <p className="text-sm text-zinc-400 mt-0.5 line-clamp-2">
-                          {product.short_description}
-                        </p>
-                      )}
-                      {product.price != null && (
-                        <p className="text-xs text-zinc-400 mt-1">
-                          {typeof product.price === 'number'
-                            ? `$${product.price.toLocaleString()}`
-                            : product.price}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Selected checkmark */}
-                    {isSelected && (
-                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center">
-                        <Check className="w-3 h-3 text-white" />
-                      </div>
+        {/* Product cards grid + Add card */}
+        {!productsLoading && !showAddForm && (
+          <div className="grid md:grid-cols-2 gap-3">
+            {products.map((product) => {
+              const isSelected = formData.productId === product.id;
+              const imgSrc = typeof product.featured_image === 'string'
+                ? product.featured_image
+                : product.featured_image?.url || null;
+              return (
+                <button
+                  key={product.id}
+                  type="button"
+                  onClick={() => handleSelectProduct(product)}
+                  className={`relative p-4 rounded-xl border transition-all text-left flex gap-3 ${
+                    isSelected
+                      ? 'border-cyan-500/50 bg-cyan-500/5 ring-1 ring-cyan-500/30'
+                      : 'border-zinc-700 hover:border-zinc-500 bg-zinc-900/30'
+                  }`}
+                >
+                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center overflow-hidden">
+                    {imgSrc ? (
+                      <img src={imgSrc} alt={product.name} className="w-full h-full object-cover rounded-lg" />
+                    ) : (
+                      <Package className="w-5 h-5 text-zinc-500" />
                     )}
-                  </button>
-                );
-              })}
-            </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-white truncate">{product.name}</span>
+                      {product.type && (
+                        <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                          {product.type}
+                        </span>
+                      )}
+                    </div>
+                    {product.short_description && (
+                      <p className="text-sm text-zinc-400 mt-0.5 line-clamp-2">{product.short_description}</p>
+                    )}
+                    {product.price != null && (
+                      <p className="text-xs text-zinc-500 mt-1">
+                        ${Number(product.price).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                  {isSelected && (
+                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
 
-            {/* Switch to manual */}
+            {/* Add New Product card */}
             <button
               type="button"
-              onClick={handleSwitchToManual}
-              className="mt-3 text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
+              onClick={() => setShowAddForm(true)}
+              className="p-4 rounded-xl border-2 border-dashed border-zinc-700 hover:border-cyan-500/40 transition-all text-left flex flex-col items-center justify-center gap-2 min-h-[100px] bg-zinc-900/20 hover:bg-cyan-500/5"
             >
-              Or describe manually
+              <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                <Plus className="w-5 h-5 text-cyan-400" />
+              </div>
+              <span className="text-sm font-medium text-cyan-400">Add New Product</span>
+              <span className="text-xs text-zinc-500">Create a product for this campaign</span>
             </button>
-          </>
-        )}
-
-        {/* Selected product summary */}
-        {!productsLoading && hasSelectedProduct && !manualMode && (
-          <div className="mt-4 p-3 rounded-lg bg-zinc-900/50 border border-zinc-700">
-            <p className="text-xs text-zinc-500 mb-1">Product description (from catalog)</p>
-            <p className="text-sm text-zinc-300">
-              {formData.productDescription || 'No description available.'}
-            </p>
           </div>
         )}
 
-        {/* Manual / freeform mode or no products */}
-        {!productsLoading && (!showProductSelector || manualMode) && (
-          <div className="space-y-4">
-            {manualMode && products.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setManualMode(false)}
-                className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
-              >
-                Back to product selection
+        {/* Add Product Form */}
+        {!productsLoading && showAddForm && (
+          <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-white flex items-center gap-2">
+                <Plus className="w-4 h-4 text-cyan-400" />
+                Add New Product
+              </h3>
+              <button type="button" onClick={() => setShowAddForm(false)} className="text-zinc-400 hover:text-white">
+                <X className="w-4 h-4" />
               </button>
-            )}
+            </div>
 
-            <div>
-              <Label htmlFor="productDescription" className="text-zinc-300">
-                What are you selling? *
-              </Label>
-              <Textarea
-                id="productDescription"
-                value={formData.productDescription}
-                onChange={(e) =>
-                  setFormData({ ...formData, productDescription: e.target.value })
-                }
-                placeholder="Describe your product or service in detail..."
-                className="mt-1.5 bg-zinc-900/50 border-zinc-700 min-h-[100px]"
-              />
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-zinc-300">Product Name *</Label>
+                <Input
+                  value={newProduct.name}
+                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                  placeholder="e.g., ISYNCSO Platform"
+                  className="mt-1.5 bg-zinc-900/50 border-zinc-700"
+                />
+              </div>
+              <div>
+                <Label className="text-zinc-300">Type *</Label>
+                <Select value={newProduct.type} onValueChange={(v) => setNewProduct({ ...newProduct, type: v })}>
+                  <SelectTrigger className="mt-1.5 bg-zinc-900/50 border-zinc-700">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRODUCT_TYPES.map(t => (
+                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div>
-              <Label htmlFor="problemSolved" className="text-zinc-300">
-                What problem does it solve? *
-              </Label>
+              <Label className="text-zinc-300">Description *</Label>
               <Textarea
-                id="problemSolved"
-                value={formData.problemSolved}
-                onChange={(e) => setFormData({ ...formData, problemSolved: e.target.value })}
-                placeholder="What pain points does your solution address?"
-                className="mt-1.5 bg-zinc-900/50 border-zinc-700 min-h-[100px]"
+                value={newProduct.description}
+                onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                placeholder="What does your product do? What value does it provide?"
+                className="mt-1.5 bg-zinc-900/50 border-zinc-700 min-h-[80px]"
               />
             </div>
 
-            <div>
-              <Label htmlFor="idealBuyer" className="text-zinc-300">
-                Who is your ideal buyer?
-              </Label>
-              <Textarea
-                id="idealBuyer"
-                value={formData.idealBuyer}
-                onChange={(e) => setFormData({ ...formData, idealBuyer: e.target.value })}
-                placeholder="Quick description of your ideal customer..."
-                className="mt-1.5 bg-zinc-900/50 border-zinc-700"
-              />
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-zinc-300">Short Description</Label>
+                <Input
+                  value={newProduct.short_description}
+                  onChange={(e) => setNewProduct({ ...newProduct, short_description: e.target.value })}
+                  placeholder="One-liner summary"
+                  className="mt-1.5 bg-zinc-900/50 border-zinc-700"
+                />
+              </div>
+              <div>
+                <Label className="text-zinc-300">Price</Label>
+                <Input
+                  type="number"
+                  value={newProduct.price}
+                  onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                  placeholder="0.00"
+                  className="mt-1.5 bg-zinc-900/50 border-zinc-700"
+                />
+              </div>
             </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="ghost" onClick={() => setShowAddForm(false)} className="text-zinc-400">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateProduct}
+                disabled={saving || !newProduct.name.trim() || !newProduct.description.trim()}
+                className="bg-cyan-600 hover:bg-cyan-700 text-white"
+              >
+                {saving ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Creating...</> : <><Plus className="w-4 h-4 mr-2" /> Create & Select</>}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Selected product summary */}
+        {!productsLoading && hasSelectedProduct && !showAddForm && (
+          <div className="mt-4 p-3 rounded-lg bg-zinc-900/50 border border-zinc-700">
+            <p className="text-xs text-zinc-500 mb-1">Product description (will be used for personalization)</p>
+            <p className="text-sm text-zinc-300">{formData.productDescription || 'No description available.'}</p>
           </div>
         )}
       </div>
@@ -1432,7 +1499,7 @@ export default function GrowthCampaignWizard() {
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
-        return formData.campaignName && (formData.productId || (formData.productDescription && formData.problemSolved));
+        return formData.campaignName && formData.productId;
       case 2:
         return formData.industries.length > 0 || formData.jobTitles.length > 0;
       case 3:
@@ -1573,7 +1640,7 @@ export default function GrowthCampaignWizard() {
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <Step1Product formData={formData} setFormData={setFormData} products={products} productsLoading={productsLoading} />;
+        return <Step1Product formData={formData} setFormData={setFormData} products={products} productsLoading={productsLoading} onProductCreated={(p) => setProducts(prev => [p, ...prev])} />;
       case 2:
         return <Step2ICP formData={formData} setFormData={setFormData} />;
       case 3:
