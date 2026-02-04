@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/api/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Sparkles, Plus, Search, ArrowLeft, MoreHorizontal, Play, Download,
+  Sparkles, Plus, Search, ArrowLeft, ArrowRight, MoreHorizontal, Play, Download,
   GripVertical, Type, Zap, Brain, FunctionSquare, Columns3, Trash2,
   Edit2, Settings, ChevronDown, Check, X, Loader2, AlertCircle,
   Table2, Clock, Hash, Upload, FileUp, Database, Pencil, Filter, XCircle,
   ArrowUp, ArrowDown, ArrowUpDown, ToggleLeft, ToggleRight, Layers, Globe,
   Calendar, DollarSign, Link, Mail, CheckSquare, ListOrdered, Merge, Send, Bot, Trash,
   FlaskConical, ShieldAlert, RotateCcw, History, Camera, Undo2, ChevronRight, BookmarkPlus,
-  Eye, Copy, Star, Save
+  Eye, Copy, Star, Save, Linkedin, Phone as PhoneIcon, Target
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ import {
   fullEnrichFromLinkedIn, fullEnrichFromEmail, enrichCompanyOnly,
   matchProspect, enrichProspectContact, enrichProspectProfile,
 } from '@/lib/explorium-api';
+import JourneyProgressBar from '@/components/growth/campaigns/JourneyProgressBar';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -339,8 +341,17 @@ export default function GrowthEnrich() {
   const { theme, toggleTheme, rt } = useTheme();
   const { user } = useUser();
   const { hasPermission } = usePermissions();
+  const { campaignId } = useParams();
+  const navigate = useNavigate();
 
   const orgId = user?.company_id || user?.organization_id;
+
+  // Campaign journey mode
+  const [campaign, setCampaign] = useState(null);
+  const [campaignLoading, setCampaignLoading] = useState(!!campaignId);
+  const [syncSuggestionsOpen, setSyncSuggestionsOpen] = useState(true);
+  const [savingCampaign, setSavingCampaign] = useState(false);
+  const isCampaignMode = !!campaignId;
 
   // View state
   const [activeWorkspaceId, setActiveWorkspaceId] = useState(null);
@@ -1102,6 +1113,111 @@ export default function GrowthEnrich() {
   }, [orgId]);
 
   useEffect(() => { loadWorkspaces(); }, [loadWorkspaces]);
+
+  // ─── Campaign mode: auto-load/create workspace ────────────────────────
+
+  useEffect(() => {
+    if (!campaignId || !orgId || !user?.id) return;
+    let cancelled = false;
+
+    async function initCampaignMode() {
+      setCampaignLoading(true);
+      try {
+        // Load campaign
+        const { data: camp, error: campErr } = await supabase
+          .from('growth_campaigns')
+          .select('*')
+          .eq('id', campaignId)
+          .single();
+        if (campErr || !camp) { toast.error('Campaign not found'); return; }
+        if (cancelled) return;
+        setCampaign(camp);
+
+        // If campaign already has a workspace, use it
+        if (camp.enrich_workspace_id) {
+          setActiveWorkspaceId(camp.enrich_workspace_id);
+          setCampaignLoading(false);
+          return;
+        }
+
+        // Auto-create workspace for this campaign
+        const wsName = `${camp.name || 'Campaign'} - Enrichment`;
+        const { data: ws, error: wsErr } = await supabase
+          .from('enrich_workspaces')
+          .insert({
+            organization_id: orgId,
+            name: wsName,
+            created_by: user.id,
+            module: 'growth',
+          })
+          .select()
+          .single();
+        if (wsErr) throw wsErr;
+
+        // Create Table 1
+        await supabase.from('enrich_tables').insert({ workspace_id: ws.id, name: 'Table 1', position: 0 });
+
+        // Link workspace to campaign
+        await supabase
+          .from('growth_campaigns')
+          .update({ enrich_workspace_id: ws.id, journey_phase: 'enrich' })
+          .eq('id', campaignId);
+
+        if (cancelled) return;
+        setActiveWorkspaceId(ws.id);
+        loadWorkspaces();
+      } catch (err) {
+        console.error('Campaign mode init error:', err);
+        toast.error('Failed to initialize enrichment workspace');
+      } finally {
+        if (!cancelled) setCampaignLoading(false);
+      }
+    }
+
+    initCampaignMode();
+    return () => { cancelled = true; };
+  }, [campaignId, orgId, user?.id]);
+
+  // Campaign continue handler
+  const handleContinueToFlow = useCallback(async () => {
+    if (!campaignId || !activeWorkspaceId) return;
+    setSavingCampaign(true);
+    try {
+      await supabase
+        .from('growth_campaigns')
+        .update({
+          enrich_workspace_id: activeWorkspaceId,
+          journey_phase: 'flow',
+          updated_date: new Date().toISOString(),
+        })
+        .eq('id', campaignId);
+      navigate(`/growth/campaign/${campaignId}/flow`);
+      toast.success('Enrichment saved! Building your flow...');
+    } catch (err) {
+      toast.error('Failed to save');
+    } finally {
+      setSavingCampaign(false);
+    }
+  }, [campaignId, activeWorkspaceId, navigate]);
+
+  // ─── SYNC Suggestions for campaign mode ────────────────────────────────
+
+  const campaignSuggestions = useMemo(() => {
+    if (!campaign) return [];
+    const channels = campaign.campaign_goals?.channels || {};
+    const suggestions = [];
+    if (channels.email) {
+      suggestions.push({ id: 'email_waterfall', icon: Mail, label: 'Add Email Waterfall', desc: 'Find verified email addresses using multiple providers', colConfig: { type: 'waterfall', name: 'Email (Waterfall)' } });
+    }
+    if (channels.linkedin) {
+      suggestions.push({ id: 'linkedin_enrich', icon: Linkedin, label: 'Add LinkedIn Enrichment', desc: 'Enrich profiles from LinkedIn URLs', colConfig: { type: 'enrichment', name: 'LinkedIn Enrichment' } });
+    }
+    if (channels.phone) {
+      suggestions.push({ id: 'phone_enrich', icon: PhoneIcon, label: 'Add Phone Number', desc: 'Find direct phone numbers', colConfig: { type: 'enrichment', name: 'Phone Number' } });
+    }
+    suggestions.push({ id: 'ai_research', icon: Brain, label: 'Add AI Research', desc: 'AI-powered research on each prospect', colConfig: { type: 'ai', name: 'AI Research' } });
+    return suggestions;
+  }, [campaign]);
 
   // ─── Load nests for picker ─────────────────────────────────────────────
 
@@ -3015,6 +3131,12 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
   return (
     <GrowthPageTransition>
       <div className={rt('min-h-screen bg-gray-50', 'min-h-screen bg-black')} style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+        {/* Campaign Journey Progress Bar */}
+        {isCampaignMode && campaignId && (
+          <div className="flex-shrink-0 px-4 pt-3">
+            <JourneyProgressBar campaignId={campaignId} currentPhase="enrich" />
+          </div>
+        )}
         {/* Toolbar */}
         <div className={rt(
           'flex-shrink-0 px-4 py-3 border-b border-gray-200 bg-white',
@@ -3387,9 +3509,54 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   </>
                 )}
               </div>
+              {/* Campaign mode: Continue button */}
+              {isCampaignMode && (
+                <Button
+                  onClick={handleContinueToFlow}
+                  disabled={savingCampaign}
+                  className="flex-shrink-0 bg-cyan-600 hover:bg-cyan-700 text-white ml-2"
+                  size="sm"
+                >
+                  {savingCampaign ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <ArrowRight className="w-3.5 h-3.5 mr-1" />}
+                  Continue to Flow
+                </Button>
+              )}
             </div>
           </div>
         </div>
+
+        {/* Campaign mode: SYNC Suggestions Banner */}
+        {isCampaignMode && campaign && syncSuggestionsOpen && campaignSuggestions.length > 0 && (
+          <div className="flex-shrink-0 px-4 py-3 border-b border-cyan-500/20 bg-cyan-500/5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-cyan-400" />
+                <span className="text-sm font-medium text-cyan-300">SYNC Suggestions for {campaign.name}</span>
+              </div>
+              <button onClick={() => setSyncSuggestionsOpen(false)} className="text-zinc-500 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {campaignSuggestions.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    setColType(s.colConfig.type);
+                    setColName(s.colConfig.name);
+                    setColConfig({});
+                    setColDialogOpen(true);
+                    toast.info(`Configure "${s.colConfig.name}" column`);
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 hover:border-cyan-500/40 text-sm text-cyan-300 hover:text-cyan-200 transition-all"
+                >
+                  <s.icon className="w-3.5 h-3.5" />
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Spreadsheet */}
         {wsLoading ? (

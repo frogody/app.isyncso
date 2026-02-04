@@ -113,6 +113,10 @@ import ExecutionMonitor from "./growth/ExecutionMonitor";
 
 import GrowthCustomerSignals from "./growth/GrowthCustomerSignals";
 
+import GrowthCampaignNests from "./growth/GrowthCampaignNests";
+
+import GrowthCampaignReview from "./growth/GrowthCampaignReview";
+
 import GrowthOpportunities from "./growth/GrowthOpportunities";
 
 import Home from "./Home";
@@ -447,6 +451,10 @@ const PAGES = {
     FlowBuilder: FlowBuilder,
 
     GrowthCustomerSignals: GrowthCustomerSignals,
+
+    GrowthCampaignNests: GrowthCampaignNests,
+
+    GrowthCampaignReview: GrowthCampaignReview,
 
     GrowthOpportunities: GrowthOpportunities,
 
@@ -866,6 +874,11 @@ function PagesContent() {
                 <Route path="/GrowthCustomerSignals" element={<GrowthCustomerSignals />} />
                 <Route path="/growth/signals" element={<GrowthCustomerSignals />} />
                 <Route path="/growth/customers" element={<GrowthCustomerSignals />} />
+
+                <Route path="/growth/campaign/:campaignId/nests" element={<GrowthCampaignNests />} />
+                <Route path="/growth/campaign/:campaignId/enrich" element={<GrowthEnrich />} />
+                <Route path="/growth/campaign/:campaignId/flow" element={<FlowBuilder />} />
+                <Route path="/growth/campaign/:campaignId/review" element={<GrowthCampaignReview />} />
 
                 <Route path="/GrowthOpportunities" element={<GrowthOpportunities />} />
                 <Route path="/growth/opportunities" element={<GrowthOpportunities />} />

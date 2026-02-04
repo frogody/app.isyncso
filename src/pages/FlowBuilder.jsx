@@ -47,16 +47,28 @@ import {
 import DebugPanel from '@/components/flows/DebugPanel';
 import { runFlowInTestMode, validateFlowConfig } from '@/services/flowTestUtils';
 import QuickRunModal from '@/components/flows/QuickRunModal';
+import { generateCampaignFlowTemplate, getRequiredIntegrations } from '@/services/flowTemplateGenerator';
+import IntegrationChecklist from '@/components/growth/campaigns/IntegrationChecklist';
+import JourneyProgressBar from '@/components/growth/campaigns/JourneyProgressBar';
 
 export default function FlowBuilder() {
   const navigate = useNavigate();
-  const { flowId } = useParams();
+  const params = useParams();
+  const flowId = params.flowId;
+  const campaignIdFromUrl = params.campaignId;
   const [searchParams] = useSearchParams();
   const { user } = useUser();
   const { toast } = useToast();
 
+  const campaignId = campaignIdFromUrl || searchParams.get('campaignId');
   const isNewFlow = !flowId || flowId === 'new';
   const templateType = searchParams.get('template');
+  const isCampaignMode = !!campaignId;
+
+  // Campaign state
+  const [campaign, setCampaign] = useState(null);
+  const [showIntegrations, setShowIntegrations] = useState(false);
+  const [savingCampaign, setSavingCampaign] = useState(false);
 
   // Flow state
   const [flow, setFlow] = useState(null);
@@ -102,6 +114,63 @@ export default function FlowBuilder() {
       loadFlow();
     }
   }, [flowId, isNewFlow, templateType]);
+
+  // Campaign mode: load campaign and auto-generate flow
+  useEffect(() => {
+    if (!campaignId || !isNewFlow) return;
+    async function loadCampaign() {
+      try {
+        const { data, error } = await supabase
+          .from('growth_campaigns')
+          .select('*')
+          .eq('id', campaignId)
+          .single();
+        if (error || !data) return;
+        setCampaign(data);
+
+        // Generate flow template from campaign
+        const template = generateCampaignFlowTemplate(data);
+        setNodes(template.nodes);
+        setEdges(template.edges);
+        setFlowName(`${data.name || 'Campaign'} - Outreach Flow`);
+        setFlowDescription(`Auto-generated flow for campaign: ${data.name}`);
+        setShowIntegrations(true);
+      } catch (err) {
+        console.error('Failed to load campaign for flow:', err);
+      }
+    }
+    loadCampaign();
+  }, [campaignId, isNewFlow]);
+
+  // Required integrations for current flow
+  const requiredIntegrations = React.useMemo(() => getRequiredIntegrations(nodes), [nodes]);
+
+  // Continue to Review handler (campaign mode)
+  const handleContinueToReview = async () => {
+    if (!campaignId) return;
+    // Save first
+    await handleSave();
+    setSavingCampaign(true);
+    try {
+      // The flow was saved — get its ID from the URL or flow state
+      const savedFlowId = flow?.id || flowId;
+      if (savedFlowId && savedFlowId !== 'new') {
+        await supabase
+          .from('growth_campaigns')
+          .update({
+            flow_id: savedFlowId,
+            journey_phase: 'review',
+            updated_date: new Date().toISOString(),
+          })
+          .eq('id', campaignId);
+        navigate(`/growth/campaign/${campaignId}/review`);
+      }
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to save', variant: 'destructive' });
+    } finally {
+      setSavingCampaign(false);
+    }
+  };
 
   const loadFlow = async () => {
     try {
@@ -323,6 +392,12 @@ export default function FlowBuilder() {
 
   return (
     <div className="flex flex-col h-screen bg-zinc-950">
+      {/* Campaign Journey Progress Bar */}
+      {isCampaignMode && campaignId && (
+        <div className="flex-shrink-0 px-4 pt-3">
+          <JourneyProgressBar campaignId={campaignId} currentPhase="flow" />
+        </div>
+      )}
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900/50">
         <div className="flex items-center gap-4">
@@ -422,6 +497,25 @@ export default function FlowBuilder() {
             )}
             {saving ? 'Saving...' : 'Save'}
           </Button>
+
+          {/* Campaign mode: Continue to Review */}
+          {isCampaignMode && (
+            <>
+              <div className="w-px h-6 bg-zinc-700" />
+              <Button
+                onClick={handleContinueToReview}
+                disabled={savingCampaign || isNewFlow}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                {savingCampaign ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                )}
+                Review & Launch
+              </Button>
+            </>
+          )}
         </div>
       </header>
 
@@ -432,6 +526,18 @@ export default function FlowBuilder() {
 
         {/* Center - Flow Canvas */}
         <div className="flex-1 relative">
+          {/* Campaign mode: Integration Checklist overlay */}
+          {isCampaignMode && showIntegrations && requiredIntegrations.length > 0 && (
+            <div className="absolute top-4 left-4 z-10 w-72">
+              <IntegrationChecklist requiredIntegrations={requiredIntegrations} />
+              <button
+                onClick={() => setShowIntegrations(false)}
+                className="mt-2 text-xs text-zinc-500 hover:text-zinc-300"
+              >
+                Hide checklist
+              </button>
+            </div>
+          )}
           <FlowCanvas
             initialNodes={nodes}
             initialEdges={edges}

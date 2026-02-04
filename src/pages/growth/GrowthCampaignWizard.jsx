@@ -172,6 +172,8 @@ const BUYING_SIGNALS = [
 const getInitialState = () => ({
   // Step 1: Product
   campaignName: '',
+  productId: null,
+  selectedProduct: null,
   productDescription: '',
   problemSolved: '',
   idealBuyer: '',
@@ -390,9 +392,45 @@ function ProgressIndicator({ currentStep, steps }) {
 }
 
 // Step 1: Product/Service
-function Step1Product({ formData, setFormData }) {
+function Step1Product({ formData, setFormData, products, productsLoading }) {
+  const [manualMode, setManualMode] = useState(false);
+
+  const handleSelectProduct = (product) => {
+    if (formData.productId === product.id) {
+      // Deselect
+      setFormData({
+        ...formData,
+        productId: null,
+        selectedProduct: null,
+        productDescription: '',
+      });
+    } else {
+      // Select
+      setFormData({
+        ...formData,
+        productId: product.id,
+        selectedProduct: product,
+        productDescription: product.description || product.short_description || '',
+      });
+      setManualMode(false);
+    }
+  };
+
+  const handleSwitchToManual = () => {
+    setManualMode(true);
+    setFormData({
+      ...formData,
+      productId: null,
+      selectedProduct: null,
+    });
+  };
+
+  const showProductSelector = products.length > 0 && !manualMode;
+  const hasSelectedProduct = formData.productId && formData.selectedProduct;
+
   return (
     <div className="space-y-6">
+      {/* Campaign Name */}
       <div>
         <Label htmlFor="campaignName" className="text-zinc-300">
           Campaign Name *
@@ -406,47 +444,162 @@ function Step1Product({ formData, setFormData }) {
         />
       </div>
 
+      {/* Product Selection Section */}
       <div>
-        <Label htmlFor="productDescription" className="text-zinc-300">
-          What are you selling? *
-        </Label>
-        <Textarea
-          id="productDescription"
-          value={formData.productDescription}
-          onChange={(e) =>
-            setFormData({ ...formData, productDescription: e.target.value })
-          }
-          placeholder="Describe your product or service in detail..."
-          className="mt-1.5 bg-zinc-900/50 border-zinc-700 min-h-[100px]"
-        />
+        <Label className="text-zinc-300 mb-3 block">Product / Service *</Label>
+
+        {/* Loading state */}
+        {productsLoading && (
+          <div className="grid md:grid-cols-2 gap-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse bg-zinc-800/50 rounded-xl h-32" />
+            ))}
+          </div>
+        )}
+
+        {/* Product cards grid */}
+        {!productsLoading && showProductSelector && (
+          <>
+            <div className="grid md:grid-cols-2 gap-3">
+              {products.map((product) => {
+                const isSelected = formData.productId === product.id;
+                return (
+                  <button
+                    key={product.id}
+                    type="button"
+                    onClick={() => handleSelectProduct(product)}
+                    className={`relative p-4 rounded-xl border transition-all text-left flex gap-3 ${
+                      isSelected
+                        ? 'border-cyan-500/50 bg-cyan-500/5'
+                        : 'border-zinc-700 hover:border-zinc-600'
+                    }`}
+                  >
+                    {/* Product image or icon */}
+                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center overflow-hidden">
+                      {product.featured_image ? (
+                        <img
+                          src={product.featured_image}
+                          alt={product.name}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        <Package className="w-5 h-5 text-zinc-500" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-white truncate">{product.name}</span>
+                        {product.type && (
+                          <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                            {product.type}
+                          </span>
+                        )}
+                      </div>
+                      {product.short_description && (
+                        <p className="text-sm text-zinc-400 mt-0.5 line-clamp-2">
+                          {product.short_description}
+                        </p>
+                      )}
+                      {product.price != null && (
+                        <p className="text-xs text-zinc-400 mt-1">
+                          {typeof product.price === 'number'
+                            ? `$${product.price.toLocaleString()}`
+                            : product.price}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Selected checkmark */}
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Switch to manual */}
+            <button
+              type="button"
+              onClick={handleSwitchToManual}
+              className="mt-3 text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
+            >
+              Or describe manually
+            </button>
+          </>
+        )}
+
+        {/* Selected product summary */}
+        {!productsLoading && hasSelectedProduct && !manualMode && (
+          <div className="mt-4 p-3 rounded-lg bg-zinc-900/50 border border-zinc-700">
+            <p className="text-xs text-zinc-500 mb-1">Product description (from catalog)</p>
+            <p className="text-sm text-zinc-300">
+              {formData.productDescription || 'No description available.'}
+            </p>
+          </div>
+        )}
+
+        {/* Manual / freeform mode or no products */}
+        {!productsLoading && (!showProductSelector || manualMode) && (
+          <div className="space-y-4">
+            {manualMode && products.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setManualMode(false)}
+                className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+              >
+                Back to product selection
+              </button>
+            )}
+
+            <div>
+              <Label htmlFor="productDescription" className="text-zinc-300">
+                What are you selling? *
+              </Label>
+              <Textarea
+                id="productDescription"
+                value={formData.productDescription}
+                onChange={(e) =>
+                  setFormData({ ...formData, productDescription: e.target.value })
+                }
+                placeholder="Describe your product or service in detail..."
+                className="mt-1.5 bg-zinc-900/50 border-zinc-700 min-h-[100px]"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="problemSolved" className="text-zinc-300">
+                What problem does it solve? *
+              </Label>
+              <Textarea
+                id="problemSolved"
+                value={formData.problemSolved}
+                onChange={(e) => setFormData({ ...formData, problemSolved: e.target.value })}
+                placeholder="What pain points does your solution address?"
+                className="mt-1.5 bg-zinc-900/50 border-zinc-700 min-h-[100px]"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="idealBuyer" className="text-zinc-300">
+                Who is your ideal buyer?
+              </Label>
+              <Textarea
+                id="idealBuyer"
+                value={formData.idealBuyer}
+                onChange={(e) => setFormData({ ...formData, idealBuyer: e.target.value })}
+                placeholder="Quick description of your ideal customer..."
+                className="mt-1.5 bg-zinc-900/50 border-zinc-700"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
-      <div>
-        <Label htmlFor="problemSolved" className="text-zinc-300">
-          What problem does it solve? *
-        </Label>
-        <Textarea
-          id="problemSolved"
-          value={formData.problemSolved}
-          onChange={(e) => setFormData({ ...formData, problemSolved: e.target.value })}
-          placeholder="What pain points does your solution address?"
-          className="mt-1.5 bg-zinc-900/50 border-zinc-700 min-h-[100px]"
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="idealBuyer" className="text-zinc-300">
-          Who is your ideal buyer?
-        </Label>
-        <Textarea
-          id="idealBuyer"
-          value={formData.idealBuyer}
-          onChange={(e) => setFormData({ ...formData, idealBuyer: e.target.value })}
-          placeholder="Quick description of your ideal customer..."
-          className="mt-1.5 bg-zinc-900/50 border-zinc-700"
-        />
-      </div>
-
+      {/* Price Range & Sales Cycle */}
       <div className="grid md:grid-cols-2 gap-4">
         <div>
           <Label className="text-zinc-300">Price Range</Label>
@@ -1182,6 +1335,8 @@ export default function GrowthCampaignWizard() {
   const [saving, setSaving] = useState(false);
   const [nests, setNests] = useState([]);
   const [nestsLoading, setNestsLoading] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
 
   const orgId = user?.organization_id || user?.company_id;
 
@@ -1217,6 +1372,27 @@ export default function GrowthCampaignWizard() {
     }
 
     fetchNests();
+  }, [orgId]);
+
+  // Fetch available products
+  useEffect(() => {
+    async function fetchProducts() {
+      if (!orgId) return;
+      setProductsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('id, name, type, description, short_description, price, featured_image, status')
+          .eq('company_id', orgId)
+          .order('updated_at', { ascending: false });
+        if (!error && data) setProducts(data);
+      } catch (e) {
+        console.error('Error fetching products:', e);
+      } finally {
+        setProductsLoading(false);
+      }
+    }
+    fetchProducts();
   }, [orgId]);
 
   // Load draft from localStorage on mount
@@ -1256,7 +1432,7 @@ export default function GrowthCampaignWizard() {
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
-        return formData.campaignName && formData.productDescription && formData.problemSolved;
+        return formData.campaignName && (formData.productId || (formData.productDescription && formData.problemSolved));
       case 2:
         return formData.industries.length > 0 || formData.jobTitles.length > 0;
       case 3:
@@ -1338,6 +1514,8 @@ export default function GrowthCampaignWizard() {
         description: formData.productDescription || null,
         status: formData.dataSource === 'existing_data' ? 'active' : 'draft',
         campaign_type: 'new_business',
+        product_id: formData.productId || null,
+        journey_phase: 'nests',
         target_audience: {
           industries: formData.industries || [],
           company_sizes: formData.companySizes || [],
@@ -1374,20 +1552,9 @@ export default function GrowthCampaignWizard() {
 
       if (error) throw error;
 
-      // Clear localStorage on successful save
       localStorage.removeItem(STORAGE_KEY);
-
-      // Navigate based on data source
-      if (formData.dataSource === 'find_new') {
-        navigate('/growth/nests');
-        toast.success('Campaign saved! Choose your prospects.');
-      } else if (formData.dataSource === 'upload_csv') {
-        navigate('/growth/import');
-        toast.success('Campaign saved! Upload your CSV.');
-      } else {
-        navigate('/growth/campaigns');
-        toast.success('Campaign created!');
-      }
+      navigate(`/growth/campaign/${data.id}/nests`);
+      toast.success('Campaign saved! Choose your prospects.');
     } catch (error) {
       console.error('Failed to save campaign:', error);
       toast.error('Failed to save campaign');
@@ -1406,7 +1573,7 @@ export default function GrowthCampaignWizard() {
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <Step1Product formData={formData} setFormData={setFormData} />;
+        return <Step1Product formData={formData} setFormData={setFormData} products={products} productsLoading={productsLoading} />;
       case 2:
         return <Step2ICP formData={formData} setFormData={setFormData} />;
       case 3:
