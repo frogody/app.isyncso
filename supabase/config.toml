@@ -132,3 +132,6 @@ verify_jwt = false
 
 [functions.scrape-embed]
 verify_jwt = false
+
+[functions.execute-ai-node]
+verify_jwt = false
