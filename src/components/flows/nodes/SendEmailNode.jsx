@@ -8,10 +8,12 @@ import { Handle, Position } from '@xyflow/react';
 import { Mail, Send } from 'lucide-react';
 
 function SendEmailNode({ data, selected }) {
+  const isConfigured = !!data?.email_type && !!data?.subject;
+
   return (
     <div
       className={`
-        relative w-[200px] rounded-xl border-2 transition-all duration-200
+        relative w-[220px] rounded-xl border-2 transition-all duration-200
         ${selected
           ? 'border-blue-400 shadow-lg shadow-blue-500/20 ring-2 ring-blue-400/30'
           : 'border-blue-500/50 hover:border-blue-400'
@@ -34,40 +36,39 @@ function SendEmailNode({ data, selected }) {
         </div>
         <span className="text-sm font-medium text-blue-100">Send Email</span>
         <Send className="w-3 h-3 text-blue-300 ml-auto" />
+        <div className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
       </div>
 
       {/* Content */}
       <div className="p-3 space-y-2">
-        {data?.name && (
-          <p className="text-sm font-medium text-blue-100 truncate">
-            {data.name}
-          </p>
-        )}
+        <p className="text-[10px] text-blue-300/60">Sends personalized email to prospect</p>
 
-        {data?.email_type && (
-          <div className="flex items-center gap-1">
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 capitalize">
-              {data.email_type.replace('_', ' ')}
-            </span>
+        {isConfigured ? (
+          <>
+            {data?.name && (
+              <p className="text-xs font-medium text-blue-100 truncate">{data.name}</p>
+            )}
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 capitalize">
+                {data.email_type.replace('_', ' ')}
+              </span>
+              {data?.tone && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 capitalize">
+                  {data.tone}
+                </span>
+              )}
+            </div>
+            {data?.subject && (
+              <p className="text-[10px] text-blue-300/70 truncate">
+                Subject: {data.subject}
+              </p>
+            )}
+          </>
+        ) : (
+          <div className="px-2 py-2 rounded-lg border border-dashed border-blue-500/30 bg-blue-500/5">
+            <p className="text-xs text-blue-300/80 font-medium">Configure email</p>
+            <p className="text-[10px] text-blue-400/60 mt-0.5">Set type, subject & tone</p>
           </div>
-        )}
-
-        {data?.subject && (
-          <p className="text-xs text-blue-300/70 truncate">
-            Subject: {data.subject}
-          </p>
-        )}
-
-        {!data?.name && !data?.email_type && (
-          <p className="text-xs text-blue-400/50 italic">
-            Configure email...
-          </p>
-        )}
-
-        {data?.send_at && (
-          <p className="text-[10px] text-blue-400/60">
-            Scheduled: {new Date(data.send_at).toLocaleString()}
-          </p>
         )}
       </div>
 

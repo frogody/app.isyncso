@@ -11,7 +11,7 @@ function EndNode({ data, selected }) {
   return (
     <div
       className={`
-        relative w-[160px] rounded-xl border-2 transition-all duration-200
+        relative w-[220px] rounded-xl border-2 transition-all duration-200
         ${selected
           ? 'border-red-400 shadow-lg shadow-red-500/20 ring-2 ring-red-400/30'
           : 'border-red-500/50 hover:border-red-400'
@@ -33,12 +33,15 @@ function EndNode({ data, selected }) {
           <Square className="w-4 h-4 text-red-400" />
         </div>
         <span className="text-sm font-medium text-red-100">End</span>
+        <div className="ml-auto w-2 h-2 rounded-full bg-emerald-400" />
       </div>
 
       {/* Content */}
-      <div className="p-3">
+      <div className="p-3 space-y-2">
+        <p className="text-[10px] text-red-300/60">Marks the end of this flow</p>
+
         <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-red-500/10">
-          <CheckCircle className="w-4 h-4 text-red-300" />
+          <CheckCircle className="w-3.5 h-3.5 text-red-300" />
           <span className="text-xs text-red-200">
             {data?.name || 'Flow Complete'}
           </span>

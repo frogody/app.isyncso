@@ -8,10 +8,15 @@ import { Handle, Position } from '@xyflow/react';
 import { Brain, Sparkles } from 'lucide-react';
 
 function AIAnalysisNode({ data, selected }) {
+  const isConfigured = !!data?.prompt;
+  const modelLabel = data?.model?.includes('sonnet') ? 'Sonnet 4'
+    : data?.model?.includes('haiku') ? 'Haiku'
+    : null;
+
   return (
     <div
       className={`
-        relative w-[200px] rounded-xl border-2 transition-all duration-200
+        relative w-[220px] rounded-xl border-2 transition-all duration-200
         ${selected
           ? 'border-purple-400 shadow-lg shadow-purple-500/20 ring-2 ring-purple-400/30'
           : 'border-purple-500/50 hover:border-purple-400'
@@ -34,33 +39,36 @@ function AIAnalysisNode({ data, selected }) {
         </div>
         <span className="text-sm font-medium text-purple-100">AI Analysis</span>
         <Sparkles className="w-3 h-3 text-purple-300 ml-auto" />
+        <div className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
       </div>
 
       {/* Content */}
       <div className="p-3 space-y-2">
-        {data?.name && (
-          <p className="text-sm font-medium text-purple-100 truncate">
-            {data.name}
-          </p>
-        )}
+        <p className="text-[10px] text-purple-300/60">Analyzes prospect data with AI</p>
 
-        {data?.prompt && (
-          <p className="text-xs text-purple-300/70 line-clamp-2">
-            {data.prompt}
-          </p>
-        )}
-
-        {!data?.prompt && !data?.name && (
-          <p className="text-xs text-purple-400/50 italic">
-            Configure AI analysis...
-          </p>
-        )}
-
-        {data?.model && (
-          <div className="flex items-center gap-1 mt-1">
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">
-              {data.model}
-            </span>
+        {isConfigured ? (
+          <>
+            {data?.name && (
+              <p className="text-xs font-medium text-purple-100 truncate">{data.name}</p>
+            )}
+            {data?.prompt && (
+              <p className="text-[10px] text-purple-300/70 line-clamp-2">{data.prompt}</p>
+            )}
+            <div className="flex flex-wrap items-center gap-1">
+              {modelLabel && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300">
+                  {modelLabel}
+                </span>
+              )}
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300">
+                Custom prompt
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="px-2 py-2 rounded-lg border border-dashed border-purple-500/30 bg-purple-500/5">
+            <p className="text-xs text-purple-300/80 font-medium">Set up AI prompt</p>
+            <p className="text-[10px] text-purple-400/60 mt-0.5">Define what to analyze</p>
           </div>
         )}
       </div>
