@@ -1,8 +1,9 @@
 /**
  * QuickRunModal - Modal to quickly run a flow on a prospect
+ * Supports both database prospects and Google Sheets triggered flows
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
@@ -13,7 +14,9 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
-  X
+  X,
+  FileSpreadsheet,
+  Table2
 } from 'lucide-react';
 import {
   Dialog,
@@ -28,8 +31,8 @@ import { Input } from '@/components/ui/input';
 import { useUser } from '@/components/context/UserContext';
 import { useToast } from '@/components/ui/use-toast';
 import { getProspectsForRun } from '@/services/flowService';
-import { startFlowExecution } from '@/services/flowExecutionEngine';
-import { supabase } from '@/api/supabaseClient';
+import { startFlowExecution, startFlowExecutionFromSheet } from '@/services/flowExecutionEngine';
+import { supabase, functions } from '@/api/supabaseClient';
 
 // Prospect item component
 function ProspectItem({ prospect, selected, onSelect }) {
@@ -89,9 +92,91 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
   const [selectedProspect, setSelectedProspect] = useState(null);
   const [loading, setLoading] = useState(false);
   const [running, setRunning] = useState(false);
+  const [sheetData, setSheetData] = useState(null);
+  const [sheetLoading, setSheetLoading] = useState(false);
+  const [sheetError, setSheetError] = useState(null);
 
-  // Search prospects
+  // Detect if flow has a Google Sheets trigger node
+  const googleSheetsNode = useMemo(() => {
+    if (!flow?.nodes) return null;
+    // Find the first Google Sheets node with 'get_values' action
+    return flow.nodes.find(node =>
+      (node.type === 'googleSheets' || node.type === 'google_sheets') &&
+      node.data?.action === 'get_values' &&
+      node.data?.spreadsheet_id
+    );
+  }, [flow?.nodes]);
+
+  const isGoogleSheetsTriggered = !!googleSheetsNode;
+
+  // Fetch Google Sheets data for preview
+  const fetchSheetData = useCallback(async () => {
+    if (!googleSheetsNode || !user?.id) return;
+
+    setSheetLoading(true);
+    setSheetError(null);
+    setSheetData(null);
+
+    try {
+      // Get user's Google Sheets connection
+      const { data: connection, error: connError } = await supabase
+        .from('user_integrations')
+        .select('composio_connected_account_id')
+        .eq('user_id', user.id)
+        .eq('toolkit_slug', 'googlesheets')
+        .eq('status', 'active')
+        .single();
+
+      if (connError || !connection?.composio_connected_account_id) {
+        setSheetError('No Google Sheets connection found. Connect Google Sheets in Settings > Integrations.');
+        return;
+      }
+
+      // Fetch sheet values via Composio
+      const { data: result, error: fetchError } = await functions.invoke('composio-connect', {
+        body: {
+          action: 'executeTool',
+          toolSlug: 'GOOGLESHEETS_GET_SPREADSHEET_VALUES',
+          connectedAccountId: connection.composio_connected_account_id,
+          arguments: {
+            spreadsheet_id: googleSheetsNode.data.spreadsheet_id,
+            range: googleSheetsNode.data.range || 'A1:Z100',
+            ...(googleSheetsNode.data.sheet_name && { sheet_name: googleSheetsNode.data.sheet_name })
+          }
+        }
+      });
+
+      if (fetchError) {
+        throw new Error(fetchError.message || 'Failed to fetch sheet data');
+      }
+
+      // Parse the sheet data - Composio returns values in a specific format
+      const values = result?.data?.values || result?.values || [];
+      if (values.length > 0) {
+        const headers = values[0];
+        const rows = values.slice(1).map((row, index) => {
+          const obj = { _row_index: index + 2 }; // +2 because index 0 is header, and sheets are 1-indexed
+          headers.forEach((header, colIndex) => {
+            obj[header.toLowerCase().replace(/\s+/g, '_')] = row[colIndex] || '';
+          });
+          return obj;
+        });
+        setSheetData({ headers, rows, totalRows: rows.length });
+      } else {
+        setSheetError('No data found in the spreadsheet');
+      }
+    } catch (error) {
+      console.error('Failed to fetch sheet data:', error);
+      setSheetError(error.message || 'Failed to load spreadsheet data');
+    } finally {
+      setSheetLoading(false);
+    }
+  }, [googleSheetsNode, user?.id]);
+
+  // Search prospects (for non-Google Sheets flows)
   const searchProspects = useCallback(async (searchTerm = '') => {
+    if (isGoogleSheetsTriggered) return; // Skip for Google Sheets flows
+
     setLoading(true);
     try {
       const workspaceId = user?.company_id || user?.organization_id;
@@ -107,19 +192,28 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, isGoogleSheetsTriggered]);
 
-  // Load prospects on open
+  // Load data on open
   useEffect(() => {
     if (open) {
-      searchProspects();
       setSelectedProspect(null);
       setSearch('');
-    }
-  }, [open, searchProspects]);
+      setSheetData(null);
+      setSheetError(null);
 
-  // Debounced search
+      if (isGoogleSheetsTriggered) {
+        fetchSheetData();
+      } else {
+        searchProspects();
+      }
+    }
+  }, [open, isGoogleSheetsTriggered, fetchSheetData, searchProspects]);
+
+  // Debounced search (only for non-Google Sheets flows)
   useEffect(() => {
+    if (isGoogleSheetsTriggered) return;
+
     const timer = setTimeout(() => {
       if (open) {
         searchProspects(search);
@@ -127,54 +221,120 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [search, open, searchProspects]);
+  }, [search, open, searchProspects, isGoogleSheetsTriggered]);
 
-  // Run flow
+  // Run flow - handles both regular prospects and Google Sheets triggered flows
   const handleRunFlow = async () => {
-    if (!selectedProspect || !flow) return;
+    if (!flow) return;
+
+    // For Google Sheets flows, we don't need a selected prospect
+    if (isGoogleSheetsTriggered) {
+      if (!sheetData?.rows?.length) {
+        toast({
+          title: 'Error',
+          description: 'No data available from the spreadsheet',
+          variant: 'destructive'
+        });
+        return;
+      }
+    } else if (!selectedProspect) {
+      return;
+    }
 
     setRunning(true);
     try {
-      // Create execution record
-      const { error: execError } = await supabase
-        .from('flow_executions')
-        .insert({
-          flow_id: flow.id,
-          prospect_id: selectedProspect.id,
-          workspace_id: user?.company_id || user?.organization_id,
-          started_by: user?.id,
-          status: 'pending',
-          current_node_id: null,
-          execution_context: {
-            prospect: {
-              id: selectedProspect.id,
-              name: selectedProspect.full_name || selectedProspect.name,
-              email: selectedProspect.email,
-              company: selectedProspect.company_name || selectedProspect.company
+      const workspaceId = user?.company_id || user?.organization_id;
+
+      if (isGoogleSheetsTriggered) {
+        // For Google Sheets flows, create execution with sheet data context
+        const { data: execData, error: execError } = await supabase
+          .from('flow_executions')
+          .insert({
+            flow_id: flow.id,
+            prospect_id: null, // No specific prospect - using sheet data
+            workspace_id: workspaceId,
+            started_by: user?.id,
+            status: 'pending',
+            current_node_id: googleSheetsNode?.id,
+            execution_context: {
+              source: 'google_sheets',
+              spreadsheet_id: googleSheetsNode.data.spreadsheet_id,
+              sheet_name: googleSheetsNode.data.sheet_name,
+              range: googleSheetsNode.data.range,
+              rows_to_process: sheetData.rows.length,
+              sheet_headers: sheetData.headers,
+              sheet_data: sheetData.rows
             }
-          }
-        })
-        .select()
-        .single();
+          })
+          .select()
+          .single();
 
-      if (execError) throw execError;
+        if (execError) throw execError;
 
-      // Start execution
-      const result = await startFlowExecution(
-        flow.id,
-        selectedProspect.id,
-        user?.company_id || user?.organization_id,
-        user?.id
-      );
+        // Start flow execution with sheet data
+        // The flow execution engine will process each row
+        const result = await startFlowExecutionFromSheet(
+          flow.id,
+          execData.id,
+          sheetData.rows,
+          sheetData.headers,
+          workspaceId,
+          user?.id
+        );
 
-      if (result.success) {
-        toast({
-          title: 'Flow Started',
-          description: `Running "${flow.name}" for ${selectedProspect.full_name || selectedProspect.name || 'prospect'}`
-        });
-        onSuccess?.();
+        if (result.success) {
+          toast({
+            title: 'Flow Started',
+            description: `Running "${flow.name}" on ${sheetData.rows.length} row(s) from Google Sheets`
+          });
+          onSuccess?.();
+          onOpenChange(false);
+        } else {
+          throw new Error(result.error || 'Failed to start flow');
+        }
       } else {
-        throw new Error(result.error || 'Failed to start flow');
+        // Standard prospect-based flow
+        const { error: execError } = await supabase
+          .from('flow_executions')
+          .insert({
+            flow_id: flow.id,
+            prospect_id: selectedProspect.id,
+            workspace_id: workspaceId,
+            started_by: user?.id,
+            status: 'pending',
+            current_node_id: null,
+            execution_context: {
+              prospect: {
+                id: selectedProspect.id,
+                name: selectedProspect.full_name || selectedProspect.name,
+                email: selectedProspect.email,
+                company: selectedProspect.company_name || selectedProspect.company
+              }
+            }
+          })
+          .select()
+          .single();
+
+        if (execError) throw execError;
+
+        // Start execution
+        const result = await startFlowExecution(
+          flow.id,
+          selectedProspect.id,
+          workspaceId,
+          user?.id
+        );
+
+        if (result.success) {
+          toast({
+            title: 'Flow Started',
+            description: `Running "${flow.name}" for ${selectedProspect.full_name || selectedProspect.name || 'prospect'}`
+          });
+          onSuccess?.();
+          onOpenChange(false);
+        } else {
+          throw new Error(result.error || 'Failed to start flow');
+        }
       }
     } catch (error) {
       console.error('Failed to run flow:', error);
@@ -188,87 +348,197 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
     }
   };
 
+  // Determine if Run button should be enabled
+  const canRun = isGoogleSheetsTriggered
+    ? !sheetLoading && !sheetError && sheetData?.rows?.length > 0
+    : !!selectedProspect;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-2">
-            <Play className="w-5 h-5 text-cyan-400" />
+            {isGoogleSheetsTriggered ? (
+              <FileSpreadsheet className="w-5 h-5 text-green-400" />
+            ) : (
+              <Play className="w-5 h-5 text-cyan-400" />
+            )}
             Quick Run: {flow?.name || 'Flow'}
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
-            Select a prospect to run this flow on
+            {isGoogleSheetsTriggered
+              ? 'Run this flow using data from Google Sheets'
+              : 'Select a prospect to run this flow on'
+            }
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-zinc-500" />
-            <Input
-              placeholder="Search prospects by name, company, or email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 bg-zinc-800 border-zinc-700 focus:border-cyan-500"
-            />
-          </div>
-
-          {/* Prospect List */}
-          <div className="max-h-64 overflow-y-auto space-y-2">
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
-              </div>
-            ) : prospects.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <AlertCircle className="w-8 h-8 text-zinc-600 mb-2" />
-                <p className="text-sm text-zinc-400">
-                  {search ? 'No prospects found matching your search' : 'No prospects available'}
-                </p>
-              </div>
-            ) : (
-              <AnimatePresence mode="popLayout">
-                {prospects.map((prospect) => (
-                  <motion.div
-                    key={prospect.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <ProspectItem
-                      prospect={prospect}
-                      selected={selectedProspect?.id === prospect.id}
-                      onSelect={setSelectedProspect}
-                    />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            )}
-          </div>
-
-          {/* Selected Info */}
-          {selectedProspect && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-cyan-400" />
-                  <span className="text-sm text-cyan-300">
-                    Ready to run on: <strong>{selectedProspect.full_name || selectedProspect.name}</strong>
+          {isGoogleSheetsTriggered ? (
+            /* Google Sheets Data View */
+            <>
+              {/* Sheet Info */}
+              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                <div className="flex items-center gap-2 text-green-300">
+                  <Table2 className="w-4 h-4" />
+                  <span className="text-sm">
+                    Data source: <strong>Google Sheets</strong>
                   </span>
                 </div>
-                <button
-                  onClick={() => setSelectedProspect(null)}
-                  className="p-1 hover:bg-zinc-800 rounded"
-                >
-                  <X className="w-4 h-4 text-zinc-400" />
-                </button>
+                {googleSheetsNode?.data?.spreadsheet_id && (
+                  <p className="text-xs text-zinc-400 mt-1 truncate">
+                    Sheet ID: {googleSheetsNode.data.spreadsheet_id}
+                  </p>
+                )}
               </div>
-            </motion.div>
+
+              {/* Sheet Data Preview */}
+              <div className="max-h-64 overflow-y-auto">
+                {sheetLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-green-400" />
+                    <span className="ml-2 text-sm text-zinc-400">Loading spreadsheet data...</span>
+                  </div>
+                ) : sheetError ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <AlertCircle className="w-8 h-8 text-red-400 mb-2" />
+                    <p className="text-sm text-red-400">{sheetError}</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={fetchSheetData}
+                      className="mt-2 text-zinc-400 hover:text-white"
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                ) : sheetData ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm text-zinc-400">
+                      <span>Preview ({Math.min(5, sheetData.rows.length)} of {sheetData.rows.length} rows)</span>
+                    </div>
+                    <div className="overflow-x-auto rounded-lg border border-zinc-700">
+                      <table className="w-full text-xs">
+                        <thead className="bg-zinc-800">
+                          <tr>
+                            {sheetData.headers.slice(0, 4).map((header, idx) => (
+                              <th key={idx} className="px-3 py-2 text-left text-zinc-300 font-medium">
+                                {header}
+                              </th>
+                            ))}
+                            {sheetData.headers.length > 4 && (
+                              <th className="px-3 py-2 text-zinc-500">+{sheetData.headers.length - 4}</th>
+                            )}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sheetData.rows.slice(0, 5).map((row, rowIdx) => (
+                            <tr key={rowIdx} className="border-t border-zinc-800">
+                              {sheetData.headers.slice(0, 4).map((header, colIdx) => (
+                                <td key={colIdx} className="px-3 py-2 text-zinc-400 truncate max-w-[120px]">
+                                  {row[header.toLowerCase().replace(/\s+/g, '_')] || '-'}
+                                </td>
+                              ))}
+                              {sheetData.headers.length > 4 && (
+                                <td className="px-3 py-2 text-zinc-600">...</td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Ready to run info */}
+              {sheetData?.rows?.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="p-3 rounded-lg bg-green-500/10 border border-green-500/20"
+                >
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                    <span className="text-sm text-green-300">
+                      Ready to process <strong>{sheetData.rows.length} row(s)</strong> from the spreadsheet
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+            </>
+          ) : (
+            /* Standard Prospect Selection View */
+            <>
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <Input
+                  placeholder="Search prospects by name, company, or email..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10 bg-zinc-800 border-zinc-700 focus:border-cyan-500"
+                />
+              </div>
+
+              {/* Prospect List */}
+              <div className="max-h-64 overflow-y-auto space-y-2">
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
+                  </div>
+                ) : prospects.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <AlertCircle className="w-8 h-8 text-zinc-600 mb-2" />
+                    <p className="text-sm text-zinc-400">
+                      {search ? 'No prospects found matching your search' : 'No prospects available'}
+                    </p>
+                  </div>
+                ) : (
+                  <AnimatePresence mode="popLayout">
+                    {prospects.map((prospect) => (
+                      <motion.div
+                        key={prospect.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <ProspectItem
+                          prospect={prospect}
+                          selected={selectedProspect?.id === prospect.id}
+                          onSelect={setSelectedProspect}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                )}
+              </div>
+
+              {/* Selected Info */}
+              {selectedProspect && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-cyan-400" />
+                      <span className="text-sm text-cyan-300">
+                        Ready to run on: <strong>{selectedProspect.full_name || selectedProspect.name}</strong>
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setSelectedProspect(null)}
+                      className="p-1 hover:bg-zinc-800 rounded"
+                    >
+                      <X className="w-4 h-4 text-zinc-400" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </>
           )}
         </div>
 
@@ -282,8 +552,11 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
           </Button>
           <Button
             onClick={handleRunFlow}
-            disabled={!selectedProspect || running}
-            className="bg-cyan-500 hover:bg-cyan-600 text-black"
+            disabled={!canRun || running}
+            className={isGoogleSheetsTriggered
+              ? "bg-green-500 hover:bg-green-600 text-black"
+              : "bg-cyan-500 hover:bg-cyan-600 text-black"
+            }
           >
             {running ? (
               <>
@@ -293,7 +566,10 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
             ) : (
               <>
                 <Play className="w-4 h-4 mr-2" />
-                Run Flow
+                {isGoogleSheetsTriggered
+                  ? `Run on ${sheetData?.rows?.length || 0} Row(s)`
+                  : 'Run Flow'
+                }
               </>
             )}
           </Button>

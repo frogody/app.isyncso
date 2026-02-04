@@ -232,6 +232,216 @@ export async function startFlowExecution(flowId, prospectId, campaignId = null, 
 }
 
 /**
+ * Start flow execution from Google Sheets data
+ * Processes each row from the sheet as a separate prospect context
+ *
+ * @param {string} flowId - The flow definition ID
+ * @param {string} executionId - The parent execution ID
+ * @param {Array} rows - Array of row data from Google Sheets
+ * @param {Array} headers - Array of column headers
+ * @param {string} workspaceId - The workspace ID
+ * @param {string} userId - The user ID who started the flow
+ * @returns {Promise<{success: boolean, results?: Array, error?: string}>}
+ */
+export async function startFlowExecutionFromSheet(flowId, executionId, rows, headers, workspaceId, userId) {
+  try {
+    console.log('[flowEngine] Starting flow execution from Google Sheets', {
+      flowId,
+      executionId,
+      rowCount: rows.length,
+      headers
+    });
+
+    // 1. Get flow definition
+    const { data: flow, error: flowError } = await supabase
+      .from('outreach_flows')
+      .select('*')
+      .eq('id', flowId)
+      .single();
+
+    if (flowError || !flow) {
+      return { success: false, error: flowError?.message || 'Flow not found' };
+    }
+
+    // 2. Find the first non-trigger node to execute (after Google Sheets node)
+    const nodes = flow.nodes || [];
+    const edges = flow.edges || [];
+
+    // Find Google Sheets node
+    const sheetNode = nodes.find(n =>
+      n.type === 'googleSheets' || n.type === 'google_sheets'
+    );
+
+    if (!sheetNode) {
+      return { success: false, error: 'Flow has no Google Sheets node' };
+    }
+
+    // Find the next node after Google Sheets
+    const nextEdge = edges.find(e => e.source === sheetNode.id);
+    const nextNodeId = nextEdge?.target;
+
+    // 3. Update parent execution with running status
+    await supabase
+      .from('flow_executions')
+      .update({
+        status: EXECUTION_STATUS.RUNNING,
+        started_at: new Date().toISOString()
+      })
+      .eq('id', executionId);
+
+    // 4. Process each row as a prospect context
+    const results = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNum = i + 2; // Sheet rows are 1-indexed, +1 for header
+
+      console.log('[flowEngine] Processing sheet row', { rowNum, row });
+
+      // Map sheet columns to prospect-like context
+      const prospectContext = {
+        _source: 'google_sheets',
+        _row_number: rowNum,
+        // Standard prospect mappings (try various common column names)
+        name: row.name || row.full_name || row.prospect_name || '',
+        full_name: row.full_name || row.name || row.prospect_name || '',
+        email: row.email || row.email_address || row.mail || '',
+        company: row.company || row.company_name || row.organization || '',
+        company_name: row.company_name || row.company || row.organization || '',
+        title: row.title || row.job_title || row.position || row.role || '',
+        industry: row.industry || row.sector || '',
+        phone: row.phone || row.phone_number || row.mobile || '',
+        linkedin_url: row.linkedin || row.linkedin_url || row.linkedin_profile || '',
+        // Include all original columns as well
+        ...row
+      };
+
+      // Create child execution for this row
+      const { data: rowExecution, error: rowExecError } = await supabase
+        .from('flow_executions')
+        .insert({
+          workspace_id: workspaceId,
+          flow_id: flowId,
+          prospect_id: null, // No database prospect - using sheet data
+          parent_execution_id: executionId,
+          status: EXECUTION_STATUS.RUNNING,
+          current_node_id: nextNodeId || sheetNode.id,
+          context: {
+            ...prospectContext,
+            flow_name: flow.name,
+            user_id: userId,
+            prospect_name: prospectContext.name || prospectContext.full_name,
+            prospect_email: prospectContext.email,
+            prospect_company: prospectContext.company || prospectContext.company_name,
+            sheet_row: rowNum,
+            started_at: new Date().toISOString()
+          },
+          started_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (rowExecError) {
+        console.error('[flowEngine] Failed to create row execution', rowExecError);
+        results.push({ row: rowNum, success: false, error: rowExecError.message });
+        continue;
+      }
+
+      // Execute flow for this row
+      try {
+        // If there's a next node, execute it
+        if (nextNodeId) {
+          const nodeResult = await executeNode(rowExecution.id, nextNodeId);
+          results.push({
+            row: rowNum,
+            executionId: rowExecution.id,
+            success: nodeResult.success,
+            error: nodeResult.error
+          });
+        } else {
+          // No next node - just mark as complete
+          await updateExecutionStatus(rowExecution.id, EXECUTION_STATUS.COMPLETED, {
+            completed_at: new Date().toISOString()
+          });
+          results.push({
+            row: rowNum,
+            executionId: rowExecution.id,
+            success: true
+          });
+        }
+      } catch (nodeError) {
+        console.error('[flowEngine] Error executing node for row', { rowNum, error: nodeError });
+        await updateExecutionStatus(rowExecution.id, EXECUTION_STATUS.FAILED, {
+          error: nodeError.message
+        });
+        results.push({
+          row: rowNum,
+          executionId: rowExecution.id,
+          success: false,
+          error: nodeError.message
+        });
+      }
+    }
+
+    // 5. Update parent execution status based on results
+    const successCount = results.filter(r => r.success).length;
+    const failCount = results.filter(r => !r.success).length;
+
+    const finalStatus = failCount === rows.length
+      ? EXECUTION_STATUS.FAILED
+      : successCount === rows.length
+        ? EXECUTION_STATUS.COMPLETED
+        : EXECUTION_STATUS.COMPLETED; // Partial success
+
+    await supabase
+      .from('flow_executions')
+      .update({
+        status: finalStatus,
+        completed_at: new Date().toISOString(),
+        context: {
+          rows_processed: rows.length,
+          rows_succeeded: successCount,
+          rows_failed: failCount,
+          results: results
+        }
+      })
+      .eq('id', executionId);
+
+    console.log('[flowEngine] Sheet flow execution complete', {
+      executionId,
+      total: rows.length,
+      succeeded: successCount,
+      failed: failCount
+    });
+
+    return {
+      success: true,
+      executionId,
+      results,
+      summary: {
+        total: rows.length,
+        succeeded: successCount,
+        failed: failCount
+      }
+    };
+  } catch (error) {
+    console.error('[flowEngine] startFlowExecutionFromSheet error:', error);
+
+    // Update execution as failed
+    await supabase
+      .from('flow_executions')
+      .update({
+        status: EXECUTION_STATUS.FAILED,
+        completed_at: new Date().toISOString(),
+        context: { error: error.message }
+      })
+      .eq('id', executionId);
+
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Execute a single node in a flow
  *
  * @param {string} executionId - The execution ID
@@ -1824,6 +2034,7 @@ export {
 
 export default {
   startFlowExecution,
+  startFlowExecutionFromSheet,
   executeNode,
   resumeExecution,
   pauseExecution,
