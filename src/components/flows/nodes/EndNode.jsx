@@ -1,48 +1,52 @@
 /**
  * EndNode - Flow termination point
- * Red themed, stop icon, marks end of flow
+ * Glass morphism card with rose accent
  */
 
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Square, CheckCircle } from 'lucide-react';
+import { CircleStop, CheckCircle2 } from 'lucide-react';
 
 function EndNode({ data, selected }) {
   return (
     <div
       className={`
-        relative w-[220px] rounded-xl border-2 transition-all duration-200
+        relative w-[260px] rounded-2xl transition-all duration-200
+        bg-zinc-900/80 backdrop-blur-xl
         ${selected
-          ? 'border-red-400 shadow-lg shadow-red-500/20 ring-2 ring-red-400/30'
-          : 'border-red-500/50 hover:border-red-400'
+          ? 'border border-rose-400/50 shadow-[0_0_24px_rgba(244,63,94,0.12)] ring-1 ring-rose-400/20'
+          : 'border border-white/[0.08] hover:border-white/[0.15]'
         }
-        bg-gradient-to-br from-red-950/90 to-red-900/80
-        backdrop-blur-sm
       `}
     >
       {/* Input Handle */}
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-red-400 !border-2 !border-red-950"
+        className="!w-2.5 !h-2.5 !bg-rose-400 !border-[1.5px] !border-zinc-900"
       />
 
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-red-500/30">
-        <div className="p-1.5 rounded-lg bg-red-500/20">
-          <Square className="w-4 h-4 text-red-400" />
+      <div className="flex items-center gap-3 px-4 py-3">
+        <div className="w-8 h-8 rounded-xl bg-rose-500/15 flex items-center justify-center">
+          <CircleStop className="w-4 h-4 text-rose-400" />
         </div>
-        <span className="text-sm font-medium text-red-100">End</span>
-        <div className="ml-auto w-2 h-2 rounded-full bg-emerald-400" />
+        <div className="flex-1 min-w-0">
+          <span className="text-[13px] font-semibold text-white tracking-tight">End</span>
+        </div>
+        <div className="w-2 h-2 rounded-full bg-emerald-400" />
       </div>
 
-      {/* Content */}
-      <div className="p-3 space-y-2">
-        <p className="text-[10px] text-red-300/60">Marks the end of this flow</p>
+      {/* Divider */}
+      <div className="border-b border-white/[0.06]" />
 
-        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-red-500/10">
-          <CheckCircle className="w-3.5 h-3.5 text-red-300" />
-          <span className="text-xs text-red-200">
+      {/* Content */}
+      <div className="px-4 py-3 space-y-2.5">
+        <p className="text-[11px] text-zinc-500 leading-relaxed">Marks the end of this flow</p>
+
+        <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/[0.04]">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+          <span className="text-xs text-zinc-300 font-medium">
             {data?.name || 'Flow Complete'}
           </span>
         </div>

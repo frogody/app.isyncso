@@ -1,17 +1,17 @@
 /**
  * TriggerNode - Entry point for flow execution
- * Green themed, play icon, configures trigger conditions
+ * Glass morphism card with emerald accent
  */
 
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Play, Zap, Clock, Users } from 'lucide-react';
+import { Play, Zap, Clock, Users, Webhook } from 'lucide-react';
 
 const TRIGGER_TYPES = {
-  manual: { label: 'Manual Start', icon: Play, description: 'Manually triggered' },
-  new_prospect: { label: 'New Prospect', icon: Users, description: 'When prospect is added' },
-  scheduled: { label: 'Scheduled', icon: Clock, description: 'At scheduled time' },
-  webhook: { label: 'Webhook', icon: Zap, description: 'External webhook trigger' }
+  manual: { label: 'Manual Start', icon: Play },
+  new_prospect: { label: 'New Prospect', icon: Users },
+  scheduled: { label: 'Scheduled', icon: Clock },
+  webhook: { label: 'Webhook', icon: Zap }
 };
 
 function TriggerNode({ data, selected }) {
@@ -23,47 +23,46 @@ function TriggerNode({ data, selected }) {
   return (
     <div
       className={`
-        relative w-[220px] rounded-xl border-2 transition-all duration-200
+        relative w-[260px] rounded-2xl transition-all duration-200
+        bg-zinc-900/80 backdrop-blur-xl
         ${selected
-          ? 'border-emerald-400 shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-400/30'
-          : 'border-emerald-500/50 hover:border-emerald-400'
+          ? 'border border-emerald-400/50 shadow-[0_0_24px_rgba(52,211,153,0.12)] ring-1 ring-emerald-400/20'
+          : 'border border-white/[0.08] hover:border-white/[0.15]'
         }
-        bg-gradient-to-br from-emerald-950/90 to-emerald-900/80
-        backdrop-blur-sm
       `}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-emerald-500/30">
-        <div className="p-1.5 rounded-lg bg-emerald-500/20">
+      <div className="flex items-center gap-3 px-4 py-3">
+        <div className="w-8 h-8 rounded-xl bg-emerald-500/15 flex items-center justify-center">
           <Play className="w-4 h-4 text-emerald-400" />
         </div>
-        <span className="text-sm font-medium text-emerald-100">Trigger</span>
-        <div className={`ml-auto w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
+        <div className="flex-1 min-w-0">
+          <span className="text-[13px] font-semibold text-white tracking-tight">Trigger</span>
+        </div>
+        <div className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
       </div>
 
+      {/* Divider */}
+      <div className="border-b border-white/[0.06]" />
+
       {/* Content */}
-      <div className="p-3 space-y-2">
-        <p className="text-[10px] text-emerald-300/60">Starts the flow when triggered</p>
+      <div className="px-4 py-3 space-y-2.5">
+        <p className="text-[11px] text-zinc-500 leading-relaxed">Starts the flow when triggered</p>
 
         {isConfigured ? (
           <>
             {data?.name && (
-              <p className="text-xs font-medium text-emerald-100 truncate">{data.name}</p>
+              <p className="text-xs font-medium text-white/90 truncate">{data.name}</p>
             )}
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-emerald-500/10">
-              <TriggerIcon className="w-3.5 h-3.5 text-emerald-300" />
-              <span className="text-xs text-emerald-200">{triggerConfig.label}</span>
-            </div>
-            <div className="flex flex-wrap items-center gap-1">
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">
-                {triggerConfig.label}
-              </span>
+            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/[0.04]">
+              <TriggerIcon className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+              <span className="text-xs text-zinc-300 font-medium">{triggerConfig.label}</span>
             </div>
           </>
         ) : (
-          <div className="px-2 py-2 rounded-lg border border-dashed border-emerald-500/30 bg-emerald-500/5">
-            <p className="text-xs text-emerald-300/80 font-medium">Select a trigger type</p>
-            <p className="text-[10px] text-emerald-400/60 mt-0.5">How should this flow start?</p>
+          <div className="px-3 py-2.5 rounded-xl border border-dashed border-white/[0.1] bg-white/[0.02]">
+            <p className="text-[11px] text-zinc-400 font-medium">Select a trigger type</p>
+            <p className="text-[10px] text-zinc-600 mt-0.5">How should this flow start?</p>
           </div>
         )}
       </div>
@@ -72,7 +71,7 @@ function TriggerNode({ data, selected }) {
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-emerald-400 !border-2 !border-emerald-950"
+        className="!w-2.5 !h-2.5 !bg-emerald-400 !border-[1.5px] !border-zinc-900"
       />
     </div>
   );

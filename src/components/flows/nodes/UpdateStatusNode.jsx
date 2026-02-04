@@ -1,77 +1,81 @@
 /**
- * UpdateStatusNode - Update prospect status
- * Gray themed, edit icon, configures status updates
+ * UpdateStatusNode - Update prospect pipeline status
+ * Glass morphism card with slate accent
  */
 
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Edit3, Tag, FileText } from 'lucide-react';
+import { RefreshCw, Tag } from 'lucide-react';
 
-const STATUS_COLORS = {
-  new: 'bg-cyan-500/20 text-cyan-300',
-  contacted: 'bg-blue-500/20 text-blue-300',
-  engaged: 'bg-indigo-500/20 text-indigo-300',
-  qualified: 'bg-purple-500/20 text-purple-300',
-  meeting_scheduled: 'bg-amber-500/20 text-amber-300',
-  won: 'bg-emerald-500/20 text-emerald-300',
-  lost: 'bg-red-500/20 text-red-300',
+const STATUS_STYLES = {
+  new: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/20',
+  contacted: 'bg-blue-500/15 text-blue-300 border-blue-500/20',
+  engaged: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/20',
+  qualified: 'bg-violet-500/15 text-violet-300 border-violet-500/20',
+  meeting_scheduled: 'bg-amber-500/15 text-amber-300 border-amber-500/20',
+  won: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/20',
+  lost: 'bg-red-500/15 text-red-300 border-red-500/20',
 };
 
 function UpdateStatusNode({ data, selected }) {
   const isConfigured = !!data?.status;
-  const statusColor = STATUS_COLORS[data?.status] || 'bg-zinc-500/20 text-zinc-300';
+  const statusStyle = STATUS_STYLES[data?.status] || 'bg-white/[0.06] text-zinc-400 border-white/[0.08]';
 
   return (
     <div
       className={`
-        relative w-[220px] rounded-xl border-2 transition-all duration-200
+        relative w-[260px] rounded-2xl transition-all duration-200
+        bg-zinc-900/80 backdrop-blur-xl
         ${selected
-          ? 'border-zinc-400 shadow-lg shadow-zinc-500/20 ring-2 ring-zinc-400/30'
-          : 'border-zinc-500/50 hover:border-zinc-400'
+          ? 'border border-slate-400/50 shadow-[0_0_24px_rgba(148,163,184,0.1)] ring-1 ring-slate-400/20'
+          : 'border border-white/[0.08] hover:border-white/[0.15]'
         }
-        bg-gradient-to-br from-zinc-900/90 to-zinc-800/80
-        backdrop-blur-sm
       `}
     >
       {/* Input Handle */}
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-zinc-400 !border-2 !border-zinc-950"
+        className="!w-2.5 !h-2.5 !bg-slate-400 !border-[1.5px] !border-zinc-900"
       />
 
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-600/30">
-        <div className="p-1.5 rounded-lg bg-zinc-600/20">
-          <Edit3 className="w-4 h-4 text-zinc-400" />
+      <div className="flex items-center gap-3 px-4 py-3">
+        <div className="w-8 h-8 rounded-xl bg-slate-500/15 flex items-center justify-center">
+          <RefreshCw className="w-4 h-4 text-slate-400" />
         </div>
-        <span className="text-sm font-medium text-zinc-100">Update Status</span>
-        <div className={`ml-auto w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
+        <div className="flex-1 min-w-0">
+          <span className="text-[13px] font-semibold text-white tracking-tight">Update Status</span>
+        </div>
+        <div className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
       </div>
 
+      {/* Divider */}
+      <div className="border-b border-white/[0.06]" />
+
       {/* Content */}
-      <div className="p-3 space-y-2">
-        <p className="text-[10px] text-zinc-400/60">Updates prospect's pipeline status</p>
+      <div className="px-4 py-3 space-y-2.5">
+        <p className="text-[11px] text-zinc-500 leading-relaxed">Updates prospect's pipeline status</p>
 
         {isConfigured ? (
           <>
             {data?.name && (
-              <p className="text-xs font-medium text-zinc-100 truncate">{data.name}</p>
+              <p className="text-xs font-medium text-white/90 truncate">{data.name}</p>
             )}
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-zinc-600/10">
-              <Tag className="w-3.5 h-3.5 text-zinc-400" />
-              <span className={`text-xs px-1.5 py-0.5 rounded-full capitalize ${statusColor}`}>
+            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/[0.04]">
+              <Tag className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
+              <span className={`text-[11px] px-2 py-0.5 rounded-md border capitalize font-medium ${statusStyle}`}>
                 {data.status.replace('_', ' ')}
               </span>
             </div>
             {data?.notes && (
-              <p className="text-[10px] text-zinc-300/70 line-clamp-2">{data.notes}</p>
+              <p className="text-[11px] text-zinc-500 line-clamp-2 leading-relaxed">{data.notes}</p>
             )}
           </>
         ) : (
-          <div className="px-2 py-2 rounded-lg border border-dashed border-zinc-500/30 bg-zinc-500/5">
-            <p className="text-xs text-zinc-300/80 font-medium">Select target status</p>
-            <p className="text-[10px] text-zinc-400/60 mt-0.5">Choose from 7 pipeline stages</p>
+          <div className="px-3 py-2.5 rounded-xl border border-dashed border-white/[0.1] bg-white/[0.02]">
+            <p className="text-[11px] text-zinc-400 font-medium">Select target status</p>
+            <p className="text-[10px] text-zinc-600 mt-0.5">Choose from 7 pipeline stages</p>
           </div>
         )}
       </div>
@@ -80,7 +84,7 @@ function UpdateStatusNode({ data, selected }) {
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-zinc-400 !border-2 !border-zinc-950"
+        className="!w-2.5 !h-2.5 !bg-slate-400 !border-[1.5px] !border-zinc-900"
       />
     </div>
   );

@@ -1,6 +1,6 @@
 /**
  * SMSNode - SMS message step
- * Teal themed, phone icon, configures SMS content
+ * Glass morphism card with teal accent
  */
 
 import React, { memo } from 'react';
@@ -13,61 +13,64 @@ function SMSNode({ data, selected }) {
   return (
     <div
       className={`
-        relative w-[220px] rounded-xl border-2 transition-all duration-200
+        relative w-[260px] rounded-2xl transition-all duration-200
+        bg-zinc-900/80 backdrop-blur-xl
         ${selected
-          ? 'border-teal-400 shadow-lg shadow-teal-500/20 ring-2 ring-teal-400/30'
-          : 'border-teal-500/50 hover:border-teal-400'
+          ? 'border border-teal-400/50 shadow-[0_0_24px_rgba(20,184,166,0.12)] ring-1 ring-teal-400/20'
+          : 'border border-white/[0.08] hover:border-white/[0.15]'
         }
-        bg-gradient-to-br from-teal-950/90 to-teal-900/80
-        backdrop-blur-sm
       `}
     >
       {/* Input Handle */}
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-3 !h-3 !bg-teal-400 !border-2 !border-teal-950"
+        className="!w-2.5 !h-2.5 !bg-teal-400 !border-[1.5px] !border-zinc-900"
       />
 
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-teal-500/30">
-        <div className="p-1.5 rounded-lg bg-teal-500/20">
+      <div className="flex items-center gap-3 px-4 py-3">
+        <div className="w-8 h-8 rounded-xl bg-teal-500/15 flex items-center justify-center">
           <MessageSquare className="w-4 h-4 text-teal-400" />
         </div>
-        <span className="text-sm font-medium text-teal-100">SMS</span>
-        <Phone className="w-3 h-3 text-teal-300 ml-auto" />
+        <div className="flex-1 min-w-0">
+          <span className="text-[13px] font-semibold text-white tracking-tight">SMS</span>
+        </div>
         <div className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
       </div>
 
+      {/* Divider */}
+      <div className="border-b border-white/[0.06]" />
+
       {/* Content */}
-      <div className="p-3 space-y-2">
-        <p className="text-[10px] text-teal-300/60">Sends SMS message to prospect</p>
+      <div className="px-4 py-3 space-y-2.5">
+        <p className="text-[11px] text-zinc-500 leading-relaxed">Sends SMS message to prospect</p>
 
         {isConfigured ? (
           <>
             {data?.name && (
-              <p className="text-xs font-medium text-teal-100 truncate">{data.name}</p>
+              <p className="text-xs font-medium text-white/90 truncate">{data.name}</p>
             )}
-            <div className="flex flex-wrap items-center gap-1">
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] px-2 py-0.5 rounded-md bg-teal-500/15 text-teal-300 font-medium">
                 AI-generated
               </span>
               {data?.from_number && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300">
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/[0.06] text-zinc-400 font-medium">
                   {data.from_number}
                 </span>
               )}
             </div>
             {(data?.prompt || data?.message) && (
-              <p className="text-[10px] text-teal-300/70 line-clamp-2">
+              <p className="text-[11px] text-zinc-500 line-clamp-2 leading-relaxed">
                 {data.prompt || data.message}
               </p>
             )}
           </>
         ) : (
-          <div className="px-2 py-2 rounded-lg border border-dashed border-teal-500/30 bg-teal-500/5">
-            <p className="text-xs text-teal-300/80 font-medium">Configure SMS</p>
-            <p className="text-[10px] text-teal-400/60 mt-0.5">Set message prompt & sender</p>
+          <div className="px-3 py-2.5 rounded-xl border border-dashed border-white/[0.1] bg-white/[0.02]">
+            <p className="text-[11px] text-zinc-400 font-medium">Configure SMS</p>
+            <p className="text-[10px] text-zinc-600 mt-0.5">Set message prompt & sender</p>
           </div>
         )}
       </div>
@@ -76,7 +79,7 @@ function SMSNode({ data, selected }) {
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-3 !h-3 !bg-teal-400 !border-2 !border-teal-950"
+        className="!w-2.5 !h-2.5 !bg-teal-400 !border-[1.5px] !border-zinc-900"
       />
     </div>
   );
