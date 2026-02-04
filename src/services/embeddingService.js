@@ -19,6 +19,39 @@ import { supabase, functions } from '@/api/supabaseClient';
 
 const MAX_CHUNK_SIZE = 6000;
 const CHUNK_OVERLAP = 200;
+const MAX_CONTENT_SIZE = 100000; // 100KB max
+const SUSPICIOUS_PATTERNS = /(<script|javascript:|onerror=|onload=|onclick=|<iframe|<object|<embed|eval\(|Function\(|document\.cookie|localStorage|sessionStorage)/gi;
+
+// ============================================================================
+// Input Validation
+// ============================================================================
+
+/**
+ * Sanitize and validate text input before embedding
+ * @param {string} text - The text to validate
+ * @param {string} context - Context for logging
+ * @returns {string} Sanitized text
+ */
+export function validateAndSanitizeInput(text, context = 'embedding') {
+  if (typeof text !== 'string') {
+    throw new Error('Input must be a string');
+  }
+
+  if (text.length === 0) {
+    throw new Error('Input cannot be empty');
+  }
+
+  if (text.length > MAX_CONTENT_SIZE) {
+    throw new Error(`Input exceeds maximum size of ${MAX_CONTENT_SIZE} characters`);
+  }
+
+  if (SUSPICIOUS_PATTERNS.test(text)) {
+    console.warn(`[embeddingService] Suspicious content detected in ${context}`);
+    text = text.replace(SUSPICIOUS_PATTERNS, '[REMOVED]');
+  }
+
+  return text;
+}
 
 // ============================================================================
 // Text Chunking (client-side utility)
@@ -33,16 +66,17 @@ const CHUNK_OVERLAP = 200;
  * @returns {Array<{text: string, start: number, end: number}>}
  */
 export function chunkText(text, maxSize = MAX_CHUNK_SIZE, overlap = CHUNK_OVERLAP) {
+  const sanitized = validateAndSanitizeInput(text, 'chunk');
   const chunks = [];
   let start = 0;
 
-  while (start < text.length) {
+  while (start < sanitized.length) {
     let end = start + maxSize;
 
     // Try to break at a natural boundary (period or newline)
-    if (end < text.length) {
-      const lastPeriod = text.lastIndexOf('.', end);
-      const lastNewline = text.lastIndexOf('\n', end);
+    if (end < sanitized.length) {
+      const lastPeriod = sanitized.lastIndexOf('.', end);
+      const lastNewline = sanitized.lastIndexOf('\n', end);
       const breakPoint = Math.max(lastPeriod, lastNewline);
       if (breakPoint > start + maxSize / 2) {
         end = breakPoint + 1;
@@ -50,7 +84,7 @@ export function chunkText(text, maxSize = MAX_CHUNK_SIZE, overlap = CHUNK_OVERLA
     }
 
     chunks.push({
-      text: text.slice(start, end).trim(),
+      text: sanitized.slice(start, end).trim(),
       start,
       end
     });
@@ -89,11 +123,14 @@ export async function embedDocument({
   sourceType = 'manual'
 }) {
   try {
+    const sanitizedContent = validateAndSanitizeInput(content, 'document');
+    const sanitizedTitle = title ? validateAndSanitizeInput(title, 'title') : '';
+
     const { data, error } = await functions.invoke('embed-document', {
       workspaceId,
       collection,
-      title,
-      content,
+      title: sanitizedTitle,
+      content: sanitizedContent,
       metadata,
       sourceUrl,
       sourceType
@@ -409,6 +446,9 @@ export async function getCollections(workspaceId) {
 // ============================================================================
 
 export default {
+  // Validation
+  validateAndSanitizeInput,
+
   // Document operations
   embedDocument,
   deleteDocument,

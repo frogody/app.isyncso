@@ -32,6 +32,51 @@ import {
 const MAX_TOOL_ITERATIONS = 10;
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 2000;
+const AI_TIMEOUT_MS = 60000; // 60 seconds
+
+// ============================================================================
+// Execution Cache (prevents N+1 queries)
+// ============================================================================
+
+const executionCache = new Map();
+const CACHE_TTL = 30000; // 30 seconds
+
+function getCachedExecution(executionId) {
+  const cached = executionCache.get(executionId);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+  executionCache.delete(executionId);
+  return null;
+}
+
+function setCachedExecution(executionId, data) {
+  executionCache.set(executionId, { data, timestamp: Date.now() });
+}
+
+function invalidateExecutionCache(executionId) {
+  executionCache.delete(executionId);
+}
+
+// ============================================================================
+// Timeout Helper
+// ============================================================================
+
+async function withTimeout(promise, timeoutMs, errorMessage) {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(errorMessage)), timeoutMs);
+  });
+
+  try {
+    const result = await Promise.race([promise, timeoutPromise]);
+    clearTimeout(timeoutId);
+    return result;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
 
 const EXECUTION_STATUS = {
   PENDING: 'pending',
@@ -156,15 +201,20 @@ export async function executeNode(executionId, nodeId) {
   try {
     console.log('[flowEngine] Executing node', { executionId, nodeId });
 
-    // 1. Get execution state
-    const { data: execution, error: execError } = await supabase
-      .from('flow_executions')
-      .select('*, outreach_flows(*), prospects(*)')
-      .eq('id', executionId)
-      .single();
+    // 1. Get execution state (with cache)
+    let execution = getCachedExecution(executionId);
+    if (!execution) {
+      const { data, error: execError } = await supabase
+        .from('flow_executions')
+        .select('*, outreach_flows(*), prospects(*)')
+        .eq('id', executionId)
+        .single();
 
-    if (execError || !execution) {
-      return { success: false, error: execError?.message || 'Execution not found' };
+      if (execError || !data) {
+        return { success: false, error: execError?.message || 'Execution not found' };
+      }
+      execution = data;
+      setCachedExecution(executionId, execution);
     }
 
     // Check if execution is in a valid state
@@ -1100,17 +1150,21 @@ async function callClaudeWithRAG(node, context, prospect, execution) {
       }
     ];
 
-    // 4. Call edge function for Claude API
-    const { data, error } = await functions.invoke('execute-ai-node', {
-      systemPrompt: context.systemPrompt,
-      messages,
-      tools,
-      nodeType: node.type,
-      nodeConfig: node.data,
-      prospectId: prospect.id,
-      executionId: execution.id,
-      workspaceId: execution.workspace_id
-    });
+    // 4. Call edge function for Claude API (with timeout)
+    const { data, error } = await withTimeout(
+      functions.invoke('execute-ai-node', {
+        systemPrompt: context.systemPrompt,
+        messages,
+        tools,
+        nodeType: node.type,
+        nodeConfig: node.data,
+        prospectId: prospect.id,
+        executionId: execution.id,
+        workspaceId: execution.workspace_id
+      }),
+      AI_TIMEOUT_MS,
+      'Claude API call timed out after 60 seconds'
+    );
 
     if (error) {
       console.error('[flowEngine] Claude API error:', error);
@@ -1137,6 +1191,8 @@ async function callClaudeWithRAG(node, context, prospect, execution) {
  * Update execution status
  */
 async function updateExecutionStatus(executionId, status, additionalUpdates = {}) {
+  invalidateExecutionCache(executionId);
+
   const { error } = await supabase
     .from('flow_executions')
     .update({

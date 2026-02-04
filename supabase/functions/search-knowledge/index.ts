@@ -18,10 +18,27 @@ const EMBEDDING_MODEL = 'BAAI/bge-large-en-v1.5';
 const TOGETHER_API_URL = 'https://api.together.xyz/v1/embeddings';
 const MAX_INPUT_LENGTH = 8000;
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const ALLOWED_ORIGINS = [
+  'https://app.isyncso.com',
+  'https://www.isyncso.com',
+  'http://localhost:3000',
+  'http://localhost:5173',
+];
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    return {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Max-Age': '86400',
+    };
+  }
+  return {
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
+}
 
 // ============================================================================
 // Together.ai Embedding
@@ -59,6 +76,9 @@ async function getEmbedding(text: string): Promise<number[]> {
 // ============================================================================
 
 serve(async (req) => {
+  const origin = req.headers.get('Origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
