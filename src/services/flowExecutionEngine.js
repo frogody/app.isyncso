@@ -1522,10 +1522,10 @@ async function handleGoogleSheetsNode(ctx) {
   const action = node.data?.action || 'get_values';
 
   const TOOL_MAP = {
-    add_row: 'GOOGLESHEETS_BATCH_UPDATE',
-    get_values: 'GOOGLESHEETS_BATCH_GET',
-    update_cell: 'GOOGLESHEETS_BATCH_UPDATE',
-    search: 'GOOGLESHEETS_BATCH_GET'
+    add_row: 'GOOGLESHEETS_ADD_ROW',
+    get_values: 'GOOGLESHEETS_GET_VALUES',
+    update_cell: 'GOOGLESHEETS_UPDATE_CELL',
+    search: 'GOOGLESHEETS_GET_VALUES'
   };
 
   // Build A1-notation range with sheet name prefix
@@ -1535,14 +1535,15 @@ async function handleGoogleSheetsNode(ctx) {
 
   const toolArgs = {
     spreadsheet_id: node.data?.spreadsheet_id,
+    range: fullRange,
   };
 
-  // BATCH_GET uses ranges array; BATCH_UPDATE uses range string + values
-  if (action === 'get_values' || action === 'search') {
-    toolArgs.ranges = [fullRange];
-  } else {
-    toolArgs.range = fullRange;
+  // For write operations, include the values
+  if (action === 'add_row' || action === 'update_cell') {
     toolArgs.values = interpolateVariables(node.data?.values_prompt || '', execution.context);
+    if (action === 'add_row') {
+      toolArgs.sheet_name = sheetName || 'Sheet1';
+    }
   }
 
   const result = await handleComposioToolExecution(

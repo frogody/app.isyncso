@@ -140,13 +140,15 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
       const sheetName = googleSheetsNode.data.sheet_name;
       const fullRange = sheetName ? `${sheetName}!${baseRange}` : baseRange;
 
+      // Use GOOGLESHEETS_GET_VALUES with singular `range` (not BATCH_GET with ranges array)
+      // This matches the Composio tool definition in lib/composio.js
       const { data: result, error: fetchError } = await functions.invoke('composio-connect', {
         action: 'executeTool',
-        toolSlug: 'GOOGLESHEETS_BATCH_GET',
+        toolSlug: 'GOOGLESHEETS_GET_VALUES',
         connectedAccountId: connection.composio_connected_account_id,
         arguments: {
           spreadsheet_id: googleSheetsNode.data.spreadsheet_id,
-          ranges: [fullRange]
+          range: fullRange
         }
       });
 
@@ -171,16 +173,31 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
         throw new Error(errMsg);
       }
 
-      // Parse the sheet data - v3 BATCH_GET returns:
-      // { success, data: { successful, data: { spreadsheet_data: { valueRanges: [{ values }] } }, executionTime } }
-      const valueRanges = result?.data?.data?.spreadsheet_data?.valueRanges
+      // Parse the sheet data — Composio response can come in different formats:
+      //   GET_VALUES: { data: { data: { values: [[...], [...]] } } }
+      //   BATCH_GET:  { data: { data: { valueRanges: [{ values }] } } }
+      //   Wrapped:    { data: { data: { spreadsheet_data: { ... } } } }
+      const inner = result?.data?.data;   // the actual Composio tool response payload
+
+      // Try GET_VALUES format first (flat `values` array), then BATCH_GET with valueRanges
+      const valueRanges =
+           inner?.spreadsheet_data?.valueRanges
+        || inner?.valueRanges
+        || inner?.sheets?.valueRanges
         || result?.data?.spreadsheet_data?.valueRanges
+        || result?.data?.valueRanges
         || [];
-      const values = valueRanges[0]?.values
+      const values = inner?.values             // GET_VALUES returns values directly
+        || valueRanges[0]?.values              // BATCH_GET wraps in valueRanges
         || result?.data?.data?.values
         || result?.data?.values
         || result?.values
         || [];
+
+      // Extra debug: log what we actually found
+      console.log('[QuickRunModal] inner payload keys:', inner ? Object.keys(inner) : 'null');
+      console.log('[QuickRunModal] valueRanges length:', valueRanges.length);
+      console.log('[QuickRunModal] values length:', values.length);
       if (values.length > 0) {
         const headers = values[0];
         const rows = values.slice(1).map((row, index) => {
@@ -192,7 +209,12 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
         });
         setSheetData({ headers, rows, totalRows: rows.length });
       } else {
-        setSheetError('No data found in the spreadsheet');
+        // Show more diagnostic info so the user can troubleshoot
+        const innerKeys = inner ? Object.keys(inner).join(', ') : 'empty';
+        console.error('[QuickRunModal] Could not extract values. Inner payload keys:', innerKeys, 'Full result:', result);
+        setSheetError(
+          `No data found in the spreadsheet. Check that the sheet is not empty and the range "${fullRange}" is correct.`
+        );
       }
     } catch (error) {
       console.error('Failed to fetch sheet data:', error);

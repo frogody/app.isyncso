@@ -397,7 +397,19 @@ async function executeTool(
     );
 
     const executionTime = Date.now() - startTime;
-    console.log(`[executeTool] v3 response (${executionTime}ms):`, JSON.stringify(result).slice(0, 500));
+    const resultStr = JSON.stringify(result);
+    console.log(`[executeTool] v3 response (${executionTime}ms, ${resultStr.length} bytes):`, resultStr.slice(0, 1000));
+    // Log response shape for debugging data extraction issues
+    if (result.success && result.data) {
+      const d = result.data as Record<string, unknown>;
+      console.log(`[executeTool] response shape: successful=${d.successful}, topKeys=[${Object.keys(d).join(',')}]`);
+      if (d.response_data && typeof d.response_data === 'object') {
+        console.log(`[executeTool] response_data keys: [${Object.keys(d.response_data as Record<string, unknown>).join(',')}]`);
+      }
+      if (d.data && typeof d.data === 'object') {
+        console.log(`[executeTool] data keys: [${Object.keys(d.data as Record<string, unknown>).join(',')}]`);
+      }
+    }
 
     if (!result.success) {
       // Check for auth errors that might need token refresh
