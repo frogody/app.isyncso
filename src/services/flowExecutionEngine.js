@@ -24,6 +24,7 @@ import {
   scheduleFollowUp,
   cancelExecutionJobs
 } from './queueService';
+import flowMetrics from './metrics';
 
 // ============================================================================
 // Constants
@@ -33,6 +34,8 @@ const MAX_TOOL_ITERATIONS = 10;
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 2000;
 const AI_TIMEOUT_MS = 60000; // 60 seconds
+const MAX_CONTEXT_SIZE = 500000; // 500KB max context
+const MAX_NODES_IN_CONTEXT = 10; // Keep last 10 node outputs
 
 // ============================================================================
 // Execution Cache (prevents N+1 queries)
@@ -78,6 +81,45 @@ async function withTimeout(promise, timeoutMs, errorMessage) {
   }
 }
 
+// ============================================================================
+// Context Size Management
+// ============================================================================
+
+function pruneContext(context) {
+  const contextJson = JSON.stringify(context);
+
+  if (contextJson.length <= MAX_CONTEXT_SIZE) {
+    return context;
+  }
+
+  console.warn(`[flowEngine] Context size ${contextJson.length} exceeded ${MAX_CONTEXT_SIZE}, pruning`);
+
+  // Keep only essential fields and last N node outputs
+  const nodeOutputKeys = Object.keys(context)
+    .filter(k => k.startsWith('node_') || k.match(/^[a-f0-9-]+$/))
+    .slice(-MAX_NODES_IN_CONTEXT);
+
+  const prunedContext = {
+    prospect: context.prospect,
+    company: context.company,
+    flow_id: context.flow_id,
+    execution_id: context.execution_id,
+    last_node: context.last_node,
+    last_node_type: context.last_node_type,
+    _context_pruned: true,
+    _pruned_at: new Date().toISOString()
+  };
+
+  // Add recent node outputs
+  nodeOutputKeys.forEach(key => {
+    if (context[key]) {
+      prunedContext[key] = context[key];
+    }
+  });
+
+  return prunedContext;
+}
+
 const EXECUTION_STATUS = {
   PENDING: 'pending',
   RUNNING: 'running',
@@ -112,6 +154,7 @@ const NODE_STATUS = {
 export async function startFlowExecution(flowId, prospectId, campaignId = null, initialContext = {}) {
   try {
     console.log('[flowEngine] Starting flow execution', { flowId, prospectId, campaignId });
+    flowMetrics.executionStarted(flowId, prospectId, initialContext.workspaceId);
 
     // 1. Get flow definition
     const { data: flow, error: flowError } = await supabase
@@ -345,14 +388,14 @@ export async function executeNode(executionId, nodeId) {
       return result;
     }
 
-    // 6. Update execution context with node output
-    const updatedContext = {
+    // 6. Update execution context with node output (with size pruning)
+    const updatedContext = pruneContext({
       ...execution.context,
       [node.id]: result.output,
       [`${node.type}_result`]: result.output,
       last_node: nodeId,
       last_node_type: node.type
-    };
+    });
 
     // 7. Resolve next nodes
     const nextNodes = result.nextNodes || resolveNextNodes(flow, nodeId, updatedContext, result.branchId);
@@ -1135,6 +1178,7 @@ async function handleGenericNode(ctx) {
  * @returns {Promise<{success: boolean, response?: string, toolCalls?: Array, tokensUsed?: number, error?: string}>}
  */
 async function callClaudeWithRAG(node, context, prospect, execution) {
+  const startTime = Date.now();
   try {
     // 1. Get tools for this node type
     const tools = getToolsForNodeType(node.type);
@@ -1166,10 +1210,15 @@ async function callClaudeWithRAG(node, context, prospect, execution) {
       'Claude API call timed out after 60 seconds'
     );
 
+    const duration = Date.now() - startTime;
+
     if (error) {
       console.error('[flowEngine] Claude API error:', error);
+      flowMetrics.claudeApiCall(0, duration, 'claude-sonnet-4-20250514');
       return { success: false, error: error.message };
     }
+
+    flowMetrics.claudeApiCall(data.tokensUsed || 0, duration, 'claude-sonnet-4-20250514');
 
     return {
       success: true,
@@ -1178,6 +1227,8 @@ async function callClaudeWithRAG(node, context, prospect, execution) {
       tokensUsed: data.tokensUsed || 0
     };
   } catch (error) {
+    const duration = Date.now() - startTime;
+    flowMetrics.claudeApiCall(0, duration, 'claude-sonnet-4-20250514');
     console.error('[flowEngine] callClaudeWithRAG error:', error);
     return { success: false, error: error.message };
   }

@@ -39,6 +39,16 @@ serve(async (req) => {
   }
 
   try {
+    // Service-role only - this is an internal function
+    const authHeader = req.headers.get('Authorization');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!authHeader?.startsWith('Bearer ') || authHeader.slice(7) !== serviceRoleKey) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: service role required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { executionId, nodeId, context = {}, isRetry = false } = await req.json();
 
     if (!executionId || !nodeId) {

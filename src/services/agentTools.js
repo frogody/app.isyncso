@@ -413,71 +413,108 @@ export const AGENT_TOOLS = [
  * @returns {Promise<Object>} Tool execution result
  */
 export async function executeToolCall(toolName, toolInput, context) {
+  // Validate context
+  if (!context || typeof context !== 'object') {
+    return { success: false, error: 'Invalid execution context' };
+  }
+
   const { workspaceId, prospectId, executionId, prospect } = context;
 
-  console.log(`[agentTools] Executing tool: ${toolName}`, { toolInput, prospectId });
+  if (!workspaceId) {
+    return { success: false, error: 'Missing workspaceId in context' };
+  }
+  if (!executionId) {
+    return { success: false, error: 'Missing executionId in context' };
+  }
+
+  const startTime = Date.now();
 
   try {
+    console.log(`[agentTools] Executing tool: ${toolName}`, {
+      toolInput: JSON.stringify(toolInput).slice(0, 200),
+      prospectId
+    });
+
+    let result;
+
     switch (toolName) {
       // RESEARCH TOOLS
       case 'search_knowledge':
-        return await handleSearchKnowledge(toolInput, workspaceId);
-
+        result = await handleSearchKnowledge(toolInput, workspaceId);
+        break;
       case 'search_prospect_history':
-        return await handleSearchHistory(toolInput, workspaceId, prospectId);
-
+        result = await handleSearchHistory(toolInput, workspaceId, prospectId);
+        break;
       case 'research_company':
-        return await handleResearchCompany(toolInput, workspaceId, prospectId);
-
+        result = await handleResearchCompany(toolInput, workspaceId, prospectId);
+        break;
       case 'get_similar_prospects':
-        return await handleGetSimilarProspects(toolInput, workspaceId, prospect);
+        result = await handleGetSimilarProspects(toolInput, workspaceId, prospect);
+        break;
 
       // COMPOSITION TOOLS
       case 'compose_email':
-        return handleComposeEmail(toolInput, prospect);
-
+        result = handleComposeEmail(toolInput, prospect);
+        break;
       case 'compose_subject_line':
-        return handleComposeSubjectLine(toolInput, prospect);
-
+        result = handleComposeSubjectLine(toolInput, prospect);
+        break;
       case 'compose_linkedin_message':
-        return handleComposeLinkedIn(toolInput, prospect);
-
+        result = handleComposeLinkedIn(toolInput, prospect);
+        break;
       case 'compose_sms':
-        return handleComposeSMS(toolInput, prospect);
-
+        result = handleComposeSMS(toolInput, prospect);
+        break;
       case 'compose_call_script':
-        return handleComposeCallScript(toolInput, prospect);
+        result = handleComposeCallScript(toolInput, prospect);
+        break;
 
       // ANALYSIS TOOLS
       case 'analyze_prospect':
-        return await handleAnalyzeProspect(toolInput, prospect, workspaceId);
-
+        result = await handleAnalyzeProspect(toolInput, prospect, workspaceId);
+        break;
       case 'evaluate_timing':
-        return await handleEvaluateTiming(toolInput, prospectId, workspaceId);
-
+        result = await handleEvaluateTiming(toolInput, prospectId, workspaceId);
+        break;
       case 'score_engagement':
-        return await handleScoreEngagement(toolInput, prospectId, workspaceId);
+        result = await handleScoreEngagement(toolInput, prospectId, workspaceId);
+        break;
 
       // ACTION TOOLS
       case 'save_draft':
-        return await handleSaveDraft(toolInput, prospectId, executionId, workspaceId);
-
+        result = await handleSaveDraft(toolInput, prospectId, executionId, workspaceId);
+        break;
       case 'schedule_follow_up':
-        return await handleScheduleFollowUp(toolInput, prospectId, executionId, workspaceId);
-
+        result = await handleScheduleFollowUp(toolInput, prospectId, executionId, workspaceId);
+        break;
       case 'update_prospect_status':
-        return await handleUpdateProspectStatus(toolInput, prospectId);
-
+        result = await handleUpdateProspectStatus(toolInput, prospectId, executionId);
+        break;
       case 'log_interaction':
-        return await handleLogInteraction(toolInput, prospectId, workspaceId, executionId);
+        result = await handleLogInteraction(toolInput, prospectId, workspaceId, executionId);
+        break;
 
       default:
-        console.warn(`[agentTools] Unknown tool: ${toolName}`);
-        return { error: `Unknown tool: ${toolName}` };
+        result = { success: false, error: `Unknown tool: ${toolName}` };
     }
+
+    const duration = Date.now() - startTime;
+    console.log(`[agentTools] Tool ${toolName} completed in ${duration}ms`, {
+      success: result.success !== false
+    });
+
+    return result;
+
   } catch (error) {
-    console.error(`[agentTools] Tool execution error for ${toolName}:`, error);
-    return { error: error.message || 'Tool execution failed' };
+    const duration = Date.now() - startTime;
+    console.error(`[agentTools] Tool ${toolName} failed after ${duration}ms:`, error);
+
+    return {
+      success: false,
+      error: `Tool execution failed: ${error.message}`,
+      tool: toolName,
+      duration
+    };
   }
 }
 
@@ -611,7 +648,32 @@ async function handleGetSimilarProspects(input, workspaceId, currentProspect) {
 // Composition Tool Handlers (Return guidance for Claude)
 // ============================================================================
 
+function isValidEmail(email) {
+  if (!email || typeof email !== 'string') return false;
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email) && email.length <= 254;
+}
+
 function handleComposeEmail(input, prospect) {
+  // Validate prospect has a valid email
+  const email = prospect?.email || prospect?.company_email || prospect?.work_email;
+
+  if (!email) {
+    return {
+      success: false,
+      error: 'Prospect does not have an email address',
+      guidance: 'Cannot compose email - no email address available for this prospect'
+    };
+  }
+
+  if (!isValidEmail(email)) {
+    return {
+      success: false,
+      error: 'Prospect email address is invalid',
+      guidance: `Email "${email}" does not appear to be valid`
+    };
+  }
+
   return {
     template_guidance: {
       intent: input.intent,
@@ -619,7 +681,9 @@ function handleComposeEmail(input, prospect) {
       key_points: input.key_points || [],
       max_length: input.max_length || 'medium',
       include_cta: input.include_cta !== false,
-      prospect_name: prospect.name || prospect.full_name || `${prospect.first_name || ''} ${prospect.last_name || ''}`.trim(),
+      prospect_name: prospect.name || prospect.full_name ||
+        `${prospect.first_name || ''} ${prospect.last_name || ''}`.trim() || 'there',
+      prospect_email: email,
       company: prospect.company || prospect.company_name,
       role: prospect.role || prospect.title,
       industry: prospect.industry
@@ -958,20 +1022,54 @@ async function handleScheduleFollowUp(input, prospectId, executionId, workspaceI
   };
 }
 
-async function handleUpdateProspectStatus(input, prospectId) {
+async function handleUpdateProspectStatus(input, prospectId, executionId) {
+  if (!prospectId) {
+    return { success: false, error: 'No prospect ID provided' };
+  }
+
+  // Check for duplicate update in this execution (idempotency)
+  if (executionId && input.status) {
+    const { data: existingUpdate } = await supabase
+      .from('interaction_memory')
+      .select('id')
+      .eq('prospect_id', prospectId)
+      .eq('interaction_type', 'status_update')
+      .eq('content', `Status changed to ${input.status}`)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingUpdate) {
+      console.log(`[agentTools] Idempotent: prospect ${prospectId} already updated to ${input.status}`);
+      return {
+        success: true,
+        message: 'Prospect already updated in this execution',
+        idempotent: true
+      };
+    }
+  }
+
+  // Get current prospect state
+  const { data: prospect, error: fetchError } = await supabase
+    .from('prospects')
+    .select('stage, notes, tags')
+    .eq('id', prospectId)
+    .single();
+
+  if (fetchError) {
+    return { success: false, error: fetchError.message };
+  }
+
+  const previousStatus = prospect?.stage;
   const updates = {};
   if (input.status) updates.stage = input.status;
-  if (input.notes) updates.notes = input.notes;
+  if (input.notes) {
+    updates.notes = prospect?.notes
+      ? `${prospect.notes}\n\n[${new Date().toISOString()}] ${input.notes}`
+      : input.notes;
+  }
 
-  // Handle tags if provided
+  // Handle tags
   if (input.tags && input.tags.length > 0) {
-    // Get existing tags first
-    const { data: prospect } = await supabase
-      .from('prospects')
-      .select('tags')
-      .eq('id', prospectId)
-      .single();
-
     const existingTags = prospect?.tags || [];
     updates.tags = [...new Set([...existingTags, ...input.tags])];
   }
@@ -987,9 +1085,28 @@ async function handleUpdateProspectStatus(input, prospectId) {
     return { success: false, error: error.message };
   }
 
+  // Log the update for idempotency tracking
+  if (input.status) {
+    await supabase.from('interaction_memory').insert({
+      prospect_id: prospectId,
+      interaction_type: 'status_update',
+      outcome: 'updated',
+      content: `Status changed to ${input.status}`,
+      metadata: {
+        execution_id: executionId,
+        update_type: 'status_change',
+        previous_status: previousStatus,
+        new_status: input.status,
+        notes: input.notes
+      }
+    }).then(null, err => console.warn('[agentTools] Failed to log status update:', err));
+  }
+
   return {
     success: true,
-    message: `Prospect updated${input.status ? ` - status: ${input.status}` : ''}${input.tags ? ` - added tags: ${input.tags.join(', ')}` : ''}`
+    message: `Prospect updated${input.status ? ` - status: ${input.status}` : ''}${input.tags ? ` - added tags: ${input.tags.join(', ')}` : ''}`,
+    previous_status: previousStatus,
+    new_status: input.status
   };
 }
 

@@ -128,6 +128,52 @@ function extractTitleFromHtml(html: string): string | null {
 }
 
 // ============================================================================
+// Workspace Authorization
+// ============================================================================
+
+async function validateWorkspaceAccess(
+  req: Request,
+  supabase: ReturnType<typeof createClient>,
+  workspaceId: string
+): Promise<{ authorized: boolean; error?: string }> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return { authorized: false, error: 'Missing authorization header' };
+  }
+
+  const token = authHeader.slice(7);
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  // Internal service calls use service_role key - always authorized
+  if (token === serviceRoleKey) {
+    return { authorized: true };
+  }
+
+  // Verify user JWT
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return { authorized: false, error: 'Invalid authentication token' };
+  }
+
+  // Check workspace membership via users table
+  const { data: userData } = await supabase
+    .from('users')
+    .select('company_id, organization_id')
+    .eq('id', user.id)
+    .single();
+
+  if (!userData) {
+    return { authorized: false, error: 'User not found' };
+  }
+
+  if (userData.company_id !== workspaceId && userData.organization_id !== workspaceId) {
+    return { authorized: false, error: 'User not authorized for this workspace' };
+  }
+
+  return { authorized: true };
+}
+
+// ============================================================================
 // Main Handler
 // ============================================================================
 
@@ -167,6 +213,15 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Workspace authorization check
+    const authResult = await validateWorkspaceAccess(req, supabase, workspaceId);
+    if (!authResult.authorized) {
+      return new Response(
+        JSON.stringify({ error: authResult.error }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const response = await fetch(url, {
       headers: {

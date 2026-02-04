@@ -510,21 +510,30 @@ export async function checkRateLimit(workspaceId, resourceType, resourceId = nul
 
     if (error) {
       console.error('[queueService] checkRateLimit error:', error);
-      // On error, allow the action (fail open)
-      return { allowed: true };
+      // FAIL CLOSED - deny on error to prevent abuse
+      return {
+        allowed: false,
+        error: 'Rate limit check unavailable - request denied for safety',
+        failedClosed: true
+      };
     }
 
-    const result = data?.[0] || { allowed: true, current_count: 0, max_count: 100, retry_after_seconds: 0 };
+    const result = data?.[0] || { allowed: false, current_count: 0, max_count: 0 };
 
     return {
       allowed: result.allowed,
       currentCount: result.current_count,
       maxCount: result.max_count,
-      retryAfter: result.retry_after_seconds
+      retryAfter: result.retry_after_seconds || null
     };
   } catch (error) {
     console.error('[queueService] checkRateLimit exception:', error);
-    return { allowed: true }; // Fail open
+    // FAIL CLOSED
+    return {
+      allowed: false,
+      error: error.message,
+      failedClosed: true
+    };
   }
 }
 
