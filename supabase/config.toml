@@ -135,3 +135,9 @@ verify_jwt = false
 
 [functions.execute-ai-node]
 verify_jwt = false
+
+[functions.execute-flow-node]
+verify_jwt = false
+
+[functions.process-queue]
+verify_jwt = false

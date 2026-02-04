@@ -16,6 +16,14 @@
 import { buildContext, formatContextForClaude, trimContextToFit } from './contextBuilder';
 import { AGENT_TOOLS, executeToolCall, getToolsForNodeType } from './agentTools';
 import { supabase, functions } from '@/api/supabaseClient';
+import {
+  scheduleTimer,
+  scheduleEmail,
+  scheduleLinkedIn,
+  scheduleSMS,
+  scheduleFollowUp,
+  cancelExecutionJobs
+} from './queueService';
 
 // ============================================================================
 // Constants
@@ -447,9 +455,18 @@ export async function cancelExecution(executionId, reason = 'User cancelled') {
       return { success: false, error: `Execution already ${execution.status}` };
     }
 
+    // Cancel any pending queued jobs for this execution
+    const cancelQueueResult = await cancelExecutionJobs(executionId);
+    if (!cancelQueueResult.success) {
+      console.warn('[flowEngine] Failed to cancel queued jobs:', cancelQueueResult.error);
+    } else {
+      console.log('[flowEngine] Cancelled queued jobs:', cancelQueueResult.cancelledCount);
+    }
+
     await updateExecutionStatus(executionId, EXECUTION_STATUS.CANCELLED, {
       cancelled_at: new Date().toISOString(),
-      cancellation_reason: reason
+      cancellation_reason: reason,
+      queued_jobs_cancelled: cancelQueueResult.cancelledCount || 0
     });
 
     return { success: true };
@@ -599,9 +616,10 @@ async function handleAIAnalysisNode(ctx) {
 
 /**
  * Handle timer/delay node
+ * Schedules a job in the execution queue to resume flow after delay
  */
 async function handleTimerNode(ctx) {
-  const { node } = ctx;
+  const { node, execution } = ctx;
 
   const delayMinutes = node.data?.delay_minutes || 0;
   const delayHours = node.data?.delay_hours || 0;
@@ -609,6 +627,22 @@ async function handleTimerNode(ctx) {
 
   const totalDelayMs = (delayMinutes * 60 + delayHours * 3600 + delayDays * 86400) * 1000;
   const resumeAt = new Date(Date.now() + totalDelayMs);
+
+  // Schedule timer job in execution queue
+  const queueResult = await scheduleTimer(
+    execution.workspace_id,
+    execution.id,
+    node.id,
+    {
+      minutes: delayMinutes,
+      hours: delayHours,
+      days: delayDays
+    }
+  );
+
+  if (!queueResult.success) {
+    console.error('[flowEngine] Failed to schedule timer:', queueResult.error);
+  }
 
   return {
     success: true,
@@ -618,7 +652,8 @@ async function handleTimerNode(ctx) {
         hours: delayHours,
         days: delayDays
       },
-      resume_at: resumeAt.toISOString()
+      resume_at: resumeAt.toISOString(),
+      queue_job_id: queueResult.jobId
     },
     waitUntil: resumeAt.toISOString()
   };
@@ -675,11 +710,29 @@ async function handleSendEmailNode(ctx) {
     .select()
     .single();
 
+  // Schedule email send via queue (either immediately or at specified time)
+  const sendAt = node.data?.send_at ? new Date(node.data.send_at) : new Date();
+  const queueResult = await scheduleEmail({
+    workspaceId: execution.workspace_id,
+    executionId: execution.id,
+    nodeId: node.id,
+    prospectId: prospect.id,
+    subject: emailContent.subject,
+    body: emailContent.body,
+    scheduledFor: sendAt
+  });
+
+  if (!queueResult.success) {
+    console.warn('[flowEngine] Failed to schedule email:', queueResult.error);
+  }
+
   return {
     success: true,
     output: {
       email_draft: emailContent,
       draft_id: draft?.id,
+      queue_job_id: queueResult.jobId,
+      scheduled_for: sendAt.toISOString(),
       tokens_used: result.tokensUsed
     },
     tokensUsed: result.tokensUsed
@@ -755,12 +808,48 @@ async function handleFollowUpNode(ctx) {
     return result;
   }
 
+  // Schedule follow-up send via queue
+  const followUpNumber = (execution.context?.follow_up_count || 0) + 1;
+  const channel = node.data?.channel || 'email';
+  const delayMs = node.data?.delay_minutes ? node.data.delay_minutes * 60 * 1000 : 0;
+  const sendAt = node.data?.send_at
+    ? new Date(node.data.send_at)
+    : new Date(Date.now() + delayMs);
+
+  // Use the follow-up scheduler with a single delay entry
+  const delayFromNow = Math.max(0, sendAt.getTime() - Date.now());
+  const delayMinutes = Math.ceil(delayFromNow / (60 * 1000));
+  const delayStr = delayMinutes > 0 ? `${delayMinutes}m` : '0m';
+
+  const queueResult = await scheduleFollowUp(
+    execution.workspace_id,
+    execution.id,
+    node.id,
+    {
+      delays: [delayStr],
+      payload: {
+        prospect_id: prospect.id,
+        content: result.response,
+        channel,
+        follow_up_number: followUpNumber,
+        had_engagement: hadEngagement,
+        previous_interactions: previousInteractions.slice(-3) // Last 3 interactions for reference
+      }
+    }
+  );
+
+  if (!queueResult.success) {
+    console.warn('[flowEngine] Failed to schedule follow-up:', queueResult.error);
+  }
+
   return {
     success: true,
     output: {
       follow_up_content: result.response,
-      follow_up_number: (execution.context?.follow_up_count || 0) + 1,
+      follow_up_number: followUpNumber,
       had_engagement: hadEngagement,
+      queue_job_ids: queueResult.jobIds,
+      scheduled_times: queueResult.scheduledTimes,
       tokens_used: result.tokensUsed
     },
     tokensUsed: result.tokensUsed
@@ -867,12 +956,30 @@ async function handleLinkedInNode(ctx) {
     return result;
   }
 
+  // Schedule LinkedIn message via queue
+  const sendAt = node.data?.send_at ? new Date(node.data.send_at) : new Date();
+  const queueResult = await scheduleLinkedIn({
+    workspaceId: execution.workspace_id,
+    executionId: execution.id,
+    nodeId: node.id,
+    prospectId: prospect.id,
+    message: result.response,
+    messageType: messageType,
+    scheduledFor: sendAt
+  });
+
+  if (!queueResult.success) {
+    console.warn('[flowEngine] Failed to schedule LinkedIn message:', queueResult.error);
+  }
+
   return {
     success: true,
     output: {
       linkedin_message: result.response,
       message_type: messageType,
       char_count: result.response?.length || 0,
+      queue_job_id: queueResult.jobId,
+      scheduled_for: sendAt.toISOString(),
       tokens_used: result.tokensUsed
     },
     tokensUsed: result.tokensUsed
@@ -903,11 +1010,28 @@ async function handleSMSNode(ctx) {
     return result;
   }
 
+  // Schedule SMS via queue
+  const sendAt = node.data?.send_at ? new Date(node.data.send_at) : new Date();
+  const queueResult = await scheduleSMS({
+    workspaceId: execution.workspace_id,
+    executionId: execution.id,
+    nodeId: node.id,
+    prospectId: prospect.id,
+    message: result.response,
+    scheduledFor: sendAt
+  });
+
+  if (!queueResult.success) {
+    console.warn('[flowEngine] Failed to schedule SMS:', queueResult.error);
+  }
+
   return {
     success: true,
     output: {
       sms_message: result.response,
       char_count: result.response?.length || 0,
+      queue_job_id: queueResult.jobId,
+      scheduled_for: sendAt.toISOString(),
       tokens_used: result.tokensUsed
     },
     tokensUsed: result.tokensUsed
