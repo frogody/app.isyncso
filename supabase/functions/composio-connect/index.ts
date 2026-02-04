@@ -424,9 +424,9 @@ async function executeTool(
  * v3 API uses /tools endpoint
  */
 async function listTools(toolkitSlug: string) {
-  // v3 API: /tools with toolkit_slug parameter
+  // v3 API: /tools with toolkit_slug parameter (limit=100 to get all tools)
   const result = await composioFetch<{ items?: unknown[] }>(
-    `/tools?toolkit_slug=${toolkitSlug}`,
+    `/tools?toolkit_slug=${toolkitSlug}&limit=100`,
     {},
     true // useV3
   );

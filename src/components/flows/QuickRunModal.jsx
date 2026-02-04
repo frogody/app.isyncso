@@ -135,14 +135,18 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
       // Fetch sheet values via Composio
       // Note: functions.invoke serializes the entire params object as the body,
       // so pass the payload directly (not wrapped in { body: ... })
+      // Build the A1-notation range, prepending sheet name if provided
+      const baseRange = googleSheetsNode.data.range || 'A1:Z100';
+      const sheetName = googleSheetsNode.data.sheet_name;
+      const fullRange = sheetName ? `${sheetName}!${baseRange}` : baseRange;
+
       const { data: result, error: fetchError } = await functions.invoke('composio-connect', {
         action: 'executeTool',
-        toolSlug: 'GOOGLESHEETS_GET_SPREADSHEET_VALUES',
+        toolSlug: 'GOOGLESHEETS_BATCH_GET',
         connectedAccountId: connection.composio_connected_account_id,
         arguments: {
           spreadsheet_id: googleSheetsNode.data.spreadsheet_id,
-          range: googleSheetsNode.data.range || 'A1:Z100',
-          ...(googleSheetsNode.data.sheet_name && { sheet_name: googleSheetsNode.data.sheet_name })
+          ranges: [fullRange]
         }
       });
 
@@ -154,8 +158,16 @@ export default function QuickRunModal({ open, onOpenChange, flow, onSuccess }) {
         throw new Error(msg || 'Failed to fetch sheet data');
       }
 
-      // Parse the sheet data - Composio returns values in a specific format
-      const values = result?.data?.values || result?.values || [];
+      // Parse the sheet data - v3 BATCH_GET returns:
+      // { success, data: { successful, data: { spreadsheet_data: { valueRanges: [{ values }] } }, executionTime } }
+      const valueRanges = result?.data?.data?.spreadsheet_data?.valueRanges
+        || result?.data?.spreadsheet_data?.valueRanges
+        || [];
+      const values = valueRanges[0]?.values
+        || result?.data?.data?.values
+        || result?.data?.values
+        || result?.values
+        || [];
       if (values.length > 0) {
         const headers = values[0];
         const rows = values.slice(1).map((row, index) => {

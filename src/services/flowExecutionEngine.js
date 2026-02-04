@@ -1523,23 +1523,30 @@ async function handleGoogleSheetsNode(ctx) {
 
   const TOOL_MAP = {
     add_row: 'GOOGLESHEETS_BATCH_UPDATE',
-    get_values: 'GOOGLESHEETS_GET_SPREADSHEET_VALUES',
+    get_values: 'GOOGLESHEETS_BATCH_GET',
     update_cell: 'GOOGLESHEETS_BATCH_UPDATE',
-    search: 'GOOGLESHEETS_GET_SPREADSHEET_VALUES'
+    search: 'GOOGLESHEETS_BATCH_GET'
   };
+
+  // Build A1-notation range with sheet name prefix
+  const baseRange = node.data?.range || 'A1:Z100';
+  const sheetName = node.data?.sheet_name;
+  const fullRange = sheetName ? `${sheetName}!${baseRange}` : baseRange;
 
   const toolArgs = {
     spreadsheet_id: node.data?.spreadsheet_id,
-    range: node.data?.range || 'A1',
-    ...(node.data?.sheet_name && { sheet_name: node.data.sheet_name })
   };
 
-  if (action === 'add_row' || action === 'update_cell') {
+  // BATCH_GET uses ranges array; BATCH_UPDATE uses range string + values
+  if (action === 'get_values' || action === 'search') {
+    toolArgs.ranges = [fullRange];
+  } else {
+    toolArgs.range = fullRange;
     toolArgs.values = interpolateVariables(node.data?.values_prompt || '', execution.context);
   }
 
   const result = await handleComposioToolExecution(
-    'googlesheets', TOOL_MAP[action] || 'GOOGLESHEETS_GET_SPREADSHEET_VALUES', toolArgs, execution
+    'googlesheets', TOOL_MAP[action] || 'GOOGLESHEETS_BATCH_GET', toolArgs, execution
   );
 
   return {
@@ -1568,8 +1575,8 @@ async function handleSlackNode(ctx) {
   }
 
   const TOOL_MAP = {
-    send_message: 'SLACK_SENDS_A_MESSAGE_TO_A_SLACK_CHANNEL',
-    create_channel: 'SLACK_CREATE_A_CHANNEL'
+    send_message: 'SLACK_CHAT_POST_MESSAGE',
+    create_channel: 'SLACK_CREATE_CHANNEL'
   };
 
   const toolArgs = action === 'create_channel'
@@ -1596,7 +1603,7 @@ async function handleHubSpotNode(ctx) {
   const TOOL_MAP = {
     create_contact: 'HUBSPOT_CREATE_CONTACT',
     create_deal: 'HUBSPOT_CREATE_DEAL',
-    send_email: 'HUBSPOT_SEND_EMAIL'
+    send_email: 'HUBSPOT_CREATE_EMAIL'
   };
 
   let toolArgs = {};
