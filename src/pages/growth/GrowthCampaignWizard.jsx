@@ -462,7 +462,7 @@ function Step1Product({ formData, setFormData, products, productsLoading, onProd
           price: newProduct.price ? parseFloat(newProduct.price) : null,
           status: 'published',
         })
-        .select('id, name, type, description, short_description, price, featured_image, status, tagline, features, category')
+        .select('id, name, type, description, short_description, price, featured_image, status, tagline, category')
         .single();
 
       if (error) throw error;
@@ -1463,10 +1463,14 @@ export default function GrowthCampaignWizard() {
       try {
         const { data, error } = await supabase
           .from('products')
-          .select('id, name, type, description, short_description, price, featured_image, status, tagline, features, category')
+          .select('id, name, type, description, short_description, price, featured_image, status, tagline, category')
           .eq('company_id', companyId)
           .order('updated_at', { ascending: false });
-        if (!error && data) setProducts(data);
+        if (error) {
+          console.error('Error fetching products:', error);
+        } else if (data) {
+          setProducts(data);
+        }
       } catch (e) {
         console.error('Error fetching products:', e);
       } finally {
