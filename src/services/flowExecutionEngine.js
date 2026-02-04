@@ -15,6 +15,7 @@
 
 import { buildContext, formatContextForClaude, trimContextToFit } from './contextBuilder';
 import { AGENT_TOOLS, executeToolCall, getToolsForNodeType } from './agentTools';
+import { searchKnowledge } from './embeddingService';
 import { supabase, functions } from '@/api/supabaseClient';
 import {
   scheduleTimer,
@@ -608,6 +609,11 @@ export async function executeNode(executionId, nodeId) {
       case 'aiAgent':
       case 'ai_agent':
         result = await handleAIAgentNode(nodeContext);
+        break;
+
+      case 'knowledgeBase':
+      case 'knowledge_base':
+        result = await handleKnowledgeBaseNode(nodeContext);
         break;
 
       case 'end':
@@ -1508,13 +1514,28 @@ async function handleGmailNode(ctx) {
     create_draft: 'GMAIL_CREATE_EMAIL_DRAFT'
   };
 
-  const toolArgs = action === 'fetch_emails'
-    ? { query: node.data?.body_prompt || '' }
-    : {
-        recipient_email: interpolateVariables(node.data?.recipient || prospect?.email || execution.context?.email || execution.context?.prospect_email, execution.context),
-        subject: interpolateVariables(node.data?.subject || '', execution.context),
-        body: interpolateVariables(node.data?.body_prompt || '', execution.context)
-      };
+  let toolArgs;
+  if (action === 'fetch_emails') {
+    toolArgs = { query: node.data?.body_prompt || '' };
+  } else {
+    let rawBody = interpolateVariables(node.data?.body_prompt || '', execution.context);
+    let rawSubject = interpolateVariables(node.data?.subject || '', execution.context);
+
+    // If body came from AI agent output, parse and clean it
+    if (rawBody && (rawBody.includes('Subject:') || rawBody.includes('**') || rawBody.includes('Subject Line Options'))) {
+      const parsed = parseEmailFromResponse(rawBody);
+      if (parsed.subject && !rawSubject) {
+        rawSubject = parsed.subject;
+      }
+      rawBody = parsed.body;
+    }
+
+    toolArgs = {
+      recipient_email: interpolateVariables(node.data?.recipient || prospect?.email || execution.context?.email || execution.context?.prospect_email, execution.context),
+      subject: rawSubject,
+      body: rawBody
+    };
+  }
 
   const result = await handleComposioToolExecution('gmail', TOOL_MAP[action] || 'GMAIL_SEND_EMAIL', toolArgs, execution);
 
@@ -1691,6 +1712,90 @@ async function handleWebhookTriggerNode(ctx) {
 }
 
 /**
+ * Handle Knowledge Base node - Search knowledge and inject context for downstream nodes
+ */
+async function handleKnowledgeBaseNode(ctx) {
+  const { node, execution, prospect } = ctx;
+  const collections = node.data?.collections || ['company', 'templates'];
+  const maxResults = node.data?.max_results || 8;
+
+  // Build search query from template or auto-generate
+  let searchQuery = node.data?.search_query || '';
+  if (searchQuery) {
+    searchQuery = interpolateVariables(searchQuery, execution.context);
+  }
+  if (!searchQuery) {
+    // Auto-build from prospect data
+    const parts = [];
+    if (prospect.company) parts.push(prospect.company);
+    if (prospect.industry) parts.push(prospect.industry);
+    if (prospect.role || prospect.title) parts.push(prospect.role || prospect.title);
+    parts.push('solutions products value proposition');
+    searchQuery = parts.join(' ');
+  }
+
+  try {
+    const result = await searchKnowledge({
+      workspaceId: execution.workspace_id,
+      query: searchQuery,
+      collections,
+      limit: maxResults,
+      threshold: 0.5
+    });
+
+    if (!result.success) {
+      console.warn('[flowEngine] Knowledge Base search failed:', result.error);
+      return {
+        success: true,
+        output: {
+          knowledge_text: '',
+          results: [],
+          search_query: searchQuery,
+          error: result.error
+        }
+      };
+    }
+
+    const results = result.results || [];
+
+    // Build a flat text version for downstream AI nodes
+    const knowledgeText = results.map((doc, i) => {
+      const source = doc.collection ? `[${doc.collection}]` : '[Source]';
+      const title = doc.title ? ` ${doc.title}` : '';
+      return `${source}${title}\n${doc.content}`;
+    }).join('\n\n---\n\n');
+
+    console.log(`[flowEngine] Knowledge Base found ${results.length} results for: "${searchQuery.slice(0, 80)}"`);
+
+    return {
+      success: true,
+      output: {
+        knowledge_text: knowledgeText,
+        results: results.map(r => ({
+          title: r.title,
+          collection: r.collection,
+          similarity: r.similarity ? Math.round(r.similarity * 100) : null,
+          content_preview: r.content?.slice(0, 200)
+        })),
+        search_query: searchQuery,
+        result_count: results.length
+      }
+    };
+  } catch (err) {
+    console.error('[flowEngine] Knowledge Base error:', err);
+    return {
+      success: true,
+      output: {
+        knowledge_text: '',
+        results: [],
+        search_query: searchQuery,
+        error: err.message
+      }
+    };
+  }
+}
+
+/**
  * Handle AI Agent node - Autonomous agent with RAG + Composio tool calling
  */
 async function handleAIAgentNode(ctx) {
@@ -1701,6 +1806,12 @@ async function handleAIAgentNode(ctx) {
   // 1. Build full RAG context
   const context = await buildContext({ node, execution, prospect, flow });
   context.nodePrompt = node.data?.prompt || 'You are an autonomous agent. Complete the task using available tools.';
+
+  // 1b. Inject Knowledge Base output if a KB node ran upstream
+  const kbResult = execution.context?.knowledgeBase_result || execution.context?.knowledge_base_result;
+  if (kbResult?.knowledge_text) {
+    context.nodePrompt += `\n\n## KNOWLEDGE BASE CONTEXT\nThe following was retrieved from the company knowledge base:\n\n${kbResult.knowledge_text}`;
+  }
 
   // 2. Get base tools for this node type
   const baseTools = getToolsForNodeType('aiAgent');
@@ -1981,20 +2092,59 @@ function interpolateVariables(text, context) {
 function parseEmailFromResponse(response) {
   if (!response) return { subject: '', body: '' };
 
-  // Try to parse structured format first
-  const subjectMatch = response.match(/(?:Subject|SUBJECT):\s*(.+?)(?:\n|$)/i);
-  const subject = subjectMatch ? subjectMatch[1].trim() : '';
+  let text = response;
 
-  // Remove subject line from body
-  let body = response;
-  if (subjectMatch) {
-    body = response.replace(subjectMatch[0], '').trim();
+  // 1. Handle "Subject Line Options: 1. ... 2. ... 3. ..." - pick first option
+  const subjectOptionsMatch = text.match(/(?:Subject\s*Line\s*Options?|Subject\s*Options?)\s*:?\s*\n?\s*(?:1[\.\)]\s*)(.+?)(?:\n\s*(?:2[\.\)]|$))/is);
+  if (subjectOptionsMatch) {
+    // Remove the entire subject options block
+    text = text.replace(/(?:Subject\s*Line\s*Options?|Subject\s*Options?)\s*:?\s*\n?\s*(?:\d[\.\)]\s*.+\n?)+/i, '').trim();
   }
 
-  // Clean up common markers
-  body = body
-    .replace(/^(?:Body|BODY|Email|EMAIL|Message|MESSAGE):\s*/i, '')
-    .replace(/^---+\s*/gm, '')
+  // 2. Extract subject line (standard format)
+  const subjectMatch = text.match(/(?:Subject|SUBJECT)\s*(?:Line)?\s*:\s*(.+?)(?:\n|$)/i);
+  let subject = '';
+  if (subjectOptionsMatch) {
+    subject = subjectOptionsMatch[1].trim();
+  } else if (subjectMatch) {
+    subject = subjectMatch[1].trim();
+  }
+
+  // Remove subject line from body
+  if (subjectMatch) {
+    text = text.replace(subjectMatch[0], '').trim();
+  }
+
+  // 3. Strip markdown formatting artifacts
+  let body = text
+    // Remove **Email:** / **Body:** / **Message:** headers
+    .replace(/^\*{1,2}(?:Email|Body|Message|Draft)\s*:?\*{1,2}\s*/im, '')
+    // Remove plain Body:/Email:/Message: headers
+    .replace(/^(?:Body|BODY|Email|EMAIL|Message|MESSAGE|Draft|DRAFT)\s*:\s*/im, '')
+    // Remove word count annotations
+    .replace(/\*?\(?(?:Word\s*count|Words?|Length)\s*:?\s*~?\d+\s*(?:words?)?\)?\*?\s*/gi, '')
+    // Remove meta-commentary lines ("This email leverages...", "Note: ...", "Key elements:")
+    .replace(/^(?:This (?:email|message) (?:leverages|uses|incorporates|focuses|aims|is designed).*$)/gm, '')
+    .replace(/^(?:Note\s*:.*$)/gim, '')
+    .replace(/^(?:Key elements?\s*:.*$)/gim, '')
+    .replace(/^(?:---+)\s*$/gm, '')
+    // Remove markdown bold/italic markers
+    .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
+    // Remove markdown headers (### etc)
+    .replace(/^#{1,4}\s+/gm, '')
+    // Collapse multiple blank lines
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  // 4. Strip leading/trailing quotes if the entire body is wrapped
+  if (body.startsWith('"') && body.endsWith('"')) {
+    body = body.slice(1, -1).trim();
+  }
+
+  // 5. Clean subject line too
+  subject = subject
+    .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
+    .replace(/^["']|["']$/g, '')
     .trim();
 
   return { subject, body };

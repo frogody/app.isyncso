@@ -305,7 +305,22 @@ function getNodeSpecificInstructions(nodeType) {
 - Identify the prospect's role and responsibilities
 - Note any mutual connections or shared interests
 - Look for conversation starters
-- Assess fit with our ideal customer profile`
+- Assess fit with our ideal customer profile`,
+
+    aiAgent: `OUTPUT FORMAT - CRITICAL:
+You are an autonomous agent. Your output will be consumed by downstream nodes in a pipeline.
+
+STRICT RULES:
+1. If your task involves writing an email, output EXACTLY this format:
+   Subject: [single subject line, no alternatives]
+
+   [clean email body - plain text only]
+2. NEVER include multiple subject line options
+3. NEVER use markdown formatting (no **, no ##, no *)
+4. NEVER add meta-commentary about the email (no "This email leverages...", no "Key elements:", no "Word count:")
+5. NEVER wrap output in quotes or code blocks
+6. Output should be DIRECTLY USABLE - no editing needed
+7. Write in plain text that can go straight into an email client`
   };
 
   return instructions[nodeType] || null;

@@ -8,7 +8,7 @@ import {
   Play, Brain, Mail, Clock, GitBranch, Linkedin,
   MessageSquare, Layers, Edit3, Square, Search,
   ChevronDown, ChevronRight, GripVertical,
-  Table, Hash, Users, Webhook, Bot
+  Table, Hash, Users, Webhook, Bot, BookOpen
 } from 'lucide-react';
 import { nodePaletteConfig } from './nodes';
 
@@ -29,7 +29,8 @@ const NODE_ICONS = {
   slack: Hash,
   hubspot: Users,
   webhookTrigger: Webhook,
-  aiAgent: Bot
+  aiAgent: Bot,
+  knowledgeBase: BookOpen
 };
 
 const COLOR_CLASSES = {

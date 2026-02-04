@@ -19,6 +19,7 @@ import SlackNode from './SlackNode';
 import HubSpotNode from './HubSpotNode';
 import WebhookTriggerNode from './WebhookTriggerNode';
 import AIAgentNode from './AIAgentNode';
+import KnowledgeBaseNode from './KnowledgeBaseNode';
 
 // Re-export components
 export {
@@ -37,7 +38,8 @@ export {
   SlackNode,
   HubSpotNode,
   WebhookTriggerNode,
-  AIAgentNode
+  AIAgentNode,
+  KnowledgeBaseNode
 };
 
 // Node type mapping for React Flow
@@ -85,7 +87,11 @@ export const nodeTypes = {
 
   // AI Agent
   aiAgent: AIAgentNode,
-  ai_agent: AIAgentNode
+  ai_agent: AIAgentNode,
+
+  // Knowledge Base
+  knowledgeBase: KnowledgeBaseNode,
+  knowledge_base: KnowledgeBaseNode
 };
 
 // Node palette configuration
@@ -133,6 +139,12 @@ export const nodePaletteConfig = [
         label: 'Research',
         description: 'Research prospect/company',
         color: 'purple'
+      },
+      {
+        type: 'knowledgeBase',
+        label: 'Knowledge Base',
+        description: 'RAG knowledge source',
+        color: 'cyan'
       }
     ]
   },

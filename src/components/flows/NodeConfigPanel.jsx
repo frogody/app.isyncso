@@ -7,7 +7,8 @@ import React, { useState, useEffect } from 'react';
 import {
   X, Play, Brain, Mail, Clock, GitBranch,
   Linkedin, MessageSquare, Layers, Edit3, Square,
-  Plus, Trash2, Table, Hash, Users, Webhook, Bot
+  Plus, Trash2, Table, Hash, Users, Webhook, Bot,
+  BookOpen, Database, Link, FileText, Upload
 } from 'lucide-react';
 
 const NODE_ICONS = {
@@ -38,7 +39,9 @@ const NODE_ICONS = {
   webhookTrigger: Webhook,
   webhook_trigger: Webhook,
   aiAgent: Bot,
-  ai_agent: Bot
+  ai_agent: Bot,
+  knowledgeBase: BookOpen,
+  knowledge_base: BookOpen
 };
 
 const NODE_TITLES = {
@@ -69,7 +72,9 @@ const NODE_TITLES = {
   webhookTrigger: 'Webhook Trigger Settings',
   webhook_trigger: 'Webhook Trigger Settings',
   aiAgent: 'AI Agent Settings',
-  ai_agent: 'AI Agent Settings'
+  ai_agent: 'AI Agent Settings',
+  knowledgeBase: 'Knowledge Base Settings',
+  knowledge_base: 'Knowledge Base Settings'
 };
 
 // Form field components
@@ -794,6 +799,96 @@ function AIAgentConfig({ data, onChange }) {
   );
 }
 
+const KNOWLEDGE_COLLECTIONS = [
+  { value: 'company', label: 'Company Info', description: 'Product info, about us, values' },
+  { value: 'prospects', label: 'Prospects', description: 'Prospect research & scraped data' },
+  { value: 'templates', label: 'Templates', description: 'Email templates & messaging' },
+  { value: 'patterns', label: 'Patterns', description: 'Successful outreach patterns' },
+  { value: 'conversations', label: 'Conversations', description: 'Past interaction history' },
+  { value: 'general', label: 'General', description: 'Miscellaneous knowledge' }
+];
+
+function KnowledgeBaseConfig({ data, onChange }) {
+  const collections = data.collections || [];
+  const [addMode, setAddMode] = useState('text');
+  const [docTitle, setDocTitle] = useState('');
+  const [docContent, setDocContent] = useState('');
+  const [docUrl, setDocUrl] = useState('');
+
+  const toggleCollection = (col) => {
+    const updated = collections.includes(col)
+      ? collections.filter(c => c !== col)
+      : [...collections, col];
+    onChange({ ...data, collections: updated });
+  };
+
+  return (
+    <div className="space-y-4">
+      <TextField
+        label="Name"
+        value={data.name}
+        onChange={(v) => onChange({ ...data, name: v })}
+        placeholder="e.g., Product Knowledge"
+      />
+
+      {/* Collections */}
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-zinc-400">Collections to Search</label>
+        <div className="space-y-1.5">
+          {KNOWLEDGE_COLLECTIONS.map(col => (
+            <label
+              key={col.value}
+              className={`
+                flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-all
+                ${collections.includes(col.value)
+                  ? 'bg-cyan-500/10 border-cyan-500/30 text-white'
+                  : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                }
+              `}
+            >
+              <input
+                type="checkbox"
+                checked={collections.includes(col.value)}
+                onChange={() => toggleCollection(col.value)}
+                className="rounded bg-zinc-800 border-zinc-700 text-cyan-500 focus:ring-cyan-500/30"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <Database className="w-3 h-3 text-cyan-400" />
+                  <span className="text-xs font-medium">{col.label}</span>
+                </div>
+                <p className="text-[10px] text-zinc-500 mt-0.5">{col.description}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Search query template */}
+      <TextField
+        label="Search Query Template"
+        value={data.search_query}
+        onChange={(v) => onChange({ ...data, search_query: v })}
+        placeholder="e.g., {{prospect.company}} products solutions"
+        multiline
+      />
+      <p className="text-[10px] text-zinc-500 -mt-2">
+        Use {'{{prospect.company}}'}, {'{{prospect.industry}}'} etc. Leave empty for auto-generated query.
+      </p>
+
+      {/* Max results */}
+      <NumberField
+        label="Max Results"
+        value={data.max_results || 8}
+        onChange={(v) => onChange({ ...data, max_results: v })}
+        min={1}
+        max={20}
+        placeholder="8"
+      />
+    </div>
+  );
+}
+
 // Config component map
 const CONFIG_COMPONENTS = {
   trigger: TriggerConfig,
@@ -823,7 +918,9 @@ const CONFIG_COMPONENTS = {
   webhookTrigger: WebhookTriggerConfig,
   webhook_trigger: WebhookTriggerConfig,
   aiAgent: AIAgentConfig,
-  ai_agent: AIAgentConfig
+  ai_agent: AIAgentConfig,
+  knowledgeBase: KnowledgeBaseConfig,
+  knowledge_base: KnowledgeBaseConfig
 };
 
 export default function NodeConfigPanel({

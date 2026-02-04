@@ -1236,7 +1236,10 @@ export function getToolsForNodeType(nodeType) {
       'update_prospect_status',
       'log_interaction',
       'schedule_follow_up'
-    ]
+    ],
+
+    // Knowledge Base nodes - no tools needed, uses searchKnowledge directly
+    knowledgeBase: []
   };
 
   const allowedTools = toolsByType[nodeType];
