@@ -14,7 +14,9 @@ import {
   AlertCircle,
   CheckCircle,
   Settings,
-  LayoutGrid
+  LayoutGrid,
+  Bug,
+  Play
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +44,9 @@ import {
   createEmptyFlow,
   createOutreachTemplate
 } from '@/components/flows';
+import DebugPanel from '@/components/flows/DebugPanel';
+import { runFlowInTestMode, validateFlowConfig } from '@/services/flowTestUtils';
+import QuickRunModal from '@/components/flows/QuickRunModal';
 
 export default function FlowBuilder() {
   const navigate = useNavigate();
@@ -65,6 +70,13 @@ export default function FlowBuilder() {
   const [showSettings, setShowSettings] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
   const [validationResult, setValidationResult] = useState(null);
+
+  // Test mode state
+  const [testMode, setTestMode] = useState(false);
+  const [testExecution, setTestExecution] = useState(null);
+  const [highlightedNodeId, setHighlightedNodeId] = useState(null);
+  const [showTestRunModal, setShowTestRunModal] = useState(false);
+  const [testRunning, setTestRunning] = useState(false);
 
   // Flow settings
   const [flowName, setFlowName] = useState('');
@@ -214,6 +226,66 @@ export default function FlowBuilder() {
     });
   };
 
+  // Test run handler
+  const handleTestRun = async (prospect) => {
+    if (isNewFlow || !flowId || flowId === 'new') {
+      toast({
+        title: 'Save Required',
+        description: 'Please save the flow before running a test',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validate first
+    const validation = await validateFlowConfig({ nodes, edges });
+    if (!validation.valid) {
+      toast({
+        title: 'Validation Failed',
+        description: validation.errors[0] || 'Flow has configuration errors',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setTestRunning(true);
+    setShowTestRunModal(false);
+
+    try {
+      const workspaceId = user?.company_id || user?.organization_id;
+      const result = await runFlowInTestMode(flowId, prospect.id, workspaceId, user?.id);
+
+      if (result.success) {
+        setTestExecution(result.execution);
+        toast({
+          title: 'Test Started',
+          description: 'Flow is running in test mode'
+        });
+      } else {
+        toast({
+          title: 'Test Failed',
+          description: result.error || 'Failed to start test execution',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to run test',
+        variant: 'destructive'
+      });
+    } finally {
+      setTestRunning(false);
+    }
+  };
+
+  // Highlight node on canvas (for debug panel)
+  const handleHighlightNode = useCallback((nodeId) => {
+    setHighlightedNodeId(nodeId);
+    // Auto-clear highlight after 3 seconds
+    setTimeout(() => setHighlightedNodeId(null), 3000);
+  }, []);
+
   // Update node data
   const handleNodeUpdate = useCallback((nodeId, newData) => {
     setNodes(nds => nds.map(node =>
@@ -306,6 +378,38 @@ export default function FlowBuilder() {
             Settings
           </Button>
 
+          {/* Separator */}
+          <div className="w-px h-6 bg-zinc-700" />
+
+          {/* Test Mode Toggle */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setTestMode(!testMode)}
+            className={`border-zinc-700 ${testMode ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'hover:bg-zinc-800'}`}
+          >
+            <Bug className="w-4 h-4 mr-2" />
+            {testMode ? 'Testing' : 'Test Mode'}
+          </Button>
+
+          {/* Test Run Button (visible in test mode) */}
+          {testMode && !isNewFlow && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTestRunModal(true)}
+              disabled={testRunning}
+              className="border-purple-500/50 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20"
+            >
+              {testRunning ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4 mr-2" />
+              )}
+              Test Run
+            </Button>
+          )}
+
           <Button
             onClick={() => handleSave()}
             disabled={saving}
@@ -341,13 +445,31 @@ export default function FlowBuilder() {
             }}
             onNodeSelect={handleNodeSelect}
             onSave={handleSave}
+            highlightedNodeId={highlightedNodeId}
           />
         </div>
 
-        {/* Right Panel - Node Config */}
-        <AnimatePresence>
-          {selectedNode && (
+        {/* Right Panel - Node Config or Debug Panel */}
+        <AnimatePresence mode="wait">
+          {testMode ? (
             <motion.div
+              key="debug-panel"
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 400, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex-shrink-0 h-full"
+            >
+              <DebugPanel
+                execution={testExecution}
+                onClose={() => setTestMode(false)}
+                onHighlightNode={handleHighlightNode}
+                className="h-full w-[400px]"
+              />
+            </motion.div>
+          ) : selectedNode ? (
+            <motion.div
+              key="config-panel"
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: 320, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
@@ -361,7 +483,7 @@ export default function FlowBuilder() {
                 className="w-80"
               />
             </motion.div>
-          )}
+          ) : null}
         </AnimatePresence>
       </div>
 
@@ -497,6 +619,16 @@ export default function FlowBuilder() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Test Run Modal */}
+      <QuickRunModal
+        open={showTestRunModal}
+        onOpenChange={setShowTestRunModal}
+        flow={{ id: flowId, name: flowName }}
+        onSuccess={(prospect) => {
+          handleTestRun(prospect);
+        }}
+      />
     </div>
   );
 }

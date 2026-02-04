@@ -108,6 +108,8 @@ import GrowthResearchWorkspace from "./growth/GrowthResearchWorkspace";
 import GrowthOutreachBuilder from "./growth/GrowthOutreachBuilder";
 
 import FlowBuilder from "./FlowBuilder";
+import Flows from "./growth/Flows";
+import ExecutionMonitor from "./growth/ExecutionMonitor";
 
 import GrowthCustomerSignals from "./growth/GrowthCustomerSignals";
 
@@ -852,11 +854,14 @@ function PagesContent() {
                 <Route path="/growth/outreach/new" element={<GrowthOutreachBuilder />} />
                 <Route path="/growth/outreach/:workspaceId" element={<GrowthOutreachBuilder />} />
 
-                <Route path="/growth/flows" element={<Navigate to="/growth/flows/new" replace />} />
+                <Route path="/growth/flows" element={<Flows />} />
                 <Route path="/growth/flows/new" element={<FlowBuilder />} />
                 <Route path="/growth/flows/:flowId" element={<FlowBuilder />} />
                 <Route path="/FlowBuilder" element={<FlowBuilder />} />
                 <Route path="/FlowBuilder/:flowId" element={<FlowBuilder />} />
+
+                <Route path="/growth/executions" element={<ExecutionMonitor />} />
+                <Route path="/ExecutionMonitor" element={<ExecutionMonitor />} />
 
                 <Route path="/GrowthCustomerSignals" element={<GrowthCustomerSignals />} />
                 <Route path="/growth/signals" element={<GrowthCustomerSignals />} />

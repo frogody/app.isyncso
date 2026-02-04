@@ -1278,7 +1278,6 @@ function parseEmailFromResponse(response) {
 // ============================================================================
 
 export {
-  startFlowExecution,
   executeNode,
   resumeExecution,
   pauseExecution,
