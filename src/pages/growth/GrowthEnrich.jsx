@@ -46,6 +46,7 @@ const DEFAULT_COL_WIDTH = 180;
 const MIN_COL_WIDTH = 80;
 const VISIBLE_BUFFER = 10;
 const ENRICHMENT_BATCH_SIZE = 5;
+const SANDBOX_ROW_LIMIT = 10;
 
 const SOURCE_FIELDS = [
   { value: 'full_name', label: 'Full Name' },
@@ -507,7 +508,7 @@ export default function GrowthEnrich() {
   const prevColCountRef = useRef(0);
 
   // Sandbox mode
-  const [sandboxMode, setSandboxMode] = useState(false);
+  const [sandboxMode, setSandboxMode] = useState(true);
   const [sandboxCells, setSandboxCells] = useState({});
   const [sandboxExportWarn, setSandboxExportWarn] = useState(false);
 
@@ -1999,14 +2000,18 @@ export default function GrowthEnrich() {
     const outputField = col.config?.output_field;
     const inputCol = columns.find(c => c.id === inputColId);
 
-    const total = rows.length;
+    const effectiveRows = sandboxMode ? rows.slice(0, SANDBOX_ROW_LIMIT) : rows;
+    if (sandboxMode && rows.length > SANDBOX_ROW_LIMIT) {
+      toast.info(`Sandbox: limited to ${SANDBOX_ROW_LIMIT} rows (${rows.length} total). Turn off sandbox to run all.`);
+    }
+    const total = effectiveRows.length;
     let completed = 0;
     let errors = 0;
-    const toastId = toast.loading(`Running ${col.name}: 0/${total}`);
+    const toastId = toast.loading(`Running ${col.name}: 0/${total}${sandboxMode ? ' (sandbox)' : ''}`);
 
     // Process in batches
-    for (let i = 0; i < rows.length; i += ENRICHMENT_BATCH_SIZE) {
-      const batch = rows.slice(i, i + ENRICHMENT_BATCH_SIZE);
+    for (let i = 0; i < effectiveRows.length; i += ENRICHMENT_BATCH_SIZE) {
+      const batch = effectiveRows.slice(i, i + ENRICHMENT_BATCH_SIZE);
       await Promise.all(batch.map(async (row) => {
         const key = cellKey(row.id, col.id);
         try {
@@ -2072,7 +2077,7 @@ export default function GrowthEnrich() {
     } else {
       toast.success(`${col.name}: All ${total} rows enriched`);
     }
-  }, [columns, rows, cells, cellKey, getCellRawValue]);
+  }, [columns, rows, cells, cellKey, getCellRawValue, sandboxMode]);
 
   // ─── Column ref replacer (used by AI + HTTP columns) ──────────────────
 
@@ -2115,13 +2120,17 @@ export default function GrowthEnrich() {
     else if (outputFormat === 'list') formatInstruction = '\n\nIMPORTANT: Respond with a plain list, one item per line. No numbering, no bullets, no explanation.';
     else formatInstruction = '\n\nIMPORTANT: Return ONLY the requested value or data point. No conversation, no explanation.';
 
-    const total = rows.length;
+    const effectiveRows = sandboxMode ? rows.slice(0, SANDBOX_ROW_LIMIT) : rows;
+    if (sandboxMode && rows.length > SANDBOX_ROW_LIMIT) {
+      toast.info(`Sandbox: limited to ${SANDBOX_ROW_LIMIT} rows (${rows.length} total). Turn off sandbox to run all.`);
+    }
+    const total = effectiveRows.length;
     let completed = 0;
     let errors = 0;
-    const toastId = toast.loading(`Running ${col.name}: 0/${total}`);
+    const toastId = toast.loading(`Running ${col.name}: 0/${total}${sandboxMode ? ' (sandbox)' : ''}`);
 
-    for (let i = 0; i < rows.length; i += batchSize) {
-      const batch = rows.slice(i, i + batchSize);
+    for (let i = 0; i < effectiveRows.length; i += batchSize) {
+      const batch = effectiveRows.slice(i, i + batchSize);
       await Promise.all(batch.map(async (row) => {
         const key = cellKey(row.id, col.id);
         try {
@@ -2217,7 +2226,7 @@ export default function GrowthEnrich() {
     toast.dismiss(toastId);
     if (errors > 0) toast.warning(`${col.name}: ${completed - errors} succeeded, ${errors} failed`);
     else toast.success(`${col.name}: All ${total} rows processed`);
-  }, [columns, rows, cells, cellKey, replaceColumnRefs]);
+  }, [columns, rows, cells, cellKey, replaceColumnRefs, sandboxMode]);
 
   // ─── Run waterfall column ─────────────────────────────────────────────
 
@@ -2227,13 +2236,17 @@ export default function GrowthEnrich() {
     const stopOnSuccess = col.config?.stopOnSuccess !== false;
     if (sources.length === 0) { toast.error('No sources configured for waterfall'); return; }
 
-    const total = rows.length;
+    const effectiveRows = sandboxMode ? rows.slice(0, SANDBOX_ROW_LIMIT) : rows;
+    if (sandboxMode && rows.length > SANDBOX_ROW_LIMIT) {
+      toast.info(`Sandbox: limited to ${SANDBOX_ROW_LIMIT} rows (${rows.length} total). Turn off sandbox to run all.`);
+    }
+    const total = effectiveRows.length;
     let completed = 0;
     let errors = 0;
-    const toastId = toast.loading(`Running ${col.name}: 0/${total}`);
+    const toastId = toast.loading(`Running ${col.name}: 0/${total}${sandboxMode ? ' (sandbox)' : ''}`);
 
-    for (let i = 0; i < rows.length; i += ENRICHMENT_BATCH_SIZE) {
-      const batch = rows.slice(i, i + ENRICHMENT_BATCH_SIZE);
+    for (let i = 0; i < effectiveRows.length; i += ENRICHMENT_BATCH_SIZE) {
+      const batch = effectiveRows.slice(i, i + ENRICHMENT_BATCH_SIZE);
       await Promise.all(batch.map(async (row) => {
         const key = cellKey(row.id, col.id);
         try {
@@ -2303,7 +2316,7 @@ export default function GrowthEnrich() {
     toast.dismiss(toastId);
     if (errors > 0) toast.warning(`${col.name}: ${completed - errors} succeeded, ${errors} failed`);
     else toast.success(`${col.name}: All ${total} rows enriched via waterfall`);
-  }, [columns, rows, cells, cellKey, getCellRawValue]);
+  }, [columns, rows, cells, cellKey, getCellRawValue, sandboxMode]);
 
   // ─── Run HTTP column ────────────────────────────────────────────────
 
@@ -2312,13 +2325,17 @@ export default function GrowthEnrich() {
     const cfg = col.config || {};
     if (!cfg.url) { toast.error('No URL configured'); return; }
 
-    const total = rows.length;
+    const effectiveRows = sandboxMode ? rows.slice(0, SANDBOX_ROW_LIMIT) : rows;
+    if (sandboxMode && rows.length > SANDBOX_ROW_LIMIT) {
+      toast.info(`Sandbox: limited to ${SANDBOX_ROW_LIMIT} rows (${rows.length} total). Turn off sandbox to run all.`);
+    }
+    const total = effectiveRows.length;
     let completed = 0;
     let errors = 0;
-    const toastId = toast.loading(`Running ${col.name}: 0/${total}`);
+    const toastId = toast.loading(`Running ${col.name}: 0/${total}${sandboxMode ? ' (sandbox)' : ''}`);
 
-    for (let i = 0; i < rows.length; i += ENRICHMENT_BATCH_SIZE) {
-      const batch = rows.slice(i, i + ENRICHMENT_BATCH_SIZE);
+    for (let i = 0; i < effectiveRows.length; i += ENRICHMENT_BATCH_SIZE) {
+      const batch = effectiveRows.slice(i, i + ENRICHMENT_BATCH_SIZE);
       await Promise.all(batch.map(async (row) => {
         const key = cellKey(row.id, col.id);
         try {
@@ -2384,28 +2401,26 @@ export default function GrowthEnrich() {
     toast.dismiss(toastId);
     if (errors > 0) toast.warning(`${col.name}: ${completed - errors} succeeded, ${errors} failed`);
     else toast.success(`${col.name}: All ${total} rows completed`);
-  }, [columns, rows, cells, cellKey, replaceColumnRefs]);
+  }, [columns, rows, cells, cellKey, replaceColumnRefs, sandboxMode]);
 
   // ─── Run all columns ───────────────────────────────────────────────────
 
   const runAllColumns = useCallback(async () => {
     const enrichCols = columns.filter(c => c.type === 'enrichment' || c.type === 'ai' || c.type === 'waterfall' || c.type === 'http');
     if (enrichCols.length === 0) return;
+    const effectiveRowCount = sandboxMode ? Math.min(rows.length, SANDBOX_ROW_LIMIT) : rows.length;
     const gId = `run_all_${Date.now()}`;
     historyGroupRef.current = gId;
-    trackChange('run_all', `Run All — ${enrichCols.length} column${enrichCols.length > 1 ? 's' : ''} × ${rows.length} rows${sandboxMode ? ' (sandbox)' : ''}`, { groupId: gId, metadata: { column_count: enrichCols.length, row_count: rows.length, sandbox: sandboxMode } });
-    if (sandboxMode) {
-      for (const col of enrichCols) await runSandboxColumn(col);
-    } else {
-      for (const col of columns) {
-        if (col.type === 'enrichment') await runEnrichmentColumn(col);
-        else if (col.type === 'ai') await runAIColumn(col);
-        else if (col.type === 'waterfall') await runWaterfallColumn(col);
-        else if (col.type === 'http') await runHTTPColumn(col);
-      }
+    trackChange('run_all', `Run All — ${enrichCols.length} column${enrichCols.length > 1 ? 's' : ''} × ${effectiveRowCount} rows${sandboxMode ? ' (sandbox)' : ''}`, { groupId: gId, metadata: { column_count: enrichCols.length, row_count: effectiveRowCount, sandbox: sandboxMode } });
+    // Always run real enrichments — sandbox mode limits rows inside each runner
+    for (const col of enrichCols) {
+      if (col.type === 'enrichment') await runEnrichmentColumn(col);
+      else if (col.type === 'ai') await runAIColumn(col);
+      else if (col.type === 'waterfall') await runWaterfallColumn(col);
+      else if (col.type === 'http') await runHTTPColumn(col);
     }
     historyGroupRef.current = null;
-  }, [columns, rows.length, sandboxMode, runSandboxColumn, runEnrichmentColumn, runAIColumn, runWaterfallColumn, runHTTPColumn, trackChange]);
+  }, [columns, rows.length, sandboxMode, runEnrichmentColumn, runAIColumn, runWaterfallColumn, runHTTPColumn, trackChange]);
 
   const convertSandboxToLive = useCallback(async () => {
     setSandboxCells({});
@@ -3679,10 +3694,10 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                 onClick={() => {
                   if (!sandboxMode) {
                     setSandboxMode(true);
-                    toast.success('Sandbox mode ON — enrichments use mock data');
+                    toast.success(`Sandbox ON — enrichments limited to ${SANDBOX_ROW_LIMIT} rows`);
                   } else {
                     setSandboxMode(false);
-                    toast.info('Sandbox mode OFF');
+                    toast.info(`Sandbox OFF — enrichments will run on all ${rows.length} rows`);
                   }
                 }}
                 className={`flex-shrink-0 whitespace-nowrap flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${

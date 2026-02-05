@@ -337,7 +337,7 @@ export default function GrowthCampaignNests() {
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
       <div className="border-b border-white/5 bg-zinc-950/80 backdrop-blur-xl sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4">
+        <div className="w-full px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button onClick={() => navigate('/growth/campaigns')} className="text-zinc-400 hover:text-white">
@@ -370,7 +370,7 @@ export default function GrowthCampaignNests() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="w-full px-6 lg:px-8 py-6 space-y-6">
         <JourneyProgressBar campaignId={campaignId} currentPhase="nests" />
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
