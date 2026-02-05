@@ -1274,7 +1274,8 @@ export default function GrowthEnrich() {
                 const rowInserts = batch.map((item, idx) => ({
                   workspace_id: ws.id,
                   table_id: tableId,
-                  nest_item_id: item.nestItemId,
+                  // nest_item_id FK references nest_items(id) — growth nest items are separate, so leave null
+                  nest_item_id: null,
                   source_data: item.sourceData,
                   position: b + idx,
                 }));
