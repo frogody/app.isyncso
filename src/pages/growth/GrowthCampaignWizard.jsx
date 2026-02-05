@@ -538,122 +538,135 @@ function Step1Product({ formData, setFormData, products, productsLoading, onProd
           </div>
         )}
 
-        {/* Search bar + Product cards grid + Add card */}
-        {!productsLoading && !showAddForm && (
-          <>
-            {/* Search bar */}
-            {products.length > 4 && (
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search your products..."
-                  className="pl-10 bg-zinc-900/50 border-zinc-700"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+        {/* Search-as-you-type product selector */}
+        {!productsLoading && !showAddForm && !hasSelectedProduct && (
+          <div className="relative">
+            {/* Search input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search your products..."
+                className="pl-10 bg-zinc-900/50 border-zinc-700"
+                autoComplete="off"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Dropdown results — only show when user types */}
+            {searchQuery.trim() && (
+              <div className="absolute z-20 left-0 right-0 mt-1 max-h-64 overflow-y-auto rounded-xl border border-zinc-700 bg-zinc-900 shadow-xl shadow-black/40">
+                {filteredProducts.length > 0 ? (
+                  filteredProducts.slice(0, 8).map((product) => {
+                    const imgSrc = typeof product.featured_image === 'string'
+                      ? product.featured_image
+                      : product.featured_image?.url || null;
+                    return (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => { handleSelectProduct(product); setSearchQuery(''); }}
+                        className="w-full p-3 flex items-center gap-3 hover:bg-zinc-800/70 transition-colors text-left border-b border-zinc-800 last:border-b-0"
+                      >
+                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center overflow-hidden">
+                          {imgSrc ? (
+                            <img src={imgSrc} alt={product.name} className="w-full h-full object-cover rounded-lg" />
+                          ) : (
+                            <Package className="w-4 h-4 text-zinc-500" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-white truncate">{product.name}</span>
+                            {product.type && (
+                              <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                {product.type}
+                              </span>
+                            )}
+                          </div>
+                          {(product.tagline || product.short_description) && (
+                            <p className="text-xs text-zinc-400 truncate">{product.tagline || product.short_description}</p>
+                          )}
+                        </div>
+                        {product.price != null && (
+                          <span className="text-xs text-zinc-500 flex-shrink-0">${Number(product.price).toLocaleString()}</span>
+                        )}
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="p-4 text-center">
+                    <p className="text-sm text-zinc-400">No products match "{searchQuery}"</p>
+                    <p className="text-xs text-zinc-500 mt-1">Try a different search or add a new one</p>
+                  </div>
                 )}
               </div>
             )}
 
-            {/* Results count when searching */}
-            {searchQuery && (
-              <p className="text-xs text-zinc-500 mb-2">
-                {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
-                {hasMore && ` (showing first 6)`}
+            {/* Hint + Add New below search */}
+            <div className="flex items-center justify-between mt-3">
+              <p className="text-xs text-zinc-500">
+                {products.length} product{products.length !== 1 ? 's' : ''} available — start typing to find
               </p>
-            )}
-
-            <div className="grid md:grid-cols-2 gap-3">
-              {displayProducts.map((product) => {
-                const isSelected = formData.productId === product.id;
-                const imgSrc = typeof product.featured_image === 'string'
-                  ? product.featured_image
-                  : product.featured_image?.url || null;
-                return (
-                  <button
-                    key={product.id}
-                    type="button"
-                    onClick={() => handleSelectProduct(product)}
-                    className={`relative p-4 rounded-xl border transition-all text-left flex gap-3 ${
-                      isSelected
-                        ? 'border-cyan-500/50 bg-cyan-500/5 ring-1 ring-cyan-500/30'
-                        : 'border-zinc-700 hover:border-zinc-500 bg-zinc-900/30'
-                    }`}
-                  >
-                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center overflow-hidden">
-                      {imgSrc ? (
-                        <img src={imgSrc} alt={product.name} className="w-full h-full object-cover rounded-lg" />
-                      ) : (
-                        <Package className="w-5 h-5 text-zinc-500" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-white truncate">{product.name}</span>
-                        {product.type && (
-                          <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                            {product.type}
-                          </span>
-                        )}
-                      </div>
-                      {(product.tagline || product.short_description) && (
-                        <p className="text-sm text-zinc-400 mt-0.5 line-clamp-2">{product.tagline || product.short_description}</p>
-                      )}
-                      {product.price != null && (
-                        <p className="text-xs text-zinc-500 mt-1">
-                          ${Number(product.price).toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                    {isSelected && (
-                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center">
-                        <Check className="w-3 h-3 text-white" />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-
-              {/* Show remaining count */}
-              {hasMore && !searchQuery && (
-                <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-900/20 flex items-center justify-center">
-                  <p className="text-sm text-zinc-500">
-                    +{filteredProducts.length - 6} more — use search to find
-                  </p>
-                </div>
-              )}
-
-              {/* Add New Product card */}
               <button
                 type="button"
                 onClick={() => setShowAddForm(true)}
-                className="p-4 rounded-xl border-2 border-dashed border-zinc-700 hover:border-cyan-500/40 transition-all text-left flex flex-col items-center justify-center gap-2 min-h-[100px] bg-zinc-900/20 hover:bg-cyan-500/5"
+                className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
               >
-                <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                  <Plus className="w-5 h-5 text-cyan-400" />
-                </div>
-                <span className="text-sm font-medium text-cyan-400">Add New Product</span>
-                <span className="text-xs text-zinc-500">Create a product for this campaign</span>
+                <Plus className="w-3 h-3" />
+                Add New Product
               </button>
+            </div>
+          </div>
+        )}
 
-              {/* No results */}
-              {searchQuery && filteredProducts.length === 0 && (
-                <div className="col-span-2 p-6 text-center">
-                  <Search className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                  <p className="text-zinc-400">No products match "{searchQuery}"</p>
-                  <p className="text-xs text-zinc-500 mt-1">Try a different search or add a new product</p>
-                </div>
+        {/* Selected product pill — shown after selection */}
+        {!productsLoading && hasSelectedProduct && !showAddForm && (
+          <div className="flex items-center gap-3 p-3 rounded-xl border border-indigo-500/30 bg-indigo-500/5">
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center overflow-hidden">
+              {(() => {
+                const imgSrc = typeof formData.selectedProduct?.featured_image === 'string'
+                  ? formData.selectedProduct.featured_image
+                  : formData.selectedProduct?.featured_image?.url || null;
+                return imgSrc
+                  ? <img src={imgSrc} alt={formData.selectedProduct?.name} className="w-full h-full object-cover rounded-lg" />
+                  : <Package className="w-4 h-4 text-zinc-500" />;
+              })()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-white truncate">{formData.selectedProduct?.name}</span>
+                {formData.selectedProduct?.type && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    {formData.selectedProduct.type}
+                  </span>
+                )}
+              </div>
+              {(formData.selectedProduct?.tagline || formData.selectedProduct?.short_description) && (
+                <p className="text-xs text-zinc-400 truncate">{formData.selectedProduct.tagline || formData.selectedProduct.short_description}</p>
               )}
             </div>
-          </>
+            <button
+              type="button"
+              onClick={() => {
+                setFormData({ ...formData, productId: null, selectedProduct: null, productDescription: '', _aiAnalyzed: false });
+                setSearchQuery('');
+              }}
+              className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors flex-shrink-0"
+              title="Change product"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         )}
 
         {/* Add Product Form */}
