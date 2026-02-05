@@ -1188,11 +1188,11 @@ export default function GrowthEnrich() {
             const tableId = tbl?.id || null;
             let allProspects = [];
 
-            // Growth nests: try nest_items→prospects first, then preview_data fallback
+            // Growth nests: try growth_nest_items→prospects first, then preview_data fallback
             const { data: nestItems } = await supabase
-              .from('nest_items')
+              .from('growth_nest_items')
               .select('id, prospect_id, prospects(*)')
-              .in('nest_id', selectedNestIds);
+              .in('growth_nest_id', selectedNestIds);
 
             if (nestItems?.length) {
               // Map prospect data — normalize field names for enrichment sheet

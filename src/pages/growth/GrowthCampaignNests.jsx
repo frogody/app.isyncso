@@ -182,11 +182,11 @@ export default function GrowthCampaignNests() {
       setNestProspects(prev => ({ ...prev, [nestId]: nest.preview_data.slice(0, 50) }));
       return;
     }
-    // Otherwise try nest_items -> prospects
+    // Otherwise try growth_nest_items -> prospects
     const { data } = await supabase
-      .from('nest_items')
+      .from('growth_nest_items')
       .select('prospect_id, prospects(id, first_name, last_name, email, job_title, location)')
-      .eq('nest_id', nestId)
+      .eq('growth_nest_id', nestId)
       .limit(50);
     if (data) {
       setNestProspects(prev => ({

@@ -572,27 +572,42 @@ serve(async (req) => {
         }
 
         if (!skipNestItem && entityId) {
-          // Create nest_item link
-          const itemData: any = {
-            nest_id: nestId,
-            item_order: i,
-            is_preview: i < 5, // First 5 items are preview by default
-          };
+          let linkError: any = null;
 
-          // Set the appropriate foreign key based on type
-          if (nestType === 'candidates') {
-            itemData.candidate_id = entityId;
-          } else if (nestType === 'prospects') {
-            itemData.prospect_id = entityId;
-          } else if (nestType === 'investors') {
-            itemData.investor_id = entityId;
-          } else if (nestType === 'companies') {
-            itemData.company_id = entityId;
+          if (nestTable === 'growth_nests') {
+            // Growth nests use growth_nest_items table (FK to growth_nests)
+            const { error } = await supabase
+              .from('growth_nest_items')
+              .insert({
+                growth_nest_id: nestId,
+                prospect_id: entityId,
+                item_order: i,
+                is_preview: i < 5,
+              });
+            linkError = error;
+          } else {
+            // Talent nests use nest_items table (FK to nests)
+            const itemData: any = {
+              nest_id: nestId,
+              item_order: i,
+              is_preview: i < 5,
+            };
+
+            if (nestType === 'candidates') {
+              itemData.candidate_id = entityId;
+            } else if (nestType === 'prospects') {
+              itemData.prospect_id = entityId;
+            } else if (nestType === 'investors') {
+              itemData.investor_id = entityId;
+            } else if (nestType === 'companies') {
+              itemData.company_id = entityId;
+            }
+
+            const { error } = await supabase
+              .from('nest_items')
+              .insert(itemData);
+            linkError = error;
           }
-
-          const { error: linkError } = await supabase
-            .from('nest_items')
-            .insert(itemData);
 
           if (linkError) {
             console.error(`Failed to link item ${i}:`, linkError);
@@ -625,10 +640,20 @@ serve(async (req) => {
     console.log(`Created ${createdCount} new, ${updatedCount} updated, ${linkedCount} linked, ${errorCount} errors`);
 
     // Update the nest's item_count to reflect actual count
-    const { count: actualCount } = await supabase
-      .from('nest_items')
-      .select('*', { count: 'exact', head: true })
-      .eq('nest_id', nestId);
+    let actualCount: number | null = 0;
+    if (nestTable === 'growth_nests') {
+      const { count } = await supabase
+        .from('growth_nest_items')
+        .select('*', { count: 'exact', head: true })
+        .eq('growth_nest_id', nestId);
+      actualCount = count;
+    } else {
+      const { count } = await supabase
+        .from('nest_items')
+        .select('*', { count: 'exact', head: true })
+        .eq('nest_id', nestId);
+      actualCount = count;
+    }
 
     if (nestTable === 'growth_nests') {
       await supabase
