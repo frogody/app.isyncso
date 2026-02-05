@@ -1243,21 +1243,7 @@ export default function GrowthEnrich() {
             }
 
             if (allProspects.length > 0) {
-              // Create rows
-              const rowInserts = allProspects.map((item, idx) => ({
-                workspace_id: ws.id,
-                table_id: tableId,
-                nest_item_id: item.nestItemId,
-                source_data: item.sourceData,
-                position: idx,
-              }));
-              const { data: newRows, error: rowErr } = await supabase
-                .from('enrich_rows')
-                .insert(rowInserts)
-                .select();
-              if (rowErr) throw rowErr;
-
-              // Create default columns
+              // Create default columns first
               const defaultCols = [
                 { name: 'Name', type: 'field', config: { source_field: 'full_name' }, position: 0 },
                 { name: 'Email', type: 'field', config: { source_field: 'email' }, position: 1 },
@@ -1273,9 +1259,29 @@ export default function GrowthEnrich() {
                 .select();
               if (colErr) throw colErr;
 
-              // Pre-populate field cells
+              // Insert rows in batches of 300 (2885 at once exceeds request limits)
+              const ROW_BATCH = 300;
+              let allNewRows = [];
+              for (let b = 0; b < allProspects.length; b += ROW_BATCH) {
+                const batch = allProspects.slice(b, b + ROW_BATCH);
+                const rowInserts = batch.map((item, idx) => ({
+                  workspace_id: ws.id,
+                  table_id: tableId,
+                  nest_item_id: item.nestItemId,
+                  source_data: item.sourceData,
+                  position: b + idx,
+                }));
+                const { data: batchRows, error: rowErr } = await supabase
+                  .from('enrich_rows')
+                  .insert(rowInserts)
+                  .select();
+                if (rowErr) throw rowErr;
+                if (batchRows) allNewRows = allNewRows.concat(batchRows);
+              }
+
+              // Pre-populate field cells in batches
               const cellInserts = [];
-              for (const row of (newRows || [])) {
+              for (const row of allNewRows) {
                 for (const col of (newCols || [])) {
                   const sourceField = col.config?.source_field;
                   if (sourceField && row.source_data) {
@@ -1296,7 +1302,7 @@ export default function GrowthEnrich() {
                   await supabase.from('enrich_cells').upsert(cellInserts.slice(i, i + 500));
                 }
               }
-              toast.success(`Imported ${newRows?.length || 0} prospects from ${selectedNestIds.length} nest${selectedNestIds.length > 1 ? 's' : ''}`);
+              toast.success(`Imported ${allNewRows.length} prospects from ${selectedNestIds.length} nest${selectedNestIds.length > 1 ? 's' : ''}`);
             } else {
               toast.info('No prospect data found in selected nests. Import data manually or upload a CSV.');
             }
