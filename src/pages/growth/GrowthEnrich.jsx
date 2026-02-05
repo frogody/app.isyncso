@@ -638,32 +638,6 @@ export default function GrowthEnrich() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [colConfig.prompt]);
 
-  // Render preview with chips for resolved values
-  const renderPreviewWithChips = useCallback((template, rowId) => {
-    if (!template) return null;
-    const sortedCols = [...columns].sort((a, b) => b.name.length - a.name.length);
-    const escapedNames = sortedCols.map(c => c.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    if (escapedNames.length === 0) return template;
-    const regex = new RegExp(`/(${escapedNames.join('|')})(?=[\\s,.:;!?"'\\n)\\]]|$)`, 'gi');
-    const parts = [];
-    let lastIndex = 0;
-    let match;
-    while ((match = regex.exec(template)) !== null) {
-      if (match.index > lastIndex) parts.push(<span key={`t-${lastIndex}`}>{template.slice(lastIndex, match.index)}</span>);
-      const colName = match[1];
-      const col = columns.find(c => c.name.toLowerCase() === colName.toLowerCase());
-      const value = col ? (getCellRawValue(rowId, col) || colName) : colName;
-      parts.push(
-        <span key={`v-${match.index}`} className="inline-flex items-center px-1 py-0.5 mx-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px] font-medium border border-purple-500/30">
-          {String(value).slice(0, 60)}
-        </span>
-      );
-      lastIndex = match.index + match[0].length;
-    }
-    if (lastIndex < template.length) parts.push(<span key={`t-${lastIndex}`}>{template.slice(lastIndex)}</span>);
-    return parts.length > 0 ? parts : template;
-  }, [columns, getCellRawValue]);
-
   // Cell editing
   const [editingCell, setEditingCell] = useState(null); // { rowId, colId }
   const [editingValue, setEditingValue] = useState('');
@@ -2288,6 +2262,32 @@ export default function GrowthEnrich() {
       result = result.replace(regex, () => getCellRawValue(rowId, col) || '');
     }
     return result;
+  }, [columns, getCellRawValue]);
+
+  // Render preview with chips for resolved values
+  const renderPreviewWithChips = useCallback((template, rowId) => {
+    if (!template) return null;
+    const sortedCols = [...columns].sort((a, b) => b.name.length - a.name.length);
+    const escapedNames = sortedCols.map(c => c.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    if (escapedNames.length === 0) return template;
+    const regex = new RegExp(`/(${escapedNames.join('|')})(?=[\\s,.:;!?"'\\n)\\]]|$)`, 'gi');
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    while ((match = regex.exec(template)) !== null) {
+      if (match.index > lastIndex) parts.push(<span key={`t-${lastIndex}`}>{template.slice(lastIndex, match.index)}</span>);
+      const colName = match[1];
+      const col = columns.find(c => c.name.toLowerCase() === colName.toLowerCase());
+      const value = col ? (getCellRawValue(rowId, col) || colName) : colName;
+      parts.push(
+        <span key={`v-${match.index}`} className="inline-flex items-center px-1 py-0.5 mx-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px] font-medium border border-purple-500/30">
+          {String(value).slice(0, 60)}
+        </span>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < template.length) parts.push(<span key={`t-${lastIndex}`}>{template.slice(lastIndex)}</span>);
+    return parts.length > 0 ? parts : template;
   }, [columns, getCellRawValue]);
 
   // ─── Run AI column ───────────────────────────────────────────────────
