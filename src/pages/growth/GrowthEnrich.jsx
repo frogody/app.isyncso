@@ -1132,14 +1132,27 @@ export default function GrowthEnrich() {
         if (cancelled) return;
         setCampaign(camp);
 
-        // If campaign already has a workspace, use it
+        // If campaign already has a workspace, check if it has data
         if (camp.enrich_workspace_id) {
-          setActiveWorkspaceId(camp.enrich_workspace_id);
-          setCampaignLoading(false);
-          return;
+          const { count } = await supabase
+            .from('enrich_rows')
+            .select('id', { count: 'exact', head: true })
+            .eq('workspace_id', camp.enrich_workspace_id);
+
+          if (count > 0 || !camp.selected_nest_ids?.length) {
+            // Workspace has data or no nests to import — just load it
+            setActiveWorkspaceId(camp.enrich_workspace_id);
+            setCampaignLoading(false);
+            return;
+          }
+          // Workspace is empty but campaign has nests — delete and recreate with import
+          await supabase.from('enrich_workspaces').delete().eq('id', camp.enrich_workspace_id);
+          await supabase.from('growth_campaigns').update({ enrich_workspace_id: null }).eq('id', campaignId);
         }
 
         // Auto-create workspace for this campaign
+        const selectedNestIds = camp.selected_nest_ids || [];
+        const primaryNestId = selectedNestIds[0] || null;
         const wsName = `${camp.name || 'Campaign'} - Enrichment`;
         const { data: ws, error: wsErr } = await supabase
           .from('enrich_workspaces')
@@ -1148,13 +1161,18 @@ export default function GrowthEnrich() {
             name: wsName,
             created_by: user.id,
             module: 'growth',
+            nest_id: primaryNestId,
           })
           .select()
           .single();
         if (wsErr) throw wsErr;
 
         // Create Table 1
-        await supabase.from('enrich_tables').insert({ workspace_id: ws.id, name: 'Table 1', position: 0 });
+        const { data: tbl } = await supabase
+          .from('enrich_tables')
+          .insert({ workspace_id: ws.id, name: 'Table 1', position: 0 })
+          .select('id')
+          .single();
 
         // Link workspace to campaign
         await supabase
@@ -1163,6 +1181,131 @@ export default function GrowthEnrich() {
           .eq('id', campaignId);
 
         if (cancelled) return;
+
+        // Auto-import prospects from ALL selected nests
+        if (selectedNestIds.length > 0) {
+          try {
+            const tableId = tbl?.id || null;
+            let allProspects = [];
+
+            // Growth nests: try nest_items→prospects first, then preview_data fallback
+            const { data: nestItems } = await supabase
+              .from('nest_items')
+              .select('id, prospect_id, prospects(*)')
+              .in('nest_id', selectedNestIds);
+
+            if (nestItems?.length) {
+              // Map prospect data — normalize field names for enrichment sheet
+              allProspects = nestItems.filter(ni => ni.prospects).map(ni => {
+                const p = ni.prospects;
+                return {
+                  nestItemId: ni.id,
+                  sourceData: {
+                    full_name: [p.first_name, p.last_name].filter(Boolean).join(' ') || p.name || '',
+                    email: p.email || '',
+                    linkedin_profile: p.linkedin_url || p.linkedin_profile || '',
+                    job_title: p.job_title || p.title || '',
+                    company_name: p.company_name || p.company || '',
+                    location: p.location || p.city || '',
+                    phone: p.phone || '',
+                    ...p,
+                  },
+                };
+              });
+            }
+
+            // Fallback: load preview_data from growth_nests
+            if (allProspects.length === 0) {
+              const { data: nestData } = await supabase
+                .from('growth_nests')
+                .select('id, preview_data')
+                .in('id', selectedNestIds);
+              if (nestData) {
+                for (const nest of nestData) {
+                  if (Array.isArray(nest.preview_data)) {
+                    for (const p of nest.preview_data) {
+                      allProspects.push({
+                        nestItemId: null,
+                        sourceData: {
+                          full_name: p.full_name || [p.first_name, p.last_name].filter(Boolean).join(' ') || p.name || '',
+                          email: p.email || '',
+                          linkedin_profile: p.linkedin_url || p.linkedin_profile || '',
+                          job_title: p.job_title || p.title || '',
+                          company_name: p.company_name || p.company || '',
+                          location: p.location || p.city || '',
+                          ...p,
+                        },
+                      });
+                    }
+                  }
+                }
+              }
+            }
+
+            if (allProspects.length > 0) {
+              // Create rows
+              const rowInserts = allProspects.map((item, idx) => ({
+                workspace_id: ws.id,
+                table_id: tableId,
+                nest_item_id: item.nestItemId,
+                source_data: item.sourceData,
+                position: idx,
+              }));
+              const { data: newRows, error: rowErr } = await supabase
+                .from('enrich_rows')
+                .insert(rowInserts)
+                .select();
+              if (rowErr) throw rowErr;
+
+              // Create default columns
+              const defaultCols = [
+                { name: 'Name', type: 'field', config: { source_field: 'full_name' }, position: 0 },
+                { name: 'Email', type: 'field', config: { source_field: 'email' }, position: 1 },
+                { name: 'LinkedIn', type: 'field', config: { source_field: 'linkedin_profile' }, position: 2 },
+                { name: 'Title', type: 'field', config: { source_field: 'job_title' }, position: 3 },
+                { name: 'Company', type: 'field', config: { source_field: 'company_name' }, position: 4 },
+                { name: 'Location', type: 'field', config: { source_field: 'location' }, position: 5 },
+              ].map(c => ({ ...c, workspace_id: ws.id, table_id: tableId, width: DEFAULT_COL_WIDTH }));
+
+              const { data: newCols, error: colErr } = await supabase
+                .from('enrich_columns')
+                .insert(defaultCols)
+                .select();
+              if (colErr) throw colErr;
+
+              // Pre-populate field cells
+              const cellInserts = [];
+              for (const row of (newRows || [])) {
+                for (const col of (newCols || [])) {
+                  const sourceField = col.config?.source_field;
+                  if (sourceField && row.source_data) {
+                    const val = row.source_data[sourceField];
+                    if (val != null && val !== '') {
+                      cellInserts.push({
+                        row_id: row.id,
+                        column_id: col.id,
+                        value: typeof val === 'object' ? val : { v: val },
+                        status: 'complete',
+                      });
+                    }
+                  }
+                }
+              }
+              if (cellInserts.length) {
+                for (let i = 0; i < cellInserts.length; i += 500) {
+                  await supabase.from('enrich_cells').upsert(cellInserts.slice(i, i + 500));
+                }
+              }
+              toast.success(`Imported ${newRows?.length || 0} prospects from ${selectedNestIds.length} nest${selectedNestIds.length > 1 ? 's' : ''}`);
+            } else {
+              toast.info('No prospect data found in selected nests. Import data manually or upload a CSV.');
+            }
+          } catch (importErr) {
+            console.error('Auto-import from nests failed:', importErr);
+            toast.error('Failed to auto-import nest data');
+          }
+        }
+
         setActiveWorkspaceId(ws.id);
         loadWorkspaces();
       } catch (err) {
