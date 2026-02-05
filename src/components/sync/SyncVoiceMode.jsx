@@ -284,77 +284,17 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
     processVoiceInputRef.current = processVoiceInput;
   }, [processVoiceInput]);
 
-  // Create recognition instance once
+  // Cleanup recognition on unmount
   useEffect(() => {
-    if (!hasSpeechRecognition) return;
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false; // Single utterance mode
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-    recognition.maxAlternatives = 1;
-
-    recognition.onstart = () => {
-      console.log('[Voice] Started listening');
-      setError(null);
-    };
-
-    recognition.onend = () => {
-      console.log('[Voice] Stopped listening');
-      // Don't auto-restart - user controls via button
-      if (voiceState === VOICE_STATES.LISTENING) {
-        setVoiceState(VOICE_STATES.IDLE);
-        setStatusText('Tap mic to speak');
-      }
-    };
-
-    recognition.onerror = (event) => {
-      console.error('[Voice] Error:', event.error);
-      if (event.error === 'not-allowed') {
-        setError('Microphone access denied');
-      } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
-        setError(`Error: ${event.error}`);
-      }
-      setVoiceState(VOICE_STATES.IDLE);
-      setStatusText('Tap mic to speak');
-    };
-
-    recognition.onresult = (event) => {
-      let interimTranscript = '';
-      let finalTranscript = '';
-
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          finalTranscript += result;
-        } else {
-          interimTranscript += result;
-        }
-      }
-
-      // Show what user is saying
-      setTranscript(interimTranscript || finalTranscript);
-
-      // Process when we have final result
-      if (finalTranscript) {
-        const trimmed = finalTranscript.trim();
-        console.log('[Voice] Got:', trimmed);
-
-        if (trimmed.length >= 2) {
-          processVoiceInputRef.current(trimmed);
-        }
-      }
-    };
-
-    recognitionRef.current = recognition;
-
     return () => {
-      try {
-        recognition.abort();
-      } catch (e) {}
-      recognitionRef.current = null;
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch (e) {}
+        recognitionRef.current = null;
+      }
     };
-  }, [hasSpeechRecognition]);
+  }, []);
 
   // Set initial state when opened
   useEffect(() => {
@@ -387,29 +327,111 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
   }, []);
 
   // Toggle mic - push to talk
-  const toggleMic = useCallback(() => {
-    if (!recognitionRef.current) return;
+  const toggleMic = useCallback(async () => {
+    console.log('[Voice] toggleMic called, state:', voiceState);
 
     if (voiceState === VOICE_STATES.LISTENING) {
       // Stop listening
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {}
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {}
+      }
       setVoiceState(VOICE_STATES.IDLE);
       setStatusText('Tap mic to speak');
       setTranscript('');
-    } else if (voiceState === VOICE_STATES.IDLE) {
-      // Start listening
-      try {
-        recognitionRef.current.start();
-        setVoiceState(VOICE_STATES.LISTENING);
-        setStatusText('Listening...');
-        setTranscript('');
-        syncState.setMood('listening');
-      } catch (e) {
-        console.error('[Voice] Failed to start:', e);
-        setError('Failed to start. Try again.');
-      }
+      return;
+    }
+
+    if (voiceState !== VOICE_STATES.IDLE) {
+      console.log('[Voice] Not idle, ignoring');
+      return;
+    }
+
+    // Clear any previous errors
+    setError(null);
+
+    // Request microphone permission explicitly first
+    try {
+      console.log('[Voice] Requesting mic permission...');
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Got permission - stop the stream immediately (we just needed permission)
+      stream.getTracks().forEach(track => track.stop());
+      console.log('[Voice] Mic permission granted');
+    } catch (e) {
+      console.error('[Voice] Mic permission denied:', e);
+      setError('Please allow microphone access and try again');
+      return;
+    }
+
+    // Now create fresh recognition and start
+    try {
+      // Create new recognition instance for each session
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        console.log('[Voice] Recognition started');
+        setError(null);
+      };
+
+      recognition.onend = () => {
+        console.log('[Voice] Recognition ended');
+        setVoiceState(VOICE_STATES.IDLE);
+        setStatusText('Tap mic to speak');
+      };
+
+      recognition.onerror = (event) => {
+        console.error('[Voice] Recognition error:', event.error);
+        if (event.error === 'not-allowed') {
+          setError('Microphone blocked. Check browser settings.');
+        } else if (event.error === 'no-speech') {
+          setError('No speech detected. Try again.');
+        } else if (event.error !== 'aborted') {
+          setError(`Error: ${event.error}`);
+        }
+        setVoiceState(VOICE_STATES.IDLE);
+        setStatusText('Tap mic to speak');
+      };
+
+      recognition.onresult = (event) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += result;
+          } else {
+            interimTranscript += result;
+          }
+        }
+
+        setTranscript(interimTranscript || finalTranscript);
+
+        if (finalTranscript) {
+          const trimmed = finalTranscript.trim();
+          console.log('[Voice] Final:', trimmed);
+          if (trimmed.length >= 2) {
+            processVoiceInputRef.current(trimmed);
+          }
+        }
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+      setVoiceState(VOICE_STATES.LISTENING);
+      setStatusText('Listening...');
+      setTranscript('');
+      syncState.setMood('listening');
+      console.log('[Voice] Started successfully');
+    } catch (e) {
+      console.error('[Voice] Failed to start recognition:', e);
+      setError('Failed to start. Try again.');
+      setVoiceState(VOICE_STATES.IDLE);
     }
   }, [voiceState, syncState]);
 
