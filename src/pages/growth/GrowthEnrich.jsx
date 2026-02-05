@@ -122,13 +122,13 @@ const AI_MODELS = [
 ];
 
 const AI_PROMPT_TEMPLATES = [
-  { id: 'summarize', label: 'Summarize', prompt: 'Summarize the following in 1-2 sentences:', icon: '📝' },
-  { id: 'extract_emails', label: 'Extract emails', prompt: 'Extract all email addresses from the following text. Return only the emails, one per line:', icon: '📧' },
-  { id: 'categorize', label: 'Categorize', prompt: 'Categorize the following into one of these categories: [define categories]. Return only the category name:', icon: '🏷️' },
-  { id: 'sentiment', label: 'Sentiment', prompt: 'Analyze the sentiment of the following text. Return only: Positive, Negative, or Neutral:', icon: '😊' },
-  { id: 'translate', label: 'Translate', prompt: 'Translate the following to English. Return only the translation:', icon: '🌍' },
-  { id: 'extract_data', label: 'Extract data', prompt: 'Extract the key information from the following and return as JSON with relevant fields:', icon: '🔍' },
-  { id: 'clean', label: 'Clean/Format', prompt: 'Clean and format the following data. Fix typos, standardize formatting:', icon: '✨' },
+  { id: 'summarize', label: 'Summarize', prompt: 'Summarize what /Company does and why /Name as /Title would be relevant for outreach. Keep it to 1-2 sentences.', icon: '📝' },
+  { id: 'verify_email', label: 'Verify email', prompt: 'Given /Name works at /Company (/Website), verify if /Email looks correct. Return the most likely valid email address.', icon: '📧' },
+  { id: 'categorize', label: 'Categorize', prompt: 'Based on /Title at /Company, categorize this prospect as: Decision Maker, Influencer, Champion, or End User. Return only the category.', icon: '🏷️' },
+  { id: 'icp_score', label: 'ICP Score', prompt: 'Rate how well /Name (/Title at /Company) fits as an ideal customer prospect. Return: Strong Fit, Moderate Fit, or Weak Fit with a one-line reason.', icon: '🎯' },
+  { id: 'pitch', label: 'Pitch line', prompt: 'Write a personalized one-liner pitch for /Name who is /Title at /Company. Reference their role and company specifically.', icon: '💡' },
+  { id: 'research', label: 'Research', prompt: 'Research /Company (/Website) and provide: 1) What they do 2) Industry 3) Estimated size 4) Key challenges they likely face.', icon: '🔍' },
+  { id: 'clean', label: 'Clean/Format', prompt: 'Clean and standardize the following name: /Name. Fix capitalization, remove special characters. Return only the cleaned full name.', icon: '✨' },
 ];
 
 // ─── Formula Engine ──────────────────────────────────────────────────────────
@@ -469,6 +469,200 @@ export default function GrowthEnrich() {
       return;
     }
   }, [slashMenu, slashMenuColumns, insertColumnRef]);
+
+  // ─── Chip-based prompt editor (contenteditable) ───────────────────────
+  const promptEditorRef = useRef(null);
+  const isPromptUserInput = useRef(false);
+
+  const escapeHtml = useCallback((str) => {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+  }, []);
+
+  const promptToHtml = useCallback((text) => {
+    if (!text) return '';
+    const colNames = columns.map(c => c.name);
+    if (colNames.length === 0) return escapeHtml(text);
+    const sorted = [...colNames].sort((a, b) => b.length - a.length);
+    const escapedNames = sorted.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const regex = new RegExp(`/(${escapedNames.join('|')})(?=[\\s,.:;!?"'\\n)\\]]|$)`, 'gi');
+    let html = '';
+    let last = 0;
+    let m;
+    while ((m = regex.exec(text)) !== null) {
+      html += escapeHtml(text.slice(last, m.index));
+      html += `<span data-col="${m[1]}" contenteditable="false" class="inline-flex items-center h-[18px] px-1.5 mx-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[11px] font-medium border border-indigo-500/30 align-baseline whitespace-nowrap cursor-default">${escapeHtml(m[1])}</span>`;
+      last = m.index + m[0].length;
+    }
+    html += escapeHtml(text.slice(last));
+    return html;
+  }, [columns, escapeHtml]);
+
+  const htmlToPrompt = useCallback((el) => {
+    let text = '';
+    const walk = (node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        text += node.textContent;
+      } else if (node.nodeName === 'BR') {
+        text += '\n';
+      } else if (node.dataset?.col) {
+        text += '/' + node.dataset.col;
+      } else if (node.nodeName === 'DIV' || node.nodeName === 'P') {
+        if (text.length > 0 && !text.endsWith('\n')) text += '\n';
+        node.childNodes.forEach(walk);
+      } else {
+        node.childNodes.forEach(walk);
+      }
+    };
+    el.childNodes.forEach(walk);
+    return text;
+  }, []);
+
+  const handlePromptEditorInput = useCallback((e) => {
+    const el = e.currentTarget;
+    const text = htmlToPrompt(el);
+    isPromptUserInput.current = true;
+    setColConfig(prev => ({ ...prev, prompt: text }));
+    // Slash menu detection
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    const range = sel.getRangeAt(0);
+    if (range.startContainer.nodeType !== Node.TEXT_NODE) {
+      setSlashMenu(prev => prev.open ? { ...prev, open: false } : prev);
+      return;
+    }
+    const textBefore = range.startContainer.textContent.slice(0, range.startOffset);
+    const slashIdx = textBefore.lastIndexOf('/');
+    if (slashIdx !== -1 && (slashIdx === 0 || /[\s,("']/.test(textBefore[slashIdx - 1]))) {
+      const partial = textBefore.slice(slashIdx + 1);
+      if (!/[,)"'\n]/.test(partial)) {
+        const newFilter = partial.toLowerCase();
+        setSlashMenu(prev => ({ open: true, field: 'prompt', caretPos: 0, filter: newFilter, selectedIndex: prev.filter !== newFilter ? 0 : prev.selectedIndex }));
+        return;
+      }
+    }
+    setSlashMenu(prev => prev.open ? { ...prev, open: false, selectedIndex: 0 } : prev);
+  }, [htmlToPrompt]);
+
+  const insertColumnRefChip = useCallback((colName) => {
+    const el = promptEditorRef.current;
+    if (!el) return;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) {
+      // No selection - append chip at end
+      const chip = document.createElement('span');
+      chip.dataset.col = colName;
+      chip.contentEditable = 'false';
+      chip.className = 'inline-flex items-center h-[18px] px-1.5 mx-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[11px] font-medium border border-indigo-500/30 align-baseline whitespace-nowrap cursor-default';
+      chip.textContent = colName;
+      el.appendChild(chip);
+      const space = document.createTextNode(' ');
+      el.appendChild(space);
+    } else {
+      const range = sel.getRangeAt(0);
+      const node = range.startContainer;
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent;
+        const cursorPos = range.startOffset;
+        const before = text.slice(0, cursorPos);
+        const slashIdx = before.lastIndexOf('/');
+        if (slashIdx !== -1) {
+          const textBefore = text.slice(0, slashIdx);
+          const textAfter = text.slice(cursorPos);
+          const chip = document.createElement('span');
+          chip.dataset.col = colName;
+          chip.contentEditable = 'false';
+          chip.className = 'inline-flex items-center h-[18px] px-1.5 mx-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[11px] font-medium border border-indigo-500/30 align-baseline whitespace-nowrap cursor-default';
+          chip.textContent = colName;
+          const parent = node.parentNode;
+          const beforeNode = document.createTextNode(textBefore);
+          const afterNode = document.createTextNode(' ' + textAfter);
+          parent.insertBefore(beforeNode, node);
+          parent.insertBefore(chip, node);
+          parent.insertBefore(afterNode, node);
+          parent.removeChild(node);
+          const newRange = document.createRange();
+          newRange.setStart(afterNode, 1);
+          newRange.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(newRange);
+        }
+      }
+    }
+    const prompt = htmlToPrompt(el);
+    isPromptUserInput.current = true;
+    setColConfig(prev => ({ ...prev, prompt: prompt }));
+    setSlashMenu({ open: false, field: null, caretPos: 0, filter: '', selectedIndex: 0 });
+    el.focus();
+  }, [htmlToPrompt]);
+
+  const handlePromptEditorKeyDown = useCallback((e) => {
+    if (!slashMenu.open || slashMenu.field !== 'prompt') return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setSlashMenu(prev => ({ ...prev, open: false, selectedIndex: 0 }));
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSlashMenu(prev => ({ ...prev, selectedIndex: Math.min(prev.selectedIndex + 1, slashMenuColumns.length - 1) }));
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSlashMenu(prev => ({ ...prev, selectedIndex: Math.max(prev.selectedIndex - 1, 0) }));
+      return;
+    }
+    if ((e.key === 'Enter' || e.key === 'Tab') && slashMenuColumns.length > 0) {
+      e.preventDefault();
+      insertColumnRefChip(slashMenuColumns[slashMenu.selectedIndex]?.name || slashMenuColumns[0].name);
+      return;
+    }
+  }, [slashMenu, slashMenuColumns, insertColumnRefChip]);
+
+  const handlePromptEditorPaste = useCallback((e) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData('text/plain');
+    document.execCommand('insertText', false, text);
+  }, []);
+
+  // Sync contenteditable when prompt changes from outside (template click, etc.)
+  useEffect(() => {
+    if (isPromptUserInput.current) {
+      isPromptUserInput.current = false;
+      return;
+    }
+    const el = promptEditorRef.current;
+    if (el) {
+      el.innerHTML = promptToHtml(colConfig.prompt || '');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [colConfig.prompt]);
+
+  // Render preview with chips for resolved values
+  const renderPreviewWithChips = useCallback((template, rowId) => {
+    if (!template) return null;
+    const sortedCols = [...columns].sort((a, b) => b.name.length - a.name.length);
+    const escapedNames = sortedCols.map(c => c.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    if (escapedNames.length === 0) return template;
+    const regex = new RegExp(`/(${escapedNames.join('|')})(?=[\\s,.:;!?"'\\n)\\]]|$)`, 'gi');
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    while ((match = regex.exec(template)) !== null) {
+      if (match.index > lastIndex) parts.push(<span key={`t-${lastIndex}`}>{template.slice(lastIndex, match.index)}</span>);
+      const colName = match[1];
+      const col = columns.find(c => c.name.toLowerCase() === colName.toLowerCase());
+      const value = col ? (getCellRawValue(rowId, col) || colName) : colName;
+      parts.push(
+        <span key={`v-${match.index}`} className="inline-flex items-center px-1 py-0.5 mx-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px] font-medium border border-purple-500/30">
+          {String(value).slice(0, 60)}
+        </span>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < template.length) parts.push(<span key={`t-${lastIndex}`}>{template.slice(lastIndex)}</span>);
+    return parts.length > 0 ? parts : template;
+  }, [columns, getCellRawValue]);
 
   // Cell editing
   const [editingCell, setEditingCell] = useState(null); // { rowId, colId }
@@ -4817,22 +5011,26 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     </div>
                   </div>
 
-                  {/* Prompt */}
+                  {/* Prompt — contenteditable with chips */}
                   <div className="relative">
                     <Label className={rt('text-gray-700', 'text-zinc-300')}>Prompt</Label>
-                    <Textarea
-                      ref={promptRef}
-                      value={colConfig.prompt || ''}
-                      onChange={e => { setColConfig(prev => ({ ...prev, prompt: e.target.value })); handleSlashInput(e, 'prompt'); }}
-                      onKeyDown={e => handleSlashKeyDown(e, 'prompt')}
-                      placeholder={'Type / to insert a column reference\ne.g. Based on /Company and /Title, write a one-line pitch'}
-                      rows={3}
-                      className={rt('', 'bg-zinc-800 border-zinc-700 text-white')}
+                    <div
+                      ref={promptEditorRef}
+                      contentEditable
+                      suppressContentEditableWarning
+                      onInput={handlePromptEditorInput}
+                      onKeyDown={handlePromptEditorKeyDown}
+                      onPaste={handlePromptEditorPaste}
+                      data-placeholder="Type / to insert column references&#10;e.g. Based on /Company and /Title, write a one-line pitch"
+                      className={`min-h-[80px] max-h-[160px] overflow-y-auto w-full rounded-md border px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ring-offset-background ${rt(
+                        'border-input bg-white text-gray-900 [&:empty]:before:text-gray-400',
+                        'bg-zinc-800 border-zinc-700 text-white [&:empty]:before:text-zinc-500'
+                      )} [&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:whitespace-pre-wrap [&:empty]:before:pointer-events-none`}
                     />
                     {slashMenu.open && slashMenu.field === 'prompt' && slashMenuColumns.length > 0 && (
                       <div className={`absolute z-50 left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-lg border shadow-xl ${rt('border-gray-200 bg-white', 'border-zinc-700 bg-zinc-800')}`}>
                         {slashMenuColumns.map((c, idx) => (
-                          <button key={c.id} onClick={() => insertColumnRef(c.name)}
+                          <button key={c.id} onClick={() => insertColumnRefChip(c.name)}
                             className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 min-w-0 ${rt(
                               idx === slashMenu.selectedIndex ? 'bg-indigo-50 text-gray-900' : 'text-gray-700 hover:bg-gray-50',
                               idx === slashMenu.selectedIndex ? 'bg-zinc-600 text-white' : 'text-white hover:bg-zinc-700'
@@ -4976,8 +5174,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                         <Brain className="w-3 h-3 text-purple-400" />
                         <span className={`text-[10px] font-medium ${rt('text-gray-600', 'text-zinc-400')}`}>Preview (Row 1)</span>
                       </div>
-                      <p className={`text-[11px] ${rt('text-gray-700', 'text-zinc-300')} whitespace-pre-wrap break-words`}>
-                        {replaceColumnRefs(colConfig.prompt, rows[0]?.id)}
+                      <p className={`text-[11px] leading-relaxed ${rt('text-gray-700', 'text-zinc-300')} whitespace-pre-wrap break-words`}>
+                        {renderPreviewWithChips(colConfig.prompt, rows[0]?.id)}
                       </p>
                     </div>
                   )}
