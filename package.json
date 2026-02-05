@@ -56,7 +56,6 @@
     "@remotion/cli": "^4.0.414",
     "@remotion/google-fonts": "^4.0.414",
     "@remotion/player": "^4.0.414",
-    "@rollup/rollup-linux-arm64-gnu": "^4.57.1",
     "@supabase/supabase-js": "^2.49.1",
     "@tanstack/react-query": "^5.90.16",
     "@tanstack/react-virtual": "^3.13.18",
