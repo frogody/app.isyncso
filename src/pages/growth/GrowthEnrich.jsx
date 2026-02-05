@@ -2998,12 +2998,16 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   ))}
                 </div>
               ) : workspaces.length === 0 ? (
-                <RaiseEmptyState
-                  icon={<Table2 className="w-6 h-6" />}
-                  title="No workspaces yet"
-                  message="Create your first enrichment workspace to start enriching candidate data"
-                  action={{ label: 'Create Workspace', onClick: () => setCreateDialogOpen(true) }}
-                />
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center mb-4">
+                    <Table2 className="w-6 h-6 text-zinc-500" />
+                  </div>
+                  <h3 className="text-lg font-medium text-white mb-1">No workspaces yet</h3>
+                  <p className="text-sm text-zinc-400 mb-4 max-w-md">Create your first enrichment workspace to start enriching candidate data</p>
+                  <Button onClick={() => setCreateDialogOpen(true)} className="bg-indigo-600 hover:bg-indigo-500 text-white">
+                    Create Workspace
+                  </Button>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {workspaces.map((ws, idx) => (

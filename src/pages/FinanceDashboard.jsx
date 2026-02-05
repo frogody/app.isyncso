@@ -103,15 +103,15 @@ export default function FinanceDashboard() {
     try {
       const [plResult, tbResult, agingResult, entriesResult, billsResult] = await Promise.all([
         // P&L for the selected period
-        supabase.rpc('get_profit_loss', { p_company_id: companyId, p_start_date: dateRange.from, p_end_date: dateRange.to }).catch(() => ({ data: [] })),
+        supabase.rpc('get_profit_loss', { p_company_id: companyId, p_start_date: dateRange.from, p_end_date: dateRange.to }).then(r => r, () => ({ data: [] })),
         // Trial Balance as of today
-        supabase.rpc('get_trial_balance', { p_company_id: companyId, p_as_of_date: today }).catch(() => ({ data: [] })),
+        supabase.rpc('get_trial_balance', { p_company_id: companyId, p_as_of_date: today }).then(r => r, () => ({ data: [] })),
         // AP Aging
-        supabase.rpc('get_aged_payables', { p_company_id: companyId, p_as_of_date: today }).catch(() => ({ data: [] })),
+        supabase.rpc('get_aged_payables', { p_company_id: companyId, p_as_of_date: today }).then(r => r, () => ({ data: [] })),
         // Recent journal entries
-        db.entities.JournalEntry?.list?.({ limit: 10, sort_by: 'entry_date', sort_order: 'desc' }).catch(() => []),
+        Promise.resolve(db.entities.JournalEntry?.list?.({ limit: 10, sort_by: 'entry_date', sort_order: 'desc' })).catch(() => []),
         // Bills due in next 7 days
-        db.entities.Bill?.list?.({ limit: 10 }).catch(() => []),
+        Promise.resolve(db.entities.Bill?.list?.({ limit: 10 })).catch(() => []),
       ]);
 
       // Process P&L
