@@ -2766,7 +2766,7 @@ export default function GrowthEnrich() {
     while (pos !== -1) {
       if (pos > last) parts.push(<span key={`t${last}`}>{str.slice(last, pos)}</span>);
       parts.push(
-        <mark key={`m${pos}`} className="bg-orange-400/30 text-inherit rounded-sm px-px">{str.slice(pos, pos + term.length)}</mark>
+        <mark key={`m${pos}`} className="bg-indigo-400/30 text-inherit rounded-sm px-px">{str.slice(pos, pos + term.length)}</mark>
       );
       last = pos + term.length;
       pos = lower.indexOf(term, last);
@@ -3297,14 +3297,14 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                       <div
                         onClick={() => setActiveWorkspaceId(ws.id)}
                         className={rt(
-                          'p-5 rounded-2xl border border-gray-200 bg-white hover:border-orange-300 cursor-pointer transition-all group/card',
-                          'p-5 rounded-2xl border border-zinc-800/60 bg-zinc-900/50 hover:border-orange-500/40 cursor-pointer transition-all group/card'
+                          'p-5 rounded-2xl border border-gray-200 bg-white hover:border-indigo-300 cursor-pointer transition-all group/card',
+                          'p-5 rounded-2xl border border-zinc-800/60 bg-zinc-900/50 hover:border-indigo-500/40 cursor-pointer transition-all group/card'
                         )}
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                              <Sparkles className="w-4 h-4 text-orange-400" />
+                            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                              <Sparkles className="w-4 h-4 text-indigo-400" />
                             </div>
                             <h3 className={rt('text-sm font-semibold text-gray-900', 'text-sm font-semibold text-white')}>{ws.name}</h3>
                           </div>
@@ -3439,16 +3439,16 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   onBlur={saveWorkspaceName}
                   onKeyDown={e => { if (e.key === 'Enter') saveWorkspaceName(); if (e.key === 'Escape') { setWsName(workspace?.name || ''); setEditingName(false); }}}
                   className={rt(
-                    'text-sm font-semibold bg-transparent border-b border-orange-400 outline-none text-gray-900 px-1',
-                    'text-sm font-semibold bg-transparent border-b border-orange-400 outline-none text-white px-1'
+                    'text-sm font-semibold bg-transparent border-b border-indigo-400 outline-none text-gray-900 px-1',
+                    'text-sm font-semibold bg-transparent border-b border-indigo-400 outline-none text-white px-1'
                   )}
                 />
               ) : (
                 <div className="flex items-center gap-1.5 group/name cursor-pointer" onClick={() => setEditingName(true)}>
                   <h2
                     className={rt(
-                      'text-sm font-semibold text-gray-900 hover:text-orange-600',
-                      'text-sm font-semibold text-white hover:text-orange-400'
+                      'text-sm font-semibold text-gray-900 hover:text-indigo-600',
+                      'text-sm font-semibold text-white hover:text-indigo-400'
                     )}
                   >
                     {wsName}
@@ -3470,13 +3470,13 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   onClick={() => setViewDropdownOpen(prev => !prev)}
                   title={activeView ? activeView.name : 'Views'}
                   className={rt(
-                    `relative flex items-center gap-1 px-1.5 py-1 rounded-md text-[11px] font-medium border transition-all ${activeViewId ? 'bg-orange-50 text-orange-700 border-orange-200' : 'text-gray-500 hover:bg-gray-100 border-gray-200'}`,
-                    `relative flex items-center gap-1 px-1.5 py-1 rounded-md text-[11px] font-medium border transition-all ${activeViewId ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' : 'text-zinc-400 hover:bg-zinc-800 border-zinc-700'}`
+                    `relative flex items-center gap-1 px-1.5 py-1 rounded-md text-[11px] font-medium border transition-all ${activeViewId ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'text-gray-500 hover:bg-gray-100 border-gray-200'}`,
+                    `relative flex items-center gap-1 px-1.5 py-1 rounded-md text-[11px] font-medium border transition-all ${activeViewId ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30' : 'text-zinc-400 hover:bg-zinc-800 border-zinc-700'}`
                   )}
                 >
                   <Eye className="w-3 h-3" />
                   {activeView ? activeView.name : 'Views'}
-                  {viewHasUnsaved && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />}
+                  {viewHasUnsaved && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />}
                   <ChevronDown className={`w-2.5 h-2.5 transition-transform ${viewDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {viewDropdownOpen && (
@@ -3488,13 +3488,13 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     <button
                       onClick={() => switchView(null)}
                       className={rt(
-                        `w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${!activeViewId ? 'bg-orange-50 text-orange-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`,
-                        `w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${!activeViewId ? 'bg-orange-500/10 text-orange-400 font-medium' : 'text-zinc-300 hover:bg-zinc-800'}`
+                        `w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${!activeViewId ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`,
+                        `w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${!activeViewId ? 'bg-indigo-500/10 text-indigo-400 font-medium' : 'text-zinc-300 hover:bg-zinc-800'}`
                       )}
                     >
                       <Table2 className="w-3.5 h-3.5 flex-shrink-0" />
                       <span className="flex-1">Default View</span>
-                      {!activeViewId && <Check className="w-3.5 h-3.5 text-orange-400" />}
+                      {!activeViewId && <Check className="w-3.5 h-3.5 text-indigo-400" />}
                       <span className={rt('text-[10px] text-gray-400', 'text-[10px] text-zinc-500')}>Ctrl+0</span>
                     </button>
                     {views.length > 0 && (
@@ -3503,8 +3503,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                           <div
                             key={view.id}
                             className={rt(
-                              `flex items-center gap-2 px-3 py-2 text-xs transition-colors group ${activeViewId === view.id ? 'bg-orange-50 text-orange-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`,
-                              `flex items-center gap-2 px-3 py-2 text-xs transition-colors group ${activeViewId === view.id ? 'bg-orange-500/10 text-orange-400 font-medium' : 'text-zinc-300 hover:bg-zinc-800'}`
+                              `flex items-center gap-2 px-3 py-2 text-xs transition-colors group ${activeViewId === view.id ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`,
+                              `flex items-center gap-2 px-3 py-2 text-xs transition-colors group ${activeViewId === view.id ? 'bg-indigo-500/10 text-indigo-400 font-medium' : 'text-zinc-300 hover:bg-zinc-800'}`
                             )}
                           >
                             {view.is_default && <Star className="w-3 h-3 text-amber-400 fill-amber-400 flex-shrink-0" />}
@@ -3517,8 +3517,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                                 onBlur={() => renameView(view.id, viewRenameValue)}
                                 onKeyDown={e => { if (e.key === 'Enter') renameView(view.id, viewRenameValue); if (e.key === 'Escape') setViewRenamingId(null); }}
                                 className={rt(
-                                  'flex-1 bg-transparent border-b border-orange-400 outline-none text-xs px-0.5',
-                                  'flex-1 bg-transparent border-b border-orange-400 outline-none text-xs px-0.5 text-white'
+                                  'flex-1 bg-transparent border-b border-indigo-400 outline-none text-xs px-0.5',
+                                  'flex-1 bg-transparent border-b border-indigo-400 outline-none text-xs px-0.5 text-white'
                                 )}
                                 onClick={e => e.stopPropagation()}
                               />
@@ -3527,7 +3527,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                                 {view.name}
                               </button>
                             )}
-                            {activeViewId === view.id && <Check className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />}
+                            {activeViewId === view.id && <Check className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />}
                             {idx < 5 && <span className={rt('text-[10px] text-gray-400', 'text-[10px] text-zinc-500')}>Ctrl+{idx + 1}</span>}
                             {/* Hover actions */}
                             <div className="hidden group-hover:flex items-center gap-0.5 flex-shrink-0">
@@ -3570,8 +3570,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                         <button
                           onClick={() => { saveView(null, activeViewId); setViewDropdownOpen(false); }}
                           className={rt(
-                            'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-orange-600 hover:bg-orange-50 font-medium',
-                            'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-orange-400 hover:bg-orange-500/10 font-medium'
+                            'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-indigo-600 hover:bg-indigo-50 font-medium',
+                            'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-indigo-400 hover:bg-indigo-500/10 font-medium'
                           )}
                         >
                           <Save className="w-3.5 h-3.5" /> Save Changes
@@ -3606,8 +3606,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                 <button
                   onClick={() => saveView(null, activeViewId)}
                   className={rt(
-                    'flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-orange-600 bg-orange-50 border border-orange-200 hover:bg-orange-100 transition-colors',
-                    'flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-orange-400 bg-orange-500/10 border border-orange-500/30 hover:bg-orange-500/20 transition-colors'
+                    'flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-colors',
+                    'flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-indigo-400 bg-indigo-500/10 border border-indigo-500/30 hover:bg-indigo-500/20 transition-colors'
                   )}
                 >
                   <Save className="w-3 h-3" /> Save
@@ -3635,7 +3635,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               )}
               {/* Global search */}
               <div className="relative flex items-center">
-                <Search className={`absolute left-2.5 w-3.5 h-3.5 pointer-events-none transition-colors ${searchFocused || searchInput ? 'text-orange-400' : 'text-zinc-500'}`} />
+                <Search className={`absolute left-2.5 w-3.5 h-3.5 pointer-events-none transition-colors ${searchFocused || searchInput ? 'text-indigo-400' : 'text-zinc-500'}`} />
                 <input
                   ref={searchRef}
                   value={searchInput}
@@ -3645,8 +3645,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   onKeyDown={e => { if (e.key === 'Escape') clearSearch(); }}
                   placeholder="Search..."
                   className={rt(
-                    `pl-8 pr-8 py-1.5 text-xs rounded-lg border border-gray-200 bg-gray-50 outline-none transition-all placeholder:text-gray-400 text-gray-900 focus:border-orange-400 focus:ring-1 focus:ring-orange-400/30 ${searchFocused || searchInput ? 'w-64' : 'w-40'}`,
-                    `pl-8 pr-8 py-1.5 text-xs rounded-lg border border-zinc-700 bg-zinc-800/60 outline-none transition-all placeholder:text-zinc-500 text-white focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20 ${searchFocused || searchInput ? 'w-64' : 'w-40'}`
+                    `pl-8 pr-8 py-1.5 text-xs rounded-lg border border-gray-200 bg-gray-50 outline-none transition-all placeholder:text-gray-400 text-gray-900 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400/30 ${searchFocused || searchInput ? 'w-64' : 'w-40'}`,
+                    `pl-8 pr-8 py-1.5 text-xs rounded-lg border border-zinc-700 bg-zinc-800/60 outline-none transition-all placeholder:text-zinc-500 text-white focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 ${searchFocused || searchInput ? 'w-64' : 'w-40'}`
                   )}
                 />
                 {searchInput && (
@@ -3656,7 +3656,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                 )}
                 {searchMatchStats && (
                   <div className="absolute -bottom-5 left-0 whitespace-nowrap">
-                    <span className="text-[10px] text-orange-400/80">{searchMatchStats.cells} matches in {searchMatchStats.rows} rows</span>
+                    <span className="text-[10px] text-indigo-400/80">{searchMatchStats.cells} matches in {searchMatchStats.rows} rows</span>
                   </div>
                 )}
               </div>
@@ -3723,7 +3723,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               <Button variant="ghost" size="sm" onClick={() => { setSortPanelOpen(prev => !prev); setFilterPanelOpen(false); setColDialogOpen(false); }} className="relative flex-shrink-0" title="Sort columns">
                 <ArrowUpDown className="w-3.5 h-3.5 mr-1" /> Sort
                 {activeSortCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-orange-500 text-[10px] font-bold text-white flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-indigo-500 text-[10px] font-bold text-white flex items-center justify-center">
                     {activeSortCount}
                   </span>
                 )}
@@ -3731,7 +3731,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               <Button variant="ghost" size="sm" onClick={() => { setFilterPanelOpen(prev => !prev); setSortPanelOpen(false); setColDialogOpen(false); }} className="relative flex-shrink-0" title="Filter rows">
                 <Filter className="w-3.5 h-3.5 mr-1" /> Filters
                 {activeFilterCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-orange-500 text-[10px] font-bold text-white flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-indigo-500 text-[10px] font-bold text-white flex items-center justify-center">
                     {activeFilterCount}
                   </span>
                 )}
@@ -3811,7 +3811,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
         {/* Spreadsheet */}
         {wsLoading ? (
           <div className="flex-1 flex items-center justify-center">
-            <Loader2 className="w-6 h-6 text-orange-400 animate-spin" />
+            <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
           </div>
         ) : rows.length === 0 && columns.length === 0 ? (
           <div className="flex-1 flex items-center justify-center px-6">
@@ -3824,11 +3824,11 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   <button
                     onClick={importFromNest}
                     className={rt(
-                      'flex flex-col items-center gap-2 p-5 rounded-2xl border border-gray-200 bg-white hover:border-orange-300 transition-all w-44',
-                      'flex flex-col items-center gap-2 p-5 rounded-2xl border border-zinc-800/60 bg-zinc-900/50 hover:border-orange-500/40 transition-all w-44'
+                      'flex flex-col items-center gap-2 p-5 rounded-2xl border border-gray-200 bg-white hover:border-indigo-300 transition-all w-44',
+                      'flex flex-col items-center gap-2 p-5 rounded-2xl border border-zinc-800/60 bg-zinc-900/50 hover:border-indigo-500/40 transition-all w-44'
                     )}
                   >
-                    <Database className="w-5 h-5 text-orange-400" />
+                    <Database className="w-5 h-5 text-indigo-400" />
                     <span className={rt('text-xs font-medium text-gray-900', 'text-xs font-medium text-white')}>Import from Nest</span>
                     <span className="text-[10px] text-zinc-500">Pull candidates from linked nest</span>
                   </button>
@@ -3836,22 +3836,22 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                 <button
                   onClick={() => csvInputRef.current?.click()}
                   className={rt(
-                    'flex flex-col items-center gap-2 p-5 rounded-2xl border border-gray-200 bg-white hover:border-orange-300 transition-all w-44',
-                    'flex flex-col items-center gap-2 p-5 rounded-2xl border border-zinc-800/60 bg-zinc-900/50 hover:border-orange-500/40 transition-all w-44'
+                    'flex flex-col items-center gap-2 p-5 rounded-2xl border border-gray-200 bg-white hover:border-indigo-300 transition-all w-44',
+                    'flex flex-col items-center gap-2 p-5 rounded-2xl border border-zinc-800/60 bg-zinc-900/50 hover:border-indigo-500/40 transition-all w-44'
                   )}
                 >
-                  <FileUp className="w-5 h-5 text-orange-400" />
+                  <FileUp className="w-5 h-5 text-indigo-400" />
                   <span className={rt('text-xs font-medium text-gray-900', 'text-xs font-medium text-white')}>Upload CSV</span>
                   <span className="text-[10px] text-zinc-500">Import rows from a CSV file</span>
                 </button>
                 <button
                   onClick={() => { setColDialogOpen(true); setColType('field'); setColName(''); setColConfig({}); }}
                   className={rt(
-                    'flex flex-col items-center gap-2 p-5 rounded-2xl border border-gray-200 bg-white hover:border-orange-300 transition-all w-44',
-                    'flex flex-col items-center gap-2 p-5 rounded-2xl border border-zinc-800/60 bg-zinc-900/50 hover:border-orange-500/40 transition-all w-44'
+                    'flex flex-col items-center gap-2 p-5 rounded-2xl border border-gray-200 bg-white hover:border-indigo-300 transition-all w-44',
+                    'flex flex-col items-center gap-2 p-5 rounded-2xl border border-zinc-800/60 bg-zinc-900/50 hover:border-indigo-500/40 transition-all w-44'
                   )}
                 >
-                  <Plus className="w-5 h-5 text-orange-400" />
+                  <Plus className="w-5 h-5 text-indigo-400" />
                   <span className={rt('text-xs font-medium text-gray-900', 'text-xs font-medium text-white')}>Add Column</span>
                   <span className="text-[10px] text-zinc-500">Start building your schema</span>
                 </button>
@@ -3892,8 +3892,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   <div
                     key={col.id}
                     className={rt(
-                      `flex-shrink-0 flex flex-col justify-center px-2 text-xs font-medium border-r border-gray-200 relative group cursor-pointer select-none ${sortState ? 'text-orange-600 bg-orange-50/50' : 'text-gray-600'}`,
-                      `flex-shrink-0 flex flex-col justify-center px-2 text-xs font-medium border-r border-zinc-800/60 relative group cursor-pointer select-none ${sortState ? 'text-orange-400 bg-orange-500/5' : 'text-zinc-300'}`
+                      `flex-shrink-0 flex flex-col justify-center px-2 text-xs font-medium border-r border-gray-200 relative group cursor-pointer select-none ${sortState ? 'text-indigo-600 bg-indigo-50/50' : 'text-gray-600'}`,
+                      `flex-shrink-0 flex flex-col justify-center px-2 text-xs font-medium border-r border-zinc-800/60 relative group cursor-pointer select-none ${sortState ? 'text-indigo-400 bg-indigo-500/5' : 'text-zinc-300'}`
                     )}
                     style={{ width: col.width || DEFAULT_COL_WIDTH, height: ROW_HEIGHT }}
                     onClick={(e) => { if (!e.target.closest('[data-no-sort]')) toggleColumnSort(col.id, e.shiftKey); }}
@@ -3907,8 +3907,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                       {/* Sort indicator */}
                       {sortState ? (
                         <span className="flex items-center gap-0.5 flex-shrink-0">
-                          {sortState.direction === 'asc' ? <ArrowUp className="w-3 h-3 text-orange-400" /> : <ArrowDown className="w-3 h-3 text-orange-400" />}
-                          {sortState.isMulti && <span className="text-[9px] text-orange-400 font-bold">{sortState.priority}</span>}
+                          {sortState.direction === 'asc' ? <ArrowUp className="w-3 h-3 text-indigo-400" /> : <ArrowDown className="w-3 h-3 text-indigo-400" />}
+                          {sortState.isMulti && <span className="text-[9px] text-indigo-400 font-bold">{sortState.priority}</span>}
                         </span>
                       ) : (
                         <ArrowUpDown className="w-3 h-3 text-zinc-500 opacity-0 group-hover:opacity-50 transition-opacity flex-shrink-0" />
@@ -3962,7 +3962,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     <div
                       data-no-sort
                       onMouseDown={(e) => onResizeStart(e, col)}
-                      className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-orange-500/50 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-indigo-500/50 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                     />
                   </div>
                 );
@@ -4156,8 +4156,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     onDoubleClick={() => { setRenamingTabId(table.id); setRenameTabValue(table.name); }}
                     onContextMenu={(e) => { e.preventDefault(); setTabContextMenu({ tableId: table.id, x: e.clientX, y: e.clientY }); }}
                     className={rt(
-                      `relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-t-lg transition-all whitespace-nowrap ${isActive ? 'text-orange-600 bg-orange-50 border-b-2 border-orange-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`,
-                      `relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-t-lg transition-all whitespace-nowrap ${isActive ? 'text-orange-400 bg-orange-500/10 border-b-2 border-orange-500' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'}`
+                      `relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-t-lg transition-all whitespace-nowrap ${isActive ? 'text-indigo-600 bg-indigo-50 border-b-2 border-indigo-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`,
+                      `relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-t-lg transition-all whitespace-nowrap ${isActive ? 'text-indigo-400 bg-indigo-500/10 border-b-2 border-indigo-500' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'}`
                     )}
                   >
                     {renamingTabId === table.id ? (
@@ -4168,7 +4168,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                         onBlur={() => { renameTable(table.id, renameTabValue); setRenamingTabId(null); }}
                         onKeyDown={e => { if (e.key === 'Enter') { renameTable(table.id, renameTabValue); setRenamingTabId(null); } if (e.key === 'Escape') setRenamingTabId(null); }}
                         onClick={e => e.stopPropagation()}
-                        className={`bg-transparent border-b outline-none text-xs w-20 ${rt('border-orange-400 text-gray-900', 'border-orange-400 text-white')}`}
+                        className={`bg-transparent border-b outline-none text-xs w-20 ${rt('border-indigo-400 text-gray-900', 'border-indigo-400 text-white')}`}
                       />
                     ) : (
                       <>
@@ -4183,8 +4183,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               <button
                 onClick={createNewTable}
                 className={rt(
-                  'flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-400 hover:text-orange-600 hover:bg-gray-50 rounded-lg transition-colors whitespace-nowrap',
-                  'flex items-center gap-1 px-2.5 py-1.5 text-xs text-zinc-600 hover:text-orange-400 hover:bg-zinc-800 rounded-lg transition-colors whitespace-nowrap'
+                  'flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-400 hover:text-indigo-600 hover:bg-gray-50 rounded-lg transition-colors whitespace-nowrap',
+                  'flex items-center gap-1 px-2.5 py-1.5 text-xs text-zinc-600 hover:text-indigo-400 hover:bg-zinc-800 rounded-lg transition-colors whitespace-nowrap'
                 )}
                 title="New Table (Ctrl+T)"
               >
@@ -4239,7 +4239,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                 'flex items-center justify-between px-4 py-3 border-b border-zinc-800'
               )}>
                 <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-orange-400" />
+                  <Filter className="w-4 h-4 text-indigo-400" />
                   <span className={rt('text-sm font-semibold text-gray-900', 'text-sm font-semibold text-white')}>Filters</span>
                   {activeFilterCount > 0 && (
                     <RaiseBadge className="text-[10px]">{activeFilterCount} active</RaiseBadge>
@@ -4397,7 +4397,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                 'flex items-center justify-between px-4 py-3 border-b border-zinc-800'
               )}>
                 <div className="flex items-center gap-2">
-                  <ArrowUpDown className="w-4 h-4 text-orange-400" />
+                  <ArrowUpDown className="w-4 h-4 text-indigo-400" />
                   <span className={rt('text-sm font-semibold text-gray-900', 'text-sm font-semibold text-white')}>Sort</span>
                   {activeSortCount > 0 && (
                     <RaiseBadge className="text-[10px]">{activeSortCount} active</RaiseBadge>
@@ -4427,8 +4427,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                         onDragOver={(e) => handleSortDragOver(e, idx)}
                         onDragEnd={handleSortDragEnd}
                         className={rt(
-                          `p-3 rounded-xl border bg-gray-50 space-y-2 transition-all ${dragSort === idx ? 'border-orange-400 opacity-70' : 'border-gray-200'}`,
-                          `p-3 rounded-xl border bg-zinc-900/60 space-y-2 transition-all ${dragSort === idx ? 'border-orange-500 opacity-70' : 'border-zinc-800'}`
+                          `p-3 rounded-xl border bg-gray-50 space-y-2 transition-all ${dragSort === idx ? 'border-indigo-400 opacity-70' : 'border-gray-200'}`,
+                          `p-3 rounded-xl border bg-zinc-900/60 space-y-2 transition-all ${dragSort === idx ? 'border-indigo-500 opacity-70' : 'border-zinc-800'}`
                         )}
                       >
                         <div className="flex items-center justify-between">
@@ -4457,7 +4457,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                             onClick={() => updateSort(sort.id, { direction: 'asc' })}
                             className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
                               sort.direction === 'asc'
-                                ? rt('bg-orange-100 text-orange-600 border border-orange-300', 'bg-orange-500/15 text-orange-400 border border-orange-500/40')
+                                ? rt('bg-indigo-100 text-indigo-600 border border-indigo-300', 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/40')
                                 : rt('bg-gray-100 text-gray-500 border border-gray-200', 'bg-zinc-800 text-zinc-500 border border-zinc-700')
                             }`}
                           >
@@ -4467,7 +4467,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                             onClick={() => updateSort(sort.id, { direction: 'desc' })}
                             className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
                               sort.direction === 'desc'
-                                ? rt('bg-orange-100 text-orange-600 border border-orange-300', 'bg-orange-500/15 text-orange-400 border border-orange-500/40')
+                                ? rt('bg-indigo-100 text-indigo-600 border border-indigo-300', 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/40')
                                 : rt('bg-gray-100 text-gray-500 border border-gray-200', 'bg-zinc-800 text-zinc-500 border border-zinc-700')
                             }`}
                           >
@@ -4574,7 +4574,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               {/* Header */}
               <div className={`flex items-center justify-between px-4 py-3 border-b ${rt('border-gray-200', 'border-zinc-800')}`}>
                 <div className="flex items-center gap-2">
-                  <Plus className="w-4 h-4 text-orange-400" />
+                  <Plus className="w-4 h-4 text-indigo-400" />
                   <h3 className={`text-sm font-semibold ${rt('text-gray-900', 'text-white')}`}>Add Column</h3>
                 </div>
                 <button onClick={() => setColDialogOpen(false)} className={`p-1.5 rounded-lg transition-colors ${rt('hover:bg-gray-100 text-gray-400', 'hover:bg-zinc-800 text-zinc-500')}`}>
@@ -4606,11 +4606,11 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                         onClick={() => { setColType(ct.value); setColConfig({}); }}
                         className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all ${
                           colType === ct.value
-                            ? rt('border-orange-400 bg-orange-50', 'border-orange-500/50 bg-orange-500/10')
+                            ? rt('border-indigo-400 bg-indigo-50', 'border-indigo-500/50 bg-indigo-500/10')
                             : rt('border-gray-200 hover:border-gray-300', 'border-zinc-700 hover:border-zinc-600')
                         }`}
                       >
-                        <CTIcon className={`w-4 h-4 ${colType === ct.value ? 'text-orange-400' : 'text-zinc-500'}`} />
+                        <CTIcon className={`w-4 h-4 ${colType === ct.value ? 'text-indigo-400' : 'text-zinc-500'}`} />
                         <div>
                           <div className={rt('text-xs font-medium text-gray-900', 'text-xs font-medium text-white')}>{ct.label}</div>
                           <div className="text-[10px] text-zinc-500">{ct.desc}</div>
@@ -4649,12 +4649,12 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                             onClick={() => setColConfig(prev => ({ ...prev, data_type: dt.value }))}
                             className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-center transition-all ${
                               selected
-                                ? rt('border-orange-400 bg-orange-50', 'border-orange-500/50 bg-orange-500/10')
+                                ? rt('border-indigo-400 bg-indigo-50', 'border-indigo-500/50 bg-indigo-500/10')
                                 : rt('border-gray-200 hover:border-gray-300', 'border-zinc-700 hover:border-zinc-600')
                             }`}
                           >
-                            <DTIcon className={`w-3.5 h-3.5 ${selected ? 'text-orange-400' : 'text-zinc-500'}`} />
-                            <span className={`text-[10px] ${selected ? rt('text-orange-600', 'text-orange-400') : 'text-zinc-500'}`}>{dt.label}</span>
+                            <DTIcon className={`w-3.5 h-3.5 ${selected ? 'text-indigo-400' : 'text-zinc-500'}`} />
+                            <span className={`text-[10px] ${selected ? rt('text-indigo-600', 'text-indigo-400') : 'text-zinc-500'}`}>{dt.label}</span>
                           </button>
                         );
                       })}
@@ -4707,7 +4707,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                         <Label className={`text-[11px] ${rt('text-gray-600', 'text-zinc-400')}`}>Symbol Position</Label>
                         <div className="flex gap-2 mt-1">
                           {['before', 'after'].map(pos => (
-                            <button key={pos} onClick={() => setColConfig(prev => ({ ...prev, symbol_position: pos }))} className={`text-xs px-3 py-1 rounded-lg border ${(colConfig.symbol_position || 'before') === pos ? rt('border-orange-400 bg-orange-50 text-orange-600', 'border-orange-500/50 bg-orange-500/10 text-orange-400') : rt('border-gray-200 text-gray-500', 'border-zinc-700 text-zinc-500')}`}>
+                            <button key={pos} onClick={() => setColConfig(prev => ({ ...prev, symbol_position: pos }))} className={`text-xs px-3 py-1 rounded-lg border ${(colConfig.symbol_position || 'before') === pos ? rt('border-indigo-400 bg-indigo-50 text-indigo-600', 'border-indigo-500/50 bg-indigo-500/10 text-indigo-400') : rt('border-gray-200 text-gray-500', 'border-zinc-700 text-zinc-500')}`}>
                               {pos === 'before' ? `${(CURRENCY_CODES.find(c => c.value === (colConfig.currency_code || 'USD'))?.symbol || '$')}100` : `100 ${CURRENCY_CODES.find(c => c.value === (colConfig.currency_code || 'USD'))?.symbol || '$'}`}
                             </button>
                           ))}
@@ -4878,7 +4878,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                             input_columns: selected ? (prev.input_columns || []).filter(id => id !== c.id) : [...(prev.input_columns || []), c.id],
                           }))}
                             className={`text-[10px] px-2 py-1 rounded-full border transition-all ${selected
-                              ? rt('border-orange-400 bg-orange-50 text-orange-600', 'border-orange-500/50 bg-orange-500/10 text-orange-400')
+                              ? rt('border-indigo-400 bg-indigo-50 text-indigo-600', 'border-indigo-500/50 bg-indigo-500/10 text-indigo-400')
                               : rt('border-gray-200 text-gray-500', 'border-zinc-700 text-zinc-500')}`}>
                             {c.name}
                           </button>
@@ -5234,7 +5234,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                                 return { ...prev, source_columns: arr };
                               });
                             }}
-                            className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full cursor-grab active:cursor-grabbing ${rt('bg-orange-50 text-orange-700 border border-orange-200', 'bg-orange-500/10 text-orange-400 border border-orange-500/30')}`}
+                            className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full cursor-grab active:cursor-grabbing ${rt('bg-indigo-50 text-indigo-700 border border-indigo-200', 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30')}`}
                           >
                             <GripVertical className="w-2.5 h-2.5 opacity-50" />
                             {srcCol.name}
@@ -5339,7 +5339,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                           return (
                             <span key={cid}>
                               {i > 0 && <span className="text-indigo-400 font-mono mx-0.5">{colConfig.output_format === 'bulleted' ? ' • ' : (colConfig.separator ?? ', ')}</span>}
-                              <span className="text-orange-400 font-mono">/{srcCol?.name || '?'}</span>
+                              <span className="text-indigo-400 font-mono">/{srcCol?.name || '?'}</span>
                             </span>
                           );
                         })}
@@ -5714,7 +5714,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
           <DialogContent className={rt('bg-white max-w-sm', 'bg-zinc-900 border-zinc-800 max-w-sm')}>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Eye className="w-5 h-5 text-orange-400" />
+                <Eye className="w-5 h-5 text-indigo-400" />
                 <span className={rt('text-gray-900', 'text-zinc-100')}>Save View</span>
               </DialogTitle>
             </DialogHeader>
@@ -5744,7 +5744,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               <button
                 onClick={() => { saveView(viewSaveName.trim()); setViewSaveDialogOpen(false); }}
                 disabled={!viewSaveName.trim()}
-                className="px-3 py-1.5 rounded-lg text-sm bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-40"
+                className="px-3 py-1.5 rounded-lg text-sm bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40"
               >
                 Save View
               </button>
