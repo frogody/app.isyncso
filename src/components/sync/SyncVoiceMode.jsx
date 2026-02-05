@@ -1,9 +1,8 @@
 /**
- * SyncVoiceMode v3 — Fast voice conversation
+ * SyncVoiceMode v4 — Fast voice with natural Orpheus TTS
  *
- * No acknowledgments, no server-side TTS.
- * Uses browser speechSynthesis for instant spoken output.
- * Edge function returns text only — no audio encoding/download.
+ * No acknowledgments. Direct LLM call + server-side Orpheus TTS.
+ * Shows text immediately, plays audio when it arrives.
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -17,7 +16,6 @@ import SyncAvatarMini from '@/components/icons/SyncAvatarMini';
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const hasSpeechRecognition = !!SpeechRecognition;
-const synth = window.speechSynthesis;
 
 const STATES = {
   IDLE: 'idle',
@@ -42,33 +40,60 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
   const recognitionRef = useRef(null);
   const processRef = useRef(null);
   const abortRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const audioSourceRef = useRef(null);
 
   const isListening = state === STATES.LISTENING;
   const isSpeaking = state === STATES.SPEAKING;
   const isProcessing = state === STATES.PROCESSING;
   const isBusy = isSpeaking || isProcessing;
 
-  // Speak text using browser speech synthesis
-  const speak = useCallback((text, onDone) => {
-    if (isMuted || !text) {
+  // Init audio context on open
+  useEffect(() => {
+    if (isOpen && !audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return () => {
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close();
+        audioCtxRef.current = null;
+      }
+    };
+  }, [isOpen]);
+
+  // Play base64 audio
+  const playAudio = useCallback(async (base64, onDone) => {
+    if (!audioCtxRef.current || isMuted || !base64) {
       onDone?.();
       return;
     }
-    synth.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.05;
-    utterance.pitch = 1;
-    utterance.onend = () => onDone?.();
-    utterance.onerror = () => onDone?.();
-    synth.speak(utterance);
+    try {
+      if (audioCtxRef.current.state === 'suspended') await audioCtxRef.current.resume();
+      const bin = atob(base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const buffer = await audioCtxRef.current.decodeAudioData(bytes.buffer.slice(0));
+      const source = audioCtxRef.current.createBufferSource();
+      source.buffer = buffer;
+      source.connect(audioCtxRef.current.destination);
+      audioSourceRef.current = source;
+      source.onended = () => { audioSourceRef.current = null; onDone?.(); };
+      source.start(0);
+    } catch (e) {
+      console.error('[Voice] Audio error:', e);
+      audioSourceRef.current = null;
+      onDone?.();
+    }
   }, [isMuted]);
 
-  // Stop speaking
-  const stopSpeaking = useCallback(() => {
-    synth.cancel();
+  const stopAudio = useCallback(() => {
+    if (audioSourceRef.current) {
+      try { audioSourceRef.current.stop(); } catch (_) {}
+      audioSourceRef.current = null;
+    }
   }, []);
 
-  // Process user input — call edge function, speak result
+  // Process user input
   const processInput = useCallback(async (text) => {
     if (!text) return;
 
@@ -77,7 +102,6 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
     setState(STATES.PROCESSING);
     syncState.setMood('thinking');
 
-    // Stop recognition while processing
     if (recognitionRef.current) {
       try { recognitionRef.current.stop(); } catch (_) {}
     }
@@ -99,7 +123,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
           body: JSON.stringify({
             message: text,
             history: history.slice(-6),
-            skipTTS: true,
+            userId: user?.id,
           }),
         },
       );
@@ -111,19 +135,23 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
       setLatency(ms);
 
       const reply = data.response || data.text || '';
-      console.log(`[Voice] Got reply in ${ms}ms: "${reply.substring(0, 60)}"`);
+      console.log(`[Voice] Reply in ${ms}ms: "${reply.substring(0, 60)}"`);
 
       setHistory(prev => [...prev, { role: 'user', content: text }, { role: 'assistant', content: reply }].slice(-10));
       setLastResponse(reply);
 
-      // Speak it via browser TTS
-      setState(STATES.SPEAKING);
-      syncState.setMood('speaking');
-
-      speak(reply, () => {
+      // Play Orpheus TTS audio if available, otherwise just show text
+      if (data.audio && !isMuted) {
+        setState(STATES.SPEAKING);
+        syncState.setMood('speaking');
+        playAudio(data.audio, () => {
+          setState(STATES.IDLE);
+          syncState.setMood('listening');
+        });
+      } else {
         setState(STATES.IDLE);
         syncState.setMood('listening');
-      });
+      }
 
     } catch (err) {
       if (err.name === 'AbortError') return;
@@ -132,9 +160,8 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
       setState(STATES.IDLE);
       syncState.setMood('listening');
     }
-  }, [history, speak, syncState]);
+  }, [history, playAudio, isMuted, syncState]);
 
-  // Keep processRef current
   useEffect(() => { processRef.current = processInput; }, [processInput]);
 
   // Toggle mic
@@ -149,7 +176,6 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
     if (state !== STATES.IDLE) return;
     setError(null);
 
-    // Get mic permission
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach(t => t.stop());
@@ -203,7 +229,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
     if (!isOpen) {
       if (recognitionRef.current) try { recognitionRef.current.abort(); } catch (_) {}
       if (abortRef.current) abortRef.current.abort();
-      stopSpeaking();
+      stopAudio();
       setState(STATES.IDLE);
       setTranscript('');
       setLastResponse('');
@@ -211,9 +237,8 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
       setLatency(null);
       setHistory([]);
     }
-  }, [isOpen, stopSpeaking]);
+  }, [isOpen, stopAudio]);
 
-  // Set initial state
   useEffect(() => {
     if (isOpen) {
       setState(STATES.IDLE);
@@ -221,7 +246,6 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
     }
   }, [isOpen, syncState]);
 
-  // Cleanup recognition on unmount
   useEffect(() => {
     return () => {
       if (recognitionRef.current) try { recognitionRef.current.abort(); } catch (_) {}
@@ -233,13 +257,11 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className={`fixed inset-0 z-50 ${syt('bg-white/80', 'bg-black/80')} backdrop-blur-sm flex items-center justify-center`}
           >
             <div className={`${syt('bg-white', 'bg-zinc-900')} border ${syt('border-slate-300', 'border-zinc-700')} rounded-2xl p-6 max-w-sm text-center`}>
-              <p className={`${syt('text-slate-900', 'text-white')} mb-4`}>Voice mode requires a browser with Speech Recognition support.</p>
+              <p className={`${syt('text-slate-900', 'text-white')} mb-4`}>Voice mode requires Speech Recognition support.</p>
               <button onClick={onClose} className={`px-4 py-2 ${syt('bg-slate-100', 'bg-zinc-800')} ${syt('text-slate-900', 'text-white')} rounded-lg`}>Close</button>
             </div>
           </motion.div>
@@ -254,9 +276,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           className={`fixed inset-0 z-50 ${syt('bg-white/90', 'bg-black/90')} backdrop-blur-md flex flex-col items-center justify-center`}
         >
           {/* Top controls */}
@@ -267,31 +287,21 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
                 <span className="text-green-400">{latency}ms</span>
               </div>
             )}
-            <button
-              onClick={onSwitchToChat}
-              className={`p-3 rounded-full ${syt('bg-slate-50', 'bg-zinc-800/50')} ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:text-slate-900', 'hover:text-white')} transition-colors`}
-              title="Switch to chat"
-            >
+            <button onClick={onSwitchToChat} className={`p-3 rounded-full ${syt('bg-slate-50', 'bg-zinc-800/50')} ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:text-slate-900', 'hover:text-white')} transition-colors`} title="Switch to chat">
               <MessageSquare className="w-5 h-5" />
             </button>
             <button
-              onClick={() => setIsMuted(m => !m)}
-              className={cn(
-                "p-3 rounded-full transition-colors",
-                isMuted ? "bg-red-500/20 text-red-400" : `${syt('bg-slate-50', 'bg-zinc-800/50')} ${syt('text-slate-500', 'text-zinc-400')}`
-              )}
+              onClick={() => { setIsMuted(m => !m); stopAudio(); }}
+              className={cn("p-3 rounded-full transition-colors", isMuted ? "bg-red-500/20 text-red-400" : `${syt('bg-slate-50', 'bg-zinc-800/50')} ${syt('text-slate-500', 'text-zinc-400')}`)}
             >
               {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
             </button>
-            <button
-              onClick={onClose}
-              className={`p-3 rounded-full ${syt('bg-slate-50', 'bg-zinc-800/50')} ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:text-slate-900', 'hover:text-white')} transition-colors`}
-            >
+            <button onClick={onClose} className={`p-3 rounded-full ${syt('bg-slate-50', 'bg-zinc-800/50')} ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:text-slate-900', 'hover:text-white')} transition-colors`}>
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Brand badge */}
+          {/* Brand */}
           <div className="absolute top-6 left-6">
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${syt('bg-slate-100/50', 'bg-zinc-800/30')} text-xs ${syt('text-slate-400', 'text-zinc-500')}`}>
               <span>SYNC</span>
@@ -299,25 +309,17 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
             </div>
           </div>
 
-          {/* Main content */}
+          {/* Main */}
           <div className="flex flex-col items-center gap-8">
             <motion.div
-              animate={{
-                scale: isSpeaking ? [1, 1.08, 1] : isProcessing ? [1, 1.02, 1] : isListening ? [1, 1.03, 1] : 1,
-              }}
-              transition={{
-                duration: isSpeaking ? 0.3 : isProcessing ? 0.8 : 2,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }}
+              animate={{ scale: isSpeaking ? [1, 1.08, 1] : isProcessing ? [1, 1.02, 1] : isListening ? [1, 1.03, 1] : 1 }}
+              transition={{ duration: isSpeaking ? 0.3 : isProcessing ? 0.8 : 2, repeat: Infinity, ease: 'easeInOut' }}
             >
               <SyncAvatarMini size={180} />
             </motion.div>
 
             <div className="text-center space-y-2">
-              <h2 className={`text-2xl font-semibold ${syt('text-slate-900', 'text-white')}`}>
-                {statusText}
-              </h2>
+              <h2 className={`text-2xl font-semibold ${syt('text-slate-900', 'text-white')}`}>{statusText}</h2>
               {error && <p className="text-red-400 text-sm">{error}</p>}
             </div>
 
@@ -335,12 +337,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
               {isProcessing && (
                 <motion.div className="flex justify-center gap-1" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   {[0, 1, 2].map(i => (
-                    <motion.div
-                      key={i}
-                      className="w-2 h-2 bg-purple-500 rounded-full"
-                      animate={{ y: [0, -8, 0] }}
-                      transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
-                    />
+                    <motion.div key={i} className="w-2 h-2 bg-purple-500 rounded-full" animate={{ y: [0, -8, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }} />
                   ))}
                 </motion.div>
               )}
@@ -351,10 +348,8 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
               whileTap={{ scale: 0.95 }}
               className={cn(
                 "w-20 h-20 rounded-full flex items-center justify-center transition-all",
-                isListening
-                  ? "bg-purple-500 text-white shadow-[0_0_30px_rgba(168,85,247,0.5)]"
-                  : isBusy
-                  ? "bg-purple-500/30 text-purple-300 cursor-not-allowed"
+                isListening ? "bg-purple-500 text-white shadow-[0_0_30px_rgba(168,85,247,0.5)]"
+                  : isBusy ? "bg-purple-500/30 text-purple-300 cursor-not-allowed"
                   : `${syt('bg-slate-100', 'bg-zinc-800')} ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:bg-slate-200', 'hover:bg-zinc-700')}`
               )}
               disabled={isBusy}
