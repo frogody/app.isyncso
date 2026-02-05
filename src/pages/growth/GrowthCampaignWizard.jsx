@@ -78,11 +78,11 @@ const STEPS = [
 
 // Options for selects
 const PRICE_RANGES = [
-  { value: 'under_1k', label: 'Under $1,000' },
-  { value: '1k_10k', label: '$1,000 - $10,000' },
-  { value: '10k_50k', label: '$10,000 - $50,000' },
-  { value: '50k_100k', label: '$50,000 - $100,000' },
-  { value: 'over_100k', label: '$100,000+' },
+  { value: 'under_1k', label: 'Under €1,000' },
+  { value: '1k_10k', label: '€1,000 - €10,000' },
+  { value: '10k_50k', label: '€10,000 - €50,000' },
+  { value: '50k_100k', label: '€50,000 - €100,000' },
+  { value: 'over_100k', label: '€100,000+' },
 ];
 
 const SALES_CYCLES = [
@@ -116,11 +116,11 @@ const COMPANY_SIZES = [
 ];
 
 const REVENUE_RANGES = [
-  { value: 'under_1m', label: 'Under $1M' },
-  { value: '1m_10m', label: '$1M - $10M' },
-  { value: '10m_50m', label: '$10M - $50M' },
-  { value: '50m_100m', label: '$50M - $100M' },
-  { value: 'over_100m', label: '$100M+' },
+  { value: 'under_1m', label: 'Under €1M' },
+  { value: '1m_10m', label: '€1M - €10M' },
+  { value: '10m_50m', label: '€10M - €50M' },
+  { value: '50m_100m', label: '€50M - €100M' },
+  { value: 'over_100m', label: '€100M+' },
 ];
 
 const REGIONS = [
