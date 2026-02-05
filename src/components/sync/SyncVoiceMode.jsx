@@ -124,6 +124,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
             message: text,
             history: history.slice(-6),
             userId: user?.id,
+            companyId: user?.company_id,
           }),
         },
       );

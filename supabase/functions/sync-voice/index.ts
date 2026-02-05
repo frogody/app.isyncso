@@ -1,11 +1,11 @@
 /**
- * SYNC Voice API v4 — Direct LLM + TTS + Persistent Memory
+ * SYNC Voice API v5 — Fast voice + background actions + persistent memory
  *
- * Calls Together.ai LLM directly with a voice-optimized prompt,
- * generates TTS audio, and persists conversation to sync_sessions.
- * Loads past conversation context so voice remembers across sessions.
+ * Two-path architecture:
+ * 1. FAST PATH (all messages): Direct LLM → TTS → respond in 2-4s
+ * 2. ACTION PATH (when needed): /sync fires in background for real execution
  *
- * Target latency: 2-4 seconds total.
+ * Every response feels instant. Actions execute asynchronously.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -19,13 +19,14 @@ const corsHeaders = {
 const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || '';
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 // =============================================================================
-// VOICE SYSTEM PROMPT — kept minimal for speed
+// VOICE SYSTEM PROMPT
 // =============================================================================
 
-const VOICE_SYSTEM_PROMPT = `You are SYNC, a friendly AI assistant for a business platform called iSyncSO. You're in a real-time voice conversation.
+const VOICE_SYSTEM_PROMPT = `You are SYNC, a voice assistant for iSyncSO. You're in a real-time voice conversation.
 
 RULES:
 - Reply in 1-2 short sentences max. Think "phone call", not "email".
@@ -35,28 +36,60 @@ RULES:
 - Be warm, natural, and conversational — like a smart colleague.
 - If asked a greeting, just greet back naturally.
 - Numbers spoken naturally: "about twelve hundred" not "1,247".
-- Ask follow-up questions to keep the conversation flowing.`;
+- Ask follow-up questions to keep the conversation flowing.
+
+ACCURACY:
+- NEVER invent or fabricate company names, emails, people, numbers, or data.
+- Only reference information explicitly mentioned in the conversation.
+- If you don't know something, say so honestly.
+
+ACTIONS:
+- You CAN perform business actions like sending emails, creating invoices, looking up data, managing tasks, and more.
+- When the user asks you to do something, confirm briefly and naturally, like "Sure, I'll create that invoice for you now" or "Got it, looking that up".
+- Keep the confirmation short — the action happens in the background.`;
 
 // =============================================================================
-// SESSION MEMORY — load past context, save new messages
+// ACTION DETECTION — keyword-based, zero latency
+// =============================================================================
+
+const ACTION_VERBS = [
+  'send', 'create', 'make', 'add', 'delete', 'remove', 'update', 'change',
+  'look up', 'lookup', 'find', 'search', 'check', 'show me', 'list',
+  'schedule', 'assign', 'complete', 'generate', 'set up', 'configure',
+  'connect', 'move', 'mark', 'cancel', 'approve', 'reject', 'invite',
+];
+
+const ACTION_NOUNS = [
+  'invoice', 'email', 'task', 'proposal', 'expense', 'product', 'team',
+  'campaign', 'prospect', 'client', 'contact', 'message', 'meeting',
+  'report', 'image', 'course', 'conversation', 'pipeline',
+];
+
+function isActionRequest(msg: string): boolean {
+  const lower = msg.toLowerCase();
+  const hasVerb = ACTION_VERBS.some(v => lower.includes(v));
+  const hasNoun = ACTION_NOUNS.some(n => lower.includes(n));
+  // Need both an action verb AND a business noun to trigger action path
+  return hasVerb && hasNoun;
+}
+
+// =============================================================================
+// SESSION MEMORY
 // =============================================================================
 
 const VOICE_SESSION_PREFIX = 'voice_';
 
-/** Get or create a voice session for this user */
 async function getVoiceSession(userId: string): Promise<{
   sessionId: string;
   messages: Array<{ role: string; content: string }>;
   summary: string | null;
 }> {
-  // Look for the most recent voice session for this user
+  const sessionId = `${VOICE_SESSION_PREFIX}${userId}`;
+
   const { data: existing } = await supabase
     .from('sync_sessions')
     .select('session_id, messages, conversation_summary')
-    .eq('user_id', userId)
-    .like('session_id', `${VOICE_SESSION_PREFIX}%`)
-    .order('last_activity', { ascending: false })
-    .limit(1)
+    .eq('session_id', sessionId)
     .single();
 
   if (existing) {
@@ -67,8 +100,6 @@ async function getVoiceSession(userId: string): Promise<{
     };
   }
 
-  // Create a new voice session
-  const sessionId = `${VOICE_SESSION_PREFIX}${userId.substring(0, 8)}`;
   const { error } = await supabase
     .from('sync_sessions')
     .insert({
@@ -86,11 +117,8 @@ async function getVoiceSession(userId: string): Promise<{
   return { sessionId, messages: [], summary: null };
 }
 
-/** Save new messages to the session (fire-and-forget, don't block response) */
-function saveToSession(sessionId: string, userMsg: string, assistantMsg: string, allMessages: Array<{ role: string; content: string }>) {
-  // Keep only last 20 messages in the buffer
+function saveToSession(sessionId: string, allMessages: Array<{ role: string; content: string }>) {
   const trimmed = allMessages.slice(-20);
-
   supabase
     .from('sync_sessions')
     .update({
@@ -102,8 +130,60 @@ function saveToSession(sessionId: string, userMsg: string, assistantMsg: string,
     .eq('session_id', sessionId)
     .then(({ error }) => {
       if (error) console.error('[sync-voice] Session save error:', error.message);
-      else console.log(`[sync-voice] Saved ${trimmed.length} messages to ${sessionId}`);
     });
+}
+
+// =============================================================================
+// BACKGROUND ACTION — fire /sync and save result to session
+// =============================================================================
+
+function fireBackgroundAction(
+  message: string,
+  userId: string,
+  companyId: string | undefined,
+  sessionId: string,
+  sessionMessages: Array<{ role: string; content: string }>,
+) {
+  // Fire and forget — don't await
+  (async () => {
+    try {
+      console.log(`[sync-voice] Background action: "${message.substring(0, 50)}..."`);
+      const syncRes = await fetch(`${SUPABASE_URL}/functions/v1/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          message,
+          sessionId,
+          voice: true,
+          stream: false,
+          context: { userId, companyId },
+        }),
+      });
+
+      if (!syncRes.ok) {
+        console.error(`[sync-voice] Background action failed: ${syncRes.status}`);
+        return;
+      }
+
+      const syncData = await syncRes.json();
+      const actionResult = syncData.response || syncData.text || '';
+      console.log(`[sync-voice] Background action done: "${actionResult.substring(0, 80)}"`);
+
+      // Save the action result to session so next voice turn has context
+      if (actionResult) {
+        const updatedMessages = [
+          ...sessionMessages,
+          { role: 'system', content: `[Action completed]: ${actionResult}` },
+        ];
+        saveToSession(sessionId, updatedMessages);
+      }
+    } catch (e) {
+      console.error('[sync-voice] Background action error:', e);
+    }
+  })();
 }
 
 // =============================================================================
@@ -162,6 +242,7 @@ serve(async (req) => {
       message,
       history = [],
       userId,
+      companyId,
       voiceConfig,
       voice: requestedVoice,
       skipTTS = false,
@@ -179,51 +260,42 @@ serve(async (req) => {
       : DEFAULT_VOICE;
 
     const startTime = Date.now();
-    console.log(`[sync-voice] "${message.substring(0, 50)}..." voice=${voice} userId=${userId?.substring(0, 8) || 'anon'}`);
+    const needsAction = isActionRequest(message);
+    console.log(`[sync-voice] "${message.substring(0, 50)}..." voice=${voice} action=${needsAction} userId=${userId?.substring(0, 8) || 'anon'}`);
 
-    // Load persistent session if userId provided (non-blocking parallel with nothing — just fast)
+    // Load session (fast — single row lookup by exact ID)
     let session: { sessionId: string; messages: Array<{ role: string; content: string }>; summary: string | null } | null = null;
     if (userId) {
       try {
         session = await getVoiceSession(userId);
-        console.log(`[sync-voice] Session ${session.sessionId}: ${session.messages.length} past msgs, summary=${!!session.summary}`);
-      } catch (e) {
-        console.error('[sync-voice] Session load failed:', e);
-      }
+      } catch (_) { /* non-critical */ }
     }
 
-    // Build messages array: system + past context + recent history + current message
+    // Build LLM messages: system + DB context + client history + current
     let systemPrompt = VOICE_SYSTEM_PROMPT;
-
-    // Inject conversation summary if available (past sessions context)
     if (session?.summary) {
-      systemPrompt += `\n\nCONVERSATION HISTORY SUMMARY (from previous conversations):\n${session.summary}`;
+      systemPrompt += `\n\nPREVIOUS CONVERSATION SUMMARY:\n${session.summary}`;
     }
 
     const messages: Array<{ role: string; content: string }> = [
       { role: 'system', content: systemPrompt },
     ];
 
-    // Add persisted session messages (last 6 from DB for context)
+    // Add persisted messages (last 6 from DB)
     if (session?.messages?.length) {
-      const dbMessages = session.messages.slice(-6);
-      for (const msg of dbMessages) {
-        if (msg.role && msg.content) {
-          messages.push({ role: msg.role, content: msg.content });
-        }
+      for (const msg of session.messages.slice(-6)) {
+        if (msg.role && msg.content) messages.push(msg);
       }
     }
 
-    // Add client-side history (current session turns not yet saved)
+    // Add client-side history
     for (const msg of history) {
-      if (msg.role && msg.content) {
-        messages.push({ role: msg.role, content: msg.content });
-      }
+      if (msg.role && msg.content) messages.push(msg);
     }
 
     messages.push({ role: 'user', content: message });
 
-    // Call LLM directly — fast turbo model, tiny max_tokens
+    // Fast LLM call — always runs, gives instant conversational response
     const llmStart = Date.now();
     const llmResponse = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
@@ -247,9 +319,8 @@ serve(async (req) => {
     const llmData = await llmResponse.json();
     let responseText = llmData.choices?.[0]?.message?.content || "Hey, I'm here!";
     const llmTime = Date.now() - llmStart;
-    console.log(`[sync-voice] LLM: ${llmTime}ms — "${responseText.substring(0, 80)}"`);
 
-    // Quick cleanup — strip any accidental markdown
+    // Strip accidental markdown
     responseText = responseText
       .replace(/\*\*/g, '')
       .replace(/\*/g, '')
@@ -258,7 +329,19 @@ serve(async (req) => {
       .replace(/`([^`]+)`/g, '$1')
       .trim();
 
-    // Generate TTS audio only if requested
+    console.log(`[sync-voice] LLM: ${llmTime}ms — "${responseText.substring(0, 80)}" action=${needsAction}`);
+
+    // Fire background action BEFORE TTS (maximize parallelism)
+    if (needsAction && userId && session) {
+      const messagesForAction = [
+        ...session.messages,
+        { role: 'user', content: message },
+        { role: 'assistant', content: responseText },
+      ];
+      fireBackgroundAction(message, userId, companyId, session.sessionId, messagesForAction);
+    }
+
+    // Generate TTS
     let audio = '';
     let ttsTime = 0;
 
@@ -278,14 +361,14 @@ serve(async (req) => {
     const totalTime = Date.now() - startTime;
     console.log(`[sync-voice] Total: ${totalTime}ms (llm=${llmTime}ms tts=${ttsTime}ms)`);
 
-    // Save to persistent session (fire-and-forget — doesn't block response)
+    // Save to session (fire-and-forget)
     if (session) {
       const updatedMessages = [
         ...session.messages,
         { role: 'user', content: message },
         { role: 'assistant', content: responseText },
       ];
-      saveToSession(session.sessionId, message, responseText, updatedMessages);
+      saveToSession(session.sessionId, updatedMessages);
     }
 
     return new Response(
@@ -295,6 +378,7 @@ serve(async (req) => {
         audio: audio || undefined,
         audioFormat: audio ? 'mp3' : undefined,
         mood: 'neutral',
+        actionPending: needsAction,
         timing: { total: totalTime, llm: llmTime, tts: ttsTime },
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
@@ -314,8 +398,8 @@ serve(async (req) => {
       JSON.stringify({
         text: errorText,
         response: errorText,
-        audio: errorAudio,
-        audioFormat: 'mp3',
+        audio: errorAudio || undefined,
+        audioFormat: errorAudio ? 'mp3' : undefined,
         mood: 'neutral',
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
