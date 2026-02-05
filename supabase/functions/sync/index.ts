@@ -11,8 +11,8 @@
  *   - Iterative refinement with quality evaluation
  */
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 
 // Import memory system
 import {
@@ -110,6 +110,17 @@ import {
   formatSynthesizedResult,
   SynthesizedResult,
 } from './tools/synthesis.ts';
+
+// Voice mode module - imported when sync-voice proxy is replaced with direct voice mode
+// Currently handled by sync-voice edge function proxy
+// import {
+//   processVoiceResponse,
+//   getVoicePromptSection,
+//   detectUserMood,
+//   humanizeVoiceResponse,
+//   VoiceConfig,
+//   VoiceResult,
+// } from './tools/voice.ts';
 
 // Import Plan-Execute system (Co-Worker upgrade)
 import {
@@ -2065,6 +2076,8 @@ interface SyncRequest {
   message: string;
   sessionId?: string;
   stream?: boolean;
+  voice?: boolean;
+  voiceConfig?: any; // VoiceConfig when voice module is imported directly
   // Workflow mode: 'auto' (default), 'fast', 'workflow', or specific workflow type
   mode?: 'auto' | 'fast' | 'workflow' | 'parallel' | 'sequential' | 'iterative' | 'hybrid';
   context?: {
@@ -2152,6 +2165,14 @@ interface SyncResponse {
     agentType: string;
     tasksExecuted: number;
     suggestedActions?: string[];
+  };
+  // Voice mode fields (when voice=true)
+  audio?: string;
+  audioFormat?: string;
+  mood?: string;
+  voiceTiming?: {
+    tts: number;
+    humanize: number;
   };
 }
 
@@ -2396,7 +2417,7 @@ serve(async (req) => {
 
     const body: SyncRequest = await req.json();
     let { message } = body;
-    const { sessionId, stream = false, mode = 'auto', context } = body;
+    const { sessionId, stream = false, voice = false, voiceConfig, mode = 'auto', context } = body;
 
     if (!message?.trim()) {
       return new Response(
@@ -2760,9 +2781,16 @@ serve(async (req) => {
     const dateContext = `\n\n## Current Date & Time\nToday is ${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}. Current time: ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}.`;
 
     // Build enhanced system prompt with memory context
-    const enhancedSystemPrompt = memoryContextStr
+    let enhancedSystemPrompt = memoryContextStr
       ? `${SYNC_SYSTEM_PROMPT}\n\n${memoryContextStr}${dateContext}`
       : `${SYNC_SYSTEM_PROMPT}${dateContext}`;
+
+    // Voice mode is handled by sync-voice proxy (prepends voice context to message)
+    // Direct voice prompt injection reserved for when voice module is imported directly
+    // if (voice) {
+    //   const moodAnalysis = detectUserMood(message);
+    //   enhancedSystemPrompt += getVoicePromptSection(moodAnalysis);
+    // }
 
     // Get buffer messages for API
     const bufferMessages = memorySystem.session.getBufferMessages(session);
@@ -3689,6 +3717,9 @@ Output the create_${docType} [ACTION] block NOW. Do NOT ask any more questions!`
       finalResponse = documentInfo.shortMessage;
       console.log('[SYNC] Long response converted to document:', documentInfo.documentTitle);
     }
+
+    // Voice processing handled by sync-voice proxy edge function
+    // Direct voice mode reserved for future when voice module is imported directly
 
     const syncResponse: SyncResponse = {
       response: finalResponse,

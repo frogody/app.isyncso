@@ -11,7 +11,7 @@
           * @version 2.0.0
            */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import { ActionResult } from './types.ts';
 import { SyncSession } from '../memory/types.ts';
 

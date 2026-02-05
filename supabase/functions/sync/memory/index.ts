@@ -35,7 +35,7 @@ export { ActionTemplateManager } from './actions.ts';
 // Convenience Factory
 // ============================================================================
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import { SessionManager } from './session.ts';
 import { BufferManager } from './buffer.ts';
 import { EntityManager } from './entities.ts';

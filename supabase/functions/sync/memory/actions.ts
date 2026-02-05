@@ -3,7 +3,7 @@
  * Handles storage and retrieval of successful action patterns
  */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import {
   SyncSession,
   ActionTemplate,

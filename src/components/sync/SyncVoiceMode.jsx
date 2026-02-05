@@ -195,6 +195,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
     syncState.setMood('thinking');
 
     try {
+      // Call sync-voice endpoint (proxies to main /sync for full action support)
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-voice`,
         {
@@ -206,11 +207,10 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
           body: JSON.stringify({
             message: text,
             sessionId,
-            conversationHistory,
-            voice: 'tara',
+            voiceConfig: { voice: 'tara' },
             context: {
               userId: user?.id,
-              companyId: user?.company_id,
+              companyId: user?.company_id || user?.organization_id,
               source: 'voice-mode',
             },
           }),
@@ -225,16 +225,22 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
       const totalLatency = Date.now() - startTime;
       setLatency(totalLatency);
 
-      console.log(`[Voice] Response in ${totalLatency}ms`);
+      const responseText = data.response || data.text || '';
+      console.log(`[Voice] Response in ${totalLatency}ms, mood: ${data.mood || 'unknown'}`);
+
+      // Log action execution if any
+      if (data.actionExecuted) {
+        console.log(`[Voice] Action executed: ${data.actionExecuted.type}, success: ${data.actionExecuted.success}`);
+      }
 
       // Update conversation history
       setConversationHistory(prev => [
         ...prev,
         { role: 'user', content: text },
-        { role: 'assistant', content: data.text }
+        { role: 'assistant', content: responseText }
       ].slice(-10));
 
-      setLastResponse(data.text);
+      setLastResponse(responseText);
 
       // Play the response
       if (!isMuted && data.audio) {
@@ -469,8 +475,8 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
           {/* Brand badge */}
           <div className="absolute top-6 left-6">
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${syt('bg-slate-100/50', 'bg-zinc-800/30')} text-xs ${syt('text-slate-400', 'text-zinc-500')}`}>
-              <span>Powered by</span>
-              <span className="text-purple-400 font-medium">Together.ai</span>
+              <span>SYNC</span>
+              <span className="text-purple-400 font-medium">Voice</span>
             </div>
           </div>
 

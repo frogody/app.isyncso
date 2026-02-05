@@ -14,7 +14,7 @@
  * @see https://memgraph.com/blog/why-hybridrag
  */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import { generateEmbedding, embeddingToPostgresVector, cosineSimilarity } from '../memory/embeddings.ts';
 import { KnowledgeGraph, EntityType, RelationshipType, EntityGraph } from './knowledge-graph.ts';
 import { SyncSession, MemorySearchResult } from '../memory/types.ts';

@@ -17,7 +17,7 @@
  * - Predictive lead scoring
  */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import { HybridRAG, createHybridRAG, HybridSearchResult } from '../tools/hybrid-rag.ts';
 import { IntegrationSync, autoSyncIntegrationData } from '../tools/integration-sync.ts';
 import { KnowledgeGraph, EntityType } from '../tools/knowledge-graph.ts';

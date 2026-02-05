@@ -3,7 +3,7 @@
  * Implements sliding window + compressed history
  */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import {
   SyncSession,
   ChatMessage,

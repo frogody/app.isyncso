@@ -249,7 +249,7 @@ async function getUserIntegrations(ctx: ActionContext): Promise<Array<{
 /**
  * Find connection for a specific toolkit
  */
-async function getConnectionForToolkit(
+export async function getConnectionForToolkit(
   ctx: ActionContext,
   toolkitSlug: string
 ): Promise<string | null> {

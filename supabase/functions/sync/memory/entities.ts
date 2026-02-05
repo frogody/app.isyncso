@@ -2,7 +2,7 @@
  * Entity Memory - Track clients, products, preferences
  */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import {
   SyncSession,
   ChatMessage,

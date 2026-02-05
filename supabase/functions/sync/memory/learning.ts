@@ -5,7 +5,7 @@
  * Uses vector embeddings for semantic similarity matching.
  */
 
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { TaskPlan, TaskStep } from "../tools/planner.ts";
 import { generateEmbedding } from "./embeddings.ts";
 

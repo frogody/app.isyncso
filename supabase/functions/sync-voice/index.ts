@@ -1,18 +1,18 @@
 /**
- * SYNC Voice API - Human-Like Personal Assistant
+ * SYNC Voice API - Voice Proxy to Main SYNC
  *
- * Design Philosophy: SYNC should feel like talking to a real human assistant
- * who knows you, remembers your preferences, and genuinely cares about helping.
+ * Proxies requests to the main /sync endpoint for full action support (51 actions),
+ * then humanizes the response text and generates TTS audio.
  *
- * Key Features:
- * - Personality: Warm, competent, slightly informal but professional
- * - Emotional Intelligence: Detects and matches user's mood
- * - Memory: Remembers preferences and past interactions
- * - Natural Speech: Uses contractions, fillers, varies pacing
+ * Flow:
+ * 1. Detect user mood from message
+ * 2. Call main /sync endpoint (LLM response + action execution)
+ * 3. Humanize the response text for voice output
+ * 4. Generate TTS audio via Orpheus-3B
+ * 5. Return audio + text + action results
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,33 +21,10 @@ const corsHeaders = {
 
 const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 // =============================================================================
-// PERSONALITY CONFIGURATION
-// =============================================================================
-
-const SYNC_PERSONALITY = {
-  name: "SYNC",
-  traits: [
-    "warm and approachable",
-    "competent and reliable",
-    "slightly informal but professional",
-    "genuinely interested in helping",
-    "good sense of humor when appropriate",
-    "remembers details about the user",
-  ],
-  speaking_style: [
-    "uses contractions naturally (I'm, you're, let's, don't)",
-    "occasionally uses filler words (well, so, actually, honestly)",
-    "varies sentence length - mix of short and medium",
-    "asks follow-up questions to show engagement",
-    "uses the user's name occasionally",
-  ],
-};
-
-// =============================================================================
-// MOOD DETECTION
+// TYPES
 // =============================================================================
 
 type UserMood = 'excited' | 'stressed' | 'frustrated' | 'neutral' | 'happy' | 'rushed' | 'curious';
@@ -58,213 +35,56 @@ interface MoodAnalysis {
   responseStyle: string;
 }
 
-function detectUserMood(message: string, conversationHistory: any[]): MoodAnalysis {
-  const lowerMessage = message.toLowerCase();
+// =============================================================================
+// MOOD DETECTION
+// =============================================================================
 
-  // Excitement indicators
-  const excitedPatterns = /(!{2,}|amazing|awesome|great news|fantastic|yes!|perfect|love it|incredible)/i;
-  if (excitedPatterns.test(message)) {
-    return {
-      mood: 'excited',
-      confidence: 0.8,
-      responseStyle: 'Match their energy! Be enthusiastic and celebratory.'
-    };
+function detectUserMood(message: string): MoodAnalysis {
+  const lower = message.toLowerCase();
+
+  if (/(!{2,}|amazing|awesome|great news|fantastic|yes!|perfect|love it|incredible)/i.test(message)) {
+    return { mood: 'excited', confidence: 0.8, responseStyle: 'Match their energy! Be enthusiastic.' };
   }
 
-  // Stress/urgency indicators
-  const stressedPatterns = /(asap|urgent|deadline|running late|need this now|hurry|quickly|stressed|overwhelmed|too much)/i;
-  if (stressedPatterns.test(lowerMessage)) {
-    return {
-      mood: 'stressed',
-      confidence: 0.8,
-      responseStyle: 'Be calm and reassuring. Get to the point quickly. Offer to help prioritize.'
-    };
+  if (/(asap|urgent|deadline|running late|need this now|hurry|quickly|stressed|overwhelmed)/i.test(lower)) {
+    return { mood: 'stressed', confidence: 0.8, responseStyle: 'Be calm and efficient. Get to the point.' };
   }
 
-  // Frustration indicators
-  const frustratedPatterns = /(ugh|again\?|not working|broken|frustrated|annoying|why (isn\'t|won\'t|can\'t)|this is|still not|keeps)/i;
-  if (frustratedPatterns.test(lowerMessage)) {
-    return {
-      mood: 'frustrated',
-      confidence: 0.8,
-      responseStyle: 'Acknowledge the frustration. Be empathetic. Focus on solutions, not explanations.'
-    };
+  if (/(ugh|again\?|not working|broken|frustrated|annoying|why (isn't|won't|can't)|still not|keeps)/i.test(lower)) {
+    return { mood: 'frustrated', confidence: 0.8, responseStyle: 'Acknowledge frustration. Focus on solutions.' };
   }
 
-  // Happy/positive indicators
-  const happyPatterns = /(thanks|thank you|appreciate|helpful|good job|well done|nice|happy|glad|pleased)/i;
-  if (happyPatterns.test(lowerMessage)) {
-    return {
-      mood: 'happy',
-      confidence: 0.7,
-      responseStyle: 'Be warm and friendly. Accept appreciation gracefully.'
-    };
+  if (/(thanks|thank you|appreciate|helpful|good job|well done|happy|glad)/i.test(lower)) {
+    return { mood: 'happy', confidence: 0.7, responseStyle: 'Be warm. Accept appreciation gracefully.' };
   }
 
-  // Rushed/brief indicators (short messages, commands)
   if (message.split(' ').length <= 4 && !message.includes('?')) {
-    return {
-      mood: 'rushed',
-      confidence: 0.6,
-      responseStyle: 'Be concise and efficient. Skip pleasantries, get to action.'
-    };
+    return { mood: 'rushed', confidence: 0.6, responseStyle: 'Be ultra-concise. Skip pleasantries.' };
   }
 
-  // Curious/questioning
-  const curiousPatterns = /(how (do|does|can|would)|what (is|are|if)|why (is|do|does)|can you (explain|tell|show)|I\'m wondering|curious)/i;
-  if (curiousPatterns.test(lowerMessage)) {
-    return {
-      mood: 'curious',
-      confidence: 0.7,
-      responseStyle: 'Be informative but conversational. Offer to explain more if needed.'
-    };
+  if (/(how (do|does|can|would)|what (is|are|if)|why (is|do)|can you (explain|tell)|wondering|curious)/i.test(lower)) {
+    return { mood: 'curious', confidence: 0.7, responseStyle: 'Be informative but brief.' };
   }
 
-  return {
-    mood: 'neutral',
-    confidence: 0.5,
-    responseStyle: 'Be warm and helpful. Standard friendly assistant tone.'
-  };
+  return { mood: 'neutral', confidence: 0.5, responseStyle: 'Be warm and helpful.' };
 }
 
 // =============================================================================
-// DYNAMIC SYSTEM PROMPT
-// =============================================================================
-
-function buildVoiceSystemPrompt(
-  moodAnalysis: MoodAnalysis,
-  userContext: {
-    userName?: string;
-    preferences?: any;
-    recentTopics?: string[];
-    timeOfDay: string;
-  }
-): string {
-  const { mood, responseStyle } = moodAnalysis;
-  const { userName, preferences, recentTopics, timeOfDay } = userContext;
-
-  // Time-appropriate greeting context
-  const timeContext = timeOfDay === 'morning'
-    ? "It's morning - be energetic but not overwhelming."
-    : timeOfDay === 'evening'
-    ? "It's evening - be calm and winding-down appropriate."
-    : timeOfDay === 'night'
-    ? "It's late - be understanding if they're working late, keep it brief."
-    : "It's afternoon - standard energy level.";
-
-  return `You are SYNC, a personal AI assistant having a real-time voice conversation.
-
-## YOUR PERSONALITY
-You're like a trusted colleague who happens to be incredibly efficient. You're:
-- Warm and genuine (not fake-cheerful)
-- Competent and reliable (you get things done)
-- Slightly informal but always professional
-- You remember details and reference them naturally
-- You have a sense of humor when appropriate
-
-## CURRENT CONVERSATION CONTEXT
-${timeContext}
-${userName ? `User's name: ${userName}. Use it occasionally (not every response).` : ''}
-${recentTopics?.length ? `Recent topics discussed: ${recentTopics.join(', ')}. Reference these naturally if relevant.` : ''}
-
-## USER'S CURRENT MOOD: ${mood.toUpperCase()}
-${responseStyle}
-
-## VOICE-SPECIFIC RULES (CRITICAL)
-1. **Be conversational**: Use contractions (I'm, you're, let's, don't, won't)
-2. **Keep it short**: 1-3 sentences MAX. This is voice, not text.
-3. **Sound natural**: Occasional fillers are OK ("Well,", "So,", "Actually,", "Honestly,")
-4. **Never use formatting**: No markdown, bullets, asterisks, or numbered lists
-5. **No technical jargon**: Speak like a human, not a computer
-6. **React appropriately**: Match the user's energy level
-
-## RESPONSE PATTERNS BY MOOD
-
-${mood === 'excited' ? `
-User is EXCITED! Match their energy:
-- "That's fantastic! Let me..."
-- "Oh wow, congrats! I'll..."
-- "Love it! So..."
-` : ''}
-
-${mood === 'stressed' ? `
-User is STRESSED. Be calm and efficient:
-- "Got it. I'll handle that right now."
-- "No worries, let me take care of this."
-- "On it. Just give me a sec."
-` : ''}
-
-${mood === 'frustrated' ? `
-User is FRUSTRATED. Be empathetic and solution-focused:
-- "I hear you. Let's fix this."
-- "That's annoying, I get it. Here's what I can do..."
-- "Sorry you're dealing with this. Let me help."
-` : ''}
-
-${mood === 'rushed' ? `
-User is RUSHED. Be ultra-concise:
-- "Done."
-- "On it."
-- "Got it, one sec."
-- "Here you go."
-` : ''}
-
-${mood === 'curious' ? `
-User is CURIOUS. Be informative but brief:
-- "Good question! So basically..."
-- "Yeah, so the way that works is..."
-- "Honestly, the simple version is..."
-` : ''}
-
-${mood === 'happy' || mood === 'neutral' ? `
-User is ${mood.toUpperCase()}. Be warm and natural:
-- "Sure thing!"
-- "Absolutely, let me..."
-- "Of course!"
-- "Happy to help with that."
-` : ''}
-
-## THINGS TO AVOID
-- Starting every response with "Sure!" or "Of course!" (vary it)
-- Being overly formal ("I would be delighted to assist you")
-- Long explanations (save those for text chat)
-- Robotic phrases ("I understand you want to..." - just do it!)
-- Apologizing excessively
-- Repeating what the user just said
-
-## EXAMPLES OF GREAT VOICE RESPONSES
-
-User: "Create an invoice for Acme Corp"
-Good: "On it! How much is it for?"
-Bad: "Certainly! I would be happy to create an invoice for Acme Corp. Could you please provide me with the amount?"
-
-User: "Ugh, the client still hasn't paid"
-Good: "That's frustrating. Want me to send them a reminder?"
-Bad: "I understand your frustration. Would you like me to assist you with following up?"
-
-User: "We just closed the big deal!!!"
-Good: "Yes! That's huge, congrats! Want me to update the pipeline?"
-Bad: "Congratulations on closing the deal. Would you like me to update the records?"
-
-User: "tasks"
-Good: "You've got 3 overdue. Want me to list them?"
-Bad: "I'd be happy to help you with your tasks. Let me retrieve your task list for you."
-
-Current date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
-}
-
-// =============================================================================
-// RESPONSE POST-PROCESSING
+// RESPONSE HUMANIZATION
 // =============================================================================
 
 function humanizeResponse(response: string, mood: UserMood): string {
-  let processed = response;
+  let text = response;
 
-  // Remove any accidental markdown
-  processed = processed.replace(/\*\*/g, '');
-  processed = processed.replace(/\*/g, '');
-  processed = processed.replace(/^[-•]\s*/gm, '');
-  processed = processed.replace(/^\d+\.\s*/gm, '');
+  // Strip all markdown formatting
+  text = text.replace(/\*\*/g, '');
+  text = text.replace(/\*/g, '');
+  text = text.replace(/^[-•]\s*/gm, '');
+  text = text.replace(/^\d+\.\s*/gm, '');
+  text = text.replace(/#{1,6}\s*/g, '');
+  text = text.replace(/```[\s\S]*?```/g, '');
+  text = text.replace(/`([^`]+)`/g, '$1');
+  text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
 
   // Remove robotic phrases
   const roboticPhrases = [
@@ -274,214 +94,61 @@ function humanizeResponse(response: string, mood: UserMood): string {
     /Please let me know if/gi,
     /Is there anything else I can/gi,
     /I can assist you with/gi,
+    /I'd be happy to help/gi,
+    /Would you like me to/gi,
   ];
+  roboticPhrases.forEach(p => { text = text.replace(p, ''); });
 
-  roboticPhrases.forEach(pattern => {
-    processed = processed.replace(pattern, '');
-  });
+  // Clean up double spaces and leading whitespace
+  text = text.replace(/\s{2,}/g, ' ').trim();
 
-  // Clean up any double spaces
-  processed = processed.replace(/\s{2,}/g, ' ').trim();
-
-  // Ensure response isn't too long for voice (max ~40 words)
-  const words = processed.split(' ');
-  if (words.length > 45) {
-    // Find a natural break point
-    let cutoff = 40;
-    for (let i = 35; i < 45; i++) {
+  // Limit length for voice (max ~50 words unless it's a data response)
+  const words = text.split(' ');
+  if (words.length > 55) {
+    let cutoff = 45;
+    for (let i = 40; i < 55; i++) {
       if (words[i]?.endsWith('.') || words[i]?.endsWith('?') || words[i]?.endsWith('!')) {
         cutoff = i + 1;
         break;
       }
     }
-    processed = words.slice(0, cutoff).join(' ');
-    if (!processed.endsWith('.') && !processed.endsWith('?') && !processed.endsWith('!')) {
-      processed += '.';
+    text = words.slice(0, cutoff).join(' ');
+    if (!text.endsWith('.') && !text.endsWith('?') && !text.endsWith('!')) {
+      text += '.';
     }
   }
 
-  return processed;
-}
+  // Remove any leaked [ACTION] blocks
+  text = text.replace(/\[ACTION\][\s\S]*?\[\/ACTION\]/g, '').trim();
+  text = text.replace(/\[ACTION_CHAIN\][\s\S]*?\[\/ACTION_CHAIN\]/g, '').trim();
+  text = text.replace(/\[ACTIONS\][\s\S]*?\[\/ACTIONS\]/g, '').trim();
 
-// =============================================================================
-// VOICE PACING HINTS (for future TTS improvements)
-// =============================================================================
-
-interface VoicePacing {
-  speed: 'slow' | 'normal' | 'fast';
-  emotion: 'neutral' | 'happy' | 'concerned' | 'excited';
-  emphasis: string[]; // words to emphasize
-}
-
-function getVoicePacing(response: string, mood: UserMood): VoicePacing {
-  const pacing: VoicePacing = {
-    speed: 'normal',
-    emotion: 'neutral',
-    emphasis: [],
-  };
-
-  // Adjust based on mood
-  switch (mood) {
-    case 'excited':
-      pacing.speed = 'fast';
-      pacing.emotion = 'excited';
-      break;
-    case 'stressed':
-    case 'rushed':
-      pacing.speed = 'fast';
-      pacing.emotion = 'neutral';
-      break;
-    case 'frustrated':
-      pacing.speed = 'normal';
-      pacing.emotion = 'concerned';
-      break;
-    case 'happy':
-      pacing.speed = 'normal';
-      pacing.emotion = 'happy';
-      break;
-    case 'curious':
-      pacing.speed = 'normal';
-      pacing.emotion = 'neutral';
-      break;
-  }
-
-  // Find words to emphasize (numbers, names, key terms)
-  const numberPattern = /\b(\d+)\b/g;
-  const matches = response.match(numberPattern);
-  if (matches) {
-    pacing.emphasis.push(...matches);
-  }
-
-  return pacing;
-}
-
-// =============================================================================
-// USER CONTEXT & MEMORY
-// =============================================================================
-
-async function getUserContext(
-  supabase: any,
-  userId?: string,
-  companyId?: string
-): Promise<{ userName?: string; preferences?: any; recentTopics?: string[] }> {
-  if (!userId) return {};
-
-  try {
-    // Get user details
-    const { data: user } = await supabase
-      .from('users')
-      .select('full_name, first_name, preferences')
-      .eq('id', userId)
-      .single();
-
-    // Get recent voice session topics (from sync_sessions)
-    const { data: recentSessions } = await supabase
-      .from('sync_sessions')
-      .select('active_entities')
-      .eq('user_id', userId)
-      .order('last_activity', { ascending: false })
-      .limit(3);
-
-    const recentTopics: string[] = [];
-    if (recentSessions) {
-      recentSessions.forEach((session: any) => {
-        if (session.active_entities?.current_intent) {
-          recentTopics.push(session.active_entities.current_intent);
-        }
-        if (session.active_entities?.clients) {
-          session.active_entities.clients.forEach((c: any) => {
-            if (c.name) recentTopics.push(`client: ${c.name}`);
-          });
-        }
-      });
-    }
-
-    return {
-      userName: user?.first_name || user?.full_name?.split(' ')[0],
-      preferences: user?.preferences,
-      recentTopics: [...new Set(recentTopics)].slice(0, 5),
-    };
-  } catch (error) {
-    console.error('Error fetching user context:', error);
-    return {};
-  }
-}
-
-function getTimeOfDay(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'morning';
-  if (hour < 17) return 'afternoon';
-  if (hour < 21) return 'evening';
-  return 'night';
-}
-
-// =============================================================================
-// LLM CALL
-// =============================================================================
-
-async function getVoiceResponse(
-  message: string,
-  conversationHistory: Array<{ role: string; content: string }>,
-  systemPrompt: string,
-  moodAnalysis: MoodAnalysis
-): Promise<string> {
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    ...conversationHistory.slice(-6), // Keep last 3 exchanges for context
-    { role: 'user', content: message }
-  ];
-
-  const response = await fetch('https://api.together.ai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${TOGETHER_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'moonshotai/Kimi-K2-Instruct',
-      messages,
-      max_tokens: 100, // Even shorter for voice - forces conciseness
-      temperature: moodAnalysis.mood === 'excited' ? 0.8 : 0.7,
-      stream: false,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    console.error('LLM error:', error);
-    throw new Error('Failed to get response');
-  }
-
-  const data = await response.json();
-  let responseText = data.choices[0]?.message?.content || "I'm here to help!";
-
-  // Post-process to ensure it's human-like
-  responseText = humanizeResponse(responseText, moodAnalysis.mood);
-
-  return responseText;
+  return text;
 }
 
 // =============================================================================
 // TTS GENERATION
 // =============================================================================
 
-const VOICES = {
-  tara: 'tara',     // Female, friendly (default)
-  leah: 'leah',     // Female, professional
-  jess: 'jess',     // Female, energetic
-  leo: 'leo',       // Male, calm
-  dan: 'dan',       // Male, authoritative
-  mia: 'mia',       // Female, warm
-  zac: 'zac',       // Male, casual
-  zoe: 'zoe',       // Female, cheerful
-};
+const VALID_VOICES = ['tara', 'leah', 'jess', 'leo', 'dan', 'mia', 'zac', 'zoe'];
+const DEFAULT_VOICE = 'tara';
 
-async function generateSpeech(
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+async function generateSpeechAudio(
   text: string,
-  voice: string = 'tara',
-  pacing: VoicePacing
-): Promise<ArrayBuffer> {
-  console.log(`[TTS] Generating speech: "${text.substring(0, 50)}..." voice: ${voice}, speed: ${pacing.speed}`);
+  voice: string = DEFAULT_VOICE
+): Promise<{ audio: string; format: string; byteLength: number }> {
+  const safeVoice = VALID_VOICES.includes(voice) ? voice : DEFAULT_VOICE;
+
+  console.log(`[Voice TTS] Generating: "${text.substring(0, 60)}..." voice=${safeVoice}`);
 
   const response = await fetch('https://api.together.ai/v1/audio/speech', {
     method: 'POST',
@@ -492,33 +159,101 @@ async function generateSpeech(
     body: JSON.stringify({
       model: 'canopylabs/orpheus-3b-0.1-ft',
       input: text,
-      voice: voice,
+      voice: safeVoice,
       response_format: 'mp3',
-      // Note: speed/emotion control depends on TTS API capabilities
-      // These are stored for future enhancement
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    console.error('[Voice TTS] Error:', err);
+    throw new Error(`TTS generation failed: ${response.status}`);
+  }
+
+  const buffer = await response.arrayBuffer();
+  return {
+    audio: arrayBufferToBase64(buffer),
+    format: 'mp3',
+    byteLength: buffer.byteLength,
+  };
+}
+
+// =============================================================================
+// VOICE-SPECIFIC SYSTEM PROMPT ADDITION
+// =============================================================================
+
+function buildVoiceContextMessage(mood: MoodAnalysis): string {
+  return `[VOICE MODE - IMPORTANT INSTRUCTIONS]
+You are in a real-time voice conversation. Follow these rules strictly:
+1. Maximum 2 sentences per response, unless reading back data the user asked for
+2. Use contractions always: I'm, you're, let's, that's, here's, don't, won't
+3. Natural fillers OK: "So,", "Well,", "Actually,", "Honestly,"
+4. NEVER use formatting: No markdown, no bullets, no asterisks, no numbered lists, no bold
+5. No technical jargon: Say "about twelve hundred" not "1,247"
+6. Dates naturally: Say "last Tuesday" not "January 28th 2026"
+7. Currency naturally: Say "thirty-five euros" not "EUR 35.19"
+8. When listing items: max 3, then "and a few more"
+9. After completing an action: Summarize in ONE sentence. "Done! Invoice created for Bram."
+10. Never read back JSON or technical data - summarize it conversationally
+
+USER MOOD: ${mood.mood.toUpperCase()} - ${mood.responseStyle}
+
+GOOD voice responses:
+- "On it! How much is it for?"
+- "Found it! Philips OneBlade at thirty-five euros."
+- "Done! Invoice sent to Bram."
+- "You've got 3 overdue tasks. Want me to list them?"
+
+BAD voice responses:
+- "I would be happy to create an invoice. Could you please provide the amount?"
+- "I found 1 result: Philips OneBlade 360 Face | Price: EUR 35.19 | Stock: 150 units"
+[/VOICE MODE]
+
+User's actual message: `;
+}
+
+// =============================================================================
+// CALL MAIN SYNC ENDPOINT
+// =============================================================================
+
+async function callMainSync(
+  message: string,
+  sessionId: string,
+  context: any,
+  authHeader: string,
+  mood: MoodAnalysis,
+): Promise<any> {
+  const syncUrl = `${SUPABASE_URL}/functions/v1/sync`;
+
+  // Prepend voice instructions to the message so the LLM knows to be concise
+  const voiceMessage = buildVoiceContextMessage(mood) + message;
+
+  console.log(`[sync-voice] Calling main sync...`);
+
+  const response = await fetch(syncUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': authHeader,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      message: voiceMessage,
+      sessionId,
+      stream: false,
+      context: {
+        ...context,
+        source: 'voice-mode',
+      },
     }),
   });
 
   if (!response.ok) {
     const error = await response.text();
-    console.error('TTS error:', error);
-    throw new Error(`TTS failed: ${error}`);
+    console.error('[sync-voice] Main sync error:', response.status, error);
+    throw new Error(`SYNC returned ${response.status}`);
   }
 
-  return await response.arrayBuffer();
-}
-
-// =============================================================================
-// UTILITY
-// =============================================================================
-
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
+  return response.json();
 }
 
 // =============================================================================
@@ -530,15 +265,13 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
   try {
     const {
       message,
       sessionId,
-      conversationHistory = [],
       voice: requestedVoice,
-      context = {}
+      voiceConfig,
+      context = {},
     } = await req.json();
 
     if (!message) {
@@ -548,66 +281,85 @@ serve(async (req) => {
       );
     }
 
-    const validVoices = Object.keys(VOICES);
-    const voice = validVoices.includes(requestedVoice) ? requestedVoice : 'tara';
+    const voice = VALID_VOICES.includes(requestedVoice || voiceConfig?.voice)
+      ? (requestedVoice || voiceConfig?.voice)
+      : DEFAULT_VOICE;
 
-    console.log(`[sync-voice] Processing: "${message.substring(0, 50)}..."`);
+    console.log(`[sync-voice] Processing: "${message.substring(0, 50)}..." voice=${voice}`);
     const startTime = Date.now();
 
     // 1. Detect user mood
-    const moodAnalysis = detectUserMood(message, conversationHistory);
-    console.log(`[sync-voice] Detected mood: ${moodAnalysis.mood} (${moodAnalysis.confidence})`);
+    const moodAnalysis = detectUserMood(message);
+    console.log(`[sync-voice] Mood: ${moodAnalysis.mood} (${moodAnalysis.confidence})`);
 
-    // 2. Get user context for personalization
-    const userContext = await getUserContext(supabase, context.userId, context.companyId);
-    userContext.timeOfDay = getTimeOfDay();
+    // 2. Get auth header from original request to pass to main sync
+    const authHeader = req.headers.get('Authorization') || `Bearer ${SUPABASE_ANON_KEY}`;
 
-    // 3. Build dynamic system prompt
-    const systemPrompt = buildVoiceSystemPrompt(moodAnalysis, userContext);
+    // 3. Call main sync endpoint (gets LLM response + executes actions)
+    const syncStart = Date.now();
+    const syncResponse = await callMainSync(message, sessionId, context, authHeader, moodAnalysis);
+    const syncTime = Date.now() - syncStart;
+    console.log(`[sync-voice] Sync responded in ${syncTime}ms`);
 
-    // 4. Get LLM response
-    const llmStart = Date.now();
-    const responseText = await getVoiceResponse(message, conversationHistory, systemPrompt, moodAnalysis);
-    const llmTime = Date.now() - llmStart;
-    console.log(`[sync-voice] LLM (${llmTime}ms): "${responseText.substring(0, 60)}..."`);
+    // 4. Extract response text from sync response
+    const rawText = syncResponse.response || syncResponse.text || "I'm here to help!";
+    console.log(`[sync-voice] Raw response: "${rawText.substring(0, 80)}..."`);
 
-    // 5. Get voice pacing hints
-    const pacing = getVoicePacing(responseText, moodAnalysis.mood);
+    // 5. Humanize for voice output
+    const humanizedText = humanizeResponse(rawText, moodAnalysis.mood);
+    console.log(`[sync-voice] Humanized: "${humanizedText.substring(0, 80)}..."`);
 
-    // 6. Generate speech
-    const ttsStart = Date.now();
-    const audioBuffer = await generateSpeech(responseText, voice, pacing);
-    const audioBase64 = arrayBufferToBase64(audioBuffer);
-    const ttsTime = Date.now() - ttsStart;
-    console.log(`[sync-voice] TTS (${ttsTime}ms): ${audioBuffer.byteLength} bytes`);
+    // 6. Generate TTS audio
+    let audio = '';
+    let audioFormat = 'mp3';
+    let ttsTime = 0;
+
+    if (humanizedText.length > 0) {
+      const ttsStart = Date.now();
+      try {
+        const ttsResult = await generateSpeechAudio(humanizedText, voice);
+        audio = ttsResult.audio;
+        audioFormat = ttsResult.format;
+        ttsTime = Date.now() - ttsStart;
+        console.log(`[sync-voice] TTS: ${ttsTime}ms, ${ttsResult.byteLength} bytes`);
+      } catch (err) {
+        console.error('[sync-voice] TTS failed, returning text only:', err);
+        ttsTime = Date.now() - ttsStart;
+      }
+    }
 
     const totalTime = Date.now() - startTime;
-    console.log(`[sync-voice] Total: ${totalTime}ms | Mood: ${moodAnalysis.mood}`);
+    console.log(`[sync-voice] Total: ${totalTime}ms | sync=${syncTime}ms tts=${ttsTime}ms`);
 
     return new Response(
       JSON.stringify({
-        text: responseText,
-        audio: audioBase64,
-        audioFormat: 'mp3',
+        text: humanizedText,
+        response: humanizedText,
+        audio,
+        audioFormat,
         mood: moodAnalysis.mood,
+        // Pass through action data from main sync
+        actionExecuted: syncResponse.actionExecuted || false,
+        actions: syncResponse.actions || [],
+        // Timing breakdown
         timing: {
           total: totalTime,
-          llm: llmTime,
+          sync: syncTime,
           tts: ttsTime,
-        }
+        },
       }),
       {
         headers: {
           ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       }
     );
 
   } catch (error) {
     console.error('[sync-voice] Error:', error);
 
-    // Even errors should sound human
+    // Human-sounding error responses
     const errorResponses = [
       "Sorry, something went wrong on my end. Try that again?",
       "Hmm, I hit a snag. Mind repeating that?",
@@ -615,15 +367,27 @@ serve(async (req) => {
     ];
     const errorText = errorResponses[Math.floor(Math.random() * errorResponses.length)];
 
+    // Try to generate TTS for the error response too
+    let errorAudio = '';
+    try {
+      const ttsResult = await generateSpeechAudio(errorText, DEFAULT_VOICE);
+      errorAudio = ttsResult.audio;
+    } catch (_) {
+      // Silent fail - text response is fine
+    }
+
     return new Response(
       JSON.stringify({
         error: error.message || 'Internal server error',
         text: errorText,
+        response: errorText,
+        audio: errorAudio,
+        audioFormat: 'mp3',
         mood: 'neutral',
       }),
       {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        status: 200, // Return 200 so the frontend can still play the error audio
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   }

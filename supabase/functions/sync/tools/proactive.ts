@@ -9,7 +9,7 @@
  * - User preference learning
  */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import { ActionResult, ActionContext } from './types.ts';
 import { SyncSession, ActiveEntities } from '../memory/types.ts';
 

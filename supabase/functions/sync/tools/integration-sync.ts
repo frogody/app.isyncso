@@ -13,7 +13,7 @@
  * - Slack: Messages indexed with channel context
  */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import { generateEmbedding, embeddingToPostgresVector } from '../memory/embeddings.ts';
 import { KnowledgeGraph, EntityType, RelationshipType } from './knowledge-graph.ts';
 

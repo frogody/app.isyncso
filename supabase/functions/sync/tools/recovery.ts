@@ -8,7 +8,7 @@
  * - User-friendly error messages with next steps
  */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import { ActionResult, ActionContext } from './types.ts';
 
 // ============================================================================
