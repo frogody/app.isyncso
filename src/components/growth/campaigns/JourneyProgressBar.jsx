@@ -110,7 +110,7 @@ export default function JourneyProgressBar({ campaignId, currentPhase }) {
   const t = theme === 'dark' ? DARK_THEME : LIGHT_THEME;
 
   return (
-    <div className="fixed top-3 right-16 z-50 pointer-events-none">
+    <div className="fixed top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
       <AnimatePresence mode="wait">
         {expanded ? (
           <motion.div

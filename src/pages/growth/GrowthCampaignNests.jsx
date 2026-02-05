@@ -270,7 +270,7 @@ export default function GrowthCampaignNests() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
       </div>
     );
   }
@@ -282,7 +282,7 @@ export default function GrowthCampaignNests() {
       animate={{ opacity: 1, y: 0 }}
       className={`rounded-xl border p-5 cursor-pointer transition-all ${
         isSelected
-          ? 'bg-cyan-500/5 border-cyan-500/50'
+          ? 'bg-indigo-500/5 border-indigo-500/50'
           : 'bg-zinc-900/50 border-white/5 hover:border-zinc-600'
       }`}
       onClick={onToggle}
@@ -297,7 +297,7 @@ export default function GrowthCampaignNests() {
           <p className="text-zinc-400 text-sm line-clamp-2">{nest.short_description || nest.description}</p>
         </div>
         <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-          isSelected ? 'bg-cyan-500 text-black' : 'bg-zinc-800 border border-zinc-700'
+          isSelected ? 'bg-indigo-500 text-black' : 'bg-zinc-800 border border-zinc-700'
         }`}>
           {isSelected && <Check className="w-4 h-4" />}
         </div>
@@ -314,13 +314,13 @@ export default function GrowthCampaignNests() {
           <div className="flex-1 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${
-                matchScore >= 80 ? 'bg-green-500' : matchScore >= 60 ? 'bg-cyan-500' : matchScore >= 40 ? 'bg-amber-500' : 'bg-red-500'
+                matchScore >= 80 ? 'bg-green-500' : matchScore >= 60 ? 'bg-indigo-500' : matchScore >= 40 ? 'bg-amber-500' : 'bg-red-500'
               }`}
               style={{ width: `${matchScore}%` }}
             />
           </div>
           <span className={`text-xs font-medium ${
-            matchScore >= 80 ? 'text-green-400' : matchScore >= 60 ? 'text-cyan-400' : matchScore >= 40 ? 'text-amber-400' : 'text-red-400'
+            matchScore >= 80 ? 'text-green-400' : matchScore >= 60 ? 'text-indigo-400' : matchScore >= 40 ? 'text-amber-400' : 'text-red-400'
           }`}>{matchScore}% match</span>
         </div>
       )}
@@ -350,7 +350,7 @@ export default function GrowthCampaignNests() {
             </div>
             <div className="flex items-center gap-3">
               {(selectedNestIds.length > 0 || totalCustomProspects > 0) && (
-                <Badge className="bg-cyan-500/20 text-cyan-400">
+                <Badge className="bg-indigo-500/20 text-indigo-400">
                   {activeTab === 'custom'
                     ? `${totalCustomProspects} prospects selected`
                     : `${selectedNestIds.length} nest${selectedNestIds.length !== 1 ? 's' : ''} selected`
@@ -360,7 +360,7 @@ export default function GrowthCampaignNests() {
               <Button
                 onClick={handleContinue}
                 disabled={saving || (selectedNestIds.length === 0 && totalCustomProspects === 0)}
-                className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ArrowRight className="w-4 h-4 mr-2" />}
                 Continue to Enrichment
@@ -380,7 +380,7 @@ export default function GrowthCampaignNests() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 activeTab === tab.id
-                  ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                  ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30'
                   : 'text-zinc-400 hover:text-white bg-zinc-900/30 border border-transparent'
               }`}
             >
@@ -463,8 +463,8 @@ export default function GrowthCampaignNests() {
               <GlassCard className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
-                      <Users className="w-4 h-4 text-cyan-400" />
+                    <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                      <Users className="w-4 h-4 text-indigo-400" />
                     </div>
                     <div>
                       <p className="text-white font-medium">{totalCustomProspects} prospects selected</p>
@@ -506,7 +506,7 @@ export default function GrowthCampaignNests() {
                       className="w-full flex items-center justify-between p-4 text-left hover:bg-white/[0.02] transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <Package className="w-5 h-5 text-cyan-400" />
+                        <Package className="w-5 h-5 text-indigo-400" />
                         <div>
                           <p className="text-white font-medium">{nest.name}</p>
                           <p className="text-xs text-zinc-500">{nest.lead_count || 0} prospects · {nest.industry || 'Various'}</p>
@@ -514,7 +514,7 @@ export default function GrowthCampaignNests() {
                       </div>
                       <div className="flex items-center gap-3">
                         {selected.size > 0 && (
-                          <Badge className="bg-cyan-500/20 text-cyan-400">{selected.size} selected</Badge>
+                          <Badge className="bg-indigo-500/20 text-indigo-400">{selected.size} selected</Badge>
                         )}
                         {isExpanded ? <ChevronDown className="w-4 h-4 text-zinc-400" /> : <ChevronRight className="w-4 h-4 text-zinc-400" />}
                       </div>
@@ -552,7 +552,7 @@ export default function GrowthCampaignNests() {
                                             }));
                                           }
                                         }}
-                                        className="accent-cyan-500"
+                                        className="accent-indigo-500"
                                       />
                                     </th>
                                     <th className="px-4 py-2 text-left">Name</th>
@@ -570,7 +570,7 @@ export default function GrowthCampaignNests() {
                                         key={pId}
                                         onClick={() => toggleProspect(nest.id, pId)}
                                         className={`cursor-pointer border-t border-white/[0.03] hover:bg-white/[0.02] ${
-                                          selected.has(pId) ? 'bg-cyan-500/5' : ''
+                                          selected.has(pId) ? 'bg-indigo-500/5' : ''
                                         }`}
                                       >
                                         <td className="px-4 py-2">
@@ -578,7 +578,7 @@ export default function GrowthCampaignNests() {
                                             type="checkbox"
                                             checked={selected.has(pId)}
                                             readOnly
-                                            className="accent-cyan-500"
+                                            className="accent-indigo-500"
                                           />
                                         </td>
                                         <td className="px-4 py-2 text-white">{name}</td>
