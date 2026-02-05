@@ -134,6 +134,41 @@ import GlobalShortcuts from "@/components/GlobalShortcuts";
 import { NotificationsProvider } from "@/contexts/NotificationsContext";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
 
+// SYNC Avatar sidebar button — single-click = chat, double-click = voice mode
+function SyncAvatarSidebarButton({ onSingleClick, onDoubleClick }) {
+  const clickTimer = React.useRef(null);
+
+  const handleClick = React.useCallback((e) => {
+    e.preventDefault();
+    if (clickTimer.current) {
+      // Second click within 300ms → double-click
+      clearTimeout(clickTimer.current);
+      clickTimer.current = null;
+      onDoubleClick();
+    } else {
+      // First click — wait to see if a second follows
+      clickTimer.current = setTimeout(() => {
+        clickTimer.current = null;
+        onSingleClick();
+      }, 300);
+    }
+  }, [onSingleClick, onDoubleClick]);
+
+  React.useEffect(() => {
+    return () => { if (clickTimer.current) clearTimeout(clickTimer.current); };
+  }, []);
+
+  return (
+    <button
+      onClick={handleClick}
+      className="flex items-center justify-center min-h-[44px] w-full p-2 mb-2 rounded-xl transition-all duration-200 group hover:bg-white/5 active:scale-[0.98]"
+      title="Click: SYNC Chat — Double-click: Voice Mode"
+    >
+      <SyncAvatarMini size={36} />
+    </button>
+  );
+}
+
 // Navigation items with permission requirements
 // permission: null = always visible, string = requires that permission
 const navigationItems = [
@@ -884,14 +919,11 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     <div className="flex flex-col h-full relative overflow-visible">
       {/* Navigation - Mobile optimized with larger touch targets */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-1 scrollbar-hide scroll-smooth-ios">
-        {/* SYNC Avatar - top of sidebar */}
-        <Link
-          to={createPageUrl("SyncAgent")}
-          className="flex items-center justify-center min-h-[44px] p-2 mb-2 rounded-xl transition-all duration-200 group hover:bg-white/5 active:scale-[0.98]"
-          title="SYNC Agent"
-        >
-          <SyncAvatarMini size={36} />
-        </Link>
+        {/* SYNC Avatar - top of sidebar: click = chat, double-click = voice */}
+        <SyncAvatarSidebarButton
+          onSingleClick={() => navigate(createPageUrl("SyncAgent"))}
+          onDoubleClick={handleOpenVoiceMode}
+        />
 
         {/* Core Navigation - filtered by permissions */}
         <div className="space-y-1">
