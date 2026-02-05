@@ -3335,6 +3335,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
         const pos = columns.length;
         const { error } = await supabase.from('enrich_columns').insert({
           workspace_id: activeWorkspaceId,
+          table_id: activeTableId,
           name: action.name,
           type: action.column_type,
           position: pos,
@@ -3354,7 +3355,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
     } catch (err) {
       toast.error(`Failed to apply: ${err.message}`);
     }
-  }, [columns, activeWorkspaceId, loadWorkspaceDetail]);
+  }, [columns, activeWorkspaceId, activeTableId, loadWorkspaceDetail]);
 
   const clearChat = useCallback(() => {
     setChatMessages([]);
