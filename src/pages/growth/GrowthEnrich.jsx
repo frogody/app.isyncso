@@ -3329,22 +3329,15 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
     }
   }, [chatMessages, chatLoading, buildChatContext, saveChatHistory]);
 
-  const applyChatAction = useCallback(async (action) => {
+  const applyChatAction = useCallback((action) => {
     try {
       if (action.type === 'add_column') {
-        const pos = columns.length;
-        const { error } = await supabase.from('enrich_columns').insert({
-          workspace_id: activeWorkspaceId,
-          table_id: activeTableId,
-          name: action.name,
-          type: action.column_type,
-          position: pos,
-          config: action.config || {},
-          width: DEFAULT_COL_WIDTH,
-        });
-        if (error) throw error;
-        toast.success(`Column "${action.name}" added`);
-        loadWorkspaceDetail(activeWorkspaceId);
+        // Open Add Column dialog pre-configured so user can review & complete setup
+        setColType(action.column_type || 'enrichment');
+        setColName(action.name || '');
+        setColConfig(action.config || {});
+        setColDialogOpen(true);
+        toast.success(`Configure "${action.name}" column and click Add Column`);
       } else if (action.type === 'add_filter') {
         const col = columns.find(c => c.name === action.column);
         if (col) {
@@ -3355,7 +3348,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
     } catch (err) {
       toast.error(`Failed to apply: ${err.message}`);
     }
-  }, [columns, activeWorkspaceId, activeTableId, loadWorkspaceDetail]);
+  }, [columns]);
 
   const clearChat = useCallback(() => {
     setChatMessages([]);
