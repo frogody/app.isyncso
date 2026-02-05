@@ -27,11 +27,10 @@ export default function useSyncVoice() {
   const [history, setHistory] = useState([]);
 
   const recognitionRef = useRef(null);
-  const abortRef = useRef(null);
   const audioElRef = useRef(null);
   const activeRef = useRef(false);
-  const safetyTimerRef = useRef(null);
-  const processingRef = useRef(false); // prevent double-processing
+  const processingRef = useRef(false);
+  const turnIdRef = useRef(0); // increments each turn — stale callbacks check this
 
   // Store latest refs so callbacks never go stale
   const syncStateRef = useRef(syncState);
@@ -44,61 +43,55 @@ export default function useSyncVoice() {
   const isActive = voiceState !== VOICE_STATES.OFF;
 
   // =========================================================================
-  // Audio — simple Audio element (doesn't interfere with mic like AudioContext)
+  // Audio — simple Audio element (no AudioContext mic interference)
   // =========================================================================
-  const playAudio = useCallback((base64, onDone) => {
-    try {
-      // Stop any existing audio
-      if (audioElRef.current) {
+  const stopAudio = useCallback(() => {
+    if (audioElRef.current) {
+      try {
+        audioElRef.current.onended = null;
+        audioElRef.current.onerror = null;
         audioElRef.current.pause();
         audioElRef.current.src = '';
-        audioElRef.current = null;
-      }
+      } catch (_) {}
+      audioElRef.current = null;
+    }
+  }, []);
+
+  const playAudio = useCallback((base64, turnId, onDone) => {
+    // If turn changed (safety timer fired), don't play
+    if (turnIdRef.current !== turnId) {
+      console.log('[SyncVoice] Skipping audio — turn expired');
+      return;
+    }
+
+    try {
+      stopAudio(); // stop any previous
 
       const audio = new Audio(`data:audio/mp3;base64,${base64}`);
       audioElRef.current = audio;
 
       audio.onended = () => {
-        console.log('[SyncVoice] Audio playback ended');
+        console.log('[SyncVoice] Audio ended');
         audioElRef.current = null;
-        onDone?.();
+        if (turnIdRef.current === turnId) onDone?.();
       };
 
-      audio.onerror = (e) => {
-        console.error('[SyncVoice] Audio play error:', e);
+      audio.onerror = () => {
+        console.warn('[SyncVoice] Audio error');
         audioElRef.current = null;
-        onDone?.();
+        if (turnIdRef.current === turnId) onDone?.();
       };
 
-      audio.play().catch((e) => {
-        console.error('[SyncVoice] Audio play() rejected:', e);
+      audio.play().catch(() => {
         audioElRef.current = null;
-        onDone?.();
+        if (turnIdRef.current === turnId) onDone?.();
       });
     } catch (e) {
-      console.error('[SyncVoice] Audio error:', e);
+      console.error('[SyncVoice] playAudio error:', e);
       audioElRef.current = null;
-      onDone?.();
+      if (turnIdRef.current === turnId) onDone?.();
     }
-  }, []);
-
-  const stopAudio = useCallback(() => {
-    if (audioElRef.current) {
-      audioElRef.current.pause();
-      audioElRef.current.src = '';
-      audioElRef.current = null;
-    }
-  }, []);
-
-  // =========================================================================
-  // Safety timer — force restart listening if stuck
-  // =========================================================================
-  const clearSafetyTimer = useCallback(() => {
-    if (safetyTimerRef.current) {
-      clearTimeout(safetyTimerRef.current);
-      safetyTimerRef.current = null;
-    }
-  }, []);
+  }, [stopAudio]);
 
   // =========================================================================
   // Speech recognition
@@ -107,12 +100,12 @@ export default function useSyncVoice() {
 
   const startListening = useCallback(() => {
     if (!activeRef.current || !hasSpeechRecognition) return;
-    if (processingRef.current) {
-      console.log('[SyncVoice] Skipping startListening — still processing');
-      return;
-    }
+    if (processingRef.current) return;
 
-    // Clean up existing
+    // ALWAYS stop audio before starting mic (prevents echo)
+    stopAudio();
+
+    // Clean up existing recognition
     if (recognitionRef.current) {
       try { recognitionRef.current.abort(); } catch (_) {}
       recognitionRef.current = null;
@@ -120,13 +113,12 @@ export default function useSyncVoice() {
 
     try {
       const rec = new SpeechRecognition();
-      rec.continuous = false; // one utterance at a time — more reliable
-      rec.interimResults = false; // only final results
+      rec.continuous = false;
+      rec.interimResults = false;
       rec.lang = 'en-US';
 
       rec.onend = () => {
         recognitionRef.current = null;
-        // Auto-restart if still active and not processing
         if (activeRef.current && !processingRef.current) {
           setTimeout(() => {
             if (activeRef.current && !processingRef.current) {
@@ -152,8 +144,8 @@ export default function useSyncVoice() {
         for (let i = 0; i < event.results.length; i++) {
           transcript += event.results[i][0].transcript;
         }
-        console.log('[SyncVoice] Heard:', transcript);
         if (transcript && transcript.trim().length >= 2 && !processingRef.current) {
+          console.log('[SyncVoice] Heard:', transcript.trim());
           processingRef.current = true;
           processInput(transcript.trim());
         }
@@ -164,12 +156,12 @@ export default function useSyncVoice() {
       setVoiceState(VOICE_STATES.LISTENING);
       syncStateRef.current?.setMood?.('listening');
     } catch (e) {
-      console.error('[SyncVoice] Failed to start recognition:', e);
+      console.error('[SyncVoice] Failed to start:', e);
       if (activeRef.current) {
         setTimeout(() => startListeningFnRef.current?.(), 1000);
       }
     }
-  }, []);
+  }, [stopAudio]);
 
   useEffect(() => { startListeningFnRef.current = startListening; }, [startListening]);
 
@@ -181,18 +173,16 @@ export default function useSyncVoice() {
   }, []);
 
   // =========================================================================
-  // Resume listening — called after processing/speaking completes
+  // Resume listening — the single path back to mic after any turn
   // =========================================================================
   const resumeListening = useCallback(() => {
-    clearSafetyTimer();
     processingRef.current = false;
     if (!activeRef.current) return;
     console.log('[SyncVoice] Resuming listening');
     setVoiceState(VOICE_STATES.LISTENING);
     syncStateRef.current?.setMood?.('listening');
-    // Small delay to let audio hardware settle after TTS playback
     setTimeout(() => startListeningFnRef.current?.(), 500);
-  }, [clearSafetyTimer]);
+  }, []);
 
   // =========================================================================
   // Process speech → LLM → TTS → auto-resume
@@ -203,21 +193,16 @@ export default function useSyncVoice() {
       return;
     }
 
+    // New turn — any stale audio callbacks will see the old turnId and bail
+    const turnId = ++turnIdRef.current;
+
     console.log('[SyncVoice] Processing:', text);
     setVoiceState(VOICE_STATES.PROCESSING);
     syncStateRef.current?.setMood?.('thinking');
     stopListening();
-    clearSafetyTimer();
-
-    // Safety: force restart after 25s if stuck
-    safetyTimerRef.current = setTimeout(() => {
-      console.warn('[SyncVoice] Safety timeout — forcing restart');
-      stopAudio();
-      resumeListening();
-    }, 25000);
+    stopAudio();
 
     const controller = new AbortController();
-    abortRef.current = controller;
 
     const voiceUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-voice`;
     const headers = {
@@ -239,6 +224,7 @@ export default function useSyncVoice() {
         }),
       });
 
+      if (turnIdRef.current !== turnId) return; // turn expired
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const reply = data.response || data.text || '';
@@ -246,53 +232,54 @@ export default function useSyncVoice() {
 
       setHistory(prev => [...prev, { role: 'user', content: text }, { role: 'assistant', content: reply }].slice(-10));
 
-      if (!activeRef.current) { clearSafetyTimer(); processingRef.current = false; return; }
+      if (!activeRef.current || turnIdRef.current !== turnId) return;
 
-      // Phase 2: TTS Audio
+      // Phase 2: TTS Audio (10s hard timeout)
       if (reply) {
         setVoiceState(VOICE_STATES.SPEAKING);
         syncStateRef.current?.setMood?.('speaking');
 
         try {
-          const ttsController = new AbortController();
-          const ttsTimeout = setTimeout(() => ttsController.abort(), 10000);
+          const ttsTimeout = setTimeout(() => controller.abort(), 10000);
 
           const audioRes = await fetch(voiceUrl, {
             method: 'POST',
-            signal: ttsController.signal,
+            signal: controller.signal,
             headers,
             body: JSON.stringify({ ttsOnly: true, ttsText: reply }),
           });
           clearTimeout(ttsTimeout);
 
+          if (turnIdRef.current !== turnId) return; // turn expired
+
           if (audioRes.ok && activeRef.current) {
             const audioData = await audioRes.json();
             if (audioData.audio) {
-              console.log('[SyncVoice] Playing TTS audio...');
-              playAudio(audioData.audio, () => {
-                console.log('[SyncVoice] Audio done → resuming mic');
+              console.log('[SyncVoice] Playing TTS...');
+              playAudio(audioData.audio, turnId, () => {
                 resumeListening();
               });
               return;
             }
           }
-          console.log('[SyncVoice] No audio → resuming mic');
         } catch (audioErr) {
-          console.warn('[SyncVoice] TTS error:', audioErr.name === 'AbortError' ? 'timeout' : audioErr.message);
+          if (turnIdRef.current !== turnId) return;
+          console.warn('[SyncVoice] TTS:', audioErr.name === 'AbortError' ? 'timeout' : audioErr.message);
         }
       }
 
-      // No audio or TTS failed
-      resumeListening();
+      // No audio or TTS failed — resume immediately
+      if (turnIdRef.current === turnId) resumeListening();
 
     } catch (err) {
-      if (err.name === 'AbortError') { clearSafetyTimer(); processingRef.current = false; return; }
-      console.error('[SyncVoice] Error:', err);
-      if (activeRef.current) {
-        setTimeout(() => resumeListening(), 1000);
+      if (err.name === 'AbortError' || turnIdRef.current !== turnId) {
+        processingRef.current = false;
+        return;
       }
+      console.error('[SyncVoice] Error:', err);
+      if (activeRef.current) setTimeout(() => resumeListening(), 1000);
     }
-  }, [stopListening, playAudio, stopAudio, clearSafetyTimer, resumeListening]);
+  }, [stopListening, stopAudio, playAudio, resumeListening]);
 
   // =========================================================================
   // Activate / deactivate
@@ -311,6 +298,7 @@ export default function useSyncVoice() {
     console.log('[SyncVoice] Activated');
     activeRef.current = true;
     processingRef.current = false;
+    turnIdRef.current = 0;
     startListeningFnRef.current?.();
   }, []);
 
@@ -318,14 +306,13 @@ export default function useSyncVoice() {
     console.log('[SyncVoice] Deactivated');
     activeRef.current = false;
     processingRef.current = false;
-    clearSafetyTimer();
+    turnIdRef.current++; // expire any in-flight turn
     stopListening();
     stopAudio();
-    if (abortRef.current) abortRef.current.abort();
     setVoiceState(VOICE_STATES.OFF);
     syncStateRef.current?.setMood?.('idle');
     setHistory([]);
-  }, [stopListening, stopAudio, clearSafetyTimer]);
+  }, [stopListening, stopAudio]);
 
   const toggle = useCallback(() => {
     if (activeRef.current) deactivate();
@@ -336,10 +323,12 @@ export default function useSyncVoice() {
   useEffect(() => {
     return () => {
       activeRef.current = false;
-      if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
+      turnIdRef.current++;
       if (recognitionRef.current) try { recognitionRef.current.abort(); } catch (_) {}
-      if (abortRef.current) abortRef.current.abort();
-      if (audioElRef.current) { audioElRef.current.pause(); audioElRef.current = null; }
+      if (audioElRef.current) {
+        try { audioElRef.current.pause(); } catch (_) {}
+        audioElRef.current = null;
+      }
     };
   }, []);
 
