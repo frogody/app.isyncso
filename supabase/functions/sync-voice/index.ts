@@ -90,6 +90,7 @@ serve(async (req) => {
       history = [],
       voiceConfig,
       voice: requestedVoice,
+      skipTTS = false,
     } = await req.json();
 
     if (!message) {
@@ -155,11 +156,11 @@ serve(async (req) => {
       .replace(/`([^`]+)`/g, '$1')
       .trim();
 
-    // Generate TTS audio
+    // Generate TTS audio only if requested
     let audio = '';
     let ttsTime = 0;
 
-    if (responseText.length > 0) {
+    if (!skipTTS && responseText.length > 0) {
       const ttsStart = Date.now();
       try {
         const ttsResult = await generateTTS(responseText, voice);
@@ -179,8 +180,8 @@ serve(async (req) => {
       JSON.stringify({
         text: responseText,
         response: responseText,
-        audio,
-        audioFormat: 'mp3',
+        audio: audio || undefined,
+        audioFormat: audio ? 'mp3' : undefined,
         mood: 'neutral',
         timing: { total: totalTime, llm: llmTime, tts: ttsTime },
       }),

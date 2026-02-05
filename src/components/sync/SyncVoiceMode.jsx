@@ -1,12 +1,9 @@
 /**
- * SyncVoiceMode v2.0
- * Comprehensive voice conversation interface with SYNC
+ * SyncVoiceMode v3 — Fast voice conversation
  *
- * Architecture:
- * - Pre-generated acknowledgments with same TTS voice (no jarring voice switches)
- * - Smart acknowledgment detection (only for searches/actions, not simple queries)
- * - Optimized latency with visual feedback
- * - Echo prevention with audio state tracking
+ * No acknowledgments, no server-side TTS.
+ * Uses browser speechSynthesis for instant spoken output.
+ * Edge function returns text only — no audio encoding/download.
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -17,24 +14,14 @@ import { useTheme } from '@/contexts/GlobalThemeContext';
 import { useUser } from '@/components/context/UserContext';
 import { useSyncState } from '@/components/context/SyncStateContext';
 import SyncAvatarMini from '@/components/icons/SyncAvatarMini';
-import {
-  VOICE_ACKNOWLEDGMENTS,
-  getRandomAcknowledgment,
-  detectAcknowledgmentCategory,
-} from '@/constants/voiceAcknowledgments';
 
-// Check for speech recognition support
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const hasSpeechRecognition = !!SpeechRecognition;
+const synth = window.speechSynthesis;
 
-// Generate unique session ID
-const generateSessionId = () => `voice-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-// Voice states for UI feedback
-const VOICE_STATES = {
+const STATES = {
   IDLE: 'idle',
   LISTENING: 'listening',
-  ACKNOWLEDGING: 'acknowledging',
   PROCESSING: 'processing',
   SPEAKING: 'speaking',
 };
@@ -44,399 +31,203 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
   const { syt } = useTheme();
   const syncState = useSyncState();
 
-  // Core state
-  const [voiceState, setVoiceState] = useState(VOICE_STATES.IDLE);
+  const [state, setState] = useState(STATES.IDLE);
   const [transcript, setTranscript] = useState('');
   const [lastResponse, setLastResponse] = useState('');
   const [error, setError] = useState(null);
-  const [sessionId] = useState(generateSessionId);
   const [isMuted, setIsMuted] = useState(false);
-  const [conversationHistory, setConversationHistory] = useState([]);
+  const [history, setHistory] = useState([]);
   const [latency, setLatency] = useState(null);
-  const [statusText, setStatusText] = useState('');
 
-  // Refs
   const recognitionRef = useRef(null);
-  const audioContextRef = useRef(null);
-  const isAudioPlayingRef = useRef(false);
-  const currentSourceRef = useRef(null);
+  const processRef = useRef(null);
+  const abortRef = useRef(null);
 
-  // Computed states for backward compatibility
-  const isListening = voiceState === VOICE_STATES.LISTENING;
-  const isSpeaking = voiceState === VOICE_STATES.SPEAKING || voiceState === VOICE_STATES.ACKNOWLEDGING;
-  const isProcessing = voiceState === VOICE_STATES.PROCESSING || voiceState === VOICE_STATES.ACKNOWLEDGING;
+  const isListening = state === STATES.LISTENING;
+  const isSpeaking = state === STATES.SPEAKING;
+  const isProcessing = state === STATES.PROCESSING;
+  const isBusy = isSpeaking || isProcessing;
 
-  // Initialize audio context
-  useEffect(() => {
-    if (isOpen && !audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    return () => {
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-        audioContextRef.current = null;
-      }
-    };
-  }, [isOpen]);
-
-  // Play audio from base64
-  const playAudio = useCallback(async (audioBase64, onEnd) => {
-    if (!audioContextRef.current || isMuted) {
-      onEnd?.();
+  // Speak text using browser speech synthesis
+  const speak = useCallback((text, onDone) => {
+    if (isMuted || !text) {
+      onDone?.();
       return;
     }
-
-    try {
-      // Resume audio context if suspended
-      if (audioContextRef.current.state === 'suspended') {
-        await audioContextRef.current.resume();
-      }
-
-      // Decode base64 to ArrayBuffer
-      const binaryString = atob(audioBase64);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-
-      // Decode audio data
-      const audioBuffer = await audioContextRef.current.decodeAudioData(bytes.buffer.slice(0));
-
-      // Create and play source
-      const source = audioContextRef.current.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(audioContextRef.current.destination);
-      currentSourceRef.current = source;
-
-      source.onended = () => {
-        currentSourceRef.current = null;
-        onEnd?.();
-      };
-
-      source.start(0);
-    } catch (error) {
-      console.error('[Voice] Audio playback error:', error);
-      currentSourceRef.current = null;
-      onEnd?.();
-    }
+    synth.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.05;
+    utterance.pitch = 1;
+    utterance.onend = () => onDone?.();
+    utterance.onerror = () => onDone?.();
+    synth.speak(utterance);
   }, [isMuted]);
 
-  // Stop any playing audio
-  const stopAudio = useCallback(() => {
-    if (currentSourceRef.current) {
-      try {
-        currentSourceRef.current.stop();
-      } catch (e) {
-        // Already stopped
-      }
-      currentSourceRef.current = null;
-    }
+  // Stop speaking
+  const stopSpeaking = useCallback(() => {
+    synth.cancel();
   }, []);
 
-  // Start listening
-  const startListening = useCallback(() => {
-    if (isAudioPlayingRef.current) {
-      console.log('[Voice] Skipping startListening - audio playing');
-      return;
-    }
-    if (recognitionRef.current && voiceState !== VOICE_STATES.LISTENING) {
-      try {
-        recognitionRef.current.start();
-        setVoiceState(VOICE_STATES.LISTENING);
-        setStatusText('Listening...');
-        syncState.setMood('listening');
-      } catch (e) {
-        // May already be running
-      }
-    }
-  }, [voiceState, syncState]);
-
-  // Stop listening
-  const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {
-        // May already be stopped
-      }
-    }
-  }, []);
-
-  // Process voice input - the main flow
-  const processVoiceInput = useCallback(async (text) => {
+  // Process user input — call edge function, speak result
+  const processInput = useCallback(async (text) => {
     if (!text) return;
 
     console.log('[Voice] Processing:', text);
     setTranscript('');
-    stopListening();
-    isAudioPlayingRef.current = true;
-
-    const startTime = Date.now();
-
-    // Determine if we need an acknowledgment
-    const ackCategory = detectAcknowledgmentCategory(text);
-    console.log('[Voice] Acknowledgment category:', ackCategory);
-
-    // Play acknowledgment if needed (for searches/actions, not simple queries)
-    if (ackCategory && !isMuted) {
-      setVoiceState(VOICE_STATES.ACKNOWLEDGING);
-      const ack = getRandomAcknowledgment(ackCategory);
-      setStatusText(ack.text);
-      syncState.setMood('speaking');
-
-      await new Promise((resolve) => {
-        playAudio(ack.audio, resolve);
-      });
-    }
-
-    // Now process with SYNC
-    setVoiceState(VOICE_STATES.PROCESSING);
-    setStatusText('Thinking...');
+    setState(STATES.PROCESSING);
     syncState.setMood('thinking');
 
+    // Stop recognition while processing
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (_) {}
+    }
+
+    const t0 = Date.now();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
-      // Call sync-voice endpoint (proxies to main /sync for full action support)
-      const response = await fetch(
+      const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-voice`,
         {
           method: 'POST',
+          signal: controller.signal,
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({
             message: text,
-            sessionId,
-            voiceConfig: { voice: 'tara' },
-            history: conversationHistory.slice(-6),
-            context: {
-              userId: user?.id,
-              companyId: user?.company_id || user?.organization_id,
-              source: 'voice-mode',
-            },
+            history: history.slice(-6),
+            skipTTS: true,
           }),
-        }
+        },
       );
 
-      if (!response.ok) {
-        throw new Error('Failed to get response');
-      }
+      if (!res.ok) throw new Error(`${res.status}`);
 
-      const data = await response.json();
-      const totalLatency = Date.now() - startTime;
-      setLatency(totalLatency);
+      const data = await res.json();
+      const ms = Date.now() - t0;
+      setLatency(ms);
 
-      const responseText = data.response || data.text || '';
-      console.log(`[Voice] Response in ${totalLatency}ms, mood: ${data.mood || 'unknown'}`);
+      const reply = data.response || data.text || '';
+      console.log(`[Voice] Got reply in ${ms}ms: "${reply.substring(0, 60)}"`);
 
-      // Log action execution if any
-      if (data.actionExecuted) {
-        console.log(`[Voice] Action executed: ${data.actionExecuted.type}, success: ${data.actionExecuted.success}`);
-      }
+      setHistory(prev => [...prev, { role: 'user', content: text }, { role: 'assistant', content: reply }].slice(-10));
+      setLastResponse(reply);
 
-      // Update conversation history
-      setConversationHistory(prev => [
-        ...prev,
-        { role: 'user', content: text },
-        { role: 'assistant', content: responseText }
-      ].slice(-10));
+      // Speak it via browser TTS
+      setState(STATES.SPEAKING);
+      syncState.setMood('speaking');
 
-      setLastResponse(responseText);
+      speak(reply, () => {
+        setState(STATES.IDLE);
+        syncState.setMood('listening');
+      });
 
-      // Play the response
-      if (!isMuted && data.audio) {
-        setVoiceState(VOICE_STATES.SPEAKING);
-        setStatusText('');
-        syncState.setMood('speaking');
-
-        await new Promise((resolve) => {
-          playAudio(data.audio, resolve);
-        });
-      }
-
-      // Done - resume listening after a short delay (echo prevention)
-      setVoiceState(VOICE_STATES.IDLE);
-      setStatusText('');
-
-      setTimeout(() => {
-        isAudioPlayingRef.current = false;
-        if (isOpen) {
-          startListening();
-        }
-      }, 400);
-
-    } catch (error) {
-      console.error('[Voice] Processing error:', error);
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.error('[Voice] Error:', err);
       setError('Something went wrong. Try again.');
-      setVoiceState(VOICE_STATES.IDLE);
-      setStatusText('');
-      isAudioPlayingRef.current = false;
-      startListening();
-    }
-  }, [
-    sessionId, user, isMuted, syncState, conversationHistory,
-    playAudio, stopListening, startListening, isOpen
-  ]);
-
-  // Ref to hold processVoiceInput to avoid dependency issues
-  const processVoiceInputRef = useRef(processVoiceInput);
-
-  useEffect(() => {
-    processVoiceInputRef.current = processVoiceInput;
-  }, [processVoiceInput]);
-
-  // Cleanup recognition on unmount
-  useEffect(() => {
-    return () => {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.abort();
-        } catch (e) {}
-        recognitionRef.current = null;
-      }
-    };
-  }, []);
-
-  // Set initial state when opened
-  useEffect(() => {
-    if (isOpen) {
-      setVoiceState(VOICE_STATES.IDLE);
-      setStatusText('Tap mic to speak');
+      setState(STATES.IDLE);
       syncState.setMood('listening');
     }
-  }, [isOpen, syncState]);
+  }, [history, speak, syncState]);
+
+  // Keep processRef current
+  useEffect(() => { processRef.current = processInput; }, [processInput]);
+
+  // Toggle mic
+  const toggleMic = useCallback(async () => {
+    if (state === STATES.LISTENING) {
+      if (recognitionRef.current) try { recognitionRef.current.stop(); } catch (_) {}
+      setState(STATES.IDLE);
+      setTranscript('');
+      return;
+    }
+
+    if (state !== STATES.IDLE) return;
+    setError(null);
+
+    // Get mic permission
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(t => t.stop());
+    } catch (_) {
+      setError('Please allow microphone access.');
+      return;
+    }
+
+    try {
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = true;
+      rec.lang = 'en-US';
+
+      rec.onend = () => {
+        setState(prev => prev === STATES.LISTENING ? STATES.IDLE : prev);
+      };
+
+      rec.onerror = (e) => {
+        if (e.error === 'not-allowed') setError('Microphone blocked.');
+        else if (e.error === 'no-speech') setError('No speech detected.');
+        else if (e.error !== 'aborted') setError(`Error: ${e.error}`);
+        setState(STATES.IDLE);
+      };
+
+      rec.onresult = (event) => {
+        let interim = '';
+        let final = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const t = event.results[i][0].transcript;
+          if (event.results[i].isFinal) final += t;
+          else interim += t;
+        }
+        setTranscript(interim || final);
+        if (final && final.trim().length >= 2) {
+          processRef.current(final.trim());
+        }
+      };
+
+      recognitionRef.current = rec;
+      rec.start();
+      setState(STATES.LISTENING);
+      syncState.setMood('listening');
+    } catch (_) {
+      setError('Failed to start. Try again.');
+    }
+  }, [state, syncState]);
 
   // Cleanup on close
   useEffect(() => {
     if (!isOpen) {
-      stopListening();
-      stopAudio();
+      if (recognitionRef.current) try { recognitionRef.current.abort(); } catch (_) {}
+      if (abortRef.current) abortRef.current.abort();
+      stopSpeaking();
+      setState(STATES.IDLE);
       setTranscript('');
       setLastResponse('');
       setError(null);
       setLatency(null);
-      setStatusText('');
-      setConversationHistory([]);
-      setVoiceState(VOICE_STATES.IDLE);
-      isAudioPlayingRef.current = false;
+      setHistory([]);
     }
-  }, [isOpen, stopListening, stopAudio]);
+  }, [isOpen, stopSpeaking]);
 
-  // Toggle mute
-  const toggleMute = useCallback(() => {
-    setIsMuted(prev => !prev);
+  // Set initial state
+  useEffect(() => {
+    if (isOpen) {
+      setState(STATES.IDLE);
+      syncState.setMood('listening');
+    }
+  }, [isOpen, syncState]);
+
+  // Cleanup recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) try { recognitionRef.current.abort(); } catch (_) {}
+    };
   }, []);
 
-  // Toggle mic - push to talk
-  const toggleMic = useCallback(async () => {
-    console.log('[Voice] toggleMic called, state:', voiceState);
-
-    if (voiceState === VOICE_STATES.LISTENING) {
-      // Stop listening
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch (e) {}
-      }
-      setVoiceState(VOICE_STATES.IDLE);
-      setStatusText('Tap mic to speak');
-      setTranscript('');
-      return;
-    }
-
-    if (voiceState !== VOICE_STATES.IDLE) {
-      console.log('[Voice] Not idle, ignoring');
-      return;
-    }
-
-    // Clear any previous errors
-    setError(null);
-
-    // Request microphone permission explicitly first
-    try {
-      console.log('[Voice] Requesting mic permission...');
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Got permission - stop the stream immediately (we just needed permission)
-      stream.getTracks().forEach(track => track.stop());
-      console.log('[Voice] Mic permission granted');
-    } catch (e) {
-      console.error('[Voice] Mic permission denied:', e);
-      setError('Please allow microphone access and try again');
-      return;
-    }
-
-    // Now create fresh recognition and start
-    try {
-      // Create new recognition instance for each session
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-      recognition.maxAlternatives = 1;
-
-      recognition.onstart = () => {
-        console.log('[Voice] Recognition started');
-        setError(null);
-      };
-
-      recognition.onend = () => {
-        console.log('[Voice] Recognition ended');
-        setVoiceState(VOICE_STATES.IDLE);
-        setStatusText('Tap mic to speak');
-      };
-
-      recognition.onerror = (event) => {
-        console.error('[Voice] Recognition error:', event.error);
-        if (event.error === 'not-allowed') {
-          setError('Microphone blocked. Check browser settings.');
-        } else if (event.error === 'no-speech') {
-          setError('No speech detected. Try again.');
-        } else if (event.error !== 'aborted') {
-          setError(`Error: ${event.error}`);
-        }
-        setVoiceState(VOICE_STATES.IDLE);
-        setStatusText('Tap mic to speak');
-      };
-
-      recognition.onresult = (event) => {
-        let interimTranscript = '';
-        let finalTranscript = '';
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const result = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += result;
-          } else {
-            interimTranscript += result;
-          }
-        }
-
-        setTranscript(interimTranscript || finalTranscript);
-
-        if (finalTranscript) {
-          const trimmed = finalTranscript.trim();
-          console.log('[Voice] Final:', trimmed);
-          if (trimmed.length >= 2) {
-            processVoiceInputRef.current(trimmed);
-          }
-        }
-      };
-
-      recognitionRef.current = recognition;
-      recognition.start();
-      setVoiceState(VOICE_STATES.LISTENING);
-      setStatusText('Listening...');
-      setTranscript('');
-      syncState.setMood('listening');
-      console.log('[Voice] Started successfully');
-    } catch (e) {
-      console.error('[Voice] Failed to start recognition:', e);
-      setError('Failed to start. Try again.');
-      setVoiceState(VOICE_STATES.IDLE);
-    }
-  }, [voiceState, syncState]);
-
-  // No speech recognition support
   if (!hasSpeechRecognition) {
     return (
       <AnimatePresence>
@@ -449,9 +240,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
           >
             <div className={`${syt('bg-white', 'bg-zinc-900')} border ${syt('border-slate-300', 'border-zinc-700')} rounded-2xl p-6 max-w-sm text-center`}>
               <p className={`${syt('text-slate-900', 'text-white')} mb-4`}>Voice mode requires a browser with Speech Recognition support.</p>
-              <button onClick={onClose} className={`px-4 py-2 ${syt('bg-slate-100', 'bg-zinc-800')} ${syt('text-slate-900', 'text-white')} rounded-lg ${syt('hover:bg-slate-200', 'hover:bg-zinc-700')}`}>
-                Close
-              </button>
+              <button onClick={onClose} className={`px-4 py-2 ${syt('bg-slate-100', 'bg-zinc-800')} ${syt('text-slate-900', 'text-white')} rounded-lg`}>Close</button>
             </div>
           </motion.div>
         )}
@@ -459,17 +248,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
     );
   }
 
-  // Get display status
-  const getDisplayStatus = () => {
-    if (statusText) return statusText;
-    switch (voiceState) {
-      case VOICE_STATES.LISTENING: return 'Listening...';
-      case VOICE_STATES.ACKNOWLEDGING: return 'One moment...';
-      case VOICE_STATES.PROCESSING: return 'Thinking...';
-      case VOICE_STATES.SPEAKING: return '';
-      default: return 'Tap to speak';
-    }
-  };
+  const statusText = isListening ? 'Listening...' : isProcessing ? 'Thinking...' : isSpeaking ? '' : 'Tap to speak';
 
   return (
     <AnimatePresence>
@@ -482,7 +261,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
         >
           {/* Top controls */}
           <div className="absolute top-6 right-6 flex items-center gap-2">
-            {latency && (
+            {latency !== null && (
               <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full ${syt('bg-slate-50', 'bg-zinc-800/50')} text-xs`}>
                 <Zap className="w-3 h-3 text-green-400" />
                 <span className="text-green-400">{latency}ms</span>
@@ -490,26 +269,23 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
             )}
             <button
               onClick={onSwitchToChat}
-              className={`p-3 rounded-full ${syt('bg-slate-50', 'bg-zinc-800/50')} ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:text-slate-900', 'hover:text-white')} ${syt('hover:bg-slate-100', 'hover:bg-zinc-700/50')} transition-colors`}
+              className={`p-3 rounded-full ${syt('bg-slate-50', 'bg-zinc-800/50')} ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:text-slate-900', 'hover:text-white')} transition-colors`}
               title="Switch to chat"
             >
               <MessageSquare className="w-5 h-5" />
             </button>
             <button
-              onClick={toggleMute}
+              onClick={() => setIsMuted(m => !m)}
               className={cn(
                 "p-3 rounded-full transition-colors",
-                isMuted
-                  ? "bg-red-500/20 text-red-400"
-                  : `${syt('bg-slate-50', 'bg-zinc-800/50')} ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:text-slate-900', 'hover:text-white')} ${syt('hover:bg-slate-100', 'hover:bg-zinc-700/50')}`
+                isMuted ? "bg-red-500/20 text-red-400" : `${syt('bg-slate-50', 'bg-zinc-800/50')} ${syt('text-slate-500', 'text-zinc-400')}`
               )}
-              title={isMuted ? "Unmute" : "Mute"}
             >
               {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
             </button>
             <button
               onClick={onClose}
-              className={`p-3 rounded-full ${syt('bg-slate-50', 'bg-zinc-800/50')} ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:text-slate-900', 'hover:text-white')} ${syt('hover:bg-slate-100', 'hover:bg-zinc-700/50')} transition-colors`}
+              className={`p-3 rounded-full ${syt('bg-slate-50', 'bg-zinc-800/50')} ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:text-slate-900', 'hover:text-white')} transition-colors`}
             >
               <X className="w-5 h-5" />
             </button>
@@ -525,16 +301,9 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
 
           {/* Main content */}
           <div className="flex flex-col items-center gap-8">
-            {/* Avatar with state-based animation */}
             <motion.div
               animate={{
-                scale: isSpeaking
-                  ? [1, 1.08, 1]
-                  : isProcessing
-                  ? [1, 1.02, 1]
-                  : isListening
-                  ? [1, 1.03, 1]
-                  : 1,
+                scale: isSpeaking ? [1, 1.08, 1] : isProcessing ? [1, 1.02, 1] : isListening ? [1, 1.03, 1] : 1,
               }}
               transition={{
                 duration: isSpeaking ? 0.3 : isProcessing ? 0.8 : 2,
@@ -545,57 +314,38 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
               <SyncAvatarMini size={180} />
             </motion.div>
 
-            {/* Status text */}
             <div className="text-center space-y-2">
               <h2 className={`text-2xl font-semibold ${syt('text-slate-900', 'text-white')}`}>
-                {getDisplayStatus()}
+                {statusText}
               </h2>
               {error && <p className="text-red-400 text-sm">{error}</p>}
             </div>
 
-            {/* Transcript / Response display */}
             <div className="min-h-[100px] max-w-lg text-center px-6">
               {transcript && (
-                <motion.p
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-lg text-cyan-300 italic"
-                >
-                  "{transcript}"
+                <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-lg text-cyan-300 italic">
+                  &ldquo;{transcript}&rdquo;
                 </motion.p>
               )}
-              {lastResponse && !transcript && voiceState !== VOICE_STATES.PROCESSING && (
-                <motion.p
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`text-lg ${syt('text-slate-600', 'text-zinc-300')}`}
-                >
+              {lastResponse && !transcript && !isProcessing && (
+                <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`text-lg ${syt('text-slate-600', 'text-zinc-300')}`}>
                   {lastResponse}
                 </motion.p>
               )}
-              {voiceState === VOICE_STATES.PROCESSING && (
-                <motion.div
-                  className="flex justify-center gap-1"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  {[0, 1, 2].map((i) => (
+              {isProcessing && (
+                <motion.div className="flex justify-center gap-1" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  {[0, 1, 2].map(i => (
                     <motion.div
                       key={i}
                       className="w-2 h-2 bg-purple-500 rounded-full"
                       animate={{ y: [0, -8, 0] }}
-                      transition={{
-                        duration: 0.6,
-                        repeat: Infinity,
-                        delay: i * 0.15,
-                      }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
                     />
                   ))}
                 </motion.div>
               )}
             </div>
 
-            {/* Mic button */}
             <motion.button
               onClick={toggleMic}
               whileTap={{ scale: 0.95 }}
@@ -603,26 +353,17 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
                 "w-20 h-20 rounded-full flex items-center justify-center transition-all",
                 isListening
                   ? "bg-purple-500 text-white shadow-[0_0_30px_rgba(168,85,247,0.5)]"
-                  : isSpeaking || isProcessing
+                  : isBusy
                   ? "bg-purple-500/30 text-purple-300 cursor-not-allowed"
                   : `${syt('bg-slate-100', 'bg-zinc-800')} ${syt('text-slate-500', 'text-zinc-400')} ${syt('hover:bg-slate-200', 'hover:bg-zinc-700')}`
               )}
-              disabled={isSpeaking || isProcessing}
+              disabled={isBusy}
             >
-              {isListening ? (
-                <Mic className="w-8 h-8" />
-              ) : (
-                <MicOff className="w-8 h-8" />
-              )}
+              {isListening ? <Mic className="w-8 h-8" /> : <MicOff className="w-8 h-8" />}
             </motion.button>
 
-            {/* Instruction */}
             <p className={`text-sm ${syt('text-slate-400', 'text-zinc-600')}`}>
-              {isListening
-                ? "Speak naturally"
-                : isSpeaking || isProcessing
-                ? "SYNC is responding..."
-                : "Tap the mic to start"}
+              {isListening ? "Speak naturally" : isBusy ? "SYNC is responding..." : "Tap the mic to start"}
             </p>
           </div>
         </motion.div>
