@@ -124,6 +124,7 @@ import { SyncStateProvider } from "@/components/context/SyncStateContext";
 // Import SYNC floating components
 import SyncFloatingChat from "@/components/sync/SyncFloatingChat";
 import SyncVoiceMode from "@/components/sync/SyncVoiceMode";
+import useSyncVoice from "@/hooks/useSyncVoice";
 import EnrichmentProgressBar from "@/components/talent/EnrichmentProgressBar";
 
 // Import Keyboard Shortcuts
@@ -134,17 +135,25 @@ import GlobalShortcuts from "@/components/GlobalShortcuts";
 import { NotificationsProvider } from "@/contexts/NotificationsContext";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
 
-// SYNC Avatar sidebar button — single-click = chat, double-click = voice mode
-function SyncAvatarSidebarButton({ onSingleClick, onDoubleClick }) {
+// SYNC Avatar sidebar button — single-click = chat, double-click = voice mode (inline, no popup)
+function SyncAvatarSidebarButton({ onSingleClick, voiceHook }) {
   const clickTimer = React.useRef(null);
+  const { isActive, isListening, isProcessing, isSpeaking, toggle } = voiceHook;
 
   const handleClick = React.useCallback((e) => {
     e.preventDefault();
+
+    // If voice is active, any click toggles it off
+    if (isActive) {
+      toggle();
+      return;
+    }
+
     if (clickTimer.current) {
-      // Second click within 300ms → double-click
+      // Double-click → activate voice
       clearTimeout(clickTimer.current);
       clickTimer.current = null;
-      onDoubleClick();
+      toggle();
     } else {
       // First click — wait to see if a second follows
       clickTimer.current = setTimeout(() => {
@@ -152,19 +161,29 @@ function SyncAvatarSidebarButton({ onSingleClick, onDoubleClick }) {
         onSingleClick();
       }, 300);
     }
-  }, [onSingleClick, onDoubleClick]);
+  }, [onSingleClick, toggle, isActive]);
 
   React.useEffect(() => {
     return () => { if (clickTimer.current) clearTimeout(clickTimer.current); };
   }, []);
 
+  // Visual ring around avatar when voice is active
+  const ringClass = isActive
+    ? isListening ? 'ring-2 ring-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.5)]'
+      : isProcessing ? 'ring-2 ring-cyan-500 shadow-[0_0_12px_rgba(6,182,212,0.4)]'
+      : isSpeaking ? 'ring-2 ring-green-500 shadow-[0_0_12px_rgba(34,197,94,0.4)]'
+      : 'ring-2 ring-purple-500/50'
+    : '';
+
   return (
     <button
       onClick={handleClick}
-      className="flex items-center justify-center min-h-[44px] w-full p-2 mb-2 rounded-xl transition-all duration-200 group hover:bg-white/5 active:scale-[0.98]"
-      title="Click: SYNC Chat — Double-click: Voice Mode"
+      className={`flex items-center justify-center min-h-[44px] w-full p-2 mb-2 rounded-xl transition-all duration-300 group hover:bg-white/5 active:scale-[0.98] ${ringClass}`}
+      title={isActive ? 'Click to stop voice mode' : 'Click: SYNC Chat — Double-click: Voice Mode'}
     >
-      <SyncAvatarMini size={36} />
+      <div className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}>
+        <SyncAvatarMini size={36} />
+      </div>
     </button>
   );
 }
@@ -820,6 +839,9 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
   // Get animation context for avatar state
   const { triggerActivity } = useAnimation();
 
+  // Headless voice mode — driven entirely by the sidebar avatar
+  const syncVoice = useSyncVoice();
+
   // Global theme
   const { theme, toggleTheme } = useTheme();
 
@@ -922,7 +944,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         {/* SYNC Avatar - top of sidebar: click = chat, double-click = voice */}
         <SyncAvatarSidebarButton
           onSingleClick={() => navigate(createPageUrl("SyncAgent"))}
-          onDoubleClick={handleOpenVoiceMode}
+          voiceHook={syncVoice}
         />
 
         {/* Core Navigation - filtered by permissions */}
