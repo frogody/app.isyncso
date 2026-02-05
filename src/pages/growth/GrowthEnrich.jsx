@@ -851,25 +851,36 @@ export default function GrowthEnrich() {
       if (colErr) throw colErr;
       setColumns(cols || []);
 
-      // Fetch rows for active table
-      const { data: rws, error: rwErr } = await supabase
-        .from('enrich_rows')
-        .select('*')
-        .eq('table_id', targetTableId)
-        .order('position', { ascending: true });
-      if (rwErr) throw rwErr;
-      setRows(rws || []);
-
-      // Fetch cells
-      if (rws?.length && cols?.length) {
-        const rowIds = rws.map(r => r.id);
-        const { data: cellData, error: cellErr } = await supabase
-          .from('enrich_cells')
+      // Fetch rows for active table (paginate — Supabase default limit = 1000)
+      let rws = [];
+      const ROW_PAGE = 1000;
+      for (let off = 0; ; off += ROW_PAGE) {
+        const { data: page, error: rwErr } = await supabase
+          .from('enrich_rows')
           .select('*')
-          .in('row_id', rowIds);
-        if (cellErr) throw cellErr;
+          .eq('table_id', targetTableId)
+          .order('position', { ascending: true })
+          .range(off, off + ROW_PAGE - 1);
+        if (rwErr) throw rwErr;
+        if (!page || page.length === 0) break;
+        rws = rws.concat(page);
+        if (page.length < ROW_PAGE) break;
+      }
+      setRows(rws);
+
+      // Fetch cells (paginate by row batches to avoid query size limits)
+      if (rws.length && cols?.length) {
         const cellMap = {};
-        (cellData || []).forEach(c => { cellMap[`${c.row_id}:${c.column_id}`] = c; });
+        const CELL_BATCH = 500;
+        for (let b = 0; b < rws.length; b += CELL_BATCH) {
+          const batchIds = rws.slice(b, b + CELL_BATCH).map(r => r.id);
+          const { data: cellData, error: cellErr } = await supabase
+            .from('enrich_cells')
+            .select('*')
+            .in('row_id', batchIds);
+          if (cellErr) throw cellErr;
+          (cellData || []).forEach(c => { cellMap[`${c.row_id}:${c.column_id}`] = c; });
+        }
         setCells(cellMap);
       } else {
         setCells({});
@@ -890,12 +901,21 @@ export default function GrowthEnrich() {
     try {
       const { data: cols } = await supabase.from('enrich_columns').select('*').eq('table_id', tableId).order('position', { ascending: true });
       setColumns(cols || []);
-      const { data: rws } = await supabase.from('enrich_rows').select('*').eq('table_id', tableId).order('position', { ascending: true });
-      setRows(rws || []);
-      if (rws?.length && cols?.length) {
-        const { data: cellData } = await supabase.from('enrich_cells').select('*').in('row_id', rws.map(r => r.id));
+      let rws = [];
+      for (let off = 0; ; off += 1000) {
+        const { data: page } = await supabase.from('enrich_rows').select('*').eq('table_id', tableId).order('position', { ascending: true }).range(off, off + 999);
+        if (!page || page.length === 0) break;
+        rws = rws.concat(page);
+        if (page.length < 1000) break;
+      }
+      setRows(rws);
+      if (rws.length && cols?.length) {
         const cellMap = {};
-        (cellData || []).forEach(c => { cellMap[`${c.row_id}:${c.column_id}`] = c; });
+        for (let b = 0; b < rws.length; b += 500) {
+          const batchIds = rws.slice(b, b + 500).map(r => r.id);
+          const { data: cellData } = await supabase.from('enrich_cells').select('*').in('row_id', batchIds);
+          (cellData || []).forEach(c => { cellMap[`${c.row_id}:${c.column_id}`] = c; });
+        }
         setCells(cellMap);
       } else { setCells({}); }
     } catch (err) { console.error('Switch table error:', err); toast.error('Failed to switch table'); }
@@ -1198,7 +1218,7 @@ export default function GrowthEnrich() {
             for (let off = 0; ; off += PAGE) {
               const { data: page, error: pageErr } = await supabase
                 .from('growth_nest_items')
-                .select('id, prospect_id, prospects(first_name, last_name, email, linkedin_url, job_title, company, location, phone)')
+                .select('id, prospect_id, prospects(first_name, last_name, email, linkedin_url, job_title, company, location, phone, website)')
                 .in('growth_nest_id', selectedNestIds)
                 .range(off, off + PAGE - 1);
               if (pageErr) { console.error('Nest items page error:', pageErr); break; }
@@ -1220,6 +1240,7 @@ export default function GrowthEnrich() {
                     company_name: p.company || '',
                     location: p.location || '',
                     phone: p.phone || '',
+                    website: p.website || '',
                   },
                 };
               });
@@ -1257,11 +1278,13 @@ export default function GrowthEnrich() {
               // Create default columns first
               const defaultCols = [
                 { name: 'Name', type: 'field', config: { source_field: 'full_name' }, position: 0 },
-                { name: 'Email', type: 'field', config: { source_field: 'email' }, position: 1 },
-                { name: 'LinkedIn', type: 'field', config: { source_field: 'linkedin_profile' }, position: 2 },
-                { name: 'Title', type: 'field', config: { source_field: 'job_title' }, position: 3 },
-                { name: 'Company', type: 'field', config: { source_field: 'company_name' }, position: 4 },
-                { name: 'Location', type: 'field', config: { source_field: 'location' }, position: 5 },
+                { name: 'LinkedIn', type: 'field', config: { source_field: 'linkedin_profile' }, position: 1 },
+                { name: 'Title', type: 'field', config: { source_field: 'job_title' }, position: 2 },
+                { name: 'Company', type: 'field', config: { source_field: 'company_name' }, position: 3 },
+                { name: 'Website', type: 'field', config: { source_field: 'website' }, position: 4 },
+                { name: 'Email', type: 'field', config: { source_field: 'email' }, position: 5 },
+                { name: 'Phone', type: 'field', config: { source_field: 'phone' }, position: 6 },
+                { name: 'Location', type: 'field', config: { source_field: 'location' }, position: 7 },
               ].map(c => ({ ...c, workspace_id: ws.id, table_id: tableId, width: DEFAULT_COL_WIDTH }));
 
               const { data: newCols, error: colErr } = await supabase
