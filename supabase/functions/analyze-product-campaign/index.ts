@@ -14,8 +14,8 @@ serve(async (req) => {
   try {
     const { product, productDescription, problemSolved } = await req.json();
 
-    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
-    if (!GROQ_API_KEY) throw new Error("GROQ_API_KEY not set");
+    const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
+    if (!TOGETHER_API_KEY) throw new Error("TOGETHER_API_KEY not set");
 
     // Build rich context about the product
     const productContext = [
@@ -23,7 +23,9 @@ serve(async (req) => {
       `Type: ${product?.type || "Unknown"}`,
       `Description: ${productDescription || product?.description || "No description"}`,
       product?.tagline ? `Tagline: ${product.tagline}` : null,
-      product?.short_description ? `Short Description: ${product.short_description}` : null,
+      product?.short_description
+        ? `Short Description: ${product.short_description}`
+        : null,
       product?.category ? `Category: ${product.category}` : null,
       product?.price ? `Price: $${product.price}` : null,
       problemSolved ? `Problem Solved: ${problemSolved}` : null,
@@ -50,7 +52,7 @@ serve(async (req) => {
 
 Analyze the product deeply. Consider its type, price point, complexity, market positioning, and competitive landscape to infer the ideal customer profile and campaign strategy.
 
-Return a JSON object with these exact fields. Choose ONLY from the allowed values listed for each field.
+You MUST return a valid JSON object with these exact fields. Choose ONLY from the allowed values listed for each field.
 
 {
   "priceRange": one of ["under_1k", "1k_10k", "10k_50k", "50k_100k", "over_100k"],
@@ -79,41 +81,46 @@ Think step by step:
 5. What CHANNELS work best for this buyer persona and deal size?
 6. What makes outreach feel personal and relevant vs generic?
 
-Return ONLY valid JSON, no markdown, no explanation, no wrapping.`;
+Return ONLY valid JSON. No markdown, no explanation, no code fences, no wrapping text.`;
 
     const response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
+      "https://api.together.xyz/v1/chat/completions",
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${GROQ_API_KEY}`,
+          Authorization: `Bearer ${TOGETHER_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
+          model: "moonshotai/Kimi-K2-Instruct",
           messages: [
             { role: "system", content: systemPrompt },
             {
               role: "user",
-              content: `Analyze this product and return optimal B2B campaign configuration:\n\n${productContext}`,
+              content: `Analyze this product and return optimal B2B campaign configuration as JSON:\n\n${productContext}`,
             },
           ],
           temperature: 0.2,
           max_tokens: 2000,
-          response_format: { type: "json_object" },
         }),
       }
     );
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Groq API error ${response.status}: ${errorText}`);
+      throw new Error(`Together API error ${response.status}: ${errorText}`);
     }
 
-    const groqData = await response.json();
-    const content = groqData.choices?.[0]?.message?.content;
+    const aiData = await response.json();
+    let content = aiData.choices?.[0]?.message?.content;
 
     if (!content) throw new Error("No response from AI");
+
+    // Strip markdown code fences if present
+    content = content.trim();
+    if (content.startsWith("```")) {
+      content = content.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+    }
 
     const suggestions = JSON.parse(content);
 
