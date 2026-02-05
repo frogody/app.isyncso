@@ -1152,7 +1152,6 @@ export default function GrowthEnrich() {
 
         // Auto-create workspace for this campaign
         const selectedNestIds = camp.selected_nest_ids || [];
-        const primaryNestId = selectedNestIds[0] || null;
         const wsName = `${camp.name || 'Campaign'} - Enrichment`;
         const { data: ws, error: wsErr } = await supabase
           .from('enrich_workspaces')
@@ -1161,7 +1160,8 @@ export default function GrowthEnrich() {
             name: wsName,
             created_by: user.id,
             module: 'growth',
-            nest_id: primaryNestId,
+            // nest_id FK references nests table — growth nests are separate, so leave null
+            nest_id: null,
           })
           .select()
           .single();
