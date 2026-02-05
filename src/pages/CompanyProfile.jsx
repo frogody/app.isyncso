@@ -89,10 +89,10 @@ export default function CompanyProfile() {
 
   const formatCurrency = (value) => {
     if (!value) return 'N/A';
-    if (value >= 1000000000) return `$${(value / 1000000000).toFixed(1)}B`;
-    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-    if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
-    return `$${value}`;
+    if (value >= 1000000000) return `\u20AC${(value / 1000000000).toFixed(1)}B`;
+    if (value >= 1000000) return `\u20AC${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `\u20AC${(value / 1000).toFixed(0)}K`;
+    return `\u20AC${value}`;
   };
 
   if (loading) {

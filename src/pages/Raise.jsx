@@ -174,7 +174,7 @@ function InvestorStageColumn({ stage, investors, onAddInvestor, onEdit, onDelete
 
           <div className="space-y-1">
             <div className="flex items-baseline justify-between">
-              <span className={`text-lg font-bold ${rt('text-orange-600', 'text-orange-400/80')}`}>${(totalCheckSize / 1000).toLocaleString()}k</span>
+              <span className={`text-lg font-bold ${rt('text-orange-600', 'text-orange-400/80')}`}>{'\u20AC'}{(totalCheckSize / 1000).toLocaleString()}k</span>
               <span className={`text-xs ${rt('text-slate-400', 'text-zinc-600')}`}>potential</span>
             </div>
           </div>

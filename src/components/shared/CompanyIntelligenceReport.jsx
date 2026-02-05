@@ -463,7 +463,7 @@ export const CompanyIntelligenceReport = ({
                 <div className="p-4 bg-gradient-to-br from-green-500/15 to-green-500/5 rounded-lg border border-green-500/20 text-center">
                   <p className="text-xs text-green-400/80 uppercase tracking-wider mb-1">Total Raised</p>
                   <p className="text-3xl font-bold text-green-400">
-                    ${(funding.total_funding / 1000000).toFixed(1)}M
+                    {'\u20AC'}{(funding.total_funding / 1000000).toFixed(1)}M
                   </p>
                   {funding.last_funding_date && (
                     <p className="text-xs text-white/40 mt-2">
@@ -483,7 +483,7 @@ export const CompanyIntelligenceReport = ({
                         <div className="flex items-center gap-4">
                           {round.amount && (
                             <span className="text-sm text-green-400 font-semibold">
-                              ${(round.amount / 1000000).toFixed(1)}M
+                              {'\u20AC'}{(round.amount / 1000000).toFixed(1)}M
                             </span>
                           )}
                           {round.date && (

@@ -302,7 +302,7 @@ export default function AdminDashboard() {
         />
         <StatCard
           title="Monthly Revenue"
-          value={`$${stats.monthlyRevenue.toLocaleString()}`}
+          value={`\u20AC${stats.monthlyRevenue.toLocaleString()}`}
           change={changes.revenue}
           changeType={getChangeType(changes.revenue)}
           icon={Euro}

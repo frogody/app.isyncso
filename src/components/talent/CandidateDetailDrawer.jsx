@@ -950,13 +950,13 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
           {candidate.current_salary && (
             <div className="flex justify-between text-sm">
               <span className="text-zinc-400">Current Salary</span>
-              <span className="text-white">${candidate.current_salary.toLocaleString()}</span>
+              <span className="text-white">{'\u20AC'}{candidate.current_salary.toLocaleString()}</span>
             </div>
           )}
           {candidate.desired_salary && (
             <div className="flex justify-between text-sm">
               <span className="text-zinc-400">Desired Salary</span>
-              <span className="text-white">${candidate.desired_salary.toLocaleString()}</span>
+              <span className="text-white">{'\u20AC'}{candidate.desired_salary.toLocaleString()}</span>
             </div>
           )}
           {candidate.notice_period && (
@@ -2091,7 +2091,7 @@ export default function CandidateDetailDrawer({
                     <div className="text-center">
                       <p className="text-[10px] text-zinc-500 mb-1">Salary</p>
                       <p className="text-sm font-semibold text-red-400">
-                        {candidate.salary_range ? `$${Number(candidate.salary_range).toLocaleString()}` : "—"}
+                        {candidate.salary_range ? `\u20AC${Number(candidate.salary_range).toLocaleString()}` : "—"}
                       </p>
                     </div>
                     <div className="text-center">

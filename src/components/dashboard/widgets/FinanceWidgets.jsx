@@ -39,16 +39,16 @@ export function FinanceOverviewWidget({ revenue = 0, expenses = 0, invoices = []
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/15">
           <p className="text-xs text-zinc-400">Revenue</p>
-          <p className="text-lg font-bold text-emerald-400">${(revenue / 1000).toFixed(0)}k</p>
+          <p className="text-lg font-bold text-emerald-400">{'\u20AC'}{(revenue / 1000).toFixed(0)}k</p>
         </div>
         <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/15">
           <p className="text-xs text-zinc-400">Expenses</p>
-          <p className="text-lg font-bold text-red-400">${(expenses / 1000).toFixed(0)}k</p>
+          <p className="text-lg font-bold text-red-400">{'\u20AC'}{(expenses / 1000).toFixed(0)}k</p>
         </div>
         <div className={`p-3 rounded-lg ${profit >= 0 ? 'bg-emerald-500/5 border-emerald-500/15' : 'bg-red-500/5 border-red-500/15'} border`}>
           <p className="text-xs text-zinc-400">Profit</p>
           <p className={`text-lg font-bold ${profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            ${(profit / 1000).toFixed(0)}k
+            {'\u20AC'}{(profit / 1000).toFixed(0)}k
           </p>
         </div>
       </div>
@@ -64,7 +64,7 @@ export function FinanceOverviewWidget({ revenue = 0, expenses = 0, invoices = []
                   'bg-amber-500/15 text-amber-400 border-amber-500/25'}
                 border text-xs
               `}>
-                ${(inv.total || 0).toLocaleString()}
+                {'\u20AC'}{(inv.total || 0).toLocaleString()}
               </Badge>
             </div>
           ))}
@@ -96,7 +96,7 @@ export function FinanceRevenueWidget({ totalRevenue = 0, change = null }) {
           </span>
         )}
       </div>
-      <div className="text-2xl font-bold text-white">${(totalRevenue / 1000).toFixed(0)}k</div>
+      <div className="text-2xl font-bold text-white">{'\u20AC'}{(totalRevenue / 1000).toFixed(0)}k</div>
     </Card>
   );
 }
@@ -118,7 +118,7 @@ export function FinanceExpensesWidget({ totalExpenses = 0, change = null }) {
           </span>
         )}
       </div>
-      <div className="text-2xl font-bold text-red-400">${(totalExpenses / 1000).toFixed(0)}k</div>
+      <div className="text-2xl font-bold text-red-400">{'\u20AC'}{(totalExpenses / 1000).toFixed(0)}k</div>
     </Card>
   );
 }
@@ -137,7 +137,7 @@ export function FinancePendingWidget({ pendingAmount = 0, invoiceCount = 0 }) {
           <span className="text-xs text-amber-400 font-medium">{invoiceCount} pending</span>
         )}
       </div>
-      <div className="text-2xl font-bold text-amber-400">${(pendingAmount / 1000).toFixed(0)}k</div>
+      <div className="text-2xl font-bold text-amber-400">{'\u20AC'}{(pendingAmount / 1000).toFixed(0)}k</div>
     </Card>
   );
 }
@@ -156,7 +156,7 @@ export function FinanceMRRWidget({ mrr = 0, activeCount = 0 }) {
           <span className="text-xs text-emerald-400 font-medium">{activeCount} active</span>
         )}
       </div>
-      <div className="text-2xl font-bold text-emerald-400">${mrr.toLocaleString()}</div>
+      <div className="text-2xl font-bold text-emerald-400">{'\u20AC'}{mrr.toLocaleString()}</div>
     </Card>
   );
 }

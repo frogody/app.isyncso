@@ -13,7 +13,7 @@ import {
   Users,
   Target,
   Calendar,
-  DollarSign,
+  Euro,
   Activity,
   ArrowRight,
   Zap,
@@ -208,9 +208,9 @@ export default function GrowthDashboard() {
             delay={0.2}
           />
           <StatCard
-            icon={DollarSign}
+            icon={Euro}
             label="Expansion Revenue"
-            value={`$${(stats.expansionRevenue / 1000).toFixed(0)}k`}
+            value={`\u20AC${(stats.expansionRevenue / 1000).toFixed(0)}k`}
             change="15%"
             trend="up"
             color="green"

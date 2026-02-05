@@ -113,16 +113,16 @@ export function useAIUsage() {
 
     return {
       monthly: {
-        used: `$${usage.monthlyUsed.toFixed(2)}`,
-        limit: `$${usage.monthlyLimit.toFixed(2)}`,
-        remaining: `$${(usage.monthlyLimit - usage.monthlyUsed).toFixed(2)}`,
+        used: `\u20AC${usage.monthlyUsed.toFixed(2)}`,
+        limit: `\u20AC${usage.monthlyLimit.toFixed(2)}`,
+        remaining: `\u20AC${(usage.monthlyLimit - usage.monthlyUsed).toFixed(2)}`,
         percent: monthlyPercent,
         status: monthlyPercent >= 90 ? 'critical' : monthlyPercent >= 70 ? 'warning' : 'ok',
       },
       daily: {
-        used: `$${usage.dailyUsed.toFixed(2)}`,
-        limit: `$${usage.dailyLimit.toFixed(2)}`,
-        remaining: `$${(usage.dailyLimit - usage.dailyUsed).toFixed(2)}`,
+        used: `\u20AC${usage.dailyUsed.toFixed(2)}`,
+        limit: `\u20AC${usage.dailyLimit.toFixed(2)}`,
+        remaining: `\u20AC${(usage.dailyLimit - usage.dailyUsed).toFixed(2)}`,
         percent: dailyPercent,
         status: dailyPercent >= 90 ? 'critical' : dailyPercent >= 70 ? 'warning' : 'ok',
       },

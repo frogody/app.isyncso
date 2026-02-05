@@ -104,7 +104,7 @@ export default function Insights() {
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <h4 className="text-white font-medium text-sm">{pred.deal}</h4>
-                        <p className="text-xs text-orange-400">${pred.value.toLocaleString()}</p>
+                        <p className="text-xs text-orange-400">{'\u20AC'}{pred.value.toLocaleString()}</p>
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-white">{pred.probability}%</div>

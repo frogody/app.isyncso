@@ -54,7 +54,7 @@ export function RaiseCampaignWidget({ campaign = null, investors = [] }) {
             <div className="flex items-center justify-between text-sm mb-2">
               <span className="text-zinc-400 text-xs">Progress</span>
               <span className="text-white text-xs font-medium">
-                ${(committedAmount / 1000000).toFixed(1)}M / ${(targetAmount / 1000000).toFixed(1)}M
+                {'\u20AC'}{(committedAmount / 1000000).toFixed(1)}M / {'\u20AC'}{(targetAmount / 1000000).toFixed(1)}M
               </span>
             </div>
             <Progress value={progress} className="h-2" />
@@ -106,7 +106,7 @@ export function RaiseTargetWidget({ targetAmount = 0, roundType = '' }) {
           </Badge>
         )}
       </div>
-      <div className="text-2xl font-bold text-white">${(targetAmount / 1000000).toFixed(1)}M</div>
+      <div className="text-2xl font-bold text-white">{'\u20AC'}{(targetAmount / 1000000).toFixed(1)}M</div>
     </Card>
   );
 }
@@ -125,7 +125,7 @@ export function RaiseCommittedWidget({ committedAmount = 0, targetAmount = 0 }) 
         </div>
         <span className="text-xs text-emerald-400 font-medium">{progress.toFixed(0)}%</span>
       </div>
-      <div className="text-2xl font-bold text-emerald-400">${(committedAmount / 1000000).toFixed(1)}M</div>
+      <div className="text-2xl font-bold text-emerald-400">{'\u20AC'}{(committedAmount / 1000000).toFixed(1)}M</div>
     </Card>
   );
 }

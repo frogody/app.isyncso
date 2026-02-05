@@ -579,10 +579,10 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
   const formatFunding = (amount) => {
     if (!amount) return null;
     const num = typeof amount === 'string' ? parseFloat(amount.replace(/[^0-9.]/g, '')) : amount;
-    if (num >= 1000000000) return `$${(num / 1000000000).toFixed(1)}B`;
-    if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `$${(num / 1000).toFixed(0)}K`;
-    return `$${num}`;
+    if (num >= 1000000000) return `\u20AC${(num / 1000000000).toFixed(1)}B`;
+    if (num >= 1000000) return `\u20AC${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `\u20AC${(num / 1000).toFixed(0)}K`;
+    return `\u20AC${num}`;
   };
 
   return (

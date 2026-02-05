@@ -34,7 +34,7 @@ const QuickStatsWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =>
   const formatSalary = (value) => {
     if (!value) return null;
     if (typeof value === 'number') {
-      return `$${(value / 1000).toFixed(0)}k`;
+      return `\u20AC${(value / 1000).toFixed(0)}k`;
     }
     return value;
   };

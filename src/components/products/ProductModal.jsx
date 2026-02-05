@@ -998,7 +998,7 @@ export default function ProductModal({
                   <div>
                     <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Base Price</Label>
                     <div className="relative">
-                      <span className={cn(`absolute left-3 top-1/2 -translate-y-1/2 ${t('text-slate-400', 'text-zinc-500')}`)}>$</span>
+                      <span className={cn(`absolute left-3 top-1/2 -translate-y-1/2 ${t('text-slate-400', 'text-zinc-500')}`)}>€</span>
                       <Input
                         type="number"
                         value={physicalData.pricing.base_price}
@@ -1014,7 +1014,7 @@ export default function ProductModal({
                   <div>
                     <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Compare at Price</Label>
                     <div className="relative">
-                      <span className={cn(`absolute left-3 top-1/2 -translate-y-1/2 ${t('text-slate-400', 'text-zinc-500')}`)}>$</span>
+                      <span className={cn(`absolute left-3 top-1/2 -translate-y-1/2 ${t('text-slate-400', 'text-zinc-500')}`)}>€</span>
                       <Input
                         type="number"
                         value={physicalData.pricing.compare_at_price}
@@ -1030,7 +1030,7 @@ export default function ProductModal({
                   <div>
                     <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Cost Price</Label>
                     <div className="relative">
-                      <span className={cn(`absolute left-3 top-1/2 -translate-y-1/2 ${t('text-slate-400', 'text-zinc-500')}`)}>$</span>
+                      <span className={cn(`absolute left-3 top-1/2 -translate-y-1/2 ${t('text-slate-400', 'text-zinc-500')}`)}>€</span>
                       <Input
                         type="number"
                         value={physicalData.pricing.cost_price}

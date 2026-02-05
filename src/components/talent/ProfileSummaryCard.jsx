@@ -654,7 +654,7 @@ const ProfileSummaryCard = ({
                 <MetricRow
                   icon={Euro}
                   label="Salary"
-                  value={typeof candidate.salary_range === 'number' ? `$${candidate.salary_range.toLocaleString()}` : candidate.salary_range}
+                  value={typeof candidate.salary_range === 'number' ? `\u20AC${candidate.salary_range.toLocaleString()}` : candidate.salary_range}
                   color="red"
                 />
               )}

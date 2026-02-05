@@ -447,7 +447,7 @@ export default function CRMCompanyProfile() {
                 <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
                   <p className={`text-xs sm:text-sm ${crt('text-slate-400', 'text-white/40')} mb-0.5 sm:mb-1`}>Deal Value</p>
                   <p className={`text-sm sm:text-base lg:text-lg font-semibold ${crt('text-slate-900', 'text-white')} whitespace-nowrap`}>
-                    {contactStats.totalValue ? `$${contactStats.totalValue.toLocaleString()}` : '-'}
+                    {contactStats.totalValue ? `\u20AC${contactStats.totalValue.toLocaleString()}` : '-'}
                   </p>
                 </div>
               </div>

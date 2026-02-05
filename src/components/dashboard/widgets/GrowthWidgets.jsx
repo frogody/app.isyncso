@@ -54,7 +54,7 @@ export function GrowthPipelineWidget({ opportunities = [] }) {
                   <p className="text-xs text-zinc-500 capitalize">{opp.stage?.replace(/_/g, ' ')}</p>
                 </div>
                 <Badge className={`${stageBadges[opp.stage] || 'bg-zinc-700'} border text-xs ml-2`}>
-                  ${((opp.deal_value || opp.value || 0) / 1000).toFixed(0)}k
+                  {'\u20AC'}{((opp.deal_value || opp.value || 0) / 1000).toFixed(0)}k
                 </Badge>
               </div>
             </Link>
@@ -86,7 +86,7 @@ export function GrowthValueWidget({ totalValue = 0, change = null }) {
           </span>
         )}
       </div>
-      <div className="text-2xl font-bold text-white">${(totalValue / 1000).toFixed(0)}k</div>
+      <div className="text-2xl font-bold text-white">{'\u20AC'}{(totalValue / 1000).toFixed(0)}k</div>
     </Card>
   );
 }

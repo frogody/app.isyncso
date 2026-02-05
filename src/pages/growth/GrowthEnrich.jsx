@@ -2263,7 +2263,7 @@ export default function GrowthEnrich() {
       if (of.includes('company') || of.includes('employer') || colName.includes('company')) return { v: pick(['Acme Corp', 'Globex Inc', 'Initech', 'Hooli', 'Pied Piper', 'Umbrella Co', 'Stark Industries']) };
       if (of.includes('industry')) return { v: pick(['SaaS', 'FinTech', 'Healthcare', 'E-commerce', 'AI/ML', 'Cybersecurity', 'EdTech']) };
       if (of.includes('employee') || of.includes('size')) return { v: String(pick([50, 120, 350, 800, 2500, 5000, 15000])) };
-      if (of.includes('revenue')) return { v: `$${pick([1, 5, 12, 25, 50, 100])}M` };
+      if (of.includes('revenue')) return { v: `\u20AC${pick([1, 5, 12, 25, 50, 100])}M` };
       if (of.includes('location') || of.includes('city') || colName.includes('location')) return { v: pick(['San Francisco, CA', 'New York, NY', 'Austin, TX', 'London, UK', 'Amsterdam, NL', 'Berlin, DE']) };
       if (of.includes('linkedin')) return { v: `https://linkedin.com/in/${pick(['jsmith', 'ajones', 'mlee', 'rpatel'])}${num(100,999)}` };
       return { v: `Mock: ${pick(['Alpha', 'Beta', 'Gamma', 'Delta'])} ${num(100, 999)}` };
@@ -5082,7 +5082,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                         <div className="flex gap-2 mt-1">
                           {['before', 'after'].map(pos => (
                             <button key={pos} onClick={() => setColConfig(prev => ({ ...prev, symbol_position: pos }))} className={`text-xs px-3 py-1 rounded-lg border ${(colConfig.symbol_position || 'before') === pos ? rt('border-indigo-400 bg-indigo-50 text-indigo-600', 'border-indigo-500/50 bg-indigo-500/10 text-indigo-400') : rt('border-gray-200 text-gray-500', 'border-zinc-700 text-zinc-500')}`}>
-                              {pos === 'before' ? `${(CURRENCY_CODES.find(c => c.value === (colConfig.currency_code || 'USD'))?.symbol || '$')}100` : `100 ${CURRENCY_CODES.find(c => c.value === (colConfig.currency_code || 'USD'))?.symbol || '$'}`}
+                              {pos === 'before' ? `${(CURRENCY_CODES.find(c => c.value === (colConfig.currency_code || 'EUR'))?.symbol || '\u20AC')}100` : `100 ${CURRENCY_CODES.find(c => c.value === (colConfig.currency_code || 'EUR'))?.symbol || '\u20AC'}`}
                             </button>
                           ))}
                         </div>

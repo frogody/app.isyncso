@@ -57,7 +57,7 @@ export function AnimatedNumber({
   );
 }
 
-export function AnimatedCurrency({ value, currency = '$', ...props }) {
+export function AnimatedCurrency({ value, currency = '\u20AC', ...props }) {
   return (
     <AnimatedNumber
       value={value}
