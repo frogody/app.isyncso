@@ -308,7 +308,7 @@ export function NestUploadWizard({
     return { validRows, invalidRows, total: fileData.rows.length };
   }, [fileData, mappings, nestType]);
 
-  // Execute import
+  // Execute import — sends rows in batches to avoid edge function timeouts
   const executeImport = async () => {
     const validation = validateData();
     if (!validation || validation.validRows.length === 0) {
@@ -321,72 +321,102 @@ export function NestUploadWizard({
     setImportProgress({ current: 0, total: totalRows });
     setCurrentStep(3);
 
-    // Simulate progress while waiting for server response
-    const progressInterval = setInterval(() => {
-      setImportProgress(prev => ({
-        ...prev,
-        current: Math.min(prev.current + Math.ceil(totalRows / 20), totalRows - 1),
-      }));
-    }, 500);
+    const BATCH_SIZE = 200;
+    const allRows = validation.validRows.map(r => r.data);
+    const batches = [];
+    for (let i = 0; i < allRows.length; i += BATCH_SIZE) {
+      batches.push(allRows.slice(i, i + BATCH_SIZE));
+    }
+
+    let totalCreated = 0;
+    let totalUpdated = 0;
+    let totalLinked = 0;
+    let totalErrors = 0;
+    let allErrors = [];
+    let lastItemCount = 0;
+    let processedRows = 0;
 
     try {
-      // Send all rows to the edge function for batch processing
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/upload-nest-data`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-          },
-          body: JSON.stringify({
-            nest_id: nestId,
-            nest_type: nestType || 'candidates',
-            mappings: mappings,
-            rows: validation.validRows.map(r => r.data)
-          })
+      for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
+        const batch = batches[batchIdx];
+
+        const response = await fetch(
+          `${SUPABASE_URL}/functions/v1/upload-nest-data`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            },
+            body: JSON.stringify({
+              nest_id: nestId,
+              nest_type: nestType || 'candidates',
+              mappings: mappings,
+              rows: batch
+            })
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || `Batch ${batchIdx + 1} failed`);
         }
-      );
 
-      clearInterval(progressInterval);
-      setImportProgress({ current: totalRows, total: totalRows });
+        totalCreated += result.created_count || 0;
+        totalUpdated += result.updated_count || 0;
+        totalLinked += result.linked_count || 0;
+        totalErrors += result.error_count || 0;
+        if (result.errors?.length) {
+          // Offset error row numbers by batch position
+          const offset = batchIdx * BATCH_SIZE;
+          allErrors = allErrors.concat(
+            result.errors.map(e => e.replace(/^(Row )(\d+)/, (_, prefix, num) => `${prefix}${parseInt(num) + offset}`))
+          );
+        }
+        lastItemCount = result.item_count || lastItemCount;
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Import failed');
+        processedRows += batch.length;
+        setImportProgress({ current: processedRows, total: totalRows });
       }
 
       setImportResults({
-        created: result.created_count || 0,
-        updated: result.updated_count || 0,
-        linked: result.linked_count || 0,
-        failed: result.error_count || 0,
-        total: validation.validRows.length,
-        errors: result.errors || [], // Capture error details
-        itemCount: result.item_count || 0
+        created: totalCreated,
+        updated: totalUpdated,
+        linked: totalLinked,
+        failed: totalErrors,
+        total: totalRows,
+        errors: allErrors.slice(0, 20),
+        itemCount: lastItemCount,
       });
 
-      // Build descriptive toast message
       const parts = [];
-      if (result.created_count > 0) parts.push(`${result.created_count} new`);
-      if (result.updated_count > 0) parts.push(`${result.updated_count} updated`);
-      if (result.linked_count > 0) parts.push(`${result.linked_count} linked`);
+      if (totalCreated > 0) parts.push(`${totalCreated} new`);
+      if (totalUpdated > 0) parts.push(`${totalUpdated} updated`);
+      if (totalLinked > 0) parts.push(`${totalLinked} linked`);
       toast.success(`Import complete: ${parts.join(', ') || '0 items'}`);
 
       if (onImportComplete) {
-        onImportComplete(result);
+        onImportComplete({
+          created_count: totalCreated,
+          updated_count: totalUpdated,
+          linked_count: totalLinked,
+          error_count: totalErrors,
+          item_count: lastItemCount,
+        });
       }
 
     } catch (error) {
-      clearInterval(progressInterval);
       console.error('Import error:', error);
       toast.error(error.message || 'Import failed');
       setImportResults({
-        created: 0,
-        failed: validation.validRows.length,
-        total: validation.validRows.length,
-        error: error.message
+        created: totalCreated,
+        updated: totalUpdated,
+        linked: totalLinked,
+        failed: totalErrors + (totalRows - processedRows),
+        total: totalRows,
+        errors: allErrors.slice(0, 20),
+        error: error.message,
       });
     } finally {
       setIsImporting(false);
