@@ -238,6 +238,7 @@ serve(async (req) => {
   }
 
   try {
+    const body = await req.json();
     const {
       message,
       history = [],
@@ -245,8 +246,31 @@ serve(async (req) => {
       companyId,
       voiceConfig,
       voice: requestedVoice,
-      skipTTS = false,
-    } = await req.json();
+      ttsOnly = false,
+      ttsText,
+    } = body;
+
+    // TTS-only mode: just generate audio for given text (called as second request)
+    if (ttsOnly && ttsText) {
+      const voice = VALID_VOICES.includes(requestedVoice || voiceConfig?.voice)
+        ? (requestedVoice || voiceConfig?.voice)
+        : DEFAULT_VOICE;
+      const ttsStart = Date.now();
+      try {
+        const ttsResult = await generateTTS(ttsText, voice);
+        console.log(`[sync-voice] TTS-only: ${Date.now() - ttsStart}ms, ${ttsResult.byteLength} bytes`);
+        return new Response(
+          JSON.stringify({ audio: ttsResult.audio, audioFormat: 'mp3' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      } catch (err) {
+        console.error('[sync-voice] TTS-only failed:', err);
+        return new Response(
+          JSON.stringify({ audio: null }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
+    }
 
     if (!message) {
       return new Response(
@@ -331,7 +355,7 @@ serve(async (req) => {
 
     console.log(`[sync-voice] LLM: ${llmTime}ms — "${responseText.substring(0, 80)}" action=${needsAction}`);
 
-    // Fire background action BEFORE TTS (maximize parallelism)
+    // Fire background action (doesn't block response)
     if (needsAction && userId && session) {
       const messagesForAction = [
         ...session.messages,
@@ -341,25 +365,9 @@ serve(async (req) => {
       fireBackgroundAction(message, userId, companyId, session.sessionId, messagesForAction);
     }
 
-    // Generate TTS
-    let audio = '';
-    let ttsTime = 0;
-
-    if (!skipTTS && responseText.length > 0) {
-      const ttsStart = Date.now();
-      try {
-        const ttsResult = await generateTTS(responseText, voice);
-        audio = ttsResult.audio;
-        ttsTime = Date.now() - ttsStart;
-        console.log(`[sync-voice] TTS: ${ttsTime}ms, ${ttsResult.byteLength} bytes`);
-      } catch (err) {
-        console.error('[sync-voice] TTS failed:', err);
-        ttsTime = Date.now() - ttsStart;
-      }
-    }
-
+    // NO TTS here — frontend will fetch audio separately via ttsOnly mode
     const totalTime = Date.now() - startTime;
-    console.log(`[sync-voice] Total: ${totalTime}ms (llm=${llmTime}ms tts=${ttsTime}ms)`);
+    console.log(`[sync-voice] Total: ${totalTime}ms (llm=${llmTime}ms, text-only)`);
 
     // Save to session (fire-and-forget)
     if (session) {
@@ -375,11 +383,9 @@ serve(async (req) => {
       JSON.stringify({
         text: responseText,
         response: responseText,
-        audio: audio || undefined,
-        audioFormat: audio ? 'mp3' : undefined,
         mood: 'neutral',
         actionPending: needsAction,
-        timing: { total: totalTime, llm: llmTime, tts: ttsTime },
+        timing: { total: totalTime, llm: llmTime },
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );

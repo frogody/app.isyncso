@@ -93,7 +93,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
     }
   }, []);
 
-  // Process user input
+  // Process user input — two-phase: text first (fast), audio second (parallel)
   const processInput = useCallback(async (text) => {
     if (!text) return;
 
@@ -110,24 +110,25 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
     const controller = new AbortController();
     abortRef.current = controller;
 
+    const voiceUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-voice`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+    };
+
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-voice`,
-        {
-          method: 'POST',
-          signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            message: text,
-            history: history.slice(-6),
-            userId: user?.id,
-            companyId: user?.company_id,
-          }),
-        },
-      );
+      // Phase 1: Get text response (fast, no TTS — should be 2-3s)
+      const res = await fetch(voiceUrl, {
+        method: 'POST',
+        signal: controller.signal,
+        headers,
+        body: JSON.stringify({
+          message: text,
+          history: history.slice(-6),
+          userId: user?.id,
+          companyId: user?.company_id,
+        }),
+      });
 
       if (!res.ok) throw new Error(`${res.status}`);
 
@@ -136,23 +137,42 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
       setLatency(ms);
 
       const reply = data.response || data.text || '';
-      console.log(`[Voice] Reply in ${ms}ms: "${reply.substring(0, 60)}"`);
+      console.log(`[Voice] Text in ${ms}ms: "${reply.substring(0, 60)}"`);
 
       setHistory(prev => [...prev, { role: 'user', content: text }, { role: 'assistant', content: reply }].slice(-10));
       setLastResponse(reply);
 
-      // Play Orpheus TTS audio if available, otherwise just show text
-      if (data.audio && !isMuted) {
+      // Show text immediately — don't wait for audio
+      if (!isMuted && reply) {
         setState(STATES.SPEAKING);
         syncState.setMood('speaking');
-        playAudio(data.audio, () => {
-          setState(STATES.IDLE);
-          syncState.setMood('listening');
-        });
-      } else {
-        setState(STATES.IDLE);
-        syncState.setMood('listening');
+
+        // Phase 2: Fetch audio separately (doesn't block text display)
+        try {
+          const audioRes = await fetch(voiceUrl, {
+            method: 'POST',
+            signal: controller.signal,
+            headers,
+            body: JSON.stringify({ ttsOnly: true, ttsText: reply }),
+          });
+
+          if (audioRes.ok) {
+            const audioData = await audioRes.json();
+            if (audioData.audio) {
+              playAudio(audioData.audio, () => {
+                setState(STATES.IDLE);
+                syncState.setMood('listening');
+              });
+              return; // playAudio callback will set IDLE
+            }
+          }
+        } catch (audioErr) {
+          console.warn('[Voice] Audio fetch failed, text already shown:', audioErr.message);
+        }
       }
+
+      setState(STATES.IDLE);
+      syncState.setMood('listening');
 
     } catch (err) {
       if (err.name === 'AbortError') return;
@@ -161,7 +181,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
       setState(STATES.IDLE);
       syncState.setMood('listening');
     }
-  }, [history, playAudio, isMuted, syncState]);
+  }, [history, playAudio, isMuted, syncState, user]);
 
   useEffect(() => { processRef.current = processInput; }, [processInput]);
 
