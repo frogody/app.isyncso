@@ -428,6 +428,23 @@ export default function GrowthEnrich() {
     }, 0);
   }, [slashMenu]);
 
+  const slashMenuColumns = useMemo(() => {
+    if (!slashMenu.open) return [];
+    const firstRow = rows[0];
+    return columns.filter(c => c.name.toLowerCase().includes(slashMenu.filter)).map(c => ({
+      ...c,
+      sampleValue: (() => {
+        if (!firstRow) return '';
+        const cell = cells[`${firstRow.id}:${c.id}`];
+        if (!cell) return '';
+        const v = cell.value;
+        if (v == null) return '';
+        if (typeof v === 'object') return v.v != null ? String(v.v) : JSON.stringify(v);
+        return String(v);
+      })(),
+    }));
+  }, [slashMenu.open, slashMenu.filter, columns, rows, cells]);
+
   const handleSlashKeyDown = useCallback((e, field) => {
     if (!slashMenu.open || slashMenu.field !== field) return;
     if (e.key === 'Escape') {
@@ -451,23 +468,6 @@ export default function GrowthEnrich() {
       return;
     }
   }, [slashMenu, slashMenuColumns, insertColumnRef]);
-
-  const slashMenuColumns = useMemo(() => {
-    if (!slashMenu.open) return [];
-    const firstRow = rows[0];
-    return columns.filter(c => c.name.toLowerCase().includes(slashMenu.filter)).map(c => ({
-      ...c,
-      sampleValue: (() => {
-        if (!firstRow) return '';
-        const cell = cells[`${firstRow.id}:${c.id}`];
-        if (!cell) return '';
-        const v = cell.value;
-        if (v == null) return '';
-        if (typeof v === 'object') return v.v != null ? String(v.v) : JSON.stringify(v);
-        return String(v);
-      })(),
-    }));
-  }, [slashMenu.open, slashMenu.filter, columns, rows, cells]);
 
   // Cell editing
   const [editingCell, setEditingCell] = useState(null); // { rowId, colId }
