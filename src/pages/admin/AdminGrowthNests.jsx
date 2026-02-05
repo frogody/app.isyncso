@@ -67,6 +67,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { NestUploadWizard } from '@/components/admin/NestUploadWizard';
 
 // Badge color mapping
 const BADGE_COLORS = {
@@ -160,6 +161,10 @@ export default function AdminGrowthNests() {
   const fileInputRef = useRef(null);
   const [uploadingCSV, setUploadingCSV] = useState(false);
   const [csvFile, setCsvFile] = useState(null);
+
+  // Import wizard state
+  const [showImportWizard, setShowImportWizard] = useState(false);
+  const [importNest, setImportNest] = useState(null);
 
   // Fetch stats
   const fetchStats = useCallback(async () => {
@@ -602,6 +607,13 @@ export default function AdminGrowthNests() {
                             <Edit className="w-4 h-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setImportNest(nest);
+                            setShowImportWizard(true);
+                          }}>
+                            <Upload className="w-4 h-4 mr-2" />
+                            Import Data
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-zinc-800" />
                           <DropdownMenuItem
                             onClick={() => {
@@ -866,6 +878,25 @@ export default function AdminGrowthNests() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Import Wizard */}
+        {importNest && (
+          <NestUploadWizard
+            open={showImportWizard}
+            onOpenChange={(open) => {
+              setShowImportWizard(open);
+              if (!open) setImportNest(null);
+            }}
+            nestId={importNest.id}
+            nestType="prospects"
+            nestName={importNest.name}
+            onImportComplete={(result) => {
+              fetchNests();
+              fetchStats();
+              toast.success(`Imported ${result.created_count || 0} prospects into "${importNest.name}"`);
+            }}
+          />
+        )}
       </div>
     </div>
   );

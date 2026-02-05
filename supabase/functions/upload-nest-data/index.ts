@@ -479,7 +479,8 @@ serve(async (req) => {
     // Create Supabase client with service role
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Verify nest exists
+    // Verify nest exists — check both talent nests and growth nests tables
+    let nestTable = 'nests';
     const { data: nest, error: nestError } = await supabase
       .from('nests')
       .select('id, nest_type')
@@ -487,10 +488,24 @@ serve(async (req) => {
       .single();
 
     if (nestError || !nest) {
-      return new Response(
-        JSON.stringify({ error: 'Nest not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // Not in talent nests — check growth_nests
+      const { data: growthNest, error: growthNestError } = await supabase
+        .from('growth_nests')
+        .select('id, name')
+        .eq('id', nestId)
+        .single();
+
+      if (growthNestError || !growthNest) {
+        return new Response(
+          JSON.stringify({ error: 'Nest not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      nestTable = 'growth_nests';
+      // Growth nests always use prospects type
+      if (nestType !== 'prospects') {
+        nestType = 'prospects';
+      }
     }
 
     let createdCount = 0;
@@ -615,15 +630,25 @@ serve(async (req) => {
       .select('*', { count: 'exact', head: true })
       .eq('nest_id', nestId);
 
-    await supabase
-      .from('nests')
-      .update({
-        item_count: actualCount || 0,
-        updated_at: new Date().toISOString() // Explicitly update timestamp for sync detection
-      })
-      .eq('id', nestId);
-
-    console.log(`Updated nest ${nestId} item_count to ${actualCount}, updated_at refreshed`);
+    if (nestTable === 'growth_nests') {
+      await supabase
+        .from('growth_nests')
+        .update({
+          lead_count: actualCount || 0,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', nestId);
+      console.log(`Updated growth_nest ${nestId} lead_count to ${actualCount}`);
+    } else {
+      await supabase
+        .from('nests')
+        .update({
+          item_count: actualCount || 0,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', nestId);
+      console.log(`Updated nest ${nestId} item_count to ${actualCount}, updated_at refreshed`);
+    }
 
     return new Response(
       JSON.stringify({
