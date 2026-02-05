@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import {
   Rocket,
   Database,
@@ -22,11 +23,91 @@ const JOURNEY_STEPS = [
   { id: 'launched', label: 'Launched', icon: Zap, path: null },
 ];
 
+// Indigo-themed color palettes
+const DARK_THEME = {
+  bar: {
+    background: 'rgba(15, 15, 25, 0.95)',
+    border: '1px solid rgba(99, 102, 241, 0.2)',
+    shadow: '0 4px 20px rgba(0, 0, 0, 0.4), 0 0 40px rgba(99, 102, 241, 0.05)',
+  },
+  completed: {
+    bg: 'rgba(99, 102, 241, 0.15)',
+    border: '#818cf8',
+    color: '#a5b4fc',
+    labelColor: '#a5b4fc',
+  },
+  current: {
+    bg: 'rgba(99, 102, 241, 0.25)',
+    border: '#6366f1',
+    color: '#ffffff',
+    labelColor: '#c7d2fe',
+    shadow: '0 0 10px rgba(99, 102, 241, 0.4)',
+  },
+  future: {
+    bg: 'rgba(39, 39, 50, 0.8)',
+    border: 'rgba(63, 63, 80, 0.6)',
+    color: 'rgba(161, 161, 178, 0.5)',
+    labelColor: 'rgba(161, 161, 178, 0.5)',
+  },
+  connector: {
+    done: 'rgba(129, 140, 248, 0.4)',
+    pending: 'rgba(63, 63, 80, 0.4)',
+  },
+  collapse: { color: 'rgba(161, 161, 178, 0.6)' },
+  nudge: {
+    background: 'rgba(15, 15, 25, 0.92)',
+    border: '1px solid rgba(99, 102, 241, 0.2)',
+    shadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+    labelColor: 'rgba(161, 161, 178, 0.7)',
+  },
+};
+
+const LIGHT_THEME = {
+  bar: {
+    background: 'rgba(255, 255, 255, 0.97)',
+    border: '1px solid rgba(99, 102, 241, 0.2)',
+    shadow: '0 4px 20px rgba(99, 102, 241, 0.08), 0 1px 3px rgba(0, 0, 0, 0.08)',
+  },
+  completed: {
+    bg: 'rgba(99, 102, 241, 0.1)',
+    border: '#6366f1',
+    color: '#4f46e5',
+    labelColor: '#4338ca',
+  },
+  current: {
+    bg: 'rgba(99, 102, 241, 0.15)',
+    border: '#4f46e5',
+    color: '#ffffff',
+    bgSolid: '#6366f1',
+    labelColor: '#4338ca',
+    shadow: '0 0 8px rgba(99, 102, 241, 0.3)',
+  },
+  future: {
+    bg: 'rgba(241, 245, 249, 0.8)',
+    border: 'rgba(203, 213, 225, 0.6)',
+    color: 'rgba(148, 163, 184, 0.7)',
+    labelColor: 'rgba(148, 163, 184, 0.7)',
+  },
+  connector: {
+    done: 'rgba(99, 102, 241, 0.3)',
+    pending: 'rgba(203, 213, 225, 0.4)',
+  },
+  collapse: { color: 'rgba(100, 116, 139, 0.6)' },
+  nudge: {
+    background: 'rgba(255, 255, 255, 0.95)',
+    border: '1px solid rgba(99, 102, 241, 0.2)',
+    shadow: '0 4px 12px rgba(99, 102, 241, 0.06), 0 1px 3px rgba(0, 0, 0, 0.06)',
+    labelColor: 'rgba(100, 116, 139, 0.7)',
+  },
+};
+
 export default function JourneyProgressBar({ campaignId, currentPhase }) {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const [expanded, setExpanded] = useState(true);
   const currentIndex = JOURNEY_STEPS.findIndex((s) => s.id === currentPhase);
   const currentStep = JOURNEY_STEPS[currentIndex];
+  const t = theme === 'dark' ? DARK_THEME : LIGHT_THEME;
 
   return (
     <div className="fixed top-3 right-16 z-50 pointer-events-none">
@@ -40,18 +121,18 @@ export default function JourneyProgressBar({ campaignId, currentPhase }) {
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             className="pointer-events-auto"
           >
-            {/* Use inline styles to prevent light theme CSS overrides */}
             <div
               style={{
-                background: 'rgba(9, 9, 11, 0.95)',
-                backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '12px',
-                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.4)',
+                background: t.bar.background,
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: t.bar.border,
+                borderRadius: 14,
+                boxShadow: t.bar.shadow,
               }}
             >
               <div style={{ padding: '10px 16px' }}>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   {JOURNEY_STEPS.map((step, index) => {
                     const isCompleted = currentPhase === 'launched' || index < currentIndex;
                     const isCurrent = index === currentIndex && currentPhase !== 'launched';
@@ -59,23 +140,13 @@ export default function JourneyProgressBar({ campaignId, currentPhase }) {
                     const isClickable = isCompleted && step.path !== null && step.id !== 'wizard';
                     const StepIcon = step.icon;
 
-                    const circleStyle = isCompleted
-                      ? { background: 'rgba(34, 197, 94, 0.2)', borderColor: '#4ade80', color: '#4ade80' }
-                      : isCurrent
-                      ? { background: 'rgba(6, 182, 212, 0.2)', borderColor: '#22d3ee', color: '#22d3ee' }
-                      : { background: 'rgba(39, 39, 42, 0.8)', borderColor: '#52525b', color: '#71717a' };
-
-                    const labelColor = isCompleted
-                      ? '#4ade80'
-                      : isCurrent
-                      ? '#22d3ee'
-                      : '#71717a';
+                    const palette = isCompleted ? t.completed : isCurrent ? t.current : t.future;
 
                     return (
                       <React.Fragment key={step.id}>
                         <div
                           className={`flex items-center gap-1.5 ${
-                            isClickable ? 'cursor-pointer hover:opacity-80' : 'cursor-default'
+                            isClickable ? 'cursor-pointer' : 'cursor-default'
                           }`}
                           onClick={() => isClickable && navigate(step.path(campaignId))}
                           role={isClickable ? 'button' : undefined}
@@ -86,34 +157,42 @@ export default function JourneyProgressBar({ campaignId, currentPhase }) {
                               navigate(step.path(campaignId));
                             }
                           }}
+                          style={{
+                            opacity: isClickable ? undefined : 1,
+                            transition: 'opacity 0.15s',
+                          }}
+                          onMouseEnter={(e) => { if (isClickable) e.currentTarget.style.opacity = '0.75'; }}
+                          onMouseLeave={(e) => { if (isClickable) e.currentTarget.style.opacity = '1'; }}
                         >
                           <div
                             style={{
-                              width: 28,
-                              height: 28,
+                              width: 26,
+                              height: 26,
                               borderRadius: '50%',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              border: `1.5px solid ${circleStyle.borderColor}`,
-                              background: circleStyle.background,
-                              color: circleStyle.color,
+                              border: `1.5px solid ${palette.border}`,
+                              background: isCurrent && palette.bgSolid ? palette.bgSolid : palette.bg,
+                              color: palette.color,
                               flexShrink: 0,
                               transition: 'all 0.2s',
+                              boxShadow: isCurrent ? palette.shadow : 'none',
                             }}
                           >
                             {isCompleted ? (
-                              <Check className="w-3 h-3" style={{ color: circleStyle.color }} />
+                              <Check style={{ width: 12, height: 12, color: palette.color }} />
                             ) : (
-                              <StepIcon className="w-3 h-3" style={{ color: circleStyle.color }} />
+                              <StepIcon style={{ width: 12, height: 12, color: palette.color }} />
                             )}
                           </div>
                           <span
                             className="hidden sm:block"
                             style={{
-                              fontSize: '12px',
-                              fontWeight: 500,
-                              color: labelColor,
+                              fontSize: 11,
+                              fontWeight: isCurrent ? 600 : 500,
+                              color: palette.labelColor,
+                              letterSpacing: '0.01em',
                             }}
                           >
                             {step.label}
@@ -125,10 +204,11 @@ export default function JourneyProgressBar({ campaignId, currentPhase }) {
                             style={{
                               flex: 1,
                               height: 1,
-                              margin: '0 4px',
+                              margin: '0 2px',
                               background: (currentPhase === 'launched' || index < currentIndex)
-                                ? 'rgba(74, 222, 128, 0.4)'
-                                : 'rgba(63, 63, 70, 0.6)',
+                                ? t.connector.done
+                                : t.connector.pending,
+                              transition: 'background 0.3s',
                             }}
                           />
                         )}
@@ -136,14 +216,13 @@ export default function JourneyProgressBar({ campaignId, currentPhase }) {
                     );
                   })}
 
-                  {/* Collapse button */}
                   <button
                     onClick={() => setExpanded(false)}
                     style={{
-                      marginLeft: 12,
+                      marginLeft: 10,
                       padding: 4,
                       borderRadius: 6,
-                      color: '#a1a1aa',
+                      color: t.collapse.color,
                       background: 'transparent',
                       border: 'none',
                       cursor: 'pointer',
@@ -151,17 +230,19 @@ export default function JourneyProgressBar({ campaignId, currentPhase }) {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      transition: 'color 0.15s',
                     }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = theme === 'dark' ? '#e2e8f0' : '#334155'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = t.collapse.color; }}
                     title="Minimize progress bar"
                   >
-                    <ChevronUp className="w-4 h-4" />
+                    <ChevronUp style={{ width: 14, height: 14 }} />
                   </button>
                 </div>
               </div>
             </div>
           </motion.div>
         ) : (
-          /* Collapsed nudge tab */
           <motion.div
             key="nudge"
             initial={{ y: -20, opacity: 0 }}
@@ -177,11 +258,12 @@ export default function JourneyProgressBar({ campaignId, currentPhase }) {
                 alignItems: 'center',
                 gap: 8,
                 padding: '6px 12px',
-                background: 'rgba(24, 24, 27, 0.9)',
+                background: t.nudge.background,
                 backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: t.nudge.border,
                 borderRadius: 12,
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                boxShadow: t.nudge.shadow,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
               }}
@@ -195,17 +277,25 @@ export default function JourneyProgressBar({ campaignId, currentPhase }) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  border: '1.5px solid #22d3ee',
-                  background: 'rgba(6, 182, 212, 0.2)',
-                  color: '#22d3ee',
+                  border: '1.5px solid #6366f1',
+                  background: theme === 'dark' ? 'rgba(99, 102, 241, 0.25)' : '#6366f1',
+                  color: theme === 'dark' ? '#c7d2fe' : '#ffffff',
                 }}
               >
-                {currentStep?.icon && <currentStep.icon className="w-2.5 h-2.5" style={{ color: '#22d3ee' }} />}
+                {currentStep?.icon && (
+                  <currentStep.icon
+                    style={{
+                      width: 10,
+                      height: 10,
+                      color: theme === 'dark' ? '#c7d2fe' : '#ffffff',
+                    }}
+                  />
+                )}
               </div>
-              <span style={{ fontSize: 12, color: '#a1a1aa' }}>
+              <span style={{ fontSize: 12, color: t.nudge.labelColor, fontWeight: 500 }}>
                 {currentStep?.label || 'Progress'}
               </span>
-              <ChevronDown className="w-3 h-3" style={{ color: '#71717a' }} />
+              <ChevronDown style={{ width: 12, height: 12, color: t.nudge.labelColor }} />
             </button>
           </motion.div>
         )}
