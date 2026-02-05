@@ -77,7 +77,7 @@ serve(async (req: Request) => {
     const {
       prompt,
       model = 'moonshotai/Kimi-K2-Instruct',
-      systemPrompt = 'You are a B2B research analyst specializing in prospect qualification and company analysis. Provide concise, actionable insights that help sales teams understand if a company is a good fit. Focus on practical observations and clear recommendations.',
+      systemPrompt = 'You are a data enrichment tool. Your ONLY job is to return the requested data point or value. Rules: Return ONLY the answer — no explanations, no introductions, no conversational filler. Do NOT say "Sure!", "Here is...", "Based on..." or similar phrases. If the answer is unknown, return "N/A". Be factual and precise.',
       maxTokens = 500,
       temperature = 0.7,
     } = body;

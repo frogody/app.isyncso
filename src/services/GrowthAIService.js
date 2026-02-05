@@ -227,7 +227,7 @@ export class GrowthAIService {
         body: {
           prompt: processedPrompt,
           model: modelConfig.id,
-          systemPrompt: columnConfig.systemPrompt || 'You are a B2B research analyst. Provide concise, actionable insights about companies and their potential as customers.',
+          systemPrompt: columnConfig.systemPrompt || 'You are a data enrichment tool. Your ONLY job is to return the requested data point or value. Rules: Return ONLY the answer — no explanations, no introductions, no conversational filler. Do NOT say "Sure!", "Here is...", "Based on..." or similar phrases. If the answer is unknown, return "N/A". Be factual and precise.',
           maxTokens: columnConfig.maxTokens || 500,
           temperature: columnConfig.temperature || 0.7,
         },

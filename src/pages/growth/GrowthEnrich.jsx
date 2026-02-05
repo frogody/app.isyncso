@@ -382,7 +382,7 @@ export default function GrowthEnrich() {
   const [httpTestResult, setHttpTestResult] = useState(null); // { loading, data, error }
 
   // Slash-command column selector
-  const [slashMenu, setSlashMenu] = useState({ open: false, field: null, caretPos: 0, filter: '' });
+  const [slashMenu, setSlashMenu] = useState({ open: false, field: null, caretPos: 0, filter: '', selectedIndex: 0 });
   const promptRef = useRef(null);
   const formulaRef = useRef(null);
 
@@ -395,11 +395,12 @@ export default function GrowthEnrich() {
     if (slashIdx !== -1 && (slashIdx === 0 || /[\s,("']/.test(before[slashIdx - 1]))) {
       const partial = before.slice(slashIdx + 1);
       if (!/[,)"'\n]/.test(partial)) {
-        setSlashMenu({ open: true, field, caretPos: pos, filter: partial.toLowerCase() });
+        const newFilter = partial.toLowerCase();
+        setSlashMenu(prev => ({ open: true, field, caretPos: pos, filter: newFilter, selectedIndex: prev.filter !== newFilter ? 0 : prev.selectedIndex }));
         return;
       }
     }
-    setSlashMenu(prev => prev.open ? { ...prev, open: false } : prev);
+    setSlashMenu(prev => prev.open ? { ...prev, open: false, selectedIndex: 0 } : prev);
   }, []);
 
   const insertColumnRef = useCallback((colName) => {
@@ -410,22 +411,46 @@ export default function GrowthEnrich() {
     const pos = slashMenu.caretPos;
     const before = val.slice(0, pos);
     const slashIdx = before.lastIndexOf('/');
-    const newVal = val.slice(0, slashIdx) + '/' + colName + val.slice(pos);
+    const newVal = val.slice(0, slashIdx) + '/' + colName + ' ' + val.slice(pos);
     if (field === 'prompt') {
       setColConfig(prev => ({ ...prev, prompt: newVal }));
     } else {
       setColConfig({ expression: newVal });
     }
-    setSlashMenu({ open: false, field: null, caretPos: 0, filter: '' });
+    setSlashMenu({ open: false, field: null, caretPos: 0, filter: '', selectedIndex: 0 });
     // Re-focus after React re-render
     setTimeout(() => {
       if (ref) {
-        const newPos = slashIdx + 1 + colName.length;
+        const newPos = slashIdx + 1 + colName.length + 1; // +1 for the trailing space
         ref.focus();
         ref.setSelectionRange(newPos, newPos);
       }
     }, 0);
   }, [slashMenu]);
+
+  const handleSlashKeyDown = useCallback((e, field) => {
+    if (!slashMenu.open || slashMenu.field !== field) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setSlashMenu(prev => ({ ...prev, open: false, selectedIndex: 0 }));
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSlashMenu(prev => ({ ...prev, selectedIndex: Math.min(prev.selectedIndex + 1, slashMenuColumns.length - 1) }));
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSlashMenu(prev => ({ ...prev, selectedIndex: Math.max(prev.selectedIndex - 1, 0) }));
+      return;
+    }
+    if ((e.key === 'Enter' || e.key === 'Tab') && slashMenuColumns.length > 0) {
+      e.preventDefault();
+      insertColumnRef(slashMenuColumns[slashMenu.selectedIndex]?.name || slashMenuColumns[0].name);
+      return;
+    }
+  }, [slashMenu, slashMenuColumns, insertColumnRef]);
 
   const slashMenuColumns = useMemo(() => {
     if (!slashMenu.open) return [];
@@ -2053,11 +2078,17 @@ export default function GrowthEnrich() {
 
   const replaceColumnRefs = useCallback((template, rowId) => {
     if (!template) return template;
-    return template.replace(/\/([A-Za-z0-9_ -]+)/g, (match, colName) => {
-      const col = columns.find(c => c.name === colName);
-      if (!col) return match;
-      return getCellRawValue(rowId, col) || '';
-    });
+    // Sort columns by name length descending so longer names match first
+    // (e.g. "Company Name" matches before "Company")
+    const sortedCols = [...columns].sort((a, b) => b.name.length - a.name.length);
+    let result = template;
+    for (const col of sortedCols) {
+      // Match /ColumnName followed by end-of-string, whitespace, punctuation, or newline
+      const escaped = col.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\/${escaped}(?=[\\s,.:;!?)"'\\n]|$)`, 'gi');
+      result = result.replace(regex, () => getCellRawValue(rowId, col) || '');
+    }
+    return result;
   }, [columns, getCellRawValue]);
 
   // ─── Run AI column ───────────────────────────────────────────────────
@@ -2071,7 +2102,7 @@ export default function GrowthEnrich() {
     const model = cfg.model || 'moonshotai/Kimi-K2-Instruct';
     const temperature = cfg.temperature ?? 0.7;
     const maxTokens = cfg.max_tokens || 500;
-    const systemPrompt = cfg.system_prompt || '';
+    const systemPrompt = cfg.system_prompt || 'You are a data enrichment tool. Your ONLY job is to return the requested data point or value. Rules:\n- Return ONLY the answer — no explanations, no introductions, no conversational filler.\n- Do NOT say "Sure!", "Here is...", "Based on...", "I found that..." or similar phrases.\n- If the answer is unknown, return "N/A".\n- Be factual and precise. One data point per request.';
     const outputFormat = cfg.output_format || 'text';
     const outputPath = cfg.output_path || '';
     const batchSize = cfg.batch_size || 5;
@@ -2080,9 +2111,9 @@ export default function GrowthEnrich() {
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
 
     let formatInstruction = '';
-    if (outputFormat === 'json') formatInstruction = '\n\nRespond ONLY with valid JSON. No other text.';
-    else if (outputFormat === 'list') formatInstruction = '\n\nRespond with a list, one item per line. No numbering or bullets.';
-    else formatInstruction = '\n\nRespond concisely with plain text only.';
+    if (outputFormat === 'json') formatInstruction = '\n\nIMPORTANT: Respond ONLY with valid JSON. No markdown, no explanation, no other text.';
+    else if (outputFormat === 'list') formatInstruction = '\n\nIMPORTANT: Respond with a plain list, one item per line. No numbering, no bullets, no explanation.';
+    else formatInstruction = '\n\nIMPORTANT: Return ONLY the requested value or data point. No conversation, no explanation.';
 
     const total = rows.length;
     let completed = 0;
@@ -2101,9 +2132,10 @@ export default function GrowthEnrich() {
           const filledPrompt = replaceColumnRefs(promptTemplate, row.id);
           if (!filledPrompt.trim()) { completed++; return; }
 
-          const messages = [];
-          if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
-          messages.push({ role: 'user', content: filledPrompt + formatInstruction });
+          const messages = [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: filledPrompt + formatInstruction },
+          ];
 
           // Call raise-chat edge function
           let retries = 0;
@@ -2113,7 +2145,7 @@ export default function GrowthEnrich() {
               const resp = await fetch(`${supabaseUrl}/functions/v1/raise-chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
-                body: JSON.stringify({ messages, model, temperature, max_tokens: maxTokens }),
+                body: JSON.stringify({ messages, model, temperature, max_tokens: maxTokens, stream: false }),
               });
               if (resp.status === 429) {
                 retries++;
@@ -4770,20 +4802,16 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                       ref={promptRef}
                       value={colConfig.prompt || ''}
                       onChange={e => { setColConfig(prev => ({ ...prev, prompt: e.target.value })); handleSlashInput(e, 'prompt'); }}
-                      onKeyDown={e => {
-                        if (slashMenu.open && slashMenu.field === 'prompt') {
-                          if (e.key === 'Escape') { e.preventDefault(); setSlashMenu(prev => ({ ...prev, open: false })); }
-                          if (e.key === 'Enter' && slashMenuColumns.length > 0) { e.preventDefault(); insertColumnRef(slashMenuColumns[0].name); }
-                        }
-                      }}
+                      onKeyDown={e => handleSlashKeyDown(e, 'prompt')}
                       placeholder={'Type / to insert a column reference\ne.g. Based on /Company and /Title, write a one-line pitch'}
                       rows={3}
                       className={rt('', 'bg-zinc-800 border-zinc-700 text-white')}
                     />
                     {slashMenu.open && slashMenu.field === 'prompt' && slashMenuColumns.length > 0 && (
                       <div className="absolute z-50 left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-800 shadow-xl">
-                        {slashMenuColumns.map(c => (
-                          <button key={c.id} onClick={() => insertColumnRef(c.name)} className="w-full text-left px-3 py-2 text-sm text-white hover:bg-zinc-700 flex items-center gap-2 min-w-0">
+                        {slashMenuColumns.map((c, idx) => (
+                          <button key={c.id} onClick={() => insertColumnRef(c.name)}
+                            className={`w-full text-left px-3 py-2 text-sm text-white flex items-center gap-2 min-w-0 ${idx === slashMenu.selectedIndex ? 'bg-zinc-600' : 'hover:bg-zinc-700'}`}>
                             <span className="text-cyan-400 font-mono text-xs shrink-0">/</span>
                             <span className="shrink-0">{c.name}</span>
                             {c.sampleValue && <span className="text-zinc-500 text-xs truncate ml-auto">{String(c.sampleValue).slice(0, 40)}</span>}
@@ -4791,7 +4819,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                         ))}
                       </div>
                     )}
-                    <p className="text-[10px] text-zinc-500 mt-1">Type <span className="font-mono text-cyan-400">/</span> to insert column references</p>
+                    <p className="text-[10px] text-zinc-500 mt-1">Type <span className="font-mono text-cyan-400">/</span> to insert column references. Use <span className="font-mono text-cyan-400">&uarr;&darr;</span> to navigate, <span className="font-mono text-cyan-400">Enter</span> or <span className="font-mono text-cyan-400">Tab</span> to select.</p>
                   </div>
 
                   {/* Model selector */}
@@ -4938,19 +4966,15 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     ref={formulaRef}
                     value={colConfig.expression || ''}
                     onChange={e => { setColConfig({ expression: e.target.value }); handleSlashInput(e, 'formula'); }}
-                    onKeyDown={e => {
-                      if (slashMenu.open && slashMenu.field === 'formula') {
-                        if (e.key === 'Escape') { e.preventDefault(); setSlashMenu(prev => ({ ...prev, open: false })); }
-                        if (e.key === 'Enter' && slashMenuColumns.length > 0) { e.preventDefault(); insertColumnRef(slashMenuColumns[0].name); }
-                      }
-                    }}
+                    onKeyDown={e => handleSlashKeyDown(e, 'formula')}
                     placeholder='Type / to insert column refs. e.g. =CONCAT(/First Name, " ", /Last Name)'
                     className={rt('font-mono', 'bg-zinc-800 border-zinc-700 text-white font-mono')}
                   />
                   {slashMenu.open && slashMenu.field === 'formula' && slashMenuColumns.length > 0 && (
                     <div className="absolute z-50 left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-800 shadow-xl">
-                      {slashMenuColumns.map(c => (
-                        <button key={c.id} onClick={() => insertColumnRef(c.name)} className="w-full text-left px-3 py-2 text-sm text-white hover:bg-zinc-700 flex items-center gap-2">
+                      {slashMenuColumns.map((c, idx) => (
+                        <button key={c.id} onClick={() => insertColumnRef(c.name)}
+                          className={`w-full text-left px-3 py-2 text-sm text-white flex items-center gap-2 ${idx === slashMenu.selectedIndex ? 'bg-zinc-600' : 'hover:bg-zinc-700'}`}>
                           <span className="text-cyan-400 font-mono text-xs">/</span>{c.name}
                         </button>
                       ))}
