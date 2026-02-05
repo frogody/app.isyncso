@@ -6,7 +6,8 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus, Download, ExternalLink, Image as ImageIcon, FileText, Sun, Moon } from 'lucide-react';
+import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus, Download, ExternalLink, Image as ImageIcon, FileText, Sun, Moon, Mic } from 'lucide-react';
+import SyncVoiceMode from '@/components/sync/SyncVoiceMode';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { SyncPageTransition } from '@/components/sync/ui';
 import { Button } from '@/components/ui/button';
@@ -1725,6 +1726,7 @@ export default function SyncAgent() {
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState(null);
   const [highlightBorders, setHighlightBorders] = useState(false);
+  const [voiceModeOpen, setVoiceModeOpen] = useState(false);
   const scrollerRef = useRef(null);
   const pageRef = useRef(null);
 
@@ -2031,6 +2033,15 @@ export default function SyncAgent() {
       <div className="shrink-0 z-20">
         <div className="mx-auto flex max-w-[1600px] items-center justify-end gap-3 px-6 py-3">
           <button
+            className="group relative inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium overflow-hidden transition-all duration-300 shadow-lg shadow-purple-500/20"
+            onClick={() => setVoiceModeOpen(true)}
+            title="Start voice conversation"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-500 opacity-90 group-hover:opacity-100 transition-opacity" />
+            <Mic className="relative h-4 w-4 text-white" />
+            <span className="relative text-white">Voice</span>
+          </button>
+          <button
             className="group relative inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium overflow-hidden transition-all duration-300"
             onClick={handleNewChat}
             title="Start new conversation"
@@ -2263,6 +2274,13 @@ export default function SyncAgent() {
         <div className="absolute right-[-25%] top-[10%] h-[620px] w-[620px] rounded-full bg-cyan-900/5 blur-3xl" />
         <div className="absolute bottom-[-35%] left-[10%] h-[640px] w-[640px] rounded-full bg-cyan-900/5 blur-3xl" />
       </div>
+
+      {/* Voice Mode Overlay */}
+      <SyncVoiceMode
+        isOpen={voiceModeOpen}
+        onClose={() => setVoiceModeOpen(false)}
+        onSwitchToChat={() => setVoiceModeOpen(false)}
+      />
     </div>
     </SyncPageTransition>
   );
