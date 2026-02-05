@@ -277,9 +277,20 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
     playAudio, stopListening, startListening, isOpen
   ]);
 
-  // Initialize speech recognition
+  // Ref to hold processVoiceInput to avoid dependency issues
+  const processVoiceInputRef = useRef(processVoiceInput);
   useEffect(() => {
-    if (!hasSpeechRecognition || !isOpen) return;
+    processVoiceInputRef.current = processVoiceInput;
+  }, [processVoiceInput]);
+
+  // Initialize speech recognition - only depends on isOpen
+  useEffect(() => {
+    if (!hasSpeechRecognition || !isOpen) {
+      console.log('[Voice] Not initializing:', { hasSpeechRecognition, isOpen });
+      return;
+    }
+
+    console.log('[Voice] Initializing speech recognition...');
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
@@ -287,17 +298,24 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
     recognition.lang = 'en-US';
 
     recognition.onstart = () => {
+      console.log('[Voice] Recognition started');
       setError(null);
     };
 
     recognition.onend = () => {
+      console.log('[Voice] Recognition ended, isOpen:', isOpen, 'audioPlaying:', isAudioPlayingRef.current);
       // Auto-restart if appropriate
-      if (isOpen && !isAudioPlayingRef.current && voiceState === VOICE_STATES.LISTENING) {
-        try {
-          recognition.start();
-        } catch (e) {
-          // Ignore
-        }
+      if (isOpen && !isAudioPlayingRef.current) {
+        setTimeout(() => {
+          try {
+            if (recognitionRef.current && isOpen) {
+              console.log('[Voice] Auto-restarting...');
+              recognition.start();
+            }
+          } catch (e) {
+            console.log('[Voice] Auto-restart failed:', e.message);
+          }
+        }, 100);
       }
     };
 
@@ -311,8 +329,11 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
     };
 
     recognition.onresult = (event) => {
+      console.log('[Voice] Got result, audioPlaying:', isAudioPlayingRef.current);
+
       // Ignore if audio is playing (echo prevention)
       if (isAudioPlayingRef.current) {
+        console.log('[Voice] Ignoring - audio playing');
         return;
       }
 
@@ -328,6 +349,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
         }
       }
 
+      console.log('[Voice] Transcript:', { interim: interimTranscript, final: finalTranscript });
       setTranscript(interimTranscript || finalTranscript);
 
       // Process final transcript
@@ -336,11 +358,24 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
         // Filter echo artifacts
         const echoPatterns = /^(okay|ok|um|uh|hmm|yeah|yes|no|the|a|an|i|is|it|on|in|one|let|got)$/i;
         if (!echoPatterns.test(trimmed)) {
-          processVoiceInput(trimmed);
+          console.log('[Voice] Processing:', trimmed);
+          processVoiceInputRef.current(trimmed);
         } else {
           console.log('[Voice] Filtered echo:', trimmed);
         }
       }
+    };
+
+    recognition.onaudiostart = () => {
+      console.log('[Voice] Audio capture started');
+    };
+
+    recognition.onsoundstart = () => {
+      console.log('[Voice] Sound detected');
+    };
+
+    recognition.onspeechstart = () => {
+      console.log('[Voice] Speech detected');
     };
 
     recognitionRef.current = recognition;
@@ -351,15 +386,22 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
       setVoiceState(VOICE_STATES.LISTENING);
       setStatusText('Listening...');
       syncState.setMood('listening');
+      console.log('[Voice] Started successfully');
     } catch (e) {
       console.error('[Voice] Failed to start:', e);
+      setError('Failed to start voice recognition');
     }
 
     return () => {
-      recognition.stop();
+      console.log('[Voice] Cleaning up recognition');
+      try {
+        recognition.stop();
+      } catch (e) {
+        // Already stopped
+      }
       recognitionRef.current = null;
     };
-  }, [isOpen, processVoiceInput, syncState]);
+  }, [isOpen, syncState]);
 
   // Cleanup on close
   useEffect(() => {
