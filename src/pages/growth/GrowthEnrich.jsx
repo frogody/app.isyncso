@@ -349,7 +349,6 @@ export default function GrowthEnrich() {
   // Campaign journey mode
   const [campaign, setCampaign] = useState(null);
   const [campaignLoading, setCampaignLoading] = useState(!!campaignId);
-  const [syncSuggestionsOpen, setSyncSuggestionsOpen] = useState(true);
   const [savingCampaign, setSavingCampaign] = useState(false);
   const isCampaignMode = !!campaignId;
 
@@ -1469,6 +1468,7 @@ export default function GrowthEnrich() {
       // Create columns for each header
       const colInserts = cleanHeaders.map((h, pos) => ({
         workspace_id: activeWorkspaceId,
+        table_id: activeTableId || null,
         name: h,
         type: 'field',
         position: pos,
@@ -1494,6 +1494,7 @@ export default function GrowthEnrich() {
         });
         return {
           workspace_id: activeWorkspaceId,
+          table_id: activeTableId || null,
           source_data: sourceData,
           position: idx,
         };
@@ -1542,7 +1543,7 @@ export default function GrowthEnrich() {
       console.error('CSV import error:', err);
       toast.error(`Failed to import CSV: ${err.message}`);
     }
-  }, [activeWorkspaceId, parseCSV, parseCSVRows, loadWorkspaceDetail, trackChange]);
+  }, [activeWorkspaceId, activeTableId, parseCSV, parseCSVRows, loadWorkspaceDetail, trackChange]);
 
   // ─── Add column ────────────────────────────────────────────────────────
 
@@ -2715,6 +2716,24 @@ export default function GrowthEnrich() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, chatLoading]);
 
+  // In campaign mode, auto-open the Sync chat with suggestions
+  const campaignChatSeeded = useRef(false);
+  useEffect(() => {
+    if (isCampaignMode && campaign && campaignSuggestions.length > 0 && !campaignChatSeeded.current && chatMessages.length === 0) {
+      campaignChatSeeded.current = true;
+      const channels = campaign.campaign_goals?.channels || {};
+      const channelList = [channels.email && 'email', channels.linkedin && 'LinkedIn', channels.phone && 'phone'].filter(Boolean);
+      const syncMsg = {
+        role: 'assistant',
+        content: `I've analyzed your campaign **${campaign.name}**${channelList.length ? ` with ${channelList.join(', ')} channels` : ''}. Here are the enrichment columns I recommend to prepare your prospects for outreach:`,
+        timestamp: Date.now(),
+        suggestions: campaignSuggestions,
+      };
+      setChatMessages([syncMsg]);
+      setChatOpen(true);
+    }
+  }, [isCampaignMode, campaign, campaignSuggestions, chatMessages.length]);
+
   // Build workspace context for AI
   const buildChatContext = useCallback(() => {
     const colSummary = columns.map(c => {
@@ -3529,38 +3548,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
           </div>
         </div>
 
-        {/* Campaign mode: SYNC Suggestions Banner */}
-        {isCampaignMode && campaign && syncSuggestionsOpen && campaignSuggestions.length > 0 && (
-          <div className="flex-shrink-0 px-4 py-3 border-b border-cyan-500/20 bg-cyan-500/5">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-cyan-400" />
-                <span className="text-sm font-medium text-cyan-300">SYNC Suggestions for {campaign.name}</span>
-              </div>
-              <button onClick={() => setSyncSuggestionsOpen(false)} className="text-zinc-500 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              {campaignSuggestions.map(s => (
-                <button
-                  key={s.id}
-                  onClick={() => {
-                    setColType(s.colConfig.type);
-                    setColName(s.colConfig.name);
-                    setColConfig({});
-                    setColDialogOpen(true);
-                    toast.info(`Configure "${s.colConfig.name}" column`);
-                  }}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 hover:border-cyan-500/40 text-sm text-cyan-300 hover:text-cyan-200 transition-all"
-                >
-                  <s.icon className="w-3.5 h-3.5" />
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Campaign suggestions now appear in the Sync chat panel */}
 
         {/* Spreadsheet */}
         {wsLoading ? (
@@ -5596,10 +5584,12 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                             const lines = block.split('\n');
                             const lang = lines[0];
                             const code = lang === 'action' ? lines.slice(1).join('\n') : block;
-                            if (lang === 'action') return null; // hide action blocks
+                            if (lang === 'action') return null;
                             return <pre key={bi} className={`my-1.5 p-2 rounded text-[10px] font-mono overflow-x-auto ${rt('bg-gray-200', 'bg-zinc-800')}`}>{code}</pre>;
                           }
-                          return <span key={bi}>{block}</span>;
+                          // Handle **bold** in text blocks
+                          const parts = block.split(/\*\*(.*?)\*\*/g);
+                          return <span key={bi}>{parts.map((p, pi) => pi % 2 === 1 ? <strong key={pi} className="font-semibold">{p}</strong> : p)}</span>;
                         })}
                       </div>
                       {/* Action button */}
@@ -5611,6 +5601,37 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                           <Check className="w-3 h-3" />
                           Apply: {msg.action.type === 'add_column' ? `Add "${msg.action.name}"` : msg.action.type === 'add_filter' ? 'Apply Filter' : 'Apply'}
                         </button>
+                      )}
+                      {/* Campaign suggestion buttons */}
+                      {msg.suggestions && msg.suggestions.length > 0 && (
+                        <div className="mt-3 space-y-1.5">
+                          {msg.suggestions.map(s => {
+                            const SIcon = s.icon;
+                            return (
+                              <button
+                                key={s.id}
+                                onClick={() => {
+                                  setColType(s.colConfig.type);
+                                  setColName(s.colConfig.name);
+                                  setColConfig({});
+                                  setColDialogOpen(true);
+                                  // Add a user-style message to the chat
+                                  setChatMessages(prev => [...prev, { role: 'user', content: `Add ${s.label.replace('Add ', '')} column`, timestamp: Date.now() }]);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 hover:border-cyan-400/50 hover:bg-cyan-500/20 text-left transition-all group"
+                              >
+                                <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                                  <SIcon className="w-3 h-3 text-cyan-400" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-[11px] font-medium text-cyan-300 group-hover:text-cyan-200">{s.label}</div>
+                                  <div className="text-[10px] text-zinc-500 truncate">{s.desc}</div>
+                                </div>
+                                <ChevronRight className="w-3 h-3 text-zinc-600 group-hover:text-cyan-400 flex-shrink-0" />
+                              </button>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
                   </div>

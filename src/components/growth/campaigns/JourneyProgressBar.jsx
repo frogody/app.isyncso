@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Rocket,
   Database,
@@ -9,6 +9,8 @@ import {
   CheckCircle2,
   Zap,
   Check,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 const JOURNEY_STEPS = [
@@ -22,99 +24,137 @@ const JOURNEY_STEPS = [
 
 export default function JourneyProgressBar({ campaignId, currentPhase }) {
   const navigate = useNavigate();
+  const [expanded, setExpanded] = useState(true);
   const currentIndex = JOURNEY_STEPS.findIndex((s) => s.id === currentPhase);
+  const currentStep = JOURNEY_STEPS[currentIndex];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: 'easeOut' }}
-      className="bg-zinc-900/50 border border-white/5 rounded-xl p-4 mb-6"
-    >
-      <div className="flex items-center justify-between">
-        {JOURNEY_STEPS.map((step, index) => {
-          const isCompleted = currentPhase === 'launched' || index < currentIndex;
-          const isCurrent = index === currentIndex && currentPhase !== 'launched';
-          const isFuture = index > currentIndex && currentPhase !== 'launched';
-          const isClickable = isCompleted && step.path !== null && step.id !== 'wizard';
+    <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+      <AnimatePresence mode="wait">
+        {expanded ? (
+          <motion.div
+            key="bar"
+            initial={{ y: -80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -80, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            className="pointer-events-auto"
+          >
+            <div className="bg-zinc-950/95 backdrop-blur-md border-b border-white/10 shadow-lg shadow-black/30">
+              <div className="max-w-5xl mx-auto px-4 py-3">
+                <div className="flex items-center gap-2">
+                  {JOURNEY_STEPS.map((step, index) => {
+                    const isCompleted = currentPhase === 'launched' || index < currentIndex;
+                    const isCurrent = index === currentIndex && currentPhase !== 'launched';
+                    const isFuture = index > currentIndex && currentPhase !== 'launched';
+                    const isClickable = isCompleted && step.path !== null && step.id !== 'wizard';
+                    const StepIcon = step.icon;
 
-          const StepIcon = step.icon;
+                    return (
+                      <React.Fragment key={step.id}>
+                        <div
+                          className={`flex items-center gap-1.5 ${
+                            isClickable ? 'cursor-pointer hover:opacity-80' : 'cursor-default'
+                          }`}
+                          onClick={() => isClickable && navigate(step.path(campaignId))}
+                          role={isClickable ? 'button' : undefined}
+                          tabIndex={isClickable ? 0 : undefined}
+                          onKeyDown={(e) => {
+                            if (isClickable && (e.key === 'Enter' || e.key === ' ')) {
+                              e.preventDefault();
+                              navigate(step.path(campaignId));
+                            }
+                          }}
+                        >
+                          <div
+                            className={[
+                              'w-7 h-7 rounded-full flex items-center justify-center border transition-all flex-shrink-0',
+                              isCompleted && 'bg-green-500/20 border-green-400 text-green-400',
+                              isCurrent && 'bg-cyan-500/20 border-cyan-400 text-cyan-400',
+                              isFuture && 'bg-zinc-800/80 border-zinc-600 text-zinc-500',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
+                          >
+                            {isCompleted ? (
+                              <Check className="w-3 h-3" />
+                            ) : (
+                              <StepIcon className="w-3 h-3" />
+                            )}
+                          </div>
+                          <span
+                            className={[
+                              'text-xs font-medium hidden sm:block',
+                              isCompleted && 'text-green-400',
+                              isCurrent && 'text-cyan-400',
+                              isFuture && 'text-zinc-500',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
+                          >
+                            {step.label}
+                          </span>
+                        </div>
 
-          return (
-            <React.Fragment key={step.id}>
-              {/* Step circle + label */}
-              <div
-                className={`flex flex-col items-center gap-1.5 ${
-                  isClickable ? 'cursor-pointer' : 'cursor-default'
-                }`}
-                onClick={() => {
-                  if (isClickable) {
-                    navigate(step.path(campaignId));
-                  }
-                }}
-                role={isClickable ? 'button' : undefined}
-                tabIndex={isClickable ? 0 : undefined}
-                onKeyDown={(e) => {
-                  if (isClickable && (e.key === 'Enter' || e.key === ' ')) {
-                    e.preventDefault();
-                    navigate(step.path(campaignId));
-                  }
-                }}
-              >
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: index * 0.06, duration: 0.3 }}
-                  className={[
-                    'w-9 h-9 rounded-full flex items-center justify-center border-2 transition-all duration-300',
-                    isCompleted && 'bg-green-500/20 border-green-400 text-green-400',
-                    isCurrent && 'bg-cyan-500/20 border-cyan-400 text-cyan-400 ring-4 ring-cyan-400/20 animate-pulse',
-                    isFuture && 'bg-zinc-800 border-zinc-600 text-zinc-500',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                >
-                  {isCompleted ? (
-                    <Check className="w-4 h-4" />
-                  ) : (
-                    <StepIcon className="w-4 h-4" />
-                  )}
-                </motion.div>
+                        {index < JOURNEY_STEPS.length - 1 && (
+                          <div
+                            className={[
+                              'flex-1 h-px mx-1',
+                              (currentPhase === 'launched' || index < currentIndex)
+                                ? 'bg-green-400/40'
+                                : 'bg-zinc-700/60',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
+                          />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
 
-                <span
-                  className={[
-                    'text-xs font-medium hidden sm:block transition-colors duration-300',
-                    isCompleted && 'text-green-400',
-                    isCurrent && 'text-cyan-400',
-                    isFuture && 'text-zinc-500',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                >
-                  {step.label}
-                </span>
+                  {/* Collapse button */}
+                  <button
+                    onClick={() => setExpanded(false)}
+                    className="ml-3 p-1 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors flex-shrink-0"
+                    title="Minimize progress bar"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-
-              {/* Connector line between steps */}
-              {index < JOURNEY_STEPS.length - 1 && (
-                <motion.div
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ delay: index * 0.06 + 0.1, duration: 0.3 }}
-                  className={[
-                    'flex-1 h-0.5 mx-2 origin-left transition-colors duration-300',
-                    (currentPhase === 'launched' || index < currentIndex)
-                      ? 'bg-green-400/50'
-                      : 'bg-zinc-700',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                />
-              )}
-            </React.Fragment>
-          );
-        })}
-      </div>
-    </motion.div>
+            </div>
+          </motion.div>
+        ) : (
+          /* Collapsed nudge tab */
+          <motion.div
+            key="nudge"
+            initial={{ y: -30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -30, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            className="pointer-events-auto flex justify-center"
+          >
+            <button
+              onClick={() => setExpanded(true)}
+              className="group flex items-center gap-2 px-4 py-1.5 bg-zinc-900/90 backdrop-blur-md border border-white/10 border-t-0 rounded-b-lg shadow-lg shadow-black/20 hover:bg-zinc-800/90 transition-all"
+              title="Show campaign progress"
+            >
+              <div
+                className={[
+                  'w-5 h-5 rounded-full flex items-center justify-center border',
+                  'bg-cyan-500/20 border-cyan-400 text-cyan-400',
+                ].join(' ')}
+              >
+                {currentStep?.icon && <currentStep.icon className="w-2.5 h-2.5" />}
+              </div>
+              <span className="text-xs text-zinc-400 group-hover:text-zinc-200">
+                {currentStep?.label || 'Progress'}
+              </span>
+              <ChevronDown className="w-3 h-3 text-zinc-500 group-hover:text-zinc-300" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
