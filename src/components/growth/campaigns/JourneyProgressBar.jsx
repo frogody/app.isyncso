@@ -29,19 +29,19 @@ export default function JourneyProgressBar({ campaignId, currentPhase }) {
   const currentStep = JOURNEY_STEPS[currentIndex];
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+    <div className="fixed top-3 right-16 z-50 pointer-events-none">
       <AnimatePresence mode="wait">
         {expanded ? (
           <motion.div
             key="bar"
-            initial={{ y: -80, opacity: 0 }}
+            initial={{ y: -40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -80, opacity: 0 }}
+            exit={{ y: -40, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             className="pointer-events-auto"
           >
-            <div className="bg-zinc-950/95 backdrop-blur-md border-b border-white/10 shadow-lg shadow-black/30">
-              <div className="max-w-5xl mx-auto px-4 py-3">
+            <div className="bg-zinc-950/95 backdrop-blur-md border border-white/10 rounded-xl shadow-lg shadow-black/30">
+              <div className="px-4 py-2.5">
                 <div className="flex items-center gap-2">
                   {JOURNEY_STEPS.map((step, index) => {
                     const isCompleted = currentPhase === 'launched' || index < currentIndex;
@@ -128,15 +128,15 @@ export default function JourneyProgressBar({ campaignId, currentPhase }) {
           /* Collapsed nudge tab */
           <motion.div
             key="nudge"
-            initial={{ y: -30, opacity: 0 }}
+            initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -30, opacity: 0 }}
+            exit={{ y: -20, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            className="pointer-events-auto flex justify-center"
+            className="pointer-events-auto flex justify-end"
           >
             <button
               onClick={() => setExpanded(true)}
-              className="group flex items-center gap-2 px-4 py-1.5 bg-zinc-900/90 backdrop-blur-md border border-white/10 border-t-0 rounded-b-lg shadow-lg shadow-black/20 hover:bg-zinc-800/90 transition-all"
+              className="group flex items-center gap-2 px-3 py-1.5 bg-zinc-900/90 backdrop-blur-md border border-white/10 rounded-xl shadow-lg shadow-black/20 hover:bg-zinc-800/90 transition-all"
               title="Show campaign progress"
             >
               <div

@@ -5752,10 +5752,10 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-              className={`fixed top-0 right-0 h-full w-[420px] z-40 flex flex-col shadow-2xl ${rt('bg-white border-l border-gray-200', 'bg-zinc-950 border-l border-zinc-800')}`}
+              className="fixed top-0 right-0 h-full w-[420px] z-40 flex flex-col shadow-2xl bg-zinc-950 border-l border-zinc-800"
             >
               {/* Header */}
-              <div className={`flex items-center justify-between px-4 py-3 border-b ${rt('border-gray-200', 'border-zinc-800')}`}>
+              <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center">
                     <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -5764,15 +5764,15 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     </svg>
                   </div>
                   <div>
-                    <h3 className={`text-sm font-semibold ${rt('text-gray-900', 'text-white')}`}>Sync</h3>
+                    <h3 className="text-sm font-semibold text-white">Sync</h3>
                     <p className="text-[10px] text-zinc-500">Your AI workspace assistant</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button onClick={clearChat} title="Clear conversation" className={`p-1.5 rounded-lg transition-colors ${rt('hover:bg-gray-100 text-gray-400', 'hover:bg-zinc-800 text-zinc-500')}`}>
+                  <button onClick={clearChat} title="Clear conversation" className="p-1.5 rounded-lg transition-colors hover:bg-zinc-800 text-zinc-500">
                     <Trash className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => setChatOpen(false)} className={`p-1.5 rounded-lg transition-colors ${rt('hover:bg-gray-100 text-gray-400', 'hover:bg-zinc-800 text-zinc-500')}`}>
+                  <button onClick={() => setChatOpen(false)} className="p-1.5 rounded-lg transition-colors hover:bg-zinc-800 text-zinc-500">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -5788,14 +5788,14 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                         <circle cx="12" cy="12" r="2" fill="currentColor" />
                       </svg>
                     </div>
-                    <h4 className={`text-sm font-medium mb-1 ${rt('text-gray-900', 'text-white')}`}>Hi, I'm Sync</h4>
-                    <p className={`text-xs mb-4 ${rt('text-gray-500', 'text-zinc-500')}`}>Your AI workspace assistant. I can help you build and configure enrichments.</p>
+                    <h4 className="text-sm font-medium mb-1 text-white">Hi, I'm Sync</h4>
+                    <p className="text-xs mb-4 text-zinc-500">Your AI workspace assistant. I can help you build and configure enrichments.</p>
                     <div className="space-y-2">
                       {CHAT_QUICK_PROMPTS.map((qp, i) => (
                         <button
                           key={i}
                           onClick={() => sendChatMessage(qp.prompt)}
-                          className={`w-full text-left px-3 py-2.5 rounded-lg text-xs transition-all truncate ${rt('bg-gray-50 hover:bg-gray-100 text-gray-700', 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300')} border ${rt('border-gray-200', 'border-zinc-800')}`}
+                          className="w-full text-left px-3 py-2.5 rounded-lg text-xs transition-all truncate bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800"
                           title={qp.prompt}
                         >
                           <span className="text-purple-400 mr-1">→</span> {qp.label}
@@ -5809,8 +5809,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed ${
                       msg.role === 'user'
-                        ? rt('bg-purple-500 text-white', 'bg-purple-600 text-white')
-                        : rt('bg-gray-100 text-gray-800', 'bg-zinc-900 text-zinc-200')
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-zinc-900 text-zinc-200'
                     }`}>
                       {/* Render message with basic markdown */}
                       <div className="whitespace-pre-wrap break-words">
@@ -5820,7 +5820,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                             const lang = lines[0];
                             const code = lang === 'action' ? lines.slice(1).join('\n') : block;
                             if (lang === 'action') return null;
-                            return <pre key={bi} className={`my-1.5 p-2 rounded text-[10px] font-mono overflow-x-auto ${rt('bg-gray-200', 'bg-zinc-800')}`}>{code}</pre>;
+                            return <pre key={bi} className="my-1.5 p-2 rounded text-[10px] font-mono overflow-x-auto bg-zinc-800">{code}</pre>;
                           }
                           // Handle **bold** in text blocks
                           const parts = block.split(/\*\*(.*?)\*\*/g);
@@ -5874,7 +5874,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
 
                 {chatLoading && (
                   <div className="flex justify-start">
-                    <div className={`rounded-2xl px-3 py-2 ${rt('bg-gray-100', 'bg-zinc-900')}`}>
+                    <div className="rounded-2xl px-3 py-2 bg-zinc-900">
                       <div className="flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '0ms' }} />
                         <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -5889,12 +5889,12 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
 
               {/* Quick prompts when conversation exists */}
               {chatMessages.length > 0 && (
-                <div className={`px-4 py-2 flex gap-1.5 overflow-x-auto border-t ${rt('border-gray-100', 'border-zinc-800/50')}`}>
+                <div className="px-4 py-2 flex gap-1.5 overflow-x-auto border-t border-zinc-800/50">
                   {CHAT_QUICK_PROMPTS.map((qp, i) => (
                     <button
                       key={i}
                       onClick={() => sendChatMessage(qp.prompt)}
-                      className={`flex-shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-all ${rt('border-gray-200 text-gray-500 hover:bg-gray-50', 'border-zinc-800 text-zinc-500 hover:bg-zinc-900')}`}
+                      className="flex-shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-all border-zinc-800 text-zinc-500 hover:bg-zinc-900"
                     >
                       {qp.label}
                     </button>
@@ -5903,8 +5903,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               )}
 
               {/* Input */}
-              <div className={`px-4 py-3 border-t ${rt('border-gray-200', 'border-zinc-800')}`}>
-                <div className={`flex items-center gap-2 rounded-xl px-3 py-2 ${rt('bg-gray-50 border border-gray-200', 'bg-zinc-900 border border-zinc-800')}`}>
+              <div className="px-4 py-3 border-t border-zinc-800">
+                <div className="flex items-center gap-2 rounded-xl px-3 py-2 bg-zinc-900 border border-zinc-800">
                   <input
                     ref={chatInputRef}
                     value={chatInput}
@@ -5912,12 +5912,12 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(chatInput); } }}
                     placeholder="Ask Sync anything..."
                     disabled={chatLoading}
-                    className={`flex-1 bg-transparent outline-none text-xs ${rt('text-gray-900 placeholder:text-gray-400', 'text-white placeholder:text-zinc-600')}`}
+                    className="flex-1 bg-transparent outline-none text-xs text-white placeholder:text-zinc-600"
                   />
                   <button
                     onClick={() => sendChatMessage(chatInput)}
                     disabled={!chatInput.trim() || chatLoading}
-                    className={`p-1.5 rounded-lg transition-colors ${chatInput.trim() ? 'bg-purple-500 text-white hover:bg-purple-600' : rt('text-gray-300', 'text-zinc-700')}`}
+                    className={`p-1.5 rounded-lg transition-colors ${chatInput.trim() ? 'bg-purple-500 text-white hover:bg-purple-600' : 'text-zinc-700'}`}
                   >
                     <Send className="w-3.5 h-3.5" />
                   </button>

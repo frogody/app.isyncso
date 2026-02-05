@@ -349,7 +349,7 @@ function TagInput({ tags, onChange, placeholder }) {
 // Progress indicator
 function ProgressIndicator({ currentStep, steps }) {
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className="flex items-center justify-start gap-2">
       {steps.map((step, index) => {
         const StepIcon = step.icon;
         const isActive = currentStep === step.id;
