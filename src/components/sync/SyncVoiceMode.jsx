@@ -208,6 +208,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
             message: text,
             sessionId,
             voiceConfig: { voice: 'tara' },
+            history: conversationHistory.slice(-6),
             context: {
               userId: user?.id,
               companyId: user?.company_id || user?.organization_id,
