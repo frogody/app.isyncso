@@ -1928,13 +1928,22 @@ export default function GrowthEnrich() {
   // ─── Add column ────────────────────────────────────────────────────────
 
   const handleAddColumn = useCallback(async () => {
-    if (!colName.trim()) { toast.error('Enter a column name'); return; }
+    let finalName = colName.trim();
+    if (!finalName) {
+      // Auto-generate name from prompt or type
+      if (colType === 'ai' && colConfig.prompt) {
+        finalName = colConfig.prompt.replace(/\/\w+/g, '').trim().slice(0, 40).trim();
+        if (finalName.length > 30) finalName = finalName.slice(0, finalName.lastIndexOf(' ')) || finalName.slice(0, 30);
+      } else {
+        toast.error('Enter a column name'); return;
+      }
+    }
     try {
       const pos = columns.length;
       const { error } = await supabase.from('enrich_columns').insert({
         workspace_id: activeWorkspaceId,
         table_id: activeTableId,
-        name: colName.trim(),
+        name: finalName,
         type: colType,
         position: pos,
         config: colConfig,
@@ -1942,7 +1951,7 @@ export default function GrowthEnrich() {
       });
       if (error) throw error;
       toast.success('Column added');
-      trackChange('add_column', `Added column "${colName.trim()}" (${colType})`, { afterValue: { name: colName.trim(), type: colType, config: colConfig } });
+      trackChange('add_column', `Added column "${finalName}" (${colType})`, { afterValue: { name: finalName, type: colType, config: colConfig } });
       setColDialogOpen(false);
       setColName('');
       setColType('field');
@@ -5003,7 +5012,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     <Label className={rt('text-gray-700', 'text-zinc-300')}>Quick Templates</Label>
                     <div className="flex flex-wrap gap-1.5 mt-1">
                       {AI_PROMPT_TEMPLATES.map(t => (
-                        <button key={t.id} onClick={() => setColConfig(prev => ({ ...prev, prompt: t.prompt }))}
+                        <button key={t.id} onClick={() => { setColConfig(prev => ({ ...prev, prompt: t.prompt })); if (!colName.trim()) setColName(t.label); }}
                           className={`text-[10px] px-2.5 py-1 rounded-full border transition-all ${rt('border-gray-200 text-gray-600 hover:border-indigo-400 hover:bg-indigo-50', 'border-zinc-700 text-zinc-400 hover:border-indigo-500/50 hover:bg-indigo-500/10')}`}>
                           {t.icon} {t.label}
                         </button>
