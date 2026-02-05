@@ -1831,9 +1831,7 @@ export default function SyncAgent() {
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
       const authToken = session?.access_token || supabaseAnonKey;
 
-      // Add analyzing message
-      await new Promise((r) => setTimeout(r, 400));
-      addAgentMessage('sync', 'Analyzing intent and context...', 'thinking');
+      addAgentMessage('sync', 'Thinking...', 'thinking');
 
       const response = await fetch(`${supabaseUrl}/functions/v1/sync`, {
         method: 'POST',
@@ -1845,6 +1843,8 @@ export default function SyncAgent() {
         body: JSON.stringify({
           message: text,
           sessionId,
+          stream: true,
+          voice: true,
           context: {
             userId: session?.user?.id,
             companyId: user?.company_id,
@@ -1857,142 +1857,85 @@ export default function SyncAgent() {
         throw new Error(errorData.error || `Request failed with status ${response.status}`);
       }
 
-      const data = await response.json();
+      // Handle SSE streaming response
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+      let receivedSessionId = null;
+      let delegatedTo = null;
+      let firstChunk = true;
 
-      // Debug logging - check what's being returned
-      console.log('SYNC response:', {
-        sessionId: data.sessionId,
-        delegatedTo: data.delegatedTo,
-        routing: data.routing,
-        actionExecuted: data.actionExecuted,
-        document: data.document
-      });
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-      if (data.sessionId) {
-        console.log('Saving sessionId to localStorage:', data.sessionId);
-        setSessionId(data.sessionId);
-      }
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n').filter(l => l.trim().startsWith('data:'));
 
-      // Set active agent if SYNC delegated to one and add agent channel messages
-      if (data.delegatedTo) {
-        const agentId = data.delegatedTo.toLowerCase();
-        setActiveAgent(agentId);
+          for (const line of lines) {
+            const data = line.replace('data: ', '').trim();
+            if (data === '[DONE]') continue;
 
-        // Get agent info for nice messages
-        const agentInfo = AGENT_SEGMENTS.find(a => a.id === agentId);
-        const agentName = agentInfo?.name || data.delegatedTo;
+            try {
+              const parsed = JSON.parse(data);
 
-        // More conversational agent exchanges
-        const actionType = data.actionExecuted?.type || '';
-        const actionReadable = actionType.replace(/_/g, ' ');
+              // Handle metadata event
+              if (parsed.event === 'start') {
+                receivedSessionId = parsed.sessionId;
+                delegatedTo = parsed.delegatedTo;
+                if (delegatedTo) {
+                  const agentInfo = AGENT_SEGMENTS.find(a => a.id === delegatedTo?.toLowerCase());
+                  if (agentInfo) setActiveAgent(delegatedTo.toLowerCase());
+                }
+                continue;
+              }
 
-        // SYNC asks for help
-        addAgentMessage('sync', `@${agentName}, I need your help with this request.`);
-        await new Promise((r) => setTimeout(r, 400));
+              // Handle text chunks
+              if (parsed.event === 'chunk' && parsed.content) {
+                if (firstChunk) {
+                  firstChunk = false;
+                  setMood('speaking');
+                  addAgentMessage('sync', 'Speaking...');
+                }
+                fullText += parsed.content;
+              }
 
-        // Agent responds
-        addAgentMessage(agentId, `Hey SYNC! I'm on it. Let me check...`, 'thinking');
-        await new Promise((r) => setTimeout(r, 600));
-
-        // If an action was executed, show the work being done
-        if (data.actionExecuted?.type) {
-          // Trigger action-specific visual effect on avatar
-          const effect = getActionEffect(data.actionExecuted.type);
-          setCurrentActionEffect(effect);
-          
-          // Show what action is being performed
-          const actionMessages = {
-            list_invoices: 'Querying invoice database...',
-            create_invoice: 'Creating new invoice entry...',
-            search_products: 'Searching product catalog...',
-            create_prospect: 'Adding to CRM pipeline...',
-            search_prospects: 'Searching contacts database...',
-            list_prospects: 'Fetching prospect list...',
-            create_task: 'Adding task to your list...',
-            list_tasks: 'Pulling up your tasks...',
-            get_financial_summary: 'Crunching the numbers...',
-            create_expense: 'Logging expense entry...',
-            get_pipeline_stats: 'Analyzing pipeline data...',
-            generate_image: 'Generating image with AI...',
-            web_search: 'Searching the web...',
-          };
-          const workMessage = actionMessages[actionType] || `Running ${actionReadable}...`;
-          addAgentMessage(agentId, workMessage, 'thinking');
-          await new Promise((r) => setTimeout(r, 500));
-
-          // Show result summary
-          if (data.actionExecuted.success) {
-            const resultCount = Array.isArray(data.actionExecuted.result)
-              ? data.actionExecuted.result.length
-              : null;
-            const successMsg = resultCount !== null
-              ? `Done! Found ${resultCount} ${resultCount === 1 ? 'result' : 'results'}.`
-              : `Done! ${actionReadable} completed successfully.`;
-            addAgentMessage(agentId, successMsg);
-            // Trigger success celebration
-            setShowSuccess(true);
-            setTimeout(() => setShowSuccess(false), 100); // Brief trigger
-          } else {
-            addAgentMessage(agentId, `Hmm, ran into an issue. Let me report back.`);
+              // Handle action results
+              if (parsed.event === 'action_result') {
+                const effect = getActionEffect(parsed.actionType);
+                setCurrentActionEffect(effect);
+                if (parsed.success) {
+                  setShowSuccess(true);
+                  setTimeout(() => setShowSuccess(false), 100);
+                }
+              }
+            } catch {
+              // Skip unparseable chunks
+            }
           }
-          await new Promise((r) => setTimeout(r, 300));
         }
-
-        // Agent hands back to SYNC
-        addAgentMessage(agentId, `@SYNC Here's what I found. Over to you!`);
-        await new Promise((r) => setTimeout(r, 300));
-
-        // SYNC acknowledges
-        addAgentMessage('sync', `Thanks ${agentName}! Formatting the response now...`);
-      } else if (data.actionExecuted?.type) {
-        // Direct action without delegation - also trigger visual effect
-        const effect = getActionEffect(data.actionExecuted.type);
-        setCurrentActionEffect(effect);
-        
-        const actionReadable = data.actionExecuted.type.replace(/_/g, ' ');
-        addAgentMessage('sync', `I'll handle this myself. Running ${actionReadable}...`, 'thinking');
-        await new Promise((r) => setTimeout(r, 400));
-
-        if (data.actionExecuted.success) {
-          const resultCount = Array.isArray(data.actionExecuted.result)
-            ? data.actionExecuted.result.length
-            : null;
-          const msg = resultCount !== null
-            ? `Got it! Found ${resultCount} ${resultCount === 1 ? 'item' : 'items'}.`
-            : `Done! Action completed.`;
-          addAgentMessage('sync', msg);
-          // Trigger success celebration
-          setShowSuccess(true);
-          setTimeout(() => setShowSuccess(false), 100);
-        } else {
-          addAgentMessage('sync', `That didn't work as expected. Let me explain...`);
-        }
-      } else {
-        // Simple response - just a conversation
-        addAgentMessage('sync', 'Let me think about that...');
-        await new Promise((r) => setTimeout(r, 300));
-        addAgentMessage('sync', 'Got it! Here\'s my response...');
       }
 
-      // Transition to speaking
-      setMood('speaking');
-      await new Promise((r) => setTimeout(r, 300));
+      if (receivedSessionId) setSessionId(receivedSessionId);
 
-      // Add message with optional document attachment
-      setMessages((m) => [...m, {
-        role: 'assistant',
-        text: data.response,
-        ts: Date.now(),
-        document: data.document || null, // { url, title }
-      }]);
+      const elapsed = Date.now() - now;
+      console.log(`[Voice] Response in ${elapsed}ms`);
 
-      // Final agent channel message
-      addAgentMessage('sync', 'All done! Let me know if you need anything else.');
+      // Show the complete response
+      if (fullText) {
+        setMessages((m) => [...m, {
+          role: 'assistant',
+          text: fullText.trim(),
+          ts: Date.now(),
+          document: null,
+        }]);
+      }
 
-      // Back to listening and clear active agent after a delay
-      await new Promise((r) => setTimeout(r, 1500));
+      // Brief cooldown then back to listening
+      await new Promise((r) => setTimeout(r, 800));
       setActiveAgent(null);
-      setCurrentActionEffect(null); // Clear action visual effect
+      setCurrentActionEffect(null);
       setMood('listening');
     } catch (err) {
       console.error('SYNC error:', err);

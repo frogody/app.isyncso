@@ -2785,12 +2785,32 @@ serve(async (req) => {
       ? `${SYNC_SYSTEM_PROMPT}\n\n${memoryContextStr}${dateContext}`
       : `${SYNC_SYSTEM_PROMPT}${dateContext}`;
 
-    // Voice mode is handled by sync-voice proxy (prepends voice context to message)
-    // Direct voice prompt injection reserved for when voice module is imported directly
-    // if (voice) {
-    //   const moodAnalysis = detectUserMood(message);
-    //   enhancedSystemPrompt += getVoicePromptSection(moodAnalysis);
-    // }
+    // Voice mode: inject conversational voice instructions
+    if (voice) {
+      enhancedSystemPrompt += `
+
+## VOICE MODE — CRITICAL RULES
+You are speaking out loud in a real-time voice conversation. Follow these rules strictly:
+
+1. **BE EXTREMELY BRIEF** — 1-3 short sentences max. Think "spoken reply", not "written essay".
+2. **NO markdown** — no bullets, tables, headers, bold, or formatting. Just plain speech.
+3. **NO lists or data dumps** — summarize instead. Say "You have 3 active campaigns" not a table of them.
+4. **Be conversational** — talk like a smart colleague on a phone call. Use natural speech patterns.
+5. **Ask follow-up questions** — keep the conversation flowing. "Want me to dig into any of those?"
+6. **NO emojis or special characters** — they can't be spoken.
+7. **If an action returns data**, give a brief spoken summary, not the raw data.
+
+Examples of GOOD voice responses:
+- "Hey! You've got 10 prospects matching Bram, mostly at ING and Energie West. Want me to narrow it down?"
+- "Sure, I'll create that invoice. Who's the client?"
+- "Done! Invoice sent to Bram de Groot for 42 thousand euros."
+
+Examples of BAD voice responses:
+- Long paragraphs with multiple bullet points
+- Tables of data
+- "Here are the results: 1. Bram de Groot | Energie West BV | new | €42,000..."
+`;
+    }
 
     // Get buffer messages for API
     const bufferMessages = memorySystem.session.getBufferMessages(session);
@@ -2799,7 +2819,8 @@ serve(async (req) => {
       ...bufferMessages.map(m => ({ role: m.role, content: m.content })),
     ];
 
-    if (stream) {
+    // Voice mode: always use streaming for speed, skip heavy processing paths
+    if (voice || stream) {
       return handleStreamingRequest(apiMessages, session, routingResult, companyId, userId);
     }
 
