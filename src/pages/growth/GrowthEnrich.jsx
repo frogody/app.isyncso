@@ -330,8 +330,8 @@ const HISTORY_ACTION_ICONS = {
 };
 
 const HISTORY_ACTION_COLORS = {
-  add_column: 'text-cyan-400', delete_column: 'text-red-400', edit_column: 'text-indigo-400',
-  add_row: 'text-cyan-400', delete_row: 'text-red-400', edit_cell: 'text-amber-400',
+  add_column: 'text-indigo-400', delete_column: 'text-red-400', edit_column: 'text-indigo-400',
+  add_row: 'text-indigo-400', delete_row: 'text-red-400', edit_cell: 'text-amber-400',
   import_csv: 'text-green-400', import_nest: 'text-green-400', run_all: 'text-purple-400',
   run_column: 'text-purple-400', clear_data: 'text-red-400', snapshot_restore: 'text-amber-400',
 };
@@ -3233,7 +3233,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
           )}
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <Loader2 className="w-8 h-8 text-cyan-400 animate-spin mx-auto mb-4" />
+              <Loader2 className="w-8 h-8 text-indigo-400 animate-spin mx-auto mb-4" />
               <h2 className="text-lg font-semibold text-white mb-2">Setting up enrichment workspace</h2>
               <p className="text-sm text-zinc-400">{campaignLoadingStatus || 'Initializing...'}</p>
             </div>
@@ -3715,7 +3715,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   <button onClick={clearSandboxData} className={`text-[10px] px-2 py-1 rounded-lg ${rt('text-gray-500 hover:bg-gray-100', 'text-zinc-500 hover:bg-zinc-800')}`} title="Clear all sandbox data">
                     <Trash className="w-3 h-3" />
                   </button>
-                  <button onClick={convertSandboxToLive} className={`text-[10px] px-2 py-1.5 rounded-lg flex items-center gap-1 ${rt('text-cyan-600 hover:bg-cyan-50 border border-cyan-200', 'text-cyan-400 hover:bg-cyan-500/10 border border-cyan-500/30')}`} title="Clear sandbox data and run live enrichments">
+                  <button onClick={convertSandboxToLive} className={`text-[10px] px-2 py-1.5 rounded-lg flex items-center gap-1 ${rt('text-indigo-600 hover:bg-indigo-50 border border-indigo-200', 'text-indigo-400 hover:bg-indigo-500/10 border border-indigo-500/30')}`} title="Clear sandbox data and run live enrichments">
                     <RotateCcw className="w-3 h-3" /> Go Live
                   </button>
                 </>
@@ -3795,7 +3795,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                 <Button
                   onClick={handleContinueToFlow}
                   disabled={savingCampaign}
-                  className="flex-shrink-0 bg-cyan-600 hover:bg-cyan-700 text-white ml-2"
+                  className="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white ml-2"
                   size="sm"
                 >
                   {savingCampaign ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <ArrowRight className="w-3.5 h-3.5 mr-1" />}
@@ -3900,7 +3900,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   >
                     <div className="flex items-center gap-1.5 min-w-0">
                       <Icon
-                        className={`w-3.5 h-3.5 flex-shrink-0 ${col.type === 'field' ? 'text-indigo-400' : col.type === 'enrichment' ? 'text-amber-400' : col.type === 'ai' ? 'text-purple-400' : col.type === 'waterfall' ? 'text-cyan-400' : col.type === 'http' ? 'text-emerald-400' : col.type === 'merge' ? 'text-pink-400' : 'text-green-400'}`}
+                        className={`w-3.5 h-3.5 flex-shrink-0 ${col.type === 'field' ? 'text-indigo-400' : col.type === 'enrichment' ? 'text-amber-400' : col.type === 'ai' ? 'text-purple-400' : col.type === 'waterfall' ? 'text-indigo-400' : col.type === 'http' ? 'text-emerald-400' : col.type === 'merge' ? 'text-pink-400' : 'text-green-400'}`}
                         title={col.type === 'field' && col.config?.data_type ? FIELD_DATA_TYPE_LABELS[col.config.data_type] || col.config.data_type : COLUMN_TYPE_LABELS[col.type] || col.type}
                       />
                       <span className="truncate flex-1">{col.name}</span>
@@ -3984,11 +3984,18 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
             <div style={{ height: totalHeight, position: 'relative', minWidth: totalGridWidth }}>
               {visibleRows.map((row) => {
                 const rowIdx = sortedRows.indexOf(row);
+                const isBeyondSandbox = sandboxMode && rowIdx >= SANDBOX_ROW_LIMIT;
+                const isSandboxBoundary = sandboxMode && rowIdx === SANDBOX_ROW_LIMIT - 1;
                 return (
                   <div
                     key={row.id}
                     className="flex absolute w-full"
-                    style={{ top: rowIdx * ROW_HEIGHT, height: ROW_HEIGHT }}
+                    style={{
+                      top: rowIdx * ROW_HEIGHT,
+                      height: ROW_HEIGHT,
+                      opacity: isBeyondSandbox ? 0.35 : 1,
+                      ...(isSandboxBoundary ? { boxShadow: '0 2px 0 0 rgba(99, 102, 241, 0.6)' } : {}),
+                    }}
                   >
                     {/* Row number */}
                     <div
@@ -4028,8 +4035,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                                   'border-amber-500/30 border-dashed bg-amber-500/5'
                                 )
                               : rt(
-                                  `border-gray-200 ${isEditing ? 'ring-2 ring-cyan-400 ring-inset bg-cyan-50/20' : isSelected ? 'ring-2 ring-cyan-400 ring-inset bg-cyan-50/10' : 'bg-white'}`,
-                                  `border-zinc-800/60 ${isEditing ? 'ring-2 ring-cyan-400 ring-inset bg-white/10' : isSelected ? 'ring-2 ring-cyan-400 ring-inset bg-cyan-500/5' : ''}`
+                                  `border-gray-200 ${isEditing ? 'ring-2 ring-indigo-400 ring-inset bg-indigo-50/20' : isSelected ? 'ring-2 ring-indigo-400 ring-inset bg-indigo-50/10' : 'bg-white'}`,
+                                  `border-zinc-800/60 ${isEditing ? 'ring-2 ring-indigo-400 ring-inset bg-white/10' : isSelected ? 'ring-2 ring-indigo-400 ring-inset bg-indigo-500/5' : ''}`
                                 )
                           }`}
                           title={isSandboxData ? 'Sandbox data — not real' : undefined}
@@ -4057,7 +4064,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                             <div className="flex items-center justify-center w-full">
                               <div className={`w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-colors ${
                                 (getCellRawValue(row.id, col) === 'true' || getCellRawValue(row.id, col) === '1' || getCellRawValue(row.id, col) === 'yes')
-                                  ? rt('bg-cyan-500 border-cyan-500', 'bg-cyan-500 border-cyan-500')
+                                  ? rt('bg-indigo-500 border-indigo-500', 'bg-indigo-500 border-indigo-500')
                                   : rt('border-gray-300', 'border-zinc-600')
                               }`}>
                                 {(getCellRawValue(row.id, col) === 'true' || getCellRawValue(row.id, col) === '1' || getCellRawValue(row.id, col) === 'yes') && <Check className="w-3 h-3 text-white" />}
@@ -4105,9 +4112,9 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                               {status !== 'empty' && status !== 'complete' && <StatusDot status={status} errorMessage={cellObj?.error_message} />}
                               {/* URL type - clickable */}
                               {col.type === 'field' && col.config?.data_type === 'url' && displayVal ? (
-                                <a href={displayVal.startsWith('http') ? displayVal : `https://${displayVal}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="truncate text-cyan-400 hover:underline">{debouncedSearch ? highlightMatch(displayVal, debouncedSearch) : displayVal}</a>
+                                <a href={displayVal.startsWith('http') ? displayVal : `https://${displayVal}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="truncate text-indigo-400 hover:underline">{debouncedSearch ? highlightMatch(displayVal, debouncedSearch) : displayVal}</a>
                               ) : col.type === 'field' && col.config?.data_type === 'email' && displayVal ? (
-                                <a href={`mailto:${displayVal}`} onClick={e => e.stopPropagation()} className="truncate text-cyan-400 hover:underline">{debouncedSearch ? highlightMatch(displayVal, debouncedSearch) : displayVal}</a>
+                                <a href={`mailto:${displayVal}`} onClick={e => e.stopPropagation()} className="truncate text-indigo-400 hover:underline">{debouncedSearch ? highlightMatch(displayVal, debouncedSearch) : displayVal}</a>
                               ) : (
                                 <span className={`truncate ${col.type === 'field' && (col.config?.data_type === 'number' || col.config?.data_type === 'currency') ? 'tabular-nums text-right w-full' : ''} ${rt('text-gray-700', 'text-zinc-300')}`}>
                                   {debouncedSearch ? highlightMatch(displayVal, debouncedSearch) : displayVal}
@@ -4115,7 +4122,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                               )}
                               {status === 'error' && <StatusDot status="error" errorMessage={cellObj?.error_message} />}
                               {col.type === 'waterfall' && cellObj?.value?._meta?.source_used && (
-                                <span title={`Source: ${cellObj.value._meta.source_used} (${cellObj.value._meta.attempts} tried)`} className="ml-auto text-[9px] px-1 py-0.5 rounded bg-cyan-500/10 text-cyan-400 flex-shrink-0">
+                                <span title={`Source: ${cellObj.value._meta.source_used} (${cellObj.value._meta.attempts} tried)`} className="ml-auto text-[9px] px-1 py-0.5 rounded bg-indigo-500/10 text-indigo-400 flex-shrink-0">
                                   #{cellObj.value._meta.attempts}
                                 </span>
                               )}
@@ -4827,14 +4834,14 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                         {slashMenuColumns.map((c, idx) => (
                           <button key={c.id} onClick={() => insertColumnRef(c.name)}
                             className={`w-full text-left px-3 py-2 text-sm text-white flex items-center gap-2 min-w-0 ${idx === slashMenu.selectedIndex ? 'bg-zinc-600' : 'hover:bg-zinc-700'}`}>
-                            <span className="text-cyan-400 font-mono text-xs shrink-0">/</span>
+                            <span className="text-indigo-400 font-mono text-xs shrink-0">/</span>
                             <span className="shrink-0">{c.name}</span>
                             {c.sampleValue && <span className="text-zinc-500 text-xs truncate ml-auto">{String(c.sampleValue).slice(0, 40)}</span>}
                           </button>
                         ))}
                       </div>
                     )}
-                    <p className="text-[10px] text-zinc-500 mt-1">Type <span className="font-mono text-cyan-400">/</span> to insert column references. Use <span className="font-mono text-cyan-400">&uarr;&darr;</span> to navigate, <span className="font-mono text-cyan-400">Enter</span> or <span className="font-mono text-cyan-400">Tab</span> to select.</p>
+                    <p className="text-[10px] text-zinc-500 mt-1">Type <span className="font-mono text-indigo-400">/</span> to insert column references. Use <span className="font-mono text-indigo-400">&uarr;&darr;</span> to navigate, <span className="font-mono text-indigo-400">Enter</span> or <span className="font-mono text-indigo-400">Tab</span> to select.</p>
                   </div>
 
                   {/* Model selector */}
@@ -4849,7 +4856,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                           <div className={`text-xs font-medium ${rt('text-gray-800', 'text-white')}`}>{m.label}</div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-[9px] text-zinc-500">Speed</span>
-                            <div className="flex gap-0.5">{[1,2,3,4,5].map(i => <div key={i} className={`w-1 h-1 rounded-full ${i <= m.speed ? 'bg-cyan-400' : rt('bg-gray-200', 'bg-zinc-700')}`} />)}</div>
+                            <div className="flex gap-0.5">{[1,2,3,4,5].map(i => <div key={i} className={`w-1 h-1 rounded-full ${i <= m.speed ? 'bg-indigo-400' : rt('bg-gray-200', 'bg-zinc-700')}`} />)}</div>
                             <span className="text-[9px] text-zinc-500 ml-1">Quality</span>
                             <div className="flex gap-0.5">{[1,2,3,4,5].map(i => <div key={i} className={`w-1 h-1 rounded-full ${i <= m.quality ? 'bg-purple-400' : rt('bg-gray-200', 'bg-zinc-700')}`} />)}</div>
                           </div>
@@ -4990,12 +4997,12 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                       {slashMenuColumns.map((c, idx) => (
                         <button key={c.id} onClick={() => insertColumnRef(c.name)}
                           className={`w-full text-left px-3 py-2 text-sm text-white flex items-center gap-2 ${idx === slashMenu.selectedIndex ? 'bg-zinc-600' : 'hover:bg-zinc-700'}`}>
-                          <span className="text-cyan-400 font-mono text-xs">/</span>{c.name}
+                          <span className="text-indigo-400 font-mono text-xs">/</span>{c.name}
                         </button>
                       ))}
                     </div>
                   )}
-                  <p className="text-[10px] text-zinc-500 mt-1">Type <span className="font-mono text-cyan-400">/</span> for column refs. Functions: CONCAT, IF, UPPER, LOWER, TRIM, LEN, LEFT, RIGHT, REPLACE, ROUND, CONTAINS</p>
+                  <p className="text-[10px] text-zinc-500 mt-1">Type <span className="font-mono text-indigo-400">/</span> for column refs. Functions: CONCAT, IF, UPPER, LOWER, TRIM, LEN, LEFT, RIGHT, REPLACE, ROUND, CONTAINS</p>
                 </div>
               )}
 
@@ -5010,7 +5017,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                       placeholder="https://api.example.com/endpoint?id=/CompanyId"
                       className={rt('font-mono text-xs', 'bg-zinc-800 border-zinc-700 text-white font-mono text-xs')}
                     />
-                    <p className="text-[10px] text-zinc-500 mt-1">Use <span className="font-mono text-cyan-400">/ColumnName</span> to insert column values</p>
+                    <p className="text-[10px] text-zinc-500 mt-1">Use <span className="font-mono text-indigo-400">/ColumnName</span> to insert column values</p>
                   </div>
 
                   {/* Method */}
@@ -5331,7 +5338,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                           const srcCol = columns.find(c => c.id === cid);
                           return (
                             <span key={cid}>
-                              {i > 0 && <span className="text-cyan-400 font-mono mx-0.5">{colConfig.output_format === 'bulleted' ? ' • ' : (colConfig.separator ?? ', ')}</span>}
+                              {i > 0 && <span className="text-indigo-400 font-mono mx-0.5">{colConfig.output_format === 'bulleted' ? ' • ' : (colConfig.separator ?? ', ')}</span>}
                               <span className="text-orange-400 font-mono">/{srcCol?.name || '?'}</span>
                             </span>
                           );
@@ -5868,16 +5875,16 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                                   // Add a user-style message to the chat
                                   setChatMessages(prev => [...prev, { role: 'user', content: `Add ${s.label.replace('Add ', '')} column`, timestamp: Date.now() }]);
                                 }}
-                                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 hover:border-cyan-400/50 hover:bg-cyan-500/20 text-left transition-all group"
+                                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 hover:border-indigo-400/50 hover:bg-indigo-500/20 text-left transition-all group"
                               >
-                                <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                                  <SIcon className="w-3 h-3 text-cyan-400" />
+                                <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                                  <SIcon className="w-3 h-3 text-indigo-400" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-[11px] font-medium text-cyan-300 group-hover:text-cyan-200">{s.label}</div>
+                                  <div className="text-[11px] font-medium text-indigo-300 group-hover:text-indigo-200">{s.label}</div>
                                   <div className="text-[10px] text-zinc-500 truncate">{s.desc}</div>
                                 </div>
-                                <ChevronRight className="w-3 h-3 text-zinc-600 group-hover:text-cyan-400 flex-shrink-0" />
+                                <ChevronRight className="w-3 h-3 text-zinc-600 group-hover:text-indigo-400 flex-shrink-0" />
                               </button>
                             );
                           })}
