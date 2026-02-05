@@ -240,6 +240,7 @@ async function callMainSync(
       message: voiceMessage,
       sessionId,
       stream: false,
+      voice: true,
       context: {
         ...context,
         source: 'voice-mode',

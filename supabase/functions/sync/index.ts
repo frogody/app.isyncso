@@ -2819,8 +2819,72 @@ Examples of BAD voice responses:
       ...bufferMessages.map(m => ({ role: m.role, content: m.content })),
     ];
 
-    // Voice mode: always use streaming for speed, skip heavy processing paths
-    if (voice || stream) {
+    // Voice mode (non-streaming): fast JSON path for sync-voice proxy
+    // Returns JSON response, bypasses plan-execute/workflow/ReAct
+    if (voice && !stream) {
+      console.log('[SYNC] Voice fast JSON path — direct LLM call');
+      const voiceResponse = await fetch('https://api.together.xyz/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${TOGETHER_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'moonshotai/Kimi-K2-Instruct',
+          messages: apiMessages,
+          temperature: 0.7,
+          max_tokens: 300,
+          stream: false,
+        }),
+      });
+
+      if (!voiceResponse.ok) {
+        throw new Error(`LLM API error: ${voiceResponse.status}`);
+      }
+
+      const voiceData = await voiceResponse.json();
+      let voiceText = voiceData.choices?.[0]?.message?.content || "I'm here, what's up?";
+
+      // Check for and execute action blocks
+      const voiceActionData = parseActionFromResponse(voiceText);
+      let voiceActionResult: ActionResult | null = null;
+      if (voiceActionData) {
+        voiceActionResult = await executeAction(voiceActionData, companyId, userId);
+        voiceText = voiceText.replace(/\[ACTION\][\s\S]*?\[\/ACTION\]/g, '').trim();
+        if (voiceActionResult.message) {
+          voiceText += ' ' + voiceActionResult.message;
+        }
+      }
+
+      // Save to session
+      const voiceAssistantMsg: ChatMessage = {
+        role: 'assistant',
+        content: voiceText,
+        timestamp: new Date().toISOString(),
+        agentId: routingResult.agentId || 'sync',
+      };
+      session.messages.push(voiceAssistantMsg);
+      memorySystem.session.updateSession(session).catch(err =>
+        console.warn('Failed to update voice session:', err)
+      );
+
+      return new Response(JSON.stringify({
+        response: voiceText.trim(),
+        text: voiceText.trim(),
+        sessionId: session.session_id,
+        delegatedTo: routingResult.agentId,
+        actionExecuted: voiceActionResult ? {
+          success: voiceActionResult.success,
+          type: voiceActionData?.action,
+          link: voiceActionResult.link,
+        } : undefined,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Streaming mode: SSE stream for SyncAgent.jsx text chat
+    if (stream) {
       return handleStreamingRequest(apiMessages, session, routingResult, companyId, userId);
     }
 
