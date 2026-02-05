@@ -62,13 +62,153 @@ const SOURCE_FIELDS = [
 ];
 
 const ENRICHMENT_FUNCTIONS = [
-  { value: 'fullEnrichFromLinkedIn', label: 'Full Enrich (LinkedIn)', inputType: 'linkedin', desc: 'Full profile + company data from LinkedIn URL' },
-  { value: 'fullEnrichFromEmail', label: 'Full Enrich (Email)', inputType: 'email', desc: 'Full profile + company data from email address' },
-  { value: 'enrichCompanyOnly', label: 'Company Enrich', inputType: 'company', desc: 'Company data only (no person info)' },
-  { value: 'matchProspect', label: 'Match Prospect', inputType: 'multi', desc: 'Find matching prospect by name/company' },
-  { value: 'enrichProspectContact', label: 'Prospect Contact', inputType: 'prospect_id', desc: 'Get contact details (email, phone)' },
-  { value: 'enrichProspectProfile', label: 'Prospect Profile', inputType: 'prospect_id', desc: 'Get professional profile data' },
+  {
+    value: 'fullEnrichFromLinkedIn', label: 'Full Person + Company (from LinkedIn URL)',
+    inputType: 'linkedin',
+    inputLabel: 'Column with LinkedIn URLs',
+    inputHint: 'Select the column that contains LinkedIn profile URLs (e.g. https://linkedin.com/in/...)',
+    desc: 'Gets full contact info, work history, skills, and company data from a LinkedIn profile URL.',
+  },
+  {
+    value: 'fullEnrichFromEmail', label: 'Full Person + Company (from Email)',
+    inputType: 'email',
+    inputLabel: 'Column with Email Addresses',
+    inputHint: 'Select the column that contains email addresses',
+    desc: 'Gets full contact info, work history, skills, and company data from an email address.',
+  },
+  {
+    value: 'enrichCompanyOnly', label: 'Company Info Only',
+    inputType: 'company',
+    inputLabel: 'Column with Company Names or Domains',
+    inputHint: 'Select the column that contains company names (e.g. "Google") or domains (e.g. "google.com")',
+    desc: 'Gets company details like industry, size, revenue, tech stack, and funding. No person data.',
+  },
+  {
+    value: 'matchProspect', label: 'Find Person ID (for chained lookups)',
+    inputType: 'multi',
+    inputLabel: 'Column with Name, Email, or LinkedIn URL',
+    inputHint: 'Select a column with identifying info — name, email, or LinkedIn URL — to find the person in the database',
+    desc: 'Looks up a person and returns their Explorium ID. Use this first, then use "Get Contact Details" or "Get Profile Data" with that ID.',
+  },
+  {
+    value: 'enrichProspectContact', label: 'Get Contact Details (email, phone)',
+    inputType: 'prospect_id',
+    inputLabel: 'Column with Person IDs',
+    inputHint: 'Select the column containing Explorium prospect IDs (from "Find Person ID" step)',
+    desc: 'Gets verified email, phone numbers, and contact info. Requires a Person ID from "Find Person ID" first.',
+  },
+  {
+    value: 'enrichProspectProfile', label: 'Get Profile Data (title, skills, history)',
+    inputType: 'prospect_id',
+    inputLabel: 'Column with Person IDs',
+    inputHint: 'Select the column containing Explorium prospect IDs (from "Find Person ID" step)',
+    desc: 'Gets job title, skills, work history, education, and seniority. Requires a Person ID from "Find Person ID" first.',
+  },
 ];
+
+const ENRICHMENT_OUTPUT_FIELDS = {
+  fullEnrichFromLinkedIn: [
+    { group: 'Contact', fields: [
+      { value: 'email', label: 'Work Email' },
+      { value: 'personal_email', label: 'Personal Email' },
+      { value: 'phone', label: 'Phone Number' },
+      { value: 'mobile_phone', label: 'Mobile Phone' },
+      { value: 'work_phone', label: 'Work Phone' },
+    ]},
+    { group: 'Person', fields: [
+      { value: 'first_name', label: 'First Name' },
+      { value: 'last_name', label: 'Last Name' },
+      { value: 'job_title', label: 'Job Title' },
+      { value: 'job_department', label: 'Department' },
+      { value: 'job_seniority_level', label: 'Seniority Level' },
+      { value: 'location_city', label: 'City' },
+      { value: 'location_country', label: 'Country' },
+      { value: 'age_group', label: 'Age Group' },
+    ]},
+    { group: 'Company', fields: [
+      { value: 'company', label: 'Company Name' },
+      { value: 'company_domain', label: 'Company Website' },
+      { value: 'company_industry', label: 'Industry' },
+      { value: 'company_size', label: 'Company Size Range' },
+      { value: 'company_employee_count', label: 'Employee Count' },
+      { value: 'company_revenue', label: 'Revenue' },
+      { value: 'company_hq_location', label: 'HQ Location' },
+      { value: 'company_description', label: 'Company Description' },
+      { value: 'company_founded_year', label: 'Founded Year' },
+    ]},
+    { group: 'Skills & Career', fields: [
+      { value: 'skills', label: 'Skills (list)' },
+      { value: 'interests', label: 'Interests (list)' },
+      { value: 'work_history', label: 'Work History (list)' },
+      { value: 'education', label: 'Education (list)' },
+      { value: 'certifications', label: 'Certifications (list)' },
+    ]},
+    { group: 'Tech & Funding', fields: [
+      { value: 'company_tech_stack', label: 'Tech Stack (list)' },
+      { value: 'company_funding_total', label: 'Total Funding' },
+      { value: 'company_investors', label: 'Investors (list)' },
+    ]},
+  ],
+  fullEnrichFromEmail: 'fullEnrichFromLinkedIn', // same output fields
+  enrichCompanyOnly: [
+    { group: 'Company Details', fields: [
+      { value: 'name', label: 'Company Name' },
+      { value: 'domain', label: 'Website Domain' },
+      { value: 'industry', label: 'Industry' },
+      { value: 'size_range', label: 'Size Range' },
+      { value: 'employee_count', label: 'Employee Count' },
+      { value: 'revenue_range', label: 'Revenue Range' },
+      { value: 'founded_year', label: 'Founded Year' },
+      { value: 'hq_location', label: 'HQ Location' },
+      { value: 'description', label: 'Description' },
+      { value: 'linkedin', label: 'LinkedIn Page' },
+    ]},
+    { group: 'Tech & Funding', fields: [
+      { value: 'tech_stack', label: 'Tech Stack (list)' },
+      { value: 'funding_total', label: 'Total Funding' },
+      { value: 'latest_funding', label: 'Latest Funding Round' },
+    ]},
+  ],
+  matchProspect: [
+    { group: 'Result', fields: [
+      { value: 'prospect_id', label: 'Person ID (use for chained lookups)' },
+    ]},
+  ],
+  enrichProspectContact: [
+    { group: 'Contact Info', fields: [
+      { value: 'data.professions_email', label: 'Work Email' },
+      { value: 'data.personal_email', label: 'Personal Email' },
+      { value: 'data.mobile_phone', label: 'Mobile Phone' },
+      { value: 'data.work_phone', label: 'Work Phone' },
+      { value: 'data.email_status', label: 'Email Status (valid/invalid)' },
+    ]},
+  ],
+  enrichProspectProfile: [
+    { group: 'Professional', fields: [
+      { value: 'data.job_title', label: 'Job Title' },
+      { value: 'data.job_department', label: 'Department' },
+      { value: 'data.seniority', label: 'Seniority Level' },
+      { value: 'data.company_name', label: 'Company Name' },
+      { value: 'data.company_domain', label: 'Company Website' },
+      { value: 'data.industry', label: 'Industry' },
+      { value: 'data.company_size', label: 'Company Size' },
+    ]},
+    { group: 'Skills & Career', fields: [
+      { value: 'data.skills', label: 'Skills (list)' },
+      { value: 'data.education', label: 'Education (list)' },
+      { value: 'data.work_history', label: 'Work History (list)' },
+      { value: 'data.certifications', label: 'Certifications (list)' },
+      { value: 'data.interests', label: 'Interests (list)' },
+    ]},
+  ],
+};
+
+function getOutputFieldsForFunction(fnValue) {
+  if (!fnValue) return [];
+  let fields = ENRICHMENT_OUTPUT_FIELDS[fnValue];
+  if (typeof fields === 'string') fields = ENRICHMENT_OUTPUT_FIELDS[fields];
+  return fields || [];
+}
 
 const COLUMN_TYPES = [
   { value: 'field', label: 'Field', icon: Type, desc: 'Map a field from source data' },
@@ -4956,48 +5096,75 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                 </div>
               )}
 
-              {colType === 'enrichment' && (
+              {colType === 'enrichment' && (() => {
+                const selectedFn = ENRICHMENT_FUNCTIONS.find(f => f.value === colConfig.function);
+                const outputGroups = getOutputFieldsForFunction(colConfig.function);
+                return (
                 <div className="space-y-3">
                   <div>
-                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Enrichment Function</Label>
-                    <Select value={colConfig.function || ''} onValueChange={v => setColConfig(prev => ({ ...prev, function: v, provider: 'explorium' }))}>
+                    <Label className={rt('text-gray-700', 'text-zinc-300')}>What do you want to enrich?</Label>
+                    <Select value={colConfig.function || ''} onValueChange={v => setColConfig(prev => ({ ...prev, function: v, provider: 'explorium', output_field: '' }))}>
                       <SelectTrigger className={rt('', 'bg-zinc-800 border-zinc-700 text-white')}>
-                        <SelectValue placeholder="Select function" />
+                        <SelectValue placeholder="Choose an enrichment type..." />
                       </SelectTrigger>
                       <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
                         {ENRICHMENT_FUNCTIONS.map(f => (
-                          <SelectItem key={f.value} value={f.value} className={rt('', 'text-white hover:bg-zinc-700')}>{f.label}</SelectItem>
+                          <SelectItem key={f.value} value={f.value} className={rt('', 'text-white hover:bg-zinc-700')}>
+                            {f.label}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {colConfig.function && (
-                      <p className="text-[10px] text-zinc-500 mt-1">{ENRICHMENT_FUNCTIONS.find(f => f.value === colConfig.function)?.desc}</p>
+                    {selectedFn && (
+                      <p className="text-[10px] text-zinc-500 mt-1">{selectedFn.desc}</p>
                     )}
                   </div>
-                  <div>
-                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Input Column</Label>
-                    <Select value={colConfig.input_column_id || ''} onValueChange={v => setColConfig(prev => ({ ...prev, input_column_id: v }))}>
-                      <SelectTrigger className={rt('', 'bg-zinc-800 border-zinc-700 text-white')}>
-                        <SelectValue placeholder="Select input column" />
-                      </SelectTrigger>
-                      <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
-                        {columns.map(c => (
-                          <SelectItem key={c.id} value={c.id} className={rt('', 'text-white hover:bg-zinc-700')}>{c.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className={rt('text-gray-700', 'text-zinc-300')}>Output Field (dot notation)</Label>
-                    <Input
-                      value={colConfig.output_field || ''}
-                      onChange={e => setColConfig(prev => ({ ...prev, output_field: e.target.value }))}
-                      placeholder="e.g. verified_email or company.name"
-                      className={rt('', 'bg-zinc-800 border-zinc-700 text-white')}
-                    />
-                  </div>
+
+                  {selectedFn && (
+                    <div>
+                      <Label className={rt('text-gray-700', 'text-zinc-300')}>{selectedFn.inputLabel}</Label>
+                      <Select value={colConfig.input_column_id || ''} onValueChange={v => setColConfig(prev => ({ ...prev, input_column_id: v }))}>
+                        <SelectTrigger className={rt('', 'bg-zinc-800 border-zinc-700 text-white')}>
+                          <SelectValue placeholder="Select a column..." />
+                        </SelectTrigger>
+                        <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                          {columns.map(c => (
+                            <SelectItem key={c.id} value={c.id} className={rt('', 'text-white hover:bg-zinc-700')}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[10px] text-zinc-500 mt-1">{selectedFn.inputHint}</p>
+                    </div>
+                  )}
+
+                  {selectedFn && outputGroups.length > 0 && (
+                    <div>
+                      <Label className={rt('text-gray-700', 'text-zinc-300')}>What data do you want back?</Label>
+                      <Select value={colConfig.output_field || ''} onValueChange={v => setColConfig(prev => ({ ...prev, output_field: v }))}>
+                        <SelectTrigger className={rt('', 'bg-zinc-800 border-zinc-700 text-white')}>
+                          <SelectValue placeholder="Pick the field to extract..." />
+                        </SelectTrigger>
+                        <SelectContent className={`${rt('', 'bg-zinc-800 border-zinc-700')} max-h-60`}>
+                          {outputGroups.map(group => (
+                            <React.Fragment key={group.group}>
+                              <SelectItem value={`__group_${group.group}`} disabled className={`text-[10px] uppercase tracking-wide font-semibold ${rt('text-gray-400', 'text-zinc-500')} pointer-events-none`}>
+                                {group.group}
+                              </SelectItem>
+                              {group.fields.map(f => (
+                                <SelectItem key={f.value} value={f.value} className={rt('', 'text-white hover:bg-zinc-700')}>
+                                  {f.label}
+                                </SelectItem>
+                              ))}
+                            </React.Fragment>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[10px] text-zinc-500 mt-1">Each enrichment column extracts one field. Add multiple columns for multiple fields.</p>
+                    </div>
+                  )}
                 </div>
-              )}
+                );
+              })()}
 
               {colType === 'ai' && (
                 <div className="space-y-3">
@@ -5572,11 +5739,11 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                             <Select value={src.function || ''} onValueChange={v => {
                               setColConfig(prev => ({
                                 ...prev,
-                                sources: prev.sources.map((s, i) => i === idx ? { ...s, function: v } : s),
+                                sources: prev.sources.map((s, i) => i === idx ? { ...s, function: v, output_field: '' } : s),
                               }));
                             }}>
                               <SelectTrigger className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}>
-                                <SelectValue placeholder="Enrichment function" />
+                                <SelectValue placeholder="Enrichment type..." />
                               </SelectTrigger>
                               <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
                                 {ENRICHMENT_FUNCTIONS.map(f => (
@@ -5584,32 +5751,83 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                                 ))}
                               </SelectContent>
                             </Select>
-                            <Select value={src.input_column_id || ''} onValueChange={v => {
-                              setColConfig(prev => ({
-                                ...prev,
-                                sources: prev.sources.map((s, i) => i === idx ? { ...s, input_column_id: v } : s),
-                              }));
-                            }}>
-                              <SelectTrigger className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}>
-                                <SelectValue placeholder="Input column" />
-                              </SelectTrigger>
-                              <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
-                                {columns.map(c => (
-                                  <SelectItem key={c.id} value={c.id} className={rt('', 'text-white hover:bg-zinc-700')}>{c.name}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <Input
-                              value={src.output_field || ''}
-                              onChange={e => {
-                                setColConfig(prev => ({
-                                  ...prev,
-                                  sources: prev.sources.map((s, i) => i === idx ? { ...s, output_field: e.target.value } : s),
-                                }));
-                              }}
-                              placeholder="Output field (dot notation)"
-                              className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}
-                            />
+                            {(() => {
+                              const srcFn = ENRICHMENT_FUNCTIONS.find(f => f.value === src.function);
+                              return srcFn ? (
+                                <Select value={src.input_column_id || ''} onValueChange={v => {
+                                  setColConfig(prev => ({
+                                    ...prev,
+                                    sources: prev.sources.map((s, i) => i === idx ? { ...s, input_column_id: v } : s),
+                                  }));
+                                }}>
+                                  <SelectTrigger className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}>
+                                    <SelectValue placeholder={srcFn.inputLabel} />
+                                  </SelectTrigger>
+                                  <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                                    {columns.map(c => (
+                                      <SelectItem key={c.id} value={c.id} className={rt('', 'text-white hover:bg-zinc-700')}>{c.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <Select value={src.input_column_id || ''} onValueChange={v => {
+                                  setColConfig(prev => ({
+                                    ...prev,
+                                    sources: prev.sources.map((s, i) => i === idx ? { ...s, input_column_id: v } : s),
+                                  }));
+                                }}>
+                                  <SelectTrigger className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}>
+                                    <SelectValue placeholder="Select input column" />
+                                  </SelectTrigger>
+                                  <SelectContent className={rt('', 'bg-zinc-800 border-zinc-700')}>
+                                    {columns.map(c => (
+                                      <SelectItem key={c.id} value={c.id} className={rt('', 'text-white hover:bg-zinc-700')}>{c.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              );
+                            })()}
+                            {(() => {
+                              const srcOutputGroups = getOutputFieldsForFunction(src.function);
+                              return srcOutputGroups.length > 0 ? (
+                                <Select value={src.output_field || ''} onValueChange={v => {
+                                  setColConfig(prev => ({
+                                    ...prev,
+                                    sources: prev.sources.map((s, i) => i === idx ? { ...s, output_field: v } : s),
+                                  }));
+                                }}>
+                                  <SelectTrigger className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}>
+                                    <SelectValue placeholder="Data to extract..." />
+                                  </SelectTrigger>
+                                  <SelectContent className={`${rt('', 'bg-zinc-800 border-zinc-700')} max-h-60`}>
+                                    {srcOutputGroups.map(group => (
+                                      <React.Fragment key={group.group}>
+                                        <SelectItem value={`__group_${group.group}`} disabled className={`text-[10px] uppercase tracking-wide font-semibold ${rt('text-gray-400', 'text-zinc-500')} pointer-events-none`}>
+                                          {group.group}
+                                        </SelectItem>
+                                        {group.fields.map(f => (
+                                          <SelectItem key={f.value} value={f.value} className={rt('', 'text-white hover:bg-zinc-700')}>
+                                            {f.label}
+                                          </SelectItem>
+                                        ))}
+                                      </React.Fragment>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <Input
+                                  value={src.output_field || ''}
+                                  onChange={e => {
+                                    setColConfig(prev => ({
+                                      ...prev,
+                                      sources: prev.sources.map((s, i) => i === idx ? { ...s, output_field: e.target.value } : s),
+                                    }));
+                                  }}
+                                  placeholder="Data field to extract..."
+                                  className={`h-8 text-xs ${rt('', 'bg-zinc-800 border-zinc-700 text-white')}`}
+                                />
+                              );
+                            })()}
                           </div>
                           <button
                             onClick={() => setColConfig(prev => ({ ...prev, sources: prev.sources.filter((_, i) => i !== idx) }))}
