@@ -2070,14 +2070,28 @@ export default function GrowthEnrich() {
   const handleAddColumn = useCallback(async () => {
     let finalName = colName.trim();
     if (!finalName) {
-      // Auto-generate name from prompt or type
+      // Auto-generate name from config
       if (colType === 'ai' && colConfig.prompt) {
         finalName = colConfig.prompt.replace(/\/\w+/g, '').trim().slice(0, 40).trim();
         if (finalName.length > 30) finalName = finalName.slice(0, finalName.lastIndexOf(' ')) || finalName.slice(0, 30);
+      } else if (colType === 'enrichment' && colConfig.output_field) {
+        // Auto-name from the selected output field label
+        const groups = getOutputFieldsForFunction(colConfig.function);
+        const fieldDef = groups.flatMap(g => g.fields).find(f => f.value === colConfig.output_field);
+        finalName = fieldDef?.label || colConfig.output_field.replace(/\./g, ' ').replace(/_/g, ' ');
       } else {
         toast.error('Enter a column name'); return;
       }
     }
+    // Validate enrichment columns have required config
+    if (colType === 'enrichment') {
+      if (!colConfig.function) { toast.error('Select an enrichment type'); return; }
+      if (!colConfig.input_column_id) { toast.error('Select an input column'); return; }
+      if (!colConfig.output_field) { toast.error('Select what data you want back'); return; }
+    }
+    if (colType === 'ai' && !colConfig.prompt) { toast.error('Enter a prompt for the AI column'); return; }
+    if (colType === 'waterfall' && (!colConfig.sources || colConfig.sources.length === 0)) { toast.error('Add at least one source for waterfall'); return; }
+
     try {
       const pos = columns.length;
       const { error } = await supabase.from('enrich_columns').insert({
@@ -2357,7 +2371,12 @@ export default function GrowthEnrich() {
           } else if (fnName === 'enrichCompanyOnly') {
             result = await fn({ company_name: inputValue });
           } else if (fnName === 'matchProspect') {
-            result = await fn({ linkedin: inputValue });
+            // Detect input type: LinkedIn URL, email, or name
+            const params = {};
+            if (inputValue.includes('linkedin.com')) params.linkedin = inputValue;
+            else if (inputValue.includes('@')) params.email = inputValue;
+            else params.full_name = inputValue;
+            result = await fn(params);
           } else if (fnName === 'enrichProspectContact' || fnName === 'enrichProspectProfile') {
             result = await fn(inputValue);
           } else {
@@ -2366,10 +2385,20 @@ export default function GrowthEnrich() {
 
           // Extract output field
           let displayValue = result;
-          if (outputField && result) {
+          if (outputField && result && typeof result === 'object') {
             displayValue = extractNestedValue(result, outputField);
           }
-          const cellValue = displayValue != null ? (typeof displayValue === 'object' ? displayValue : { v: String(displayValue) }) : { v: '' };
+          // Always store as { v: string } for consistent cell display
+          let cellValue;
+          if (displayValue == null) {
+            cellValue = { v: '' };
+          } else if (Array.isArray(displayValue)) {
+            cellValue = { v: displayValue.join(', ') };
+          } else if (typeof displayValue === 'object') {
+            cellValue = { v: JSON.stringify(displayValue) };
+          } else {
+            cellValue = { v: String(displayValue) };
+          }
 
           setCells(prev => ({ ...prev, [key]: { ...prev[key], status: 'complete', value: cellValue } }));
           await supabase.from('enrich_cells').upsert({
@@ -2617,14 +2646,22 @@ export default function GrowthEnrich() {
                 const companyVal = getCellRawValue(row.id, columns.find(c => c.config?.source_field === 'company_name'));
                 result = await fn(inputValue, companyVal || undefined);
               } else if (fnName === 'enrichCompanyOnly') result = await fn({ company_name: inputValue });
-              else if (fnName === 'matchProspect') result = await fn({ linkedin: inputValue });
+              else if (fnName === 'matchProspect') {
+                const params = {};
+                if (inputValue.includes('linkedin.com')) params.linkedin = inputValue;
+                else if (inputValue.includes('@')) params.email = inputValue;
+                else params.full_name = inputValue;
+                result = await fn(params);
+              }
               else result = await fn(inputValue);
 
               let displayValue = result;
-              if (source.output_field && result) displayValue = extractNestedValue(result, source.output_field);
+              if (source.output_field && result && typeof result === 'object') displayValue = extractNestedValue(result, source.output_field);
 
               if (displayValue != null && displayValue !== '' && displayValue !== undefined) {
-                finalValue = typeof displayValue === 'object' ? displayValue : { v: String(displayValue) };
+                if (Array.isArray(displayValue)) finalValue = { v: displayValue.join(', ') };
+                else if (typeof displayValue === 'object') finalValue = { v: JSON.stringify(displayValue) };
+                else finalValue = { v: String(displayValue) };
                 sourceUsed = source.function;
                 if (stopOnSuccess) break;
               }

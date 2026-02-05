@@ -60,7 +60,7 @@ export async function matchProspect({ linkedin, email, full_name, company_name }
  */
 export async function enrichProspectContact(prospectId) {
   return callEnrichmentFunction({
-    action: 'enrich_contact',
+    action: 'enrich_contacts',
     prospect_id: prospectId,
   });
 }
