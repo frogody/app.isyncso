@@ -3,7 +3,7 @@
  * Handles nodes, edges, connections, and canvas interactions
  */
 
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
@@ -50,6 +50,19 @@ function FlowCanvasInner({
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  // Sync when parent provides new initial nodes/edges (e.g. async campaign template)
+  useEffect(() => {
+    if (initialNodes.length > 0) {
+      setNodes(initialNodes);
+    }
+  }, [initialNodes]);
+
+  useEffect(() => {
+    if (initialEdges.length > 0) {
+      setEdges(initialEdges);
+    }
+  }, [initialEdges]);
 
   // Handle node changes
   const handleNodesChange = useCallback((changes) => {

@@ -43,6 +43,10 @@ export default function IntegrationChecklist({ requiredIntegrations = [] }) {
   const handleConnect = async (slug) => {
     setConnecting(slug);
     try {
+      // Get the user's session token for auth
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
+
       // Call composio-connect edge function to initiate OAuth
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/composio-connect`,
@@ -50,7 +54,7 @@ export default function IntegrationChecklist({ requiredIntegrations = [] }) {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
             action: 'initiateConnection',
@@ -59,7 +63,18 @@ export default function IntegrationChecklist({ requiredIntegrations = [] }) {
           }),
         }
       );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`composio-connect error (${response.status}):`, errorText);
+        toast.error(`Connection failed: ${response.status} — check console for details`);
+        setConnecting(null);
+        return;
+      }
+
       const result = await response.json();
+      console.log('composio-connect response:', result);
+
       if (result.redirectUrl) {
         // Open OAuth popup
         const popup = window.open(result.redirectUrl, 'Connect Integration', 'width=600,height=700');
@@ -84,12 +99,14 @@ export default function IntegrationChecklist({ requiredIntegrations = [] }) {
         // Timeout after 2 minutes
         setTimeout(() => { clearInterval(pollInterval); setConnecting(null); }, 120000);
       } else {
-        toast.error('Could not start connection flow');
+        const errorMsg = result.error || result.message || 'No redirect URL returned';
+        console.error('composio-connect: no redirectUrl. Full response:', result);
+        toast.error(`Could not start connection: ${errorMsg}`);
         setConnecting(null);
       }
     } catch (err) {
       console.error('Connection error:', err);
-      toast.error('Failed to connect');
+      toast.error(`Failed to connect: ${err.message}`);
       setConnecting(null);
     }
   };

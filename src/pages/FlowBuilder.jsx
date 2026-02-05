@@ -98,6 +98,11 @@ export default function FlowBuilder() {
   // Load flow or create new
   useEffect(() => {
     if (isNewFlow) {
+      // In campaign mode, skip empty flow — the campaign effect will generate the template
+      if (isCampaignMode) {
+        setLoading(true);
+        return;
+      }
       // Create new flow
       const template = templateType === 'outreach'
         ? createOutreachTemplate()
@@ -113,7 +118,7 @@ export default function FlowBuilder() {
       // Load existing flow
       loadFlow();
     }
-  }, [flowId, isNewFlow, templateType]);
+  }, [flowId, isNewFlow, templateType, isCampaignMode]);
 
   // Campaign mode: load campaign and auto-generate flow
   useEffect(() => {
@@ -125,7 +130,16 @@ export default function FlowBuilder() {
           .select('*')
           .eq('id', campaignId)
           .single();
-        if (error || !data) return;
+        if (error || !data) {
+          console.error('Failed to load campaign:', error);
+          // Fall back to empty flow
+          const template = createEmptyFlow();
+          setNodes(template.nodes);
+          setEdges(template.edges);
+          setFlowName('New Flow');
+          setLoading(false);
+          return;
+        }
         setCampaign(data);
 
         // Generate flow template from campaign
@@ -134,9 +148,16 @@ export default function FlowBuilder() {
         setEdges(template.edges);
         setFlowName(`${data.name || 'Campaign'} - Outreach Flow`);
         setFlowDescription(`Auto-generated flow for campaign: ${data.name}`);
+        setAgentPersona('You are a helpful B2B sales assistant.');
         setShowIntegrations(true);
       } catch (err) {
         console.error('Failed to load campaign for flow:', err);
+        const template = createEmptyFlow();
+        setNodes(template.nodes);
+        setEdges(template.edges);
+        setFlowName('New Flow');
+      } finally {
+        setLoading(false);
       }
     }
     loadCampaign();
