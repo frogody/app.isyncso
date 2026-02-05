@@ -210,6 +210,9 @@ const getInitialState = () => ({
   // Step 5: Data source
   dataSource: 'find_new', // 'existing_nest', 'find_new', 'upload_csv'
   selectedNestId: '',
+
+  // Internal
+  _aiAnalyzed: false,
 });
 
 // Animation variants
@@ -406,6 +409,7 @@ const PRODUCT_TYPES = [
 function Step1Product({ formData, setFormData, products, productsLoading, onProductCreated }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [newProduct, setNewProduct] = useState({
     name: '',
     type: 'saas',
@@ -415,9 +419,25 @@ function Step1Product({ formData, setFormData, products, productsLoading, onProd
   });
   const { user } = useUser();
 
+  // Filter products by search query
+  const filteredProducts = products.filter((p) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (p.name || '').toLowerCase().includes(q) ||
+      (p.description || '').toLowerCase().includes(q) ||
+      (p.tagline || '').toLowerCase().includes(q) ||
+      (p.short_description || '').toLowerCase().includes(q) ||
+      (p.type || '').toLowerCase().includes(q) ||
+      (p.category || '').toLowerCase().includes(q)
+    );
+  });
+  const displayProducts = filteredProducts.slice(0, 6);
+  const hasMore = filteredProducts.length > 6;
+
   const handleSelectProduct = async (product) => {
     if (formData.productId === product.id) {
-      setFormData({ ...formData, productId: null, selectedProduct: null, productDescription: '' });
+      setFormData({ ...formData, productId: null, selectedProduct: null, productDescription: '', _aiAnalyzed: false });
     } else {
       // Also fetch digital product details if it's a digital product
       let enrichedProduct = { ...product };
@@ -439,6 +459,7 @@ function Step1Product({ formData, setFormData, products, productsLoading, onProd
         selectedProduct: enrichedProduct,
         productDescription: product.description || product.short_description || '',
         problemSolved: product.tagline || product.short_description || formData.problemSolved || '',
+        _aiAnalyzed: false, // Reset so AI re-analyzes on next
       });
       setShowAddForm(false);
     }
@@ -517,72 +538,122 @@ function Step1Product({ formData, setFormData, products, productsLoading, onProd
           </div>
         )}
 
-        {/* Product cards grid + Add card */}
+        {/* Search bar + Product cards grid + Add card */}
         {!productsLoading && !showAddForm && (
-          <div className="grid md:grid-cols-2 gap-3">
-            {products.map((product) => {
-              const isSelected = formData.productId === product.id;
-              const imgSrc = typeof product.featured_image === 'string'
-                ? product.featured_image
-                : product.featured_image?.url || null;
-              return (
-                <button
-                  key={product.id}
-                  type="button"
-                  onClick={() => handleSelectProduct(product)}
-                  className={`relative p-4 rounded-xl border transition-all text-left flex gap-3 ${
-                    isSelected
-                      ? 'border-cyan-500/50 bg-cyan-500/5 ring-1 ring-cyan-500/30'
-                      : 'border-zinc-700 hover:border-zinc-500 bg-zinc-900/30'
-                  }`}
-                >
-                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center overflow-hidden">
-                    {imgSrc ? (
-                      <img src={imgSrc} alt={product.name} className="w-full h-full object-cover rounded-lg" />
-                    ) : (
-                      <Package className="w-5 h-5 text-zinc-500" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-white truncate">{product.name}</span>
-                      {product.type && (
-                        <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                          {product.type}
-                        </span>
+          <>
+            {/* Search bar */}
+            {products.length > 4 && (
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search your products..."
+                  className="pl-10 bg-zinc-900/50 border-zinc-700"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Results count when searching */}
+            {searchQuery && (
+              <p className="text-xs text-zinc-500 mb-2">
+                {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
+                {hasMore && ` (showing first 6)`}
+              </p>
+            )}
+
+            <div className="grid md:grid-cols-2 gap-3">
+              {displayProducts.map((product) => {
+                const isSelected = formData.productId === product.id;
+                const imgSrc = typeof product.featured_image === 'string'
+                  ? product.featured_image
+                  : product.featured_image?.url || null;
+                return (
+                  <button
+                    key={product.id}
+                    type="button"
+                    onClick={() => handleSelectProduct(product)}
+                    className={`relative p-4 rounded-xl border transition-all text-left flex gap-3 ${
+                      isSelected
+                        ? 'border-cyan-500/50 bg-cyan-500/5 ring-1 ring-cyan-500/30'
+                        : 'border-zinc-700 hover:border-zinc-500 bg-zinc-900/30'
+                    }`}
+                  >
+                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center overflow-hidden">
+                      {imgSrc ? (
+                        <img src={imgSrc} alt={product.name} className="w-full h-full object-cover rounded-lg" />
+                      ) : (
+                        <Package className="w-5 h-5 text-zinc-500" />
                       )}
                     </div>
-                    {(product.tagline || product.short_description) && (
-                      <p className="text-sm text-zinc-400 mt-0.5 line-clamp-2">{product.tagline || product.short_description}</p>
-                    )}
-                    {product.price != null && (
-                      <p className="text-xs text-zinc-500 mt-1">
-                        ${Number(product.price).toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-                  {isSelected && (
-                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center">
-                      <Check className="w-3 h-3 text-white" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-white truncate">{product.name}</span>
+                        {product.type && (
+                          <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                            {product.type}
+                          </span>
+                        )}
+                      </div>
+                      {(product.tagline || product.short_description) && (
+                        <p className="text-sm text-zinc-400 mt-0.5 line-clamp-2">{product.tagline || product.short_description}</p>
+                      )}
+                      {product.price != null && (
+                        <p className="text-xs text-zinc-500 mt-1">
+                          ${Number(product.price).toLocaleString()}
+                        </p>
+                      )}
                     </div>
-                  )}
-                </button>
-              );
-            })}
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
 
-            {/* Add New Product card */}
-            <button
-              type="button"
-              onClick={() => setShowAddForm(true)}
-              className="p-4 rounded-xl border-2 border-dashed border-zinc-700 hover:border-cyan-500/40 transition-all text-left flex flex-col items-center justify-center gap-2 min-h-[100px] bg-zinc-900/20 hover:bg-cyan-500/5"
-            >
-              <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                <Plus className="w-5 h-5 text-cyan-400" />
-              </div>
-              <span className="text-sm font-medium text-cyan-400">Add New Product</span>
-              <span className="text-xs text-zinc-500">Create a product for this campaign</span>
-            </button>
-          </div>
+              {/* Show remaining count */}
+              {hasMore && !searchQuery && (
+                <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-900/20 flex items-center justify-center">
+                  <p className="text-sm text-zinc-500">
+                    +{filteredProducts.length - 6} more — use search to find
+                  </p>
+                </div>
+              )}
+
+              {/* Add New Product card */}
+              <button
+                type="button"
+                onClick={() => setShowAddForm(true)}
+                className="p-4 rounded-xl border-2 border-dashed border-zinc-700 hover:border-cyan-500/40 transition-all text-left flex flex-col items-center justify-center gap-2 min-h-[100px] bg-zinc-900/20 hover:bg-cyan-500/5"
+              >
+                <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                  <Plus className="w-5 h-5 text-cyan-400" />
+                </div>
+                <span className="text-sm font-medium text-cyan-400">Add New Product</span>
+                <span className="text-xs text-zinc-500">Create a product for this campaign</span>
+              </button>
+
+              {/* No results */}
+              {searchQuery && filteredProducts.length === 0 && (
+                <div className="col-span-2 p-6 text-center">
+                  <Search className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                  <p className="text-zinc-400">No products match "{searchQuery}"</p>
+                  <p className="text-xs text-zinc-500 mt-1">Try a different search or add a new product</p>
+                </div>
+              )}
+            </div>
+          </>
         )}
 
         {/* Add Product Form */}
@@ -723,10 +794,23 @@ function Step1Product({ formData, setFormData, products, productsLoading, onProd
   );
 }
 
+// AI prefill banner
+function AIPrefillBanner() {
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 mb-4">
+      <Sparkles className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+      <p className="text-xs text-cyan-300">
+        AI pre-filled these fields based on your product. Review and adjust as needed.
+      </p>
+    </div>
+  );
+}
+
 // Step 2: Target Audience (ICP)
 function Step2ICP({ formData, setFormData }) {
   return (
     <div className="space-y-6">
+      {formData._aiAnalyzed && <AIPrefillBanner />}
       {/* Company Criteria */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -825,6 +909,7 @@ function Step3Goals({ formData, setFormData }) {
 
   return (
     <div className="space-y-6">
+      {formData._aiAnalyzed && <AIPrefillBanner />}
       {/* Primary Goal */}
       <div>
         <Label className="text-zinc-300 mb-3 block">Primary Goal *</Label>
@@ -955,7 +1040,7 @@ function Step3Goals({ formData, setFormData }) {
 }
 
 // Step 4: Correlation Insights
-function Step4Correlations({ formData, setFormData }) {
+function Step4Correlations({ formData, setFormData, analyzing }) {
   const addCustomQuestion = () => {
     setFormData({
       ...formData,
@@ -978,6 +1063,7 @@ function Step4Correlations({ formData, setFormData }) {
 
   return (
     <div className="space-y-6">
+      {formData._aiAnalyzed && <AIPrefillBanner />}
       <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30">
         <div className="flex items-start gap-3">
           <Sparkles className="w-5 h-5 text-indigo-400 mt-0.5" />
@@ -1417,6 +1503,7 @@ export default function GrowthCampaignWizard() {
   const [nestsLoading, setNestsLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
 
   const orgId = user?.organization_id || user?.company_id;
 
@@ -1498,9 +1585,74 @@ export default function GrowthCampaignWizard() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
   }, [formData]);
 
+  // AI product analysis - fills in remaining wizard steps
+  const analyzeProduct = useCallback(async () => {
+    if (!formData.selectedProduct) return;
+    setAnalyzing(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-product-campaign`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            product: formData.selectedProduct,
+            productDescription: formData.productDescription,
+            problemSolved: formData.problemSolved,
+          }),
+        }
+      );
+      const data = await response.json();
+      if (data && !data.error) {
+        // Merge AI suggestions — only fill fields that are still at their defaults
+        setFormData((prev) => ({
+          ...prev,
+          // Step 1 fields
+          priceRange: prev.priceRange || data.priceRange || '',
+          salesCycle: prev.salesCycle || data.salesCycle || '',
+          // Step 2: ICP — only fill if user hasn't already selected
+          industries: prev.industries.length > 0 ? prev.industries : (data.industries || []),
+          companySizes: prev.companySizes.length > 0 ? prev.companySizes : (data.companySizes || []),
+          revenueRanges: prev.revenueRanges.length > 0 ? prev.revenueRanges : (data.revenueRanges || []),
+          regions: prev.regions.length > 0 ? prev.regions : (data.regions || []),
+          jobTitles: prev.jobTitles.length > 0 ? prev.jobTitles : (data.jobTitles || []),
+          seniorityLevels: prev.seniorityLevels.length > 0 ? prev.seniorityLevels : (data.seniorityLevels || []),
+          departments: prev.departments.length > 0 ? prev.departments : (data.departments || []),
+          // Step 3: Goals
+          primaryGoal: prev.primaryGoal || data.primaryGoal || '',
+          prospectCount: prev.prospectCount !== 100 ? prev.prospectCount : (data.prospectCount || 100),
+          channels: (prev.channels.linkedin || prev.channels.phone)
+            ? prev.channels
+            : (data.channels || prev.channels),
+          // Step 4: Correlations
+          buyingSignals: prev.buyingSignals.length > 0 ? prev.buyingSignals : (data.buyingSignals || []),
+          personalizationAngles: prev.personalizationAngles || data.personalizationAngles || '',
+          triggerIndicators: prev.triggerIndicators || data.triggerIndicators || '',
+          customQuestions: prev.customQuestions.some(q => q.trim())
+            ? prev.customQuestions
+            : (data.customQuestions?.length > 0 ? data.customQuestions : prev.customQuestions),
+          _aiAnalyzed: true,
+        }));
+        toast.success('AI analyzed your product and pre-filled campaign settings');
+      }
+    } catch (e) {
+      console.error('AI product analysis failed:', e);
+      // Non-blocking — user can fill manually
+    } finally {
+      setAnalyzing(false);
+    }
+  }, [formData.selectedProduct, formData.productDescription, formData.problemSolved]);
+
   // Navigation
-  const goNext = () => {
+  const goNext = async () => {
     if (currentStep < STEPS.length) {
+      // Trigger AI analysis when leaving Step 1 with a selected product
+      if (currentStep === 1 && formData.selectedProduct && !formData._aiAnalyzed) {
+        await analyzeProduct();
+      }
       setDirection(1);
       setCurrentStep(currentStep + 1);
     }
@@ -1800,11 +1952,20 @@ export default function GrowthCampaignWizard() {
             ) : (
               <Button
                 onClick={goNext}
-                disabled={!isStepValid()}
+                disabled={!isStepValid() || analyzing}
                 className="bg-indigo-600 hover:bg-indigo-500 text-white"
               >
-                Next
-                <ArrowRight className="w-4 h-4 ml-2" />
+                {analyzing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Analyzing product...
+                  </>
+                ) : (
+                  <>
+                    Next
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
               </Button>
             )}
           </div>
