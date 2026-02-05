@@ -3148,6 +3148,66 @@ export default function Layout({ children, currentPageName }) {
             0% { height: 0; opacity: 0; }
             100% { height: var(--target-height); opacity: 1; }
           }
+
+          /* ── Global: Preserve white text on colored backgrounds ────
+             The text-white → #0F172A override breaks readability on
+             buttons, badges, and chat bubbles with solid color backgrounds.
+             These compound selectors have higher specificity and win. */
+          html:not(.dark) .bg-indigo-600.text-white,
+          html:not(.dark) .bg-indigo-500.text-white,
+          html:not(.dark) .bg-purple-600.text-white,
+          html:not(.dark) .bg-purple-500.text-white,
+          html:not(.dark) .bg-violet-600.text-white,
+          html:not(.dark) .bg-violet-500.text-white,
+          html:not(.dark) .bg-cyan-600.text-white,
+          html:not(.dark) .bg-cyan-500.text-white,
+          html:not(.dark) .bg-blue-600.text-white,
+          html:not(.dark) .bg-blue-500.text-white,
+          html:not(.dark) .bg-green-600.text-white,
+          html:not(.dark) .bg-green-500.text-white,
+          html:not(.dark) .bg-red-600.text-white,
+          html:not(.dark) .bg-red-500.text-white,
+          html:not(.dark) .bg-amber-600.text-white,
+          html:not(.dark) .bg-amber-500.text-white,
+          html:not(.dark) .bg-orange-600.text-white,
+          html:not(.dark) .bg-orange-500.text-white,
+          html:not(.dark) .bg-emerald-600.text-white,
+          html:not(.dark) .bg-emerald-500.text-white,
+          html:not(.dark) .bg-teal-600.text-white,
+          html:not(.dark) .bg-teal-500.text-white,
+          html:not(.dark) .bg-pink-600.text-white,
+          html:not(.dark) .bg-pink-500.text-white,
+          html:not(.dark) .bg-rose-600.text-white,
+          html:not(.dark) .bg-rose-500.text-white { color: #FFFFFF !important; }
+
+          /* Also preserve white text INSIDE colored background containers */
+          html:not(.dark) .bg-indigo-600 .text-white,
+          html:not(.dark) .bg-indigo-500 .text-white,
+          html:not(.dark) .bg-purple-600 .text-white,
+          html:not(.dark) .bg-purple-500 .text-white,
+          html:not(.dark) .bg-violet-600 .text-white,
+          html:not(.dark) .bg-violet-500 .text-white,
+          html:not(.dark) .bg-cyan-600 .text-white,
+          html:not(.dark) .bg-cyan-500 .text-white,
+          html:not(.dark) .bg-blue-600 .text-white,
+          html:not(.dark) .bg-blue-500 .text-white,
+          html:not(.dark) .bg-green-600 .text-white,
+          html:not(.dark) .bg-green-500 .text-white,
+          html:not(.dark) .bg-red-600 .text-white,
+          html:not(.dark) .bg-red-500 .text-white,
+          html:not(.dark) .bg-emerald-600 .text-white,
+          html:not(.dark) .bg-emerald-500 .text-white { color: #FFFFFF !important; }
+
+          /* Hover variants: keep white text on colored hover backgrounds */
+          html:not(.dark) .hover\\:bg-indigo-500:hover.text-white,
+          html:not(.dark) .hover\\:bg-purple-500:hover.text-white,
+          html:not(.dark) .hover\\:bg-cyan-500:hover.text-white,
+          html:not(.dark) .hover\\:bg-blue-500:hover.text-white { color: #FFFFFF !important; }
+
+          /* Gradient backgrounds that need white text */
+          html:not(.dark) .bg-gradient-to-r.text-white,
+          html:not(.dark) .bg-gradient-to-br.text-white,
+          html:not(.dark) .bg-gradient-to-l.text-white { color: #FFFFFF !important; }
           `}</style>
 
         <div className="flex h-screen">
