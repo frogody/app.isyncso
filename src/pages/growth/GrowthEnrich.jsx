@@ -4610,10 +4610,10 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                             : rt('border-gray-200 hover:border-gray-300', 'border-zinc-700 hover:border-zinc-600')
                         }`}
                       >
-                        <CTIcon className={`w-4 h-4 ${colType === ct.value ? 'text-indigo-400' : 'text-zinc-500'}`} />
-                        <div>
-                          <div className={rt('text-xs font-medium text-gray-900', 'text-xs font-medium text-white')}>{ct.label}</div>
-                          <div className="text-[10px] text-zinc-500">{ct.desc}</div>
+                        <CTIcon className={`w-4 h-4 flex-shrink-0 ${colType === ct.value ? 'text-indigo-400' : rt('text-gray-400', 'text-zinc-500')}`} />
+                        <div className="min-w-0">
+                          <div className={`text-xs font-semibold ${rt('text-gray-900', 'text-white')}`}>{ct.label}</div>
+                          <div className={`text-[10px] leading-tight ${rt('text-gray-500', 'text-zinc-500')}`}>{ct.desc}</div>
                         </div>
                       </button>
                     );
@@ -4810,7 +4810,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     <div className="flex flex-wrap gap-1.5 mt-1">
                       {AI_PROMPT_TEMPLATES.map(t => (
                         <button key={t.id} onClick={() => setColConfig(prev => ({ ...prev, prompt: t.prompt }))}
-                          className={`text-[10px] px-2.5 py-1 rounded-full border transition-all ${rt('border-gray-200 text-gray-600 hover:border-purple-400 hover:bg-purple-50', 'border-zinc-700 text-zinc-400 hover:border-purple-500/50 hover:bg-purple-500/10')}`}>
+                          className={`text-[10px] px-2.5 py-1 rounded-full border transition-all ${rt('border-gray-200 text-gray-600 hover:border-indigo-400 hover:bg-indigo-50', 'border-zinc-700 text-zinc-400 hover:border-indigo-500/50 hover:bg-indigo-500/10')}`}>
                           {t.icon} {t.label}
                         </button>
                       ))}
@@ -4830,13 +4830,16 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                       className={rt('', 'bg-zinc-800 border-zinc-700 text-white')}
                     />
                     {slashMenu.open && slashMenu.field === 'prompt' && slashMenuColumns.length > 0 && (
-                      <div className="absolute z-50 left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-800 shadow-xl">
+                      <div className={`absolute z-50 left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-lg border shadow-xl ${rt('border-gray-200 bg-white', 'border-zinc-700 bg-zinc-800')}`}>
                         {slashMenuColumns.map((c, idx) => (
                           <button key={c.id} onClick={() => insertColumnRef(c.name)}
-                            className={`w-full text-left px-3 py-2 text-sm text-white flex items-center gap-2 min-w-0 ${idx === slashMenu.selectedIndex ? 'bg-zinc-600' : 'hover:bg-zinc-700'}`}>
+                            className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 min-w-0 ${rt(
+                              idx === slashMenu.selectedIndex ? 'bg-indigo-50 text-gray-900' : 'text-gray-700 hover:bg-gray-50',
+                              idx === slashMenu.selectedIndex ? 'bg-zinc-600 text-white' : 'text-white hover:bg-zinc-700'
+                            )}`}>
                             <span className="text-indigo-400 font-mono text-xs shrink-0">/</span>
                             <span className="shrink-0">{c.name}</span>
-                            {c.sampleValue && <span className="text-zinc-500 text-xs truncate ml-auto">{String(c.sampleValue).slice(0, 40)}</span>}
+                            {c.sampleValue && <span className={`text-xs truncate ml-auto ${rt('text-gray-400', 'text-zinc-500')}`}>{String(c.sampleValue).slice(0, 40)}</span>}
                           </button>
                         ))}
                       </div>
@@ -4851,7 +4854,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                       {AI_MODELS.map(m => (
                         <button key={m.value} onClick={() => setColConfig(prev => ({ ...prev, model: m.value }))}
                           className={`text-left p-2 rounded-lg border transition-all ${(colConfig.model || 'moonshotai/Kimi-K2-Instruct') === m.value
-                            ? rt('border-purple-400 bg-purple-50', 'border-purple-500/50 bg-purple-500/10')
+                            ? rt('border-indigo-400 bg-indigo-50', 'border-indigo-500/50 bg-indigo-500/10')
                             : rt('border-gray-200 hover:border-gray-300', 'border-zinc-700 hover:border-zinc-600')}`}>
                           <div className={`text-xs font-medium ${rt('text-gray-800', 'text-white')}`}>{m.label}</div>
                           <div className="flex items-center gap-2 mt-0.5">
@@ -4993,10 +4996,13 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                     className={rt('font-mono', 'bg-zinc-800 border-zinc-700 text-white font-mono')}
                   />
                   {slashMenu.open && slashMenu.field === 'formula' && slashMenuColumns.length > 0 && (
-                    <div className="absolute z-50 left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-800 shadow-xl">
+                    <div className={`absolute z-50 left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-lg border shadow-xl ${rt('border-gray-200 bg-white', 'border-zinc-700 bg-zinc-800')}`}>
                       {slashMenuColumns.map((c, idx) => (
                         <button key={c.id} onClick={() => insertColumnRef(c.name)}
-                          className={`w-full text-left px-3 py-2 text-sm text-white flex items-center gap-2 ${idx === slashMenu.selectedIndex ? 'bg-zinc-600' : 'hover:bg-zinc-700'}`}>
+                          className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 ${rt(
+                            idx === slashMenu.selectedIndex ? 'bg-indigo-50 text-gray-900' : 'text-gray-700 hover:bg-gray-50',
+                            idx === slashMenu.selectedIndex ? 'bg-zinc-600 text-white' : 'text-white hover:bg-zinc-700'
+                          )}`}>
                           <span className="text-indigo-400 font-mono text-xs">/</span>{c.name}
                         </button>
                       ))}
@@ -5532,7 +5538,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="ghost" onClick={() => setColDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddColumn}>Add Column</Button>
+                <Button onClick={handleAddColumn} className="bg-indigo-600 hover:bg-indigo-700 text-white">Add Column</Button>
               </div>
             </div>
             </motion.div>
