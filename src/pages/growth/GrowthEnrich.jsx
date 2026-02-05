@@ -349,6 +349,7 @@ export default function GrowthEnrich() {
   // Campaign journey mode
   const [campaign, setCampaign] = useState(null);
   const [campaignLoading, setCampaignLoading] = useState(!!campaignId);
+  const [campaignLoadingStatus, setCampaignLoadingStatus] = useState('');
   const [savingCampaign, setSavingCampaign] = useState(false);
   const isCampaignMode = !!campaignId;
 
@@ -1121,6 +1122,7 @@ export default function GrowthEnrich() {
 
     async function initCampaignMode() {
       setCampaignLoading(true);
+      setCampaignLoadingStatus('Loading campaign...');
       try {
         // Load campaign
         const { data: camp, error: campErr } = await supabase
@@ -1151,6 +1153,7 @@ export default function GrowthEnrich() {
         }
 
         // Auto-create workspace for this campaign
+        setCampaignLoadingStatus('Creating enrichment workspace...');
         const selectedNestIds = camp.selected_nest_ids || [];
         const wsName = `${camp.name || 'Campaign'} - Enrichment`;
         const { data: ws, error: wsErr } = await supabase
@@ -1189,6 +1192,7 @@ export default function GrowthEnrich() {
             let allProspects = [];
 
             // Growth nests: paginate growth_nest_items→prospects (default limit = 1000)
+            setCampaignLoadingStatus('Loading prospects from nests...');
             const PAGE = 1000;
             let nestItems = [];
             for (let off = 0; ; off += PAGE) {
@@ -1267,6 +1271,7 @@ export default function GrowthEnrich() {
               if (colErr) throw colErr;
 
               // Insert rows in batches of 300 (2885 at once exceeds request limits)
+              setCampaignLoadingStatus(`Importing ${allProspects.length} prospects...`);
               const ROW_BATCH = 300;
               let allNewRows = [];
               for (let b = 0; b < allProspects.length; b += ROW_BATCH) {
@@ -1305,6 +1310,7 @@ export default function GrowthEnrich() {
                   }
                 }
               }
+              setCampaignLoadingStatus('Populating cells...');
               if (cellInserts.length) {
                 for (let i = 0; i < cellInserts.length; i += 500) {
                   await supabase.from('enrich_cells').upsert(cellInserts.slice(i, i + 500));
@@ -3135,6 +3141,31 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               <AlertCircle className="w-12 h-12 text-zinc-500 mx-auto mb-4" />
               <h2 className="text-lg font-semibold text-white mb-2">Access Denied</h2>
               <p className="text-zinc-400 text-sm">You do not have permission to view this page.</p>
+            </div>
+          </div>
+        </div>
+      </GrowthPageTransition>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // RENDER: Campaign Loading
+  // ═══════════════════════════════════════════════════════════════════════
+
+  if (campaignLoading && isCampaignMode) {
+    return (
+      <GrowthPageTransition>
+        <div className="min-h-screen bg-black flex flex-col">
+          {campaignId && (
+            <div className="flex-shrink-0 px-4 pt-3">
+              <JourneyProgressBar campaignId={campaignId} currentPhase="enrich" />
+            </div>
+          )}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 text-cyan-400 animate-spin mx-auto mb-4" />
+              <h2 className="text-lg font-semibold text-white mb-2">Setting up enrichment workspace</h2>
+              <p className="text-sm text-zinc-400">{campaignLoadingStatus || 'Initializing...'}</p>
             </div>
           </div>
         </div>
