@@ -1,14 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { db } from "@/api/supabaseClient";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useUser } from "@/components/context/UserContext";
 import { usePermissions } from "@/components/context/PermissionContext";
-import { motion } from "framer-motion";
-import anime from '@/lib/anime-wrapper';
-const animate = anime;
-const stagger = anime.stagger;
-import { prefersReducedMotion } from '@/lib/animations';
 import { Plus, LayoutGrid, Users, TrendingUp, Award, Target, BookOpen, Briefcase, Shield, Euro, AlertTriangle, FileCheck, Activity, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -436,59 +431,6 @@ export default function Dashboard() {
     return () => window.removeEventListener('dashboard-config-updated', handleConfigUpdate);
   }, [loadDashboardData]);
 
-  // Refs for anime.js animations
-  const widgetsGridRef = useRef(null);
-  const teamStatsRef = useRef(null);
-
-  // Animate widgets grid on load
-  useEffect(() => {
-    if (dataLoading || !widgetsGridRef.current || prefersReducedMotion()) return;
-
-    const cards = widgetsGridRef.current.querySelectorAll('.widget-card');
-    if (cards.length === 0) return;
-
-    // Set initial state
-    Array.from(cards).forEach(card => {
-      card.style.opacity = '0';
-      card.style.transform = 'translateY(20px) scale(0.95)';
-    });
-
-    // Staggered entrance animation
-    animate({
-      targets: cards,
-      translateY: [20, 0],
-      scale: [0.95, 1],
-      opacity: [0, 1],
-      delay: anime.stagger(60, { start: 100 }),
-      duration: 500,
-      easing: 'easeOutQuart',
-    });
-  }, [dataLoading, enabledWidgets]);
-
-  // Animate team stats with count-up
-  useEffect(() => {
-    if (!teamData || !teamStatsRef.current || prefersReducedMotion()) return;
-
-    const statValues = teamStatsRef.current.querySelectorAll('.stat-value');
-    statValues.forEach(el => {
-      const endValue = parseFloat(el.dataset.value) || 0;
-      const suffix = el.dataset.suffix || '';
-      const prefix = el.dataset.prefix || '';
-
-      const obj = { value: 0 };
-      animate({
-        targets: obj,
-        value: endValue,
-        round: 1,
-        duration: 1200,
-        easing: 'easeOutExpo',
-        update: () => {
-          el.textContent = prefix + obj.value.toLocaleString() + suffix;
-        },
-      });
-    });
-  }, [teamData]);
-
   const loading = userLoading || dataLoading || permLoading;
   
   if (loading) {
@@ -642,21 +584,11 @@ export default function Dashboard() {
   const gridItems = buildGridItems();
 
   return (
-    <div className="min-h-screen bg-black relative">
-      {/* Background - hidden on mobile for performance */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden hidden sm:block">
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-40 right-1/4 w-80 h-80 bg-indigo-900/10 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 px-3 sm:px-4 py-3 sm:py-4 space-y-3 sm:space-y-4">
+    <div className="min-h-screen bg-black">
+      <div className="px-3 sm:px-4 py-3 sm:py-4 space-y-3 sm:space-y-4">
 
         {/* Welcome Header - Mobile optimized */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4"
-        >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div className="min-w-0 flex-1">
             <h1 className="text-lg font-bold text-white mb-0.5 truncate">
               {greeting}, {user?.full_name?.split(' ')[0] || 'there'}
@@ -671,16 +603,11 @@ export default function Dashboard() {
               </Button>
             </Link>
           </div>
-        </motion.div>
+        </div>
 
         {/* View Switcher for Managers */}
         {canViewTeamDashboard && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="flex gap-2 p-1 bg-zinc-900/50 rounded-xl w-fit border border-zinc-800"
-          >
+          <div className="flex gap-2 p-1 bg-zinc-900/50 rounded-xl w-fit border border-zinc-800">
             <button
               onClick={() => setViewMode('personal')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -703,16 +630,12 @@ export default function Dashboard() {
               <Users className="w-4 h-4" />
               Team Dashboard
             </button>
-          </motion.div>
+          </div>
         )}
 
         {/* Team Dashboard View */}
         {viewMode === 'team' && canViewTeamDashboard ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
+          <div className="space-y-6">
             {teamLoading ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -726,47 +649,47 @@ export default function Dashboard() {
               <>
                 {/* Team Overview Stats */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Card className="bg-zinc-900/50 border-zinc-800 hover:border-cyan-500/30 transition-colors">
+                  <Card className="bg-zinc-900/50 border-zinc-800">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <Users className="w-5 h-5 text-cyan-400" />
+                        <Users className="w-5 h-5 text-zinc-400" />
                       </div>
                       <p className="text-lg font-bold text-white">{teamData.memberCount}</p>
                       <p className="text-sm text-zinc-400">Team Members</p>
-                      <p className="text-xs text-cyan-400 mt-1">{teamData.activeThisWeek} active this week</p>
+                      <p className="text-xs text-zinc-500 mt-1">{teamData.activeThisWeek} active this week</p>
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-zinc-900/50 border-zinc-800 hover:border-emerald-500/30 transition-colors">
+                  <Card className="bg-zinc-900/50 border-zinc-800">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <Euro className="w-5 h-5 text-emerald-400" />
+                        <Euro className="w-5 h-5 text-zinc-400" />
                       </div>
                       <p className="text-lg font-bold text-white">${(teamData.pipelineValue / 1000).toFixed(0)}k</p>
                       <p className="text-sm text-zinc-400">Pipeline Value</p>
-                      <p className="text-xs text-emerald-400 mt-1">{teamData.activeDeals} active deals</p>
+                      <p className="text-xs text-zinc-500 mt-1">{teamData.activeDeals} active deals</p>
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-zinc-900/50 border-zinc-800 hover:border-purple-500/30 transition-colors">
+                  <Card className="bg-zinc-900/50 border-zinc-800">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <Shield className="w-5 h-5 text-purple-400" />
+                        <Shield className="w-5 h-5 text-zinc-400" />
                       </div>
                       <p className="text-lg font-bold text-white">{teamData.complianceRate}%</p>
                       <p className="text-sm text-zinc-400">Compliance Rate</p>
-                      <p className="text-xs text-purple-400 mt-1">{teamData.aiSystems} AI systems</p>
+                      <p className="text-xs text-zinc-500 mt-1">{teamData.aiSystems} AI systems</p>
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-zinc-900/50 border-zinc-800 hover:border-amber-500/30 transition-colors">
+                  <Card className="bg-zinc-900/50 border-zinc-800">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <Activity className="w-5 h-5 text-amber-400" />
+                        <Activity className="w-5 h-5 text-zinc-400" />
                       </div>
                       <p className="text-lg font-bold text-white">{teamData.actionsThisWeek}</p>
                       <p className="text-sm text-zinc-400">Actions This Week</p>
-                      <p className="text-xs text-amber-400 mt-1">Team activity</p>
+                      <p className="text-xs text-zinc-500 mt-1">Team activity</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -777,7 +700,7 @@ export default function Dashboard() {
                   <Card className="bg-zinc-900/50 border-zinc-800">
                     <CardHeader className="border-b border-zinc-800 py-3">
                       <CardTitle className="text-white flex items-center gap-2 text-base">
-                        <BookOpen className="w-5 h-5 text-indigo-400" />
+                        <BookOpen className="w-5 h-5 text-zinc-400" />
                         Learn
                       </CardTitle>
                     </CardHeader>
@@ -793,7 +716,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <Link to={createPageUrl("LearnDashboard")} className="mt-4 block">
-                        <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30">
+                        <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
                           View Learning Analytics
                         </Button>
                       </Link>
@@ -804,7 +727,7 @@ export default function Dashboard() {
                   <Card className="bg-zinc-900/50 border-zinc-800">
                     <CardHeader className="border-b border-zinc-800 py-3">
                       <CardTitle className="text-white flex items-center gap-2 text-base">
-                        <TrendingUp className="w-5 h-5 text-emerald-400" />
+                        <TrendingUp className="w-5 h-5 text-zinc-400" />
                         Growth
                       </CardTitle>
                     </CardHeader>
@@ -815,7 +738,7 @@ export default function Dashboard() {
                           <p className="text-xs text-zinc-400">Active Deals</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-lg font-bold text-emerald-400">{teamData.wonDeals}</p>
+                          <p className="text-lg font-bold text-white">{teamData.wonDeals}</p>
                           <p className="text-xs text-zinc-400">Won</p>
                         </div>
                         <div className="space-y-1">
@@ -824,7 +747,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <Link to={createPageUrl("GrowthPipeline")} className="mt-4 block">
-                        <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30">
+                        <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
                           View Pipeline
                         </Button>
                       </Link>
@@ -835,7 +758,7 @@ export default function Dashboard() {
                   <Card className="bg-zinc-900/50 border-zinc-800">
                     <CardHeader className="border-b border-zinc-800 py-3">
                       <CardTitle className="text-white flex items-center gap-2 text-base">
-                        <Shield className="w-5 h-5 text-purple-400" />
+                        <Shield className="w-5 h-5 text-zinc-400" />
                         Sentinel
                       </CardTitle>
                     </CardHeader>
@@ -846,16 +769,16 @@ export default function Dashboard() {
                           <p className="text-xs text-zinc-400">AI Systems</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-lg font-bold text-amber-400">{teamData.highRiskSystems}</p>
+                          <p className="text-lg font-bold text-white">{teamData.highRiskSystems}</p>
                           <p className="text-xs text-zinc-400">High Risk</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-lg font-bold text-purple-400">{teamData.complianceRate}%</p>
+                          <p className="text-lg font-bold text-white">{teamData.complianceRate}%</p>
                           <p className="text-xs text-zinc-400">Compliant</p>
                         </div>
                       </div>
                       <Link to={createPageUrl("SentinelDashboard")} className="mt-4 block">
-                        <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-purple-500/10 hover:text-purple-400 hover:border-purple-500/30">
+                        <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
                           View Compliance
                         </Button>
                       </Link>
@@ -866,27 +789,27 @@ export default function Dashboard() {
                   <Card className="bg-zinc-900/50 border-zinc-800">
                     <CardHeader className="border-b border-zinc-800 py-3">
                       <CardTitle className="text-white flex items-center gap-2 text-base">
-                        <Euro className="w-5 h-5 text-cyan-400" />
+                        <Euro className="w-5 h-5 text-zinc-400" />
                         Finance
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4">
                       <div className="grid grid-cols-3 gap-3">
                         <div className="space-y-1">
-                          <p className="text-lg font-bold text-emerald-400">${(teamData.revenue / 1000).toFixed(0)}k</p>
+                          <p className="text-lg font-bold text-white">${(teamData.revenue / 1000).toFixed(0)}k</p>
                           <p className="text-xs text-zinc-400">Revenue</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-lg font-bold text-amber-400">{teamData.pendingInvoices}</p>
+                          <p className="text-lg font-bold text-white">{teamData.pendingInvoices}</p>
                           <p className="text-xs text-zinc-400">Pending</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-lg font-bold text-rose-400">${(teamData.monthlyExpenses / 1000).toFixed(1)}k</p>
+                          <p className="text-lg font-bold text-white">${(teamData.monthlyExpenses / 1000).toFixed(1)}k</p>
                           <p className="text-xs text-zinc-400">Expenses</p>
                         </div>
                       </div>
                       <Link to={createPageUrl("FinanceOverview")} className="mt-4 block">
-                        <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-cyan-500/10 hover:text-cyan-400 hover:border-cyan-500/30">
+                        <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
                           View Financials
                         </Button>
                       </Link>
@@ -898,7 +821,7 @@ export default function Dashboard() {
                 <Card className="bg-zinc-900/50 border-zinc-800">
                   <CardHeader className="border-b border-zinc-800 py-3">
                     <CardTitle className="text-white flex items-center gap-2 text-base">
-                      <Briefcase className="w-5 h-5 text-cyan-400" />
+                      <Briefcase className="w-5 h-5 text-zinc-400" />
                       Manager Actions
                     </CardTitle>
                   </CardHeader>
@@ -951,7 +874,7 @@ export default function Dashboard() {
                 <p className="text-zinc-500">Team analytics will appear once your team starts using the platform</p>
               </div>
             )}
-          </motion.div>
+          </div>
         ) : hasWidgets ? (
           <>
             {/* Small Widgets Row - Mobile optimized */}
@@ -962,15 +885,10 @@ export default function Dashboard() {
                 smallWidgets.length === 3 ? 'grid-cols-2 lg:grid-cols-3' :
                 'grid-cols-2 lg:grid-cols-4'
               }`}>
-                {smallWidgets.map((widget, i) => (
-                  <motion.div
-                    key={widget.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                  >
+                {smallWidgets.map((widget) => (
+                  <div key={widget.id}>
                     {widget.component}
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             )}
@@ -978,28 +896,23 @@ export default function Dashboard() {
             {/* Large & Medium Widgets Grid - Mobile optimized with tablet breakpoint */}
             {gridItems.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {gridItems.map((widget, i) => (
-                  <motion.div
+                {gridItems.map((widget) => (
+                  <div
                     key={widget.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 + i * 0.05 }}
                     className={widget.span === 2 ? "md:col-span-2" : ""}
                   >
                     {widget.component}
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             )}
           </>
         ) : (
           /* Empty State - Mobile optimized */
-          <div className="text-center py-12 sm:py-20 px-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-zinc-800/50 flex items-center justify-center mx-auto mb-3 sm:mb-4">
-              <LayoutGrid className="w-8 h-8 sm:w-10 sm:h-10 text-zinc-600" />
-            </div>
-            <h2 className="text-lg sm:text-sm font-bold text-zinc-300 mb-1.5 sm:mb-2">Customize your dashboard</h2>
-            <p className="text-sm sm:text-base text-zinc-500 mb-4 sm:mb-6">Tap the menu icon to add widgets</p>
+          <div className="text-center py-16 px-4">
+            <LayoutGrid className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+            <h2 className="text-base font-medium text-zinc-300 mb-1">Customize your dashboard</h2>
+            <p className="text-sm text-zinc-500">Use the menu to add widgets</p>
           </div>
         )}
       </div>
