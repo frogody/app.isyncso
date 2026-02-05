@@ -1188,27 +1188,34 @@ export default function GrowthEnrich() {
             const tableId = tbl?.id || null;
             let allProspects = [];
 
-            // Growth nests: try growth_nest_items→prospects first, then preview_data fallback
-            const { data: nestItems } = await supabase
-              .from('growth_nest_items')
-              .select('id, prospect_id, prospects(*)')
-              .in('growth_nest_id', selectedNestIds);
+            // Growth nests: paginate growth_nest_items→prospects (default limit = 1000)
+            const PAGE = 1000;
+            let nestItems = [];
+            for (let off = 0; ; off += PAGE) {
+              const { data: page, error: pageErr } = await supabase
+                .from('growth_nest_items')
+                .select('id, prospect_id, prospects(first_name, last_name, email, linkedin_url, job_title, company, location, phone)')
+                .in('growth_nest_id', selectedNestIds)
+                .range(off, off + PAGE - 1);
+              if (pageErr) { console.error('Nest items page error:', pageErr); break; }
+              if (!page || page.length === 0) break;
+              nestItems = nestItems.concat(page);
+              if (page.length < PAGE) break;
+            }
 
-            if (nestItems?.length) {
-              // Map prospect data — normalize field names for enrichment sheet
+            if (nestItems.length) {
               allProspects = nestItems.filter(ni => ni.prospects).map(ni => {
                 const p = ni.prospects;
                 return {
                   nestItemId: ni.id,
                   sourceData: {
-                    full_name: [p.first_name, p.last_name].filter(Boolean).join(' ') || p.name || '',
+                    full_name: [p.first_name, p.last_name].filter(Boolean).join(' ') || '',
                     email: p.email || '',
-                    linkedin_profile: p.linkedin_url || p.linkedin_profile || '',
-                    job_title: p.job_title || p.title || '',
-                    company_name: p.company_name || p.company || '',
-                    location: p.location || p.city || '',
+                    linkedin_profile: p.linkedin_url || '',
+                    job_title: p.job_title || '',
+                    company_name: p.company || '',
+                    location: p.location || '',
                     phone: p.phone || '',
-                    ...p,
                   },
                 };
               });
