@@ -91,59 +91,70 @@ async function processGmailEvent(
   const { trigger_slug, data, user_id } = payload;
 
   switch (trigger_slug) {
-    case "GMAIL_NEW_MESSAGE_RECEIVED": {
-      // Extract email details
+    case "GMAIL_NEW_MESSAGE_RECEIVED":
+    case "GMAIL_NEW_GMAIL_MESSAGE": {
+      // Extract email details — handle both v1 and v3 payload formats
       const email = data as {
         from?: string;
+        sender?: string;
         subject?: string;
         snippet?: string;
+        message_text?: string;
         date?: string;
+        message_timestamp?: string;
+        id?: string;
+        message_id?: string;
       };
+      // Normalize field names (v3 uses sender/message_text/message_timestamp)
+      const emailFrom = email.from || email.sender || '';
+      const emailSubject = email.subject || '';
+      const emailSnippet = email.snippet || email.message_text || '';
+      const emailDate = email.date || email.message_timestamp || '';
+      const emailId = (data as { id?: string }).id || email.message_id || '';
 
-      console.log(`New Gmail message for user ${user_id}:`, email.subject);
+      console.log(`New Gmail message for user ${user_id}:`, emailSubject);
 
-      // Create inbox notification
-      const { error } = await supabase.from("inbox_messages").insert({
-        user_id,
-        source: "gmail",
-        source_id: (data as { id?: string }).id,
-        from_address: email.from,
-        subject: email.subject,
-        preview: email.snippet,
-        received_at: email.date,
-        read: false,
-      });
-
-      if (error) {
-        console.error("Failed to store Gmail message:", error);
-        return { action: "create_inbox_message", success: false, message: error.message };
-      }
-
-      // Check for urgent emails — trigger SYNC knock notification
-      const subject = (email.subject || '').toLowerCase();
-      if (subject.includes('urgent')) {
-        const senderName = (email.from || 'Someone').split('<')[0].trim() || email.from;
+      // Check for urgent emails FIRST — trigger SYNC knock notification
+      if (emailSubject.toLowerCase().includes('urgent')) {
+        const senderName = emailFrom.split('<')[0].trim() || emailFrom || 'Someone';
         const { error: knockError } = await supabase.from("user_notifications").insert({
           user_id,
           type: 'sync_knock',
           title: 'Urgent Email',
-          message: `${senderName}: ${email.subject}`,
+          message: `${senderName}: ${emailSubject}`,
           metadata: {
             source: 'gmail',
-            email_id: (data as { id?: string }).id,
-            sender: email.from,
-            subject: email.subject,
-            snippet: email.snippet,
+            email_id: emailId,
+            sender: emailFrom,
+            subject: emailSubject,
+            snippet: emailSnippet,
           },
         });
         if (knockError) {
           console.error("Failed to create knock notification:", knockError);
         } else {
-          console.log(`[composio-webhooks] SYNC knock triggered for urgent email: "${email.subject}"`);
+          console.log(`[composio-webhooks] SYNC knock triggered for urgent email: "${emailSubject}"`);
         }
       }
 
-      return { action: "create_inbox_message", success: true, data: { subject: email.subject } };
+      // Also store in inbox_messages (non-critical — don't fail if table issues)
+      try {
+        const { error } = await supabase.from("inbox_messages").insert({
+          user_id,
+          source: "gmail",
+          source_id: emailId,
+          from_address: emailFrom,
+          subject: emailSubject,
+          preview: emailSnippet,
+          received_at: emailDate || new Date().toISOString(),
+          read: false,
+        });
+        if (error) console.error("Failed to store Gmail message:", error.message);
+      } catch (e) {
+        console.error("inbox_messages insert error:", e);
+      }
+
+      return { action: "create_inbox_message", success: true, data: { subject: emailSubject } };
     }
 
     default:
@@ -400,8 +411,28 @@ serve(async (req) => {
       );
     }
 
-    // Parse payload
-    const payload: WebhookPayload = JSON.parse(rawBody);
+    // Parse payload — handle both v1 and v3 Composio webhook formats
+    const raw = JSON.parse(rawBody);
+    console.log(`[composio-webhooks] Raw keys: ${Object.keys(raw).join(', ')}`);
+
+    // v3 may nest data differently: { trigger_id, trigger_name, connected_account_id, payload: {...} }
+    const payload: WebhookPayload = {
+      trigger_slug: raw.trigger_slug || raw.trigger_name || raw.triggerSlug || raw.triggerName || '',
+      connected_account_id: raw.connected_account_id || raw.connectedAccountId || '',
+      user_id: raw.user_id || raw.userId || '',
+      data: raw.data || raw.payload || raw,
+      timestamp: raw.timestamp || raw.created_at || '',
+    };
+
+    // If user_id not in webhook, look it up from connected account
+    if (!payload.user_id && payload.connected_account_id) {
+      const { data: integration } = await supabase
+        .from('user_integrations')
+        .select('user_id')
+        .eq('composio_connected_account_id', payload.connected_account_id)
+        .single();
+      if (integration) payload.user_id = integration.user_id;
+    }
 
     console.log(`Received webhook: ${payload.trigger_slug} for user ${payload.user_id}`);
 

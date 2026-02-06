@@ -55,6 +55,8 @@ type ComposioAction =
   | "listTriggers"
   | "subscribeTrigger"
   | "unsubscribeTrigger"
+  | "setWebhookUrl"
+  | "getWebhookUrl"
   // MCP Server Management Actions
   | "createMcpServer"
   | "getMcpServerUrl"
@@ -496,24 +498,26 @@ async function subscribeTrigger(
   userId: string,
   supabase: ReturnType<typeof createClient>
 ) {
-  // v1 API: /triggers/{triggerId}/enable
+  // v3 API: /trigger_instances/{slug}/upsert
   const result = await composioFetch<{
+    trigger_id?: string;
     triggerId?: string;
     id?: string;
-    status: string;
-  }>(`/triggers/${triggerSlug}/enable`, {
+    status?: string;
+    deprecated?: { uuid?: string };
+  }>(`/trigger_instances/${triggerSlug}/upsert`, {
     method: "POST",
     body: JSON.stringify({
-      connectedAccountId: connectedAccountId,
-      triggerConfig: config,
+      connected_account_id: connectedAccountId,
+      trigger_config: config,
     }),
-  });
+  }, true); // useV3 = true
 
   if (!result.success || !result.data) {
     return result;
   }
 
-  const triggerId = result.data.triggerId || result.data.id;
+  const triggerId = result.data.trigger_id || result.data.triggerId || result.data.deprecated?.uuid || result.data.id;
 
   // Store subscription in database
   const { error } = await supabase.from("composio_trigger_subscriptions").upsert(
@@ -1132,6 +1136,57 @@ serve(async (req) => {
           );
         }
         result = await unsubscribeTrigger(body.connectedAccountId, supabase);
+        break;
+      }
+
+      case "setWebhookUrl": {
+        // Try multiple v3 endpoint paths for setting webhook URL
+        const webhookUrlToSet = body.webhookUrl || `${SUPABASE_URL}/functions/v1/composio-webhooks`;
+        const attempts: Array<{ path: string; method: string; body: string; result: string }> = [];
+        let setResult: { success: boolean; data?: unknown; error?: string } = { success: false, error: "All attempts failed" };
+
+        const trySet = async (path: string, method: string, payload: Record<string, unknown>) => {
+          const r = await composioFetch<{ url?: string }>(path, {
+            method,
+            body: JSON.stringify(payload),
+          }, true);
+          attempts.push({ path, method, body: Object.keys(payload).join(','), result: r.success ? 'OK' : (r.error || 'failed') });
+          return r;
+        };
+
+        // Try PATCH on /org/projects/webhook (405 on POST suggests PATCH/PUT)
+        let r = await trySet("/org/projects/webhook", "PATCH", { webhook_url: webhookUrlToSet, type: "trigger" });
+        if (!r.success) r = await trySet("/org/projects/webhook", "PUT", { webhook_url: webhookUrlToSet, type: "trigger" });
+        if (!r.success) r = await trySet("/org/projects/webhook", "PATCH", { callbackURL: webhookUrlToSet });
+        if (!r.success) r = await trySet("/org/projects/webhook", "PUT", { callbackURL: webhookUrlToSet });
+        // Try with /update suffix
+        if (!r.success) r = await trySet("/org/projects/webhook/update", "POST", { webhook_url: webhookUrlToSet, type: "trigger" });
+        if (!r.success) r = await trySet("/org/projects/webhook/update", "PATCH", { webhook_url: webhookUrlToSet, type: "trigger" });
+
+        if (r.success) {
+          setResult = { success: true, data: { url: webhookUrlToSet, ...r.data } };
+        } else {
+          setResult = { success: false, error: `All failed: ${JSON.stringify(attempts)}` };
+        }
+
+        if (!setResult.success) {
+          setResult = { success: false, error: `All webhook URL paths failed. Attempts: ${attempts.join(' | ')}` };
+        }
+        result = setResult;
+        break;
+      }
+
+      case "getWebhookUrl": {
+        // Try multiple paths
+        let getResult = await composioFetch<{ url?: string; secret?: string }>(
+          "/org/project/webhook", { method: "GET" }, true
+        );
+        if (!getResult.success) {
+          getResult = await composioFetch<{ url?: string; secret?: string }>(
+            "/org/projects/webhook", { method: "GET" }, true
+          );
+        }
+        result = getResult;
         break;
       }
 
