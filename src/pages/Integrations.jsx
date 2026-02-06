@@ -506,6 +506,7 @@ export default function Integrations({ embedded = false }) {
       const connectionInfo = await composio.connect(user.id, authConfig.id, {
         popup: true,
         callbackUrl: `${window.location.origin}/integrations/callback`,
+        toolkitSlug: integration.slug,
       });
 
       setConnectionDialog((prev) => ({

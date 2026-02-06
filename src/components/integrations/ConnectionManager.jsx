@@ -148,6 +148,7 @@ export function ConnectionManager() {
         const connectionInfo = await composio.connect(user.id, authConfig.id, {
           popup: true,
           callbackUrl: `${window.location.origin}/settings/integrations/callback`,
+          toolkitSlug: integration.slug,
         });
 
         setConnectionDialog((prev) => ({

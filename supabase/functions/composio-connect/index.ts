@@ -57,6 +57,7 @@ type ComposioAction =
   | "unsubscribeTrigger"
   | "setWebhookUrl"
   | "getWebhookUrl"
+  | "rawApiCall"
   // MCP Server Management Actions
   | "createMcpServer"
   | "getMcpServerUrl"
@@ -198,8 +199,26 @@ async function listAuthConfigs(toolkitSlug: string) {
 async function initiateConnection(
   userId: string,
   authConfigId: string,
-  callbackUrl?: string
+  callbackUrl?: string,
+  toolkitSlug?: string
 ) {
+  // Build connection body with optional scopes for triggers
+  const connectionBody: Record<string, unknown> = {
+    auth_config: { id: authConfigId },
+    connection: {
+      user_id: userId,
+      redirect_url: callbackUrl || `${SUPABASE_URL}/functions/v1/composio-connect/callback`,
+    },
+  };
+
+  // For Gmail, request tools+triggers that need extra scopes (gmail.readonly)
+  if (toolkitSlug === 'gmail') {
+    connectionBody.requested_tools = [
+      'GMAIL_FETCH_EMAILS', 'GMAIL_GET_EMAIL', 'GMAIL_SEND_EMAIL',
+      'GMAIL_NEW_GMAIL_MESSAGE',
+    ];
+  }
+
   // v3 API: Create connection via /connected_accounts with nested format
   const linkResult = await composioFetch<{
     id?: string;
@@ -211,13 +230,7 @@ async function initiateConnection(
     };
   }>("/connected_accounts", {
     method: "POST",
-    body: JSON.stringify({
-      auth_config: { id: authConfigId },
-      connection: {
-        user_id: userId,
-        redirect_url: callbackUrl || `${SUPABASE_URL}/functions/v1/composio-connect/callback`,
-      },
-    }),
+    body: JSON.stringify(connectionBody),
   }, true); // useV3 = true
 
   if (!linkResult.success || !linkResult.data) {
@@ -923,7 +936,8 @@ serve(async (req) => {
         result = await initiateConnection(
           body.userId,
           body.authConfigId,
-          body.callbackUrl
+          body.callbackUrl,
+          body.toolkitSlug
         );
         break;
       }
@@ -1140,39 +1154,34 @@ serve(async (req) => {
       }
 
       case "setWebhookUrl": {
-        // Try multiple v3 endpoint paths for setting webhook URL
+        // v3 API: POST /org/project/webhook-update (with hyphen)
         const webhookUrlToSet = body.webhookUrl || `${SUPABASE_URL}/functions/v1/composio-webhooks`;
-        const attempts: Array<{ path: string; method: string; body: string; result: string }> = [];
-        let setResult: { success: boolean; data?: unknown; error?: string } = { success: false, error: "All attempts failed" };
+        const attempts: Array<{ path: string; method: string; status: string }> = [];
 
         const trySet = async (path: string, method: string, payload: Record<string, unknown>) => {
-          const r = await composioFetch<{ url?: string }>(path, {
+          const r = await composioFetch<{ url?: string; webhook_url?: string }>(path, {
             method,
             body: JSON.stringify(payload),
           }, true);
-          attempts.push({ path, method, body: Object.keys(payload).join(','), result: r.success ? 'OK' : (r.error || 'failed') });
+          attempts.push({ path, method, status: r.success ? 'OK' : (r.error || 'failed') });
           return r;
         };
 
-        // Try PATCH on /org/projects/webhook (405 on POST suggests PATCH/PUT)
-        let r = await trySet("/org/projects/webhook", "PATCH", { webhook_url: webhookUrlToSet, type: "trigger" });
-        if (!r.success) r = await trySet("/org/projects/webhook", "PUT", { webhook_url: webhookUrlToSet, type: "trigger" });
-        if (!r.success) r = await trySet("/org/projects/webhook", "PATCH", { callbackURL: webhookUrlToSet });
-        if (!r.success) r = await trySet("/org/projects/webhook", "PUT", { callbackURL: webhookUrlToSet });
-        // Try with /update suffix
-        if (!r.success) r = await trySet("/org/projects/webhook/update", "POST", { webhook_url: webhookUrlToSet, type: "trigger" });
-        if (!r.success) r = await trySet("/org/projects/webhook/update", "PATCH", { webhook_url: webhookUrlToSet, type: "trigger" });
+        // Primary: POST /org/project/webhook-update (documented v3 endpoint)
+        let r = await trySet("/org/project/webhook-update", "POST", { webhook_url: webhookUrlToSet, type: "trigger" });
+        // Fallback: PATCH /org/project/webhook
+        if (!r.success) r = await trySet("/org/project/webhook", "PATCH", { webhook_url: webhookUrlToSet, type: "trigger" });
+        // Fallback: POST /org/project/webhook
+        if (!r.success) r = await trySet("/org/project/webhook", "POST", { webhook_url: webhookUrlToSet, type: "trigger" });
+        // Fallback: /org/projects (plural) — 405 on POST means try PATCH/PUT
+        if (!r.success) r = await trySet("/org/projects/webhook-update", "PATCH", { webhook_url: webhookUrlToSet, type: "trigger" });
+        if (!r.success) r = await trySet("/org/projects/webhook-update", "PUT", { webhook_url: webhookUrlToSet, type: "trigger" });
 
         if (r.success) {
-          setResult = { success: true, data: { url: webhookUrlToSet, ...r.data } };
+          result = { success: true, data: { url: webhookUrlToSet, ...r.data } };
         } else {
-          setResult = { success: false, error: `All failed: ${JSON.stringify(attempts)}` };
+          result = { success: false, error: `All webhook URL paths failed. Attempts: ${JSON.stringify(attempts)}` };
         }
-
-        if (!setResult.success) {
-          setResult = { success: false, error: `All webhook URL paths failed. Attempts: ${attempts.join(' | ')}` };
-        }
-        result = setResult;
         break;
       }
 
@@ -1187,6 +1196,16 @@ serve(async (req) => {
           );
         }
         result = getResult;
+        break;
+      }
+
+      case "rawApiCall": {
+        // Debug tool: make raw API call to Composio
+        const rawResult = await composioFetch<unknown>(body.path, {
+          method: body.method || "GET",
+          ...(body.body ? { body: JSON.stringify(body.body) } : {}),
+        }, body.useV3 !== false);
+        result = rawResult;
         break;
       }
 

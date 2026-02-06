@@ -101,6 +101,7 @@ export function useComposio() {
         userId,
         authConfigId,
         callbackUrl,
+        toolkitSlug: options.toolkitSlug,
       });
 
       // Open popup if requested
