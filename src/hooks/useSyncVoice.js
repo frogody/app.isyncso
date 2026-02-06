@@ -319,6 +319,67 @@ export default function useSyncVoice() {
     else activate();
   }, [activate, deactivate]);
 
+  // Activate and immediately speak a message (for knock/proactive notifications)
+  const activateWithMessage = useCallback(async (text) => {
+    if (!text) return;
+
+    // Request mic permission
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(t => t.stop());
+    } catch (_) {
+      console.error('[SyncVoice] Mic permission denied');
+      return;
+    }
+
+    console.log('[SyncVoice] Activated with message:', text.substring(0, 60));
+    activeRef.current = true;
+    processingRef.current = true;
+    const turnId = ++turnIdRef.current;
+
+    setVoiceState(VOICE_STATES.SPEAKING);
+    syncStateRef.current?.setMood?.('speaking');
+    setHistory(prev => [...prev, { role: 'assistant', content: text }]);
+
+    // Fetch TTS and play
+    const voiceUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-voice`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+    };
+
+    try {
+      const controller = new AbortController();
+      const ttsTimeout = setTimeout(() => controller.abort(), 10000);
+
+      const audioRes = await fetch(voiceUrl, {
+        method: 'POST',
+        signal: controller.signal,
+        headers,
+        body: JSON.stringify({ ttsOnly: true, ttsText: text }),
+      });
+      clearTimeout(ttsTimeout);
+
+      if (turnIdRef.current !== turnId || !activeRef.current) return;
+
+      if (audioRes.ok) {
+        const audioData = await audioRes.json();
+        if (audioData.audio) {
+          playAudio(audioData.audio, turnId, () => {
+            resumeListening();
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      if (turnIdRef.current !== turnId) return;
+      console.warn('[SyncVoice] TTS for message:', e.message);
+    }
+
+    // TTS failed — still start listening
+    if (turnIdRef.current === turnId) resumeListening();
+  }, [playAudio, resumeListening]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -341,5 +402,6 @@ export default function useSyncVoice() {
     toggle,
     activate,
     deactivate,
+    activateWithMessage,
   };
 }

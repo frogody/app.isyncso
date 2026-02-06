@@ -10,7 +10,7 @@ const SyncStateContext = createContext(null);
 
 // Default state values
 const DEFAULT_STATE = {
-  mood: 'listening',      // 'listening' | 'thinking' | 'speaking'
+  mood: 'listening',      // 'listening' | 'thinking' | 'speaking' | 'knocking'
   level: 0.18,            // Animation intensity 0-1
   seed: 4,                // Visual variation seed
   activeAgent: null,      // Currently delegated agent id
@@ -18,6 +18,7 @@ const DEFAULT_STATE = {
   showSuccess: false,     // Success animation flag
   isProcessing: false,    // Whether SYNC is processing a request
   lastActivity: null,     // Timestamp of last activity
+  knockData: null,        // Data for proactive knock notification
 };
 
 export function SyncStateProvider({ children }) {
@@ -40,6 +41,7 @@ export function SyncStateProvider({ children }) {
       speaking: 0.55,
       thinking: 0.35,
       listening: 0.18,
+      knocking: 0.65,
     };
     updateState({ mood, level: levelTargets[mood] || 0.18 });
   }, [updateState]);
@@ -70,6 +72,16 @@ export function SyncStateProvider({ children }) {
     });
   }, [updateState]);
 
+  // Trigger knock (proactive notification)
+  const triggerKnock = useCallback((data) => {
+    updateState({ mood: 'knocking', knockData: data });
+  }, [updateState]);
+
+  // Clear knock state
+  const clearKnock = useCallback(() => {
+    updateState({ mood: 'listening', knockData: null });
+  }, [updateState]);
+
   // Subscribe to state changes (for external listeners)
   const subscribe = useCallback((listener) => {
     listenersRef.current.add(listener);
@@ -89,6 +101,8 @@ export function SyncStateProvider({ children }) {
     triggerActionEffect,
     triggerSuccess,
     setProcessing,
+    triggerKnock,
+    clearKnock,
     subscribe,
     reset,
   };
@@ -112,6 +126,8 @@ export function useSyncState() {
       triggerActionEffect: () => {},
       triggerSuccess: () => {},
       setProcessing: () => {},
+      triggerKnock: () => {},
+      clearKnock: () => {},
       subscribe: () => () => {},
       reset: () => {},
     };

@@ -125,6 +125,7 @@ import { SyncStateProvider } from "@/components/context/SyncStateContext";
 import SyncFloatingChat from "@/components/sync/SyncFloatingChat";
 import SyncVoiceMode from "@/components/sync/SyncVoiceMode";
 import useSyncVoice from "@/hooks/useSyncVoice";
+import useSyncKnock from "@/hooks/useSyncKnock";
 import EnrichmentProgressBar from "@/components/talent/EnrichmentProgressBar";
 
 // Import Keyboard Shortcuts
@@ -135,13 +136,26 @@ import GlobalShortcuts from "@/components/GlobalShortcuts";
 import { NotificationsProvider } from "@/contexts/NotificationsContext";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
 
-// SYNC Avatar sidebar button — single-click = chat, double-click = voice mode (inline, no popup)
-function SyncAvatarSidebarButton({ onSingleClick, voiceHook }) {
+// SYNC Avatar sidebar button — single-click = chat, double-click = voice mode, knock = click to answer
+function SyncAvatarSidebarButton({ onSingleClick, voiceHook, knockHook }) {
   const clickTimer = React.useRef(null);
-  const { isActive, isListening, isProcessing, isSpeaking, toggle } = voiceHook;
+  const { isActive, isListening, isProcessing, isSpeaking, toggle, activateWithMessage } = voiceHook;
+  const { isKnocking, consumeKnock, getKnockMessage } = knockHook || {};
 
   const handleClick = React.useCallback((e) => {
     e.preventDefault();
+
+    // If SYNC is knocking — consume knock and speak the message
+    if (isKnocking && consumeKnock && getKnockMessage) {
+      const knock = consumeKnock();
+      if (knock) {
+        const message = getKnockMessage(knock);
+        if (message && activateWithMessage) {
+          activateWithMessage(message);
+        }
+      }
+      return;
+    }
 
     // If voice is active, any click toggles it off
     if (isActive) {
@@ -161,25 +175,27 @@ function SyncAvatarSidebarButton({ onSingleClick, voiceHook }) {
         onSingleClick();
       }, 300);
     }
-  }, [onSingleClick, toggle, isActive]);
+  }, [onSingleClick, toggle, isActive, isKnocking, consumeKnock, getKnockMessage, activateWithMessage]);
 
   React.useEffect(() => {
     return () => { if (clickTimer.current) clearTimeout(clickTimer.current); };
   }, []);
 
-  // Visual ring around avatar when voice is active
-  const ringClass = isActive
-    ? isListening ? 'ring-2 ring-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.5)]'
-      : isProcessing ? 'ring-2 ring-cyan-500 shadow-[0_0_12px_rgba(6,182,212,0.4)]'
-      : isSpeaking ? 'ring-2 ring-green-500 shadow-[0_0_12px_rgba(34,197,94,0.4)]'
-      : 'ring-2 ring-purple-500/50'
-    : '';
+  // Visual ring around avatar — amber when knocking, voice colors when active
+  const ringClass = isKnocking
+    ? 'ring-2 ring-amber-500 shadow-[0_0_16px_rgba(245,158,11,0.6)]'
+    : isActive
+      ? isListening ? 'ring-2 ring-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.5)]'
+        : isProcessing ? 'ring-2 ring-cyan-500 shadow-[0_0_12px_rgba(6,182,212,0.4)]'
+        : isSpeaking ? 'ring-2 ring-green-500 shadow-[0_0_12px_rgba(34,197,94,0.4)]'
+        : 'ring-2 ring-purple-500/50'
+      : '';
 
   return (
     <button
       onClick={handleClick}
       className={`flex items-center justify-center min-h-[44px] w-full p-2 mb-2 rounded-xl transition-all duration-300 group hover:bg-white/5 active:scale-[0.98] ${ringClass}`}
-      title={isActive ? 'Click to stop voice mode' : 'Click: SYNC Chat — Double-click: Voice Mode'}
+      title={isKnocking ? 'SYNC has an urgent message — click to listen' : isActive ? 'Click to stop voice mode' : 'Click: SYNC Chat — Double-click: Voice Mode'}
     >
       <div className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}>
         <SyncAvatarMini size={36} />
@@ -841,6 +857,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
 
   // Headless voice mode — driven entirely by the sidebar avatar
   const syncVoice = useSyncVoice();
+  const syncKnock = useSyncKnock();
 
   // Global theme
   const { theme, toggleTheme } = useTheme();
@@ -945,6 +962,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         <SyncAvatarSidebarButton
           onSingleClick={() => navigate(createPageUrl("SyncAgent"))}
           voiceHook={syncVoice}
+          knockHook={syncKnock}
         />
 
         {/* Core Navigation - filtered by permissions */}

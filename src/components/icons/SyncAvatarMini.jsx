@@ -40,6 +40,7 @@ export default function SyncAvatarMini({ size = 48, className = '' }) {
   // Derive animation state from sync state
   const animationState = useMemo(() => {
     if (showSuccess) return 'success';
+    if (mood === 'knocking') return 'knocking';
     if (mood === 'speaking') return 'speaking';
     if (mood === 'thinking' || isProcessing) return 'thinking';
     return 'idle';
@@ -72,6 +73,11 @@ export default function SyncAvatarMini({ size = 48, className = '' }) {
 
     // Different animation parameters based on state
     const configs = {
+      knocking: {
+        strokeWidth: [3, 6, 3],
+        opacity: [0.8, 1, 0.8],
+        duration: 300,
+      },
       speaking: {
         strokeWidth: [3, 5, 3],
         opacity: [0.9, 1, 0.9],
@@ -138,6 +144,7 @@ export default function SyncAvatarMini({ size = 48, className = '' }) {
     if (prefersReducedMotion() || !glowRef.current) return;
 
     const glowConfigs = {
+      knocking: { scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5], duration: 300 },
       speaking: { scale: [1, 1.15, 1], opacity: [0.6, 0.9, 0.6], duration: 400 },
       thinking: { scale: [1, 1.08, 1], opacity: [0.4, 0.7, 0.4], duration: 1000 },
       success: { scale: [1, 1.3, 1], opacity: [0.8, 1, 0.8], duration: 500 },
@@ -309,13 +316,15 @@ export default function SyncAvatarMini({ size = 48, className = '' }) {
     };
   }, [size, level, innerR]);
 
-  // Get active agent color for glow
-  const activeAgentColor = activeAgent
-    ? AGENT_SEGMENTS.find(s => s.id === activeAgent)?.color || '#a855f7'
-    : '#a855f7';
+  // Get active agent color for glow — amber when knocking
+  const activeAgentColor = mood === 'knocking'
+    ? '#f59e0b'
+    : activeAgent
+      ? AGENT_SEGMENTS.find(s => s.id === activeAgent)?.color || '#a855f7'
+      : '#a855f7';
 
   return (
-    <div className={cn('relative', className)} style={{ width: size, height: size }}>
+    <div className={cn('relative', mood === 'knocking' && 'knock-shake', className)} style={{ width: size, height: size }}>
       {/* Outer glow halo */}
       <div
         ref={glowRef}

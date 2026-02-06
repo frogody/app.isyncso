@@ -12,6 +12,19 @@
   100% { background-position: 24px 0; }
 }
 
+@keyframes knock-shake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-2px); }
+  20% { transform: translateX(2px); }
+  30% { transform: translateX(-2px); }
+  40% { transform: translateX(2px); }
+  50% { transform: translateX(0); }
+}
+
+.knock-shake {
+  animation: knock-shake 0.6s ease-in-out infinite;
+}
+
 
 /* :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;

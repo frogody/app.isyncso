@@ -119,6 +119,30 @@ async function processGmailEvent(
         return { action: "create_inbox_message", success: false, message: error.message };
       }
 
+      // Check for urgent emails — trigger SYNC knock notification
+      const subject = (email.subject || '').toLowerCase();
+      if (subject.includes('urgent')) {
+        const senderName = (email.from || 'Someone').split('<')[0].trim() || email.from;
+        const { error: knockError } = await supabase.from("user_notifications").insert({
+          user_id,
+          type: 'sync_knock',
+          title: 'Urgent Email',
+          message: `${senderName}: ${email.subject}`,
+          metadata: {
+            source: 'gmail',
+            email_id: (data as { id?: string }).id,
+            sender: email.from,
+            subject: email.subject,
+            snippet: email.snippet,
+          },
+        });
+        if (knockError) {
+          console.error("Failed to create knock notification:", knockError);
+        } else {
+          console.log(`[composio-webhooks] SYNC knock triggered for urgent email: "${email.subject}"`);
+        }
+      }
+
       return { action: "create_inbox_message", success: true, data: { subject: email.subject } };
     }
 
