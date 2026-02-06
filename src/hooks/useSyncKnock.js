@@ -13,10 +13,48 @@ const KNOCK_TIMEOUT = 30000; // Auto-dismiss after 30s
 const SOUND_REPEAT_INTERVAL = 8000; // Repeat knock sound every 8s
 const MAX_SOUND_REPEATS = 3;
 
+// Shared AudioContext — unlocked on first user interaction
+let sharedAudioCtx = null;
+let audioCtxUnlocked = false;
+
+function getAudioContext() {
+  if (!sharedAudioCtx) {
+    sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return sharedAudioCtx;
+}
+
+// Unlock AudioContext on any user gesture (click, touch, keydown)
+function unlockAudioContext() {
+  if (audioCtxUnlocked) return;
+  const ctx = getAudioContext();
+  if (ctx.state === 'suspended') {
+    ctx.resume().then(() => {
+      audioCtxUnlocked = true;
+      console.log('[SyncKnock] AudioContext unlocked');
+    }).catch(() => {});
+  } else {
+    audioCtxUnlocked = true;
+  }
+}
+
+// Register unlock listeners once
+if (typeof window !== 'undefined') {
+  ['click', 'touchstart', 'keydown'].forEach((evt) => {
+    window.addEventListener(evt, unlockAudioContext, { once: false, passive: true });
+  });
+}
+
 // Web Audio API knock sound — three quick taps
 function playKnockSound() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getAudioContext();
+
+    // Resume if still suspended (belt & suspenders)
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+
     const taps = [0, 0.12, 0.24]; // timing of three taps
 
     taps.forEach((delay) => {
@@ -35,9 +73,6 @@ function playKnockSound() {
       osc.start(ctx.currentTime + delay);
       osc.stop(ctx.currentTime + delay + 0.08);
     });
-
-    // Close context after sounds finish
-    setTimeout(() => ctx.close().catch(() => {}), 500);
   } catch (e) {
     console.warn('[SyncKnock] Sound error:', e);
   }
