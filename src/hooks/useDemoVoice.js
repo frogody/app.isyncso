@@ -91,7 +91,7 @@ export default function useDemoVoice({ demoToken, onDemoAction } = {}) {
         if (activeRef.current && !processingRef.current) {
           setTimeout(() => {
             if (activeRef.current && !processingRef.current) startListeningFnRef.current?.();
-          }, 200);
+          }, 80);
         }
       };
 
@@ -117,7 +117,7 @@ export default function useDemoVoice({ demoToken, onDemoAction } = {}) {
       rec.start();
       setVoiceState(VOICE_STATES.LISTENING);
     } catch (e) {
-      if (activeRef.current) setTimeout(() => startListeningFnRef.current?.(), 1000);
+      if (activeRef.current) setTimeout(() => startListeningFnRef.current?.(), 300);
     }
   }, [stopAudio, isMuted]);
 
@@ -134,7 +134,7 @@ export default function useDemoVoice({ demoToken, onDemoAction } = {}) {
     processingRef.current = false;
     if (!activeRef.current) return;
     setVoiceState(VOICE_STATES.LISTENING);
-    setTimeout(() => startListeningFnRef.current?.(), 500);
+    setTimeout(() => startListeningFnRef.current?.(), 150);
   }, []);
 
   // Parse [DEMO_ACTION: xxx] from responses
@@ -169,7 +169,7 @@ export default function useDemoVoice({ demoToken, onDemoAction } = {}) {
         headers,
         body: JSON.stringify({
           message: text,
-          history: historyRef.current.slice(-6),
+          history: historyRef.current.slice(-4),
           demoToken,
           stepContext: stepContextRef.current,
         }),
@@ -205,7 +205,7 @@ export default function useDemoVoice({ demoToken, onDemoAction } = {}) {
         // Fallback: separate TTS call
         try {
           const controller = new AbortController();
-          const ttsTimeout = setTimeout(() => controller.abort(), 10000);
+          const ttsTimeout = setTimeout(() => controller.abort(), 6000);
           const audioRes = await fetch(voiceUrl, {
             method: 'POST',
             signal: controller.signal,
@@ -230,7 +230,7 @@ export default function useDemoVoice({ demoToken, onDemoAction } = {}) {
         processingRef.current = false;
         return;
       }
-      if (activeRef.current) setTimeout(() => resumeListening(), 1000);
+      if (activeRef.current) setTimeout(() => resumeListening(), 300);
     }
   }, [demoToken, stopListening, stopAudio, playAudio, resumeListening, parseDemoActions, voiceUrl, headers]);
 
@@ -248,7 +248,7 @@ export default function useDemoVoice({ demoToken, onDemoAction } = {}) {
 
     try {
       const controller = new AbortController();
-      const ttsTimeout = setTimeout(() => controller.abort(), 15000);
+      const ttsTimeout = setTimeout(() => controller.abort(), 8000);
       const audioRes = await fetch(voiceUrl, {
         method: 'POST',
         signal: controller.signal,
@@ -268,9 +268,9 @@ export default function useDemoVoice({ demoToken, onDemoAction } = {}) {
       }
     } catch (_) {}
 
-    // TTS failed — just pause and resume
+    // TTS failed — resume quickly
     if (turnIdRef.current === turnId) {
-      await new Promise(r => setTimeout(r, 3000));
+      await new Promise(r => setTimeout(r, 1000));
       resumeListening();
     }
   }, [voiceUrl, headers, stopListening, stopAudio, playAudio, resumeListening]);

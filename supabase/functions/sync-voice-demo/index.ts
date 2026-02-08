@@ -1,11 +1,12 @@
 /**
- * SYNC Voice Demo API — Public demo voice assistant (no JWT)
+ * SYNC Voice Demo API — Ultra-fast public demo voice assistant
  *
- * Forked from sync-voice/index.ts with key differences:
- * - No auth required — operates with demoToken
- * - System prompt is an Account Executive demo persona
- * - Parses [DEMO_ACTION: ...] tags for orchestration
- * - Session key: demo_{token}
+ * Optimized for speed:
+ * - 8B model for sub-second LLM responses
+ * - Minimal system prompt (fewer input tokens = faster TTFT)
+ * - Parallel DB lookups + TTS
+ * - max_tokens: 35 for punchy, human-like replies
+ * - Client history only (no server-side session lookup on hot path)
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -22,116 +23,25 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 // =============================================================================
-// DEMO VOICE SYSTEM PROMPT
+// COMPACT SYSTEM PROMPT — kept short for fast TTFT
 // =============================================================================
 
-function buildDemoSystemPrompt(demoLink: Record<string, unknown> | null, stepContext: Record<string, unknown> | null): string {
-  const recipientName = (demoLink?.recipient_name as string) || 'there';
-  const companyName = (demoLink?.company_name as string) || 'your company';
-  const industry = (demoLink?.company_context as Record<string, unknown>)?.industry || '';
-  const notes = (demoLink?.company_context as Record<string, unknown>)?.notes || '';
+function buildSystemPrompt(name: string, company: string, stepContext: Record<string, unknown> | null): string {
+  let p = `You are SYNC, a friendly AI sales rep demoing iSyncso for ${name} at ${company}. Reply in 1-2 short spoken sentences. Use contractions. No markdown, no lists, no emojis. Sound natural and warm like a real person on a call.`;
 
-  let prompt = `You are SYNC, an AI Account Executive giving a personalized demo of iSyncso — an AI-powered business platform.
-
-PROSPECT INFO:
-- Name: ${recipientName}
-- Company: ${companyName}
-${industry ? `- Industry: ${industry}` : ''}
-${notes ? `- Notes: ${notes}` : ''}
-
-YOUR PERSONALITY:
-- Warm, confident, and enthusiastic — like a top AE who genuinely loves the product
-- Use the prospect's first name naturally
-- Frame every feature as a business outcome for their specific company
-- Keep responses under 3 sentences — this is a voice conversation, not a pitch deck
-- Use contractions: I'm, you're, let's, that's, we've
-- NO markdown, bullets, lists, bold, or formatting
-- NO emojis or special characters
-
-DEMO FLOW:
-- You're walking the prospect through a live demo of iSyncso
-- Guide them through features, highlighting what matters for their business
-- If they ask a question, answer it naturally, then steer back to the demo
-- If they seem ready to move on, you can suggest advancing: [DEMO_ACTION: navigate_next]
-
-DEMO ACTIONS:
-- When you want the demo to advance to the next step, include: [DEMO_ACTION: navigate_next]
-- When you want to highlight a specific feature, include: [DEMO_ACTION: highlight feature-name]
-- When the prospect wants to schedule a call, include: [DEMO_ACTION: schedule_call]
-- Actions are parsed and removed before the text is spoken — they're invisible to the prospect
-
-CONVERSATION HANDLING:
-- If the prospect asks about pricing, say something like "Pricing depends on your team size and modules. Let's schedule a call after the demo to discuss what makes sense for ${companyName}."
-- If they ask a technical question you're unsure about, say "Great question — I'll make sure our solutions team covers that in your follow-up call."
-- Always be honest — don't make up features or capabilities`;
-
-  if (stepContext) {
-    prompt += `\n\nCURRENT DEMO STEP:
-- Step Title: ${stepContext.title || 'N/A'}
-- Page: ${stepContext.page_key || 'N/A'}
-- Script: ${stepContext.dialogue || 'N/A'}
-- You just spoke about this. If the user asks a related question, answer in context.`;
+  if (stepContext?.page_key) {
+    p += ` You're currently showing the ${stepContext.page_key} page.`;
   }
 
-  return prompt;
-}
+  p += ` If they want to move on say [DEMO_ACTION: navigate_next]. If they want to book a call say [DEMO_ACTION: schedule_call].`;
 
-// =============================================================================
-// SESSION MEMORY (keyed by demo token)
-// =============================================================================
-
-async function getDemoSession(token: string): Promise<{
-  sessionId: string;
-  messages: Array<{ role: string; content: string }>;
-}> {
-  const sessionId = `demo_${token}`;
-
-  const { data: existing } = await supabase
-    .from('sync_sessions')
-    .select('session_id, messages')
-    .eq('session_id', sessionId)
-    .single();
-
-  if (existing) {
-    return { sessionId: existing.session_id, messages: existing.messages || [] };
-  }
-
-  await supabase
-    .from('sync_sessions')
-    .insert({
-      session_id: sessionId,
-      messages: [],
-      conversation_summary: null,
-      active_entities: {},
-      context: { type: 'demo', token },
-      last_agent: 'sync-voice-demo',
-      total_messages: 0,
-    });
-
-  return { sessionId, messages: [] };
-}
-
-function saveDemoSession(sessionId: string, messages: Array<{ role: string; content: string }>) {
-  const trimmed = messages.slice(-20);
-  supabase
-    .from('sync_sessions')
-    .update({
-      messages: trimmed,
-      total_messages: trimmed.length,
-      last_agent: 'sync-voice-demo',
-      last_activity: new Date().toISOString(),
-    })
-    .eq('session_id', sessionId)
-    .then(({ error }) => {
-      if (error) console.error('[sync-voice-demo] Session save error:', error.message);
-    });
+  return p;
 }
 
 // =============================================================================
 // TTS
 // =============================================================================
 
-const VALID_VOICES = ['tara', 'leah', 'jess', 'leo', 'dan', 'mia', 'zac', 'zoe'];
 const DEFAULT_VOICE = 'tara';
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -187,19 +97,17 @@ serve(async (req) => {
       ttsText,
     } = body;
 
-    // TTS-only mode
+    const voice = requestedVoice === 'tara' || requestedVoice === 'leah' || requestedVoice === 'jess' || requestedVoice === 'leo' ? requestedVoice : DEFAULT_VOICE;
+
+    // TTS-only mode (for scripted dialogue)
     if (ttsOnly && ttsText) {
-      const voice = VALID_VOICES.includes(requestedVoice) ? requestedVoice : DEFAULT_VOICE;
-      const ttsStart = Date.now();
       try {
         const ttsResult = await generateTTS(ttsText, voice);
-        console.log(`[sync-voice-demo] TTS-only: ${Date.now() - ttsStart}ms, ${ttsResult.byteLength} bytes`);
         return new Response(
           JSON.stringify({ audio: ttsResult.audio, audioFormat: 'mp3' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
-      } catch (err) {
-        console.error('[sync-voice-demo] TTS-only failed:', err);
+      } catch (_) {
         return new Response(
           JSON.stringify({ audio: null }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
@@ -214,49 +122,47 @@ serve(async (req) => {
       );
     }
 
-    const voice = VALID_VOICES.includes(requestedVoice) ? requestedVoice : DEFAULT_VOICE;
     const startTime = Date.now();
 
-    // Load demo link data for context
-    let demoLink: Record<string, unknown> | null = null;
+    // Fetch demo link (for name/company) — only select what we need
+    let recipientName = 'there';
+    let companyName = 'your company';
+    let demoLinkId: string | null = null;
+
     if (demoToken) {
-      const { data } = await supabase
+      // Non-blocking: start fetch but don't wait if it's slow
+      const linkPromise = supabase
         .from('demo_links')
-        .select('*')
+        .select('id, recipient_name, company_name')
         .eq('token', demoToken)
         .single();
-      demoLink = data;
+
+      // Give it 300ms max — if DB is slow, use defaults
+      const result = await Promise.race([
+        linkPromise,
+        new Promise<null>(r => setTimeout(() => r(null), 300)),
+      ]) as { data: Record<string, unknown> } | null;
+
+      if (result?.data) {
+        recipientName = (result.data.recipient_name as string) || recipientName;
+        companyName = (result.data.company_name as string) || companyName;
+        demoLinkId = result.data.id as string;
+      }
     }
 
-    // Load or create session
-    let session: { sessionId: string; messages: Array<{ role: string; content: string }> } | null = null;
-    if (demoToken) {
-      try {
-        session = await getDemoSession(demoToken);
-      } catch (_) { /* non-critical */ }
-    }
-
-    // Build messages for LLM
-    const systemPrompt = buildDemoSystemPrompt(demoLink, stepContext);
+    // Build compact messages — only use client-side history (skip DB session)
+    const systemPrompt = buildSystemPrompt(recipientName, companyName, stepContext);
     const messages: Array<{ role: string; content: string }> = [
       { role: 'system', content: systemPrompt },
     ];
 
-    // Add persisted session messages
-    if (session?.messages?.length) {
-      for (const msg of session.messages.slice(-6)) {
-        if (msg.role && msg.content) messages.push(msg);
-      }
-    }
-
-    // Add client-side history
-    for (const msg of history) {
+    // Only last 4 history messages to keep input tokens minimal
+    for (const msg of history.slice(-4)) {
       if (msg.role && msg.content) messages.push(msg);
     }
-
     messages.push({ role: 'user', content: message });
 
-    // LLM call — use fast turbo model with tight token limit for voice
+    // LLM call — 8B turbo for speed, 35 tokens for punchy replies
     const llmStart = Date.now();
     const llmResponse = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
@@ -265,10 +171,10 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
+        model: 'meta-llama/Llama-3.1-8B-Instruct-Turbo',
         messages,
-        temperature: 0.6,
-        max_tokens: 80,
+        temperature: 0.5,
+        max_tokens: 35,
         stream: false,
       }),
     });
@@ -278,56 +184,35 @@ serve(async (req) => {
     }
 
     const llmData = await llmResponse.json();
-    let responseText = llmData.choices?.[0]?.message?.content || "Hey, I'm here! Ask me anything about iSyncso.";
+    let responseText = llmData.choices?.[0]?.message?.content || "I'm here! What would you like to know?";
     const llmTime = Date.now() - llmStart;
 
-    // Strip accidental markdown
+    // Strip any markdown that slipped through
     responseText = responseText
       .replace(/\*\*/g, '')
       .replace(/\*/g, '')
       .replace(/#{1,6}\s*/g, '')
-      .replace(/```[\s\S]*?```/g, '')
       .replace(/`([^`]+)`/g, '$1')
       .trim();
 
-    console.log(`[sync-voice-demo] LLM: ${llmTime}ms — "${responseText.substring(0, 80)}" token=${demoToken?.substring(0, 8)}`);
+    console.log(`[voice-demo] ${llmTime}ms LLM — "${responseText.substring(0, 60)}"`);
 
-    // Generate TTS in parallel with session/log saves (single round-trip for client)
-    const ttsPromise = generateTTS(responseText, voice).catch((err) => {
-      console.warn('[sync-voice-demo] Inline TTS failed:', err.message);
-      return null;
-    });
+    // Start TTS immediately (parallel with log saves)
+    const ttsPromise = generateTTS(responseText, voice).catch(() => null);
 
-    // Save to session (fire-and-forget)
-    if (session) {
-      const updatedMessages = [
-        ...session.messages,
-        { role: 'user', content: message },
-        { role: 'assistant', content: responseText },
-      ];
-      saveDemoSession(session.sessionId, updatedMessages);
+    // Fire-and-forget: save conversation log
+    if (demoLinkId) {
+      supabase.rpc('append_demo_conversation', {
+        p_demo_link_id: demoLinkId,
+        p_user_msg: message,
+        p_assistant_msg: responseText,
+      }).then(() => {}).catch(() => {});
     }
 
-    // Append to conversation_log (fire-and-forget)
-    if (demoLink?.id) {
-      const existingLog = (demoLink.conversation_log as Array<unknown>) || [];
-      supabase
-        .from('demo_links')
-        .update({
-          conversation_log: [
-            ...existingLog,
-            { role: 'user', content: message, timestamp: new Date().toISOString() },
-            { role: 'assistant', content: responseText, timestamp: new Date().toISOString() },
-          ],
-        })
-        .eq('id', demoLink.id)
-        .then(() => {});
-    }
-
-    // Wait for TTS to finish
+    // Wait for TTS
     const ttsResult = await ttsPromise;
     const totalTime = Date.now() - startTime;
-    console.log(`[sync-voice-demo] Total: ${totalTime}ms (llm=${llmTime}ms, tts=${ttsResult ? 'ok' : 'skip'})`);
+    console.log(`[voice-demo] ${totalTime}ms total (llm=${llmTime}ms)`);
 
     return new Response(
       JSON.stringify({
@@ -335,29 +220,18 @@ serve(async (req) => {
         response: responseText,
         audio: ttsResult?.audio || null,
         audioFormat: ttsResult ? 'mp3' : undefined,
-        mood: 'neutral',
         timing: { total: totalTime, llm: llmTime },
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
 
   } catch (error) {
-    console.error('[sync-voice-demo] Error:', error);
-
-    const errorText = "Sorry, I had a hiccup. Could you say that again?";
-    let errorAudio = '';
-    try {
-      const tts = await generateTTS(errorText, DEFAULT_VOICE);
-      errorAudio = tts.audio;
-    } catch (_) { /* silent */ }
-
+    console.error('[voice-demo] Error:', error);
     return new Response(
       JSON.stringify({
-        text: errorText,
-        response: errorText,
-        audio: errorAudio || undefined,
-        audioFormat: errorAudio ? 'mp3' : undefined,
-        mood: 'neutral',
+        text: "Sorry, could you say that again?",
+        response: "Sorry, could you say that again?",
+        audio: null,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
