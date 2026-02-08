@@ -144,3 +144,6 @@ verify_jwt = false
 
 [functions.process-queue]
 verify_jwt = false
+
+[functions.sync-voice-demo]
+verify_jwt = false

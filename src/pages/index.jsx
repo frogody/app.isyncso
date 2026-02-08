@@ -323,6 +323,9 @@ import PlatformAdminSupport from "./admin/AdminSupport";
 import PlatformAdminAI from "./admin/AdminAI";
 import PlatformAdminCredits from "./admin/AdminCredits";
 import PlatformAdminGrowthNests from "./admin/AdminGrowthNests";
+import PlatformAdminDemos from "./admin/AdminDemos";
+
+import DemoExperience from "./DemoExperience";
 
 // Providers needed for admin routes (since they don't use main Layout)
 import { UserProvider } from "@/components/context/UserContext";
@@ -670,6 +673,16 @@ function PagesContent() {
         );
     }
 
+    // Demo routes - public, no auth required
+    const isDemoRoute = location.pathname.startsWith('/demo');
+    if (isDemoRoute) {
+        return (
+            <Routes>
+                <Route path="/demo" element={<DemoExperience />} />
+            </Routes>
+        );
+    }
+
     // Client Portal routes - uses ClientProvider and ClientLayout
     // URL Structure: /portal/:org/... where :org is the organization slug
     // This makes it clear each organization has its own branded portal
@@ -725,6 +738,7 @@ function PagesContent() {
                             <Route path="ai" element={<PlatformAdminAI />} />
                             <Route path="credits" element={<PlatformAdminCredits />} />
                             <Route path="growth-nests" element={<PlatformAdminGrowthNests />} />
+                            <Route path="demos" element={<PlatformAdminDemos />} />
                         </Route>
                     </Routes>
                 </PermissionProvider>

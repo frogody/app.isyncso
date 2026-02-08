@@ -28,6 +28,7 @@ import {
   Bot,
   Package,
   Coins,
+  Presentation,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +43,7 @@ const adminNavItems = [
   { title: 'Apps', href: '/admin/apps', icon: AppWindow },
   { title: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { divider: true },
+  { title: 'Demos', href: '/admin/demos', icon: Presentation },
   { title: 'Content', href: '/admin/content', icon: FileText },
   { title: 'Support', href: '/admin/support', icon: Headphones },
   { title: 'AI & Automation', href: '/admin/ai', icon: Bot },
