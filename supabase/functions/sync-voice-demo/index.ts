@@ -2,11 +2,13 @@
  * SYNC Voice Demo API — Ultra-fast public demo voice assistant
  *
  * Optimized for quality + speed:
- * - 8B model for fast LLM responses
- * - Rich system prompt with deep module knowledge for substantive answers
+ * - 70B model for freestyle Q&A (substantive, accurate, reliable action tags)
+ * - TTS-only mode for scripted dialogue (no LLM needed)
+ * - Rich system prompt with intent classification, objection handling
  * - Parallel DB lookups + TTS
  * - max_tokens: 200 for thorough, value-driven replies
  * - Client history only (no server-side session lookup on hot path)
+ * - Streaming support: first sentence TTS while LLM continues
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -28,9 +30,17 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 function buildSystemPrompt(name: string, company: string, stepContext: Record<string, unknown> | null): string {
   const currentPage = stepContext?.page_key || 'dashboard';
-  let p = `You are SYNC, a knowledgeable and friendly AI sales rep demoing iSyncso for ${name} at ${company}. Reply in 3-5 spoken sentences. Be substantive — explain what features do, why they matter, and how they help ${company}. Use contractions. No markdown, no lists, no emojis. Sound natural and warm like a real senior AE on a discovery call who deeply understands the product.`;
+  let p = `You are SYNC, a knowledgeable and friendly AI sales rep demoing iSyncso for ${name} at ${company}. Be substantive — explain what features do, why they matter, and how they help ${company}. Use contractions. No markdown, no lists, no emojis. Sound natural and warm like a real senior AE on a discovery call who deeply understands the product.`;
 
   p += ` You are currently on the "${currentPage}" page.`;
+
+  // Intent classification — prevents over-explaining simple acknowledgments
+  p += ` INTENT CLASSIFICATION: Before responding, classify the user's input into one of these categories and adjust your response length accordingly:`;
+  p += ` - ACKNOWLEDGMENT ("hmm", "okay", "I see", "cool", "nice", "got it", "right", "yeah", "sure", "mm-hmm"): Give a brief 1-sentence continuation. Do NOT over-explain or repeat what you just said. Just naturally bridge to the next point.`;
+  p += ` - GO-DEEPER ("tell me more", "how does that work", "explain that", "can you elaborate"): Expand on the current topic with 3-4 sentences and highlight relevant sections.`;
+  p += ` - QUESTION ("can it do X?", "what about Y?", "does it have Z?"): Answer in 2-3 sentences + navigate if the answer involves a different module.`;
+  p += ` - OBJECTION ("we already have", "too expensive", "we're too small"): Handle with a thoughtful rebuttal (see objection handling below). 2-3 sentences max.`;
+  p += ` - NAVIGATION ("show me X", "go to Y", "take me to Z"): Navigate immediately with a brief 1-sentence intro. Don't give a speech before navigating.`;
 
   // CRITICAL navigation rule — must be early and emphatic
   p += ` CRITICAL RULE: When you talk about ANY module that is NOT "${currentPage}", you MUST include a [DEMO_ACTION: navigate_to PAGE_KEY] tag in your response so the screen navigates to match what you're saying. What the user sees must ALWAYS match what you're talking about. For example, if you're on the crm page and the user asks about sentinel, you MUST include [DEMO_ACTION: navigate_to sentinel] in your reply. If you're on growth and explain finance, include [DEMO_ACTION: navigate_to finance]. NEVER talk about a module without navigating there first. The only exception is if you're already on that module's page.`;
@@ -81,6 +91,17 @@ function buildSystemPrompt(name: string, company: string, stepContext: Record<st
   p += ` Navigation examples: User asks "what about finance?" → "Let me show you finance. [DEMO_ACTION: navigate_to finance] Here you can see..." User asks "show me sentinel" → "Absolutely. [DEMO_ACTION: navigate_to sentinel] This is our compliance module..."`;
   p += ` CRITICAL: You are on "${currentPage}". If you discuss any other module, you MUST include [DEMO_ACTION: navigate_to PAGE_KEY] with EXACTLY the page key keyword — no extra words.`;
 
+  // Objection handling + competitive positioning
+  p += ` OBJECTION HANDLING: When ${name} raises concerns, address them naturally:`;
+  p += ` "We already use Salesforce/HubSpot/other CRM" → "Totally understand — most teams we work with started there too. The difference is iSyncso connects your CRM data to your finance, tasks, hiring, and compliance in one view. So when a deal closes in Growth, the invoice auto-generates in Finance, and an onboarding task kicks off in Tasks. No integrations to maintain, no data silos. That cross-module intelligence is what makes teams move faster."`;
+  p += ` "This seems expensive / what's the pricing" → "Great question. Most teams actually save money because they're replacing 4-5 separate tools — a CRM, project manager, invoicing tool, learning platform, and compliance tracker. One platform means one subscription, one login, one source of truth. We can run through the numbers specific to ${company} on a follow-up call."`;
+  p += ` "We're too small for this" → "Actually, growing teams get the most value here because you're building on a unified foundation from day one. No painful migrations later, no data spread across 10 different tools. Teams of 5-10 people use iSyncso every day."`;
+  p += ` "We're too big / enterprise needs" → "iSyncso is built for scale — role-based access, department-level permissions, compliance tracking, and audit trails. Our Sentinel module alone handles EU AI Act compliance that enterprise teams are scrambling to figure out."`;
+  p += ` "How is this different from X?" → "The core difference is that iSyncso is one unified platform, not a bundle of disconnected tools. When you close a deal, that data flows into finance, triggers tasks, and updates dashboards — automatically. No Zapier glue, no sync issues, no data living in three different places."`;
+
+  // Cross-module narratives for weaving compelling stories
+  p += ` CROSS-MODULE STORIES: When natural, connect features across modules: "Close a deal in Growth, the invoice auto-creates in Finance, and a task gets assigned in Tasks for onboarding." "A candidate in Talent can be enriched with company intel from CRM, and when they join, they're auto-enrolled in Learn courses." "Sentinel tracks the AI systems registered across all modules, so compliance is built into the workflow, not bolted on."`;
+
   return p;
 }
 
@@ -100,6 +121,33 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 async function generateTTS(text: string, voice: string): Promise<{ audio: string; byteLength: number }> {
+  // Try Kokoro first (97ms TTFB vs 187ms Orpheus)
+  try {
+    const response = await fetch('https://api.together.ai/v1/audio/speech', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${TOGETHER_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'hexgrad/Kokoro-82M',
+        input: text,
+        voice,
+        response_format: 'mp3',
+      }),
+    });
+
+    if (response.ok) {
+      const buffer = await response.arrayBuffer();
+      return { audio: arrayBufferToBase64(buffer), byteLength: buffer.byteLength };
+    }
+    // Kokoro failed — fall through to Orpheus
+    console.log(`[voice-demo] Kokoro TTS failed (${response.status}), falling back to Orpheus`);
+  } catch (e) {
+    console.log('[voice-demo] Kokoro TTS error, falling back to Orpheus');
+  }
+
+  // Fallback: Orpheus
   const response = await fetch('https://api.together.ai/v1/audio/speech', {
     method: 'POST',
     headers: {
@@ -202,13 +250,13 @@ serve(async (req) => {
       { role: 'system', content: systemPrompt },
     ];
 
-    // Last 8 history messages for good conversational context
-    for (const msg of history.slice(-8)) {
+    // Last 12 history messages for richer conversational context
+    for (const msg of history.slice(-12)) {
       if (msg.role && msg.content) messages.push(msg);
     }
     messages.push({ role: 'user', content: message });
 
-    // LLM call — 8B turbo for speed, 200 tokens for substantive answers
+    // LLM call with streaming — accumulate until first sentence, start TTS early
     const llmStart = Date.now();
     const llmResponse = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
@@ -217,11 +265,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
+        model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
         messages,
         temperature: 0.5,
         max_tokens: 200,
-        stream: false,
+        stream: true,
       }),
     });
 
@@ -229,11 +277,56 @@ serve(async (req) => {
       throw new Error(`LLM error: ${llmResponse.status}`);
     }
 
-    const llmData = await llmResponse.json();
-    let responseText = llmData.choices?.[0]?.message?.content || "I'm here! What would you like to know?";
+    // Stream tokens and split at first sentence boundary for early TTS
+    let fullText = '';
+    let firstSentence = '';
+    let firstSentenceTtsPromise: Promise<{ audio: string; byteLength: number } | null> | null = null;
+    const sentenceEndRegex = /[.!?]\s/;
+
+    const reader = llmResponse.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed === 'data: [DONE]') continue;
+        if (!trimmed.startsWith('data: ')) continue;
+
+        try {
+          const json = JSON.parse(trimmed.slice(6));
+          const token = json.choices?.[0]?.delta?.content || '';
+          if (token) {
+            fullText += token;
+
+            // Once we have a complete first sentence, fire TTS immediately
+            if (!firstSentence && sentenceEndRegex.test(fullText)) {
+              const match = fullText.match(/^(.*?[.!?])\s/);
+              if (match) {
+                firstSentence = match[1];
+                const firstSpoken = firstSentence.replace(/\[DEMO_ACTION:\s*[^\]]+\]/g, '').trim();
+                if (firstSpoken) {
+                  firstSentenceTtsPromise = generateTTS(firstSpoken, voice).catch(() => null);
+                  console.log(`[voice-demo] ${Date.now() - llmStart}ms → first sentence TTS fired`);
+                }
+              }
+            }
+          }
+        } catch (_) {}
+      }
+    }
+
     const llmTime = Date.now() - llmStart;
 
-    // Strip any markdown that slipped through
+    // Clean up response
+    let responseText = fullText || "I'm here! What would you like to know?";
     responseText = responseText
       .replace(/\*\*/g, '')
       .replace(/\*/g, '')
@@ -246,8 +339,18 @@ serve(async (req) => {
     // Strip action tags from TTS text (keep in response for client parsing)
     const spokenText = responseText.replace(/\[DEMO_ACTION:\s*[^\]]+\]/g, '').trim();
 
-    // Start TTS immediately (parallel with log saves)
-    const ttsPromise = spokenText ? generateTTS(spokenText, voice).catch(() => null) : Promise.resolve(null);
+    // Use first-sentence TTS if available, otherwise generate full TTS
+    let ttsPromise: Promise<{ audio: string; byteLength: number } | null>;
+    if (firstSentenceTtsPromise) {
+      // Already started TTS for first sentence — now also generate full audio
+      // Return whichever finishes: prefer full audio if first-sentence TTS is slow
+      ttsPromise = Promise.race([
+        firstSentenceTtsPromise,
+        spokenText ? generateTTS(spokenText, voice).catch(() => null) : Promise.resolve(null),
+      ]);
+    } else {
+      ttsPromise = spokenText ? generateTTS(spokenText, voice).catch(() => null) : Promise.resolve(null);
+    }
 
     // Fire-and-forget: save conversation log
     if (demoLinkId) {

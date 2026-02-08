@@ -16,6 +16,8 @@ export default function useDemoOrchestrator() {
   const [conversationMode, setConversationMode] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(null);
+  const [previousPage, setPreviousPage] = useState(null);
+  const visitedPagesRef = useRef(new Set());
 
   const startTimeRef = useRef(null);
   const stepStartRef = useRef(null);
@@ -90,12 +92,16 @@ export default function useDemoOrchestrator() {
     setIsTransitioning(true);
     setHighlights([]);
 
+    // Track previous page for back button
+    setPreviousPage(currentPage !== 'loading' ? currentPage : null);
+
     // Small delay for fade out
     await new Promise(r => setTimeout(r, 300));
 
-    // Switch page
+    // Switch page and mark as visited
     setCurrentPage(step.page_key);
     setCurrentStepIndex(index);
+    visitedPagesRef.current.add(step.page_key);
     stepStartRef.current = Date.now();
 
     // Fade in
@@ -133,10 +139,12 @@ export default function useDemoOrchestrator() {
       goToStep(stepIndex);
     } else {
       // Page exists but no scripted step — just switch the page directly
+      setPreviousPage(currentPage !== 'loading' ? currentPage : null);
       setIsTransitioning(true);
       setHighlights([]);
       setTimeout(() => {
         setCurrentPage(pageKey);
+        visitedPagesRef.current.add(pageKey);
         setTimeout(() => setIsTransitioning(false), 100);
       }, 300);
     }
@@ -170,10 +178,24 @@ export default function useDemoOrchestrator() {
     setHighlights([]);
   }, []);
 
-  // Resume scripted demo
+  // Resume scripted demo — find first unvisited step
   const resumeScript = useCallback(() => {
     setConversationMode(false);
-  }, []);
+    // Find next unvisited step
+    const nextUnvisited = steps.findIndex(
+      (s, i) => i > currentStepIndex && !visitedPagesRef.current.has(s.page_key)
+    );
+    if (nextUnvisited >= 0) {
+      return nextUnvisited;
+    }
+    // All visited — just advance from current
+    return currentStepIndex + 1 < steps.length ? currentStepIndex + 1 : -1;
+  }, [steps, currentStepIndex]);
+
+  // Go back to previous page (conversation mode only)
+  const goBack = useCallback(() => {
+    if (previousPage) goToPage(previousPage);
+  }, [previousPage, goToPage]);
 
   // Complete the demo
   const completeDemo = useCallback(async () => {
@@ -230,11 +252,13 @@ export default function useDemoOrchestrator() {
     isLoaded,
     isLastStep,
     error,
+    previousPage,
 
     // Methods
     loadDemo,
     goToStep,
     goToPage,
+    goBack,
     advanceStep,
     executeHighlights,
     clearHighlights,

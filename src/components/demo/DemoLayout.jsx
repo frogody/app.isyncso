@@ -1,11 +1,11 @@
 import React from 'react';
 import DemoSidebar from './DemoSidebar';
 
-export default function DemoLayout({ currentPage, children, voicePanel }) {
+export default function DemoLayout({ currentPage, children, voicePanel, onNavigate }) {
   return (
     <div className="flex h-screen">
       {/* Sidebar — matches real app: 72px/80px icon-only */}
-      <DemoSidebar currentPage={currentPage} />
+      <DemoSidebar currentPage={currentPage} onNavigate={onNavigate} />
 
       {/* Main content — matches real app structure */}
       <main className="relative flex-1 overflow-auto">

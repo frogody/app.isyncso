@@ -1,5 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
+
+// Contextual suggestion chips per page
+const PAGE_SUGGESTIONS = {
+  dashboard: ["How do these KPIs update?", "Show me Growth", "What modules are included?"],
+  growth: ["How does AI scoring work?", "Show me a deal example", "Show me Finance"],
+  crm: ["How does contact enrichment work?", "What's the lead scoring based on?", "Show me Growth"],
+  talent: ["How does flight risk detection work?", "Show me a candidate match", "How does outreach work?"],
+  finance: ["Can I create invoices from deals?", "Show me expenses", "How does P&L tracking work?"],
+  learn: ["How are learning paths created?", "What certifications are available?", "Show me Create"],
+  create: ["What can the AI generate?", "How does brand kit work?", "Show me Products"],
+  products: ["How does inventory tracking work?", "Can I import products?", "Show me Finance"],
+  raise: ["How does investor tracking work?", "What's in the data room?", "Show me Dashboard"],
+  sentinel: ["What's the EU AI Act?", "How does risk classification work?", "Show me Integrations"],
+  inbox: ["How does unified messaging work?", "Can SYNC respond here?", "Show me Tasks"],
+  tasks: ["How does AI prioritization work?", "Can I assign tasks?", "Show me Dashboard"],
+  integrations: ["How many integrations are there?", "How does sync work?", "Show me SYNC"],
+  'sync-showcase': ["What can SYNC do?", "How many actions?", "Show me Dashboard"],
+};
 
 export default function DemoVoicePanel({
   voiceState = 'idle',
@@ -8,9 +26,13 @@ export default function DemoVoicePanel({
   onToggleMute,
   recipientName = '',
   onTextSubmit,
+  currentPage = 'dashboard',
+  responseTime = null,
 }) {
   const [textInput, setTextInput] = useState('');
   const [collapsed, setCollapsed] = useState(false);
+  const [showChips, setShowChips] = useState(true);
+  const transcriptRef = useRef(null);
 
   const stateLabels = {
     idle: 'Ready',
@@ -36,11 +58,44 @@ export default function DemoVoicePanel({
     speaking: 'text-emerald-400',
   };
 
+  // Connection quality based on response time
+  const getConnectionDot = () => {
+    if (!responseTime) return 'bg-zinc-500';
+    if (responseTime < 3000) return 'bg-emerald-400';
+    if (responseTime < 5000) return 'bg-amber-400';
+    return 'bg-red-400';
+  };
+
+  // Show chips when speaking finishes, hide when user interacts
+  useEffect(() => {
+    if (voiceState === 'speaking') {
+      setShowChips(false);
+    } else if (voiceState === 'listening' && transcript && !transcript.startsWith('You:')) {
+      // SYNC finished speaking, show chips after brief delay
+      const timer = setTimeout(() => setShowChips(true), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [voiceState, transcript]);
+
+  // Auto-scroll transcript
+  useEffect(() => {
+    if (transcriptRef.current) {
+      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+    }
+  }, [transcript]);
+
   // Sync avatar ring segments (simplified)
   const segments = [
     '#ec4899', '#06b6d4', '#6366f1', '#10b981', '#86EFAC',
     '#f59e0b', '#f43f5e', '#f97316', '#3b82f6', '#14b8a6',
   ];
+
+  const suggestions = PAGE_SUGGESTIONS[currentPage] || PAGE_SUGGESTIONS.dashboard;
+
+  const handleChipClick = (chipText) => {
+    setShowChips(false);
+    onTextSubmit?.(chipText);
+  };
 
   return (
     <div className="bg-black/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
@@ -78,8 +133,8 @@ export default function DemoVoicePanel({
               background: 'radial-gradient(circle, rgba(168,85,247,0.4) 0%, rgba(0,0,0,0.7) 100%)',
             }}
           />
-          {/* Status dot */}
-          <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-black ${stateColors[voiceState] || stateColors.idle}`} />
+          {/* Connection quality dot */}
+          <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-black ${getConnectionDot()}`} />
         </div>
 
         <div className="flex-1 text-left min-w-0">
@@ -96,10 +151,17 @@ export default function DemoVoicePanel({
         )}
       </button>
 
+      {/* Collapsed preview — show last message as 1-line */}
+      {collapsed && transcript && (
+        <div className="px-3 pb-2">
+          <p className="text-xs text-zinc-500 truncate">{transcript}</p>
+        </div>
+      )}
+
       {!collapsed && (
         <>
           {/* Transcript */}
-          <div className="px-3 pb-2 max-h-40 overflow-y-auto">
+          <div ref={transcriptRef} className="px-3 pb-2 max-h-40 overflow-y-auto scroll-smooth">
             {transcript ? (
               <div className="bg-white/5 rounded-xl p-2.5 text-sm text-zinc-300 leading-relaxed">
                 {transcript}
@@ -110,6 +172,21 @@ export default function DemoVoicePanel({
               </div>
             )}
           </div>
+
+          {/* Suggestion chips */}
+          {showChips && voiceState === 'listening' && (
+            <div className="px-3 pb-2 flex flex-wrap gap-1.5">
+              {suggestions.map((chip, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleChipClick(chip)}
+                  className="text-xs px-2.5 py-1 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full hover:bg-cyan-500/20 transition-colors truncate max-w-full"
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Listening indicator */}
           {voiceState === 'listening' && (
@@ -146,6 +223,7 @@ export default function DemoVoicePanel({
                 onChange={(e) => setTextInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && textInput.trim()) {
+                    setShowChips(false);
                     onTextSubmit?.(textInput.trim());
                     setTextInput('');
                   }
@@ -156,6 +234,7 @@ export default function DemoVoicePanel({
               <button
                 onClick={() => {
                   if (textInput.trim()) {
+                    setShowChips(false);
                     onTextSubmit?.(textInput.trim());
                     setTextInput('');
                   }

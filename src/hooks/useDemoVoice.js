@@ -25,6 +25,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
   const onDemoActionRef = useRef(onDemoAction);
   const onDialogueEndRef = useRef(onDialogueEnd);
   const onUserSpokeRef = useRef(onUserSpoke);
+  const audioCacheRef = useRef(new Map()); // Pre-cached audio: text → base64
 
   useEffect(() => { onDemoActionRef.current = onDemoAction; }, [onDemoAction]);
   useEffect(() => { onDialogueEndRef.current = onDialogueEnd; }, [onDialogueEnd]);
@@ -138,7 +139,8 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
     processingRef.current = false;
     if (!activeRef.current) return;
     setVoiceState(VOICE_STATES.LISTENING);
-    setTimeout(() => startListeningFnRef.current?.(), 150);
+    // 400ms breathing room prevents echo/feedback pickup after SYNC speaks
+    setTimeout(() => startListeningFnRef.current?.(), 400);
   }, []);
 
   // Parse [DEMO_ACTION: xxx] from responses
@@ -176,7 +178,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
         headers,
         body: JSON.stringify({
           message: text,
-          history: historyRef.current.slice(-4),
+          history: historyRef.current.slice(-12),
           demoToken,
           stepContext: stepContextRef.current,
         }),
@@ -189,7 +191,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
       const rawReply = data.response || data.text || '';
       const { cleanText: reply, actions } = parseDemoActions(rawReply);
 
-      historyRef.current = [...historyRef.current, { role: 'user', content: text }, { role: 'assistant', content: reply }].slice(-10);
+      historyRef.current = [...historyRef.current, { role: 'user', content: text }, { role: 'assistant', content: reply }].slice(-20);
       setTranscript(reply);
 
       // Fire demo actions
@@ -241,6 +243,30 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
     }
   }, [demoToken, stopListening, stopAudio, playAudio, resumeListening, parseDemoActions, voiceUrl, headers]);
 
+  // Pre-cache TTS audio for upcoming scripted dialogue (fire-and-forget)
+  const preCacheAudio = useCallback((texts) => {
+    if (!texts || !texts.length) return;
+    texts.forEach(text => {
+      if (!text || audioCacheRef.current.has(text)) return;
+      // Mark as pending to avoid duplicate fetches
+      audioCacheRef.current.set(text, 'pending');
+      fetch(voiceUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ ttsOnly: true, ttsText: text }),
+      })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.audio) {
+            audioCacheRef.current.set(text, data.audio);
+          } else {
+            audioCacheRef.current.delete(text);
+          }
+        })
+        .catch(() => audioCacheRef.current.delete(text));
+    });
+  }, [voiceUrl, headers]);
+
   // Speak pre-written dialogue (scripted steps)
   const speakDialogue = useCallback(async (text) => {
     if (!text) return;
@@ -258,6 +284,13 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
       onDialogueEndRef.current?.();
     };
 
+    // Check pre-cache first
+    const cached = audioCacheRef.current.get(text);
+    if (cached && cached !== 'pending') {
+      playAudio(cached, turnId, handleDone);
+      return;
+    }
+
     try {
       const controller = new AbortController();
       const ttsTimeout = setTimeout(() => controller.abort(), 8000);
@@ -274,6 +307,8 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
       if (audioRes.ok) {
         const audioData = await audioRes.json();
         if (audioData.audio) {
+          // Cache for potential replay
+          audioCacheRef.current.set(text, audioData.audio);
           playAudio(audioData.audio, turnId, handleDone);
           return;
         }
@@ -282,7 +317,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
 
     // TTS failed — wait long enough to read the transcript before advancing
     if (turnIdRef.current === turnId) {
-      const readTime = Math.max(3000, text.length * 40); // ~40ms per char, min 3s
+      const readTime = Math.max(3000, text.length * 40);
       await new Promise(r => setTimeout(r, readTime));
       handleDone();
     }
@@ -372,6 +407,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
     activate,
     deactivate,
     speakDialogue,
+    preCacheAudio,
     setStepContext,
     toggleMute,
     submitText,

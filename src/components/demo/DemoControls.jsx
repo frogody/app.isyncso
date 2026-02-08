@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, MessageCircle, X, Pause, Play } from 'lucide-react';
+import { ChevronRight, ChevronLeft, MessageCircle, X, Play } from 'lucide-react';
 
 export default function DemoControls({
   currentStep = 0,
@@ -7,10 +7,10 @@ export default function DemoControls({
   onNext,
   onAskQuestion,
   onEndDemo,
-  isPaused = false,
-  onTogglePause,
   conversationMode = false,
   onResumeScript,
+  onBack,
+  canGoBack = false,
 }) {
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40" style={{ marginLeft: '-160px' }}>
@@ -37,6 +37,18 @@ export default function DemoControls({
         </span>
 
         <div className="w-px h-6 bg-zinc-700" />
+
+        {/* Back button — only in conversation mode with history */}
+        {conversationMode && canGoBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 transition-colors text-sm"
+            title="Go back"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back
+          </button>
+        )}
 
         {/* Actions */}
         {conversationMode ? (

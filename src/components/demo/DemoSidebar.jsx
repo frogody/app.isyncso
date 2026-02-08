@@ -101,7 +101,7 @@ function DemoSyncAvatar({ size = 36 }) {
   );
 }
 
-export default function DemoSidebar({ currentPage = 'dashboard' }) {
+export default function DemoSidebar({ currentPage = 'dashboard', onNavigate }) {
   return (
     <div className="hidden md:flex flex-col w-[72px] lg:w-[80px] h-screen bg-black/95 border-r border-zinc-800 shrink-0 overflow-visible relative z-20">
       {/* Navigation */}
@@ -117,9 +117,10 @@ export default function DemoSidebar({ currentPage = 'dashboard' }) {
             const isActive = currentPage === item.key;
             const Icon = item.icon;
             return (
-              <div
+              <button
                 key={item.key}
-                className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative cursor-default
+                onClick={() => onNavigate?.(item.key)}
+                className={`flex items-center justify-center min-h-[44px] w-full p-3 rounded-xl transition-all duration-200 group relative cursor-pointer hover:bg-white/5
                   ${isActive
                     ? 'text-cyan-400 bg-cyan-950/30'
                     : 'text-gray-400'
@@ -131,7 +132,7 @@ export default function DemoSidebar({ currentPage = 'dashboard' }) {
                 {isActive && (
                   <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-500 rounded-l-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
                 )}
-              </div>
+              </button>
             );
           })}
         </div>
@@ -145,9 +146,10 @@ export default function DemoSidebar({ currentPage = 'dashboard' }) {
             const Icon = item.icon;
             const colors = item.color;
             return (
-              <div
+              <button
                 key={item.key}
-                className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative cursor-default w-full
+                onClick={() => onNavigate?.(item.key)}
+                className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative cursor-pointer hover:bg-white/5 w-full
                   ${isActive
                     ? `${colors.text} ${colors.bg}`
                     : 'text-gray-400'
@@ -159,7 +161,7 @@ export default function DemoSidebar({ currentPage = 'dashboard' }) {
                 {isActive && (
                   <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-l-full ${colors.solid} ${colors.glow}`} />
                 )}
-              </div>
+              </button>
             );
           })}
         </div>

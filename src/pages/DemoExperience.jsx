@@ -8,6 +8,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Sparkles, AlertCircle, CheckCircle, Calendar, ArrowRight } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import DemoLayout from '@/components/demo/DemoLayout';
 import DemoOverlay from '@/components/demo/DemoOverlay';
@@ -116,6 +117,7 @@ export default function DemoExperience() {
   const [showEndScreen, setShowEndScreen] = useState(false);
   const greetingSpoken = useRef(false);
   const stepSpeechRef = useRef(-1);
+  const prevStepRef = useRef(-1);
 
   const autoAdvanceTimer = useRef(null);
 
@@ -136,7 +138,7 @@ export default function DemoExperience() {
     }
   }, [orchestrator]);
 
-  // Auto-advance after scripted dialogue finishes playing
+  // Auto-advance after scripted dialogue finishes playing — dynamic timing
   const handleDialogueEnd = useCallback(() => {
     // Don't auto-advance if in conversation mode
     if (orchestrator.conversationMode) return;
@@ -148,12 +150,18 @@ export default function DemoExperience() {
     // Clear any pending timer
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
 
-    // Wait 5s after speech ends so prospect can absorb the visuals
+    // Dynamic pause based on dialogue length
+    const dialogue = orchestrator.currentDialogue || '';
+    const wordCount = dialogue.split(/\s+/).length;
+    let pauseMs = 4000; // default medium
+    if (wordCount < 15) pauseMs = 3000;      // short messages
+    else if (wordCount > 50) pauseMs = 6000;  // long messages
+
     autoAdvanceTimer.current = setTimeout(() => {
       if (!orchestrator.conversationMode) {
         orchestrator.advanceStep();
       }
-    }, 5000);
+    }, pauseMs);
   }, [orchestrator]);
 
   // Clean up timer on unmount
@@ -172,6 +180,19 @@ export default function DemoExperience() {
       clearTimeout(autoAdvanceTimer.current);
       autoAdvanceTimer.current = null;
     }
+  }, [orchestrator]);
+
+  // Sidebar click navigation — enter conversation mode and navigate
+  const handleSidebarNavigate = useCallback((pageKey) => {
+    if (pageKey === orchestrator.currentPage) return;
+    if (!orchestrator.conversationMode) {
+      orchestrator.enterConversationMode();
+    }
+    if (autoAdvanceTimer.current) {
+      clearTimeout(autoAdvanceTimer.current);
+      autoAdvanceTimer.current = null;
+    }
+    orchestrator.goToPage(pageKey);
   }, [orchestrator]);
 
   const voice = useDemoVoice({
@@ -229,6 +250,16 @@ export default function DemoExperience() {
 
     const timer = setTimeout(() => {
       voice.speakDialogue(orchestrator.currentDialogue);
+
+      // Pre-cache audio for next 2 steps in background
+      const upcomingTexts = [];
+      for (let i = 1; i <= 2; i++) {
+        const futureStep = orchestrator.steps[orchestrator.currentStepIndex + i];
+        if (futureStep?.sync_dialogue) {
+          upcomingTexts.push(orchestrator.interpolateDialogue(futureStep.sync_dialogue));
+        }
+      }
+      if (upcomingTexts.length) voice.preCacheAudio(upcomingTexts);
 
       // Show highlights after speech starts
       const pageHighlights = step.highlights?.length
@@ -341,6 +372,7 @@ export default function DemoExperience() {
     return (
       <DemoLayout
         currentPage={orchestrator.currentPage}
+        onNavigate={handleSidebarNavigate}
         voicePanel={
           <DemoVoicePanel
             voiceState={voice.voiceState}
@@ -349,6 +381,7 @@ export default function DemoExperience() {
             onToggleMute={voice.toggleMute}
             recipientName={orchestrator.demoLink?.recipient_name}
             onTextSubmit={voice.submitText}
+            currentPage={orchestrator.currentPage}
           />
         }
       >
@@ -372,9 +405,15 @@ export default function DemoExperience() {
           onAskQuestion={() => orchestrator.enterConversationMode()}
           onEndDemo={() => orchestrator.completeDemo()}
           conversationMode={orchestrator.conversationMode}
+          canGoBack={!!orchestrator.previousPage}
+          onBack={() => orchestrator.goBack()}
           onResumeScript={() => {
-            orchestrator.resumeScript();
-            orchestrator.advanceStep();
+            const nextIndex = orchestrator.resumeScript();
+            if (nextIndex >= 0) {
+              orchestrator.goToStep(nextIndex);
+            } else {
+              orchestrator.advanceStep();
+            }
           }}
         />
       </DemoLayout>
@@ -387,6 +426,7 @@ export default function DemoExperience() {
   return (
     <DemoLayout
       currentPage={orchestrator.currentPage}
+      onNavigate={handleSidebarNavigate}
       voicePanel={
         <DemoVoicePanel
           voiceState={voice.voiceState}
@@ -395,24 +435,31 @@ export default function DemoExperience() {
           onToggleMute={voice.toggleMute}
           recipientName={orchestrator.demoLink?.recipient_name}
           onTextSubmit={voice.submitText}
+          currentPage={orchestrator.currentPage}
         />
       }
     >
-      <div
-        className="transition-opacity duration-300"
-        style={{ opacity: orchestrator.isTransitioning ? 0 : 1 }}
-      >
-        {PageComponent ? (
-          <PageComponent
-            companyName={orchestrator.demoLink?.company_name || 'Acme Corp'}
-            recipientName={orchestrator.demoLink?.recipient_name || 'there'}
-          />
-        ) : (
-          <div className="flex items-center justify-center h-64">
-            <p className="text-zinc-500">Loading page...</p>
-          </div>
-        )}
-      </div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={orchestrator.currentPage}
+          initial={{ opacity: 0, x: orchestrator.currentStepIndex >= prevStepRef.current ? 24 : -24, scale: 0.98 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: orchestrator.currentStepIndex >= prevStepRef.current ? -24 : 24, scale: 0.98 }}
+          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          onAnimationComplete={() => { prevStepRef.current = orchestrator.currentStepIndex; }}
+        >
+          {PageComponent ? (
+            <PageComponent
+              companyName={orchestrator.demoLink?.company_name || 'Acme Corp'}
+              recipientName={orchestrator.demoLink?.recipient_name || 'there'}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-64">
+              <p className="text-zinc-500">Loading page...</p>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
 
       <DemoOverlay highlights={orchestrator.highlights} />
       <DemoControls
@@ -422,10 +469,16 @@ export default function DemoExperience() {
         onAskQuestion={() => orchestrator.enterConversationMode()}
         onEndDemo={() => orchestrator.completeDemo()}
         conversationMode={orchestrator.conversationMode}
+        canGoBack={!!orchestrator.previousPage}
+        onBack={() => orchestrator.goBack()}
         onResumeScript={() => {
-          orchestrator.resumeScript();
-          orchestrator.advanceStep();
-        }}
+            const nextIndex = orchestrator.resumeScript();
+            if (nextIndex >= 0) {
+              orchestrator.goToStep(nextIndex);
+            } else {
+              orchestrator.advanceStep();
+            }
+          }}
       />
     </DemoLayout>
   );
