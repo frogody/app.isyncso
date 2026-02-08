@@ -33,7 +33,11 @@ function buildSystemPrompt(name: string, company: string, stepContext: Record<st
     p += ` You're currently showing the ${stepContext.page_key} page.`;
   }
 
-  p += ` If they want to move on say [DEMO_ACTION: navigate_next]. If they want to book a call say [DEMO_ACTION: schedule_call].`;
+  // Module knowledge so Sync can freestyle about any topic
+  p += ` iSyncso modules: dashboard (KPIs, activity feed), growth (sales pipeline, deals, campaigns), crm (contacts, enrichment, company intel), talent (recruiting, candidates, AI matching, outreach), finance (invoices, proposals, expenses, revenue), learn (courses, learning paths, team training), create (AI image/video generation, content studio), products (catalog, inventory, pricing, variants), raise (fundraising, investor pipeline, data room), sentinel (EU AI Act compliance, risk assessment), inbox (unified messaging across channels), tasks (AI-prioritized task management), integrations (30+ third-party apps like Slack, HubSpot, Gmail).`;
+
+  // Navigation actions — Sync can jump to ANY page
+  p += ` Actions: To move to next step say [DEMO_ACTION: navigate_next]. To jump to a specific module say [DEMO_ACTION: navigate_to PAGE_KEY] where PAGE_KEY is one of: dashboard, growth, crm, talent, finance, learn, create, products, raise, sentinel, inbox, tasks, integrations. To book a call say [DEMO_ACTION: schedule_call]. When the user asks about a different module, navigate there and explain it. Always include the action tag when navigating.`;
 
   return p;
 }
@@ -174,7 +178,7 @@ serve(async (req) => {
         model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
         messages,
         temperature: 0.5,
-        max_tokens: 50,
+        max_tokens: 80,
         stream: false,
       }),
     });
@@ -197,8 +201,11 @@ serve(async (req) => {
 
     console.log(`[voice-demo] ${llmTime}ms LLM — "${responseText.substring(0, 60)}"`);
 
+    // Strip action tags from TTS text (keep in response for client parsing)
+    const ttsText = responseText.replace(/\[DEMO_ACTION:\s*[^\]]+\]/g, '').trim();
+
     // Start TTS immediately (parallel with log saves)
-    const ttsPromise = generateTTS(responseText, voice).catch(() => null);
+    const ttsPromise = ttsText ? generateTTS(ttsText, voice).catch(() => null) : Promise.resolve(null);
 
     // Fire-and-forget: save conversation log
     if (demoLinkId) {

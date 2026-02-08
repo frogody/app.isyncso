@@ -125,6 +125,23 @@ export default function useDemoOrchestrator() {
     return step;
   }, [steps, demoLink]);
 
+  // Jump to a specific page by key (for freestyle navigation)
+  const goToPage = useCallback((pageKey) => {
+    // Find the first step that matches this page_key
+    const stepIndex = steps.findIndex(s => s.page_key === pageKey);
+    if (stepIndex >= 0) {
+      goToStep(stepIndex);
+    } else {
+      // Page exists but no scripted step — just switch the page directly
+      setIsTransitioning(true);
+      setHighlights([]);
+      setTimeout(() => {
+        setCurrentPage(pageKey);
+        setTimeout(() => setIsTransitioning(false), 100);
+      }, 300);
+    }
+  }, [steps, goToStep]);
+
   // Advance to next step
   const advanceStep = useCallback(() => {
     const nextIndex = currentStepIndex + 1;
@@ -217,6 +234,7 @@ export default function useDemoOrchestrator() {
     // Methods
     loadDemo,
     goToStep,
+    goToPage,
     advanceStep,
     executeHighlights,
     clearHighlights,

@@ -83,6 +83,9 @@ export default function DemoExperience() {
       orchestrator.advanceStep();
     } else if (action === 'schedule_call') {
       setShowEndScreen(true);
+    } else if (action.startsWith('navigate_to ')) {
+      const pageKey = action.replace('navigate_to ', '').trim().toLowerCase();
+      orchestrator.goToPage(pageKey);
     } else if (action.startsWith('highlight ')) {
       const selector = action.replace('highlight ', '');
       orchestrator.executeHighlights([{ selector, tooltip: '' }]);
@@ -116,10 +119,22 @@ export default function DemoExperience() {
     };
   }, []);
 
+  // When user speaks, enter conversation mode and cancel auto-advance
+  const handleUserSpoke = useCallback(() => {
+    if (!orchestrator.conversationMode) {
+      orchestrator.enterConversationMode();
+    }
+    if (autoAdvanceTimer.current) {
+      clearTimeout(autoAdvanceTimer.current);
+      autoAdvanceTimer.current = null;
+    }
+  }, [orchestrator]);
+
   const voice = useDemoVoice({
     demoToken: token,
     onDemoAction: handleDemoAction,
     onDialogueEnd: handleDialogueEnd,
+    onUserSpoke: handleUserSpoke,
   });
 
   // Load demo on mount
@@ -147,6 +162,16 @@ export default function DemoExperience() {
     startDemo();
   }, [orchestrator.isLoaded, demoStarted]);
 
+  // Keep step context in sync with current page (for freestyle navigation)
+  useEffect(() => {
+    if (orchestrator.isTransitioning) return;
+    voice.setStepContext({
+      title: orchestrator.currentStep?.title || orchestrator.currentPage,
+      page_key: orchestrator.currentPage,
+      dialogue: orchestrator.conversationMode ? null : orchestrator.currentDialogue,
+    });
+  }, [orchestrator.currentPage, orchestrator.isTransitioning]);
+
   // Speak dialogue when step changes (and page has rendered)
   useEffect(() => {
     if (orchestrator.currentStepIndex < 0) return;
@@ -158,14 +183,6 @@ export default function DemoExperience() {
     const step = orchestrator.currentStep;
     if (!step) return;
 
-    // Set step context for voice LLM
-    voice.setStepContext({
-      title: step.title,
-      page_key: step.page_key,
-      dialogue: orchestrator.currentDialogue,
-    });
-
-    // Speak the dialogue
     const timer = setTimeout(() => {
       voice.speakDialogue(orchestrator.currentDialogue);
 

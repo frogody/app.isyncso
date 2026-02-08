@@ -10,7 +10,7 @@ const VOICE_STATES = {
   SPEAKING: 'speaking',
 };
 
-export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd } = {}) {
+export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, onUserSpoke } = {}) {
   const [voiceState, setVoiceState] = useState(VOICE_STATES.OFF);
   const [transcript, setTranscript] = useState('');
   const [isMuted, setIsMuted] = useState(false);
@@ -24,9 +24,11 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd } 
   const stepContextRef = useRef(null);
   const onDemoActionRef = useRef(onDemoAction);
   const onDialogueEndRef = useRef(onDialogueEnd);
+  const onUserSpokeRef = useRef(onUserSpoke);
 
   useEffect(() => { onDemoActionRef.current = onDemoAction; }, [onDemoAction]);
   useEffect(() => { onDialogueEndRef.current = onDialogueEnd; }, [onDialogueEnd]);
+  useEffect(() => { onUserSpokeRef.current = onUserSpoke; }, [onUserSpoke]);
 
   const voiceUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-voice-demo`;
   const headers = {
@@ -164,6 +166,9 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd } 
     setTranscript(`You: ${text}`);
     stopListening();
     stopAudio();
+
+    // Notify parent that user spoke (enters conversation mode, cancels auto-advance)
+    onUserSpokeRef.current?.();
 
     try {
       const res = await fetch(voiceUrl, {
