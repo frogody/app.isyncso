@@ -109,7 +109,11 @@ function buildSystemPrompt(name: string, company: string, stepContext: Record<st
 // TTS
 // =============================================================================
 
-const DEFAULT_VOICE = 'tara';
+// Voice mappings per TTS model — Kokoro uses different voice IDs than Orpheus
+const ORPHEUS_DEFAULT_VOICE = 'tara';
+const KOKORO_DEFAULT_VOICE = 'af_heart'; // Warm feminine voice, best for demo AE persona
+const ORPHEUS_VOICES = ['tara', 'leah', 'jess', 'leo'];
+const KOKORO_VOICES = ['af_heart', 'af_bella', 'af_nicole', 'af_sarah', 'af_sky', 'am_adam', 'am_echo'];
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -120,7 +124,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-async function generateTTS(text: string, voice: string): Promise<{ audio: string; byteLength: number }> {
+async function generateTTS(text: string, orpheusVoice: string): Promise<{ audio: string; byteLength: number }> {
   // Try Kokoro first (97ms TTFB vs 187ms Orpheus)
   try {
     const response = await fetch('https://api.together.ai/v1/audio/speech', {
@@ -132,7 +136,7 @@ async function generateTTS(text: string, voice: string): Promise<{ audio: string
       body: JSON.stringify({
         model: 'hexgrad/Kokoro-82M',
         input: text,
-        voice,
+        voice: KOKORO_DEFAULT_VOICE,
         response_format: 'mp3',
       }),
     });
@@ -147,7 +151,7 @@ async function generateTTS(text: string, voice: string): Promise<{ audio: string
     console.log('[voice-demo] Kokoro TTS error, falling back to Orpheus');
   }
 
-  // Fallback: Orpheus
+  // Fallback: Orpheus with original voice names
   const response = await fetch('https://api.together.ai/v1/audio/speech', {
     method: 'POST',
     headers: {
@@ -157,7 +161,7 @@ async function generateTTS(text: string, voice: string): Promise<{ audio: string
     body: JSON.stringify({
       model: 'canopylabs/orpheus-3b-0.1-ft',
       input: text,
-      voice,
+      voice: orpheusVoice,
       response_format: 'mp3',
     }),
   });
@@ -191,7 +195,7 @@ serve(async (req) => {
       ttsText,
     } = body;
 
-    const voice = requestedVoice === 'tara' || requestedVoice === 'leah' || requestedVoice === 'jess' || requestedVoice === 'leo' ? requestedVoice : DEFAULT_VOICE;
+    const voice = ORPHEUS_VOICES.includes(requestedVoice) ? requestedVoice : ORPHEUS_DEFAULT_VOICE;
 
     // TTS-only mode (for scripted dialogue)
     if (ttsOnly && ttsText) {
