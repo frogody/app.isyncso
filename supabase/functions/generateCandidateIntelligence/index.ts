@@ -449,7 +449,11 @@ It's BETTER to return empty arrays than to make up irrelevant correlations.
    - Declining headcount = job security concerns
 
 5. **COMPETITORS AS LATERAL OPPORTUNITIES**:
-   - Only include if competitors are actually listed in the data
+   - MUST include 2-3 specific named companies — never generic categories
+   - Primary sources: competitors from company intelligence data, companies from COMPANY-SPECIFIC RULES section
+   - Secondary sources: candidate's previous employers' competitors, well-known companies in the candidate's industry + region
+   - FORBIDDEN phrases: "Other firms", "Similar companies", "Mid-tier firms", "Various", "Multiple", any entry without a specific company name
+   - If no competitors are in the data, use companies from COMPANY-SPECIFIC RULES and your knowledge of the industry
 ` : '';
 
   return `You are an elite recruiter intelligence analyst. Your job is to analyze candidate data and determine how likely this person is to respond positively to a job opportunity outreach.
@@ -577,7 +581,9 @@ RESPOND WITH VALID JSON ONLY (no markdown, no explanation outside JSON):
     "<pain points derived from low ratings to use as outreach hooks, e.g. 'Limited career advancement (2.8/5 rating)'>"
   ],
   "lateral_opportunities": [
-    "<specific lateral move: competitor company name + why it's relevant for THIS candidate's skills/role, e.g. 'Deloitte - their expanding audit practice needs senior accountants with Big Four experience'>"
+    "RULES: Provide exactly 2-3 entries. Each MUST name a specific real company — NEVER use generic terms like 'other firms', 'similar companies', 'mid-tier firms', 'various companies', etc. Sources for company names (in priority order): (1) competitors listed in company intelligence data, (2) companies from COMPANY-SPECIFIC RULES section, (3) candidate's PREVIOUS EMPLOYERS and their known competitors — if someone worked at EY and PwC, suggest Deloitte/KPMG, (4) well-known companies in the same industry and region. Format each entry as: 'Company Name - reason this specific company is relevant for this candidate'",
+    "<Company Name - specific reason>",
+    "<Company Name - specific reason>"
   ],
   "company_correlations": [
     {
@@ -843,6 +849,27 @@ function analyzeWithRules(candidate: CandidateData, companyIntel?: CompanyIntell
       lateralOpportunities.push(...competitors.slice(0, 5).map(c =>
         `${c.name} - competitor with similar business model`
       ));
+    }
+  }
+
+  // Source 2: Candidate's previous employers as lateral opportunity context
+  if (lateralOpportunities.length < 3 && candidate.work_history && Array.isArray(candidate.work_history) && candidate.work_history.length > 0) {
+    const previousCompanies = candidate.work_history
+      .map((w: any) => {
+        if (typeof w.company === 'object') return w.company?.name;
+        return w.company_name || w.company;
+      })
+      .filter(Boolean)
+      .filter((name: string) => name.toLowerCase() !== (candidate.company_name || '').toLowerCase());
+
+    if (previousCompanies.length > 0) {
+      const uniquePrevious = [...new Set(previousCompanies)]
+        .filter((name: string) => !lateralOpportunities.some(opp => opp.toLowerCase().includes(name.toLowerCase())))
+        .slice(0, 3 - lateralOpportunities.length);
+
+      for (const company of uniquePrevious) {
+        lateralOpportunities.push(`${company} - candidate has prior experience here, making them a strong re-hire or referral candidate`);
+      }
     }
   }
 
@@ -1214,6 +1241,18 @@ serve(async (req) => {
           if (filteredSkills > 0 || filteredCorrelations > 0) {
             console.log(`Filtered ${filteredSkills} invalid skills and ${filteredCorrelations} invalid correlations for ${candidate.job_title}`);
           }
+        }
+
+        // ISS-015 FIX: Validate lateral opportunities — reject generic entries
+        if (intelligence.lateral_opportunities && Array.isArray(intelligence.lateral_opportunities)) {
+          const genericPatterns = /\b(other\s+(firms?|companies|organizations?)|similar\s+companies|mid-tier\s+firms?|various|multiple\s+(firms?|companies)|industry\s+peers?)\b/i;
+          intelligence.lateral_opportunities = intelligence.lateral_opportunities.filter((opp: string) => {
+            if (genericPatterns.test(opp)) {
+              console.log(`ISS-015: Filtered generic lateral opportunity: "${opp}"`);
+              return false;
+            }
+            return true;
+          });
         }
 
         // Update the candidate record with all intelligence fields (including new company-correlation fields)
