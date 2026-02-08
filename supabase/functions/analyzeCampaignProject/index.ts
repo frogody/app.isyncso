@@ -1116,15 +1116,29 @@ serve(async (req) => {
     );
     console.log(`After stage filter: ${eligibleCandidates.length} eligible candidates`);
 
-    // ISS-005 FIX: Filter out candidates with pending enrichment status
-    const pendingCandidates = eligibleCandidates.filter(c =>
-      c.enrichment_status === 'pending' || c.enrichment_status === 'Pending'
-    );
-    if (pendingCandidates.length > 0) {
-      console.log(`Excluding ${pendingCandidates.length} candidates with pending enrichment`);
-      eligibleCandidates = eligibleCandidates.filter(c =>
-        c.enrichment_status !== 'pending' && c.enrichment_status !== 'Pending'
-      );
+    // ISS-005 FIX: Filter out candidates that haven't been enriched
+    // enriched_at is the reliable indicator — enrichment_status is not a real column
+    const unenrichedCandidates = eligibleCandidates.filter(c => !c.enriched_at);
+    if (unenrichedCandidates.length > 0) {
+      console.log(`ISS-005: Excluding ${unenrichedCandidates.length} unenriched candidates (no enriched_at timestamp)`);
+      eligibleCandidates = eligibleCandidates.filter(c => !!c.enriched_at);
+    }
+
+    // Layer 2: Data completeness check — even enriched candidates need minimum viable data
+    const insufficientDataCandidates = eligibleCandidates.filter(c => {
+      const hasExperience = Array.isArray(c.experience) && c.experience.length > 0;
+      const hasCurrentRole = !!(c.current_title || c.headline);
+      const hasAnySkills = Array.isArray(c.skills) && c.skills.length > 0;
+      // Require at least current role OR experience history to produce meaningful matching
+      return !hasCurrentRole && !hasExperience;
+    });
+    if (insufficientDataCandidates.length > 0) {
+      console.log(`ISS-005: Excluding ${insufficientDataCandidates.length} candidates with insufficient data for matching`);
+      eligibleCandidates = eligibleCandidates.filter(c => {
+        const hasExperience = Array.isArray(c.experience) && c.experience.length > 0;
+        const hasCurrentRole = !!(c.current_title || c.headline);
+        return hasCurrentRole || hasExperience;
+      });
     }
 
     // ISS-003 FIX: Apply company "do not poach" / deprioritize rules
@@ -1426,8 +1440,9 @@ serve(async (req) => {
           excluded_candidates: excludedByRule,
           boost_rules: boostRules,
         },
-        // ISS-005: Pending candidate filtering info
-        pending_candidates_excluded: pendingCandidates.length,
+        // ISS-005: Enrichment filtering info
+        unenriched_candidates_excluded: unenrichedCandidates.length,
+        insufficient_data_excluded: insufficientDataCandidates.length,
         matched_at: new Date().toISOString(),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
