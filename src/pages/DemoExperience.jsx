@@ -27,6 +27,7 @@ import DemoSentinel from '@/components/demo/pages/DemoSentinel';
 import DemoInbox from '@/components/demo/pages/DemoInbox';
 import DemoTasks from '@/components/demo/pages/DemoTasks';
 import DemoIntegrations from '@/components/demo/pages/DemoIntegrations';
+import DemoSync from '@/components/demo/pages/DemoSync';
 
 import useDemoOrchestrator from '@/hooks/useDemoOrchestrator';
 import useDemoVoice from '@/hooks/useDemoVoice';
@@ -46,7 +47,48 @@ const PAGE_COMPONENTS = {
   inbox: DemoInbox,
   tasks: DemoTasks,
   integrations: DemoIntegrations,
+  'sync-showcase': DemoSync,
+  sync: DemoSync,
 };
+
+// Resolve fuzzy page keys from LLM output to exact PAGE_COMPONENTS keys
+// The 8B model often adds extra words like "growth page", "the finance module", etc.
+const VALID_PAGE_KEYS = Object.keys(PAGE_COMPONENTS);
+const PAGE_KEY_ALIASES = {
+  // Common LLM variations
+  'growth pipeline': 'growth', pipeline: 'growth', sales: 'growth', deals: 'growth',
+  'crm contacts': 'crm', contacts: 'crm', 'contact management': 'crm',
+  'talent acquisition': 'talent', recruiting: 'talent', candidates: 'talent', talent_acquisition: 'talent',
+  'finance hub': 'finance', invoices: 'finance', billing: 'finance', accounting: 'finance',
+  'learning academy': 'learn', learning: 'learn', courses: 'learn', training: 'learn',
+  'content studio': 'create', 'ai content': 'create', 'create studio': 'create', content: 'create',
+  'product catalog': 'products', product: 'products', catalog: 'products', inventory: 'products',
+  fundraising: 'raise', investors: 'raise', 'fundraise': 'raise',
+  'ai compliance': 'sentinel', compliance: 'sentinel',
+  'unified inbox': 'inbox', messages: 'inbox', messaging: 'inbox',
+  'task management': 'tasks', task: 'tasks',
+  'integration': 'integrations', apps: 'integrations',
+  'sync showcase': 'sync-showcase', 'meet sync': 'sync-showcase',
+};
+
+function resolvePageKey(raw) {
+  const cleaned = raw.replace(/\b(page|module|the|a|an|view|screen|section|tab|environment)\b/gi, '').trim().toLowerCase().replace(/\s+/g, ' ');
+  // Exact match first
+  if (VALID_PAGE_KEYS.includes(cleaned)) return cleaned;
+  // Alias match
+  if (PAGE_KEY_ALIASES[cleaned]) return PAGE_KEY_ALIASES[cleaned];
+  // Substring match — check if any valid key is contained in the input
+  for (const key of VALID_PAGE_KEYS) {
+    if (cleaned.includes(key)) return key;
+  }
+  // Reverse: check if input is contained in any alias
+  for (const [alias, key] of Object.entries(PAGE_KEY_ALIASES)) {
+    if (cleaned.includes(alias) || alias.includes(cleaned)) return key;
+  }
+  // Last resort: return raw (will show fallback)
+  console.warn(`[DemoExperience] Could not resolve page key: "${raw}" → cleaned: "${cleaned}"`);
+  return cleaned;
+}
 
 // Default highlight config per page
 const PAGE_HIGHLIGHTS = {
@@ -79,15 +121,17 @@ export default function DemoExperience() {
 
   // Handle demo actions from voice LLM
   const handleDemoAction = useCallback((action) => {
-    if (action === 'navigate_next') {
+    const a = action.trim();
+    if (a === 'navigate_next') {
       orchestrator.advanceStep();
-    } else if (action === 'schedule_call') {
+    } else if (a === 'schedule_call') {
       setShowEndScreen(true);
-    } else if (action.startsWith('navigate_to ')) {
-      const pageKey = action.replace('navigate_to ', '').trim().toLowerCase();
+    } else if (a.startsWith('navigate_to ') || a.startsWith('navigate_to_')) {
+      const raw = a.replace(/^navigate_to[_ ]/, '').trim().toLowerCase();
+      const pageKey = resolvePageKey(raw);
       orchestrator.goToPage(pageKey);
-    } else if (action.startsWith('highlight ')) {
-      const selector = action.replace('highlight ', '');
+    } else if (a.startsWith('highlight ')) {
+      const selector = a.replace('highlight ', '').trim();
       orchestrator.executeHighlights([{ selector, tooltip: '' }]);
     }
   }, [orchestrator]);
@@ -292,9 +336,8 @@ export default function DemoExperience() {
     );
   }
 
-  // Sync showcase / closing special pages
-  if (orchestrator.currentPage === 'sync-showcase' || orchestrator.currentPage === 'closing') {
-    const isClosing = orchestrator.currentPage === 'closing';
+  // Closing special page
+  if (orchestrator.currentPage === 'closing') {
     return (
       <DemoLayout
         currentPage={orchestrator.currentPage}
@@ -311,16 +354,12 @@ export default function DemoExperience() {
       >
         <div className="flex items-center justify-center h-full min-h-[70vh]">
           <div className="text-center max-w-lg">
-            <div className={`w-24 h-24 rounded-3xl ${isClosing ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-cyan-500/20 border-cyan-500/30'} border flex items-center justify-center mx-auto mb-8`}>
-              <Sparkles className={`w-12 h-12 ${isClosing ? 'text-emerald-400' : 'text-cyan-400'} ${voice.isSpeaking ? 'animate-pulse' : ''}`} />
+            <div className="w-24 h-24 rounded-3xl bg-emerald-500/20 border-emerald-500/30 border flex items-center justify-center mx-auto mb-8">
+              <Sparkles className={`w-12 h-12 text-emerald-400 ${voice.isSpeaking ? 'animate-pulse' : ''}`} />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-3">
-              {isClosing ? 'Ready to Get Started?' : 'Meet Sync, Your AI Assistant'}
-            </h2>
+            <h2 className="text-2xl font-bold text-white mb-3">Ready to Get Started?</h2>
             <p className="text-zinc-400 leading-relaxed">
-              {isClosing
-                ? `That was a quick tour of iSyncso for ${orchestrator.demoLink?.company_name || 'your team'}. Speak or type to ask any final questions.`
-                : 'Sync can handle tasks across your entire platform — just by asking. Try speaking a command or ask a question.'}
+              {`That was a quick tour of iSyncso for ${orchestrator.demoLink?.company_name || 'your team'}. Speak or type to ask any final questions.`}
             </p>
           </div>
         </div>

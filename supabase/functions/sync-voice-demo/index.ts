@@ -52,13 +52,34 @@ function buildSystemPrompt(name: string, company: string, stepContext: Record<st
   p += ` INTEGRATIONS: 30+ connections including Slack, Gmail, HubSpot, Notion, Google Drive, Stripe, Salesforce, LinkedIn, Zoom, GitHub, Jira, QuickBooks. Auto-syncs records and automates actions across all connected tools.`;
   p += ` SYNC AI: Voice and text assistant spanning all 13 modules with 51 actions. Persistent memory, multi-step workflows, natural language commands. Can create invoices, find prospects, draft emails, schedule tasks — all from conversation.`;
 
-  // Navigation actions with examples
-  p += ` Action tags — include these in your reply text:`;
+  // Navigation + highlight actions with examples
+  p += ` Action tags — include EXACTLY these in your reply text (no extra words in the tag):`;
+  p += ` [DEMO_ACTION: navigate_to PAGE_KEY] = jump to a module. PAGE_KEY must be EXACTLY one of: dashboard, growth, crm, talent, finance, learn, create, products, raise, sentinel, inbox, tasks, integrations. Use ONLY the single keyword, never add extra words.`;
   p += ` [DEMO_ACTION: navigate_next] = advance to the next scripted step.`;
-  p += ` [DEMO_ACTION: navigate_to PAGE_KEY] = jump to a module page. Valid PAGE_KEY values: dashboard, growth, crm, talent, finance, learn, create, products, raise, sentinel, inbox, tasks, integrations.`;
+  p += ` [DEMO_ACTION: highlight SELECTOR] = spotlight a specific section on the current page. SELECTOR matches data-demo attributes.`;
   p += ` [DEMO_ACTION: schedule_call] = end demo and show booking screen.`;
-  p += ` Examples: User asks "what about finance?" while on crm → reply: "Let me show you the finance module. [DEMO_ACTION: navigate_to finance] It handles invoicing, proposals..." User asks "show me sentinel" → reply: "Absolutely, let me pull up Sentinel. [DEMO_ACTION: navigate_to sentinel] This is our EU AI Act compliance..." User says "next" → reply: "Sure, let's move on. [DEMO_ACTION: navigate_next]"`;
-  p += ` Remember: you are currently on "${currentPage}". If you mention any other module by name, ALWAYS include the navigate_to tag.`;
+
+  // Highlight selectors per page for interactive walkthroughs
+  p += ` Available highlight selectors per page:`;
+  p += ` dashboard: stats, pipeline, finance, learn, sentinel, raise, activity, quick-actions, team.`;
+  p += ` growth: pipeline-stats, conversion-funnel, revenue-trend, pipeline, campaigns, growth-signals.`;
+  p += ` crm: contact-stats, contacts, pagination, contact-intel.`;
+  p += ` talent: talent-stats, response-ring, pipeline-stages, candidates, campaigns, intelligence-dist.`;
+  p += ` finance: finance-stats, revenue-expense-chart, pnl-summary, invoices, ap-aging, upcoming-bills.`;
+  p += ` learn: progress-overview, learn-stats, courses, skills, heatmap, leaderboard, certifications.`;
+  p += ` create: tools, tabs, gallery, brand-assets, recent-prompts.`;
+  p += ` products: product-stats, category-tabs, products, quick-actions, alerts.`;
+  p += ` raise: raise-progress, raise-stats, investors, data-room, meetings, round-summary.`;
+  p += ` sentinel: compliance, sentinel-stats, workflow, risk-chart, systems, obligations, documents.`;
+  p += ` inbox: channels, messages, thread.`;
+  p += ` tasks: task-stats, task-board.`;
+  p += ` integrations: integration-stats, category-tabs, integrations, connected-stats.`;
+
+  // Interactive use-case instructions
+  p += ` INTERACTIVE WALKTHROUGHS: When explaining a module, walk through a concrete use case by highlighting specific sections as you explain them. For example on the growth page: "Let's say ${company} just got a hot inbound lead. [DEMO_ACTION: highlight pipeline] You'd see them appear right here in your pipeline. As your team qualifies them, just drag the card to the next stage. [DEMO_ACTION: highlight conversion-funnel] And this funnel shows you exactly where deals tend to stall, so you can coach your team on the right actions." On finance: "Imagine ${company} just closed a deal. [DEMO_ACTION: highlight invoices] You'd create the invoice right from this table — client info pulls in automatically from your CRM. [DEMO_ACTION: highlight pnl-summary] And it immediately flows into your P&L so you've got a real-time picture of profitability." Do this naturally, weaving highlights into your explanation. Don't just describe — point to specific parts of the screen as you talk.`;
+
+  p += ` Navigation examples: User asks "what about finance?" → "Let me show you finance. [DEMO_ACTION: navigate_to finance] Here you can see..." User asks "show me sentinel" → "Absolutely. [DEMO_ACTION: navigate_to sentinel] This is our compliance module..."`;
+  p += ` CRITICAL: You are on "${currentPage}". If you discuss any other module, you MUST include [DEMO_ACTION: navigate_to PAGE_KEY] with EXACTLY the page key keyword — no extra words.`;
 
   return p;
 }
