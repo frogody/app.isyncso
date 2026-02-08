@@ -61,10 +61,21 @@ function buildSystemPrompt(name: string, company: string, stepContext: Record<st
   p += ` TASKS: Kanban task management with AI prioritization. Brain icon flags high-impact tasks. Labels, subtask progress, priority levels, assignee tracking, overdue alerts. Board and list views.`;
   p += ` INTEGRATIONS: 30+ connections including Slack, Gmail, HubSpot, Notion, Google Drive, Stripe, Salesforce, LinkedIn, Zoom, GitHub, Jira, QuickBooks. Auto-syncs records and automates actions across all connected tools.`;
   p += ` SYNC AI: Voice and text assistant spanning all 13 modules with 51 actions. Persistent memory, multi-step workflows, natural language commands. Can create invoices, find prospects, draft emails, schedule tasks — all from conversation.`;
+  p += ` SUB-PAGES: Each module has dedicated sub-pages for deeper exploration. When the user wants to go deeper into a specific area, navigate to the sub-page:`;
+  p += ` Finance sub-pages: finance-invoices (invoice list/management), finance-proposals (create/track proposals), finance-expenses (expense tracking vs budget), finance-ledger (general ledger/chart of accounts), finance-payables (AP aging/vendor payments), finance-reports (P&L, balance sheet, cash flow reports).`;
+  p += ` Growth sub-pages: growth-pipeline (detailed kanban pipeline board), growth-campaigns (outbound campaign management), growth-signals (customer buying signals), growth-opportunities (opportunity tracking/forecast).`;
+  p += ` CRM sub-pages: crm-leads (lead scoring/management), crm-prospects (prospect enrichment pipeline), crm-customers (customer health monitoring), crm-companies (company intelligence profiles).`;
+  p += ` Talent sub-pages: talent-candidates (AI-matched candidate database), talent-projects (recruitment projects/open roles), talent-campaigns (outreach campaign analytics), talent-nests (candidate pool marketplace), talent-outreach (multi-channel SMS/email outreach).`;
+  p += ` Learn sub-pages: learn-courses (course catalog/enrollment), learn-skills (team skill competency matrix), learn-builder (custom course creation), learn-certifications (verified certification tracking).`;
+  p += ` Create sub-pages: create-branding (brand kit with colors/fonts/logo), create-images (AI image generation), create-videos (AI video creation), create-library (asset library/storage).`;
+  p += ` Products sub-pages: products-digital (SaaS/license products), products-physical (physical goods/SKUs), products-shipping (shipment tracking), products-receiving (supplier receiving/QC), products-inventory (stock levels/reorder alerts).`;
+  p += ` Raise sub-pages: raise-investors (investor pipeline/database), raise-pitchdecks (pitch deck analytics), raise-dataroom (encrypted document sharing), raise-campaigns (investor outreach).`;
+  p += ` Sentinel sub-pages: sentinel-systems (AI system inventory/classification), sentinel-roadmap (compliance milestones/deadlines), sentinel-documents (generate Annex IV docs/conformity declarations).`;
+  p += ` Sync sub-pages: sync-agent (SYNC AI chat interface), sync-activity (action history/analytics).`;
 
   // Navigation + highlight actions with examples
   p += ` Action tags — include EXACTLY these in your reply text (no extra words in the tag):`;
-  p += ` [DEMO_ACTION: navigate_to PAGE_KEY] = jump to a module. PAGE_KEY must be EXACTLY one of: dashboard, growth, crm, talent, finance, learn, create, products, raise, sentinel, inbox, tasks, integrations. Use ONLY the single keyword, never add extra words.`;
+  p += ` [DEMO_ACTION: navigate_to PAGE_KEY] = jump to a module or sub-page. PAGE_KEY must be EXACTLY one of: dashboard, growth, crm, talent, finance, learn, create, products, raise, sentinel, inbox, tasks, integrations, sync-showcase, finance-invoices, finance-proposals, finance-expenses, finance-ledger, finance-payables, finance-reports, growth-pipeline, growth-campaigns, growth-signals, growth-opportunities, crm-leads, crm-prospects, crm-customers, crm-companies, talent-candidates, talent-projects, talent-campaigns, talent-nests, talent-outreach, learn-courses, learn-skills, learn-builder, learn-certifications, create-branding, create-images, create-videos, create-library, products-digital, products-physical, products-shipping, products-receiving, products-inventory, raise-investors, raise-pitchdecks, raise-dataroom, raise-campaigns, sentinel-systems, sentinel-roadmap, sentinel-documents, sync-agent, sync-activity. Use ONLY the exact key, never add extra words.`;
   p += ` [DEMO_ACTION: navigate_next] = advance to the next scripted step.`;
   p += ` [DEMO_ACTION: highlight SELECTOR] = spotlight a specific section on the current page. SELECTOR matches data-demo attributes.`;
   p += ` [DEMO_ACTION: schedule_call] = end demo and show booking screen.`;
@@ -84,6 +95,17 @@ function buildSystemPrompt(name: string, company: string, stepContext: Record<st
   p += ` inbox: channels, messages, thread.`;
   p += ` tasks: task-stats, task-board.`;
   p += ` integrations: integration-stats, category-tabs, integrations, connected-stats.`;
+  p += ` Sub-page highlight selectors:`;
+  p += ` finance-invoices: invoices-list. finance-proposals: proposals-list. finance-expenses: expenses-list. finance-ledger: ledger. finance-payables: payables-list. finance-reports: reports-grid.`;
+  p += ` growth-pipeline: pipeline-board. growth-campaigns: campaigns-list. growth-signals: signals-feed. growth-opportunities: opportunities-table.`;
+  p += ` crm-leads: leads-table. crm-prospects: prospects-grid. crm-customers: customers-table. crm-companies: companies-grid.`;
+  p += ` talent-candidates: candidates-table. talent-projects: projects-grid. talent-campaigns: talent-campaigns. talent-nests: nests-marketplace. talent-outreach: outreach-messages.`;
+  p += ` learn-courses: course-catalog. learn-skills: skills-matrix. learn-builder: course-builder. learn-certifications: certifications-grid.`;
+  p += ` create-branding: brand-kit. create-images: image-generator. create-videos: video-generator. create-library: asset-library.`;
+  p += ` products-digital: digital-products. products-physical: physical-products. products-shipping: shipping-table. products-receiving: receiving-log. products-inventory: inventory-table.`;
+  p += ` raise-investors: investor-pipeline. raise-pitchdecks: pitch-decks. raise-dataroom: data-room. raise-campaigns: raise-campaigns.`;
+  p += ` sentinel-systems: ai-systems. sentinel-roadmap: compliance-roadmap. sentinel-documents: sentinel-documents.`;
+  p += ` sync-agent: sync-agent. sync-activity: sync-activity.`;
 
   // Interactive use-case instructions
   p += ` INTERACTIVE WALKTHROUGHS: When explaining a module, walk through a concrete use case by highlighting specific sections as you explain them. For example on the growth page: "Let's say ${company} just got a hot inbound lead. [DEMO_ACTION: highlight pipeline] You'd see them appear right here in your pipeline. As your team qualifies them, just drag the card to the next stage. [DEMO_ACTION: highlight conversion-funnel] And this funnel shows you exactly where deals tend to stall, so you can coach your team on the right actions." On finance: "Imagine ${company} just closed a deal. [DEMO_ACTION: highlight invoices] You'd create the invoice right from this table — client info pulls in automatically from your CRM. [DEMO_ACTION: highlight pnl-summary] And it immediately flows into your P&L so you've got a real-time picture of profitability." Do this naturally, weaving highlights into your explanation. Don't just describe — point to specific parts of the screen as you talk.`;

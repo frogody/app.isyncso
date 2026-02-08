@@ -1,22 +1,74 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
-// Contextual suggestion chips per page
+// Contextual suggestion chips per page (including sub-pages)
 const PAGE_SUGGESTIONS = {
-  dashboard: ["How do these KPIs update?", "Show me Growth", "What modules are included?"],
-  growth: ["How does AI scoring work?", "Show me a deal example", "Show me Finance"],
-  crm: ["How does contact enrichment work?", "What's the lead scoring based on?", "Show me Growth"],
-  talent: ["How does flight risk detection work?", "Show me a candidate match", "How does outreach work?"],
-  finance: ["Can I create invoices from deals?", "Show me expenses", "How does P&L tracking work?"],
-  learn: ["How are learning paths created?", "What certifications are available?", "Show me Create"],
-  create: ["What can the AI generate?", "How does brand kit work?", "Show me Products"],
-  products: ["How does inventory tracking work?", "Can I import products?", "Show me Finance"],
-  raise: ["How does investor tracking work?", "What's in the data room?", "Show me Dashboard"],
-  sentinel: ["What's the EU AI Act?", "How does risk classification work?", "Show me Integrations"],
+  // Main dashboards
+  dashboard: ["Walk me through a deal lifecycle", "Show me Growth", "What modules are included?"],
+  growth: ["Show me the pipeline board", "How do campaigns work?", "Show me customer signals"],
+  crm: ["Show me lead scoring", "How does enrichment work?", "Show me company profiles"],
+  talent: ["Show me the candidate database", "How does AI matching work?", "Show me nests marketplace"],
+  finance: ["Show me invoices", "How does P&L tracking work?", "Show me expense tracking"],
+  learn: ["Show me course catalog", "How does skill tracking work?", "Show me certifications"],
+  create: ["Show me image generation", "How does brand kit work?", "Show me the asset library"],
+  products: ["Show me digital products", "How does inventory work?", "Show me shipping"],
+  raise: ["Show me investor pipeline", "How does data room work?", "Show me pitch deck analytics"],
+  sentinel: ["Show me AI systems", "How does risk classification work?", "Show me compliance roadmap"],
   inbox: ["How does unified messaging work?", "Can SYNC respond here?", "Show me Tasks"],
   tasks: ["How does AI prioritization work?", "Can I assign tasks?", "Show me Dashboard"],
   integrations: ["How many integrations are there?", "How does sync work?", "Show me SYNC"],
-  'sync-showcase': ["What can SYNC do?", "How many actions?", "Show me Dashboard"],
+  'sync-showcase': ["What can SYNC do?", "Show me activity log", "Show me Dashboard"],
+  // Finance sub-pages
+  'finance-invoices': ["Can I create invoices from deals?", "Show me proposals", "How do payments work?"],
+  'finance-proposals': ["How do proposals convert to invoices?", "Show me invoices", "Show me expenses"],
+  'finance-expenses': ["How does budget tracking work?", "Show me the ledger", "Show me reports"],
+  'finance-ledger': ["How are accounts organized?", "Show me payables", "Show me reports"],
+  'finance-payables': ["How does AP aging work?", "Show me invoices", "Show me the ledger"],
+  'finance-reports': ["Can I generate custom reports?", "Show me P&L details", "Show me dashboard"],
+  // Growth sub-pages
+  'growth-pipeline': ["How do deal stages work?", "Show me campaigns", "Show me signals"],
+  'growth-campaigns': ["How do email sequences work?", "Show me opportunities", "Show me signals"],
+  'growth-signals': ["What triggers a hot signal?", "Show me pipeline", "Show me opportunities"],
+  'growth-opportunities': ["How does forecasting work?", "Show me pipeline", "Show me campaigns"],
+  // CRM sub-pages
+  'crm-leads': ["How does lead scoring work?", "Show me prospects", "Show me companies"],
+  'crm-prospects': ["How does enrichment work?", "Show me customers", "Show me leads"],
+  'crm-customers': ["How does health scoring work?", "Show me companies", "Show me leads"],
+  'crm-companies': ["How does company intel work?", "Show me prospects", "Show me customers"],
+  // Talent sub-pages
+  'talent-candidates': ["How does AI matching work?", "Show me projects", "Show me outreach"],
+  'talent-projects': ["How do recruitment projects work?", "Show me candidates", "Show me campaigns"],
+  'talent-campaigns': ["How does outreach perform?", "Show me nests", "Show me candidates"],
+  'talent-nests': ["How do candidate pools work?", "Show me candidates", "Show me outreach"],
+  'talent-outreach': ["How does SMS outreach work?", "Show me campaigns", "Show me candidates"],
+  // Learn sub-pages
+  'learn-courses': ["How do course enrollments work?", "Show me skills", "Show me certifications"],
+  'learn-skills': ["How are skills tracked?", "Show me courses", "Show me builder"],
+  'learn-builder': ["How do I create a course?", "Show me courses", "Show me skills"],
+  'learn-certifications': ["How do certifications expire?", "Show me courses", "Show me skills"],
+  // Create sub-pages
+  'create-branding': ["How does auto-branding work?", "Show me images", "Show me library"],
+  'create-images': ["What AI models are used?", "Show me videos", "Show me branding"],
+  'create-videos': ["How long can videos be?", "Show me images", "Show me library"],
+  'create-library': ["How is storage organized?", "Show me images", "Show me branding"],
+  // Products sub-pages
+  'products-digital': ["How does subscription billing work?", "Show me physical", "Show me inventory"],
+  'products-physical': ["How do SKUs work?", "Show me shipping", "Show me inventory"],
+  'products-shipping': ["What carriers are supported?", "Show me receiving", "Show me inventory"],
+  'products-receiving': ["How does quality check work?", "Show me shipping", "Show me inventory"],
+  'products-inventory': ["How do reorder alerts work?", "Show me digital", "Show me physical"],
+  // Raise sub-pages
+  'raise-investors': ["How does investor tracking work?", "Show me pitch decks", "Show me data room"],
+  'raise-pitchdecks': ["How does slide analytics work?", "Show me data room", "Show me campaigns"],
+  'raise-dataroom': ["How secure is the data room?", "Show me investors", "Show me pitch decks"],
+  'raise-campaigns': ["How does investor outreach work?", "Show me investors", "Show me data room"],
+  // Sentinel sub-pages
+  'sentinel-systems': ["How does risk classification work?", "Show me roadmap", "Show me documents"],
+  'sentinel-roadmap': ["When are EU AI Act deadlines?", "Show me systems", "Show me documents"],
+  'sentinel-documents': ["What documents are required?", "Show me systems", "Show me roadmap"],
+  // Sync sub-pages
+  'sync-agent': ["What actions can SYNC perform?", "Show me activity", "Show me dashboard"],
+  'sync-activity': ["How many actions this month?", "Show me agent", "Show me dashboard"],
 };
 
 export default function DemoVoicePanel({
