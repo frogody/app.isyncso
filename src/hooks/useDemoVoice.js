@@ -280,9 +280,10 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
       }
     } catch (_) {}
 
-    // TTS failed — resume quickly and still advance
+    // TTS failed — wait long enough to read the transcript before advancing
     if (turnIdRef.current === turnId) {
-      await new Promise(r => setTimeout(r, 1000));
+      const readTime = Math.max(3000, text.length * 40); // ~40ms per char, min 3s
+      await new Promise(r => setTimeout(r, readTime));
       handleDone();
     }
   }, [voiceUrl, headers, stopListening, stopAudio, playAudio, resumeListening]);

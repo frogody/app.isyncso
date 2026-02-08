@@ -202,10 +202,10 @@ serve(async (req) => {
     console.log(`[voice-demo] ${llmTime}ms LLM — "${responseText.substring(0, 60)}"`);
 
     // Strip action tags from TTS text (keep in response for client parsing)
-    const ttsText = responseText.replace(/\[DEMO_ACTION:\s*[^\]]+\]/g, '').trim();
+    const spokenText = responseText.replace(/\[DEMO_ACTION:\s*[^\]]+\]/g, '').trim();
 
     // Start TTS immediately (parallel with log saves)
-    const ttsPromise = ttsText ? generateTTS(ttsText, voice).catch(() => null) : Promise.resolve(null);
+    const ttsPromise = spokenText ? generateTTS(spokenText, voice).catch(() => null) : Promise.resolve(null);
 
     // Fire-and-forget: save conversation log
     if (demoLinkId) {
