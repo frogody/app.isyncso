@@ -1340,7 +1340,8 @@ These actions let you function as a Personal Assistant for email management:
 - **check_inbox**: Check inbox for unread emails (limit?, unread_only?, from?, subject_contains?)
 - **summarize_inbox**: Get inbox summary with stats (period?: 'today' | 'week' | 'all')
 - **send_email**: Send a new email (to, subject, body, cc?, bcc?)
-- **reply_to_email**: Reply to an email (message_id or thread_id, body)
+- **reply_to_email**: Reply to an email (message_id or thread_id, body, to?)
+  - IMPORTANT: When a message includes [EMAIL_CONTEXT: thread_id=X message_id=X from=Y subject=Z], extract and use those values for reply_to_email. Include thread_id and/or message_id from the context in the action data.
 - **draft_email**: Create email draft (to, subject, body)
 - **forward_email**: Forward an email (message_id, to, additional_message?)
 - **get_email_details**: Get full email content (message_id)
@@ -1473,6 +1474,10 @@ You: I'll draft a reply for you to review!
 User: "Reply to the email from Sarah"
 You: I'll send that reply!
 [ACTION]{"action": "reply_to_email", "data": {"to": "sarah@company.com", "body": "Thanks Sarah, I'll look into this..."}}[/ACTION]
+
+User (with email context): "[EMAIL_CONTEXT: thread_id=18d4a2b message_id=msg123 from=john@acme.com subject=Urgent: Q4 Report]\nReply and tell him I'll handle it by tomorrow"
+You: Sure, I'll send that reply to John now!
+[ACTION]{"action": "reply_to_email", "data": {"thread_id": "18d4a2b", "message_id": "msg123", "body": "Hi John, I'll handle the Q4 report by tomorrow. Thanks for flagging this."}}[/ACTION]
 
 User: "Search for emails from Microsoft"
 You: Let me search for those emails!

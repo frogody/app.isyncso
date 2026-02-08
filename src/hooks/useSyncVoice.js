@@ -31,6 +31,7 @@ export default function useSyncVoice() {
   const activeRef = useRef(false);
   const processingRef = useRef(false);
   const turnIdRef = useRef(0); // increments each turn — stale callbacks check this
+  const knockContextRef = useRef(null); // email metadata from knock for reply flow
 
   // Store latest refs so callbacks never go stale
   const syncStateRef = useRef(syncState);
@@ -210,6 +211,20 @@ export default function useSyncVoice() {
       'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
     };
 
+    // Prepend email context if we're in a knock-triggered voice session
+    let messageToSend = text;
+    if (knockContextRef.current) {
+      const ctx = knockContextRef.current;
+      const contextParts = [];
+      if (ctx.thread_id) contextParts.push(`thread_id=${ctx.thread_id}`);
+      if (ctx.email_id) contextParts.push(`message_id=${ctx.email_id}`);
+      if (ctx.sender) contextParts.push(`from=${ctx.sender}`);
+      if (ctx.subject) contextParts.push(`subject=${ctx.subject}`);
+      if (contextParts.length > 0) {
+        messageToSend = `[EMAIL_CONTEXT: ${contextParts.join(' ')}]\n${text}`;
+      }
+    }
+
     try {
       // Phase 1: Text (fast LLM)
       const res = await fetch(voiceUrl, {
@@ -217,7 +232,7 @@ export default function useSyncVoice() {
         signal: controller.signal,
         headers,
         body: JSON.stringify({
-          message: text,
+          message: messageToSend,
           history: historyRef.current.slice(-6),
           userId: userRef.current?.id,
           companyId: userRef.current?.company_id,
@@ -307,6 +322,7 @@ export default function useSyncVoice() {
     activeRef.current = false;
     processingRef.current = false;
     turnIdRef.current++; // expire any in-flight turn
+    knockContextRef.current = null;
     stopListening();
     stopAudio();
     setVoiceState(VOICE_STATES.OFF);
@@ -320,8 +336,11 @@ export default function useSyncVoice() {
   }, [activate, deactivate]);
 
   // Activate and immediately speak a message (for knock/proactive notifications)
-  const activateWithMessage = useCallback(async (text) => {
+  const activateWithMessage = useCallback(async (text, emailContext = null) => {
     if (!text) return;
+
+    // Store email context for reply flow
+    knockContextRef.current = emailContext;
 
     // Request mic permission
     try {

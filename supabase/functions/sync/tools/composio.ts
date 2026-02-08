@@ -698,30 +698,52 @@ export async function executeComposioAction(
         };
       }
 
-      if (!message_id && !thread_id && !to) {
+      if (!thread_id && !to) {
         return {
           success: false,
-          message: "Please provide either a message_id, thread_id, or recipient email to reply to.",
+          message: "Please provide either a thread_id or recipient email to reply to.",
         };
       }
 
-      // Use Gmail reply functionality
-      const result = await executeComposioTool(connId, 'GMAIL_REPLY_TO_EMAIL', {
-        message_id,
-        thread_id,
-        body,
-        to,
-      }, ctx.userId);
+      // Extract clean email from "Name <email>" format
+      const recipientEmail = to?.match(/<([^>]+)>/)?.[1] || to || '';
 
-      if (result.success) {
-        return {
-          success: true,
-          result: result.result,
-          message: `✉️ Reply sent successfully!`,
-        };
+      if (thread_id) {
+        // Use GMAIL_REPLY_TO_THREAD (correct v3 tool slug)
+        // Required params: thread_id, message_body, recipient_email
+        const result = await executeComposioTool(connId, 'GMAIL_REPLY_TO_THREAD', {
+          thread_id,
+          message_body: body,
+          recipient_email: recipientEmail,
+          user_id: 'me',
+        }, ctx.userId);
+
+        if (result.success) {
+          return {
+            success: true,
+            result: result.result,
+            message: `✉️ Reply sent successfully!`,
+          };
+        }
+        return result;
+      } else {
+        // No thread_id — fall back to GMAIL_SEND_EMAIL as a new email
+        const result = await executeComposioTool(connId, 'GMAIL_SEND_EMAIL', {
+          recipient_email: recipientEmail,
+          subject: `Re: ${(data as any).subject || ''}`,
+          body,
+          user_id: 'me',
+        }, ctx.userId);
+
+        if (result.success) {
+          return {
+            success: true,
+            result: result.result,
+            message: `✉️ Reply sent successfully!`,
+          };
+        }
+        return result;
       }
-
-      return result;
     }
 
     case 'composio_forward_email':

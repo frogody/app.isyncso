@@ -151,7 +151,7 @@ function SyncAvatarSidebarButton({ onSingleClick, voiceHook, knockHook }) {
       if (knock) {
         const message = getKnockMessage(knock);
         if (message && activateWithMessage) {
-          activateWithMessage(message);
+          activateWithMessage(message, knock.metadata || null);
         }
       }
       return;

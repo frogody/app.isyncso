@@ -45,33 +45,75 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// Web Audio API knock sound — three quick taps
+// Web Audio API knock sound — realistic door knock using noise bursts + resonant filter
 function playKnockSound() {
   try {
     const ctx = getAudioContext();
 
-    // Resume if still suspended (belt & suspenders)
     if (ctx.state === 'suspended') {
       ctx.resume().catch(() => {});
     }
 
-    const taps = [0, 0.12, 0.24]; // timing of three taps
+    // Three knocks: knock-knock ... knock (classic pattern)
+    const knocks = [0, 0.18, 0.56];
+    const volumes = [0.8, 0.7, 0.9];
 
-    taps.forEach((delay) => {
+    knocks.forEach((delay, i) => {
+      const now = ctx.currentTime + delay;
+
+      // — Noise burst (the "thud" impact) —
+      const bufferSize = Math.floor(ctx.sampleRate * 0.06);
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const noiseData = noiseBuffer.getChannelData(0);
+      for (let j = 0; j < bufferSize; j++) {
+        noiseData[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / bufferSize, 3);
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      // Bandpass filter to shape the thud (wood-like resonance ~180Hz)
+      const thudFilter = ctx.createBiquadFilter();
+      thudFilter.type = 'bandpass';
+      thudFilter.frequency.value = 180;
+      thudFilter.Q.value = 2.5;
+
+      const thudGain = ctx.createGain();
+      thudGain.gain.setValueAtTime(volumes[i] * 0.5, now);
+      thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+      noise.connect(thudFilter);
+      thudFilter.connect(thudGain);
+      thudGain.connect(ctx.destination);
+      noise.start(now);
+
+      // — Tonal "knock" resonance (wood panel ring) —
       const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
       osc.type = 'sine';
-      osc.frequency.value = 440;
+      osc.frequency.setValueAtTime(120, now);
+      osc.frequency.exponentialRampToValueAtTime(80, now + 0.05);
 
-      gain.gain.setValueAtTime(0, ctx.currentTime + delay);
-      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + delay + 0.005);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.06);
+      const oscGain = ctx.createGain();
+      oscGain.gain.setValueAtTime(volumes[i] * 0.35, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
 
-      osc.start(ctx.currentTime + delay);
-      osc.stop(ctx.currentTime + delay + 0.08);
+      osc.connect(oscGain);
+      oscGain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.12);
+
+      // — Higher "tap" transient (knuckle contact) —
+      const tap = ctx.createOscillator();
+      tap.type = 'triangle';
+      tap.frequency.value = 800 + Math.random() * 200;
+
+      const tapGain = ctx.createGain();
+      tapGain.gain.setValueAtTime(volumes[i] * 0.15, now);
+      tapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+      tap.connect(tapGain);
+      tapGain.connect(ctx.destination);
+      tap.start(now);
+      tap.stop(now + 0.03);
     });
   } catch (e) {
     console.warn('[SyncKnock] Sound error:', e);
@@ -183,7 +225,7 @@ export default function useSyncKnock() {
     if (snippet) {
       message += ` It says: ${snippet.substring(0, 120)}.`;
     }
-    message += ' Want me to help you with this?';
+    message += ' Want me to help you with this? You can ask me to reply.';
     return message;
   }, []);
 
