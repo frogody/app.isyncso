@@ -1,6 +1,7 @@
 import React from "react";
 import { BarChart3, Euro, Calendar, Award, TrendingUp, MapPin, Building2, GraduationCap } from "lucide-react";
 import WidgetWrapper from "./WidgetWrapper";
+import { getCrossCheckedTenure } from "@/utils/tenureCrossCheck";
 
 /**
  * QuickStatsWidget - Compact stats row with key metrics
@@ -22,7 +23,7 @@ const StatItem = ({ icon: Icon, label, value, color = "zinc" }) => {
 const QuickStatsWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => {
   const salary = candidate?.salary_range;
   const yearsExp = candidate?.years_of_experience;
-  const tenure = candidate?.years_at_company;
+  const tenure = getCrossCheckedTenure(candidate);
   const promotions = candidate?.times_promoted;
   const skills = candidate?.skills?.length || 0;
   const location = candidate?.location || candidate?.location_city;

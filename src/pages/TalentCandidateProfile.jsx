@@ -74,6 +74,7 @@ import {
 } from "@/components/ui/select";
 import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { getCrossCheckedTenure } from "@/utils/tenureCrossCheck";
 
 // Animation variants
 const containerVariants = {
@@ -901,7 +902,7 @@ export default function TalentCandidateProfile() {
               </div>
               <div>
                 <p className="text-[10px] text-white/40 mb-0.5">Tenure</p>
-                <p className="text-sm font-semibold text-white">{candidate.years_at_company || 0}y</p>
+                <p className="text-sm font-semibold text-white">{getCrossCheckedTenure(candidate) || 0}y</p>
               </div>
               <div>
                 <p className="text-[10px] text-white/40 mb-0.5">Promos</p>
@@ -972,7 +973,7 @@ export default function TalentCandidateProfile() {
 
                 {/* Career Metrics */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <StatCard label="Years at Company" value={candidate.years_at_company || 0} icon={Calendar} color="red" />
+                  <StatCard label="Years at Company" value={getCrossCheckedTenure(candidate) || 0} icon={Calendar} color="red" />
                   <StatCard label="Promotions" value={candidate.times_promoted || 0} icon={TrendingUp} color="red" />
                   <StatCard label="Avg Promo Time" value={candidate.avg_promotion_threshold ? `${candidate.avg_promotion_threshold}y` : "—"} icon={Clock} color="red" />
                   <StatCard label="Company Changes" value={candidate.times_company_hopped || 0} icon={Briefcase} color="red" />

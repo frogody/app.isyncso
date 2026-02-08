@@ -25,6 +25,7 @@ import {
   Sparkles
 } from "lucide-react";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge } from "./IntelligenceGauge";
+import { getCrossCheckedTenure } from "@/utils/tenureCrossCheck";
 
 /**
  * ProfileSummaryCard - A scannable summary card showing key decision points for recruiters
@@ -417,7 +418,8 @@ const ProfileSummaryCard = ({
   // Professional metrics
   const showTitle = candidate.current_title && isMetricEnabled('current_title');
   const showCompany = (candidate.current_company || candidate.company_name) && isMetricEnabled('company_name');
-  const showTenure = candidate.years_at_company && isMetricEnabled('years_at_company');
+  const crossCheckedTenure = getCrossCheckedTenure(candidate);
+  const showTenure = crossCheckedTenure && isMetricEnabled('years_at_company');
   const showPromos = candidate.times_promoted != null && isMetricEnabled('times_promoted');
   const showHops = candidate.times_company_hopped != null && isMetricEnabled('times_company_hopped');
   const showYearsExp = candidate.years_of_experience && isMetricEnabled('years_experience');
@@ -613,7 +615,7 @@ const ProfileSummaryCard = ({
                     <MetricRow icon={Building2} label="Co" value={candidate.current_company || candidate.company_name} color="red" />
                   )}
                   {showTenure && (
-                    <MetricRow icon={TrendingUp} label="Tenure" value={`${candidate.years_at_company}y`} color="red" />
+                    <MetricRow icon={TrendingUp} label="Tenure" value={`${crossCheckedTenure}y`} color="red" />
                   )}
                   {showYearsExp && (
                     <MetricRow icon={Briefcase} label="Exp" value={`${candidate.years_of_experience}y`} color="red" />

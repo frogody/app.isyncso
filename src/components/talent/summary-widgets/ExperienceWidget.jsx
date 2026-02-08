@@ -1,6 +1,7 @@
 import React from "react";
 import { Briefcase, TrendingUp, Building2, Calendar, ArrowUpRight } from "lucide-react";
 import WidgetWrapper from "./WidgetWrapper";
+import { getCrossCheckedTenure } from "@/utils/tenureCrossCheck";
 
 /**
  * ExperienceWidget - Displays career trajectory metrics
@@ -23,7 +24,7 @@ const StatCard = ({ icon: Icon, label, value, color = "zinc" }) => {
 
 const ExperienceWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => {
   const yearsExp = candidate?.years_of_experience;
-  const yearsAtCompany = candidate?.years_at_company;
+  const yearsAtCompany = getCrossCheckedTenure(candidate);
   const promotions = candidate?.times_promoted;
   const jobChanges = candidate?.times_company_hopped;
   const currentTitle = candidate?.current_title || candidate?.job_title;
