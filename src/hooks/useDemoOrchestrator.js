@@ -17,6 +17,7 @@ export default function useDemoOrchestrator() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(null);
   const [previousPage, setPreviousPage] = useState(null);
+  const [discoveryPhase, setDiscoveryPhase] = useState(true);
   const visitedPagesRef = useRef(new Set());
 
   const startTimeRef = useRef(null);
@@ -161,6 +162,61 @@ export default function useDemoOrchestrator() {
     }
   }, [currentStepIndex, steps, goToStep]);
 
+  // Reorder steps based on priority modules (called after discovery)
+  const reorderSteps = useCallback((priorityModuleKeys) => {
+    if (!steps.length || !priorityModuleKeys.length) return;
+
+    // Fixed steps that always keep their position
+    const dashboardStep = steps.find(s => s.page_key === 'dashboard');
+    const syncStep = steps.find(s => s.page_key === 'sync-showcase');
+    const closingStep = steps.find(s => s.page_key === 'closing');
+    const fixedKeys = new Set(['dashboard', 'closing', 'sync-showcase']);
+
+    // All middle steps (everything except dashboard, sync-showcase, closing)
+    const middleSteps = steps.filter(s => !fixedKeys.has(s.page_key));
+
+    // Separate priority and remaining
+    const prioritySteps = [];
+    const remainingSteps = [];
+
+    priorityModuleKeys.forEach(key => {
+      const step = middleSteps.find(s => s.page_key === key);
+      if (step) prioritySteps.push(step);
+    });
+
+    middleSteps.forEach(step => {
+      if (!priorityModuleKeys.includes(step.page_key)) {
+        remainingSteps.push(step);
+      }
+    });
+
+    const reordered = [
+      dashboardStep,
+      ...prioritySteps,
+      ...remainingSteps,
+      syncStep,
+      closingStep,
+    ].filter(Boolean);
+
+    // Re-number step_order
+    reordered.forEach((step, i) => { step.step_order = i + 1; });
+
+    setSteps(reordered);
+  }, [steps]);
+
+  // Finish discovery phase and start the scripted demo
+  const finishDiscovery = useCallback(() => {
+    setDiscoveryPhase(false);
+    setConversationMode(false);
+  }, []);
+
+  // Start scripted demo from a given step (used after discovery)
+  const startFromStep = useCallback((index) => {
+    setConversationMode(false);
+    setDiscoveryPhase(false);
+    goToStep(index);
+  }, [goToStep]);
+
   // Execute highlights for current step (called after speech starts)
   const executeHighlights = useCallback((stepHighlights) => {
     if (!stepHighlights || !stepHighlights.length) return;
@@ -253,6 +309,7 @@ export default function useDemoOrchestrator() {
     isLastStep,
     error,
     previousPage,
+    discoveryPhase,
 
     // Methods
     loadDemo,
@@ -260,6 +317,9 @@ export default function useDemoOrchestrator() {
     goToPage,
     goBack,
     advanceStep,
+    reorderSteps,
+    finishDiscovery,
+    startFromStep,
     executeHighlights,
     clearHighlights,
     enterConversationMode,

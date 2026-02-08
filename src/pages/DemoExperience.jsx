@@ -296,6 +296,7 @@ export default function DemoExperience() {
   const prevStepRef = useRef(-1);
 
   const autoAdvanceTimer = useRef(null);
+  const pendingDiscoveryStartRef = useRef(false);
 
   // Handle demo actions from voice LLM
   const handleDemoAction = useCallback((action) => {
@@ -311,6 +312,10 @@ export default function DemoExperience() {
     } else if (a.startsWith('highlight ')) {
       const selector = a.replace('highlight ', '').trim();
       orchestrator.executeHighlights([{ selector, tooltip: '' }]);
+    } else if (a.startsWith('prioritize ')) {
+      const modules = a.replace('prioritize ', '').split(',').map(m => m.trim()).filter(Boolean);
+      orchestrator.reorderSteps(modules);
+      pendingDiscoveryStartRef.current = true;
     }
   }, [orchestrator]);
 
@@ -396,8 +401,22 @@ export default function DemoExperience() {
       // Small delay for UX
       await new Promise(r => setTimeout(r, 800));
 
-      // Go to first step
-      orchestrator.goToStep(0);
+      if (orchestrator.discoveryPhase) {
+        // Discovery: enter conversation mode first to prevent scripted dialogue
+        orchestrator.enterConversationMode();
+        // Show dashboard
+        orchestrator.goToStep(0);
+        // Wait for page to render
+        await new Promise(r => setTimeout(r, 1200));
+        // Speak discovery greeting
+        const name = orchestrator.demoLink?.recipient_name || 'there';
+        const company = orchestrator.demoLink?.company_name || 'your company';
+        const greeting = `Hey ${name}! Before I walk you through iSyncso, I'd love to know — what's most important for ${company} right now? Are you looking to grow revenue, hire talent, streamline finances, or something else entirely?`;
+        voice.speakDialogue(greeting);
+      } else {
+        // No discovery — start scripted demo directly
+        orchestrator.goToStep(0);
+      }
     };
 
     startDemo();
@@ -410,8 +429,21 @@ export default function DemoExperience() {
       title: orchestrator.currentStep?.title || orchestrator.currentPage,
       page_key: orchestrator.currentPage,
       dialogue: orchestrator.conversationMode ? null : orchestrator.currentDialogue,
+      discoveryMode: orchestrator.discoveryPhase,
     });
-  }, [orchestrator.currentPage, orchestrator.isTransitioning]);
+  }, [orchestrator.currentPage, orchestrator.isTransitioning, orchestrator.discoveryPhase]);
+
+  // Auto-start scripted demo after discovery response finishes playing
+  useEffect(() => {
+    if (pendingDiscoveryStartRef.current && voice.voiceState === 'listening') {
+      pendingDiscoveryStartRef.current = false;
+      orchestrator.finishDiscovery();
+      // Brief pause before transitioning to first priority module
+      setTimeout(() => {
+        orchestrator.startFromStep(1);
+      }, 600);
+    }
+  }, [voice.voiceState]);
 
   // Speak dialogue when step changes (and page has rendered)
   useEffect(() => {
@@ -419,6 +451,7 @@ export default function DemoExperience() {
     if (stepSpeechRef.current === orchestrator.currentStepIndex) return;
     if (orchestrator.isTransitioning) return;
     if (orchestrator.conversationMode) return;
+    if (orchestrator.discoveryPhase) return;
 
     stepSpeechRef.current = orchestrator.currentStepIndex;
     const step = orchestrator.currentStep;
@@ -558,6 +591,7 @@ export default function DemoExperience() {
             recipientName={orchestrator.demoLink?.recipient_name}
             onTextSubmit={voice.submitText}
             currentPage={orchestrator.currentPage}
+            discoveryPhase={orchestrator.discoveryPhase}
           />
         }
       >
@@ -612,6 +646,7 @@ export default function DemoExperience() {
           recipientName={orchestrator.demoLink?.recipient_name}
           onTextSubmit={voice.submitText}
           currentPage={orchestrator.currentPage}
+          discoveryPhase={orchestrator.discoveryPhase}
         />
       }
     >

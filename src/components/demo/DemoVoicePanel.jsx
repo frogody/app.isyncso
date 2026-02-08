@@ -71,6 +71,13 @@ const PAGE_SUGGESTIONS = {
   'sync-activity': ["How many actions this month?", "Show me agent", "Show me dashboard"],
 };
 
+const DISCOVERY_SUGGESTIONS = [
+  "Revenue & Sales Growth",
+  "Hiring & Talent",
+  "Finance & Operations",
+  "Show me everything",
+];
+
 export default function DemoVoicePanel({
   voiceState = 'idle',
   transcript = '',
@@ -80,6 +87,7 @@ export default function DemoVoicePanel({
   onTextSubmit,
   currentPage = 'dashboard',
   responseTime = null,
+  discoveryPhase = false,
 }) {
   const [textInput, setTextInput] = useState('');
   const [collapsed, setCollapsed] = useState(false);
@@ -142,7 +150,9 @@ export default function DemoVoicePanel({
     '#f59e0b', '#f43f5e', '#f97316', '#3b82f6', '#14b8a6',
   ];
 
-  const suggestions = PAGE_SUGGESTIONS[currentPage] || PAGE_SUGGESTIONS.dashboard;
+  const suggestions = discoveryPhase
+    ? DISCOVERY_SUGGESTIONS
+    : (PAGE_SUGGESTIONS[currentPage] || PAGE_SUGGESTIONS.dashboard);
 
   const handleChipClick = (chipText) => {
     setShowChips(false);
