@@ -1857,7 +1857,7 @@ export default function TalentCampaignDetail() {
         .from('campaigns')
         .update({
           matched_candidates: updatedMatches,
-          updated_at: new Date().toISOString(),
+          updated_date: new Date().toISOString(),
         })
         .eq('id', campaign.id);
 
@@ -2012,7 +2012,7 @@ export default function TalentCampaignDetail() {
         .update({
           matched_candidates: updatedMatches,
           status: 'active',
-          updated_at: new Date().toISOString(),
+          updated_date: new Date().toISOString(),
         })
         .eq('id', campaign.id);
 
@@ -2396,13 +2396,19 @@ export default function TalentCampaignDetail() {
         signal_filters: formData.signal_filters || [],
       };
 
-      // Strip the flattened fields before saving
-      const { role_context_perfect_fit, role_context_selling_points, role_context_ideal_background, criteria_weights, signal_filters, ...rest } = formData;
+      // Strip fields that don't exist in the campaigns table
+      const {
+        role_context_perfect_fit, role_context_selling_points, role_context_ideal_background,
+        criteria_weights, signal_filters,
+        delay_min_minutes, delay_max_minutes, sequence_steps,
+        ...rest
+      } = formData;
 
       const campaignData = {
         ...rest,
         role_context: roleContext,
         organization_id: user.organization_id,
+        updated_date: new Date().toISOString(),
       };
 
       let result;
