@@ -283,7 +283,6 @@ const TalentOnboardingChecklist = ({
                   onClick={() => !isComplete && handleItemClick(item)}
                   disabled={isComplete}
 
-                  whileTap={!isComplete ? { scale: 0.98 } : {}}
                   className={`
                     relative p-3 rounded-lg text-left transition-all group
                     ${isComplete

@@ -235,7 +235,6 @@ const CriteriaWeightingStep = ({ weights = DEFAULT_WEIGHTS, onChange, onPresetAp
             <motion.button
               key={key}
 
-              whileTap={{ scale: 0.98 }}
               onClick={() => applyPreset(key)}
               className={`p-3 rounded-xl border text-left transition-colors ${
                 activePreset === key

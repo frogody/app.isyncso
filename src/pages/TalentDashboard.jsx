@@ -61,7 +61,6 @@ function StatPill({ icon: Icon, value, label, sub }) {
   return (
     <motion.div
       variants={fadeIn}
-      whileHover={{ y: -2, scale: 1.02, boxShadow: '0 8px 24px rgba(239, 68, 68, 0.12)' }}
     >
       <div className="flex items-center gap-3 bg-zinc-900/60 border border-zinc-800/60 rounded-xl px-4 py-3">
         <div className="p-2 rounded-lg bg-red-500/10 text-red-400 shrink-0">
@@ -192,7 +191,6 @@ function CampaignRow({ campaign, outreachTasks }) {
 
   return (
     <motion.div
-      whileHover={{ x: 4, backgroundColor: 'rgba(255,255,255,0.03)' }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
       className="rounded-lg"
     >
@@ -248,8 +246,6 @@ function NestCard({ nest }) {
     <Link to={`/marketplace/nests/${nest.id}`}>
       <motion.div
         className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-4 hover:border-red-500/20 transition-all h-full flex flex-col"
-        whileHover={{ y: -4, scale: 1.02, boxShadow: '0 8px 24px rgba(239, 68, 68, 0.12)' }}
-        whileTap={{ scale: 0.98 }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       >
         <AnimatedBadge className="bg-red-500/15 text-red-400 text-[10px] w-fit mb-2">

@@ -182,7 +182,6 @@ const CandidateRow = ({ candidate, isSelected, isFocused, onToggle, onClick, onE
   return (
     <motion.tr
       variants={itemVariants}
-      whileHover={{ backgroundColor: "rgba(255,255,255,0.03)" }}
       className={`cursor-pointer border-b border-white/5 last:border-0 h-9 ${
         isFocused ? "ring-1 ring-red-500/50 bg-red-500/5" : ""
       }`}
