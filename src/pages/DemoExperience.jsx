@@ -16,9 +16,17 @@ import DemoVoicePanel from '@/components/demo/DemoVoicePanel';
 
 import DemoDashboard from '@/components/demo/pages/DemoDashboard';
 import DemoGrowth from '@/components/demo/pages/DemoGrowth';
-import DemoFinance from '@/components/demo/pages/DemoFinance';
-import DemoTalent from '@/components/demo/pages/DemoTalent';
 import DemoCRM from '@/components/demo/pages/DemoCRM';
+import DemoTalent from '@/components/demo/pages/DemoTalent';
+import DemoFinance from '@/components/demo/pages/DemoFinance';
+import DemoLearn from '@/components/demo/pages/DemoLearn';
+import DemoCreate from '@/components/demo/pages/DemoCreate';
+import DemoProducts from '@/components/demo/pages/DemoProducts';
+import DemoRaise from '@/components/demo/pages/DemoRaise';
+import DemoSentinel from '@/components/demo/pages/DemoSentinel';
+import DemoInbox from '@/components/demo/pages/DemoInbox';
+import DemoTasks from '@/components/demo/pages/DemoTasks';
+import DemoIntegrations from '@/components/demo/pages/DemoIntegrations';
 
 import useDemoOrchestrator from '@/hooks/useDemoOrchestrator';
 import useDemoVoice from '@/hooks/useDemoVoice';
@@ -27,9 +35,17 @@ import useDemoVoice from '@/hooks/useDemoVoice';
 const PAGE_COMPONENTS = {
   dashboard: DemoDashboard,
   growth: DemoGrowth,
-  finance: DemoFinance,
-  talent: DemoTalent,
   crm: DemoCRM,
+  talent: DemoTalent,
+  finance: DemoFinance,
+  learn: DemoLearn,
+  create: DemoCreate,
+  products: DemoProducts,
+  raise: DemoRaise,
+  sentinel: DemoSentinel,
+  inbox: DemoInbox,
+  tasks: DemoTasks,
+  integrations: DemoIntegrations,
 };
 
 // Default highlight config per page
@@ -39,6 +55,14 @@ const PAGE_HIGHLIGHTS = {
   crm: [{ selector: 'contacts', tooltip: 'Every contact enriched with AI intelligence' }],
   talent: [{ selector: 'candidates', tooltip: 'Smart matching with flight risk scoring' }],
   finance: [{ selector: 'invoices', tooltip: 'Invoicing, proposals, and expense tracking' }],
+  learn: [{ selector: 'courses', tooltip: 'AI-curated learning paths for your team' }],
+  create: [{ selector: 'gallery', tooltip: 'AI-powered content creation studio' }],
+  products: [{ selector: 'products', tooltip: 'Full product catalog management' }],
+  raise: [{ selector: 'investors', tooltip: 'Investor pipeline and data room' }],
+  sentinel: [{ selector: 'compliance', tooltip: 'EU AI Act compliance tracking' }],
+  inbox: [{ selector: 'conversations', tooltip: 'Unified inbox across all channels' }],
+  tasks: [{ selector: 'task-board', tooltip: 'AI-prioritized task management' }],
+  integrations: [{ selector: 'integrations', tooltip: '30+ third-party integrations' }],
 };
 
 export default function DemoExperience() {

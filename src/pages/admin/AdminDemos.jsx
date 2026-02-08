@@ -63,10 +63,17 @@ const INDUSTRY_OPTIONS = [
 const MODULE_OPTIONS = [
   'Dashboard',
   'Growth',
-  'Finance',
-  'Talent',
   'CRM',
+  'Talent',
+  'Finance',
   'Learn',
+  'Create',
+  'Products',
+  'Raise',
+  'Sentinel',
+  'Inbox',
+  'Tasks',
+  'Integrations',
 ];
 
 const STATUS_STYLES = {
@@ -78,59 +85,40 @@ const STATUS_STYLES = {
 };
 
 const DEFAULT_DEMO_STEPS = [
-  {
-    step_order: 1,
-    title: 'Welcome & Dashboard',
-    page_key: 'dashboard',
-    wait_for_user: false,
-  },
-  {
-    step_order: 2,
-    title: 'Growth Pipeline',
-    page_key: 'growth',
-    wait_for_user: false,
-  },
-  {
-    step_order: 3,
-    title: 'CRM Intelligence',
-    page_key: 'crm',
-    wait_for_user: false,
-  },
-  {
-    step_order: 4,
-    title: 'Talent Acquisition',
-    page_key: 'talent',
-    wait_for_user: false,
-  },
-  {
-    step_order: 5,
-    title: 'Finance Hub',
-    page_key: 'finance',
-    wait_for_user: false,
-  },
-  {
-    step_order: 6,
-    title: 'Meet Sync',
-    page_key: 'sync-showcase',
-    wait_for_user: true,
-  },
-  {
-    step_order: 7,
-    title: 'Next Steps',
-    page_key: 'closing',
-    wait_for_user: true,
-  },
+  { step_order: 1, title: 'Welcome & Dashboard', page_key: 'dashboard', wait_for_user: false },
+  { step_order: 2, title: 'Growth Pipeline', page_key: 'growth', wait_for_user: false },
+  { step_order: 3, title: 'CRM Intelligence', page_key: 'crm', wait_for_user: false },
+  { step_order: 4, title: 'Talent Acquisition', page_key: 'talent', wait_for_user: false },
+  { step_order: 5, title: 'Finance Hub', page_key: 'finance', wait_for_user: false },
+  { step_order: 6, title: 'Learning Academy', page_key: 'learn', wait_for_user: false },
+  { step_order: 7, title: 'AI Content Studio', page_key: 'create', wait_for_user: false },
+  { step_order: 8, title: 'Product Catalog', page_key: 'products', wait_for_user: false },
+  { step_order: 9, title: 'Fundraising', page_key: 'raise', wait_for_user: false },
+  { step_order: 10, title: 'AI Compliance', page_key: 'sentinel', wait_for_user: false },
+  { step_order: 11, title: 'Unified Inbox', page_key: 'inbox', wait_for_user: false },
+  { step_order: 12, title: 'Task Management', page_key: 'tasks', wait_for_user: false },
+  { step_order: 13, title: 'Integrations', page_key: 'integrations', wait_for_user: false },
+  { step_order: 14, title: 'Meet Sync', page_key: 'sync-showcase', wait_for_user: true },
+  { step_order: 15, title: 'Next Steps', page_key: 'closing', wait_for_user: true },
 ];
 
 function getSyncDialogue(stepOrder, recipientName, companyName) {
   const dialogues = {
-    1: `This is your command center, ${recipientName}. Everything about ${companyName}'s operations at a glance. You can see key metrics, recent activity, and quick actions all in one place.`,
-    2: `Here's where your sales team lives. The Growth module gives you a full pipeline view, campaign management, and AI-powered prospecting to help ${companyName} close more deals.`,
-    3: `Your CRM is enriched with AI. We automatically pull intel on every contact, track engagement signals, and score leads so your team at ${companyName} knows exactly who to focus on.`,
-    4: `For recruiting, we match candidates using AI intelligence scoring. You'll see flight risk indicators, timing signals, and personalized outreach recommendations.`,
-    5: `Finance is built in. Create invoices, track proposals, manage expenses — all connected to your pipeline so ${companyName} has a complete picture of revenue.`,
-    6: `And the best part? I can do all of this for you. Tell me to create an invoice, find a prospect, schedule a task — I handle it through voice or chat.`,
-    7: `That's a quick look at what iSyncso can do for ${companyName}. Want to schedule a call to dive deeper into any of these features, ${recipientName}?`,
+    1: `This is your command center, ${recipientName}. Everything about ${companyName}'s operations at a glance — key metrics, recent activity, and quick actions all in one place.`,
+    2: `Here's where your sales team lives. The Growth module gives ${companyName} a full pipeline view, campaign management, and AI-powered prospecting.`,
+    3: `Your CRM is enriched with AI. We automatically pull intel on every contact and score leads so ${companyName} knows exactly who to focus on.`,
+    4: `For recruiting, we match candidates using AI intelligence scoring. Flight risk indicators, timing signals, and personalized outreach — all built in.`,
+    5: `Finance is built in, ${recipientName}. Invoices, proposals, expenses — all connected to your pipeline for a complete revenue picture.`,
+    6: `The Learn module lets ${companyName} build and manage training programs with AI-curated learning paths for your entire team.`,
+    7: `This is the AI content studio. Generate marketing images, product visuals, and creative assets using AI — right inside the platform.`,
+    8: `Your product catalog lives here. Manage inventory, pricing tiers, and digital products all in one place for ${companyName}.`,
+    9: `The Raise module helps manage your fundraising pipeline. Track investors, share your data room, and monitor commitments.`,
+    10: `Sentinel handles AI compliance. It tracks all your AI systems, assesses risk levels, and keeps ${companyName} aligned with the EU AI Act.`,
+    11: `Your unified inbox brings all conversations together. Messages from clients, team notifications, and AI alerts — all in one stream.`,
+    12: `Task management with AI prioritization. Your team at ${companyName} can track projects, deadlines, and dependencies effortlessly.`,
+    13: `We integrate with over thirty tools your team already uses — from Slack and HubSpot to Google Drive and Stripe.`,
+    14: `And the best part, ${recipientName}? I can do all of this for you. Tell me to create an invoice, find a prospect, or schedule a task — I handle it through voice or chat.`,
+    15: `That's a full tour of what iSyncso can do for ${companyName}. Want to schedule a call to dive deeper, ${recipientName}?`,
   };
   return dialogues[stepOrder] || '';
 }

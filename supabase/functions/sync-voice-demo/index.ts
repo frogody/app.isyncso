@@ -256,7 +256,7 @@ serve(async (req) => {
 
     messages.push({ role: 'user', content: message });
 
-    // LLM call
+    // LLM call — use fast turbo model with tight token limit for voice
     const llmStart = Date.now();
     const llmResponse = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
@@ -267,8 +267,8 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
         messages,
-        temperature: 0.7,
-        max_tokens: 150,
+        temperature: 0.6,
+        max_tokens: 80,
         stream: false,
       }),
     });
@@ -292,7 +292,13 @@ serve(async (req) => {
 
     console.log(`[sync-voice-demo] LLM: ${llmTime}ms — "${responseText.substring(0, 80)}" token=${demoToken?.substring(0, 8)}`);
 
-    // Save to session
+    // Generate TTS in parallel with session/log saves (single round-trip for client)
+    const ttsPromise = generateTTS(responseText, voice).catch((err) => {
+      console.warn('[sync-voice-demo] Inline TTS failed:', err.message);
+      return null;
+    });
+
+    // Save to session (fire-and-forget)
     if (session) {
       const updatedMessages = [
         ...session.messages,
@@ -302,7 +308,7 @@ serve(async (req) => {
       saveDemoSession(session.sessionId, updatedMessages);
     }
 
-    // Append to conversation_log in demo_links
+    // Append to conversation_log (fire-and-forget)
     if (demoLink?.id) {
       const existingLog = (demoLink.conversation_log as Array<unknown>) || [];
       supabase
@@ -318,13 +324,17 @@ serve(async (req) => {
         .then(() => {});
     }
 
+    // Wait for TTS to finish
+    const ttsResult = await ttsPromise;
     const totalTime = Date.now() - startTime;
-    console.log(`[sync-voice-demo] Total: ${totalTime}ms`);
+    console.log(`[sync-voice-demo] Total: ${totalTime}ms (llm=${llmTime}ms, tts=${ttsResult ? 'ok' : 'skip'})`);
 
     return new Response(
       JSON.stringify({
         text: responseText,
         response: responseText,
+        audio: ttsResult?.audio || null,
+        audioFormat: ttsResult ? 'mp3' : undefined,
         mood: 'neutral',
         timing: { total: totalTime, llm: llmTime },
       }),

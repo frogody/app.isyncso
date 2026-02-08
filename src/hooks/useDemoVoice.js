@@ -192,12 +192,20 @@ export default function useDemoVoice({ demoToken, onDemoAction } = {}) {
 
       if (!activeRef.current || turnIdRef.current !== turnId) return;
 
-      // TTS
+      // Play audio from combined response (single round-trip) or fall back to TTS-only call
       if (reply) {
         setVoiceState(VOICE_STATES.SPEAKING);
+
+        // Check if audio was included in the response (combined LLM+TTS)
+        if (data.audio) {
+          playAudio(data.audio, turnId, () => resumeListening());
+          return;
+        }
+
+        // Fallback: separate TTS call
         try {
           const controller = new AbortController();
-          const ttsTimeout = setTimeout(() => controller.abort(), 12000);
+          const ttsTimeout = setTimeout(() => controller.abort(), 10000);
           const audioRes = await fetch(voiceUrl, {
             method: 'POST',
             signal: controller.signal,
