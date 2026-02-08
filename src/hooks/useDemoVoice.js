@@ -10,7 +10,7 @@ const VOICE_STATES = {
   SPEAKING: 'speaking',
 };
 
-export default function useDemoVoice({ demoToken, onDemoAction } = {}) {
+export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd } = {}) {
   const [voiceState, setVoiceState] = useState(VOICE_STATES.OFF);
   const [transcript, setTranscript] = useState('');
   const [isMuted, setIsMuted] = useState(false);
@@ -23,8 +23,10 @@ export default function useDemoVoice({ demoToken, onDemoAction } = {}) {
   const historyRef = useRef([]);
   const stepContextRef = useRef(null);
   const onDemoActionRef = useRef(onDemoAction);
+  const onDialogueEndRef = useRef(onDialogueEnd);
 
   useEffect(() => { onDemoActionRef.current = onDemoAction; }, [onDemoAction]);
+  useEffect(() => { onDialogueEndRef.current = onDialogueEnd; }, [onDialogueEnd]);
 
   const voiceUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-voice-demo`;
   const headers = {
@@ -246,6 +248,11 @@ export default function useDemoVoice({ demoToken, onDemoAction } = {}) {
     setTranscript(text);
     setVoiceState(VOICE_STATES.SPEAKING);
 
+    const handleDone = () => {
+      resumeListening();
+      onDialogueEndRef.current?.();
+    };
+
     try {
       const controller = new AbortController();
       const ttsTimeout = setTimeout(() => controller.abort(), 8000);
@@ -262,16 +269,16 @@ export default function useDemoVoice({ demoToken, onDemoAction } = {}) {
       if (audioRes.ok) {
         const audioData = await audioRes.json();
         if (audioData.audio) {
-          playAudio(audioData.audio, turnId, () => resumeListening());
+          playAudio(audioData.audio, turnId, handleDone);
           return;
         }
       }
     } catch (_) {}
 
-    // TTS failed — resume quickly
+    // TTS failed — resume quickly and still advance
     if (turnIdRef.current === turnId) {
       await new Promise(r => setTimeout(r, 1000));
-      resumeListening();
+      handleDone();
     }
   }, [voiceUrl, headers, stopListening, stopAudio, playAudio, resumeListening]);
 

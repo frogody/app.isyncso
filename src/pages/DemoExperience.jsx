@@ -75,6 +75,8 @@ export default function DemoExperience() {
   const greetingSpoken = useRef(false);
   const stepSpeechRef = useRef(-1);
 
+  const autoAdvanceTimer = useRef(null);
+
   // Handle demo actions from voice LLM
   const handleDemoAction = useCallback((action) => {
     if (action === 'navigate_next') {
@@ -87,9 +89,37 @@ export default function DemoExperience() {
     }
   }, [orchestrator]);
 
+  // Auto-advance after scripted dialogue finishes playing
+  const handleDialogueEnd = useCallback(() => {
+    // Don't auto-advance if in conversation mode
+    if (orchestrator.conversationMode) return;
+
+    // Don't auto-advance on wait_for_user steps (sync-showcase, closing)
+    const step = orchestrator.currentStep;
+    if (step?.wait_for_user) return;
+
+    // Clear any pending timer
+    if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+
+    // Wait 2s after speech ends, then advance
+    autoAdvanceTimer.current = setTimeout(() => {
+      if (!orchestrator.conversationMode) {
+        orchestrator.advanceStep();
+      }
+    }, 2000);
+  }, [orchestrator]);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+    };
+  }, []);
+
   const voice = useDemoVoice({
     demoToken: token,
     onDemoAction: handleDemoAction,
+    onDialogueEnd: handleDialogueEnd,
   });
 
   // Load demo on mount

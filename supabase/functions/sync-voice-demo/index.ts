@@ -162,7 +162,7 @@ serve(async (req) => {
     }
     messages.push({ role: 'user', content: message });
 
-    // LLM call — 8B turbo for speed, 35 tokens for punchy replies
+    // LLM call — 8B turbo for speed, 50 tokens for complete short replies
     const llmStart = Date.now();
     const llmResponse = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
@@ -174,7 +174,7 @@ serve(async (req) => {
         model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
         messages,
         temperature: 0.5,
-        max_tokens: 35,
+        max_tokens: 50,
         stream: false,
       }),
     });
