@@ -1116,29 +1116,26 @@ serve(async (req) => {
     );
     console.log(`After stage filter: ${eligibleCandidates.length} eligible candidates`);
 
-    // ISS-005 FIX: Filter out candidates that haven't been enriched
-    // enriched_at is the reliable indicator — enrichment_status is not a real column
-    const unenrichedCandidates = eligibleCandidates.filter(c => !c.enriched_at);
-    if (unenrichedCandidates.length > 0) {
-      console.log(`ISS-005: Excluding ${unenrichedCandidates.length} unenriched candidates (no enriched_at timestamp)`);
-      eligibleCandidates = eligibleCandidates.filter(c => !!c.enriched_at);
-    }
-
-    // Layer 2: Data completeness check — even enriched candidates need minimum viable data
-    // DB columns: job_title (not current_title), work_history (not experience)
-    const insufficientDataCandidates = eligibleCandidates.filter(c => {
+    // ISS-005 FIX: Filter candidates based on data completeness
+    // Don't rely solely on enriched_at — candidates may have good data from other import methods
+    // Instead, check if they have enough actual profile data for meaningful matching
+    // DB columns: job_title (not current_title), work_history (not experience), skills, education
+    const hasMinimumMatchData = (c: any) => {
       const hasWorkHistory = Array.isArray(c.work_history) && c.work_history.length > 0;
       const hasCurrentRole = !!(c.job_title || c.current_title || c.headline);
-      // Require at least current role OR work history to produce meaningful matching
-      return !hasCurrentRole && !hasWorkHistory;
-    });
+      const hasAnySkills = Array.isArray(c.skills) && c.skills.length > 0;
+      const hasEducation = Array.isArray(c.education) && c.education.length > 0;
+      // Must have at least: (current role OR work history) AND (skills OR education OR work history)
+      // This ensures there's enough signal for the matching algorithm
+      const hasIdentity = hasCurrentRole || hasWorkHistory;
+      const hasDepth = hasAnySkills || hasEducation || hasWorkHistory;
+      return hasIdentity && hasDepth;
+    };
+
+    const insufficientDataCandidates = eligibleCandidates.filter(c => !hasMinimumMatchData(c));
     if (insufficientDataCandidates.length > 0) {
-      console.log(`ISS-005: Excluding ${insufficientDataCandidates.length} candidates with insufficient data for matching`);
-      eligibleCandidates = eligibleCandidates.filter(c => {
-        const hasWorkHistory = Array.isArray(c.work_history) && c.work_history.length > 0;
-        const hasCurrentRole = !!(c.job_title || c.current_title || c.headline);
-        return hasCurrentRole || hasWorkHistory;
-      });
+      console.log(`ISS-005: Excluding ${insufficientDataCandidates.length} candidates with insufficient profile data for matching`);
+      eligibleCandidates = eligibleCandidates.filter(c => hasMinimumMatchData(c));
     }
 
     // ISS-003 FIX: Apply company "do not poach" / deprioritize rules
@@ -1440,8 +1437,7 @@ serve(async (req) => {
           excluded_candidates: excludedByRule,
           boost_rules: boostRules,
         },
-        // ISS-005: Enrichment filtering info
-        unenriched_candidates_excluded: unenrichedCandidates.length,
+        // ISS-005: Data completeness filtering info
         insufficient_data_excluded: insufficientDataCandidates.length,
         matched_at: new Date().toISOString(),
       }),
