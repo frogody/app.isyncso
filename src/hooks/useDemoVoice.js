@@ -170,7 +170,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
     stopAudio();
 
     // Notify parent that user spoke (enters conversation mode, cancels auto-advance)
-    onUserSpokeRef.current?.();
+    onUserSpokeRef.current?.(text);
 
     try {
       const res = await fetch(voiceUrl, {
@@ -323,6 +323,100 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
     }
   }, [voiceUrl, headers, stopListening, stopAudio, playAudio, resumeListening]);
 
+  // Generate and speak a tailored walkthrough via LLM (for priority modules after discovery)
+  // Unlike speakDialogue (pre-written text→TTS), this calls the LLM to generate contextual dialogue
+  // Unlike processInput (user speech→LLM), this doesn't trigger onUserSpoke and fires onDialogueEnd
+  const generateGuidedWalkthrough = useCallback(async (guidedPrompt) => {
+    if (!guidedPrompt || !activeRef.current) return;
+
+    const turnId = ++turnIdRef.current;
+    processingRef.current = true;
+    stopListening();
+    stopAudio();
+
+    setVoiceState(VOICE_STATES.PROCESSING);
+    setTranscript('');
+
+    const handleDone = () => {
+      resumeListening();
+      onDialogueEndRef.current?.();
+    };
+
+    try {
+      const res = await fetch(voiceUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          message: guidedPrompt,
+          history: historyRef.current.slice(-12),
+          demoToken,
+          stepContext: stepContextRef.current,
+        }),
+      });
+
+      if (turnIdRef.current !== turnId) return;
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      const rawReply = data.response || data.text || '';
+      const { cleanText: reply, actions } = parseDemoActions(rawReply);
+
+      // Store in history as assistant turn (don't expose the guided prompt as user message)
+      historyRef.current = [...historyRef.current, { role: 'assistant', content: reply }].slice(-20);
+      setTranscript(reply);
+
+      // Fire demo actions (highlights, sub-page navigation)
+      if (actions.length && onDemoActionRef.current) {
+        actions.forEach(a => onDemoActionRef.current(a));
+      }
+
+      if (!activeRef.current || turnIdRef.current !== turnId) return;
+
+      if (reply) {
+        setVoiceState(VOICE_STATES.SPEAKING);
+
+        if (data.audio) {
+          playAudio(data.audio, turnId, handleDone);
+          return;
+        }
+
+        // Fallback TTS
+        try {
+          const controller = new AbortController();
+          const ttsTimeout = setTimeout(() => controller.abort(), 8000);
+          const audioRes = await fetch(voiceUrl, {
+            method: 'POST',
+            signal: controller.signal,
+            headers,
+            body: JSON.stringify({ ttsOnly: true, ttsText: reply }),
+          });
+          clearTimeout(ttsTimeout);
+          if (turnIdRef.current !== turnId) return;
+          if (audioRes.ok && activeRef.current) {
+            const audioData = await audioRes.json();
+            if (audioData.audio) {
+              playAudio(audioData.audio, turnId, handleDone);
+              return;
+            }
+          }
+        } catch (_) {}
+      }
+
+      // TTS failed — wait reading time
+      if (turnIdRef.current === turnId) {
+        const readTime = Math.max(3000, (reply || '').length * 40);
+        await new Promise(r => setTimeout(r, readTime));
+        handleDone();
+      }
+    } catch (err) {
+      if (err.name === 'AbortError' || turnIdRef.current !== turnId) {
+        processingRef.current = false;
+        return;
+      }
+      if (activeRef.current) setTimeout(() => handleDone(), 300);
+    }
+  }, [demoToken, stopListening, stopAudio, playAudio, resumeListening, parseDemoActions, voiceUrl, headers]);
+
   // Set step context (called by orchestrator before each step)
   const setStepContext = useCallback((ctx) => {
     stepContextRef.current = ctx;
@@ -407,6 +501,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
     activate,
     deactivate,
     speakDialogue,
+    generateGuidedWalkthrough,
     preCacheAudio,
     setStepContext,
     toggleMute,

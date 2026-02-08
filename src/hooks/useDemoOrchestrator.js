@@ -18,6 +18,7 @@ export default function useDemoOrchestrator() {
   const [error, setError] = useState(null);
   const [previousPage, setPreviousPage] = useState(null);
   const [discoveryPhase, setDiscoveryPhase] = useState(true);
+  const [discoveryContext, setDiscoveryContextState] = useState(null);
   const visitedPagesRef = useRef(new Set());
 
   const startTimeRef = useRef(null);
@@ -204,6 +205,16 @@ export default function useDemoOrchestrator() {
     setSteps(reordered);
   }, [steps]);
 
+  // Save what the prospect said during discovery + their priority modules
+  const saveDiscoveryContext = useCallback((userInterests, priorityModules) => {
+    setDiscoveryContextState({ userInterests, priorityModules });
+  }, []);
+
+  // Check if a page is one of the prospect's priority modules
+  const isPriorityModule = useCallback((pageKey) => {
+    return discoveryContext?.priorityModules?.includes(pageKey) || false;
+  }, [discoveryContext]);
+
   // Finish discovery phase and start the scripted demo
   const finishDiscovery = useCallback(() => {
     setDiscoveryPhase(false);
@@ -310,6 +321,7 @@ export default function useDemoOrchestrator() {
     error,
     previousPage,
     discoveryPhase,
+    discoveryContext,
 
     // Methods
     loadDemo,
@@ -318,6 +330,8 @@ export default function useDemoOrchestrator() {
     goBack,
     advanceStep,
     reorderSteps,
+    saveDiscoveryContext,
+    isPriorityModule,
     finishDiscovery,
     startFromStep,
     executeHighlights,

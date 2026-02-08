@@ -297,6 +297,7 @@ export default function DemoExperience() {
 
   const autoAdvanceTimer = useRef(null);
   const pendingDiscoveryStartRef = useRef(false);
+  const discoveryMessageRef = useRef('');
 
   // Handle demo actions from voice LLM
   const handleDemoAction = useCallback((action) => {
@@ -315,6 +316,7 @@ export default function DemoExperience() {
     } else if (a.startsWith('prioritize ')) {
       const modules = a.replace('prioritize ', '').split(',').map(m => m.trim()).filter(Boolean);
       orchestrator.reorderSteps(modules);
+      orchestrator.saveDiscoveryContext(discoveryMessageRef.current, modules);
       pendingDiscoveryStartRef.current = true;
     }
   }, [orchestrator]);
@@ -327,6 +329,18 @@ export default function DemoExperience() {
     // Don't auto-advance on wait_for_user steps (sync-showcase, closing)
     const step = orchestrator.currentStep;
     if (step?.wait_for_user) return;
+
+    // Priority modules: enter conversation mode so the prospect can explore and ask questions
+    // SYNC already ended its walkthrough with "want me to dig deeper or move on?"
+    if (step && orchestrator.isPriorityModule(step.page_key)) {
+      if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+      autoAdvanceTimer.current = setTimeout(() => {
+        if (!orchestrator.conversationMode) {
+          orchestrator.enterConversationMode();
+        }
+      }, 1500);
+      return;
+    }
 
     // Clear any pending timer
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
@@ -353,7 +367,11 @@ export default function DemoExperience() {
   }, []);
 
   // When user speaks, enter conversation mode and cancel auto-advance
-  const handleUserSpoke = useCallback(() => {
+  const handleUserSpoke = useCallback((text) => {
+    // Capture what the user said during discovery for context
+    if (orchestrator.discoveryPhase && text) {
+      discoveryMessageRef.current = text;
+    }
     if (!orchestrator.conversationMode) {
       orchestrator.enterConversationMode();
     }
@@ -430,8 +448,9 @@ export default function DemoExperience() {
       page_key: orchestrator.currentPage,
       dialogue: orchestrator.conversationMode ? null : orchestrator.currentDialogue,
       discoveryMode: orchestrator.discoveryPhase,
+      discoveryContext: orchestrator.discoveryContext,
     });
-  }, [orchestrator.currentPage, orchestrator.isTransitioning, orchestrator.discoveryPhase]);
+  }, [orchestrator.currentPage, orchestrator.isTransitioning, orchestrator.discoveryPhase, orchestrator.discoveryContext]);
 
   // Auto-start scripted demo after discovery response finishes playing
   useEffect(() => {
@@ -458,24 +477,34 @@ export default function DemoExperience() {
     if (!step) return;
 
     const timer = setTimeout(() => {
-      voice.speakDialogue(orchestrator.currentDialogue);
+      // Priority modules get LLM-generated tailored walkthroughs
+      if (orchestrator.isPriorityModule(step.page_key)) {
+        const interests = orchestrator.discoveryContext?.userInterests || '';
+        const company = orchestrator.demoLink?.company_name || 'your company';
+        const guidedPrompt = `[GUIDED_WALKTHROUGH] You just navigated to the ${step.page_key} page for ${company}. The prospect told you during discovery: "${interests}". Give a tailored walkthrough that directly connects this module to what they care about. Go deep — highlight specific features, give a concrete ${company} scenario, and navigate to the most relevant sub-page.`;
+        voice.generateGuidedWalkthrough(guidedPrompt);
+      } else {
+        voice.speakDialogue(orchestrator.currentDialogue);
+      }
 
-      // Pre-cache audio for next 2 steps in background
+      // Pre-cache audio for upcoming non-priority steps
       const upcomingTexts = [];
       for (let i = 1; i <= 2; i++) {
         const futureStep = orchestrator.steps[orchestrator.currentStepIndex + i];
-        if (futureStep?.sync_dialogue) {
+        if (futureStep?.sync_dialogue && !orchestrator.isPriorityModule(futureStep.page_key)) {
           upcomingTexts.push(orchestrator.interpolateDialogue(futureStep.sync_dialogue));
         }
       }
       if (upcomingTexts.length) voice.preCacheAudio(upcomingTexts);
 
-      // Show highlights after speech starts
-      const pageHighlights = step.highlights?.length
-        ? step.highlights
-        : PAGE_HIGHLIGHTS[step.page_key] || [];
-      if (pageHighlights.length) {
-        setTimeout(() => orchestrator.executeHighlights(pageHighlights), 1500);
+      // Show highlights after speech starts (only for non-priority — priority modules handle their own)
+      if (!orchestrator.isPriorityModule(step.page_key)) {
+        const pageHighlights = step.highlights?.length
+          ? step.highlights
+          : PAGE_HIGHLIGHTS[step.page_key] || [];
+        if (pageHighlights.length) {
+          setTimeout(() => orchestrator.executeHighlights(pageHighlights), 1500);
+        }
       }
     }, 500);
 
