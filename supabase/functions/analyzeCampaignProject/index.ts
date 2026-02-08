@@ -1125,19 +1125,19 @@ serve(async (req) => {
     }
 
     // Layer 2: Data completeness check — even enriched candidates need minimum viable data
+    // DB columns: job_title (not current_title), work_history (not experience)
     const insufficientDataCandidates = eligibleCandidates.filter(c => {
-      const hasExperience = Array.isArray(c.experience) && c.experience.length > 0;
-      const hasCurrentRole = !!(c.current_title || c.headline);
-      const hasAnySkills = Array.isArray(c.skills) && c.skills.length > 0;
-      // Require at least current role OR experience history to produce meaningful matching
-      return !hasCurrentRole && !hasExperience;
+      const hasWorkHistory = Array.isArray(c.work_history) && c.work_history.length > 0;
+      const hasCurrentRole = !!(c.job_title || c.current_title || c.headline);
+      // Require at least current role OR work history to produce meaningful matching
+      return !hasCurrentRole && !hasWorkHistory;
     });
     if (insufficientDataCandidates.length > 0) {
       console.log(`ISS-005: Excluding ${insufficientDataCandidates.length} candidates with insufficient data for matching`);
       eligibleCandidates = eligibleCandidates.filter(c => {
-        const hasExperience = Array.isArray(c.experience) && c.experience.length > 0;
-        const hasCurrentRole = !!(c.current_title || c.headline);
-        return hasCurrentRole || hasExperience;
+        const hasWorkHistory = Array.isArray(c.work_history) && c.work_history.length > 0;
+        const hasCurrentRole = !!(c.job_title || c.current_title || c.headline);
+        return hasCurrentRole || hasWorkHistory;
       });
     }
 
