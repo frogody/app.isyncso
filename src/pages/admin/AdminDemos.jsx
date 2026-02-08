@@ -256,9 +256,11 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
           recipient_name: recipientName.trim(),
           recipient_email: recipientEmail.trim(),
           company_name: companyName.trim(),
-          industry: industry || null,
-          notes: notes.trim() || null,
-          modules,
+          company_context: {
+            industry: industry || null,
+            notes: notes.trim() || null,
+          },
+          modules_to_demo: modules,
           status: 'created',
         })
         .select()
@@ -783,9 +785,9 @@ export default function AdminDemos() {
                           <span className="text-zinc-300 text-xs">
                             {demo.company_name}
                           </span>
-                          {demo.industry && (
+                          {demo.company_context?.industry && (
                             <p className="text-zinc-500 text-[10px]">
-                              {demo.industry}
+                              {demo.company_context.industry}
                             </p>
                           )}
                         </td>
