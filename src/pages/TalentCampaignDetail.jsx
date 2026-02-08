@@ -791,8 +791,8 @@ const OutreachQueueTab = ({ campaign, tasks, onRefresh, onSendTask, onCancelTask
                       {task.candidate?.first_name} {task.candidate?.last_name}
                     </p>
                     <p className="text-sm text-zinc-400 truncate">
-                      {task.candidate?.current_title || task.candidate?.job_title}
-                      {task.candidate?.current_company && ` at ${task.candidate.current_company}`}
+                      {task.candidate?.job_title}
+                      {task.candidate?.company_name && ` at ${task.candidate.company_name}`}
                     </p>
                   </div>
                 </div>
@@ -2041,7 +2041,7 @@ export default function TalentCampaignDetail() {
     try {
       const { data, error } = await supabase
         .from('outreach_tasks')
-        .select('*, candidate:candidate_id(id, first_name, last_name, job_title, email, current_title, current_company)')
+        .select('*, candidate:candidate_id(id, first_name, last_name, job_title, email, company_name)')
         .eq('campaign_id', campaign.id)
         .order('created_date', { ascending: false });
 
@@ -2171,8 +2171,8 @@ export default function TalentCampaignDetail() {
       const { data: candidates, error: candidatesError } = await supabase
         .from("candidates")
         .select(`
-          id, name, first_name, last_name, current_title, job_title,
-          current_company, company_name, skills, email, linkedin_url,
+          id, first_name, last_name, job_title,
+          company_name, skills, email, linkedin_url,
           intelligence_score, intelligence_level, intelligence_status,
           intelligence_generated, best_outreach_angle, timing_signals,
           outreach_hooks, recommended_approach, import_source

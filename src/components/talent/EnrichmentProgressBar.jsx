@@ -37,7 +37,7 @@ function EnrichmentProgressBarInner({ organizationId, onDismiss }) {
     if (!organizationId) return;
     const { data, error } = await supabase
       .from('sync_intel_queue')
-      .select('id, candidate_id, status, current_stage, error_message, created_at, candidates(name, first_name, last_name)')
+      .select('id, candidate_id, status, current_stage, error_message, created_at, candidates(first_name, last_name)')
       .eq('organization_id', organizationId)
       .in('status', ['pending', 'processing', 'completed', 'failed'])
       .order('created_at', { ascending: true })
