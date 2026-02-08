@@ -423,16 +423,19 @@ serve(async (req) => {
     // Strip action tags from TTS text (keep in response for client parsing)
     const spokenText = responseText.replace(/\[DEMO_ACTION:\s*[^\]]+\]/g, '').trim();
 
-    // Use first-sentence TTS if available, otherwise generate full TTS
+    // Generate TTS for the full response
+    // For long responses (3+ sentences), always use full TTS — the first-sentence
+    // race optimization would return truncated audio for guided walkthroughs
     let ttsPromise: Promise<{ audio: string; byteLength: number } | null>;
-    if (firstSentenceTtsPromise) {
-      // Already started TTS for first sentence — now also generate full audio
-      // Return whichever finishes: prefer full audio if first-sentence TTS is slow
+    const sentenceCount = (spokenText.match(/[.!?]+/g) || []).length;
+    if (firstSentenceTtsPromise && sentenceCount <= 2) {
+      // Short response — race first-sentence vs full TTS for faster delivery
       ttsPromise = Promise.race([
         firstSentenceTtsPromise,
         spokenText ? generateTTS(spokenText, voice).catch(() => null) : Promise.resolve(null),
       ]);
     } else {
+      // Long response or no first-sentence TTS — always generate full audio
       ttsPromise = spokenText ? generateTTS(spokenText, voice).catch(() => null) : Promise.resolve(null);
     }
 

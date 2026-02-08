@@ -298,6 +298,7 @@ export default function DemoExperience() {
   const autoAdvanceTimer = useRef(null);
   const pendingDiscoveryStartRef = useRef(false);
   const discoveryMessageRef = useRef('');
+  const guidedActiveRef = useRef(false);
 
   // Handle demo actions from voice LLM
   const handleDemoAction = useCallback((action) => {
@@ -323,6 +324,9 @@ export default function DemoExperience() {
 
   // Auto-advance after scripted dialogue finishes playing — dynamic timing
   const handleDialogueEnd = useCallback(() => {
+    // Clear guided walkthrough lock so step speech effect can fire for next step
+    guidedActiveRef.current = false;
+
     // Don't auto-advance if in conversation mode
     if (orchestrator.conversationMode) return;
 
@@ -471,6 +475,7 @@ export default function DemoExperience() {
     if (orchestrator.isTransitioning) return;
     if (orchestrator.conversationMode) return;
     if (orchestrator.discoveryPhase) return;
+    if (guidedActiveRef.current) return; // Don't interrupt an active guided walkthrough
 
     stepSpeechRef.current = orchestrator.currentStepIndex;
     const step = orchestrator.currentStep;
@@ -479,6 +484,7 @@ export default function DemoExperience() {
     const timer = setTimeout(() => {
       // Priority modules get LLM-generated tailored walkthroughs
       if (orchestrator.isPriorityModule(step.page_key)) {
+        guidedActiveRef.current = true;
         const interests = orchestrator.discoveryContext?.userInterests || '';
         const company = orchestrator.demoLink?.company_name || 'your company';
         const guidedPrompt = `[GUIDED_WALKTHROUGH] You just navigated to the ${step.page_key} page for ${company}. The prospect told you during discovery: "${interests}". Give a tailored walkthrough that directly connects this module to what they care about. Go deep — highlight specific features, give a concrete ${company} scenario, and navigate to the most relevant sub-page.`;
