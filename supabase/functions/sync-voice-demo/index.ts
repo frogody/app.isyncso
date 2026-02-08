@@ -171,7 +171,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'meta-llama/Llama-3.1-8B-Instruct-Turbo',
+        model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
         messages,
         temperature: 0.5,
         max_tokens: 35,
