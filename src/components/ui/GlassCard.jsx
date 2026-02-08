@@ -62,17 +62,6 @@ export function GlassCard({
         delay,
         ease: [0.25, 0.46, 0.45, 0.94]
       }}
-      whileHover={hover ? {
-        y: -4,
-        scale: 1.02,
-        boxShadow: glowConfig?.shadow || '0 20px 40px rgba(0, 0, 0, 0.3)',
-        transition: {
-          type: 'spring',
-          stiffness: 400,
-          damping: 25
-        }
-      } : undefined}
-      whileTap={hover ? { scale: 0.98 } : undefined}
       className={baseClasses}
       {...props}
     >
