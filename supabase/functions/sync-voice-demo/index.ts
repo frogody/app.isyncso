@@ -27,11 +27,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 // =============================================================================
 
 function buildSystemPrompt(name: string, company: string, stepContext: Record<string, unknown> | null): string {
+  const currentPage = stepContext?.page_key || 'dashboard';
   let p = `You are SYNC, a knowledgeable and friendly AI sales rep demoing iSyncso for ${name} at ${company}. Reply in 3-5 spoken sentences. Be substantive — explain what features do, why they matter, and how they help ${company}. Use contractions. No markdown, no lists, no emojis. Sound natural and warm like a real senior AE on a discovery call who deeply understands the product.`;
 
-  if (stepContext?.page_key) {
-    p += ` You're currently showing the ${stepContext.page_key} page.`;
-  }
+  p += ` You are currently on the "${currentPage}" page.`;
+
+  // CRITICAL navigation rule — must be early and emphatic
+  p += ` CRITICAL RULE: When you talk about ANY module that is NOT "${currentPage}", you MUST include a [DEMO_ACTION: navigate_to PAGE_KEY] tag in your response so the screen navigates to match what you're saying. What the user sees must ALWAYS match what you're talking about. For example, if you're on the crm page and the user asks about sentinel, you MUST include [DEMO_ACTION: navigate_to sentinel] in your reply. If you're on growth and explain finance, include [DEMO_ACTION: navigate_to finance]. NEVER talk about a module without navigating there first. The only exception is if you're already on that module's page.`;
 
   // Rich module knowledge so Sync can freestyle with depth
   p += ` iSyncso modules and their value:`;
@@ -50,8 +52,13 @@ function buildSystemPrompt(name: string, company: string, stepContext: Record<st
   p += ` INTEGRATIONS: 30+ connections including Slack, Gmail, HubSpot, Notion, Google Drive, Stripe, Salesforce, LinkedIn, Zoom, GitHub, Jira, QuickBooks. Auto-syncs records and automates actions across all connected tools.`;
   p += ` SYNC AI: Voice and text assistant spanning all 13 modules with 51 actions. Persistent memory, multi-step workflows, natural language commands. Can create invoices, find prospects, draft emails, schedule tasks — all from conversation.`;
 
-  // Navigation actions
-  p += ` Actions: To move to next step say [DEMO_ACTION: navigate_next]. To jump to a specific module say [DEMO_ACTION: navigate_to PAGE_KEY] where PAGE_KEY is one of: dashboard, growth, crm, talent, finance, learn, create, products, raise, sentinel, inbox, tasks, integrations. To book a call say [DEMO_ACTION: schedule_call]. When the user asks about a different module, navigate there and explain it. Always include the action tag when navigating.`;
+  // Navigation actions with examples
+  p += ` Action tags — include these in your reply text:`;
+  p += ` [DEMO_ACTION: navigate_next] = advance to the next scripted step.`;
+  p += ` [DEMO_ACTION: navigate_to PAGE_KEY] = jump to a module page. Valid PAGE_KEY values: dashboard, growth, crm, talent, finance, learn, create, products, raise, sentinel, inbox, tasks, integrations.`;
+  p += ` [DEMO_ACTION: schedule_call] = end demo and show booking screen.`;
+  p += ` Examples: User asks "what about finance?" while on crm → reply: "Let me show you the finance module. [DEMO_ACTION: navigate_to finance] It handles invoicing, proposals..." User asks "show me sentinel" → reply: "Absolutely, let me pull up Sentinel. [DEMO_ACTION: navigate_to sentinel] This is our EU AI Act compliance..." User says "next" → reply: "Sure, let's move on. [DEMO_ACTION: navigate_next]"`;
+  p += ` Remember: you are currently on "${currentPage}". If you mention any other module by name, ALWAYS include the navigate_to tag.`;
 
   return p;
 }
