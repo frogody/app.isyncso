@@ -13,8 +13,8 @@ export default function DemoControls({
   onResumeScript,
 }) {
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
-      <div className="flex items-center gap-3 bg-zinc-900/95 backdrop-blur-xl border border-zinc-700 rounded-2xl px-5 py-3 shadow-2xl">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40" style={{ marginLeft: '-160px' }}>
+      <div className="flex items-center gap-3 bg-black/95 backdrop-blur-xl border border-white/10 rounded-2xl px-5 py-3 shadow-2xl">
         {/* Progress dots */}
         <div className="flex items-center gap-1.5 mr-2">
           {Array.from({ length: totalSteps }).map((_, i) => (
