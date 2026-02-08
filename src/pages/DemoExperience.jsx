@@ -104,12 +104,12 @@ export default function DemoExperience() {
     // Clear any pending timer
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
 
-    // Wait 2s after speech ends, then advance
+    // Wait 5s after speech ends so prospect can absorb the visuals
     autoAdvanceTimer.current = setTimeout(() => {
       if (!orchestrator.conversationMode) {
         orchestrator.advanceStep();
       }
-    }, 2000);
+    }, 5000);
   }, [orchestrator]);
 
   // Clean up timer on unmount

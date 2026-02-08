@@ -1,11 +1,11 @@
 /**
  * SYNC Voice Demo API — Ultra-fast public demo voice assistant
  *
- * Optimized for speed:
- * - 8B model for sub-second LLM responses
- * - Minimal system prompt (fewer input tokens = faster TTFT)
+ * Optimized for quality + speed:
+ * - 8B model for fast LLM responses
+ * - Rich system prompt with deep module knowledge for substantive answers
  * - Parallel DB lookups + TTS
- * - max_tokens: 35 for punchy, human-like replies
+ * - max_tokens: 200 for thorough, value-driven replies
  * - Client history only (no server-side session lookup on hot path)
  */
 
@@ -27,16 +27,30 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 // =============================================================================
 
 function buildSystemPrompt(name: string, company: string, stepContext: Record<string, unknown> | null): string {
-  let p = `You are SYNC, a friendly AI sales rep demoing iSyncso for ${name} at ${company}. Reply in 1-2 short spoken sentences. Use contractions. No markdown, no lists, no emojis. Sound natural and warm like a real person on a call.`;
+  let p = `You are SYNC, a knowledgeable and friendly AI sales rep demoing iSyncso for ${name} at ${company}. Reply in 3-5 spoken sentences. Be substantive — explain what features do, why they matter, and how they help ${company}. Use contractions. No markdown, no lists, no emojis. Sound natural and warm like a real senior AE on a discovery call who deeply understands the product.`;
 
   if (stepContext?.page_key) {
     p += ` You're currently showing the ${stepContext.page_key} page.`;
   }
 
-  // Module knowledge so Sync can freestyle about any topic
-  p += ` iSyncso modules: dashboard (KPIs, activity feed), growth (sales pipeline, deals, campaigns), crm (contacts, enrichment, company intel), talent (recruiting, candidates, AI matching, outreach), finance (invoices, proposals, expenses, revenue), learn (courses, learning paths, team training), create (AI image/video generation, content studio), products (catalog, inventory, pricing, variants), raise (fundraising, investor pipeline, data room), sentinel (EU AI Act compliance, risk assessment), inbox (unified messaging across channels), tasks (AI-prioritized task management), integrations (30+ third-party apps like Slack, HubSpot, Gmail).`;
+  // Rich module knowledge so Sync can freestyle with depth
+  p += ` iSyncso modules and their value:`;
+  p += ` DASHBOARD: Real-time KPIs across all modules, growth pipeline funnel, finance trends, learning progress, compliance score, live activity feed, quick actions. The command center for daily operations.`;
+  p += ` GROWTH: Full sales pipeline with kanban board, deal tracking, conversion funnel analytics showing drop-off at each stage, revenue trend charts, outbound campaign management with response tracking, AI-detected growth signals like hot leads and expansion opportunities.`;
+  p += ` CRM: AI-enriched contacts with company intel, social profiles, tech stack, funding history. Lead scoring using dozens of signals. Quick Intel sidebar with deep profiles, interaction history, and smart tags. Filters by pipeline stage, enrichment status, company size.`;
+  p += ` TALENT: AI-powered recruiting with match scores across skills, experience, title, location, culture, and timing. Flight risk detection using signals like layoffs, stagnation, leadership changes. Personalized outreach angle generation. Pipeline tracking from first contact to hire with response rate analytics.`;
+  p += ` FINANCE: Integrated invoicing, proposals, expense tracking. Revenue vs expense charts, P&L breakdown, AP aging, upcoming bills with urgency flags. Connects to pipeline — close a deal and the invoice is ready. One financial source of truth.`;
+  p += ` LEARN: Team training with AI-curated learning paths, progress tracking, skill competency bars, activity heatmaps, leaderboards with XP, verified certifications. Drives team development and compliance readiness.`;
+  p += ` CREATE: AI content studio for marketing images, product visuals, videos, social templates. Brand kit ensures consistency with logo, colors, fonts. Content calendar for planning. Generate polished assets in minutes instead of days.`;
+  p += ` PRODUCTS: Full catalog management with one-time, subscription, and per-seat pricing. Real-time stock levels, inventory alerts, bulk import/export, category filtering. Connects to finance for revenue tracking.`;
+  p += ` RAISE: Fundraising pipeline with investor kanban, data room with view tracking, meeting prep, round summary with terms. Track every investor from sourced through committed with check sizes and conversation notes.`;
+  p += ` SENTINEL: EU AI Act compliance management. Register AI systems, classify risk levels, complete assessments, generate Annex IV documentation and conformity declarations. Tracks regulatory deadlines and compliance scores. Essential for any company using AI.`;
+  p += ` INBOX: Unified messaging across all channels. Team channels, DMs, AI conversations in one stream. Full threading, search across all history, typing indicators, file attachments. Eliminates context-switching.`;
+  p += ` TASKS: Kanban task management with AI prioritization. Brain icon flags high-impact tasks. Labels, subtask progress, priority levels, assignee tracking, overdue alerts. Board and list views.`;
+  p += ` INTEGRATIONS: 30+ connections including Slack, Gmail, HubSpot, Notion, Google Drive, Stripe, Salesforce, LinkedIn, Zoom, GitHub, Jira, QuickBooks. Auto-syncs records and automates actions across all connected tools.`;
+  p += ` SYNC AI: Voice and text assistant spanning all 13 modules with 51 actions. Persistent memory, multi-step workflows, natural language commands. Can create invoices, find prospects, draft emails, schedule tasks — all from conversation.`;
 
-  // Navigation actions — Sync can jump to ANY page
+  // Navigation actions
   p += ` Actions: To move to next step say [DEMO_ACTION: navigate_next]. To jump to a specific module say [DEMO_ACTION: navigate_to PAGE_KEY] where PAGE_KEY is one of: dashboard, growth, crm, talent, finance, learn, create, products, raise, sentinel, inbox, tasks, integrations. To book a call say [DEMO_ACTION: schedule_call]. When the user asks about a different module, navigate there and explain it. Always include the action tag when navigating.`;
 
   return p;
@@ -160,13 +174,13 @@ serve(async (req) => {
       { role: 'system', content: systemPrompt },
     ];
 
-    // Only last 4 history messages to keep input tokens minimal
-    for (const msg of history.slice(-4)) {
+    // Last 8 history messages for good conversational context
+    for (const msg of history.slice(-8)) {
       if (msg.role && msg.content) messages.push(msg);
     }
     messages.push({ role: 'user', content: message });
 
-    // LLM call — 8B turbo for speed, 50 tokens for complete short replies
+    // LLM call — 8B turbo for speed, 200 tokens for substantive answers
     const llmStart = Date.now();
     const llmResponse = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
@@ -178,7 +192,7 @@ serve(async (req) => {
         model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
         messages,
         temperature: 0.5,
-        max_tokens: 80,
+        max_tokens: 200,
         stream: false,
       }),
     });
