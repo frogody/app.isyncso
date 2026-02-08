@@ -577,7 +577,7 @@ RESPOND WITH VALID JSON ONLY (no markdown, no explanation outside JSON):
     "<pain points derived from low ratings to use as outreach hooks, e.g. 'Limited career advancement (2.8/5 rating)'>"
   ],
   "lateral_opportunities": [
-    "<competitor company names that could be mentioned as alternative opportunities>"
+    "<specific lateral move: competitor company name + why it's relevant for THIS candidate's skills/role, e.g. 'Deloitte - their expanding audit practice needs senior accountants with Big Four experience'>"
   ],
   "company_correlations": [
     {
@@ -594,7 +594,15 @@ Important scoring guidance:
 - 40-59: Medium - Some signals, standard nurturing
 - 0-39: Low - Few signals, long-term relationship building
 
-Be specific and actionable. Base your analysis ONLY on the data provided. If data is missing, note that as a limitation but still provide the best analysis possible with available data.`;
+CRITICAL GROUNDING RULES:
+- Base your analysis ONLY on the data provided above. Do NOT infer or fabricate details not present in the data.
+- When referencing the candidate's role, use ONLY the exact title from "Current Role" field.
+- When citing years of experience, use ONLY the "Years at Current Company" number. Do NOT invent experience figures.
+- If "Years at Current Company" is unknown, do NOT guess or estimate a number.
+- If data is missing for a dimension, score it conservatively and note the limitation.
+- Do NOT claim the candidate is an "executive" unless their title explicitly includes executive-level terms (CEO, CFO, CTO, VP, Director).
+- Ensure intelligence_factors weights sum to approximately match the intelligence_score.
+- Be specific and actionable. If data is missing, note that as a limitation but still provide the best analysis possible.`;
 }
 
 // Call Together.ai API
@@ -824,10 +832,17 @@ function analyzeWithRules(candidate: CandidateData, companyIntel?: CompanyIntell
       }
     }
 
-    // Competitors as lateral opportunities
+    // ISS-015 FIX: Personalized lateral opportunities (not just generic competitor names)
     const competitors = companyIntel.competitive_landscape?.competitors || [];
-    if (competitors.length > 0) {
-      lateralOpportunities.push(...competitors.slice(0, 5).map(c => c.name));
+    if (competitors.length > 0 && candidate.job_title) {
+      const roleDesc = candidate.job_title.toLowerCase();
+      lateralOpportunities.push(...competitors.slice(0, 5).map(c =>
+        `${c.name} - potential ${candidate.job_title} role (direct competitor with similar industry needs)`
+      ));
+    } else if (competitors.length > 0) {
+      lateralOpportunities.push(...competitors.slice(0, 5).map(c =>
+        `${c.name} - competitor with similar business model`
+      ));
     }
   }
 
@@ -988,21 +1003,34 @@ function analyzeWithRules(candidate: CandidateData, companyIntel?: CompanyIntell
   let approach: "nurture" | "targeted" | "immediate";
   let timeline: string;
 
+  // ISS-006 FIX: Determine approach considering satisfaction level, not just score
+  // ISS-007 FIX: Ensure switching likelihood aligns with satisfaction/tenure data
+  const satisfactionText = (candidate.job_satisfaction || candidate.job_satisfaction_analysis || '').toLowerCase();
+  const isNotLooking = satisfactionText.includes('not looking') ||
+                       satisfactionText.includes('satisfied') ||
+                       satisfactionText.includes('switching likelihood: low');
+  const isActivelyLooking = satisfactionText.includes('actively looking') ||
+                            satisfactionText.includes('switching likelihood: high') ||
+                            satisfactionText.includes('open to');
+
   if (finalScore >= 80) {
     level = "Critical";
     urgency = "High";
-    approach = "immediate";
-    timeline = "Reach out within 24-48 hours";
+    // ISS-006: Even high scores should respect satisfaction signals
+    approach = isNotLooking ? "targeted" : "immediate";
+    timeline = isNotLooking ? "Approach carefully over 1-2 weeks" : "Reach out within 24-48 hours";
   } else if (finalScore >= 60) {
     level = "High";
     urgency = "High";
-    approach = "targeted";
-    timeline = "Prioritize outreach this week";
+    // ISS-006: "Not Looking" candidates should never get "immediate"
+    approach = isNotLooking ? "nurture" : "targeted";
+    timeline = isNotLooking ? "Build relationship over 2-4 weeks" : "Prioritize outreach this week";
   } else if (finalScore >= 40) {
     level = "Medium";
     urgency = "Medium";
-    approach = "targeted";
-    timeline = "Reach out within 1-2 weeks";
+    // ISS-006: Medium score + Not Looking = nurture, not targeted
+    approach = isNotLooking ? "nurture" : (isActivelyLooking ? "targeted" : "nurture");
+    timeline = isNotLooking ? "Long-term nurturing over 4-6 weeks" : "Reach out within 1-2 weeks";
   } else {
     level = "Low";
     urgency = "Low";
@@ -1122,6 +1150,46 @@ serve(async (req) => {
         if (!intelligence) {
           console.log(`LLM failed for candidate ${candidate.id}, using rule-based fallback`);
           intelligence = analyzeWithRules(candidate, company_intelligence as CompanyIntelligence | undefined);
+        }
+
+        // ISS-004 FIX: Validate AI output against actual candidate data to prevent hallucinations
+        if (intelligence) {
+          // Validate experience claims
+          if (candidate.years_at_company !== undefined && candidate.years_at_company !== null) {
+            const riskSummary = intelligence.risk_summary || '';
+            const keyInsights = (intelligence.key_insights || []).join(' ');
+            const allText = `${riskSummary} ${keyInsights}`;
+
+            // Check for wildly inaccurate experience claims (e.g., "45 years" when actual is 3)
+            const yearsMatch = allText.match(/(\d{2,})\s*(?:years?|yr)/gi);
+            if (yearsMatch) {
+              for (const match of yearsMatch) {
+                const claimedYears = parseInt(match);
+                if (claimedYears > 50 || (candidate.years_at_company && claimedYears > candidate.years_at_company * 3)) {
+                  console.log(`ISS-004: Filtering hallucinated experience claim "${match}" for candidate ${candidate.id} (actual: ${candidate.years_at_company} years)`);
+                  // Remove the hallucinated insight
+                  intelligence.key_insights = (intelligence.key_insights || []).filter(
+                    insight => !insight.includes(match.trim())
+                  );
+                }
+              }
+            }
+          }
+
+          // ISS-006 FIX: Override approach if it contradicts satisfaction level
+          const satText = (candidate.job_satisfaction || candidate.job_satisfaction_analysis || '').toLowerCase();
+          const candidateNotLooking = satText.includes('not looking') || satText.includes('satisfied') || satText.includes('switching likelihood: low');
+
+          if (candidateNotLooking && intelligence.recommended_approach === 'immediate') {
+            intelligence.recommended_approach = 'nurture';
+            intelligence.recommended_timeline = 'Build relationship over 2-4 weeks';
+            console.log(`ISS-006: Overrode "immediate" to "nurture" for satisfied candidate ${candidate.id}`);
+          }
+          if (candidateNotLooking && intelligence.recommended_approach === 'targeted') {
+            intelligence.recommended_approach = 'nurture';
+            intelligence.recommended_timeline = 'Long-term nurturing over 4-6 weeks';
+            console.log(`ISS-006: Overrode "targeted" to "nurture" for satisfied candidate ${candidate.id}`);
+          }
         }
 
         // CRITICAL: Apply validation to filter out invalid correlations

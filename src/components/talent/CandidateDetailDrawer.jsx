@@ -333,19 +333,34 @@ const ReasoningBlock = ({ title, items, content, color = "cyan" }) => {
 const QuickStats = ({ candidate }) => {
   // Use database fields if available, otherwise calculate from experience
   const calculateYearsAtCompany = () => {
-    // First try to use the database field
-    if (candidate.years_at_company != null) {
-      return Math.round(candidate.years_at_company);
-    }
-    // Fallback to calculation from experience
-    if (!candidate.experience || candidate.experience.length === 0) return null;
-    const currentJob = candidate.experience.find(exp => !exp.end_date || exp.end_date === 'Present');
-    if (!currentJob || !currentJob.start_date) return null;
+    // ISS-012 FIX: Cross-check DB field against experience data to catch bad values
+    const dbYears = candidate.years_at_company != null ? Math.round(candidate.years_at_company) : null;
 
-    const startYear = parseInt(currentJob.start_date.match(/\d{4}/)?.[0]);
-    if (!startYear) return null;
-    const years = new Date().getFullYear() - startYear;
-    return years;
+    // Calculate from experience history for cross-check
+    let calculatedYears = null;
+    if (candidate.experience && candidate.experience.length > 0) {
+      const currentJob = candidate.experience.find(exp => !exp.end_date || exp.end_date === 'Present');
+      if (currentJob?.start_date) {
+        const startYear = parseInt(currentJob.start_date.match(/\d{4}/)?.[0]);
+        if (startYear) {
+          calculatedYears = new Date().getFullYear() - startYear;
+        }
+      }
+    }
+
+    // If both are available and differ significantly, use the calculated value
+    // (the DB field may have been imported incorrectly)
+    if (dbYears !== null && calculatedYears !== null) {
+      if (Math.abs(dbYears - calculatedYears) > 5) {
+        // Significant discrepancy — trust the calculated value from actual dates
+        console.warn(`Tenure discrepancy for candidate: DB=${dbYears}y, Calculated=${calculatedYears}y. Using calculated.`);
+        return calculatedYears;
+      }
+      return dbYears; // Within range, trust DB
+    }
+
+    // Return whichever is available
+    return dbYears ?? calculatedYears;
   };
 
   // Calculate times promoted (count title changes at same company)

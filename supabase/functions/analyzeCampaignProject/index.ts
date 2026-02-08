@@ -501,7 +501,13 @@ Respond with JSON array for ALL candidates:
   }
 ]
 
-Be discriminating. Most candidates are 40-60. Only truly great fits score 70+. Score 80+ is exceptional.`;
+Use the FULL 0-100 range. Score based on actual fit:
+- 85-100: Exceptional fit across multiple dimensions. Strong skills match + right experience + good timing.
+- 70-84: Strong fit. Solid match in most dimensions with minor gaps.
+- 50-69: Moderate fit. Some alignment but notable gaps in skills, experience, or timing.
+- 30-49: Weak fit. Limited alignment, significant gaps.
+- 0-29: Poor fit. Little to no alignment with role requirements.
+Do NOT cluster all scores around 50. Differentiate clearly between strong and weak candidates.`;
 
     try {
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -573,14 +579,16 @@ Be discriminating. Most candidates are 40-60. Only truly great fits score 70+. S
 }
 
 function getDefaultFactors(): MatchFactors {
+  // ISS-001 FIX: Default to 30 (low-data baseline) instead of 50 (which falsely inflated scores)
+  // Each dimension should start conservative and be earned by actual data
   return {
-    skills_fit: 50,
-    experience_fit: 50,
-    title_fit: 50,
-    location_fit: 50,
-    timing_score: 50,
-    culture_fit: 50,
-    overall_confidence: 50,
+    skills_fit: 30,
+    experience_fit: 30,
+    title_fit: 30,
+    location_fit: 30,
+    timing_score: 30,
+    culture_fit: 30,
+    overall_confidence: 20, // Low confidence when using defaults
   };
 }
 
@@ -590,65 +598,180 @@ function fallbackDeepAnalysis(
   roleContext: RoleContext | undefined,
   weights: CriteriaWeights = DEFAULT_WEIGHTS
 ): { score: number; reasons: string[]; analysis: string; factors: MatchFactors } {
-  const factors: MatchFactors = getDefaultFactors();
+  // ISS-001 FIX: Comprehensive rule-based analysis that produces meaningful variance
+  // Start from low baseline (20) and ADD points based on actual data matches
+  const factors: MatchFactors = {
+    skills_fit: 20,
+    experience_fit: 20,
+    title_fit: 20,
+    location_fit: 30,  // Slightly higher default since location is often flexible
+    timing_score: 20,
+    culture_fit: 25,
+    overall_confidence: 40,
+  };
   const reasons: string[] = [];
 
   const candidateTitle = (candidate.current_title || candidate.job_title || "").toLowerCase();
   const roleTitle = role.title.toLowerCase();
 
-  // Skills fit
-  if (candidate.skills && role.requirements) {
+  // ---- SKILLS FIT ----
+  // Check explicit skills against requirements
+  if (candidate.skills && candidate.skills.length > 0 && role.requirements) {
     const reqLower = role.requirements.toLowerCase();
     const matchedSkills = candidate.skills.filter(s => reqLower.includes(s.toLowerCase()));
-    factors.skills_fit = Math.min(30 + (matchedSkills.length * 15), 100);
-    if (matchedSkills.length > 0) {
+    const skillRatio = matchedSkills.length / Math.max(candidate.skills.length, 1);
+
+    if (matchedSkills.length >= 3) {
+      factors.skills_fit = Math.min(70 + (matchedSkills.length * 5), 95);
+      reasons.push(`Strong skills match: ${matchedSkills.slice(0, 3).join(", ")}`);
+    } else if (matchedSkills.length > 0) {
+      factors.skills_fit = 45 + (matchedSkills.length * 12);
       reasons.push(`Skills: ${matchedSkills.slice(0, 3).join(", ")}`);
+    } else {
+      factors.skills_fit = 25; // Has skills, but no match
+    }
+  } else if (candidate.skills && candidate.skills.length > 0) {
+    // Has skills but no requirements to compare against — give partial credit
+    factors.skills_fit = 40;
+  }
+  // Check must-haves for additional skills signal
+  const mustHaves = normalizeToArray(roleContext?.must_haves);
+  if (mustHaves.length > 0 && candidate.skills) {
+    const candidateText = `${candidateTitle} ${candidate.skills.join(' ')} ${candidate.certifications?.join(' ') || ''}`.toLowerCase();
+    const matchedMH = mustHaves.filter(mh => candidateText.includes(mh.toLowerCase()));
+    if (matchedMH.length > 0) {
+      const mhBoost = Math.round((matchedMH.length / mustHaves.length) * 20);
+      factors.skills_fit = Math.min(factors.skills_fit + mhBoost, 100);
+      if (mhBoost >= 10) reasons.push(`${matchedMH.length}/${mustHaves.length} must-haves covered`);
     }
   }
 
-  // Title fit
+  // ---- TITLE FIT ----
   const titleWords = roleTitle.split(/\s+/).filter(w => w.length > 2);
   const matchedWords = titleWords.filter(w => candidateTitle.includes(w));
-  factors.title_fit = Math.min(30 + (matchedWords.length / Math.max(titleWords.length, 1)) * 70, 100);
-  if (matchedWords.length > 0) {
-    reasons.push(`Title alignment: ${matchedWords.join(", ")}`);
-  }
+  const titleRatio = matchedWords.length / Math.max(titleWords.length, 1);
 
-  // Experience fit
-  if (candidate.years_experience) {
-    if (candidate.years_experience >= 3 && candidate.years_experience <= 15) {
-      factors.experience_fit = 70;
-    } else if (candidate.years_experience > 15) {
-      factors.experience_fit = 60; // Might be overqualified
-    } else {
-      factors.experience_fit = 40; // Junior
+  if (titleRatio >= 0.8) {
+    factors.title_fit = 90;
+    reasons.push(`Excellent title alignment: "${candidate.current_title || candidate.job_title}"`);
+  } else if (titleRatio >= 0.5) {
+    factors.title_fit = 65 + Math.round(titleRatio * 25);
+    reasons.push(`Title alignment: ${matchedWords.join(", ")}`);
+  } else if (matchedWords.length > 0) {
+    factors.title_fit = 40 + Math.round(titleRatio * 30);
+    reasons.push(`Partial title match: ${matchedWords.join(", ")}`);
+  } else {
+    // Check for related titles (e.g., "Controller" for "Senior Accountant")
+    const relatedTitlePairs: Record<string, string[]> = {
+      accountant: ["finance", "controller", "bookkeeper", "auditor", "fiscal", "boekhouder"],
+      engineer: ["developer", "programmer", "architect", "devops"],
+      manager: ["lead", "head", "director", "supervisor"],
+      analyst: ["consultant", "advisor", "specialist"],
+      sales: ["business development", "account", "commercial"],
+    };
+    let foundRelated = false;
+    for (const [key, related] of Object.entries(relatedTitlePairs)) {
+      if (roleTitle.includes(key) && related.some(r => candidateTitle.includes(r))) {
+        factors.title_fit = 50;
+        reasons.push(`Related role: ${candidate.current_title || candidate.job_title}`);
+        foundRelated = true;
+        break;
+      }
+      if (candidateTitle.includes(key) && related.some(r => roleTitle.includes(r))) {
+        factors.title_fit = 50;
+        reasons.push(`Related role: ${candidate.current_title || candidate.job_title}`);
+        foundRelated = true;
+        break;
+      }
+    }
+    if (!foundRelated) {
+      factors.title_fit = 15; // No title alignment at all
     }
   }
 
-  // Location fit
+  // ---- EXPERIENCE FIT ----
+  const targetLevel = roleContext?.experience_level?.toLowerCase() || "";
+  if (candidate.years_experience !== undefined && candidate.years_experience !== null) {
+    const ye = candidate.years_experience;
+
+    // Match against target experience level if specified
+    if (targetLevel === "entry" || targetLevel === "junior") {
+      factors.experience_fit = ye <= 3 ? 85 : ye <= 5 ? 65 : ye <= 8 ? 45 : 30;
+    } else if (targetLevel === "mid") {
+      factors.experience_fit = ye >= 3 && ye <= 7 ? 85 : ye >= 2 && ye <= 10 ? 65 : 40;
+    } else if (targetLevel === "senior") {
+      factors.experience_fit = ye >= 5 && ye <= 15 ? 90 : ye >= 3 && ye <= 20 ? 65 : 40;
+    } else if (targetLevel === "lead" || targetLevel === "executive") {
+      factors.experience_fit = ye >= 10 ? 85 : ye >= 7 ? 70 : ye >= 5 ? 55 : 35;
+    } else {
+      // No target level specified — use general heuristic based on role title
+      const isSeniorRole = roleTitle.includes("senior") || roleTitle.includes("sr") || roleTitle.includes("lead");
+      const isJuniorRole = roleTitle.includes("junior") || roleTitle.includes("jr") || roleTitle.includes("entry");
+
+      if (isSeniorRole) {
+        factors.experience_fit = ye >= 5 && ye <= 20 ? 80 : ye >= 3 ? 60 : 35;
+      } else if (isJuniorRole) {
+        factors.experience_fit = ye <= 3 ? 80 : ye <= 5 ? 60 : 40;
+      } else {
+        // General mid-level assumption
+        factors.experience_fit = ye >= 2 && ye <= 15 ? 75 : ye > 15 ? 55 : 45;
+      }
+    }
+    if (factors.experience_fit >= 70) {
+      reasons.push(`${ye} years experience - good fit for ${targetLevel || 'role'} level`);
+    }
+  }
+  // If no years_experience, leave at default 20 (no data)
+
+  // ---- LOCATION FIT ----
   const candidateLoc = (candidate.location || candidate.person_home_location || "").toLowerCase();
   const roleLoc = (role.location || "").toLowerCase();
-  if (candidateLoc && roleLoc) {
-    if (candidateLoc.includes(roleLoc) || roleLoc.includes(candidateLoc) ||
-        roleLoc.includes("remote") || roleContext?.remote_ok) {
-      factors.location_fit = 90;
+
+  if (roleLoc.includes("remote") || roleContext?.remote_ok) {
+    factors.location_fit = 90;
+    reasons.push("Remote compatible");
+  } else if (candidateLoc && roleLoc) {
+    // Check for country/city overlap
+    const locWords = roleLoc.split(/[\s,]+/).filter(w => w.length > 2);
+    const locMatches = locWords.filter(w => candidateLoc.includes(w));
+    if (locMatches.length > 0) {
+      factors.location_fit = 85;
       reasons.push("Location compatible");
     } else {
-      factors.location_fit = 40;
+      // Check for same country
+      const commonCountries = ["netherlands", "nederland", "germany", "belgium", "uk", "france", "us", "usa"];
+      const sameCountry = commonCountries.some(c => candidateLoc.includes(c) && roleLoc.includes(c));
+      factors.location_fit = sameCountry ? 65 : 30;
+      if (sameCountry) reasons.push("Same country");
+    }
+  } else if (!roleLoc) {
+    factors.location_fit = 70; // No location requirement = flexible
+  } else {
+    factors.location_fit = 40; // Unknown candidate location
+  }
+
+  // ---- TIMING SCORE ----
+  // Use intelligence_score as primary signal (it measures flight risk / receptiveness)
+  if (candidate.intelligence_score !== undefined && candidate.intelligence_score !== null) {
+    factors.timing_score = candidate.intelligence_score;
+    if (factors.timing_score >= 70) {
+      reasons.push("Excellent timing - high flight risk");
+    } else if (factors.timing_score >= 50) {
+      reasons.push("Good timing signals");
+    } else if (factors.timing_score >= 30) {
+      reasons.push("Moderate timing");
     }
   } else {
-    factors.location_fit = 70; // Unknown = neutral
+    factors.timing_score = 35; // No intelligence data = unknown timing
   }
 
-  // Timing score (based on intelligence)
-  factors.timing_score = candidate.intelligence_score || 50;
-  if (factors.timing_score >= 70) {
-    reasons.push("Excellent timing - high flight risk");
-  } else if (factors.timing_score >= 50) {
-    reasons.push("Good timing signals");
+  // Boost timing for candidates with high-urgency timing signals
+  if (candidate.timing_signals?.some(t => t.urgency === 'high')) {
+    factors.timing_score = Math.min(factors.timing_score + 15, 100);
   }
 
-  // Culture fit (based on company tier)
+  // ---- CULTURE FIT ----
+  // Start with baseline and adjust based on available signals
   if (roleContext?.target_companies && candidate.current_company) {
     const isTarget = roleContext.target_companies.some(tc =>
       (candidate.current_company || '').toLowerCase().includes(tc.toLowerCase())
@@ -657,19 +780,40 @@ function fallbackDeepAnalysis(
       factors.culture_fit = 85;
       reasons.push(`From target company: ${candidate.current_company}`);
     } else {
-      factors.culture_fit = 60;
+      factors.culture_fit = 45; // Not from target, but not disqualified
+    }
+  } else {
+    // No target companies defined — use other culture signals
+    factors.culture_fit = 40; // Neutral baseline
+
+    // Boost if ideal_background matches
+    if (roleContext?.ideal_background && candidateTitle) {
+      const bgWords = roleContext.ideal_background.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+      const bgMatches = bgWords.filter(w => candidateTitle.includes(w) ||
+        (candidate.current_company || '').toLowerCase().includes(w));
+      if (bgMatches.length > 0) {
+        factors.culture_fit = Math.min(factors.culture_fit + bgMatches.length * 15, 80);
+      }
     }
   }
 
-  // Calculate overall score (weighted)
+  // ---- CALCULATE OVERALL SCORE ----
   const score = calculateWeightedScore(factors, weights);
 
-  factors.overall_confidence = 60; // Rule-based = lower confidence
+  // Set confidence based on data completeness
+  let dataPoints = 0;
+  if (candidate.skills && candidate.skills.length > 0) dataPoints++;
+  if (candidate.years_experience) dataPoints++;
+  if (candidateTitle) dataPoints++;
+  if (candidateLoc) dataPoints++;
+  if (candidate.intelligence_score) dataPoints++;
+  if (candidate.current_company) dataPoints++;
+  factors.overall_confidence = Math.min(30 + (dataPoints * 10), 80); // Rule-based max 80%
 
   return {
     score,
     reasons,
-    analysis: reasons.length > 0 ? reasons.slice(0, 2).join(". ") : "Basic match analysis",
+    analysis: reasons.length > 0 ? reasons.slice(0, 3).join(". ") : "Limited data for analysis",
     factors,
   };
 }
@@ -821,6 +965,25 @@ serve(async (req) => {
     const criteriaWeights = validateAndNormalizeWeights(effectiveRoleContext?.criteria_weights);
     console.log("Using criteria weights:", criteriaWeights);
 
+    // ISS-003 FIX: Load intelligence preferences (company rules) for this organization
+    let companyRules: Array<{ company: string; rule: string; reason?: string }> = [];
+    try {
+      const { data: prefsData } = await supabase
+        .from('intelligence_preferences')
+        .select('company_rules')
+        .eq('organization_id', organization_id)
+        .eq('is_active', true)
+        .is('user_id', null)
+        .maybeSingle();
+
+      if (prefsData?.company_rules && Array.isArray(prefsData.company_rules)) {
+        companyRules = prefsData.company_rules;
+        console.log(`Loaded ${companyRules.length} company rules:`, companyRules.map(r => `${r.company}: ${r.rule}`));
+      }
+    } catch (prefErr) {
+      console.log('Could not load company rules, continuing without them:', prefErr);
+    }
+
     // Get roles to match against - be more flexible with role_context
     let roles: Role[] = [];
 
@@ -948,10 +1111,65 @@ serve(async (req) => {
     }
 
     // Filter out hired/rejected candidates in code (more reliable than complex query)
-    const eligibleCandidates = allCandidates.filter(c =>
+    let eligibleCandidates = allCandidates.filter(c =>
       !c.stage || !['hired', 'rejected'].includes(c.stage?.toLowerCase())
     );
     console.log(`After stage filter: ${eligibleCandidates.length} eligible candidates`);
+
+    // ISS-005 FIX: Filter out candidates with pending enrichment status
+    const pendingCandidates = eligibleCandidates.filter(c =>
+      c.enrichment_status === 'pending' || c.enrichment_status === 'Pending'
+    );
+    if (pendingCandidates.length > 0) {
+      console.log(`Excluding ${pendingCandidates.length} candidates with pending enrichment`);
+      eligibleCandidates = eligibleCandidates.filter(c =>
+        c.enrichment_status !== 'pending' && c.enrichment_status !== 'Pending'
+      );
+    }
+
+    // ISS-003 FIX: Apply company "do not poach" / deprioritize rules
+    const excludedByRule: Array<{ id: string; name: string; company: string; rule: string }> = [];
+    const boostRules: Array<{ company: string; boost: number; reason?: string }> = [];
+
+    if (companyRules.length > 0) {
+      // Separate exclusion rules from boost rules
+      for (const rule of companyRules) {
+        if (rule.rule === 'penalize' || rule.rule === 'deprioritize' || rule.rule === 'exclude' || rule.rule === 'do_not_poach') {
+          // Exclude candidates from this company
+          const companyLower = rule.company.toLowerCase();
+          const excluded = eligibleCandidates.filter(c =>
+            (c.current_company || c.company_name || '').toLowerCase().includes(companyLower)
+          );
+          for (const c of excluded) {
+            excludedByRule.push({
+              id: c.id,
+              name: c.name || `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+              company: c.current_company || c.company_name || 'Unknown',
+              rule: rule.rule,
+            });
+          }
+          eligibleCandidates = eligibleCandidates.filter(c =>
+            !(c.current_company || c.company_name || '').toLowerCase().includes(companyLower)
+          );
+        } else if (rule.rule === 'boost') {
+          // Parse boost amount from reason or use default +15
+          const boostMatch = rule.reason?.match(/\+(\d+)/);
+          const boostAmount = boostMatch ? parseInt(boostMatch[1]) : 15;
+          boostRules.push({ company: rule.company, boost: boostAmount, reason: rule.reason });
+        }
+      }
+
+      if (excludedByRule.length > 0) {
+        console.log(`Company rules: Excluded ${excludedByRule.length} candidates:`,
+          excludedByRule.map(e => `${e.name} (${e.company}) - ${e.rule}`));
+      }
+      if (boostRules.length > 0) {
+        console.log(`Company rules: ${boostRules.length} boost rules active:`,
+          boostRules.map(b => `${b.company} +${b.boost}`));
+      }
+    }
+
+    console.log(`After all filters: ${eligibleCandidates.length} candidates for matching`);
 
     if (eligibleCandidates.length === 0) {
       return new Response(
@@ -1070,6 +1288,26 @@ serve(async (req) => {
       }
     }
 
+    // ISS-003 FIX: Apply company boost rules to match results
+    if (boostRules.length > 0) {
+      for (const match of allMatches) {
+        const candidate = candidatesToAnalyze.find(c => c.id === match.candidate_id);
+        if (!candidate) continue;
+        const candidateCompany = (candidate.current_company || candidate.company_name || '').toLowerCase();
+
+        for (const boost of boostRules) {
+          if (candidateCompany.includes(boost.company.toLowerCase())) {
+            match.match_score = Math.min(100, match.match_score + boost.boost);
+            match.match_reasons = [
+              ...(match.match_reasons || []),
+              `Company boost: +${boost.boost} for ${boost.company}${boost.reason ? ` (${boost.reason})` : ''}`
+            ];
+            console.log(`Applied +${boost.boost} boost for ${match.candidate_name} (${boost.company})`);
+          }
+        }
+      }
+    }
+
     // STAGE 3: Priority ranking
     const rankedMatches = priorityRank(allMatches);
     const finalMatches = rankedMatches.slice(0, limit);
@@ -1177,12 +1415,19 @@ serve(async (req) => {
         role_context_used: !!effectiveRoleContext,
         analysis_method: shouldUseAI ? "multi-stage-ai" : "rule-based",
         weights_used: criteriaWeights,
-        // NEW: Include source info for transparency
+        // Include source info for transparency
         source: {
           nest_id: campaignNestId || null,
           candidate_ids_provided: !!(candidate_ids && candidate_ids.length > 0),
           filtered_by_nest: !!campaignNestId,
         },
+        // ISS-003: Company rule enforcement info
+        company_rules_applied: {
+          excluded_candidates: excludedByRule,
+          boost_rules: boostRules,
+        },
+        // ISS-005: Pending candidate filtering info
+        pending_candidates_excluded: pendingCandidates.length,
         matched_at: new Date().toISOString(),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
