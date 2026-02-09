@@ -425,17 +425,17 @@ function StarfieldCanvas({ speaking, phase }) {
     const st = stateRef.current;
     let running = true;
 
-    // Init particles — more variety, aurora-ready
-    const N = 260;
+    // Init particles — subtle, refined
+    const N = 150;
     st.particles = Array.from({ length: N }).map(() => {
       const layer = Math.random();
-      const isAurora = layer > 0.82; // ~18% of particles are aurora ribbon particles
+      const isAurora = layer > 0.88; // ~12% aurora ribbons
       return {
         x: Math.random() * window.innerWidth,
         y: Math.random() * window.innerHeight,
         z: layer,
-        s: isAurora ? 1.2 + Math.random() * 2.5 : 0.3 + Math.random() * 1.5,
-        baseAlpha: isAurora ? 0.06 + Math.random() * 0.12 : 0.1 + Math.random() * 0.5,
+        s: isAurora ? 0.8 + Math.random() * 1.5 : 0.2 + Math.random() * 1.0,
+        baseAlpha: isAurora ? 0.03 + Math.random() * 0.06 : 0.05 + Math.random() * 0.3,
         pulse: Math.random() * Math.PI * 2,
         speed: isAurora ? 0.008 + Math.random() * 0.02 : 0.02 + Math.random() * 0.08,
         hue: isAurora
@@ -565,7 +565,7 @@ function StarfieldCanvas({ speaking, phase }) {
     <canvas
       ref={canvasRef}
       className="absolute inset-0 pointer-events-none"
-      style={{ opacity: 0.9 }}
+      style={{ opacity: 0.5 }}
     />
   );
 }
@@ -775,14 +775,9 @@ function LyricDisplay({ text, durationMs = 5000, audioDuration, speaking, classN
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className="inline-block"
               style={isActive ? {
-                background: 'linear-gradient(90deg, #06b6d4, #a855f7, #ec4899)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                textShadow: 'none',
-                filter: 'drop-shadow(0 0 18px rgba(6,182,212,0.5)) drop-shadow(0 0 40px rgba(168,85,247,0.3))',
+                color: 'rgba(255,255,255,1)',
               } : (isPast || isFar) ? {
-                color: `rgba(255,255,255,${isFar ? 0.4 : 0.65})`,
+                color: `rgba(255,255,255,${isFar ? 0.3 : 0.55})`,
               } : {}}
             >
               {word}&nbsp;
@@ -1041,8 +1036,8 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
             transformOrigin: 'bottom center',
             transform: 'rotateX(65deg)',
             backgroundImage: `
-              linear-gradient(rgba(6,182,212,0.06) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(6,182,212,0.06) 1px, transparent 1px)
+              linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
             `,
             backgroundSize: '60px 60px',
             maskImage: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 80%)',
@@ -1053,77 +1048,47 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
         />
       </div>
 
-      {/* ─── Animated Gradient Mesh Background ─── */}
+      {/* ─── Subtle Gradient Background ─── */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse at 20% 50%, rgba(6,182,212,0.18) 0%, transparent 50%)' }}
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ background: 'radial-gradient(ellipse at 30% 40%, rgba(6,182,212,0.06) 0%, transparent 50%)' }}
+          animate={{ opacity: [0.4, 0.7, 0.4] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
           className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse at 80% 30%, rgba(168,85,247,0.14) 0%, transparent 45%)' }}
-          animate={{ opacity: [0.4, 0.9, 0.4] }}
-          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
-        />
-        <motion.div
-          className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse at 50% 80%, rgba(59,130,246,0.10) 0%, transparent 45%)' }}
-          animate={{ opacity: [0.5, 0.85, 0.5] }}
-          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
-        />
-        <motion.div
-          className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse at 30% 20%, rgba(99,102,241,0.08) 0%, transparent 40%)' }}
-          animate={{ opacity: [0.3, 0.7, 0.3] }}
-          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+          style={{ background: 'radial-gradient(ellipse at 70% 60%, rgba(139,92,246,0.04) 0%, transparent 45%)' }}
+          animate={{ opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
         />
       </div>
 
-      {/* ─── Horizontal Light Beam (lens flare) ─── */}
+      {/* ─── Horizontal Light Beam (subtle) ─── */}
       <motion.div
         className="absolute top-1/2 left-0 right-0 -translate-y-1/2 pointer-events-none"
         style={{
-          height: 2,
-          background: 'linear-gradient(90deg, transparent, rgba(6,182,212,0.15) 20%, rgba(168,85,247,0.2) 50%, rgba(6,182,212,0.15) 80%, transparent)',
-          filter: 'blur(6px)',
+          height: 1,
+          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.04) 30%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.04) 70%, transparent)',
+          filter: 'blur(4px)',
         }}
-        animate={{ opacity: speaking ? [0.3, 0.8, 0.3] : [0.05, 0.15, 0.05], scaleY: speaking ? [1, 3, 1] : [1, 1.5, 1] }}
+        animate={{ opacity: speaking ? [0.2, 0.5, 0.2] : [0.02, 0.08, 0.02] }}
         transition={{ duration: 60 / 108, repeat: Infinity, ease: 'easeInOut' }}
       />
 
       {/* ─── Particle Starfield ─── */}
       <StarfieldCanvas speaking={speaking} phase={phase} />
 
-      {/* ─── Cinematic Background Layers ─── */}
+      {/* ─── Minimal Background Layers ─── */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Beat pulse — clean flash on every quarter note */}
-        <motion.div
-          className="absolute inset-0"
-          style={{ background: 'radial-gradient(circle at 50% 40%, rgba(6,182,212,0.08) 0%, transparent 40%)' }}
-          animate={speaking ? { opacity: [0, 1, 0] } : { opacity: 0 }}
-          transition={{ duration: 60 / BPM_VISUAL, repeat: Infinity, ease: 'easeOut' }}
-        />
-
-        {/* Central focus light — clean, concentrated */}
-        <motion.div
+        {/* Central ambient glow */}
+        <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-          style={{ width: '140vw', height: '140vh', background: 'radial-gradient(ellipse at center, rgba(6,182,212,0.12) 0%, rgba(168,85,247,0.05) 20%, transparent 50%)' }}
-          animate={{ scale: speaking ? [1, 1.08, 1] : [1, 1.03, 1] }}
-          transition={{ duration: 60 / BPM_VISUAL * 2, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ width: '100vw', height: '100vh', background: 'radial-gradient(ellipse at center, rgba(6,182,212,0.04) 0%, transparent 50%)' }}
         />
 
-        {/* Flowing gradient orbs — cleaner Apple aesthetic */}
-        <motion.div className="absolute w-[900px] h-[900px] rounded-full" style={{ top: '-10%', left: '-5%', background: 'radial-gradient(circle, rgba(6,182,212,0.07) 0%, transparent 50%)', filter: 'blur(100px)' }}
-          animate={{ x: [0, 60, 0], y: [0, -40, 0] }} transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }} />
-        <motion.div className="absolute w-[800px] h-[800px] rounded-full" style={{ bottom: '-8%', right: '-5%', background: 'radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 50%)', filter: 'blur(90px)' }}
-          animate={{ x: [0, -50, 0], y: [0, 35, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 3 }} />
-        <motion.div className="absolute w-[600px] h-[600px] rounded-full" style={{ top: '40%', right: '10%', background: 'radial-gradient(circle, rgba(59,130,246,0.05) 0%, transparent 50%)', filter: 'blur(80px)' }}
-          animate={{ x: [0, 40, 0], y: [0, -50, 0] }} transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 6 }} />
-
-        {/* Vignette — tighter for more focus */}
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 25%, rgba(0,0,0,0.75) 100%)' }} />
+        {/* Vignette */}
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%)' }} />
       </div>
 
       {/* ─── Cinematic Letterbox ─── */}
@@ -1150,96 +1115,57 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
               initial={{ opacity: 0, scale: 0.02, filter: 'blur(60px)' }}
               animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
               transition={{ duration: 2.0, ease: [0.16, 1, 0.3, 1] }}
-              className="mb-6 relative"
+              className="mb-3 relative"
             >
-              {/* Light burst on entrance */}
+              {/* Subtle glow pulse */}
               <motion.div
                 className="absolute inset-0 rounded-full pointer-events-none"
-                style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.5) 0%, rgba(168,85,247,0.2) 30%, transparent 60%)', transform: 'scale(4)' }}
-                initial={{ opacity: 0.8, scale: 0.5 }}
-                animate={{ opacity: 0, scale: 5 }}
-                transition={{ duration: 2.5, ease: 'easeOut' }}
+                style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.2) 0%, transparent 60%)', transform: 'scale(2)' }}
+                initial={{ opacity: 0, scale: 1 }}
+                animate={{ opacity: 0, scale: 3 }}
+                transition={{ duration: 2, ease: 'easeOut' }}
               />
 
-              {/* Beat pulse ring — clean concentric */}
-              <motion.div
-                className="absolute inset-0 rounded-full"
-                style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.15) 0%, transparent 65%)', transform: 'scale(2.8)' }}
-                animate={speaking ? { scale: [2.8, 3.2, 2.8], opacity: [0.25, 0.65, 0.25] } : { scale: [2.8, 2.9, 2.8], opacity: [0.08, 0.15, 0.08] }}
-                transition={{ duration: 60 / BPM_VISUAL, repeat: Infinity, ease: 'easeInOut' }}
-              />
-
-              {/* Concentric rotating ring 1 — outermost, slow */}
+              {/* Single rotating ring */}
               <motion.div
                 className="absolute rounded-full pointer-events-none"
                 style={{
-                  inset: -30,
-                  border: '1px solid rgba(6,182,212,0.12)',
-                  borderTopColor: 'rgba(6,182,212,0.4)',
-                  borderRightColor: 'rgba(168,85,247,0.3)',
+                  inset: -12,
+                  border: '1px solid rgba(6,182,212,0.08)',
+                  borderTopColor: 'rgba(6,182,212,0.3)',
                 }}
                 animate={{ rotate: 360 }}
-                transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+                transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
               />
 
-              {/* Concentric rotating ring 2 — middle, medium speed, opposite */}
-              <motion.div
-                className="absolute rounded-full pointer-events-none"
-                style={{
-                  inset: -18,
-                  border: '1px solid rgba(168,85,247,0.1)',
-                  borderBottomColor: 'rgba(236,72,153,0.35)',
-                  borderLeftColor: 'rgba(6,182,212,0.25)',
-                }}
-                animate={{ rotate: -360 }}
-                transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-              />
-
-              {/* Concentric rotating ring 3 — inner, dashed, fast */}
-              <motion.div
-                className="absolute rounded-full pointer-events-none"
-                style={{
-                  inset: -8,
-                  border: '1px dashed rgba(139,92,246,0.15)',
-                  borderTopColor: 'rgba(139,92,246,0.4)',
-                }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
-              />
-
-              <IntroSyncAvatar size={240} mood={avatarMood} level={avatarLevel} />
+              <IntroSyncAvatar size={140} mood={avatarMood} level={avatarLevel} />
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ─── Speaking Visualizer — wide frequency analyzer ─── */}
+        {/* ─── Speaking Visualizer — minimal monochrome ─── */}
         <AnimatePresence>
           {speaking && (
             <motion.div
-              initial={{ opacity: 0, scaleX: 0.1, scaleY: 0.3 }}
-              animate={{ opacity: 1, scaleX: 1, scaleY: 1 }}
-              exit={{ opacity: 0, scaleY: 0, transition: { duration: 0.15 } }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="flex items-end justify-center gap-[2px] h-16 mb-8"
+              initial={{ opacity: 0, scaleX: 0.3 }}
+              animate={{ opacity: 0.6, scaleX: 1 }}
+              exit={{ opacity: 0, transition: { duration: 0.15 } }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="flex items-end justify-center gap-[1.5px] h-6 mb-4"
             >
-              {[...Array(40)].map((_, i) => {
-                const center = 20;
+              {[...Array(24)].map((_, i) => {
+                const center = 12;
                 const dist = Math.abs(i - center) / center;
-                const maxH = 50 * (1 - dist * 0.6);
-                const col = AGENT_SEGMENTS[i % 10]?.color || '#06b6d4';
+                const maxH = 18 * (1 - dist * 0.5);
                 return (
                   <motion.div
                     key={i}
-                    className="w-[2.5px] rounded-full origin-bottom"
-                    style={{
-                      background: `linear-gradient(to top, ${col}44, ${col})`,
-                      boxShadow: `0 0 8px ${col}40`,
-                    }}
-                    animate={{ height: [2, maxH + Math.sin(i * 0.3) * 12, 2] }}
+                    className="w-[1.5px] rounded-full origin-bottom bg-white/40"
+                    animate={{ height: [1, maxH, 1] }}
                     transition={{
-                      duration: 0.22 + (i % 7) * 0.03,
+                      duration: 0.25 + (i % 5) * 0.04,
                       repeat: Infinity,
-                      delay: i * 0.015,
+                      delay: i * 0.02,
                       ease: 'easeInOut',
                     }}
                   />
@@ -1256,7 +1182,7 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex items-center gap-2 mb-6"
+              className="flex items-center gap-2 mb-3"
             >
               {[0, 1, 2].map(i => (
                 <motion.div
@@ -1275,7 +1201,7 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
           <motion.div
             initial={{ opacity: 0, scaleX: 0 }}
             animate={{ opacity: 0.15, scaleX: 1 }}
-            className="w-48 h-px mb-6"
+            className="w-32 h-px mb-3"
             style={{ background: 'linear-gradient(90deg, transparent, rgba(168,85,247,0.6), rgba(6,182,212,0.6), transparent)' }}
           />
         )}
@@ -1289,32 +1215,24 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16, filter: 'blur(8px)', transition: { duration: 0.35 } }}
               transition={{ duration: 0.5 }}
-              className="text-center mb-10 max-w-3xl mx-auto relative"
+              className="text-center mb-5 max-w-2xl mx-auto relative"
             >
-              {/* Frosted glass panel */}
+              {/* Frosted glass panel — minimal */}
               <div
-                className="absolute -inset-x-8 -inset-y-5 rounded-3xl pointer-events-none"
+                className="absolute -inset-x-5 -inset-y-3 rounded-2xl pointer-events-none"
                 style={{
-                  background: 'rgba(0,0,0,0.3)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(255,255,255,0.04)',
+                  background: 'rgba(0,0,0,0.2)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(255,255,255,0.03)',
                 }}
-              />
-
-              {/* Glow behind text */}
-              <motion.div
-                className="absolute -inset-x-16 -inset-y-8 pointer-events-none"
-                style={{ background: 'radial-gradient(ellipse at center, rgba(6,182,212,0.08) 0%, transparent 60%)', filter: 'blur(25px)' }}
-                animate={speaking ? { opacity: [0.5, 1, 0.5] } : { opacity: 0.2 }}
-                transition={{ duration: 60 / BPM_VISUAL * 2, repeat: Infinity, ease: 'easeInOut' }}
               />
               <LyricDisplay
                 text={transcript}
                 durationMs={currentDuration}
                 audioDuration={audioDuration}
                 speaking={speaking}
-                className="text-white/95 text-3xl sm:text-4xl md:text-5xl leading-relaxed font-light tracking-[-0.02em] relative z-10"
+                className="text-white/90 text-base sm:text-lg md:text-xl leading-relaxed font-light tracking-[-0.01em] relative z-10"
               />
             </motion.div>
           )}
@@ -1326,7 +1244,7 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
             initial={{ opacity: 0, scaleX: 0 }}
             animate={{ opacity: 0.1, scaleX: 1 }}
             transition={{ duration: 0.8 }}
-            className="w-64 h-px mb-8"
+            className="w-40 h-px mb-4"
             style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)' }}
           />
         )}
@@ -1338,43 +1256,33 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6 }}
-              className="flex items-center justify-center gap-4 sm:gap-5 md:gap-6 mb-10 flex-wrap"
+              className="flex items-center justify-center gap-3 sm:gap-4 mb-5 flex-wrap"
             >
               {MODULES.map((mod, i) => {
                 const Icon = mod.icon;
-                const waveY = Math.sin((i - 4.5) * 0.35) * 6;
                 return (
                   <motion.div
                     key={mod.label}
-                    initial={{ opacity: 0, scale: 0, y: 60 }}
-                    animate={{ opacity: 1, scale: 1, y: waveY }}
-                    transition={{ delay: i * 0.05, duration: 0.7, type: 'spring', stiffness: 250, damping: 20 }}
-                    className="flex flex-col items-center gap-2"
+                    initial={{ opacity: 0, scale: 0, y: 30 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ delay: i * 0.04, duration: 0.5, type: 'spring', stiffness: 300, damping: 22 }}
+                    className="flex flex-col items-center gap-1"
                   >
                     <motion.div
-                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center relative overflow-hidden"
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center"
                       style={{
-                        border: `1px solid ${mod.color}25`,
-                        background: `linear-gradient(145deg, ${mod.color}10, rgba(0,0,0,0.3))`,
-                        backdropFilter: 'blur(12px)',
-                        WebkitBackdropFilter: 'blur(12px)',
+                        border: `1px solid ${mod.color}18`,
+                        background: `${mod.color}08`,
                       }}
-                      animate={{
-                        boxShadow: [`0 0 0px ${mod.color}00, 0 4px 20px rgba(0,0,0,0.3)`, `0 0 24px ${mod.color}30, 0 4px 20px rgba(0,0,0,0.3)`, `0 0 0px ${mod.color}00, 0 4px 20px rgba(0,0,0,0.3)`],
-                        y: [0, -3, 0],
-                      }}
-                      transition={{ duration: 2.5 + i * 0.12, repeat: Infinity, delay: i * 0.1, ease: 'easeInOut' }}
                     >
-                      <Icon className="w-6 h-6 sm:w-7 sm:h-7 relative z-10" style={{ color: mod.color, filter: `drop-shadow(0 0 6px ${mod.color}50)` }} />
+                      <Icon className="w-4 h-4 sm:w-[18px] sm:h-[18px]" style={{ color: mod.color }} />
                     </motion.div>
-                    <motion.span
-                      className="text-[10px] sm:text-[11px] font-semibold tracking-[0.15em] uppercase"
-                      style={{ color: mod.color + '80' }}
-                      animate={{ opacity: [0.5, 0.9, 0.5] }}
-                      transition={{ duration: 3, repeat: Infinity, delay: i * 0.1 }}
+                    <span
+                      className="text-[8px] sm:text-[9px] font-medium tracking-[0.12em] uppercase"
+                      style={{ color: mod.color + '60' }}
                     >
                       {mod.label}
-                    </motion.span>
+                    </span>
                   </motion.div>
                 );
               })}
@@ -1389,7 +1297,7 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.7 }}
-              className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full mb-10"
+              className="grid grid-cols-4 gap-2 w-full max-w-xl mb-5"
             >
               {FEATURES.map((feat, i) => {
                 const Icon = feat.icon;
@@ -1397,26 +1305,18 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
                 return (
                   <motion.div
                     key={feat.title}
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{ opacity: isActive ? 1 : 0.15, y: 0 }}
-                    transition={{ delay: i * 0.1, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                    className="relative rounded-2xl p-4 overflow-hidden"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: isActive ? 1 : 0.12, y: 0 }}
+                    transition={{ delay: i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="relative rounded-xl px-3 py-2.5 overflow-hidden"
                     style={{
-                      border: `1px solid ${isActive ? feat.color + '30' : 'rgba(255,255,255,0.03)'}`,
-                      background: isActive ? `linear-gradient(145deg, ${feat.color}0D, ${feat.color}05)` : 'rgba(255,255,255,0.005)',
-                      backdropFilter: isActive ? 'blur(12px)' : 'none',
+                      border: `1px solid ${isActive ? feat.color + '20' : 'rgba(255,255,255,0.02)'}`,
+                      background: isActive ? `${feat.color}08` : 'transparent',
                     }}
                   >
-                    {isActive && (
-                      <motion.div className="absolute -top-12 -right-12 w-40 h-40 rounded-full" style={{ background: `radial-gradient(circle, ${feat.color}20, transparent)` }}
-                        initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1 }} />
-                    )}
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 relative z-10"
-                      style={{ background: isActive ? `${feat.color}15` : 'rgba(255,255,255,0.02)' }}>
-                      <Icon className="w-6 h-6" style={{ color: isActive ? feat.color : '#3f3f46' }} />
-                    </div>
-                    <h3 className={`text-sm font-semibold mb-1 relative z-10 transition-colors duration-700 ${isActive ? 'text-white' : 'text-zinc-800'}`}>{feat.title}</h3>
-                    <p className={`text-[11px] leading-relaxed relative z-10 transition-colors duration-700 ${isActive ? 'text-zinc-400' : 'text-zinc-800'}`}>{feat.desc}</p>
+                    <Icon className="w-4 h-4 mb-1.5" style={{ color: isActive ? feat.color : '#3f3f46' }} />
+                    <h3 className={`text-[10px] font-semibold mb-0.5 transition-colors duration-500 ${isActive ? 'text-white/80' : 'text-zinc-800'}`}>{feat.title}</h3>
+                    <p className={`text-[9px] leading-tight transition-colors duration-500 ${isActive ? 'text-zinc-500' : 'text-zinc-800'}`}>{feat.desc}</p>
                   </motion.div>
                 );
               })}
@@ -1428,7 +1328,7 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
         <AnimatePresence>
           {showStats && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.1 }}
-              className="flex items-center justify-center gap-6 sm:gap-10 md:gap-14 mb-8">
+              className="flex items-center justify-center gap-6 sm:gap-8 mb-4">
               {[
                 { value: '51', label: 'AI Actions', color: '#a855f7' },
                 { value: '10', label: 'Engines', color: '#06b6d4' },
@@ -1437,20 +1337,13 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
               ].map((stat, i) => (
                 <motion.div
                   key={stat.label}
-                  initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ delay: 0.15 + i * 0.08, type: 'spring', stiffness: 200, damping: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 + i * 0.06 }}
                   className="text-center"
                 >
-                  <motion.div
-                    className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight"
-                    style={{ color: stat.color }}
-                    animate={{ textShadow: [`0 0 0px ${stat.color}00`, `0 0 25px ${stat.color}50`, `0 0 0px ${stat.color}00`] }}
-                    transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.3 }}
-                  >
-                    {stat.value}
-                  </motion.div>
-                  <div className="text-[10px] sm:text-[11px] text-zinc-500 uppercase tracking-[0.2em] mt-1.5 font-medium">{stat.label}</div>
+                  <div className="text-lg sm:text-xl font-semibold tracking-tight" style={{ color: stat.color }}>{stat.value}</div>
+                  <div className="text-[8px] sm:text-[9px] text-zinc-600 uppercase tracking-[0.15em] mt-0.5 font-medium">{stat.label}</div>
                 </motion.div>
               ))}
             </motion.div>
