@@ -1,13 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Brain, Zap, BarChart3, Shield, Puzzle, Activity,
   Rocket, Euro, GraduationCap, UserPlus, Palette, Package,
-  TrendingUp, Contact, FolderKanban, Inbox, ChevronRight,
-  CheckSquare, BookOpen, Globe, Mic, ArrowRight,
+  TrendingUp, Contact, Mic, ArrowRight, SkipForward,
 } from 'lucide-react';
 
-// SYNC avatar ring segments (matching production)
+// ─── SYNC Avatar ──────────────────────────────────────────────────────────────
 const RING_SEGMENTS = [
   { color: '#ec4899', from: 0.02, to: 0.08 },
   { color: '#06b6d4', from: 0.12, to: 0.18 },
@@ -21,7 +20,7 @@ const RING_SEGMENTS = [
   { color: '#14b8a6', from: 0.92, to: 0.98 },
 ];
 
-function SyncAvatarLarge({ size = 120, spinning = true }) {
+function SyncAvatar({ size = 120, speaking = false }) {
   const r = size / 2;
   const segmentR = r - 4;
   const innerR = r * 0.52;
@@ -39,24 +38,26 @@ function SyncAvatarLarge({ size = 120, spinning = true }) {
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
-      <div
+      {/* Ambient glow behind avatar */}
+      <motion.div
         className="absolute inset-0 rounded-full pointer-events-none"
         style={{
-          background: 'radial-gradient(circle, rgba(168,85,247,0.3) 0%, transparent 70%)',
-          transform: 'scale(1.5)',
-          opacity: 0.4,
+          background: 'radial-gradient(circle, rgba(168,85,247,0.35) 0%, transparent 70%)',
+          transform: 'scale(1.8)',
         }}
+        animate={{ opacity: speaking ? [0.3, 0.6, 0.3] : 0.3 }}
+        transition={speaking ? { duration: 1.5, repeat: Infinity, ease: 'easeInOut' } : {}}
       />
       <svg
         width={size}
         height={size}
         viewBox={`0 0 ${size} ${size}`}
         className="absolute inset-0"
-        style={spinning ? { animation: 'syncSpin 20s linear infinite' } : undefined}
+        style={{ animation: 'introSpin 25s linear infinite' }}
       >
         <defs>
           <filter id="introGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation={2.5} result="b" />
+            <feGaussianBlur stdDeviation={3} result="b" />
             <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
         </defs>
@@ -67,7 +68,7 @@ function SyncAvatarLarge({ size = 120, spinning = true }) {
               d={arcPath(r, r, segmentR, seg.from, seg.to)}
               fill="none"
               stroke={seg.color}
-              strokeWidth={4}
+              strokeWidth={speaking ? 5 : 4}
               strokeLinecap="round"
               opacity={0.85}
             />
@@ -84,10 +85,7 @@ function SyncAvatarLarge({ size = 120, spinning = true }) {
           background: 'radial-gradient(circle, rgba(168,85,247,0.4) 0%, rgba(0,0,0,0.7) 100%)',
         }}
       />
-      <div
-        className="absolute inset-0 flex items-center justify-center"
-        style={{ paddingTop: 2 }}
-      >
+      <div className="absolute inset-0 flex items-center justify-center">
         <span className="text-white font-bold tracking-tight" style={{ fontSize: size * 0.18 }}>
           SYNC
         </span>
@@ -96,66 +94,55 @@ function SyncAvatarLarge({ size = 120, spinning = true }) {
   );
 }
 
-// Feature showcase data
-const HERO_FEATURES = [
-  {
-    icon: Brain,
-    title: 'SYNC AI Orchestrator',
-    desc: 'One AI that understands your entire business. 51 actions across every module, voice-controlled.',
-    color: 'from-purple-500/20 to-violet-500/20',
-    border: 'border-purple-500/30',
-    iconColor: 'text-purple-400',
-    tag: 'AI-Powered',
-  },
-  {
-    icon: Zap,
-    title: '10 Integrated Engines',
-    desc: 'CRM, Finance, Growth, Talent, Learn, Create, Products, Raise, Sentinel, and more — all connected.',
-    color: 'from-cyan-500/20 to-blue-500/20',
-    border: 'border-cyan-500/30',
-    iconColor: 'text-cyan-400',
-    tag: 'All-in-One',
-  },
-  {
-    icon: Activity,
-    title: 'Real-Time Activity Tracking',
-    desc: 'Every action logged. AI-generated daily journals. Complete visibility across your team.',
-    color: 'from-emerald-500/20 to-teal-500/20',
-    border: 'border-emerald-500/30',
-    iconColor: 'text-emerald-400',
-    tag: 'Live Insights',
-  },
-  {
-    icon: Puzzle,
-    title: '30+ Integrations',
-    desc: 'Connect Slack, HubSpot, Gmail, Stripe, QuickBooks, and more. Everything syncs automatically.',
-    color: 'from-amber-500/20 to-orange-500/20',
-    border: 'border-amber-500/30',
-    iconColor: 'text-amber-400',
-    tag: 'Connected',
-  },
-  {
-    icon: Shield,
-    title: 'EU AI Act Compliance',
-    desc: 'Built-in AI governance. Register systems, assess risk, generate compliance docs automatically.',
-    color: 'from-green-500/20 to-emerald-500/20',
-    border: 'border-green-500/30',
-    iconColor: 'text-green-400',
-    tag: 'Compliant',
-  },
-  {
-    icon: Mic,
-    title: 'Voice-First Experience',
-    desc: 'Talk to SYNC like a colleague. Ask questions, give commands, navigate — all by voice.',
-    color: 'from-rose-500/20 to-pink-500/20',
-    border: 'border-rose-500/30',
-    iconColor: 'text-rose-400',
-    tag: 'Voice AI',
-  },
-];
+// ─── Narration Script ─────────────────────────────────────────────────────────
+// Each phase has narration text and a minimum display duration (ms).
+// Voice narration is fired at phase start; phase advances when voice finishes
+// OR when the minimum duration elapses (whichever is longer).
+function buildNarrationScript(name, company) {
+  const n = name || 'there';
+  const c = company || 'your company';
+  return [
+    // Phase 0: Avatar appears, SYNC introduces itself
+    {
+      key: 'greeting',
+      text: `Hey ${n}! I'm SYNC, your AI business orchestrator. Let me show you what iSyncSO can do for ${c}.`,
+      minMs: 4000,
+    },
+    // Phase 1: Platform overview — engines light up
+    {
+      key: 'engines',
+      text: `iSyncSO brings together 10 powerful engines: CRM, Finance, Growth, Talent, Learn, Create, Products, Raise, Sentinel, and Analytics. All connected. All powered by AI.`,
+      minMs: 6000,
+    },
+    // Phase 2: SYNC orchestrator
+    {
+      key: 'orchestrator',
+      text: `At the heart of everything is me — SYNC. I can execute 51 different actions across every module. Create invoices, enrich contacts, match candidates, generate images — just tell me what you need.`,
+      minMs: 7000,
+    },
+    // Phase 3: Activity tracking
+    {
+      key: 'activity',
+      text: `Every action your team takes is tracked in real time. I generate daily journals and activity summaries so you always know what's happening across your organization.`,
+      minMs: 5500,
+    },
+    // Phase 4: Integrations + compliance
+    {
+      key: 'integrations',
+      text: `Plus, we connect to over 30 tools you already use — Slack, HubSpot, Gmail, Stripe, and more. And with built-in EU AI Act compliance, you stay ahead of regulations automatically.`,
+      minMs: 6000,
+    },
+    // Phase 5: Transition to demo
+    {
+      key: 'ready',
+      text: `Ready? Let's dive in and explore what iSyncSO looks like for ${c}.`,
+      minMs: 3000,
+    },
+  ];
+}
 
-// Module icons for the orbiting ring
-const MODULE_ICONS = [
+// ─── Module Icons Data ────────────────────────────────────────────────────────
+const MODULES = [
   { icon: Contact, label: 'CRM', color: '#06b6d4' },
   { icon: Euro, label: 'Finance', color: '#f59e0b' },
   { icon: Rocket, label: 'Growth', color: '#6366f1' },
@@ -168,124 +155,333 @@ const MODULE_ICONS = [
   { icon: BarChart3, label: 'Analytics', color: '#3b82f6' },
 ];
 
-const stagger = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.12 } },
+// ─── Feature Cards ────────────────────────────────────────────────────────────
+const FEATURES = [
+  {
+    icon: Brain, title: 'SYNC AI Orchestrator',
+    desc: '51 voice-controlled actions across every module.',
+    gradient: 'from-purple-500/20 to-violet-500/20', border: 'border-purple-500/30', iconColor: 'text-purple-400',
+    phase: 2,
+  },
+  {
+    icon: Activity, title: 'Activity Tracking',
+    desc: 'Real-time logs and AI-generated daily journals.',
+    gradient: 'from-emerald-500/20 to-teal-500/20', border: 'border-emerald-500/30', iconColor: 'text-emerald-400',
+    phase: 3,
+  },
+  {
+    icon: Puzzle, title: '30+ Integrations',
+    desc: 'Slack, HubSpot, Gmail, Stripe, and more.',
+    gradient: 'from-amber-500/20 to-orange-500/20', border: 'border-amber-500/30', iconColor: 'text-amber-400',
+    phase: 4,
+  },
+  {
+    icon: Shield, title: 'EU AI Act Compliance',
+    desc: 'Built-in AI governance and documentation.',
+    gradient: 'from-green-500/20 to-emerald-500/20', border: 'border-green-500/30', iconColor: 'text-green-400',
+    phase: 4,
+  },
+];
+
+// ─── TTS Helper (direct fetch to sync-voice-demo, browser fallback) ──────────
+const voiceUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-voice-demo`;
+const ttsHeaders = {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
 };
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } },
-};
+async function speakText(text, language, audioRef, onDone) {
+  if (!text) { onDone?.(); return; }
 
+  const cancel = () => {
+    try { window.speechSynthesis?.cancel(); } catch (_) {}
+    if (audioRef.current) {
+      try { audioRef.current.pause(); audioRef.current.src = ''; } catch (_) {}
+      audioRef.current = null;
+    }
+  };
+
+  cancel();
+
+  // Try server TTS first
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(voiceUrl, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: ttsHeaders,
+      body: JSON.stringify({ ttsOnly: true, ttsText: text, language }),
+    });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.audio) {
+        return new Promise((resolve) => {
+          const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
+          audioRef.current = audio;
+          const done = () => { audioRef.current = null; resolve(); onDone?.(); };
+          audio.onended = done;
+          audio.onerror = done;
+          audio.play().catch(done);
+        });
+      }
+      if (data.ttsUnavailable) {
+        return browserTTS(text, language, onDone);
+      }
+    }
+  } catch (_) {}
+
+  // Fallback: browser speechSynthesis
+  return browserTTS(text, language, onDone);
+}
+
+function browserTTS(text, language, onDone) {
+  return new Promise((resolve) => {
+    if (!window.speechSynthesis) {
+      // No TTS at all — wait a reading duration
+      const wait = Math.max(3000, text.length * 45);
+      setTimeout(() => { resolve(); onDone?.(); }, wait);
+      return;
+    }
+    try {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = language === 'nl' ? 'nl-NL' : language === 'de' ? 'de-DE' : 'en-US';
+      utterance.rate = 1.0;
+      const done = () => { resolve(); onDone?.(); };
+      utterance.onend = done;
+      utterance.onerror = done;
+      window.speechSynthesis.speak(utterance);
+    } catch (_) {
+      const wait = Math.max(3000, text.length * 45);
+      setTimeout(() => { resolve(); onDone?.(); }, wait);
+    }
+  });
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function DemoIntroScreen({ recipientName, companyName, onStart, language = 'en' }) {
-  const [phase, setPhase] = useState(0); // 0=avatar, 1=headline, 2=features, 3=ready
-  const [activeFeature, setActiveFeature] = useState(-1);
+  const [phase, setPhase] = useState(-1); // -1 = not started, 0..5 = narration phases
+  const [speaking, setSpeaking] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [skipping, setSkipping] = useState(false);
+  const audioRef = useRef(null);
+  const mountedRef = useRef(true);
+  const phaseRef = useRef(-1);
 
-  // Auto-advance phases
+  const script = useRef(buildNarrationScript(recipientName, companyName)).current;
+
   useEffect(() => {
-    const timers = [
-      setTimeout(() => setPhase(1), 600),
-      setTimeout(() => setPhase(2), 1400),
-      setTimeout(() => setPhase(3), 2000),
-    ];
-    return () => timers.forEach(clearTimeout);
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
   }, []);
 
-  // Auto-cycle through features for visual interest
+  // Start the cinematic sequence after a brief blackout
   useEffect(() => {
-    if (phase < 2) return;
-    const interval = setInterval(() => {
-      setActiveFeature(prev => (prev + 1) % HERO_FEATURES.length);
-    }, 3000);
-    setActiveFeature(0);
-    return () => clearInterval(interval);
-  }, [phase]);
+    const timer = setTimeout(() => {
+      if (mountedRef.current) setPhase(0);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Narration engine — advances through phases
+  useEffect(() => {
+    if (phase < 0 || phase >= script.length || skipping) return;
+    phaseRef.current = phase;
+
+    const step = script[phase];
+    setTranscript(step.text);
+    setSpeaking(true);
+
+    let voiceDone = false;
+    let timerDone = false;
+    let advanced = false;
+
+    const tryAdvance = () => {
+      if (advanced || !mountedRef.current) return;
+      if (voiceDone && timerDone) {
+        advanced = true;
+        setSpeaking(false);
+        // Brief pause between phases
+        setTimeout(() => {
+          if (!mountedRef.current) return;
+          const next = phaseRef.current + 1;
+          if (next < script.length) {
+            setPhase(next);
+          } else {
+            // Narration complete — auto-start demo after a beat
+            setTimeout(() => { if (mountedRef.current) onStart(); }, 800);
+          }
+        }, 400);
+      }
+    };
+
+    // Speak the narration
+    speakText(step.text, language, audioRef, () => {
+      voiceDone = true;
+      tryAdvance();
+    });
+
+    // Minimum display timer
+    const minTimer = setTimeout(() => {
+      timerDone = true;
+      tryAdvance();
+    }, step.minMs);
+
+    return () => {
+      clearTimeout(minTimer);
+      // Cancel audio on phase change
+      try { window.speechSynthesis?.cancel(); } catch (_) {}
+      if (audioRef.current) {
+        try { audioRef.current.pause(); audioRef.current.src = ''; } catch (_) {}
+        audioRef.current = null;
+      }
+    };
+  }, [phase, skipping]);
+
+  // Skip handler — cancels narration and jumps straight to demo
+  const handleSkip = useCallback(() => {
+    setSkipping(true);
+    try { window.speechSynthesis?.cancel(); } catch (_) {}
+    if (audioRef.current) {
+      try { audioRef.current.pause(); audioRef.current.src = ''; } catch (_) {}
+      audioRef.current = null;
+    }
+    setSpeaking(false);
+    onStart();
+  }, [onStart]);
+
+  const showModules = phase >= 1;
+  const showFeatureCards = phase >= 2;
+  const isReady = phase >= 5;
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4 py-8 overflow-hidden relative">
-      {/* Background ambient glow */}
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4 overflow-hidden relative select-none">
+      {/* ─── Background Effects ─── */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-purple-500/5 blur-[120px]" />
-        <div className="absolute bottom-1/4 left-1/3 w-[400px] h-[400px] rounded-full bg-cyan-500/5 blur-[100px]" />
-        <div className="absolute top-1/2 right-1/4 w-[300px] h-[300px] rounded-full bg-amber-500/5 blur-[80px]" />
+        <motion.div
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%)' }}
+          animate={{ scale: speaking ? [1, 1.15, 1] : 1 }}
+          transition={speaking ? { duration: 3, repeat: Infinity, ease: 'easeInOut' } : {}}
+        />
+        <motion.div
+          className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.06) 0%, transparent 70%)' }}
+          animate={{ scale: phase >= 1 ? [1, 1.1, 1] : 0.8, opacity: phase >= 1 ? 1 : 0 }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute top-1/4 right-1/4 w-[400px] h-[400px] rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.05) 0%, transparent 70%)' }}
+          animate={{ scale: phase >= 2 ? [1, 1.1, 1] : 0.8, opacity: phase >= 2 ? 1 : 0 }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+        />
       </div>
 
-      {/* Subtle grid pattern */}
+      {/* Subtle grid */}
       <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        className="absolute inset-0 opacity-[0.02] pointer-events-none"
         style={{
           backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
           backgroundSize: '60px 60px',
         }}
       />
 
-      <div className="relative z-10 max-w-4xl w-full flex flex-col items-center">
-        {/* SYNC Avatar */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: [0, 0.7, 0.3, 1] }}
-          className="mb-6"
-        >
-          <SyncAvatarLarge size={100} />
-        </motion.div>
+      {/* ─── Content ─── */}
+      <div className="relative z-10 max-w-5xl w-full flex flex-col items-center">
 
-        {/* Welcome text */}
+        {/* ─── SYNC Avatar ─── */}
         <AnimatePresence>
-          {phase >= 1 && (
+          {phase >= 0 && (
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-8"
+              initial={{ opacity: 0, scale: 0.3 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1.2, ease: [0, 0.7, 0.2, 1] }}
+              className="mb-4"
             >
-              {recipientName && (
+              <SyncAvatar size={110} speaking={speaking} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ─── Transcript / Narration text ─── */}
+        <AnimatePresence mode="wait">
+          {phase >= 0 && transcript && (
+            <motion.div
+              key={phase}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.5 }}
+              className="text-center mb-6 max-w-2xl mx-auto px-4"
+            >
+              {phase === 0 && recipientName && (
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-zinc-400 text-sm mb-2 tracking-wide uppercase"
+                  className="text-zinc-500 text-xs mb-3 tracking-widest uppercase"
                 >
                   Welcome, {recipientName}
                 </motion.p>
               )}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 tracking-tight">
-                Meet <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">iSyncSO</span>
-              </h1>
-              <p className="text-zinc-400 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
-                The AI-powered operating system that runs your entire business
-                {companyName ? ` — personalized for ${companyName}` : ''}.
+              <p className="text-white/90 text-base sm:text-lg md:text-xl leading-relaxed font-light">
+                {transcript}
               </p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Module orbit ring - horizontal strip */}
+        {/* ─── Speaking indicator ─── */}
         <AnimatePresence>
-          {phase >= 2 && (
+          {speaking && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="flex items-center justify-center gap-3 sm:gap-4 mb-8 flex-wrap px-4"
+              exit={{ opacity: 0 }}
+              className="flex items-center justify-center gap-[3px] mb-6"
             >
-              {MODULE_ICONS.map((mod, i) => {
+              {[...Array(5)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="w-[3px] rounded-full bg-cyan-400"
+                  animate={{ height: [6, 18, 6] }}
+                  transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.08, ease: 'easeInOut' }}
+                />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ─── Module Icons ─── */}
+        <AnimatePresence>
+          {showModules && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6 }}
+              className="flex items-center justify-center gap-3 sm:gap-4 mb-6 flex-wrap px-2"
+            >
+              {MODULES.map((mod, i) => {
                 const Icon = mod.icon;
                 return (
                   <motion.div
                     key={mod.label}
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.06, duration: 0.4, ease: [0, 0.7, 0.3, 1] }}
+                    initial={{ opacity: 0, scale: 0, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ delay: i * 0.07, duration: 0.5, ease: [0, 0.8, 0.2, 1] }}
                     className="flex flex-col items-center gap-1"
                   >
-                    <div
-                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center border border-white/10 bg-white/[0.03] backdrop-blur-sm"
-                      style={{ boxShadow: `0 0 20px ${mod.color}15` }}
+                    <motion.div
+                      className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center border border-white/10 bg-white/[0.03] backdrop-blur-sm"
+                      animate={phase === 1 ? {
+                        boxShadow: [`0 0 0px ${mod.color}00`, `0 0 20px ${mod.color}40`, `0 0 0px ${mod.color}00`],
+                      } : {}}
+                      transition={phase === 1 ? { duration: 2, repeat: Infinity, delay: i * 0.2 } : {}}
                     >
                       <Icon className="w-5 h-5" style={{ color: mod.color }} />
-                    </div>
+                    </motion.div>
                     <span className="text-[10px] text-zinc-500 font-medium">{mod.label}</span>
                   </motion.div>
                 );
@@ -294,51 +490,46 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
           )}
         </AnimatePresence>
 
-        {/* Feature cards grid */}
+        {/* ─── Feature Cards ─── */}
         <AnimatePresence>
-          {phase >= 2 && (
+          {showFeatureCards && (
             <motion.div
-              variants={stagger}
-              initial="hidden"
-              animate="visible"
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full mb-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full mb-6 px-2"
             >
-              {HERO_FEATURES.map((feat, i) => {
+              {FEATURES.map((feat, i) => {
                 const Icon = feat.icon;
-                const isActive = activeFeature === i;
+                const isActive = phase >= feat.phase;
                 return (
                   <motion.div
                     key={feat.title}
-                    variants={fadeUp}
-                    className={`relative rounded-2xl border p-4 transition-all duration-500 cursor-default overflow-hidden ${
+                    initial={{ opacity: 0, y: 24, scale: 0.95 }}
+                    animate={{
+                      opacity: isActive ? 1 : 0.3,
+                      y: 0,
+                      scale: isActive ? 1 : 0.97,
+                    }}
+                    transition={{ delay: i * 0.1, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+                    className={`relative rounded-2xl border p-3 sm:p-4 transition-all duration-700 overflow-hidden ${
                       isActive
-                        ? `${feat.border} bg-gradient-to-br ${feat.color}`
-                        : 'border-white/5 bg-white/[0.02]'
+                        ? `${feat.border} bg-gradient-to-br ${feat.gradient}`
+                        : 'border-white/5 bg-white/[0.01]'
                     }`}
-                    onMouseEnter={() => setActiveFeature(i)}
                   >
-                    {/* Tag */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                        isActive ? 'bg-white/10' : 'bg-white/[0.04]'
-                      }`}>
-                        <Icon className={`w-5 h-5 ${isActive ? feat.iconColor : 'text-zinc-500'}`} />
-                      </div>
-                      <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                        isActive
-                          ? `${feat.iconColor} bg-white/10`
-                          : 'text-zinc-600 bg-white/[0.03]'
-                      }`}>
-                        {feat.tag}
-                      </span>
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${
+                      isActive ? 'bg-white/10' : 'bg-white/[0.03]'
+                    }`}>
+                      <Icon className={`w-4 h-4 ${isActive ? feat.iconColor : 'text-zinc-600'}`} />
                     </div>
-                    <h3 className={`text-sm font-semibold mb-1 transition-colors duration-300 ${
-                      isActive ? 'text-white' : 'text-zinc-300'
+                    <h3 className={`text-xs sm:text-sm font-semibold mb-0.5 transition-colors duration-500 ${
+                      isActive ? 'text-white' : 'text-zinc-600'
                     }`}>
                       {feat.title}
                     </h3>
-                    <p className={`text-xs leading-relaxed transition-colors duration-300 ${
-                      isActive ? 'text-zinc-300' : 'text-zinc-500'
+                    <p className={`text-[10px] sm:text-xs leading-relaxed transition-colors duration-500 ${
+                      isActive ? 'text-zinc-300' : 'text-zinc-700'
                     }`}>
                       {feat.desc}
                     </p>
@@ -349,59 +540,69 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
           )}
         </AnimatePresence>
 
-        {/* Stats strip */}
+        {/* ─── Stats Counter ─── */}
         <AnimatePresence>
-          {phase >= 3 && (
+          {phase >= 2 && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex items-center justify-center gap-6 sm:gap-10 mb-8 text-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6 }}
+              className="flex items-center justify-center gap-8 sm:gap-12 mb-6"
             >
               {[
-                { value: '51', label: 'AI Actions' },
-                { value: '10', label: 'Engines' },
-                { value: '30+', label: 'Integrations' },
-                { value: '11', label: 'Languages' },
-              ].map((stat, i) => (
-                <div key={stat.label}>
+                { value: '51', label: 'AI Actions', delay: 0 },
+                { value: '10', label: 'Engines', delay: 0.1 },
+                { value: '30+', label: 'Integrations', delay: 0.2 },
+                { value: '11', label: 'Languages', delay: 0.3 },
+              ].map((stat) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: stat.delay, duration: 0.4 }}
+                  className="text-center"
+                >
                   <div className="text-xl sm:text-2xl font-bold text-white">{stat.value}</div>
-                  <div className="text-[10px] sm:text-xs text-zinc-500 uppercase tracking-wide">{stat.label}</div>
-                </div>
+                  <div className="text-[9px] sm:text-[10px] text-zinc-500 uppercase tracking-wider">{stat.label}</div>
+                </motion.div>
               ))}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* CTA Button */}
-        <AnimatePresence>
-          {phase >= 3 && (
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="flex flex-col items-center gap-3"
-            >
-              <motion.button
-                onClick={onStart}
-                className="group flex items-center gap-3 px-8 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-2xl shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all duration-300 hover:scale-[1.02]"
-                whileTap={{ scale: 0.97 }}
-              >
-                Start the Demo
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
-              </motion.button>
-              <p className="text-zinc-600 text-xs flex items-center gap-1.5">
-                <Mic className="w-3 h-3" />
-                Voice-guided interactive experience
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* ─── Progress indicator ─── */}
+        {phase >= 0 && phase < script.length && (
+          <div className="flex items-center justify-center gap-1.5 mb-4">
+            {script.map((_, i) => (
+              <motion.div
+                key={i}
+                className="h-1 rounded-full"
+                animate={{
+                  width: i === phase ? 24 : 6,
+                  backgroundColor: i <= phase ? 'rgba(6,182,212,0.8)' : 'rgba(63,63,70,0.5)',
+                }}
+                transition={{ duration: 0.4 }}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Keyframes */}
+      {/* ─── Skip Button ─── */}
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: phase >= 0 ? 1 : 0 }}
+        transition={{ delay: 2, duration: 0.5 }}
+        onClick={handleSkip}
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition-all text-sm backdrop-blur-sm"
+      >
+        <SkipForward className="w-4 h-4" />
+        Skip Intro
+      </motion.button>
+
+      {/* ─── Keyframes ─── */}
       <style>{`
-        @keyframes syncSpin {
+        @keyframes introSpin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
