@@ -796,7 +796,7 @@ function buildNarrationScript(name, company) {
   return [
     { key: 'greeting', text: `Hey ${n}. This is SYNC. And what you're about to see was built for ${c}.`, minMs: 4000 },
     { key: 'problem', text: `Your tools don't talk to each other. Your data lives in silos. Your team wastes hours switching between apps. That ends today.`, minMs: 5500 },
-    { key: 'reveal', text: `Introducing iSyncSO. One platform. Ten engines. CRM, Finance, Growth, Talent, and six more — all connected, all intelligent, all working together.`, minMs: 6000 },
+    { key: 'reveal', text: `Introducing iSinkso. One platform. Ten engines. CRM, Finance, Growth, Talent, and six more — all connected, all intelligent, all working together.`, minMs: 6000 },
     { key: 'orchestrator', text: `And at the center of it all — me. Fifty-one actions, all voice-controlled. Just say what you need. I handle the rest.`, minMs: 5000 },
     { key: 'integrations', text: `It connects to everything you already use. Slack. HubSpot. Gmail. Stripe. Over thirty integrations. One workspace. Zero friction.`, minMs: 5500 },
     { key: 'ready', text: `Enough talking. Let me show you.`, minMs: 2500 },
