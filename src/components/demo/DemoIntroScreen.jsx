@@ -22,11 +22,16 @@ const AGENT_SEGMENTS = [
 ];
 
 // ─── Generative Ambient Audio Engine ────────────────────────────────────────
+// Creates an evolving ambient soundscape with layered pads, random chimes,
+// filtered noise texture, and slow modulation — not a static drone.
 function createAmbientAudio() {
   let ctx = null;
   let masterGain = null;
-  let nodes = [];
+  let oscs = [];
+  let chimeInterval = null;
   let started = false;
+  let padFilters = [];
+  let currentIntensity = 0.3;
 
   const start = () => {
     if (started) return;
@@ -36,103 +41,230 @@ function createAmbientAudio() {
       masterGain.gain.value = 0;
       masterGain.connect(ctx.destination);
 
-      // Warm pad — layered detuned oscillators
-      const padFreqs = [130.81, 196.00, 261.63, 329.63]; // C3, G3, C4, E4
-      padFreqs.forEach((freq, i) => {
+      // ── Reverb (convolver simulation via delay network) ──
+      const reverbGain = ctx.createGain();
+      reverbGain.gain.value = 0.3;
+      const delays = [0.07, 0.13, 0.21, 0.34].map(t => {
+        const d = ctx.createDelay(1);
+        d.delayTime.value = t;
+        const fb = ctx.createGain();
+        fb.gain.value = 0.2;
+        const filt = ctx.createBiquadFilter();
+        filt.type = 'lowpass';
+        filt.frequency.value = 2000 - t * 2000;
+        d.connect(filt);
+        filt.connect(fb);
+        fb.connect(d); // feedback loop
+        filt.connect(reverbGain);
+        return d;
+      });
+      reverbGain.connect(masterGain);
+
+      // Send bus into reverb
+      const reverbSend = ctx.createGain();
+      reverbSend.gain.value = 0.4;
+      delays.forEach(d => reverbSend.connect(d));
+
+      // ── Evolving Pad Layer — triangle waves with slow LFO modulation ──
+      const padNotes = [
+        { freq: 130.81, detune: -8 },   // C3
+        { freq: 196.00, detune: 5 },    // G3
+        { freq: 261.63, detune: -3 },   // C4
+        { freq: 329.63, detune: 7 },    // E4
+        { freq: 392.00, detune: -6 },   // G4
+      ];
+
+      padNotes.forEach((note, i) => {
+        // Main oscillator — triangle for warmth
+        const osc = ctx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.value = note.freq;
+        osc.detune.value = note.detune;
+
+        // Slow detune wobble — each voice drifts differently
+        const detuneLfo = ctx.createOscillator();
+        const detuneDepth = ctx.createGain();
+        detuneLfo.type = 'sine';
+        detuneLfo.frequency.value = 0.05 + i * 0.02; // Very slow, staggered
+        detuneDepth.gain.value = 4 + i * 2; // ±4-14 cents drift
+        detuneLfo.connect(detuneDepth);
+        detuneDepth.connect(osc.detune);
+        detuneLfo.start();
+
+        // Per-voice filter with LFO sweep
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 300 + i * 60;
+        filter.Q.value = 0.7;
+
+        const filterLfo = ctx.createOscillator();
+        const filterDepth = ctx.createGain();
+        filterLfo.type = 'sine';
+        filterLfo.frequency.value = 0.03 + i * 0.015; // Each filter sweeps at different rate
+        filterDepth.gain.value = 150 + i * 40;
+        filterLfo.connect(filterDepth);
+        filterDepth.connect(filter.frequency);
+        filterLfo.start();
+
+        // Amplitude tremolo — very gentle
+        const ampLfo = ctx.createOscillator();
+        const ampDepth = ctx.createGain();
+        const voiceGain = ctx.createGain();
+        ampLfo.type = 'sine';
+        ampLfo.frequency.value = 0.08 + i * 0.03;
+        ampDepth.gain.value = 0.008;
+        voiceGain.gain.value = 0.025;
+        ampLfo.connect(ampDepth);
+        ampDepth.connect(voiceGain.gain);
+        ampLfo.start();
+
+        osc.connect(filter);
+        filter.connect(voiceGain);
+        voiceGain.connect(masterGain);
+        voiceGain.connect(reverbSend);
+        osc.start();
+
+        padFilters.push(filter);
+        oscs.push(osc, detuneLfo, filterLfo, ampLfo);
+      });
+
+      // ── Noise Texture — filtered white noise for "air" ──
+      const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 4, ctx.sampleRate);
+      const noiseData = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < noiseData.length; i++) noiseData[i] = Math.random() * 2 - 1;
+      const noise = ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+      noise.loop = true;
+
+      const noiseBand = ctx.createBiquadFilter();
+      noiseBand.type = 'bandpass';
+      noiseBand.frequency.value = 800;
+      noiseBand.Q.value = 0.3;
+
+      const noiseGain = ctx.createGain();
+      noiseGain.value = 0.008;
+      noiseGain.gain.value = 0.008;
+
+      // Slow noise sweep
+      const noiseLfo = ctx.createOscillator();
+      const noiseDepth = ctx.createGain();
+      noiseLfo.type = 'sine';
+      noiseLfo.frequency.value = 0.04;
+      noiseDepth.gain.value = 400;
+      noiseLfo.connect(noiseDepth);
+      noiseDepth.connect(noiseBand.frequency);
+      noiseLfo.start();
+
+      noise.connect(noiseBand);
+      noiseBand.connect(noiseGain);
+      noiseGain.connect(masterGain);
+      noise.start();
+      oscs.push(noiseLfo);
+
+      // ── Random Chime Layer — gentle bell tones at harmonic intervals ──
+      const chimeNotes = [
+        523.25, 587.33, 659.25, 783.99, 880.00, // C5, D5, E5, G5, A5
+        1046.50, 1174.66, 1318.51,               // C6, D6, E6
+      ];
+
+      const scheduleChime = () => {
+        if (!ctx || ctx.state === 'closed') return;
+        const t = ctx.currentTime;
+        const freq = chimeNotes[Math.floor(Math.random() * chimeNotes.length)];
+
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         const filter = ctx.createBiquadFilter();
 
         osc.type = 'sine';
         osc.frequency.value = freq;
-        osc.detune.value = (i - 1.5) * 6; // Slight detune for warmth
+        // Slight random detune for organic feel
+        osc.detune.value = (Math.random() - 0.5) * 10;
 
         filter.type = 'lowpass';
-        filter.frequency.value = 400 + i * 80;
+        filter.frequency.value = 3000;
         filter.Q.value = 0.5;
 
-        gain.gain.value = 0.035;
+        // Bell envelope — quick attack, long exponential decay
+        const vol = 0.015 + Math.random() * 0.012 * currentIntensity;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(vol, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 2.5 + Math.random() * 2);
 
         osc.connect(filter);
         filter.connect(gain);
         gain.connect(masterGain);
-        osc.start();
-        nodes.push({ osc, gain, filter });
-      });
+        gain.connect(reverbSend); // Chimes get extra reverb
+        osc.start(t);
+        osc.stop(t + 5);
+      };
 
-      // Sub bass drone
+      // Schedule chimes at random intervals (1.5-4s apart)
+      const chimeLoop = () => {
+        scheduleChime();
+        // Occasionally play two notes close together (gentle chord)
+        if (Math.random() > 0.6) {
+          setTimeout(scheduleChime, 80 + Math.random() * 150);
+        }
+        const nextDelay = 1500 + Math.random() * 2500;
+        chimeInterval = setTimeout(chimeLoop, nextDelay);
+      };
+      // Start first chime after a moment
+      chimeInterval = setTimeout(chimeLoop, 2000);
+
+      // ── Sub bass — very gentle sine, barely felt ──
       const sub = ctx.createOscillator();
       const subGain = ctx.createGain();
+      const subFilter = ctx.createBiquadFilter();
       sub.type = 'sine';
       sub.frequency.value = 65.41; // C2
-      subGain.gain.value = 0.04;
-      sub.connect(subGain);
+      subFilter.type = 'lowpass';
+      subFilter.frequency.value = 100;
+      subGain.gain.value = 0.025;
+      sub.connect(subFilter);
+      subFilter.connect(subGain);
       subGain.connect(masterGain);
       sub.start();
-      nodes.push({ osc: sub, gain: subGain });
+      oscs.push(sub);
 
-      // Shimmer layer — high sine with tremolo
-      const shimmer = ctx.createOscillator();
-      const shimmerGain = ctx.createGain();
-      const shimmerFilter = ctx.createBiquadFilter();
-      const lfo = ctx.createOscillator();
-      const lfoGain = ctx.createGain();
-
-      shimmer.type = 'sine';
-      shimmer.frequency.value = 523.25; // C5
-      shimmerFilter.type = 'lowpass';
-      shimmerFilter.frequency.value = 600;
-      shimmerGain.gain.value = 0.012;
-
-      lfo.type = 'sine';
-      lfo.frequency.value = 0.15;
-      lfoGain.gain.value = 0.008;
-
-      shimmer.connect(shimmerFilter);
-      shimmerFilter.connect(shimmerGain);
-      lfo.connect(lfoGain);
-      lfoGain.connect(shimmerGain.gain);
-      shimmerGain.connect(masterGain);
-      shimmer.start();
-      lfo.start();
-      nodes.push({ osc: shimmer, gain: shimmerGain }, { osc: lfo, gain: lfoGain });
-
-      // Fade in over 3 seconds
-      masterGain.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 3);
+      // Fade in over 4 seconds
+      masterGain.gain.setValueAtTime(0, ctx.currentTime);
+      masterGain.gain.linearRampToValueAtTime(0.55, ctx.currentTime + 4);
       started = true;
     } catch (_) {}
   };
 
   const setIntensity = (val) => {
     if (!ctx || !masterGain) return;
+    currentIntensity = val;
     const t = ctx.currentTime;
     masterGain.gain.cancelScheduledValues(t);
     masterGain.gain.setValueAtTime(masterGain.gain.value, t);
-    masterGain.gain.linearRampToValueAtTime(0.3 + val * 0.5, t + 0.5);
+    masterGain.gain.linearRampToValueAtTime(0.3 + val * 0.4, t + 0.8);
 
-    // Sweep filters up with intensity
-    nodes.forEach(n => {
-      if (n.filter) {
-        n.filter.frequency.cancelScheduledValues(t);
-        n.filter.frequency.setValueAtTime(n.filter.frequency.value, t);
-        n.filter.frequency.linearRampToValueAtTime(400 + val * 600, t + 0.8);
-      }
+    // Open pad filters with intensity — more brightness when speaking
+    padFilters.forEach((f, i) => {
+      f.frequency.cancelScheduledValues(t);
+      f.frequency.setValueAtTime(f.frequency.value, t);
+      f.frequency.linearRampToValueAtTime(300 + i * 60 + val * 500, t + 1.2);
     });
   };
 
   const stop = () => {
     if (!ctx || !masterGain) return;
+    if (chimeInterval) { clearTimeout(chimeInterval); chimeInterval = null; }
     const t = ctx.currentTime;
     masterGain.gain.cancelScheduledValues(t);
     masterGain.gain.setValueAtTime(masterGain.gain.value, t);
-    masterGain.gain.linearRampToValueAtTime(0, t + 1.5);
+    masterGain.gain.linearRampToValueAtTime(0, t + 2);
     setTimeout(() => {
-      nodes.forEach(n => { try { n.osc.stop(); } catch (_) {} });
-      nodes = [];
+      oscs.forEach(o => { try { o.stop(); } catch (_) {} });
+      oscs = [];
+      padFilters = [];
       try { ctx.close(); } catch (_) {}
       ctx = null;
       started = false;
-    }, 2000);
+    }, 2500);
   };
 
   return { start, setIntensity, stop };
