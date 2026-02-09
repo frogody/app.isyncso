@@ -702,12 +702,12 @@ function buildNarrationScript(name, company) {
   const n = name || 'there';
   const c = company || 'your company';
   return [
-    { key: 'greeting', text: `Welcome, ${n}. I'm SYNC — the intelligence that orchestrates everything inside iSyncSO. I've been looking forward to showing you what we've built for ${c}.`, minMs: 5000 },
-    { key: 'engines', text: `Imagine ten powerful engines — CRM, Finance, Growth, Talent, Learn, Create, Products, Raise, Sentinel, and Analytics — all working together as one living system. That's iSyncSO.`, minMs: 6500 },
-    { key: 'orchestrator', text: `And I'm at the center of it all. Fifty-one actions at my fingertips. I can draft invoices, enrich your contacts, match the perfect candidate, generate stunning visuals — anything you need, just say the word.`, minMs: 7500 },
-    { key: 'activity', text: `Nothing slips through the cracks. Every action, every decision your team makes is captured in real time. I even write your daily activity journals, so you always see the full picture.`, minMs: 6000 },
-    { key: 'integrations', text: `And the tools you already rely on? Slack, HubSpot, Gmail, Stripe — over thirty integrations that flow seamlessly into one workspace. Plus, built-in EU AI Act compliance keeps you ahead of regulations, automatically.`, minMs: 7000 },
-    { key: 'ready', text: `Now — let me show you what this looks like in practice. Let's step inside.`, minMs: 3500 },
+    { key: 'greeting', text: `${n}... welcome. I'm SYNC. Think of me as the mind behind everything that happens inside iSyncSO. And right now, my full attention is on ${c}.`, minMs: 6000 },
+    { key: 'engines', text: `Behind me are ten engines. CRM. Finance. Growth. Talent. Learn. Create. Products. Raise. Sentinel. Analytics. Each one powerful on its own — but together, they become something extraordinary.`, minMs: 8000 },
+    { key: 'orchestrator', text: `I orchestrate all of them. Fifty-one actions, all voice-controlled. Draft an invoice. Enrich a lead. Match a candidate. Generate a campaign visual. You ask — I execute. Instantly.`, minMs: 8000 },
+    { key: 'activity', text: `Every move your team makes, I see it. Every decision, every deal, every conversation — captured in real time. I even write your daily journals, so nothing ever slips through the cracks.`, minMs: 7000 },
+    { key: 'integrations', text: `Your existing tools? They plug right in. Slack, HubSpot, Gmail, Stripe — over thirty integrations, flowing seamlessly into one workspace. And EU AI Act compliance? Built in. Automatic. You're already ahead.`, minMs: 8000 },
+    { key: 'ready', text: `Now... let me show you what this actually feels like. Step inside with me.`, minMs: 4000 },
   ];
 }
 
@@ -736,8 +736,8 @@ const FEATURES = [
 const voiceUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-voice-demo`;
 const ttsHeaders = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` };
 
-async function speakText(text, language, audioRef, onDone) {
-  if (!text) { onDone?.(); return; }
+async function speakText(text, language, audioRef, onStart, onDone) {
+  if (!text) { onStart?.(); onDone?.(); return; }
   const cancel = () => {
     try { window.speechSynthesis?.cancel(); } catch (_) {}
     if (audioRef.current) { try { audioRef.current.pause(); audioRef.current.src = ''; } catch (_) {} audioRef.current = null; }
@@ -745,7 +745,7 @@ async function speakText(text, language, audioRef, onDone) {
   cancel();
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const timeout = setTimeout(() => controller.abort(), 20000); // longer for ElevenLabs
     const res = await fetch(voiceUrl, { method: 'POST', signal: controller.signal, headers: ttsHeaders, body: JSON.stringify({ ttsOnly: true, ttsText: text, language }) });
     clearTimeout(timeout);
     if (res.ok) {
@@ -754,26 +754,39 @@ async function speakText(text, language, audioRef, onDone) {
         return new Promise((resolve) => {
           const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
           audioRef.current = audio;
-          const done = () => { audioRef.current = null; resolve(); onDone?.(); };
-          audio.onended = done; audio.onerror = done; audio.play().catch(done);
+          let started = false;
+          audio.onplaying = () => { if (!started) { started = true; onStart?.(); } };
+          const done = () => { audioRef.current = null; if (!started) { started = true; onStart?.(); } resolve(); onDone?.(); };
+          audio.onended = done; audio.onerror = done;
+          audio.play().then(() => { if (!started) { started = true; onStart?.(); } }).catch(done);
         });
       }
-      if (data.ttsUnavailable) return browserTTS(text, language, onDone);
+      if (data.ttsUnavailable) return browserTTS(text, language, onStart, onDone);
     }
   } catch (_) {}
-  return browserTTS(text, language, onDone);
+  return browserTTS(text, language, onStart, onDone);
 }
 
-function browserTTS(text, language, onDone) {
+function browserTTS(text, language, onStart, onDone) {
   return new Promise((resolve) => {
-    if (!window.speechSynthesis) { const w = Math.max(3000, text.length * 45); setTimeout(() => { resolve(); onDone?.(); }, w); return; }
+    if (!window.speechSynthesis) {
+      onStart?.();
+      const w = Math.max(3000, text.length * 45);
+      setTimeout(() => { resolve(); onDone?.(); }, w);
+      return;
+    }
     try {
       const u = new SpeechSynthesisUtterance(text);
       u.lang = language === 'nl' ? 'nl-NL' : language === 'de' ? 'de-DE' : 'en-US';
       u.rate = 1.0;
+      u.onstart = () => onStart?.();
       const done = () => { resolve(); onDone?.(); };
       u.onend = done; u.onerror = done; window.speechSynthesis.speak(u);
-    } catch (_) { const w = Math.max(3000, text.length * 45); setTimeout(() => { resolve(); onDone?.(); }, w); }
+    } catch (_) {
+      onStart?.();
+      const w = Math.max(3000, text.length * 45);
+      setTimeout(() => { resolve(); onDone?.(); }, w);
+    }
   });
 }
 
@@ -781,6 +794,7 @@ function browserTTS(text, language, onDone) {
 export default function DemoIntroScreen({ recipientName, companyName, onStart, language = 'en' }) {
   const [phase, setPhase] = useState(-1);
   const [speaking, setSpeaking] = useState(false);
+  const [loading, setLoading] = useState(false); // waiting for TTS audio
   const [transcript, setTranscript] = useState('');
   const [currentDuration, setCurrentDuration] = useState(5000);
   const [skipping, setSkipping] = useState(false);
@@ -791,8 +805,8 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
   const ambientRef = useRef(null);
 
   const script = useRef(buildNarrationScript(recipientName, companyName)).current;
-  const avatarMood = speaking ? 'speaking' : 'idle';
-  const avatarLevel = speaking ? 0.6 : 0.18;
+  const avatarMood = speaking ? 'speaking' : loading ? 'thinking' : 'idle';
+  const avatarLevel = speaking ? 0.6 : loading ? 0.35 : 0.18;
 
   useEffect(() => {
     mountedRef.current = true;
@@ -820,21 +834,24 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
     ambientRef.current?.setIntensity(speaking ? 0.7 : 0.3);
   }, [speaking]);
 
-  // Narration engine
+  // Narration engine — waits for audio to start before revealing text
   useEffect(() => {
     if (phase < 0 || phase >= script.length || skipping) return;
     phaseRef.current = phase;
     const step = script[phase];
     setTranscript(step.text);
     setCurrentDuration(step.minMs);
-    setSpeaking(true);
+    setSpeaking(false);
+    setLoading(true);
 
     let voiceDone = false, timerDone = false, advanced = false;
+    let minTimer = null;
     const tryAdvance = () => {
       if (advanced || !mountedRef.current) return;
       if (voiceDone && timerDone) {
         advanced = true;
         setSpeaking(false);
+        setLoading(false);
         setTimeout(() => {
           if (!mountedRef.current) return;
           const next = phaseRef.current + 1;
@@ -844,11 +861,19 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
       }
     };
 
-    speakText(step.text, language, audioRef, () => { voiceDone = true; tryAdvance(); });
-    const minTimer = setTimeout(() => { timerDone = true; tryAdvance(); }, step.minMs);
+    // onStart fires when audio actually begins playing — THEN reveal text
+    const handleAudioStart = () => {
+      if (!mountedRef.current) return;
+      setLoading(false);
+      setSpeaking(true);
+      // Start the minimum duration timer from when audio begins, not when requested
+      minTimer = setTimeout(() => { timerDone = true; tryAdvance(); }, step.minMs);
+    };
+
+    speakText(step.text, language, audioRef, handleAudioStart, () => { voiceDone = true; tryAdvance(); });
 
     return () => {
-      clearTimeout(minTimer);
+      if (minTimer) clearTimeout(minTimer);
       try { window.speechSynthesis?.cancel(); } catch (_) {}
       if (audioRef.current) { try { audioRef.current.pause(); audioRef.current.src = ''; } catch (_) {} audioRef.current = null; }
     };
@@ -960,6 +985,27 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
                   style={{ background: `linear-gradient(to top, ${AGENT_SEGMENTS[i % 10]?.color || '#a855f7'}66, ${AGENT_SEGMENTS[i % 10]?.color || '#06b6d4'})` }}
                   animate={{ height: [2, 14 + Math.sin(i * 0.5) * 10, 2] }}
                   transition={{ duration: 0.35 + (i % 4) * 0.05, repeat: Infinity, delay: i * 0.035, ease: 'easeInOut' }}
+                />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ─── Loading indicator — waiting for premium voice ─── */}
+        <AnimatePresence>
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center gap-1.5 mb-4"
+            >
+              {[0, 1, 2].map(i => (
+                <motion.div
+                  key={i}
+                  className="w-1.5 h-1.5 rounded-full bg-purple-400/60"
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0.9, 0.4] }}
+                  transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
                 />
               ))}
             </motion.div>

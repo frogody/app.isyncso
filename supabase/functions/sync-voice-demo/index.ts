@@ -431,10 +431,10 @@ async function generateElevenLabsTTS(text: string): Promise<{ audio: string; byt
       },
       body: JSON.stringify({
         text,
-        voice: 'Aria',          // Natural, warm, confident — ElevenLabs showcase voice
-        stability: 0.35,         // Lower = more expressive intonation
-        similarity_boost: 0.78,  // Keeps voice identity strong
-        style: 0.45,             // Adds emotional expressiveness
+        voice: 'Charlotte',      // Smooth, warm, alluring British voice
+        stability: 0.30,         // Low = very expressive intonation
+        similarity_boost: 0.80,  // Keeps voice identity strong
+        style: 0.55,             // High emotional expressiveness
         speed: 1.0,              // Normal pace
       }),
     });
@@ -459,6 +459,13 @@ async function generateElevenLabsTTS(text: string): Promise<{ audio: string; byt
 }
 
 async function generateTTS(text: string, orpheusVoice: string, language = 'en'): Promise<{ audio: string; byteLength: number } | null> {
+  // Try ElevenLabs first for English — same premium voice across entire demo
+  if (language === 'en' && FAL_KEY) {
+    const elevenResult = await generateElevenLabsTTS(text);
+    if (elevenResult) return elevenResult;
+    console.log('[voice-demo] ElevenLabs failed, falling back to Kokoro/Orpheus');
+  }
+
   // Check if language has a Kokoro voice (null = explicitly unsupported, undefined = unknown)
   const kokoroVoice = language in KOKORO_VOICE_MAP ? KOKORO_VOICE_MAP[language] : KOKORO_VOICE_MAP['en'];
 
@@ -468,7 +475,7 @@ async function generateTTS(text: string, orpheusVoice: string, language = 'en'):
     return null;
   }
 
-  // Try Kokoro first (97ms TTFB vs 187ms Orpheus)
+  // Fallback: Kokoro (97ms TTFB vs 187ms Orpheus)
   try {
     const ttsAbort = new AbortController();
     const ttsTimeout = setTimeout(() => ttsAbort.abort(), 15000);

@@ -274,7 +274,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
         // Fallback: separate TTS call
         try {
           const controller = new AbortController();
-          const ttsTimeout = setTimeout(() => controller.abort(), 6000);
+          const ttsTimeout = setTimeout(() => controller.abort(), 20000);
           const audioRes = await fetch(voiceUrl, {
             method: 'POST',
             signal: controller.signal,
@@ -365,7 +365,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
 
     try {
       const controller = new AbortController();
-      const ttsTimeout = setTimeout(() => controller.abort(), 8000);
+      const ttsTimeout = setTimeout(() => controller.abort(), 20000);
       const audioRes = await fetch(voiceUrl, {
         method: 'POST',
         signal: controller.signal,
@@ -468,7 +468,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
         // Fallback TTS
         try {
           const controller = new AbortController();
-          const ttsTimeout = setTimeout(() => controller.abort(), 8000);
+          const ttsTimeout = setTimeout(() => controller.abort(), 20000);
           const audioRes = await fetch(voiceUrl, {
             method: 'POST',
             signal: controller.signal,
