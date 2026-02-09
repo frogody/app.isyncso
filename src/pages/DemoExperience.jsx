@@ -368,43 +368,6 @@ export default function DemoExperience() {
     };
   }, []);
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Don't capture if user is typing in an input
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-      switch (e.key) {
-        case ' ':
-        case 'm':
-        case 'M':
-          e.preventDefault();
-          voice.toggleMute();
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          orchestrator.advanceStep();
-          break;
-        case 'ArrowLeft':
-          e.preventDefault();
-          if (orchestrator.previousPage) orchestrator.goBack();
-          break;
-        case 'Escape':
-          e.preventDefault();
-          // No panel collapse needed — Escape could end conversation mode
-          if (orchestrator.conversationMode) {
-            const nextIndex = orchestrator.resumeScript();
-            if (nextIndex >= 0) orchestrator.goToStep(nextIndex);
-            else orchestrator.advanceStep();
-          }
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [voice, orchestrator]);
-
   // When user speaks, enter conversation mode and cancel auto-advance
   const handleUserSpoke = useCallback((text) => {
     // Capture what the user said during discovery for context
@@ -442,6 +405,42 @@ export default function DemoExperience() {
     onUserSpoke: handleUserSpoke,
     language: demoLanguage,
   });
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't capture if user is typing in an input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      switch (e.key) {
+        case ' ':
+        case 'm':
+        case 'M':
+          e.preventDefault();
+          voice.toggleMute();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          orchestrator.advanceStep();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          if (orchestrator.previousPage) orchestrator.goBack();
+          break;
+        case 'Escape':
+          e.preventDefault();
+          if (orchestrator.conversationMode) {
+            const nextIndex = orchestrator.resumeScript();
+            if (nextIndex >= 0) orchestrator.goToStep(nextIndex);
+            else orchestrator.advanceStep();
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [voice, orchestrator]);
 
   // Load demo on mount with 15s timeout
   useEffect(() => {
