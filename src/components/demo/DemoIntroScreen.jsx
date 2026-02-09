@@ -21,10 +21,10 @@ const AGENT_SEGMENTS = [
   { id: 'inbox',        color: '#14b8a6', from: 0.92, to: 0.98 },
 ];
 
-// ─── R&B / Pop Beat Engine (~88 BPM) ─────────────────────────────────────────
-// Smooth R&B production: kick, snare w/ ghosts, swung 16th hi-hats,
-// sine bass on chord roots, Rhodes-style chords, warm pad, FDN reverb.
-// Everything at LOW volume — sits behind voice narration.
+// ─── Modern Electronic Beat Engine (~108 BPM) ──────────────────────────────
+// Clean, minimal electronic production — Apple keynote energy.
+// Tight kick, crisp clap, shuffled trap hi-hats, deep sub bass,
+// crystal FM pluck melody, airy filtered pad. LOW volume behind voice.
 function createAmbientAudio() {
   let ctx = null;
   let masterGain = null;
@@ -32,39 +32,31 @@ function createAmbientAudio() {
   let beatTimer = null;
   let currentIntensity = 0.3;
 
-  // Nodes we need to modulate via setIntensity
+  // Modulatable nodes
   let hatGainNode = null;
-  let snareGainNode = null;
-  let rhodesGainNode = null;
+  let clapGainNode = null;
+  let pluckGainNode = null;
   let padFilters = [];
 
-  const BPM = 88;
-  const beat = 60 / BPM;               // ~0.6818s per beat
-  const sixteenth = beat / 4;           // ~0.1705s
-  const swingAmount = 0.032;            // seconds — subtle swing on even 16ths
+  const BPM = 108;
+  const beat = 60 / BPM;
+  const sixteenth = beat / 4;
 
-  // Chord progression (2 bars each, repeating): Abm7, Emaj7, Bmaj7, Gbmaj7
-  // Bass roots:
-  const BASS_ROOTS = [103.83, 82.41, 123.47, 92.50]; // Ab2, E2, B2, Gb2
-
-  // Rhodes chord voicings (frequencies for each chord)
-  const RHODES_CHORDS = [
-    // Abm7: Ab3, Cb4(B3), Eb4, Gb4
-    [207.65, 246.94, 311.13, 369.99],
-    // Emaj7: E3, G#3, B3, D#4
-    [164.81, 207.65, 246.94, 311.13],
-    // Bmaj7: B3, D#4, F#4, A#4
-    [246.94, 311.13, 369.99, 466.16],
-    // Gbmaj7: Gb3, Bb3, Db4, F4
-    [185.00, 233.08, 277.18, 349.23],
+  // Minimal 4-chord progression: Am → F → C → G (uplifting pop in C major)
+  const BASS_ROOTS = [110.00, 87.31, 130.81, 98.00]; // A2, F2, C3, G2
+  // Pluck melody notes per chord (arpeggiated)
+  const PLUCK_NOTES = [
+    [440, 523.25, 659.25, 523.25],  // Am: A4 C5 E5 C5
+    [349.23, 440, 523.25, 440],      // F:  F4 A4 C5 A4
+    [523.25, 659.25, 783.99, 659.25],// C:  C5 E5 G5 E5
+    [392, 493.88, 587.33, 493.88],   // G:  G4 B4 D5 B4
   ];
-
-  // Warm pad voicings (lower, wider — triangle waves)
+  // Pad voicings (wide, airy)
   const PAD_CHORDS = [
-    [103.83, 155.56, 207.65, 311.13],   // Abm spread
-    [82.41, 123.47, 164.81, 246.94],     // E spread
-    [123.47, 185.00, 246.94, 369.99],    // B spread
-    [92.50, 138.59, 185.00, 277.18],     // Gb spread
+    [110, 164.81, 220, 329.63],  // Am spread
+    [87.31, 130.81, 174.61, 261.63], // F spread
+    [130.81, 196, 261.63, 392],  // C spread
+    [98, 146.83, 196, 293.66],   // G spread
   ];
 
   const start = () => {
@@ -75,86 +67,88 @@ function createAmbientAudio() {
       masterGain.gain.value = 0;
       masterGain.connect(ctx.destination);
 
-      // ── Reverb via Feedback Delay Network ──
+      // ── Clean plate reverb (short, bright) ──
       const reverbGain = ctx.createGain();
-      reverbGain.gain.value = 0.22;
+      reverbGain.gain.value = 0.18;
       const reverbSend = ctx.createGain();
-      reverbSend.gain.value = 0.3;
-      [0.043, 0.083, 0.127, 0.197].forEach(t => {
+      reverbSend.gain.value = 0.25;
+      [0.031, 0.059, 0.089, 0.131].forEach(t => {
         const d = ctx.createDelay(1);
         d.delayTime.value = t;
         const fb = ctx.createGain();
-        fb.gain.value = 0.15;
+        fb.gain.value = 0.12;
         const filt = ctx.createBiquadFilter();
         filt.type = 'lowpass';
-        filt.frequency.value = 3200 - t * 5000;
-        d.connect(filt);
-        filt.connect(fb);
-        fb.connect(d);
-        filt.connect(reverbGain);
-        reverbSend.connect(d);
+        filt.frequency.value = 5000 - t * 8000;
+        d.connect(filt); filt.connect(fb); fb.connect(d);
+        filt.connect(reverbGain); reverbSend.connect(d);
       });
       reverbGain.connect(masterGain);
 
-      // ── Drum bus gains (so setIntensity can modulate them) ──
+      // ── Stereo delay for pluck (ping-pong feel via two delays) ──
+      const delayL = ctx.createDelay(1);
+      const delayR = ctx.createDelay(1);
+      const delayGainL = ctx.createGain();
+      const delayGainR = ctx.createGain();
+      delayL.delayTime.value = beat * 0.75; // dotted eighth
+      delayR.delayTime.value = beat * 0.5;
+      delayGainL.gain.value = 0.2;
+      delayGainR.gain.value = 0.15;
+      const delaySend = ctx.createGain();
+      delaySend.gain.value = 0.3;
+      delaySend.connect(delayL); delaySend.connect(delayR);
+      delayL.connect(delayGainL); delayR.connect(delayGainR);
+      delayGainL.connect(masterGain); delayGainR.connect(masterGain);
+
+      // ── Bus gains ──
       hatGainNode = ctx.createGain();
-      hatGainNode.gain.value = 0.08;
+      hatGainNode.gain.value = 0.07;
       hatGainNode.connect(masterGain);
 
-      snareGainNode = ctx.createGain();
-      snareGainNode.gain.value = 0.12;
-      snareGainNode.connect(masterGain);
-      snareGainNode.connect(reverbSend);
+      clapGainNode = ctx.createGain();
+      clapGainNode.gain.value = 0.10;
+      clapGainNode.connect(masterGain);
+      clapGainNode.connect(reverbSend);
 
       const kickBus = ctx.createGain();
-      kickBus.gain.value = 0.25;
+      kickBus.gain.value = 0.30;
       kickBus.connect(masterGain);
 
-      // ── Bass gain ──
       const bassBus = ctx.createGain();
-      bassBus.gain.value = 0.18;
+      bassBus.gain.value = 0.22;
       bassBus.connect(masterGain);
 
-      // ── Rhodes gain ──
-      rhodesGainNode = ctx.createGain();
-      rhodesGainNode.gain.value = 0.06;
-      rhodesGainNode.connect(masterGain);
-      rhodesGainNode.connect(reverbSend);
+      pluckGainNode = ctx.createGain();
+      pluckGainNode.gain.value = 0.05;
+      pluckGainNode.connect(masterGain);
+      pluckGainNode.connect(delaySend);
+      pluckGainNode.connect(reverbSend);
 
-      // ── Warm Pad (triangle waves, continuous, LP filtered) ──
+      // ── Airy Pad (saw-like via detuned triangles, heavy LP filter) ──
       const padGain = ctx.createGain();
-      padGain.gain.value = 0.025;
+      padGain.gain.value = 0.020;
       padFilters = [];
-
-      // Start with first chord, we'll morph pad frequencies on chord changes
       const padOscs = [];
       PAD_CHORDS[0].forEach((freq, i) => {
-        [-5, 5].forEach(det => {
+        [-7, 0, 7].forEach(det => {
           const osc = ctx.createOscillator();
           osc.type = 'triangle';
           osc.frequency.value = freq;
-          osc.detune.value = det + (Math.random() - 0.5) * 3;
-
-          // Slow drift LFO
+          osc.detune.value = det + (Math.random() - 0.5) * 4;
           const lfo = ctx.createOscillator();
-          const lfoGain = ctx.createGain();
+          const lfoG = ctx.createGain();
           lfo.type = 'sine';
-          lfo.frequency.value = 0.05 + i * 0.02;
-          lfoGain.gain.value = 4;
-          lfo.connect(lfoGain);
-          lfoGain.connect(osc.detune);
-          lfo.start();
-
-          // LP filter per voice
+          lfo.frequency.value = 0.04 + i * 0.015;
+          lfoG.gain.value = 3;
+          lfo.connect(lfoG); lfoG.connect(osc.detune); lfo.start();
           if (padFilters.length <= i) {
             const f = ctx.createBiquadFilter();
             f.type = 'lowpass';
-            f.frequency.value = 500 + i * 100;
-            f.Q.value = 0.8;
+            f.frequency.value = 400 + i * 80;
+            f.Q.value = 0.6;
             padFilters.push(f);
             f.connect(padGain);
           }
-
           osc.connect(padFilters[Math.min(i, padFilters.length - 1)]);
           osc.start();
           padOscs.push(osc);
@@ -162,164 +156,140 @@ function createAmbientAudio() {
       });
       padGain.connect(masterGain);
 
-      // ── Beat scheduling via lookahead timer ──
+      // ── Beat state ──
       let nextBeatTime = ctx.currentTime + 0.1;
-      let beatCount = 0;       // 16th note counter
-      let chordIndex = 0;      // which chord in the progression (0-3)
-      let chordBeatCount = 0;  // 16ths elapsed in current 2-bar section
+      let beatCount = 0;
+      let chordIndex = 0;
+      let chordBeatCount = 0;
+      let pluckNoteIdx = 0;
 
-      // === Drum Synthesizers (self-destructing) ===
-
+      // === Tight Electronic Kick (punchy 808-style) ===
       const playKick = (time) => {
-        // Sine pitch sweep 150Hz -> 40Hz
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(150, time);
-        osc.frequency.exponentialRampToValueAtTime(40, time + 0.12);
-        gain.gain.setValueAtTime(0.9, time);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
-        osc.connect(gain);
-        gain.connect(kickBus);
-        osc.start(time);
-        osc.stop(time + 0.4);
+        osc.frequency.setValueAtTime(160, time);
+        osc.frequency.exponentialRampToValueAtTime(35, time + 0.08);
+        gain.gain.setValueAtTime(1.0, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.28);
+        // Click transient
+        const click = ctx.createOscillator();
+        const clickG = ctx.createGain();
+        click.type = 'square';
+        click.frequency.value = 1800;
+        clickG.gain.setValueAtTime(0.15, time);
+        clickG.gain.exponentialRampToValueAtTime(0.001, time + 0.008);
+        click.connect(clickG); clickG.connect(kickBus);
+        click.start(time); click.stop(time + 0.015);
+        osc.connect(gain); gain.connect(kickBus);
+        osc.start(time); osc.stop(time + 0.3);
       };
 
-      const playSnare = (time, ghost = false) => {
-        const vol = ghost ? 0.15 : 0.6;
-        // Noise burst (filtered)
-        const bufLen = Math.floor(ctx.sampleRate * 0.12);
-        const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1);
-        const noise = ctx.createBufferSource();
-        noise.buffer = buf;
-        const noiseFilter = ctx.createBiquadFilter();
-        noiseFilter.type = 'bandpass';
-        noiseFilter.frequency.value = ghost ? 4500 : 3500;
-        noiseFilter.Q.value = 1.2;
-        const noiseGain = ctx.createGain();
-        noiseGain.gain.setValueAtTime(vol, time);
-        noiseGain.gain.exponentialRampToValueAtTime(0.001, time + (ghost ? 0.06 : 0.15));
-        noise.connect(noiseFilter);
-        noiseFilter.connect(noiseGain);
-        noiseGain.connect(snareGainNode);
-        noise.start(time);
-        noise.stop(time + 0.2);
-
-        // Sine tone body
-        const osc = ctx.createOscillator();
-        const oscGain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(ghost ? 220 : 185, time);
-        osc.frequency.exponentialRampToValueAtTime(120, time + 0.04);
-        oscGain.gain.setValueAtTime(vol * 0.5, time);
-        oscGain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
-        osc.connect(oscGain);
-        oscGain.connect(snareGainNode);
-        osc.start(time);
-        osc.stop(time + 0.12);
+      // === Electronic Clap (layered noise bursts) ===
+      const playClap = (time) => {
+        [0, 0.012, 0.025].forEach(offset => {
+          const bufLen = Math.floor(ctx.sampleRate * 0.08);
+          const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+          const data = buf.getChannelData(0);
+          for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1);
+          const noise = ctx.createBufferSource();
+          noise.buffer = buf;
+          const bp = ctx.createBiquadFilter();
+          bp.type = 'bandpass';
+          bp.frequency.value = 2800 + Math.random() * 800;
+          bp.Q.value = 1.5;
+          const gain = ctx.createGain();
+          gain.gain.setValueAtTime(0.55, time + offset);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + offset + 0.09);
+          noise.connect(bp); bp.connect(gain); gain.connect(clapGainNode);
+          noise.start(time + offset); noise.stop(time + offset + 0.12);
+        });
       };
 
-      const playHiHat = (time, open = false) => {
-        const dur = open ? 0.15 : 0.04;
-        const bufLen = Math.floor(ctx.sampleRate * dur * 2);
+      // === Crisp Hi-Hat (tight filtered noise) ===
+      const playHiHat = (time, open = false, velocity = 1.0) => {
+        const dur = open ? 0.12 : 0.025;
+        const bufLen = Math.floor(ctx.sampleRate * dur * 2.5);
         const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
         const data = buf.getChannelData(0);
         for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1);
         const noise = ctx.createBufferSource();
         noise.buffer = buf;
         const hp = ctx.createBiquadFilter();
-        hp.type = 'highpass';
-        hp.frequency.value = 7000;
-        hp.Q.value = 0.5;
+        hp.type = 'highpass'; hp.frequency.value = 8500; hp.Q.value = 0.8;
         const lp = ctx.createBiquadFilter();
-        lp.type = 'lowpass';
-        lp.frequency.value = 12000;
+        lp.type = 'lowpass'; lp.frequency.value = 14000;
         const gain = ctx.createGain();
-        const vol = open ? 0.35 : 0.2 + Math.random() * 0.1;
+        const vol = (open ? 0.3 : 0.18) * velocity;
         gain.gain.setValueAtTime(vol, time);
         gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
-        noise.connect(hp);
-        hp.connect(lp);
-        lp.connect(gain);
-        gain.connect(hatGainNode);
-        noise.start(time);
-        noise.stop(time + dur + 0.01);
+        noise.connect(hp); hp.connect(lp); lp.connect(gain); gain.connect(hatGainNode);
+        noise.start(time); noise.stop(time + dur + 0.01);
       };
 
-      // === Bass (sine, follows chord roots, 2 bars each) ===
+      // === FM Pluck (crystal bell/marimba) ===
+      const playPluck = (time, freq) => {
+        // Carrier
+        const car = ctx.createOscillator();
+        const carGain = ctx.createGain();
+        car.type = 'sine';
+        car.frequency.value = freq;
+        carGain.gain.setValueAtTime(0.4, time);
+        carGain.gain.exponentialRampToValueAtTime(0.15, time + 0.08);
+        carGain.gain.exponentialRampToValueAtTime(0.001, time + 0.8);
+        // Modulator (FM)
+        const mod = ctx.createOscillator();
+        const modGain = ctx.createGain();
+        mod.type = 'sine';
+        mod.frequency.value = freq * 3;
+        modGain.gain.setValueAtTime(freq * 2.5, time);
+        modGain.gain.exponentialRampToValueAtTime(freq * 0.1, time + 0.15);
+        mod.connect(modGain); modGain.connect(car.frequency);
+        car.connect(carGain); carGain.connect(pluckGainNode);
+        mod.start(time); car.start(time);
+        mod.stop(time + 0.9); car.stop(time + 0.9);
+      };
+
+      // === Sub Bass ===
       let currentBassOsc = null;
       let currentBassGain = null;
-
       const startBassNote = (time, freq) => {
-        // Fade out previous if any
         if (currentBassOsc) {
           try {
             currentBassGain.gain.cancelScheduledValues(time - 0.01);
             currentBassGain.gain.setValueAtTime(currentBassGain.gain.value, time - 0.01);
-            currentBassGain.gain.linearRampToValueAtTime(0, time + 0.05);
-            currentBassOsc.stop(time + 0.1);
+            currentBassGain.gain.linearRampToValueAtTime(0, time + 0.04);
+            currentBassOsc.stop(time + 0.08);
           } catch (_) {}
         }
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        const filter = ctx.createBiquadFilter();
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        filter.type = 'lowpass';
-        filter.frequency.value = 200;
-        filter.Q.value = 0.7;
+        const lp = ctx.createBiquadFilter();
+        osc.type = 'sine'; osc.frequency.value = freq;
+        lp.type = 'lowpass'; lp.frequency.value = 180; lp.Q.value = 0.5;
         gain.gain.setValueAtTime(0, time);
-        gain.gain.linearRampToValueAtTime(0.7, time + 0.05);
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(bassBus);
+        gain.gain.linearRampToValueAtTime(0.65, time + 0.03);
+        osc.connect(lp); lp.connect(gain); gain.connect(bassBus);
         osc.start(time);
-        currentBassOsc = osc;
-        currentBassGain = gain;
+        currentBassOsc = osc; currentBassGain = gain;
       };
 
-      // === Rhodes chords (multiple sine harmonics with bell-like decay) ===
-      const playRhodesChord = (time, chordFreqs) => {
-        chordFreqs.forEach((freq, noteIdx) => {
-          // Fundamental + 2nd partial + 3rd partial
-          [1, 2, 3].forEach((partial, pIdx) => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.value = freq * partial;
-            // Bell-like decay: higher partials decay faster
-            const vol = (0.3 / (pIdx + 1)) * (0.8 + Math.random() * 0.2);
-            const decay = 1.8 - pIdx * 0.5;
-            gain.gain.setValueAtTime(0, time);
-            gain.gain.linearRampToValueAtTime(vol, time + 0.008);
-            gain.gain.exponentialRampToValueAtTime(vol * 0.4, time + 0.15);
-            gain.gain.exponentialRampToValueAtTime(0.001, time + decay);
-            osc.connect(gain);
-            gain.connect(rhodesGainNode);
-            osc.start(time);
-            osc.stop(time + decay + 0.1);
-          });
-        });
-      };
-
-      // === Morph pad to new chord ===
-      const morphPadChord = (time, chordFreqs) => {
-        let oscIdx = 0;
+      // === Morph pad ===
+      const morphPad = (time, chordFreqs) => {
+        let oi = 0;
         chordFreqs.forEach(freq => {
-          [-5, 5].forEach(() => {
-            if (oscIdx < padOscs.length) {
-              padOscs[oscIdx].frequency.cancelScheduledValues(time);
-              padOscs[oscIdx].frequency.setValueAtTime(padOscs[oscIdx].frequency.value, time);
-              padOscs[oscIdx].frequency.linearRampToValueAtTime(freq, time + 0.8);
+          [-7, 0, 7].forEach(() => {
+            if (oi < padOscs.length) {
+              padOscs[oi].frequency.cancelScheduledValues(time);
+              padOscs[oi].frequency.setValueAtTime(padOscs[oi].frequency.value, time);
+              padOscs[oi].frequency.linearRampToValueAtTime(freq, time + 0.6);
             }
-            oscIdx++;
+            oi++;
           });
         });
       };
 
-      // ── Main beat scheduling loop (lookahead: schedule 100ms ahead, loop every 50ms) ──
+      // ── Main beat loop ──
       const scheduleBeat = () => {
         if (!ctx || ctx.state === 'closed') return;
         const now = ctx.currentTime;
@@ -327,73 +297,71 @@ function createAmbientAudio() {
 
         while (nextBeatTime < now + lookAhead) {
           const t = Math.max(nextBeatTime, now);
-          const posInBar = beatCount % 16;    // 0-15 (16th notes in one bar)
+          const pos = beatCount % 16; // 0-15 (16th notes in one bar)
 
-          // Swing: every other 16th (the "e" and "a") gets slightly delayed
-          const isSwung = posInBar % 2 === 1;
-
-          // ── Kick on beats 1 and 3 (positions 0, 8) ──
-          if (posInBar === 0 || posInBar === 8) {
+          // ── Kick: beats 1 and 3 (four-on-the-floor energy) ──
+          if (pos === 0 || pos === 8) {
+            playKick(t);
+          }
+          // ── Extra kick on beat 4-and (pos 13) for drive ──
+          if (pos === 13 && Math.random() < 0.3) {
             playKick(t);
           }
 
-          // ── Snare on beats 2 and 4 (positions 4, 12) ──
-          if (posInBar === 4 || posInBar === 12) {
-            playSnare(t, false);
+          // ── Clap on beats 2 and 4 ──
+          if (pos === 4 || pos === 12) {
+            playClap(t);
           }
 
-          // ── Ghost snare hits (subtle, on specific 16ths) ──
-          if (posInBar === 6 || posInBar === 10 || posInBar === 14) {
-            if (Math.random() < 0.45) {
-              playSnare(t, true);
-            }
+          // ── Hi-hats: every 16th with velocity variation ──
+          const isOffbeat = pos % 2 === 1;
+          const isOpen = pos === 2 || pos === 10;
+          const velocity = isOffbeat ? 0.5 + Math.random() * 0.3 : 0.8 + Math.random() * 0.2;
+          playHiHat(t, isOpen, velocity);
+
+          // ── Occasional 32nd-note hat roll (fill) ──
+          if (pos === 14 && Math.random() < 0.35) {
+            playHiHat(t + sixteenth * 0.5, false, 0.4);
+          }
+          if (pos === 15 && Math.random() < 0.4) {
+            playHiHat(t + sixteenth * 0.33, false, 0.35);
+            playHiHat(t + sixteenth * 0.66, false, 0.3);
           }
 
-          // ── Hi-hats on every 16th note ──
-          const isOpenHat = posInBar === 2 || posInBar === 10;
-          playHiHat(t, isOpenHat);
+          // ── Pluck melody: one note per beat (every 4 sixteenths) ──
+          if (pos % 4 === 0) {
+            const noteIdx = (pos / 4) % 4;
+            const freq = PLUCK_NOTES[chordIndex][noteIdx];
+            playPluck(t, freq);
+            pluckNoteIdx++;
+          }
 
-          // ── Rhodes chord (play at start of each 2-bar section) ──
+          // ── Chord change: every 2 bars (32 sixteenths) ──
           if (chordBeatCount === 0) {
-            playRhodesChord(t, RHODES_CHORDS[chordIndex]);
             startBassNote(t, BASS_ROOTS[chordIndex]);
-            morphPadChord(t, PAD_CHORDS[chordIndex]);
-          }
-          // Re-trigger Rhodes on beat 3 of bar 1 (position 8) for rhythm
-          if (chordBeatCount === 8) {
-            playRhodesChord(t + 0.01, RHODES_CHORDS[chordIndex]);
-          }
-          // Re-trigger on beat 1 of bar 2
-          if (chordBeatCount === 16) {
-            playRhodesChord(t + 0.01, RHODES_CHORDS[chordIndex]);
+            morphPad(t, PAD_CHORDS[chordIndex]);
           }
 
-          // Advance counters
           beatCount++;
           chordBeatCount++;
-
-          // 2 bars = 32 sixteenth notes per chord
           if (chordBeatCount >= 32) {
             chordBeatCount = 0;
             chordIndex = (chordIndex + 1) % 4;
           }
 
-          // Next 16th note time, with swing
-          const swingDelay = isSwung ? swingAmount : 0;
-          nextBeatTime += sixteenth + swingDelay;
+          nextBeatTime += sixteenth;
         }
       };
 
-      // Lookahead timer: check every 50ms, schedule 100ms ahead
       const beatLoop = () => {
         scheduleBeat();
-        beatTimer = setTimeout(beatLoop, 50);
+        beatTimer = setTimeout(beatLoop, 40);
       };
-      beatTimer = setTimeout(beatLoop, 50);
+      beatTimer = setTimeout(beatLoop, 40);
 
-      // Fade in over 3 seconds to master gain ~0.35
+      // Fade in over 2.5s
       masterGain.gain.setValueAtTime(0, ctx.currentTime);
-      masterGain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 3);
+      masterGain.gain.linearRampToValueAtTime(0.38, ctx.currentTime + 2.5);
       started = true;
     } catch (_) {}
   };
@@ -402,34 +370,28 @@ function createAmbientAudio() {
     if (!ctx || !masterGain) return;
     currentIntensity = val;
     const t = ctx.currentTime;
-
-    // Master volume adjusts slightly
     masterGain.gain.cancelScheduledValues(t);
     masterGain.gain.setValueAtTime(masterGain.gain.value, t);
-    masterGain.gain.linearRampToValueAtTime(0.3 + val * 0.12, t + 0.5);
-
-    // Open hi-hat and snare volume when speaking
+    masterGain.gain.linearRampToValueAtTime(0.32 + val * 0.14, t + 0.4);
     if (hatGainNode) {
       hatGainNode.gain.cancelScheduledValues(t);
       hatGainNode.gain.setValueAtTime(hatGainNode.gain.value, t);
-      hatGainNode.gain.linearRampToValueAtTime(0.06 + val * 0.08, t + 0.4);
+      hatGainNode.gain.linearRampToValueAtTime(0.05 + val * 0.07, t + 0.3);
     }
-    if (snareGainNode) {
-      snareGainNode.gain.cancelScheduledValues(t);
-      snareGainNode.gain.setValueAtTime(snareGainNode.gain.value, t);
-      snareGainNode.gain.linearRampToValueAtTime(0.1 + val * 0.08, t + 0.4);
+    if (clapGainNode) {
+      clapGainNode.gain.cancelScheduledValues(t);
+      clapGainNode.gain.setValueAtTime(clapGainNode.gain.value, t);
+      clapGainNode.gain.linearRampToValueAtTime(0.08 + val * 0.06, t + 0.3);
     }
-    if (rhodesGainNode) {
-      rhodesGainNode.gain.cancelScheduledValues(t);
-      rhodesGainNode.gain.setValueAtTime(rhodesGainNode.gain.value, t);
-      rhodesGainNode.gain.linearRampToValueAtTime(0.05 + val * 0.04, t + 0.4);
+    if (pluckGainNode) {
+      pluckGainNode.gain.cancelScheduledValues(t);
+      pluckGainNode.gain.setValueAtTime(pluckGainNode.gain.value, t);
+      pluckGainNode.gain.linearRampToValueAtTime(0.04 + val * 0.04, t + 0.3);
     }
-
-    // Open pad filters for brightness when speaking
     padFilters.forEach((f, i) => {
       f.frequency.cancelScheduledValues(t);
       f.frequency.setValueAtTime(f.frequency.value, t);
-      f.frequency.linearRampToValueAtTime(500 + i * 100 + val * 900, t + 0.6);
+      f.frequency.linearRampToValueAtTime(400 + i * 80 + val * 1200, t + 0.5);
     });
   };
 
@@ -439,17 +401,13 @@ function createAmbientAudio() {
     const t = ctx.currentTime;
     masterGain.gain.cancelScheduledValues(t);
     masterGain.gain.setValueAtTime(masterGain.gain.value, t);
-    masterGain.gain.linearRampToValueAtTime(0, t + 1.8);
+    masterGain.gain.linearRampToValueAtTime(0, t + 1.5);
     setTimeout(() => {
       try { ctx.close(); } catch (_) {}
-      ctx = null;
-      masterGain = null;
-      hatGainNode = null;
-      snareGainNode = null;
-      rhodesGainNode = null;
-      padFilters = [];
-      started = false;
-    }, 2200);
+      ctx = null; masterGain = null;
+      hatGainNode = null; clapGainNode = null; pluckGainNode = null;
+      padFilters = []; started = false;
+    }, 2000);
   };
 
   return { start, setIntensity, stop };
@@ -467,18 +425,28 @@ function StarfieldCanvas({ speaking, phase }) {
     const st = stateRef.current;
     let running = true;
 
-    // Init particles
-    const N = 200;
-    st.particles = Array.from({ length: N }).map(() => ({
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      z: Math.random(), // depth layer 0-1
-      s: 0.3 + Math.random() * 1.5,
-      baseAlpha: 0.1 + Math.random() * 0.5,
-      pulse: Math.random() * Math.PI * 2,
-      speed: 0.02 + Math.random() * 0.08,
-      hue: Math.random() > 0.85 ? (Math.random() > 0.5 ? 270 : 190) : 0, // Some purple/cyan tinted
-    }));
+    // Init particles — more variety, aurora-ready
+    const N = 260;
+    st.particles = Array.from({ length: N }).map(() => {
+      const layer = Math.random();
+      const isAurora = layer > 0.82; // ~18% of particles are aurora ribbon particles
+      return {
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        z: layer,
+        s: isAurora ? 1.2 + Math.random() * 2.5 : 0.3 + Math.random() * 1.5,
+        baseAlpha: isAurora ? 0.06 + Math.random() * 0.12 : 0.1 + Math.random() * 0.5,
+        pulse: Math.random() * Math.PI * 2,
+        speed: isAurora ? 0.008 + Math.random() * 0.02 : 0.02 + Math.random() * 0.08,
+        hue: isAurora
+          ? (Math.random() > 0.5 ? 180 + Math.random() * 30 : 260 + Math.random() * 30)
+          : (Math.random() > 0.85 ? (Math.random() > 0.5 ? 270 : 190) : 0),
+        isAurora,
+        auroraPhase: Math.random() * Math.PI * 2,
+        auroraAmplitude: 30 + Math.random() * 60,
+        originX: Math.random() * window.innerWidth,
+      };
+    });
 
     const resize = () => {
       const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -502,15 +470,42 @@ function StarfieldCanvas({ speaking, phase }) {
 
       ctx.clearRect(0, 0, w, h);
 
+      // ── Aurora ribbon pass (soft flowing color bands behind particles) ──
+      ctx.globalCompositeOperation = 'screen';
+      for (const p of st.particles) {
+        if (!p.isAurora) continue;
+        p.auroraPhase += 0.003 + st.intensity * 0.002;
+        const waveX = p.originX + Math.sin(p.auroraPhase) * p.auroraAmplitude;
+        const waveY = p.y + Math.cos(p.auroraPhase * 0.7 + p.originX * 0.001) * 20;
+        const aAlpha = p.baseAlpha * (0.5 + st.intensity * 0.5);
+        const grad = ctx.createRadialGradient(waveX, waveY, 0, waveX, waveY, p.s * 8);
+        grad.addColorStop(0, `hsla(${p.hue}, 80%, 65%, ${aAlpha})`);
+        grad.addColorStop(0.5, `hsla(${p.hue}, 70%, 55%, ${aAlpha * 0.3})`);
+        grad.addColorStop(1, `hsla(${p.hue}, 60%, 45%, 0)`);
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(waveX, waveY, p.s * 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+
+      // ── Star particles pass ──
       for (const p of st.particles) {
         p.pulse += p.speed;
         const pulseVal = (Math.sin(p.pulse) + 1) * 0.5;
         const alpha = p.baseAlpha * (0.4 + st.intensity * 0.6) * (0.6 + pulseVal * 0.4);
         const size = p.s * (0.8 + st.intensity * 0.3 + pulseVal * 0.2);
 
-        // Subtle drift
-        p.y -= p.z * 0.15 * (1 + st.intensity);
-        if (p.y < -10) { p.y = h + 10; p.x = Math.random() * w; }
+        if (p.isAurora) {
+          // Aurora particles drift in sine waves
+          p.y -= 0.08 * (1 + st.intensity);
+          p.x = p.originX + Math.sin(p.auroraPhase) * p.auroraAmplitude;
+          if (p.y < -20) { p.y = h + 20; p.originX = Math.random() * w; p.x = p.originX; }
+        } else {
+          // Regular particles drift upward
+          p.y -= p.z * 0.15 * (1 + st.intensity);
+          if (p.y < -10) { p.y = h + 10; p.x = Math.random() * w; }
+        }
 
         if (p.hue > 0) {
           ctx.fillStyle = `hsla(${p.hue}, 70%, 70%, ${alpha * 0.8})`;
@@ -804,12 +799,12 @@ function buildNarrationScript(name, company) {
   const n = name || 'there';
   const c = company || 'your company';
   return [
-    { key: 'greeting', text: `${n}... welcome. I'm SYNC. Think of me as the mind behind everything that happens inside iSyncSO. And right now, my full attention is on ${c}.`, minMs: 6000 },
-    { key: 'engines', text: `Behind me are ten engines. CRM. Finance. Growth. Talent. Learn. Create. Products. Raise. Sentinel. Analytics. Each one powerful on its own — but together, they become something extraordinary.`, minMs: 8000 },
-    { key: 'orchestrator', text: `I orchestrate all of them. Fifty-one actions, all voice-controlled. Draft an invoice. Enrich a lead. Match a candidate. Generate a campaign visual. You ask — I execute. Instantly.`, minMs: 8000 },
-    { key: 'activity', text: `Every move your team makes, I see it. Every decision, every deal, every conversation — captured in real time. I even write your daily journals, so nothing ever slips through the cracks.`, minMs: 7000 },
-    { key: 'integrations', text: `Your existing tools? They plug right in. Slack, HubSpot, Gmail, Stripe — over thirty integrations, flowing seamlessly into one workspace. And EU AI Act compliance? Built in. Automatic. You're already ahead.`, minMs: 8000 },
-    { key: 'ready', text: `Now... let me show you what this actually feels like. Step inside with me.`, minMs: 4000 },
+    { key: 'greeting', text: `${n} — welcome. I'm SYNC. The intelligence behind iSyncSO. And right now, every part of me is focused on ${c}.`, minMs: 5000 },
+    { key: 'engines', text: `Ten engines. CRM. Finance. Growth. Talent. Learn. Create. Products. Raise. Sentinel. Analytics. Individually powerful. Together? Unstoppable.`, minMs: 6000 },
+    { key: 'orchestrator', text: `Fifty-one actions. All voice-controlled. Draft an invoice. Enrich a lead. Match a candidate. Generate a campaign visual. You speak — I execute. Instantly.`, minMs: 6000 },
+    { key: 'activity', text: `Every move your team makes — every decision, every deal, every conversation — captured in real time. I even write your daily journals. Nothing slips through.`, minMs: 6000 },
+    { key: 'integrations', text: `Slack, HubSpot, Gmail, Stripe — over thirty integrations, one workspace. EU AI Act compliance? Built in from day one. You're already ahead.`, minMs: 6000 },
+    { key: 'ready', text: `Now — let me show you what this actually feels like. Step inside.`, minMs: 3500 },
   ];
 }
 
@@ -911,7 +906,7 @@ function browserTTS(text, language, onStart, onDone) {
     try {
       const u = new SpeechSynthesisUtterance(text);
       u.lang = language === 'nl' ? 'nl-NL' : language === 'de' ? 'de-DE' : 'en-US';
-      u.rate = 1.0;
+      u.rate = 1.25;
       u.onstart = () => onStart?.(null);
       const done = () => { resolve(); onDone?.(); };
       u.onend = done; u.onerror = done; window.speechSynthesis.speak(u);
@@ -1032,86 +1027,103 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
   const showFeatures = phase >= 2;
   const showStats = phase >= 2;
 
-  const BPM_VISUAL = 88;
+  const BPM_VISUAL = 108;
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col items-center justify-center overflow-hidden select-none" style={{ cursor: 'none' }}>
 
+      {/* ─── Perspective Grid Floor (Apple keynote style) ─── */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ perspective: '800px' }}>
+        <motion.div
+          className="absolute left-1/2 bottom-0 -translate-x-1/2"
+          style={{
+            width: '200vw', height: '60vh',
+            transformOrigin: 'bottom center',
+            transform: 'rotateX(65deg)',
+            backgroundImage: `
+              linear-gradient(rgba(6,182,212,0.06) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(6,182,212,0.06) 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px',
+            maskImage: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 80%)',
+            WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 80%)',
+          }}
+          animate={{ backgroundPositionY: ['0px', '-60px'] }}
+          transition={{ duration: 60 / 108 * 4, repeat: Infinity, ease: 'linear' }}
+        />
+      </div>
+
       {/* ─── Animated Gradient Mesh Background ─── */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Morphing gradient blobs */}
         <motion.div
           className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse at 20% 50%, rgba(168,85,247,0.15) 0%, transparent 50%)' }}
-          animate={{ opacity: [0.6, 1, 0.6] }}
-          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ background: 'radial-gradient(ellipse at 20% 50%, rgba(6,182,212,0.18) 0%, transparent 50%)' }}
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
           className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse at 80% 30%, rgba(6,182,212,0.12) 0%, transparent 45%)' }}
+          style={{ background: 'radial-gradient(ellipse at 80% 30%, rgba(168,85,247,0.14) 0%, transparent 45%)' }}
           animate={{ opacity: [0.4, 0.9, 0.4] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
         />
         <motion.div
           className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse at 50% 80%, rgba(236,72,153,0.1) 0%, transparent 45%)' }}
-          animate={{ opacity: [0.5, 0.8, 0.5] }}
-          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
+          style={{ background: 'radial-gradient(ellipse at 50% 80%, rgba(59,130,246,0.10) 0%, transparent 45%)' }}
+          animate={{ opacity: [0.5, 0.85, 0.5] }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
         />
         <motion.div
           className="absolute inset-0"
           style={{ background: 'radial-gradient(ellipse at 30% 20%, rgba(99,102,241,0.08) 0%, transparent 40%)' }}
           animate={{ opacity: [0.3, 0.7, 0.3] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
         />
       </div>
 
-      {/* ─── Animated Scan Lines ─── */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ opacity: 0.04 }}>
-        <motion.div
-          className="absolute left-0 right-0"
-          style={{
-            height: '200%',
-            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.5) 3px, rgba(255,255,255,0.5) 4px)',
-          }}
-          animate={{ y: ['-50%', '0%'] }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
-        />
-      </div>
+      {/* ─── Horizontal Light Beam (lens flare) ─── */}
+      <motion.div
+        className="absolute top-1/2 left-0 right-0 -translate-y-1/2 pointer-events-none"
+        style={{
+          height: 2,
+          background: 'linear-gradient(90deg, transparent, rgba(6,182,212,0.15) 20%, rgba(168,85,247,0.2) 50%, rgba(6,182,212,0.15) 80%, transparent)',
+          filter: 'blur(6px)',
+        }}
+        animate={{ opacity: speaking ? [0.3, 0.8, 0.3] : [0.05, 0.15, 0.05], scaleY: speaking ? [1, 3, 1] : [1, 1.5, 1] }}
+        transition={{ duration: 60 / 108, repeat: Infinity, ease: 'easeInOut' }}
+      />
 
       {/* ─── Particle Starfield ─── */}
       <StarfieldCanvas speaking={speaking} phase={phase} />
 
       {/* ─── Cinematic Background Layers ─── */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Beat pulse — subtle full-screen flash at BPM */}
+        {/* Beat pulse — clean flash on every quarter note */}
         <motion.div
           className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse at center, rgba(6,182,212,0.06) 0%, transparent 50%)' }}
-          animate={speaking ? { opacity: [0, 0.9, 0] } : { opacity: 0 }}
+          style={{ background: 'radial-gradient(circle at 50% 40%, rgba(6,182,212,0.08) 0%, transparent 40%)' }}
+          animate={speaking ? { opacity: [0, 1, 0] } : { opacity: 0 }}
           transition={{ duration: 60 / BPM_VISUAL, repeat: Infinity, ease: 'easeOut' }}
         />
 
-        {/* Central nebula — bigger, more vivid */}
+        {/* Central focus light — clean, concentrated */}
         <motion.div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-          style={{ width: '180vw', height: '180vh', background: 'radial-gradient(ellipse at center, rgba(168,85,247,0.14) 0%, rgba(6,182,212,0.06) 18%, rgba(236,72,153,0.03) 30%, rgba(99,102,241,0.02) 42%, transparent 60%)' }}
-          animate={{ scale: speaking ? [1, 1.1, 1] : [1, 1.04, 1], rotate: [0, 1.5, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ width: '140vw', height: '140vh', background: 'radial-gradient(ellipse at center, rgba(6,182,212,0.12) 0%, rgba(168,85,247,0.05) 20%, transparent 50%)' }}
+          animate={{ scale: speaking ? [1, 1.08, 1] : [1, 1.03, 1] }}
+          transition={{ duration: 60 / BPM_VISUAL * 2, repeat: Infinity, ease: 'easeInOut' }}
         />
 
-        {/* Flowing orbs — more movement, varied speeds */}
-        <motion.div className="absolute w-[1000px] h-[1000px] rounded-full" style={{ top: '0%', left: '-8%', background: 'radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 55%)', filter: 'blur(80px)' }}
-          animate={{ x: [0, 80, 0], y: [0, -50, 0], scale: [1, 1.2, 1] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} />
-        <motion.div className="absolute w-[800px] h-[800px] rounded-full" style={{ bottom: '-5%', right: '-8%', background: 'radial-gradient(circle, rgba(236,72,153,0.07) 0%, transparent 55%)', filter: 'blur(70px)' }}
-          animate={{ x: [0, -60, 0], y: [0, 45, 0], scale: [1, 1.25, 1] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }} />
-        <motion.div className="absolute w-[700px] h-[700px] rounded-full" style={{ top: '35%', right: '8%', background: 'radial-gradient(circle, rgba(245,158,11,0.05) 0%, transparent 55%)', filter: 'blur(60px)' }}
-          animate={{ x: [0, 45, 0], y: [0, -60, 0], scale: [0.9, 1.15, 0.9] }} transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut', delay: 5 }} />
-        <motion.div className="absolute w-[600px] h-[600px] rounded-full" style={{ top: '15%', left: '35%', background: 'radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 55%)', filter: 'blur(60px)' }}
-          animate={{ x: [0, -50, 0], y: [0, 40, 0] }} transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut', delay: 8 }} />
+        {/* Flowing gradient orbs — cleaner Apple aesthetic */}
+        <motion.div className="absolute w-[900px] h-[900px] rounded-full" style={{ top: '-10%', left: '-5%', background: 'radial-gradient(circle, rgba(6,182,212,0.07) 0%, transparent 50%)', filter: 'blur(100px)' }}
+          animate={{ x: [0, 60, 0], y: [0, -40, 0] }} transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }} />
+        <motion.div className="absolute w-[800px] h-[800px] rounded-full" style={{ bottom: '-8%', right: '-5%', background: 'radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 50%)', filter: 'blur(90px)' }}
+          animate={{ x: [0, -50, 0], y: [0, 35, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 3 }} />
+        <motion.div className="absolute w-[600px] h-[600px] rounded-full" style={{ top: '40%', right: '10%', background: 'radial-gradient(circle, rgba(59,130,246,0.05) 0%, transparent 50%)', filter: 'blur(80px)' }}
+          animate={{ x: [0, 40, 0], y: [0, -50, 0] }} transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 6 }} />
 
-        {/* Vignette */}
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%)' }} />
+        {/* Vignette — tighter for more focus */}
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 25%, rgba(0,0,0,0.75) 100%)' }} />
       </div>
 
       {/* ─── Cinematic Letterbox ─── */}
@@ -1135,16 +1147,25 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
         <AnimatePresence>
           {phase >= 0 && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.05, filter: 'blur(40px)', rotate: -30 }}
-              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)', rotate: 0 }}
-              transition={{ duration: 2.5, ease: [0.16, 1, 0.3, 1] }}
+              initial={{ opacity: 0, scale: 0.02, filter: 'blur(60px)' }}
+              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+              transition={{ duration: 2.0, ease: [0.16, 1, 0.3, 1] }}
               className="mb-6 relative"
             >
-              {/* Beat pulse ring behind avatar */}
+              {/* Light burst on entrance */}
+              <motion.div
+                className="absolute inset-0 rounded-full pointer-events-none"
+                style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.5) 0%, rgba(168,85,247,0.2) 30%, transparent 60%)', transform: 'scale(4)' }}
+                initial={{ opacity: 0.8, scale: 0.5 }}
+                animate={{ opacity: 0, scale: 5 }}
+                transition={{ duration: 2.5, ease: 'easeOut' }}
+              />
+
+              {/* Beat pulse ring — clean concentric */}
               <motion.div
                 className="absolute inset-0 rounded-full"
-                style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.18) 0%, transparent 70%)', transform: 'scale(2.5)' }}
-                animate={speaking ? { scale: [2.5, 2.9, 2.5], opacity: [0.3, 0.7, 0.3] } : { scale: [2.5, 2.6, 2.5], opacity: [0.1, 0.2, 0.1] }}
+                style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.15) 0%, transparent 65%)', transform: 'scale(2.8)' }}
+                animate={speaking ? { scale: [2.8, 3.2, 2.8], opacity: [0.25, 0.65, 0.25] } : { scale: [2.8, 2.9, 2.8], opacity: [0.08, 0.15, 0.08] }}
                 transition={{ duration: 60 / BPM_VISUAL, repeat: Infinity, ease: 'easeInOut' }}
               />
 
@@ -1186,30 +1207,44 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
                 transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
               />
 
-              <IntroSyncAvatar size={220} mood={avatarMood} level={avatarLevel} />
+              <IntroSyncAvatar size={240} mood={avatarMood} level={avatarLevel} />
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ─── Speaking waveform — MUCH bigger, wider spread ─── */}
+        {/* ─── Speaking Visualizer — wide frequency analyzer ─── */}
         <AnimatePresence>
           {speaking && (
             <motion.div
-              initial={{ opacity: 0, scaleX: 0.2 }}
-              animate={{ opacity: 1, scaleX: 1 }}
-              exit={{ opacity: 0, scaleX: 0.2, transition: { duration: 0.2 } }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="flex items-center justify-center gap-[3px] h-12 mb-8"
+              initial={{ opacity: 0, scaleX: 0.1, scaleY: 0.3 }}
+              animate={{ opacity: 1, scaleX: 1, scaleY: 1 }}
+              exit={{ opacity: 0, scaleY: 0, transition: { duration: 0.15 } }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="flex items-end justify-center gap-[2px] h-16 mb-8"
             >
-              {[...Array(25)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="w-[3px] rounded-full"
-                  style={{ background: `linear-gradient(to top, ${AGENT_SEGMENTS[i % 10]?.color || '#a855f7'}88, ${AGENT_SEGMENTS[i % 10]?.color || '#06b6d4'})` }}
-                  animate={{ height: [3, 28 + Math.sin(i * 0.4) * 18, 3] }}
-                  transition={{ duration: 0.3 + (i % 5) * 0.04, repeat: Infinity, delay: i * 0.025, ease: 'easeInOut' }}
-                />
-              ))}
+              {[...Array(40)].map((_, i) => {
+                const center = 20;
+                const dist = Math.abs(i - center) / center;
+                const maxH = 50 * (1 - dist * 0.6);
+                const col = AGENT_SEGMENTS[i % 10]?.color || '#06b6d4';
+                return (
+                  <motion.div
+                    key={i}
+                    className="w-[2.5px] rounded-full origin-bottom"
+                    style={{
+                      background: `linear-gradient(to top, ${col}44, ${col})`,
+                      boxShadow: `0 0 8px ${col}40`,
+                    }}
+                    animate={{ height: [2, maxH + Math.sin(i * 0.3) * 12, 2] }}
+                    transition={{
+                      duration: 0.22 + (i % 7) * 0.03,
+                      repeat: Infinity,
+                      delay: i * 0.015,
+                      ease: 'easeInOut',
+                    }}
+                  />
+                );
+              })}
             </motion.div>
           )}
         </AnimatePresence>
@@ -1279,7 +1314,7 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
                 durationMs={currentDuration}
                 audioDuration={audioDuration}
                 speaking={speaking}
-                className="text-white/90 text-2xl sm:text-3xl md:text-4xl leading-relaxed font-light tracking-[-0.01em] relative z-10"
+                className="text-white/95 text-3xl sm:text-4xl md:text-5xl leading-relaxed font-light tracking-[-0.02em] relative z-10"
               />
             </motion.div>
           )}
@@ -1307,37 +1342,36 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
             >
               {MODULES.map((mod, i) => {
                 const Icon = mod.icon;
-                const waveY = Math.sin((i - 4.5) * 0.4) * 8;
+                const waveY = Math.sin((i - 4.5) * 0.35) * 6;
                 return (
                   <motion.div
                     key={mod.label}
-                    initial={{ opacity: 0, scale: 0, y: 50, rotate: -15 + i * 3 }}
-                    animate={{ opacity: 1, scale: 1, y: waveY, rotate: 0 }}
-                    transition={{ delay: i * 0.06, duration: 0.8, type: 'spring', stiffness: 200, damping: 18 }}
+                    initial={{ opacity: 0, scale: 0, y: 60 }}
+                    animate={{ opacity: 1, scale: 1, y: waveY }}
+                    transition={{ delay: i * 0.05, duration: 0.7, type: 'spring', stiffness: 250, damping: 20 }}
                     className="flex flex-col items-center gap-2"
                   >
                     <motion.div
-                      className="w-16 h-16 rounded-2xl flex items-center justify-center relative overflow-hidden backdrop-blur-sm"
+                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center relative overflow-hidden"
                       style={{
-                        border: `1px solid ${mod.color}30`,
-                        background: `linear-gradient(135deg, ${mod.color}12, ${mod.color}06)`,
+                        border: `1px solid ${mod.color}25`,
+                        background: `linear-gradient(145deg, ${mod.color}10, rgba(0,0,0,0.3))`,
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
                       }}
                       animate={{
-                        boxShadow: [`0 0 0px ${mod.color}00`, `0 0 32px ${mod.color}35`, `0 0 0px ${mod.color}00`],
-                        borderColor: [`${mod.color}30`, `${mod.color}65`, `${mod.color}30`],
-                        y: [0, -4, 0],
+                        boxShadow: [`0 0 0px ${mod.color}00, 0 4px 20px rgba(0,0,0,0.3)`, `0 0 24px ${mod.color}30, 0 4px 20px rgba(0,0,0,0.3)`, `0 0 0px ${mod.color}00, 0 4px 20px rgba(0,0,0,0.3)`],
+                        y: [0, -3, 0],
                       }}
-                      transition={{ duration: 2 + i * 0.15, repeat: Infinity, delay: i * 0.12, ease: 'easeInOut' }}
+                      transition={{ duration: 2.5 + i * 0.12, repeat: Infinity, delay: i * 0.1, ease: 'easeInOut' }}
                     >
-                      <motion.div className="absolute inset-0" style={{ background: `radial-gradient(circle at center, ${mod.color}20, transparent 70%)` }}
-                        animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 2, repeat: Infinity, delay: i * 0.12 }} />
-                      <Icon className="w-7 h-7 relative z-10" style={{ color: mod.color }} />
+                      <Icon className="w-6 h-6 sm:w-7 sm:h-7 relative z-10" style={{ color: mod.color, filter: `drop-shadow(0 0 6px ${mod.color}50)` }} />
                     </motion.div>
                     <motion.span
-                      className="text-[11px] font-semibold tracking-wider uppercase"
-                      style={{ color: mod.color + '90' }}
-                      animate={{ opacity: [0.6, 1, 0.6] }}
-                      transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.12 }}
+                      className="text-[10px] sm:text-[11px] font-semibold tracking-[0.15em] uppercase"
+                      style={{ color: mod.color + '80' }}
+                      animate={{ opacity: [0.5, 0.9, 0.5] }}
+                      transition={{ duration: 3, repeat: Infinity, delay: i * 0.1 }}
                     >
                       {mod.label}
                     </motion.span>

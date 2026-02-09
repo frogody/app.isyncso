@@ -432,10 +432,10 @@ async function generateElevenLabsTTS(text: string): Promise<{ audio: string; byt
       body: JSON.stringify({
         text,
         voice: 'Charlotte',      // Smooth, warm, alluring British voice
-        stability: 0.30,         // Low = very expressive intonation
+        stability: 0.25,         // Very expressive intonation — keynote energy
         similarity_boost: 0.80,  // Keeps voice identity strong
-        style: 0.55,             // High emotional expressiveness
-        speed: 1.15,             // Slightly faster pace
+        style: 0.60,             // High emotional expressiveness
+        speed: 1.32,             // Fast, punchy keynote delivery
       }),
     });
     clearTimeout(timeout);

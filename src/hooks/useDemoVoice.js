@@ -111,7 +111,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
       const langConfig = getLanguageConfig(language);
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = langConfig.speechCode;
-      utterance.rate = 1.0;
+      utterance.rate = 1.25;
       utterance.onend = () => { if (turnIdRef.current === turnId) onDone?.(); };
       utterance.onerror = () => { if (turnIdRef.current === turnId) onDone?.(); };
       window.speechSynthesis.speak(utterance);
