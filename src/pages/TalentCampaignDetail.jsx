@@ -32,6 +32,7 @@ import { OutreachPipeline, OutreachQueue, AnalyticsTab, CandidateDetailDrawer, B
 import { MatchReasonCards } from "@/components/talent/campaign";
 import CriteriaWeightingStep, { DEFAULT_WEIGHTS } from "@/components/talent/campaign/CriteriaWeightingStep";
 import SignalMatchingConfig, { INTELLIGENCE_SIGNALS } from "@/components/talent/campaign/SignalMatchingConfig";
+import OutreachCustomizationPanel from "@/components/talent/OutreachCustomizationPanel";
 import {
   Megaphone,
   Settings,
@@ -2778,6 +2779,13 @@ export default function TalentCampaignDetail() {
                   Outreach
                 </TabsTrigger>
                 <TabsTrigger
+                  value="customize"
+                  className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
+                >
+                  <SlidersHorizontal className="w-4 h-4 mr-2" />
+                  Customize
+                </TabsTrigger>
+                <TabsTrigger
                   value="analytics"
                   className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
                 >
@@ -2845,6 +2853,16 @@ export default function TalentCampaignDetail() {
                 onRefresh={fetchOutreachTasks}
                 onSendTask={handleSendTask}
                 onCancelTask={handleCancelTask}
+              />
+            </TabsContent>
+          )}
+
+          {/* Customize Tab */}
+          {!isNew && (
+            <TabsContent value="customize" className="m-0">
+              <OutreachCustomizationPanel
+                organizationId={campaign.organization_id}
+                campaignId={campaign.id}
               />
             </TabsContent>
           )}
