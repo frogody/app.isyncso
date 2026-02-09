@@ -150,3 +150,6 @@ verify_jwt = false
 
 [functions.sync-voice-demo]
 verify_jwt = false
+
+[functions.create-public-demo]
+verify_jwt = false

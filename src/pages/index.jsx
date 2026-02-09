@@ -326,6 +326,7 @@ import PlatformAdminGrowthNests from "./admin/AdminGrowthNests";
 import PlatformAdminDemos from "./admin/AdminDemos";
 
 import DemoExperience from "./DemoExperience";
+import RequestDemo from "./RequestDemo";
 
 // Providers needed for admin routes (since they don't use main Layout)
 import { UserProvider } from "@/components/context/UserContext";
@@ -674,11 +675,12 @@ function PagesContent() {
     }
 
     // Demo routes - public, no auth required
-    const isDemoRoute = location.pathname.startsWith('/demo');
+    const isDemoRoute = location.pathname.startsWith('/demo') || location.pathname === '/request-demo';
     if (isDemoRoute) {
         return (
             <Routes>
                 <Route path="/demo" element={<DemoExperience />} />
+                <Route path="/request-demo" element={<RequestDemo />} />
             </Routes>
         );
     }
