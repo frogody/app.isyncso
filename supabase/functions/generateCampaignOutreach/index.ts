@@ -275,21 +275,22 @@ function buildDataPointContext(
     intelligenceUsed.push("lateral_opportunities");
   }
 
-  // Intelligence factors
+  // Intelligence factors (data shape: { signal, insight, weight, impact } or { factor, reason, score })
   if (request.intelligence_factors?.length) {
     const topFactors = [...request.intelligence_factors]
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => (b.weight ?? b.score ?? 0) - (a.weight ?? a.score ?? 0))
       .slice(0, 2);
     // Map factor names to priority keys where possible
     const factorPriority = topFactors.reduce((max, f) => {
-      const key = f.factor.toLowerCase().replace(/\s+/g, "_");
+      const name = f.signal || f.factor || "";
+      const key = name.toLowerCase().replace(/\s+/g, "_");
       return Math.max(max, priorities[key] ?? 50);
     }, 50);
     dataPoints.push({
       key: "intelligence_factors",
       label: "DRIVING FACTORS",
       priority: factorPriority,
-      content: topFactors.map(f => `${f.factor}: ${f.reason}`).join("; "),
+      content: topFactors.map(f => `${f.signal || f.factor || "Factor"}: ${f.insight || f.reason || ""}`).join("; "),
     });
     intelligenceUsed.push("intelligence_factors");
   }
@@ -678,7 +679,7 @@ function generateIntelligentFallback(request: OutreachRequest): OutreachResponse
         intelligenceUsed.push("match_reasons");
       }
       if (timingContext) {
-        content += `Given ${timingContext.trigger.toLowerCase()}, thought this might be interesting timing.\n\n`;
+        content += `Given ${(timingContext.trigger || "recent developments").toLowerCase()}, thought this might be interesting timing.\n\n`;
       }
       content += `Would you be open to a brief conversation?\n\nBest regards`;
     }
@@ -686,7 +687,7 @@ function generateIntelligentFallback(request: OutreachRequest): OutreachResponse
     subject = typeConfig.hasSubject ? `Quick thought, ${firstName}` : null;
     content = `Hi ${firstName},\n\nFollowing up on my earlier message. `;
     if (timingContext) {
-      content += `I noticed ${timingContext.trigger.toLowerCase()} - `;
+      content += `I noticed ${(timingContext.trigger || "recent changes").toLowerCase()} - `;
     }
     if (primaryHook && primaryHook !== request.outreach_hooks?.[0]) {
       content += `${primaryHook}\n\n`;
