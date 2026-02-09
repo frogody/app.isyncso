@@ -350,12 +350,9 @@ export default function DemoExperience() {
     // Clear any pending timer
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
 
-    // Dynamic pause based on dialogue length
+    // Dynamic delay based on text length: Math.max(2000, text.length * 30) capped at 8000ms
     const dialogue = orchestrator.currentDialogue || '';
-    const wordCount = dialogue.split(/\s+/).length;
-    let pauseMs = 4000; // default medium
-    if (wordCount < 15) pauseMs = 3000;      // short messages
-    else if (wordCount > 50) pauseMs = 6000;  // long messages
+    const pauseMs = Math.min(8000, Math.max(2000, dialogue.length * 30));
 
     autoAdvanceTimer.current = setTimeout(() => {
       if (!orchestrator.conversationMode) {
@@ -370,6 +367,43 @@ export default function DemoExperience() {
       if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
     };
   }, []);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't capture if user is typing in an input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      switch (e.key) {
+        case ' ':
+        case 'm':
+        case 'M':
+          e.preventDefault();
+          voice.toggleMute();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          orchestrator.advanceStep();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          if (orchestrator.previousPage) orchestrator.goBack();
+          break;
+        case 'Escape':
+          e.preventDefault();
+          // No panel collapse needed — Escape could end conversation mode
+          if (orchestrator.conversationMode) {
+            const nextIndex = orchestrator.resumeScript();
+            if (nextIndex >= 0) orchestrator.goToStep(nextIndex);
+            else orchestrator.advanceStep();
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [voice, orchestrator]);
 
   // When user speaks, enter conversation mode and cancel auto-advance
   const handleUserSpoke = useCallback((text) => {
@@ -409,10 +443,18 @@ export default function DemoExperience() {
     language: demoLanguage,
   });
 
-  // Load demo on mount
+  // Load demo on mount with 15s timeout
   useEffect(() => {
     if (!token) return;
     orchestrator.loadDemo(token);
+
+    const loadTimeout = setTimeout(() => {
+      if (!orchestrator.isLoaded && !orchestrator.error) {
+        orchestrator.loadDemo(token); // retry once
+      }
+    }, 15000);
+
+    return () => clearTimeout(loadTimeout);
   }, [token]);
 
   // Start demo flow after loading
@@ -540,7 +582,23 @@ export default function DemoExperience() {
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
           <h1 className="text-xl font-bold text-white mb-2">Demo Unavailable</h1>
-          <p className="text-zinc-400">{orchestrator.error}</p>
+          <p className="text-zinc-400 mb-6">{orchestrator.error}</p>
+          <div className="flex flex-col items-center gap-3">
+            <button
+              onClick={() => {
+                orchestrator.loadDemo(token);
+              }}
+              className="px-5 py-2.5 bg-cyan-500/20 text-cyan-400 rounded-xl hover:bg-cyan-500/30 transition-colors text-sm font-medium"
+            >
+              Try Again
+            </button>
+            <a
+              href="/request-demo"
+              className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors"
+            >
+              Return to Start
+            </a>
+          </div>
         </div>
       </div>
     );
@@ -631,6 +689,7 @@ export default function DemoExperience() {
             onTextSubmit={voice.submitText}
             currentPage={orchestrator.currentPage}
             discoveryPhase={orchestrator.discoveryPhase}
+            visitedPages={orchestrator.visitedPages}
             language={demoLanguage}
           />
         }
@@ -688,6 +747,7 @@ export default function DemoExperience() {
           onTextSubmit={voice.submitText}
           currentPage={orchestrator.currentPage}
           discoveryPhase={orchestrator.discoveryPhase}
+          visitedPages={orchestrator.visitedPages}
         />
       }
     >

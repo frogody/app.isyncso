@@ -427,8 +427,11 @@ async function generateTTS(text: string, orpheusVoice: string, language = 'en'):
 
   // Try Kokoro first (97ms TTFB vs 187ms Orpheus)
   try {
+    const ttsAbort = new AbortController();
+    const ttsTimeout = setTimeout(() => ttsAbort.abort(), 15000);
     const response = await fetch('https://api.together.ai/v1/audio/speech', {
       method: 'POST',
+      signal: ttsAbort.signal,
       headers: {
         'Authorization': `Bearer ${TOGETHER_API_KEY}`,
         'Content-Type': 'application/json',
@@ -440,6 +443,7 @@ async function generateTTS(text: string, orpheusVoice: string, language = 'en'):
         response_format: 'mp3',
       }),
     });
+    clearTimeout(ttsTimeout);
 
     if (response.ok) {
       const buffer = await response.arrayBuffer();
@@ -457,8 +461,11 @@ async function generateTTS(text: string, orpheusVoice: string, language = 'en'):
     return null;
   }
 
+  const orpheusAbort = new AbortController();
+  const orpheusTimeout = setTimeout(() => orpheusAbort.abort(), 15000);
   const response = await fetch('https://api.together.ai/v1/audio/speech', {
     method: 'POST',
+    signal: orpheusAbort.signal,
     headers: {
       'Authorization': `Bearer ${TOGETHER_API_KEY}`,
       'Content-Type': 'application/json',
@@ -470,6 +477,7 @@ async function generateTTS(text: string, orpheusVoice: string, language = 'en'):
       response_format: 'mp3',
     }),
   });
+  clearTimeout(orpheusTimeout);
 
   if (!response.ok) {
     throw new Error(`TTS failed: ${response.status}`);
@@ -544,7 +552,7 @@ serve(async (req) => {
       // Give it 500ms max — slightly more time to get research data too
       const result = await Promise.race([
         linkPromise,
-        new Promise<null>(r => setTimeout(() => r(null), 500)),
+        new Promise<null>(r => setTimeout(() => r(null), 2000)),
       ]) as { data: Record<string, unknown> } | null;
 
       if (result?.data) {
@@ -570,8 +578,11 @@ serve(async (req) => {
 
     // LLM call with streaming — accumulate until first sentence, start TTS early
     const llmStart = Date.now();
+    const llmAbort = new AbortController();
+    const llmTimeout = setTimeout(() => llmAbort.abort(), 15000);
     const llmResponse = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
+      signal: llmAbort.signal,
       headers: {
         'Authorization': `Bearer ${TOGETHER_API_KEY}`,
         'Content-Type': 'application/json',
@@ -588,16 +599,32 @@ serve(async (req) => {
     if (!llmResponse.ok) {
       throw new Error(`LLM error: ${llmResponse.status}`);
     }
+    clearTimeout(llmTimeout);
 
     // Stream tokens and split at first sentence boundary for early TTS
     let fullText = '';
     let firstSentence = '';
     let firstSentenceTtsPromise: Promise<{ audio: string; byteLength: number } | null> | null = null;
     const sentenceEndRegex = /[.!?]\s/;
+    const MIN_FIRST_SENTENCE_CHARS = 50;
 
     const reader = llmResponse.body!.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
+
+    // 3s timeout fallback: if no complete sentence found, use accumulated text
+    let firstSentenceTimeoutFired = false;
+    const firstSentenceTimeout = setTimeout(() => {
+      if (!firstSentence && fullText.length >= 20) {
+        firstSentenceTimeoutFired = true;
+        firstSentence = fullText.trim();
+        const firstSpoken = firstSentence.replace(/\[DEMO_ACTION:\s*[^\]]+\]/g, '').trim();
+        if (firstSpoken && !firstSentenceTtsPromise) {
+          firstSentenceTtsPromise = generateTTS(firstSpoken, voice, language).catch(() => null);
+          console.log(`[voice-demo] ${Date.now() - llmStart}ms → first sentence TTS fired (timeout fallback)`);
+        }
+      }
+    }, 3000);
 
     while (true) {
       const { done, value } = await reader.read();
@@ -618,8 +645,8 @@ serve(async (req) => {
           if (token) {
             fullText += token;
 
-            // Once we have a complete first sentence, fire TTS immediately
-            if (!firstSentence && sentenceEndRegex.test(fullText)) {
+            // Wait for minimum chars AND a complete sentence before firing TTS
+            if (!firstSentence && !firstSentenceTimeoutFired && fullText.length >= MIN_FIRST_SENTENCE_CHARS && sentenceEndRegex.test(fullText)) {
               const match = fullText.match(/^(.*?[.!?])\s/);
               if (match) {
                 firstSentence = match[1];
@@ -634,6 +661,8 @@ serve(async (req) => {
         } catch (_) {}
       }
     }
+
+    clearTimeout(firstSentenceTimeout);
 
     const llmTime = Date.now() - llmStart;
 
@@ -667,13 +696,25 @@ serve(async (req) => {
       ttsPromise = spokenText ? generateTTS(spokenText, voice, language).catch(() => null) : Promise.resolve(null);
     }
 
-    // Fire-and-forget: save conversation log
+    // Save conversation log with retry + cap at 50 entries
     if (demoLinkId) {
-      supabase.rpc('append_demo_conversation', {
-        p_demo_link_id: demoLinkId,
-        p_user_msg: message,
-        p_assistant_msg: responseText,
-      }).then(() => {}).catch(() => {});
+      const saveConversation = async (attempt = 1) => {
+        try {
+          await supabase.rpc('append_demo_conversation', {
+            p_demo_link_id: demoLinkId,
+            p_user_msg: message,
+            p_assistant_msg: responseText,
+          });
+        } catch (err) {
+          if (attempt < 2) {
+            console.warn('[voice-demo] Conversation log save failed, retrying...');
+            setTimeout(() => saveConversation(attempt + 1), 1000);
+          } else {
+            console.error('[voice-demo] Conversation log save failed after retry:', err);
+          }
+        }
+      };
+      saveConversation();
     }
 
     // Wait for TTS
@@ -695,10 +736,14 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[voice-demo] Error:', error);
+    const isTimeout = error.name === 'AbortError';
+    const errorText = isTimeout
+      ? "I'm having trouble connecting right now. Could you try again in a moment?"
+      : "Sorry, could you say that again?";
     return new Response(
       JSON.stringify({
-        text: "Sorry, could you say that again?",
-        response: "Sorry, could you say that again?",
+        text: errorText,
+        response: errorText,
         audio: null,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },

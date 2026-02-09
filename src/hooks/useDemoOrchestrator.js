@@ -46,12 +46,29 @@ export default function useDemoOrchestrator() {
         return null;
       }
 
-      // Fetch steps
-      const { data: scriptSteps } = await supabase
-        .from('demo_script_steps')
-        .select('*')
-        .eq('demo_link_id', link.id)
-        .order('step_order', { ascending: true });
+      // Fetch steps with 1 retry
+      let scriptSteps = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const { data, error: stepsError } = await supabase
+          .from('demo_script_steps')
+          .select('*')
+          .eq('demo_link_id', link.id)
+          .order('step_order', { ascending: true });
+
+        if (!stepsError && data?.length) {
+          scriptSteps = data;
+          break;
+        }
+
+        if (attempt === 0) {
+          console.warn('[DemoOrchestrator] Steps fetch failed, retrying in 2s...');
+          await new Promise(r => setTimeout(r, 2000));
+        } else {
+          console.error('[DemoOrchestrator] Steps fetch failed after retry');
+          setError('Failed to load demo steps. Please refresh the page.');
+          return null;
+        }
+      }
 
       // Mark as viewed if first time
       if (link.status === 'created') {
@@ -84,9 +101,16 @@ export default function useDemoOrchestrator() {
       .replace(/\{companyName\}/g, demoLink.company_name);
   }, [demoLink]);
 
+  const transitioningRef = useRef(false);
+  const transitionTimeoutRef = useRef(null);
+
   // Go to a specific step
   const goToStep = useCallback(async (index) => {
     if (index < 0 || index >= steps.length) return;
+
+    // Guard: reject concurrent transitions (prevents double-click issues)
+    if (transitioningRef.current) return;
+    transitioningRef.current = true;
 
     const step = steps[index];
 
@@ -96,6 +120,11 @@ export default function useDemoOrchestrator() {
 
     // Track previous page for back button
     setPreviousPage(currentPage !== 'loading' ? currentPage : null);
+
+    // Clear any existing transition timeout
+    if (transitionTimeoutRef.current) {
+      clearTimeout(transitionTimeoutRef.current);
+    }
 
     // Small delay for fade out
     await new Promise(r => setTimeout(r, 300));
@@ -109,6 +138,7 @@ export default function useDemoOrchestrator() {
     // Fade in
     await new Promise(r => setTimeout(r, 100));
     setIsTransitioning(false);
+    transitioningRef.current = false;
 
     // Update status to in_progress
     if (demoLink && demoLink.status !== 'in_progress' && demoLink.status !== 'completed') {
@@ -135,19 +165,26 @@ export default function useDemoOrchestrator() {
 
   // Jump to a specific page by key (for freestyle navigation)
   const goToPage = useCallback((pageKey) => {
+    // Guard: reject concurrent transitions
+    if (transitioningRef.current) return;
+
     // Find the first step that matches this page_key
     const stepIndex = steps.findIndex(s => s.page_key === pageKey);
     if (stepIndex >= 0) {
       goToStep(stepIndex);
     } else {
       // Page exists but no scripted step — just switch the page directly
+      transitioningRef.current = true;
       setPreviousPage(currentPage !== 'loading' ? currentPage : null);
       setIsTransitioning(true);
       setHighlights([]);
       setTimeout(() => {
         setCurrentPage(pageKey);
         visitedPagesRef.current.add(pageKey);
-        setTimeout(() => setIsTransitioning(false), 100);
+        setTimeout(() => {
+          setIsTransitioning(false);
+          transitioningRef.current = false;
+        }, 100);
       }, 300);
     }
   }, [steps, goToStep]);
@@ -300,6 +337,14 @@ export default function useDemoOrchestrator() {
     return () => clearInterval(interval);
   }, [demoLink]);
 
+  // Cleanup transition state on unmount
+  useEffect(() => {
+    return () => {
+      if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
+      transitioningRef.current = false;
+    };
+  }, []);
+
   // Get current step data
   const currentStep = steps[currentStepIndex] || null;
   const currentDialogue = currentStep ? interpolateDialogue(currentStep.sync_dialogue) : '';
@@ -322,6 +367,7 @@ export default function useDemoOrchestrator() {
     previousPage,
     discoveryPhase,
     discoveryContext,
+    visitedPages: [...visitedPagesRef.current],
 
     // Methods
     loadDemo,

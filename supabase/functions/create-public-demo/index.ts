@@ -105,8 +105,11 @@ INPUT:
 ${JSON.stringify(dialogues)}`;
 
   try {
+    const translateAbort = new AbortController();
+    const translateTimeout = setTimeout(() => translateAbort.abort(), 15000);
     const res = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
+      signal: translateAbort.signal,
       headers: {
         'Authorization': `Bearer ${TOGETHER_API_KEY}`,
         'Content-Type': 'application/json',
@@ -121,6 +124,7 @@ ${JSON.stringify(dialogues)}`;
         max_tokens: 16000,
       }),
     });
+    clearTimeout(translateTimeout);
 
     if (!res.ok) {
       console.error(`[create-public-demo] Translation LLM error: ${res.status}`);

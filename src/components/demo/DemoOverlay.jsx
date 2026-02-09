@@ -31,14 +31,14 @@ export default function DemoOverlay({ highlights = [], onDismiss }) {
       setVisible(true);
     }, 300);
 
-    // Auto-dismiss after 6 seconds
+    // Auto-dismiss after 10 seconds
     const autoDismiss = setTimeout(() => {
       setVisible(false);
       setTimeout(() => {
         setRects([]);
         onDismiss?.();
       }, 400);
-    }, 6000);
+    }, 10000);
 
     return () => {
       clearTimeout(timer);
@@ -52,14 +52,23 @@ export default function DemoOverlay({ highlights = [], onDismiss }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 pointer-events-none"
+      className="fixed inset-0 z-50"
       style={{
         transition: 'opacity 0.4s ease',
         opacity: visible ? 1 : 0,
       }}
     >
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/60" />
+      {/* Dark overlay — click to dismiss */}
+      <div
+        className="absolute inset-0 bg-black/60 cursor-pointer"
+        onClick={() => {
+          setVisible(false);
+          setTimeout(() => {
+            setRects([]);
+            onDismiss?.();
+          }, 400);
+        }}
+      />
 
       {/* Spotlight cutouts */}
       {rects.map((item, i) => (
@@ -75,24 +84,43 @@ export default function DemoOverlay({ highlights = [], onDismiss }) {
               border: '2px solid rgba(6, 182, 212, 0.6)',
               transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
               animation: 'demoPulse 2s ease-in-out infinite',
+              willChange: 'transform',
             }}
           />
-          {/* Tooltip */}
-          {item.tooltip && (
-            <div
-              className="absolute bg-zinc-900 border border-cyan-500/30 text-white text-sm px-4 py-2.5 rounded-xl shadow-xl max-w-xs pointer-events-auto"
-              style={{
-                top: item.rect.top + item.rect.height + pad + 12,
-                left: Math.max(16, item.rect.left),
-                transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.15s',
-                opacity: visible ? 1 : 0,
-                transform: visible ? 'translateY(0)' : 'translateY(-8px)',
-              }}
-            >
-              <div className="w-3 h-3 bg-zinc-900 border-l border-t border-cyan-500/30 absolute -top-1.5 left-6 rotate-45" />
-              {item.tooltip}
-            </div>
-          )}
+          {/* Tooltip with viewport boundary detection */}
+          {item.tooltip && (() => {
+            const tooltipBelow = item.rect.top + item.rect.height + pad + 60 < window.innerHeight;
+            const tooltipTop = tooltipBelow
+              ? item.rect.top + item.rect.height + pad + 12
+              : item.rect.top - pad - 52;
+            const tooltipLeft = Math.min(
+              Math.max(16, item.rect.left),
+              window.innerWidth - 280
+            );
+            return (
+              <div
+                className="absolute bg-zinc-900 border border-cyan-500/30 text-white text-sm px-4 py-2.5 rounded-xl shadow-xl max-w-xs pointer-events-auto"
+                style={{
+                  top: tooltipTop,
+                  left: tooltipLeft,
+                  transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.15s',
+                  opacity: visible ? 1 : 0,
+                  transform: visible ? 'translateY(0)' : `translateY(${tooltipBelow ? '-8px' : '8px'})`,
+                }}
+              >
+                <div
+                  className="w-3 h-3 bg-zinc-900 border-cyan-500/30 absolute left-6"
+                  style={{
+                    ...(tooltipBelow
+                      ? { top: -6, borderLeft: '1px solid', borderTop: '1px solid', transform: 'rotate(45deg)' }
+                      : { bottom: -6, borderRight: '1px solid', borderBottom: '1px solid', transform: 'rotate(45deg)' }),
+                    borderColor: 'rgba(6, 182, 212, 0.3)',
+                  }}
+                />
+                {item.tooltip}
+              </div>
+            );
+          })()}
         </React.Fragment>
       ))}
 

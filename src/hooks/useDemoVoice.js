@@ -53,24 +53,47 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
     try { window.speechSynthesis?.cancel(); } catch (_) {}
   }, []);
 
+  const safetyTimeoutRef = useRef(null);
+
   const playAudio = useCallback((base64, turnId, onDone) => {
     if (turnIdRef.current !== turnId) return;
+
+    // Clear any previous safety timeout
+    if (safetyTimeoutRef.current) {
+      clearTimeout(safetyTimeoutRef.current);
+      safetyTimeoutRef.current = null;
+    }
+
     try {
       stopAudio();
       const audio = new Audio(`data:audio/mp3;base64,${base64}`);
       audioElRef.current = audio;
-      audio.onended = () => {
+
+      let doneFired = false;
+      const fireDone = () => {
+        if (doneFired) return;
+        doneFired = true;
+        if (safetyTimeoutRef.current) {
+          clearTimeout(safetyTimeoutRef.current);
+          safetyTimeoutRef.current = null;
+        }
         audioElRef.current = null;
         if (turnIdRef.current === turnId) onDone?.();
       };
-      audio.onerror = () => {
-        audioElRef.current = null;
-        if (turnIdRef.current === turnId) onDone?.();
-      };
-      audio.play().catch(() => {
-        audioElRef.current = null;
-        if (turnIdRef.current === turnId) onDone?.();
-      });
+
+      audio.onended = fireDone;
+      audio.onerror = fireDone;
+
+      audio.play().then(() => {
+        // Set safety timeout: max(audio.duration + 2s, 30s)
+        const safetyMs = audio.duration
+          ? Math.min((audio.duration + 2) * 1000, 30000)
+          : 30000;
+        safetyTimeoutRef.current = setTimeout(() => {
+          console.warn('[useDemoVoice] Safety timeout: force-resetting from Speaking');
+          fireDone();
+        }, safetyMs);
+      }).catch(fireDone);
     } catch (e) {
       audioElRef.current = null;
       if (turnIdRef.current === turnId) onDone?.();
@@ -125,8 +148,15 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
 
       rec.onerror = (e) => {
         if (e.error === 'not-allowed') {
-          activeRef.current = false;
-          setVoiceState(VOICE_STATES.OFF);
+          // Mic denied — keep active for text input but auto-switch to muted
+          setIsMuted(true);
+          setTranscript('Microphone access denied — use text input instead');
+          recognitionRef.current = null;
+          // Don't deactivate — user can still use text input
+          if (activeRef.current) {
+            setVoiceState(VOICE_STATES.LISTENING);
+          }
+          return;
         }
       };
 
@@ -515,6 +545,10 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
     turnIdRef.current++;
     stopListening();
     stopAudio();
+    if (safetyTimeoutRef.current) {
+      clearTimeout(safetyTimeoutRef.current);
+      safetyTimeoutRef.current = null;
+    }
     setVoiceState(VOICE_STATES.OFF);
     setTranscript('');
     historyRef.current = [];
@@ -544,10 +578,30 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
     return () => {
       activeRef.current = false;
       turnIdRef.current++;
+      if (safetyTimeoutRef.current) clearTimeout(safetyTimeoutRef.current);
       if (recognitionRef.current) try { recognitionRef.current.abort(); } catch (_) {}
       if (audioElRef.current) try { audioElRef.current.pause(); } catch (_) {}
     };
   }, []);
+
+  // Handle tab visibility change — check if audio should have finished
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && voiceState === 'speaking') {
+        const audio = audioElRef.current;
+        if (audio && audio.ended) {
+          // Audio finished while tab was backgrounded — trigger done
+          audio.onended?.();
+        } else if (!audio) {
+          // Audio element gone but still in speaking state — force reset
+          setVoiceState(activeRef.current ? VOICE_STATES.LISTENING : VOICE_STATES.OFF);
+          processingRef.current = false;
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [voiceState]);
 
   return {
     voiceState,

@@ -92,6 +92,7 @@ export default function DemoVoicePanel({
   responseTime = null,
   discoveryPhase = false,
   language = 'en',
+  visitedPages = [],
 }) {
   const [textInput, setTextInput] = useState('');
   const [collapsed, setCollapsed] = useState(false);
@@ -154,9 +155,26 @@ export default function DemoVoicePanel({
     '#f59e0b', '#f43f5e', '#f97316', '#3b82f6', '#14b8a6',
   ];
 
-  const suggestions = discoveryPhase
+  const rawSuggestions = discoveryPhase
     ? getDiscoverySuggestions(language)
     : (PAGE_SUGGESTIONS[currentPage] || PAGE_SUGGESTIONS.dashboard);
+
+  // Filter out suggestions for already-visited modules
+  const suggestions = discoveryPhase ? rawSuggestions : rawSuggestions.filter(chip => {
+    const lc = chip.toLowerCase();
+    // Check if chip references a visited page
+    const mentionedPages = Object.keys(PAGE_SUGGESTIONS).filter(key =>
+      lc.includes(key.replace('-', ' ')) || lc.includes(key.split('-')[0])
+    );
+    // Keep chip if it doesn't reference a specific module, or references current page
+    if (!mentionedPages.length) return true;
+    return mentionedPages.some(p => p === currentPage || !visitedPages.includes(p));
+  });
+
+  // Fallback when all filtered out
+  const finalSuggestions = suggestions.length > 0
+    ? suggestions
+    : [`What else can SYNC do?`, `Tell me more about this page`, `Ask me anything`];
 
   const handleChipClick = (chipText) => {
     setShowChips(false);
@@ -164,7 +182,7 @@ export default function DemoVoicePanel({
   };
 
   return (
-    <div className="bg-black/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="bg-black/95 backdrop-blur-xl border-t md:border border-white/10 md:rounded-2xl shadow-2xl overflow-hidden max-h-[60vh] md:max-h-none overflow-y-auto">
       {/* Header — always visible, clickable to collapse */}
       <button
         onClick={() => setCollapsed(!collapsed)}
@@ -242,7 +260,7 @@ export default function DemoVoicePanel({
           {/* Suggestion chips */}
           {showChips && voiceState === 'listening' && (
             <div className="px-3 pb-2 flex flex-wrap gap-1.5">
-              {suggestions.map((chip, i) => (
+              {finalSuggestions.map((chip, i) => (
                 <button
                   key={i}
                   onClick={() => handleChipClick(chip)}
@@ -267,6 +285,22 @@ export default function DemoVoicePanel({
                   }}
                 />
               ))}
+            </div>
+          )}
+
+          {/* Processing indicator */}
+          {voiceState === 'processing' && (
+            <div className="px-3 py-2 flex items-center justify-center gap-2">
+              <div className="flex items-center gap-1">
+                {[0, 1, 2].map(i => (
+                  <div
+                    key={i}
+                    className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-bounce"
+                    style={{ animationDelay: `${i * 0.15}s` }}
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-amber-400/70">Processing...</span>
             </div>
           )}
 
