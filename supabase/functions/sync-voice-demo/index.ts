@@ -435,22 +435,31 @@ async function generateElevenLabsTTS(text: string): Promise<{ audio: string; byt
         stability: 0.18,         // Very low = expressive, seductive intonation
         similarity_boost: 0.82,  // Keeps voice identity consistent
         style: 0.75,             // High emotional depth — alluring delivery
-        speed: 1.28,             // Fast but not rushed — confident and sexy
+        speed: 1.2,              // Max speed allowed by ElevenLabs v3
       }),
     });
+    console.log(`[voice-demo] ElevenLabs fal.run response: ${res.status}`);
     clearTimeout(timeout);
     if (!res.ok) {
-      console.log(`[voice-demo] ElevenLabs TTS failed (${res.status})`);
+      const errBody = await res.text().catch(() => '');
+      console.log(`[voice-demo] ElevenLabs TTS failed (${res.status}): ${errBody.substring(0, 300)}`);
       return null;
     }
     const data = await res.json();
-    if (data?.audio?.url) {
-      // Fetch the generated MP3 from fal.ai CDN
-      const audioRes = await fetch(data.audio.url);
-      if (!audioRes.ok) return null;
+    console.log(`[voice-demo] ElevenLabs response keys: ${Object.keys(data || {}).join(', ')}`);
+    // fal.ai may return {audio: {url}} or {url} directly
+    const audioUrl = data?.audio?.url || data?.url;
+    if (audioUrl) {
+      console.log(`[voice-demo] ElevenLabs audio URL: ${audioUrl.substring(0, 100)}`);
+      const audioRes = await fetch(audioUrl);
+      if (!audioRes.ok) {
+        console.log(`[voice-demo] ElevenLabs audio fetch failed (${audioRes.status})`);
+        return null;
+      }
       const buffer = await audioRes.arrayBuffer();
       return { audio: arrayBufferToBase64(buffer), byteLength: buffer.byteLength };
     }
+    console.log(`[voice-demo] ElevenLabs no audio.url in response: ${JSON.stringify(data).substring(0, 300)}`);
     return null;
   } catch (e) {
     console.log('[voice-demo] ElevenLabs TTS error:', e?.message || e);
@@ -566,20 +575,28 @@ serve(async (req) => {
       const ttsLang = requestLanguage || 'en';
       // For scripted narration, try ElevenLabs v3 first (premium human voice)
       let ttsResult: { audio: string; byteLength: number } | null = null;
+      let ttsProvider = 'none';
       if (ttsLang === 'en' && FAL_KEY) {
         console.log('[voice-demo] Trying ElevenLabs v3 for premium narration...');
         ttsResult = await generateElevenLabsTTS(ttsText);
-        if (ttsResult) console.log(`[voice-demo] ElevenLabs TTS success (${ttsResult.byteLength} bytes)`);
+        if (ttsResult) {
+          ttsProvider = 'elevenlabs';
+          console.log(`[voice-demo] ElevenLabs TTS success (${ttsResult.byteLength} bytes)`);
+        } else {
+          console.log('[voice-demo] ElevenLabs FAILED, falling back...');
+        }
       }
       // Fallback to Kokoro/Orpheus
       if (!ttsResult) {
         ttsResult = await generateTTS(ttsText, voice, ttsLang);
+        if (ttsResult) ttsProvider = 'kokoro';
       }
       return new Response(
         JSON.stringify({
           audio: ttsResult?.audio || null,
           audioFormat: ttsResult ? 'mp3' : undefined,
           ttsUnavailable: !ttsResult,
+          ttsProvider,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
