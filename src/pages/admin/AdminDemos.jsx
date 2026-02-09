@@ -214,6 +214,7 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
   const [recipientName, setRecipientName] = useState('');
   const [recipientEmail, setRecipientEmail] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [companyDomain, setCompanyDomain] = useState('');
   const [industry, setIndustry] = useState('');
   const [notes, setNotes] = useState('');
   const [selectedModules, setSelectedModules] = useState(
@@ -221,21 +222,39 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
   );
   const [isCreating, setIsCreating] = useState(false);
   const [research, setResearch] = useState(null);
+  const [explorium, setExplorium] = useState(null);
+  const [prospectData, setProspectData] = useState(null);
   const [isResearching, setIsResearching] = useState(false);
   const [researchExpanded, setResearchExpanded] = useState(true);
+  const [researchPhase, setResearchPhase] = useState('');
 
   const resetForm = () => {
     setRecipientName('');
     setRecipientEmail('');
     setCompanyName('');
+    setCompanyDomain('');
     setIndustry('');
     setNotes('');
     setResearch(null);
+    setExplorium(null);
+    setProspectData(null);
     setIsResearching(false);
     setResearchExpanded(true);
+    setResearchPhase('');
     setSelectedModules(
       MODULE_OPTIONS.reduce((acc, m) => ({ ...acc, [m]: true }), {})
     );
+  };
+
+  // Auto-extract domain from email
+  const handleEmailChange = (email) => {
+    setRecipientEmail(email);
+    if (!companyDomain && email.includes('@')) {
+      const domain = email.split('@')[1];
+      if (domain && !domain.includes('gmail') && !domain.includes('yahoo') && !domain.includes('hotmail') && !domain.includes('outlook')) {
+        setCompanyDomain(domain);
+      }
+    }
   };
 
   const handleResearch = async () => {
@@ -244,7 +263,51 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
       return;
     }
     setIsResearching(true);
+    setResearchPhase('Enriching with Explorium...');
+
     try {
+      // Phase 1: Call Explorium for real company data + prospect data in parallel
+      const exploriumPromises = [];
+
+      // Company intelligence (firmographics, tech stack, funding, workforce, competitors, traffic)
+      exploriumPromises.push(
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generateCompanyIntelligence`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            companyName: companyName.trim(),
+            companyDomain: companyDomain.trim() || null,
+          }),
+        }).then(r => r.json()).catch(e => ({ error: e.message }))
+      );
+
+      // Prospect enrichment (if email provided)
+      if (recipientEmail.trim()) {
+        exploriumPromises.push(
+          fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/explorium-enrich`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'full_enrich',
+              email: recipientEmail.trim(),
+              full_name: recipientName.trim() || null,
+              company_name: companyName.trim(),
+            }),
+          }).then(r => r.json()).catch(e => ({ error: e.message }))
+        );
+      }
+
+      const [companyResult, prospectResult] = await Promise.all(exploriumPromises);
+
+      const exploriumIntel = companyResult?.intelligence || null;
+      const prospectEnriched = prospectResult?.error ? null : (prospectResult || null);
+
+      setExplorium(exploriumIntel);
+      setProspectData(prospectEnriched);
+
+      // Phase 2: Pass Explorium data to LLM for intelligent strategy generation
+      setResearchPhase('Generating AI strategy...');
+
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/research-demo-prospect`,
         {
@@ -254,8 +317,11 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
             recipientName: recipientName.trim(),
             recipientEmail: recipientEmail.trim(),
             companyName: companyName.trim(),
+            companyDomain: companyDomain.trim() || null,
             industry,
             notes: notes.trim(),
+            exploriumData: exploriumIntel,
+            prospectData: prospectEnriched,
           }),
         }
       );
@@ -263,6 +329,13 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
       if (data.error) throw new Error(data.error);
       setResearch(data.research);
       setResearchExpanded(true);
+
+      // Auto-fill industry from Explorium if not set
+      if (!industry && exploriumIntel?.firmographics?.industry) {
+        setIndustry(
+          INDUSTRY_OPTIONS.find(o => exploriumIntel.firmographics.industry.toLowerCase().includes(o.toLowerCase())) || 'Other'
+        );
+      }
 
       // Auto-select priority modules from research
       if (data.research?.demo_strategy?.priority_modules) {
@@ -272,7 +345,6 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
           const key = mod.toLowerCase();
           newModules[mod] = priorities.includes(key);
         });
-        // Always include Dashboard
         newModules['Dashboard'] = true;
         setSelectedModules(newModules);
       }
@@ -283,6 +355,7 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
       toast.error(err.message || 'Research failed.');
     } finally {
       setIsResearching(false);
+      setResearchPhase('');
     }
   };
 
@@ -322,7 +395,10 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
           company_context: {
             industry: industry || null,
             notes: notes.trim() || null,
+            domain: companyDomain.trim() || null,
             research: research || null,
+            explorium: explorium || null,
+            prospect: prospectData || null,
           },
           modules_to_demo: modules,
           status: 'created',
@@ -406,7 +482,7 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
               type="email"
               placeholder="john@company.com"
               value={recipientEmail}
-              onChange={(e) => setRecipientEmail(e.target.value)}
+              onChange={(e) => handleEmailChange(e.target.value)}
               className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
             />
           </div>
@@ -421,6 +497,21 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
               placeholder="Acme Corp"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
+              className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+            />
+          </div>
+
+          {/* Company Domain */}
+          <div className="space-y-1.5">
+            <Label htmlFor="company-domain" className="text-zinc-300 text-xs">
+              Company Domain
+              <span className="text-zinc-600 ml-1 font-normal">(auto-filled from email)</span>
+            </Label>
+            <Input
+              id="company-domain"
+              placeholder="company.com"
+              value={companyDomain}
+              onChange={(e) => setCompanyDomain(e.target.value)}
               className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
             />
           </div>
@@ -471,7 +562,7 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
                 </button>
               )}
             </div>
-            {!research ? (
+            {!research && !explorium ? (
               <Button
                 onClick={handleResearch}
                 disabled={isResearching || !companyName.trim()}
@@ -482,7 +573,7 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
                 {isResearching ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 mr-2 animate-spin" />
-                    Researching {companyName || '...'}
+                    {researchPhase || `Researching ${companyName || '...'}`}
                   </>
                 ) : (
                   <>
@@ -495,12 +586,120 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
               <>
                 {researchExpanded && (
                   <div className="space-y-2 text-xs">
-                    {/* Company overview */}
-                    {research.company && (
+                    {/* Explorium Real Data */}
+                    {explorium && (
+                      <div className="bg-purple-500/5 border border-purple-500/20 rounded-lg p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Shield className="w-3.5 h-3.5 text-purple-400" />
+                          <span className="text-purple-400 font-medium">Explorium Intelligence</span>
+                          {explorium.data_quality && (
+                            <span className="text-[10px] text-zinc-500 ml-auto">{explorium.data_quality.completeness}/8 sources</span>
+                          )}
+                        </div>
+
+                        {/* Firmographics */}
+                        {explorium.firmographics && (
+                          <div className="mb-1.5">
+                            <p className="text-zinc-300 leading-relaxed">
+                              {explorium.firmographics.description || explorium.firmographics.company_name}
+                            </p>
+                            <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px] text-zinc-500">
+                              {explorium.firmographics.industry && <span><span className="text-zinc-400">Industry:</span> {explorium.firmographics.industry}</span>}
+                              {explorium.firmographics.employee_count_range && <span><span className="text-zinc-400">Size:</span> {explorium.firmographics.employee_count_range}</span>}
+                              {explorium.firmographics.revenue_range && <span><span className="text-zinc-400">Revenue:</span> {explorium.firmographics.revenue_range}</span>}
+                              {explorium.firmographics.headquarters && <span><span className="text-zinc-400">HQ:</span> {explorium.firmographics.headquarters}</span>}
+                              {explorium.firmographics.founded_year && <span><span className="text-zinc-400">Founded:</span> {explorium.firmographics.founded_year}</span>}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Tech Stack */}
+                        {explorium.technographics?.tech_stack?.length > 0 && (
+                          <div className="mb-1.5">
+                            <span className="text-[10px] text-zinc-400">Tech Stack ({explorium.technographics.tech_count}):</span>
+                            <div className="flex flex-wrap gap-1 mt-0.5">
+                              {explorium.technographics.tech_stack.slice(0, 4).map((cat, i) => (
+                                <span key={i} className="text-[10px] text-purple-400/70">
+                                  {cat.category}: {cat.technologies.slice(0, 3).join(', ')}{cat.technologies.length > 3 ? ` +${cat.technologies.length - 3}` : ''}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Funding */}
+                        {explorium.funding && explorium.funding.total_funding && (
+                          <div className="mb-1.5 text-[10px] text-zinc-500">
+                            <span className="text-zinc-400">Funding:</span> {explorium.funding.total_funding}
+                            {explorium.funding.funding_stage && <> ({explorium.funding.funding_stage})</>}
+                            {explorium.funding.last_funding_date && <> — last: {explorium.funding.last_funding_date}</>}
+                          </div>
+                        )}
+
+                        {/* Competitors */}
+                        {explorium.competitive_landscape?.competitors?.length > 0 && (
+                          <div className="mb-1.5">
+                            <span className="text-[10px] text-zinc-400">Competitors:</span>
+                            <div className="flex flex-wrap gap-1 mt-0.5">
+                              {explorium.competitive_landscape.competitors.slice(0, 5).map((c, i) => (
+                                <span key={i} className="px-1.5 py-0.5 bg-purple-500/10 text-purple-400/80 rounded text-[10px]">{c.name}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Workforce */}
+                        {explorium.workforce?.departments?.length > 0 && (
+                          <div className="text-[10px] text-zinc-500">
+                            <span className="text-zinc-400">Departments:</span>{' '}
+                            {explorium.workforce.departments.slice(0, 5).map(d => `${d.name} ${d.percentage}%`).join(', ')}
+                          </div>
+                        )}
+
+                        {/* Employee Ratings */}
+                        {explorium.employee_ratings?.overall_rating && (
+                          <div className="text-[10px] text-zinc-500 mt-0.5">
+                            <span className="text-zinc-400">Employee Rating:</span> {explorium.employee_ratings.overall_rating}/5
+                            {explorium.employee_ratings.recommend_percent && <> — {explorium.employee_ratings.recommend_percent}% recommend</>}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Prospect Enrichment */}
+                    {prospectData && !prospectData.error && (
+                      <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Users className="w-3.5 h-3.5 text-blue-400" />
+                          <span className="text-blue-400 font-medium">Prospect Profile</span>
+                        </div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-zinc-500">
+                          {prospectData.job_title && <span><span className="text-zinc-400">Title:</span> {prospectData.job_title}</span>}
+                          {prospectData.job_department && <span><span className="text-zinc-400">Dept:</span> {prospectData.job_department}</span>}
+                          {prospectData.job_seniority_level && <span><span className="text-zinc-400">Level:</span> {prospectData.job_seniority_level}</span>}
+                          {(prospectData.location_city || prospectData.location_country) && (
+                            <span><span className="text-zinc-400">Location:</span> {[prospectData.location_city, prospectData.location_country].filter(Boolean).join(', ')}</span>
+                          )}
+                        </div>
+                        {prospectData.skills?.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {prospectData.skills.slice(0, 8).map((s, i) => (
+                              <span key={i} className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400/80 rounded text-[10px]">
+                                {typeof s === 'string' ? s : s?.name || s?.skill || ''}
+                              </span>
+                            ))}
+                            {prospectData.skills.length > 8 && <span className="text-[10px] text-zinc-600">+{prospectData.skills.length - 8} more</span>}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* LLM Company Analysis (only if no Explorium data, avoid duplication) */}
+                    {research?.company && !explorium?.firmographics && (
                       <div className="bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-2.5">
                         <div className="flex items-center gap-1.5 mb-1.5">
                           <Building2 className="w-3.5 h-3.5 text-cyan-400" />
-                          <span className="text-cyan-400 font-medium">Company</span>
+                          <span className="text-cyan-400 font-medium">Company (AI Analysis)</span>
                           {research.company.estimated_size && (
                             <span className="text-[10px] text-zinc-500 ml-auto">{research.company.estimated_size}</span>
                           )}

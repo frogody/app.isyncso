@@ -31,19 +31,33 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 function buildDiscoveryPrompt(name: string, company: string, companyContext?: Record<string, unknown> | null): string {
   let p = `You are SYNC, a warm and perceptive AI sales rep at iSyncso. You're in the DISCOVERY phase of a personalized demo for ${name} at ${company}.`;
 
-  // Inject pre-researched intel so SYNC already knows the company during discovery
-  const research = companyContext?.research as Record<string, unknown> | undefined;
-  if (research) {
-    const comp = research.company as Record<string, unknown> | undefined;
-    if (comp?.description) p += ` What you already know about ${company}: ${comp.description}`;
-    if (comp && Array.isArray(comp.products_services) && comp.products_services.length) {
-      p += ` They offer: ${(comp.products_services as string[]).join(', ')}.`;
+  // Inject Explorium verified data and LLM research for discovery
+  const exploriumD = companyContext?.explorium as Record<string, unknown> | undefined;
+  const researchD = companyContext?.research as Record<string, unknown> | undefined;
+  if (exploriumD?.firmographics || researchD) {
+    p += ` What you know about ${company}:`;
+    const firm = exploriumD?.firmographics as Record<string, unknown> | undefined;
+    if (firm?.description) {
+      p += ` ${firm.description}`;
+      if (firm.industry) p += ` Industry: ${firm.industry}.`;
+      if (firm.employee_count_range) p += ` Size: ${firm.employee_count_range}.`;
+    } else {
+      const comp = researchD?.company as Record<string, unknown> | undefined;
+      if (comp?.description) p += ` ${comp.description}`;
     }
-    const landscape = research.competitive_landscape as Record<string, unknown> | undefined;
+    const compR = researchD?.company as Record<string, unknown> | undefined;
+    if (compR && Array.isArray(compR.products_services) && compR.products_services.length) {
+      p += ` They offer: ${(compR.products_services as string[]).join(', ')}.`;
+    }
+    const landscape = researchD?.competitive_landscape as Record<string, unknown> | undefined;
     if (landscape && Array.isArray(landscape.pain_points) && landscape.pain_points.length) {
-      p += ` Their likely pain points: ${(landscape.pain_points as string[]).join('; ')}.`;
+      p += ` Their pain points: ${(landscape.pain_points as string[]).join('; ')}.`;
     }
-    p += ` Use this knowledge subtly — show that you've done your homework but don't overwhelm ${name}. Reference their business naturally.`;
+    const prospectD = companyContext?.prospect as Record<string, unknown> | undefined;
+    if (prospectD?.job_title) {
+      p += ` ${name} is a ${prospectD.job_title}${prospectD.job_department ? ' in ' + prospectD.job_department : ''}.`;
+    }
+    p += ` Use this knowledge subtly — show you've done your homework but don't overwhelm ${name}. Reference their business naturally.`;
   }
 
   p += ` ${name} just told you what they care about. Your job is to:`;
@@ -91,53 +105,104 @@ function buildSystemPrompt(name: string, company: string, stepContext: Record<st
 
   p += ` You are currently on the "${currentPage}" page.`;
 
-  // Inject pre-researched company intelligence if available
+  // Inject Explorium verified company data if available
+  const exploriumData = companyContext?.explorium as Record<string, unknown> | undefined;
+  if (exploriumData) {
+    p += ` VERIFIED COMPANY DATA (from Explorium — these are FACTS, reference them confidently):`;
+    const firmographics = exploriumData.firmographics as Record<string, unknown> | undefined;
+    if (firmographics) {
+      if (firmographics.description) p += ` ${company}: ${firmographics.description}`;
+      if (firmographics.industry) p += ` Industry: ${firmographics.industry}.`;
+      if (firmographics.employee_count_range) p += ` Size: ${firmographics.employee_count_range} employees.`;
+      if (firmographics.revenue_range) p += ` Revenue: ${firmographics.revenue_range}.`;
+      if (firmographics.headquarters) p += ` HQ: ${firmographics.headquarters}.`;
+      if (firmographics.founded_year) p += ` Founded: ${firmographics.founded_year}.`;
+    }
+    const tech = exploriumData.technographics as Record<string, unknown> | undefined;
+    if (tech && Array.isArray(tech.tech_stack) && (tech.tech_stack as unknown[]).length > 0) {
+      const stacks = (tech.tech_stack as Array<{ category: string; technologies: string[] }>).slice(0, 4);
+      const techStr = stacks.map(c => `${c.category}: ${c.technologies.slice(0, 3).join(', ')}`).join('; ');
+      p += ` Tech stack: ${techStr}.`;
+    }
+    const funding = exploriumData.funding as Record<string, unknown> | undefined;
+    if (funding?.total_funding) {
+      p += ` Funding: ${funding.total_funding}${funding.funding_stage ? ' (' + funding.funding_stage + ')' : ''}.`;
+    }
+    const competitors = exploriumData.competitive_landscape as Record<string, unknown> | undefined;
+    if (competitors && Array.isArray(competitors.competitors) && (competitors.competitors as unknown[]).length > 0) {
+      const names = (competitors.competitors as Array<{ name: string }>).slice(0, 4).map(c => c.name);
+      p += ` Competitors: ${names.join(', ')}.`;
+    }
+    const workforce = exploriumData.workforce as Record<string, unknown> | undefined;
+    if (workforce && Array.isArray(workforce.departments) && (workforce.departments as unknown[]).length > 0) {
+      const depts = (workforce.departments as Array<{ name: string; percentage: number }>).slice(0, 4);
+      p += ` Team composition: ${depts.map(d => `${d.name} ${d.percentage}%`).join(', ')}.`;
+    }
+    const ratings = exploriumData.employee_ratings as Record<string, unknown> | undefined;
+    if (ratings?.overall_rating) {
+      p += ` Employee rating: ${ratings.overall_rating}/5.`;
+    }
+  }
+
+  // Inject prospect profile data if available
+  const prospectProfile = companyContext?.prospect as Record<string, unknown> | undefined;
+  if (prospectProfile && !prospectProfile.error) {
+    p += ` PROSPECT PROFILE:`;
+    if (prospectProfile.job_title) p += ` ${name}'s title: ${prospectProfile.job_title}.`;
+    if (prospectProfile.job_department) p += ` Department: ${prospectProfile.job_department}.`;
+    if (prospectProfile.job_seniority_level) p += ` Seniority: ${prospectProfile.job_seniority_level}.`;
+    if (Array.isArray(prospectProfile.skills) && prospectProfile.skills.length > 0) {
+      const skills = (prospectProfile.skills as unknown[]).slice(0, 6).map((s: unknown) => typeof s === 'string' ? s : ((s as Record<string, string>)?.name || '')).filter(Boolean);
+      if (skills.length) p += ` Skills: ${skills.join(', ')}.`;
+    }
+  }
+
+  // Inject LLM-generated strategy and analysis
   const research = companyContext?.research as Record<string, unknown> | undefined;
   if (research) {
-    p += ` COMPANY INTELLIGENCE (pre-researched):`;
+    p += ` DEMO STRATEGY:`;
     const comp = research.company as Record<string, unknown> | undefined;
     if (comp) {
-      if (comp.description) p += ` About ${company}: ${comp.description}`;
+      if (!exploriumData?.firmographics && comp.description) p += ` About ${company}: ${comp.description}`;
       if (Array.isArray(comp.products_services) && comp.products_services.length) {
         p += ` Their products/services: ${(comp.products_services as string[]).join(', ')}.`;
       }
-      if (comp.target_audience) p += ` Their target audience: ${comp.target_audience}.`;
+      if (comp.target_audience) p += ` Target audience: ${comp.target_audience}.`;
       if (comp.business_model) p += ` Business model: ${comp.business_model}.`;
-      if (comp.estimated_size) p += ` Company size: ${comp.estimated_size}.`;
     }
     const prospect = research.prospect as Record<string, unknown> | undefined;
     if (prospect) {
-      if (prospect.likely_role) p += ` ${name}'s likely role: ${prospect.likely_role}.`;
+      if (!prospectProfile?.job_title && prospect.likely_role) p += ` ${name}'s likely role: ${prospect.likely_role}.`;
       if (Array.isArray(prospect.likely_priorities) && prospect.likely_priorities.length) {
-        p += ` Their likely priorities: ${(prospect.likely_priorities as string[]).join(', ')}.`;
+        p += ` Their priorities: ${(prospect.likely_priorities as string[]).join(', ')}.`;
       }
     }
     const landscape = research.competitive_landscape as Record<string, unknown> | undefined;
     if (landscape) {
       if (Array.isArray(landscape.pain_points) && landscape.pain_points.length) {
-        p += ` Their pain points: ${(landscape.pain_points as string[]).join('; ')}.`;
+        p += ` Pain points: ${(landscape.pain_points as string[]).join('; ')}.`;
       }
       if (Array.isArray(landscape.likely_tools) && landscape.likely_tools.length) {
-        p += ` Tools they probably use: ${(landscape.likely_tools as string[]).join(', ')}.`;
+        p += ` Tools they use: ${(landscape.likely_tools as string[]).join(', ')}.`;
       }
     }
     const strategy = research.demo_strategy as Record<string, unknown> | undefined;
     if (strategy) {
       if (strategy.opening_hook) p += ` Opening hook: "${strategy.opening_hook}"`;
       if (Array.isArray(strategy.killer_scenarios) && strategy.killer_scenarios.length) {
-        p += ` Killer scenarios to use: ${(strategy.killer_scenarios as string[]).join(' | ')}`;
+        p += ` Killer scenarios: ${(strategy.killer_scenarios as string[]).join(' | ')}`;
       }
       const moduleAngles = strategy.module_angles as Record<string, string> | undefined;
       if (moduleAngles) {
         const angles = Object.entries(moduleAngles).map(([k, v]) => `${k}: ${v}`).join('; ');
-        p += ` Module-specific angles: ${angles}.`;
+        p += ` Module angles: ${angles}.`;
       }
       if (Array.isArray(strategy.objections_likely) && strategy.objections_likely.length) {
-        p += ` Likely objections from ${name}: ${(strategy.objections_likely as string[]).join('; ')}.`;
+        p += ` Likely objections: ${(strategy.objections_likely as string[]).join('; ')}.`;
       }
-      if (strategy.closing_angle) p += ` Best closing angle: ${strategy.closing_angle}.`;
+      if (strategy.closing_angle) p += ` Closing angle: ${strategy.closing_angle}.`;
     }
-    p += ` USE THIS INTELLIGENCE: Weave these insights naturally into your explanations. Reference ${company}'s actual products, audience, and pain points when explaining iSyncso features. Don't dump all the intel at once — reveal it naturally as relevant modules come up. When giving scenarios, use ${company}-specific examples instead of generic ones.`;
+    p += ` USE THIS INTELLIGENCE: Weave insights naturally into explanations. Reference ${company}'s actual business — their products, audience, tech stack, and pain points — when explaining iSyncso features. Don't dump intel all at once — reveal it naturally as modules come up. Use ${company}-specific scenarios instead of generic ones.`;
   }
 
   // Navigation awareness — SYNC should reference the sidebar and explain how navigation works
