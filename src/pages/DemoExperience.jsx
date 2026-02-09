@@ -14,6 +14,7 @@ import DemoLayout from '@/components/demo/DemoLayout';
 import DemoOverlay from '@/components/demo/DemoOverlay';
 import DemoControls from '@/components/demo/DemoControls';
 import DemoVoicePanel from '@/components/demo/DemoVoicePanel';
+import DemoIntroScreen from '@/components/demo/DemoIntroScreen';
 
 // Main module pages
 import DemoDashboard from '@/components/demo/pages/DemoDashboard';
@@ -384,6 +385,7 @@ export default function DemoExperience() {
 
   const orchestrator = useDemoOrchestrator();
   const [demoStarted, setDemoStarted] = useState(false);
+  const [introComplete, setIntroComplete] = useState(false);
   const [showEndScreen, setShowEndScreen] = useState(false);
   const greetingSpoken = useRef(false);
   const stepSpeechRef = useRef(-1);
@@ -549,9 +551,9 @@ export default function DemoExperience() {
     return () => clearTimeout(loadTimeout);
   }, [token]);
 
-  // Start demo flow after loading
+  // Start demo flow after intro screen is completed
   useEffect(() => {
-    if (!orchestrator.isLoaded || demoStarted) return;
+    if (!orchestrator.isLoaded || !introComplete || demoStarted) return;
     setDemoStarted(true);
 
     const startDemo = async () => {
@@ -580,7 +582,7 @@ export default function DemoExperience() {
     };
 
     startDemo();
-  }, [orchestrator.isLoaded, demoStarted]);
+  }, [orchestrator.isLoaded, introComplete, demoStarted]);
 
   // Keep step context in sync with current page (for freestyle navigation)
   useEffect(() => {
@@ -696,7 +698,7 @@ export default function DemoExperience() {
     );
   }
 
-  // Loading state
+  // Loading state — brief spinner before data loads
   if (!orchestrator.isLoaded) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -721,6 +723,18 @@ export default function DemoExperience() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  // Intro screen — showcases iSyncSO capabilities before the demo starts
+  if (!introComplete) {
+    return (
+      <DemoIntroScreen
+        recipientName={orchestrator.demoLink?.recipient_name}
+        companyName={orchestrator.demoLink?.company_name}
+        language={demoLanguage}
+        onStart={() => setIntroComplete(true)}
+      />
     );
   }
 
