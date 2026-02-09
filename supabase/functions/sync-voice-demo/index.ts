@@ -431,11 +431,11 @@ async function generateElevenLabsTTS(text: string): Promise<{ audio: string; byt
       },
       body: JSON.stringify({
         text,
-        voice: 'Sarah',          // Soothing, warm, naturally upbeat female voice
-        stability: 0.35,         // Expressive but smooth — not jarring
-        similarity_boost: 0.80,  // Consistent voice identity
-        style: 0.55,             // Upbeat energy without over-the-top drama
-        speed: 1.15,             // Brisk but relaxed — soothing pace
+        voice: 'Lily',            // Young, soft, breathy female — intimate and alluring
+        stability: 0.25,         // Low = breathy variation, seductive inflection
+        similarity_boost: 0.78,  // Natural voice character
+        style: 0.65,             // Warm emotional depth, not robotic
+        speed: 1.1,              // Slightly slower for that soft, intimate feel
       }),
     });
     console.log(`[voice-demo] ElevenLabs fal.run response: ${res.status}`);
