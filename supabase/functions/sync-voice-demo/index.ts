@@ -416,8 +416,8 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 async function generateTTS(text: string, orpheusVoice: string, language = 'en'): Promise<{ audio: string; byteLength: number } | null> {
-  // Check if language has a Kokoro voice
-  const kokoroVoice = KOKORO_VOICE_MAP[language] ?? KOKORO_VOICE_MAP['en'];
+  // Check if language has a Kokoro voice (null = explicitly unsupported, undefined = unknown)
+  const kokoroVoice = language in KOKORO_VOICE_MAP ? KOKORO_VOICE_MAP[language] : KOKORO_VOICE_MAP['en'];
 
   // No Kokoro voice for this language — return null so client uses browser speechSynthesis
   if (!kokoroVoice) {
