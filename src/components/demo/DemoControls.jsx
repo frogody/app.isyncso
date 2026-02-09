@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronRight, ChevronLeft, MessageCircle, X, Play } from 'lucide-react';
+import { ChevronRight, ChevronLeft, MessageCircle, X, Play, Moon, Sun } from 'lucide-react';
 import { t } from '@/constants/demoTranslations';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export default function DemoControls({
   currentStep = 0,
@@ -14,6 +15,7 @@ export default function DemoControls({
   canGoBack = false,
   language = 'en',
 }) {
+  const { theme, toggleTheme } = useTheme();
   const [confirmEnd, setConfirmEnd] = useState(false);
   const confirmTimer = useRef(null);
 
@@ -98,6 +100,14 @@ export default function DemoControls({
           title="Ask a question"
         >
           <MessageCircle className="w-4 h-4" />
+        </button>
+
+        <button
+          onClick={toggleTheme}
+          className="flex md:hidden items-center justify-center p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors min-w-[44px] min-h-[44px]"
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        >
+          {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
 
         <button

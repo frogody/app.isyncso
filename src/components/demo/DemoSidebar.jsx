@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTheme } from '@/contexts/GlobalThemeContext';
+import { ThemeToggle } from '@/components/sentinel/ThemeToggle';
 import {
   LayoutDashboard, Contact, FolderKanban, Package, Inbox,
   Euro, Rocket, GraduationCap, UserPlus, Shield, TrendingUp, Palette,
@@ -235,7 +237,7 @@ function calculateFlyoutOffset(moduleKey) {
 }
 
 // Simplified SYNC avatar ring (no animation dependencies)
-function DemoSyncAvatar({ size = 36 }) {
+function DemoSyncAvatar({ size = 36, isLight = false }) {
   const r = size / 2;
   const segmentR = r - 2;
   const innerR = r * 0.58;
@@ -272,7 +274,7 @@ function DemoSyncAvatar({ size = 36 }) {
         style={{
           background: 'radial-gradient(circle, rgba(168,85,247,0.3) 0%, transparent 70%)',
           transform: 'scale(1.2)',
-          opacity: 0.3,
+          opacity: isLight ? 0.15 : 0.3,
         }}
       />
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="absolute inset-0">
@@ -303,7 +305,9 @@ function DemoSyncAvatar({ size = 36 }) {
           left: size / 2 - innerR,
           width: innerR * 2,
           height: innerR * 2,
-          background: 'radial-gradient(circle, rgba(168,85,247,0.35) 0%, rgba(0,0,0,0.6) 100%)',
+          background: isLight
+            ? 'radial-gradient(circle, rgba(168,85,247,0.35) 0%, rgba(248,250,252,0.6) 100%)'
+            : 'radial-gradient(circle, rgba(168,85,247,0.35) 0%, rgba(0,0,0,0.6) 100%)',
         }}
       />
     </div>
@@ -311,6 +315,8 @@ function DemoSyncAvatar({ size = 36 }) {
 }
 
 export default function DemoSidebar({ currentPage = 'dashboard', onNavigate }) {
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
   const activeModule = getParentModule(currentPage);
   const moduleConfig = activeModule ? MODULE_SUB_PAGES[activeModule] : null;
 
@@ -332,7 +338,7 @@ export default function DemoSidebar({ currentPage = 'dashboard', onNavigate }) {
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-1 scrollbar-hide">
           {/* SYNC Avatar at top */}
           <div className="flex items-center justify-center min-h-[44px] w-full p-2 mb-2 rounded-xl">
-            <DemoSyncAvatar size={36} />
+            <DemoSyncAvatar size={36} isLight={isLight} />
           </div>
 
           {/* Core Navigation */}
@@ -392,6 +398,9 @@ export default function DemoSidebar({ currentPage = 'dashboard', onNavigate }) {
           </div>
           <div className="flex items-center justify-center min-h-[44px] p-3 rounded-xl text-gray-400 cursor-default" title="Settings">
             <Settings className="w-5 h-5" />
+          </div>
+          <div className="flex items-center justify-center min-h-[44px]">
+            <ThemeToggle />
           </div>
           <div className="flex items-center justify-center min-h-[44px] p-3 rounded-xl text-gray-400 cursor-default" title="Credits">
             <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 flex items-center justify-center flex-shrink-0">

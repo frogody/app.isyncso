@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export default function DemoOverlay({ highlights = [], onDismiss }) {
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
+  const overlayAlpha = isLight ? '0.3' : '0.6';
   const [rects, setRects] = useState([]);
   const [visible, setVisible] = useState(false);
 
@@ -80,7 +84,7 @@ export default function DemoOverlay({ highlights = [], onDismiss }) {
               left: item.rect.left - pad,
               width: item.rect.width + pad * 2,
               height: item.rect.height + pad * 2,
-              boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)',
+              boxShadow: `0 0 0 9999px rgba(0,0,0,${overlayAlpha})`,
               border: '2px solid rgba(6, 182, 212, 0.6)',
               transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
               animation: 'demoPulse 2s ease-in-out infinite',
@@ -127,8 +131,8 @@ export default function DemoOverlay({ highlights = [], onDismiss }) {
       {/* Pulse animation keyframes */}
       <style>{`
         @keyframes demoPulse {
-          0%, 100% { box-shadow: 0 0 0 9999px rgba(0,0,0,0.6), 0 0 0 0 rgba(6, 182, 212, 0.4); }
-          50% { box-shadow: 0 0 0 9999px rgba(0,0,0,0.6), 0 0 12px 4px rgba(6, 182, 212, 0.2); }
+          0%, 100% { box-shadow: 0 0 0 9999px rgba(0,0,0,${overlayAlpha}), 0 0 0 0 rgba(6, 182, 212, 0.4); }
+          50% { box-shadow: 0 0 0 9999px rgba(0,0,0,${overlayAlpha}), 0 0 12px 4px rgba(6, 182, 212, 0.2); }
         }
       `}</style>
     </div>

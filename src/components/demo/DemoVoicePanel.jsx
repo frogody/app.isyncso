@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { t } from '@/constants/demoTranslations';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 // Contextual suggestion chips per page (including sub-pages)
 const PAGE_SUGGESTIONS = {
@@ -94,6 +95,8 @@ export default function DemoVoicePanel({
   language = 'en',
   visitedPages = [],
 }) {
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
   const [textInput, setTextInput] = useState('');
   const [collapsed, setCollapsed] = useState(false);
   const [showChips, setShowChips] = useState(true);
@@ -214,7 +217,9 @@ export default function DemoVoicePanel({
             className="absolute rounded-full"
             style={{
               top: 8, left: 8, width: 24, height: 24,
-              background: 'radial-gradient(circle, rgba(168,85,247,0.4) 0%, rgba(0,0,0,0.7) 100%)',
+              background: isLight
+                ? 'radial-gradient(circle, rgba(168,85,247,0.4) 0%, rgba(248,250,252,0.7) 100%)'
+                : 'radial-gradient(circle, rgba(168,85,247,0.4) 0%, rgba(0,0,0,0.7) 100%)',
             }}
           />
           {/* Connection quality dot */}
