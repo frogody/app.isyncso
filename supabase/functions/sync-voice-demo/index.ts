@@ -416,26 +416,31 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-// High-quality TTS via fal.ai Dia TTS — expressive narration with natural intonation
-async function generateDiaTTS(text: string): Promise<{ audio: string; byteLength: number } | null> {
+// Premium TTS via ElevenLabs v3 (through fal.ai) — ultra-natural human voice
+async function generateElevenLabsTTS(text: string): Promise<{ audio: string; byteLength: number } | null> {
   if (!FAL_KEY) return null;
   try {
     const abort = new AbortController();
-    const timeout = setTimeout(() => abort.abort(), 20000);
-    // Dia uses [S1] speaker tags for single-voice narration
-    const diaText = text.startsWith('[S') ? text : `[S1] ${text}`;
-    const res = await fetch('https://fal.run/fal-ai/dia-tts', {
+    const timeout = setTimeout(() => abort.abort(), 25000);
+    const res = await fetch('https://fal.run/fal-ai/elevenlabs/tts/eleven-v3', {
       method: 'POST',
       signal: abort.signal,
       headers: {
         'Authorization': `Key ${FAL_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text: diaText }),
+      body: JSON.stringify({
+        text,
+        voice: 'Aria',          // Natural, warm, confident — ElevenLabs showcase voice
+        stability: 0.35,         // Lower = more expressive intonation
+        similarity_boost: 0.78,  // Keeps voice identity strong
+        style: 0.45,             // Adds emotional expressiveness
+        speed: 1.0,              // Normal pace
+      }),
     });
     clearTimeout(timeout);
     if (!res.ok) {
-      console.log(`[voice-demo] Dia TTS failed (${res.status})`);
+      console.log(`[voice-demo] ElevenLabs TTS failed (${res.status})`);
       return null;
     }
     const data = await res.json();
@@ -448,7 +453,7 @@ async function generateDiaTTS(text: string): Promise<{ audio: string; byteLength
     }
     return null;
   } catch (e) {
-    console.log('[voice-demo] Dia TTS error:', e?.message || e);
+    console.log('[voice-demo] ElevenLabs TTS error:', e?.message || e);
     return null;
   }
 }
@@ -552,12 +557,12 @@ serve(async (req) => {
     // TTS-only mode (for scripted dialogue)
     if (ttsOnly && ttsText) {
       const ttsLang = requestLanguage || 'en';
-      // For scripted narration, try Dia TTS first (much more expressive/natural)
+      // For scripted narration, try ElevenLabs v3 first (premium human voice)
       let ttsResult: { audio: string; byteLength: number } | null = null;
       if (ttsLang === 'en' && FAL_KEY) {
-        console.log('[voice-demo] Trying Dia TTS for high-quality narration...');
-        ttsResult = await generateDiaTTS(ttsText);
-        if (ttsResult) console.log(`[voice-demo] Dia TTS success (${ttsResult.byteLength} bytes)`);
+        console.log('[voice-demo] Trying ElevenLabs v3 for premium narration...');
+        ttsResult = await generateElevenLabsTTS(ttsText);
+        if (ttsResult) console.log(`[voice-demo] ElevenLabs TTS success (${ttsResult.byteLength} bytes)`);
       }
       // Fallback to Kokoro/Orpheus
       if (!ttsResult) {
