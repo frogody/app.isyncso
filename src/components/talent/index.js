@@ -22,6 +22,8 @@ export { CandidateMatchCard, CandidateMatchList } from './CandidateMatchCard';
 export { default as OutreachMessageModal } from './OutreachMessageModal';
 export { default as OutreachPipeline } from './OutreachPipeline';
 export { default as OutreachQueue } from './OutreachQueue';
+export { default as LinkedInOutreachWorkflow } from './LinkedInOutreachWorkflow';
+export { default as LinkedInCandidateCard } from './LinkedInCandidateCard';
 
 // Analytics Components
 export {

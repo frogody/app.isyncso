@@ -33,6 +33,7 @@ import { MatchReasonCards } from "@/components/talent/campaign";
 import CriteriaWeightingStep, { DEFAULT_WEIGHTS } from "@/components/talent/campaign/CriteriaWeightingStep";
 import SignalMatchingConfig, { INTELLIGENCE_SIGNALS } from "@/components/talent/campaign/SignalMatchingConfig";
 import OutreachCustomizationPanel from "@/components/talent/OutreachCustomizationPanel";
+import LinkedInOutreachWorkflow from "@/components/talent/LinkedInOutreachWorkflow";
 import {
   Megaphone,
   Settings,
@@ -1793,6 +1794,7 @@ export default function TalentCampaignDetail() {
   const [showOutreachSuccess, setShowOutreachSuccess] = useState(false);
   const [createdTaskCount, setCreatedTaskCount] = useState(0);
   const [outreachTasks, setOutreachTasks] = useState([]);
+  const [outreachMode, setOutreachMode] = useState("queue");
 
   // Drawer state for candidate detail
   const [drawerCandidateId, setDrawerCandidateId] = useState(null);
@@ -2339,6 +2341,10 @@ export default function TalentCampaignDetail() {
       if (error) throw error;
 
       setCampaign(data);
+      // Default outreach mode based on campaign type
+      if (data.campaign_type === "linkedin") {
+        setOutreachMode("linkedin");
+      }
       setFormData({
         name: data.name || "",
         description: data.description || "",
@@ -2847,13 +2853,43 @@ export default function TalentCampaignDetail() {
           {/* Outreach Tab */}
           {!isNew && (
             <TabsContent value="outreach" className="m-0">
-              <OutreachQueueTab
-                campaign={campaign}
-                tasks={outreachTasks}
-                onRefresh={fetchOutreachTasks}
-                onSendTask={handleSendTask}
-                onCancelTask={handleCancelTask}
-              />
+              {/* Mode Toggle */}
+              <div className="flex items-center gap-2 mb-4">
+                <Button
+                  size="sm"
+                  variant={outreachMode === "queue" ? "default" : "ghost"}
+                  onClick={() => setOutreachMode("queue")}
+                  className={outreachMode === "queue" ? "bg-red-500 hover:bg-red-600" : "text-zinc-400 hover:text-white"}
+                >
+                  <Mail className="w-4 h-4 mr-1" />
+                  Queue View
+                </Button>
+                <Button
+                  size="sm"
+                  variant={outreachMode === "linkedin" ? "default" : "ghost"}
+                  onClick={() => setOutreachMode("linkedin")}
+                  className={outreachMode === "linkedin" ? "bg-red-500 hover:bg-red-600" : "text-zinc-400 hover:text-white"}
+                >
+                  <Linkedin className="w-4 h-4 mr-1" />
+                  LinkedIn Workflow
+                </Button>
+              </div>
+
+              {outreachMode === "queue" && (
+                <OutreachQueueTab
+                  campaign={campaign}
+                  tasks={outreachTasks}
+                  onRefresh={fetchOutreachTasks}
+                  onSendTask={handleSendTask}
+                  onCancelTask={handleCancelTask}
+                />
+              )}
+              {outreachMode === "linkedin" && (
+                <LinkedInOutreachWorkflow
+                  campaign={campaign}
+                  organizationId={campaign?.organization_id}
+                />
+              )}
             </TabsContent>
           )}
 
