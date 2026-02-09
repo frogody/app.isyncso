@@ -22,6 +22,15 @@ import {
   Image,
   Globe,
   Filter,
+  BookOpen,
+  Flame,
+  Plus,
+  ChevronDown,
+  Tag,
+  Smile,
+  Frown,
+  Meh,
+  Heart,
 } from 'lucide-react';
 
 // ─── SYNC AGENT ───────────────────────────────────────────────────────────────
@@ -345,6 +354,186 @@ export function DemoSyncActivity({ companyName = 'Acme Corp', recipientName = 't
             );
           })}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SYNC JOURNALS ───────────────────────────────────────────────────────────
+
+const moodIcons = {
+  great: { icon: Heart, color: 'text-emerald-400', bg: 'bg-emerald-500/15', label: 'Great' },
+  good: { icon: Smile, color: 'text-cyan-400', bg: 'bg-cyan-500/15', label: 'Good' },
+  neutral: { icon: Meh, color: 'text-zinc-400', bg: 'bg-zinc-700/50', label: 'Neutral' },
+  low: { icon: Frown, color: 'text-amber-400', bg: 'bg-amber-500/15', label: 'Low' },
+};
+
+const journalEntries = [
+  {
+    date: 'Feb 9, 2026',
+    day: 'Sunday',
+    mood: 'great',
+    summary: 'Closed the Meridian Health deal and hit Q1 pipeline target two weeks early. Team morale is high after the all-hands.',
+    highlights: ['Closed $32K deal', 'Pipeline target hit', 'Positive team feedback'],
+    tags: ['Sales', 'Milestone'],
+    expanded: true,
+  },
+  {
+    date: 'Feb 8, 2026',
+    day: 'Saturday',
+    mood: 'good',
+    summary: 'Productive day reviewing proposals and prepping for Monday client meetings. Wrapped up early for a change.',
+    highlights: ['3 proposals reviewed', 'Meeting prep complete'],
+    tags: ['Planning'],
+    expanded: false,
+  },
+  {
+    date: 'Feb 7, 2026',
+    day: 'Friday',
+    mood: 'neutral',
+    summary: 'Mixed day. Good progress on product roadmap alignment but the integration demo hit some snags. Need to follow up with engineering.',
+    highlights: ['Roadmap aligned', 'Demo issues logged'],
+    tags: ['Product', 'Engineering'],
+    expanded: false,
+  },
+  {
+    date: 'Feb 6, 2026',
+    day: 'Thursday',
+    mood: 'good',
+    summary: 'Successfully onboarded two new team members. The training materials SYNC generated saved a ton of time.',
+    highlights: ['2 new hires onboarded', 'Training complete', 'SYNC assisted'],
+    tags: ['Team', 'Onboarding'],
+    expanded: false,
+  },
+  {
+    date: 'Feb 5, 2026',
+    day: 'Wednesday',
+    mood: 'low',
+    summary: 'Tough call with DataBridge - they are pushing back on pricing. Lost the Vertex proposal. Need to regroup on competitive positioning.',
+    highlights: ['DataBridge negotiation ongoing', 'Vertex proposal lost'],
+    tags: ['Sales', 'Challenge'],
+    expanded: false,
+  },
+  {
+    date: 'Feb 4, 2026',
+    day: 'Tuesday',
+    mood: 'great',
+    summary: 'Three back-to-back meetings all went well. Got verbal commitment from Summit Analytics. Campaign emails performing 2x above benchmark.',
+    highlights: ['Summit Analytics committed', 'Campaign 2x benchmark', '3 successful meetings'],
+    tags: ['Sales', 'Marketing'],
+    expanded: false,
+  },
+];
+
+const journalTagStyles = {
+  Sales: 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/15',
+  Milestone: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/15',
+  Planning: 'bg-violet-500/10 text-violet-400 border border-violet-500/15',
+  Product: 'bg-blue-500/10 text-blue-400 border border-blue-500/15',
+  Engineering: 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/15',
+  Team: 'bg-amber-500/10 text-amber-400 border border-amber-500/15',
+  Onboarding: 'bg-teal-500/10 text-teal-400 border border-teal-500/15',
+  Challenge: 'bg-red-500/10 text-red-400 border border-red-500/15',
+  Marketing: 'bg-rose-500/10 text-rose-400 border border-rose-500/15',
+};
+
+export function DemoSyncJournals({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  const streakDays = 12;
+
+  return (
+    <div className="space-y-6" data-demo="sync-journals">
+      {/* Header Row */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          {/* Streak Indicator */}
+          <div className="flex items-center gap-2 px-3.5 py-2 bg-zinc-900/50 border border-zinc-800 rounded-xl">
+            <Flame className="w-4 h-4 text-orange-400" />
+            <span className="text-sm font-semibold text-white">{streakDays}</span>
+            <span className="text-xs text-zinc-500">day streak</span>
+          </div>
+          {/* Mood Summary */}
+          <div className="flex items-center gap-1.5">
+            {Object.entries(moodIcons).map(([key, m]) => {
+              const count = journalEntries.filter(e => e.mood === key).length;
+              if (count === 0) return null;
+              const MoodIcon = m.icon;
+              return (
+                <div key={key} className={`flex items-center gap-1 px-2 py-1 rounded-lg ${m.bg}`}>
+                  <MoodIcon className={`w-3 h-3 ${m.color}`} />
+                  <span className={`text-[10px] font-medium ${m.color}`}>{count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-500/20 text-cyan-400 text-xs font-medium border border-cyan-500/25 cursor-default">
+          <Plus className="w-3.5 h-3.5" /> Write Entry
+        </button>
+      </div>
+
+      {/* Journal Entries */}
+      <div className="space-y-3">
+        {journalEntries.map((entry) => {
+          const mood = moodIcons[entry.mood];
+          const MoodIcon = mood.icon;
+          return (
+            <div key={entry.date} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors">
+              {/* Entry Header */}
+              <div className="px-5 py-4 flex items-center gap-4 cursor-default">
+                {/* Mood */}
+                <div className={`p-2 rounded-xl ${mood.bg} shrink-0`}>
+                  <MoodIcon className={`w-5 h-5 ${mood.color}`} />
+                </div>
+                {/* Date & Summary */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-sm font-semibold text-white">{entry.day}</span>
+                    <span className="text-xs text-zinc-500">{entry.date}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${mood.bg} ${mood.color}`}>{mood.label}</span>
+                  </div>
+                  <p className="text-sm text-zinc-400 leading-relaxed line-clamp-2">{entry.summary}</p>
+                </div>
+                {/* Expand */}
+                <ChevronDown className={`w-4 h-4 text-zinc-600 shrink-0 transition-transform ${entry.expanded ? 'rotate-180' : ''}`} />
+              </div>
+
+              {/* Expanded Content */}
+              {entry.expanded && (
+                <div className="px-5 pb-4 pt-0 space-y-3 border-t border-zinc-800/50 mt-0 pt-3">
+                  {/* AI Summary */}
+                  <div className="flex items-start gap-2.5 p-3 bg-cyan-500/5 border border-cyan-500/10 rounded-xl">
+                    <Sparkles className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
+                    <div>
+                      <span className="text-[10px] text-cyan-400 font-medium uppercase tracking-wider">AI Summary</span>
+                      <p className="text-sm text-zinc-300 mt-1">{entry.summary}</p>
+                    </div>
+                  </div>
+                  {/* Highlights */}
+                  <div>
+                    <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Key Highlights</span>
+                    <div className="flex flex-wrap gap-2 mt-1.5">
+                      {entry.highlights.map((h) => (
+                        <div key={h} className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-800/50 border border-zinc-700/50 rounded-lg">
+                          <CheckCircle2 className="w-3 h-3 text-cyan-400" />
+                          <span className="text-xs text-zinc-300">{h}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Tags */}
+                  <div className="flex items-center gap-1.5">
+                    <Tag className="w-3 h-3 text-zinc-600" />
+                    {entry.tags.map((tag) => (
+                      <span key={tag} className={`text-[10px] px-2 py-0.5 rounded-md ${journalTagStyles[tag] || 'bg-zinc-800 text-zinc-400'}`}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -28,6 +28,12 @@ import {
   Zap,
   TrendingUp,
   ArrowUpRight,
+  DollarSign,
+  Handshake,
+  Calendar,
+  FileText,
+  Phone,
+  Ban,
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -755,6 +761,287 @@ export function DemoTalentOutreach({ companyName = 'Acme Corp', recipientName = 
                   </tr>
                 );
               })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ================================================================== */
+/*  6. DemoTalentClients                                               */
+/* ================================================================== */
+
+export function DemoTalentClients({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  const stats = [
+    { label: 'Total Clients', value: '18', icon: Building2 },
+    { label: 'Open Roles', value: '42', icon: Briefcase },
+    { label: 'Total Contract Value', value: '$1.8M', icon: DollarSign },
+    { label: 'Active Exclusions', value: '6', icon: Ban },
+  ];
+
+  const clients = [
+    { company: 'TechVentures', openRoles: 8, contact: 'Sarah Mitchell', contractValue: '$420K', exclusion: true, status: 'Active' },
+    { company: 'Summit Analytics', openRoles: 5, contact: 'Priya Shah', contractValue: '$280K', exclusion: true, status: 'Active' },
+    { company: 'Meridian Health', openRoles: 12, contact: 'Lisa Tran', contractValue: '$510K', exclusion: false, status: 'Active' },
+    { company: 'Catalyst Labs', openRoles: 3, contact: 'David Nguyen', contractValue: '$150K', exclusion: true, status: 'Active' },
+    { company: 'DataBridge Corp', openRoles: 6, contact: 'Michael Chen', contractValue: '$195K', exclusion: true, status: 'Paused' },
+    { company: 'Orion Systems', openRoles: 4, contact: 'Emma Wilson', contractValue: '$120K', exclusion: false, status: 'Active' },
+    { company: 'Pinnacle Group', openRoles: 2, contact: 'Robert Kim', contractValue: '$85K', exclusion: true, status: 'Active' },
+    { company: 'GreenLeaf Ventures', openRoles: 2, contact: 'Nina Patel', contractValue: '$40K', exclusion: true, status: 'Inactive' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-black p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-red-500/20">
+            <Building2 className="w-6 h-6 text-red-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-white">Clients</h1>
+            <p className="text-zinc-400 mt-0.5 text-sm">Manage recruiting clients for {companyName}.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2 w-56">
+            <Search className="w-4 h-4 text-zinc-500" />
+            <span className="text-sm text-zinc-500">Search clients...</span>
+          </div>
+          <button className="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors cursor-default">
+            <Plus className="w-4 h-4" /> Add Client
+          </button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((s) => (
+          <div key={s.label} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-red-500/15 text-red-400">
+              <s.icon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xl font-bold text-white">{s.value}</p>
+              <p className="text-xs text-zinc-500">{s.label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Clients Table */}
+      <div data-demo="talent-clients" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="text-left text-xs text-zinc-500 border-b border-zinc-800 bg-zinc-900/80">
+                <th className="px-4 py-3 font-medium">Company</th>
+                <th className="px-4 py-3 font-medium text-center">Open Roles</th>
+                <th className="px-4 py-3 font-medium">Contact Person</th>
+                <th className="px-4 py-3 font-medium">Contract Value</th>
+                <th className="px-4 py-3 font-medium text-center">Exclusion</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800/50">
+              {clients.map((c) => (
+                <tr key={c.company} className="hover:bg-zinc-800/20 transition-colors">
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-semibold text-zinc-300 shrink-0">
+                        {c.company.charAt(0)}
+                      </div>
+                      <span className="text-sm font-medium text-white">{c.company}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3.5 text-center">
+                    <span className="text-sm font-bold text-white">{c.openRoles}</span>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <span className="text-sm text-zinc-400">{c.contact}</span>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <span className="text-sm font-semibold text-red-400">{c.contractValue}</span>
+                  </td>
+                  <td className="px-4 py-3.5 text-center">
+                    <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] ${
+                      c.exclusion ? 'bg-red-500/10 text-red-400' : 'bg-zinc-700/50 text-zinc-500'
+                    }`}>
+                      {c.exclusion ? (
+                        <>
+                          <Ban className="w-3 h-3" />
+                          On
+                        </>
+                      ) : (
+                        'Off'
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <span className={`text-xs px-2.5 py-1 rounded-full ${statusStyle(c.status)}`}>
+                      {c.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3.5 text-center">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 cursor-default"><Eye className="w-3.5 h-3.5" /></button>
+                      <button className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 cursor-default"><Phone className="w-3.5 h-3.5" /></button>
+                      <button className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 cursor-default"><MoreHorizontal className="w-3.5 h-3.5" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ================================================================== */
+/*  7. DemoTalentDeals                                                 */
+/* ================================================================== */
+
+export function DemoTalentDeals({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  const pipelineStats = [
+    { label: 'Total Deals', value: '34', icon: Handshake },
+    { label: 'Total Fees', value: '$892K', icon: DollarSign },
+    { label: 'Placement Rate', value: '68%', icon: TrendingUp },
+    { label: 'Avg Days to Close', value: '28', icon: Clock },
+  ];
+
+  const dealStageColors = {
+    Negotiation: 'bg-amber-500/15 text-amber-400',
+    Offer: 'bg-blue-500/15 text-blue-400',
+    Placed: 'bg-emerald-500/15 text-emerald-400',
+    Invoiced: 'bg-red-500/15 text-red-400',
+    Lost: 'bg-zinc-700/50 text-zinc-400',
+  };
+
+  const deals = [
+    { candidate: 'Elena Rodriguez', client: 'TechVentures', role: 'Senior Backend Engineer', fee: '$32,000', stage: 'Placed', expectedClose: 'Jan 30, 2026' },
+    { candidate: 'David Kim', client: 'Summit Analytics', role: 'VP of Product', fee: '$58,000', stage: 'Offer', expectedClose: 'Feb 5, 2026' },
+    { candidate: 'Sophia Nguyen', client: 'Meridian Health', role: 'Lead Data Scientist', fee: '$42,000', stage: 'Negotiation', expectedClose: 'Feb 12, 2026' },
+    { candidate: 'Marcus Johnson', client: 'Catalyst Labs', role: 'Director of Sales', fee: '$48,000', stage: 'Invoiced', expectedClose: 'Jan 18, 2026' },
+    { candidate: 'Aisha Patel', client: 'DataBridge Corp', role: 'Staff Engineer', fee: '$35,000', stage: 'Placed', expectedClose: 'Jan 25, 2026' },
+    { candidate: 'Tom van der Berg', client: 'Orion Systems', role: 'CTO', fee: '$75,000', stage: 'Negotiation', expectedClose: 'Feb 20, 2026' },
+    { candidate: 'Laura Chen', client: 'Pinnacle Group', role: 'Product Manager', fee: '$28,000', stage: 'Lost', expectedClose: 'Jan 15, 2026' },
+    { candidate: 'James Park', client: 'TechVentures', role: 'Engineering Manager', fee: '$38,000', stage: 'Offer', expectedClose: 'Feb 8, 2026' },
+  ];
+
+  const stageCounts = Object.entries(
+    deals.reduce((acc, d) => {
+      acc[d.stage] = (acc[d.stage] || 0) + 1;
+      return acc;
+    }, {})
+  );
+
+  return (
+    <div className="min-h-screen bg-black p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-red-500/20">
+            <Handshake className="w-6 h-6 text-red-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-white">Deals & Placements</h1>
+            <p className="text-zinc-400 mt-0.5 text-sm">Track recruiting deals and placement fees for {companyName}.</p>
+          </div>
+        </div>
+        <button className="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors cursor-default">
+          <Plus className="w-4 h-4" /> New Deal
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {pipelineStats.map((s) => (
+          <div key={s.label} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-red-500/15 text-red-400">
+              <s.icon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xl font-bold text-white">{s.value}</p>
+              <p className="text-xs text-zinc-500">{s.label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Deal Pipeline Summary */}
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
+        <h2 className="text-white font-semibold mb-4">Deal Pipeline</h2>
+        <div className="flex items-center gap-2">
+          {stageCounts.map(([stage, count]) => (
+            <div key={stage} className="flex-1 text-center p-3 rounded-xl bg-zinc-800/30 border border-zinc-700/40">
+              <p className="text-lg font-bold text-white">{count}</p>
+              <p className="text-[10px] text-zinc-500">{stage}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Deals Table */}
+      <div data-demo="talent-deals" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="text-left text-xs text-zinc-500 border-b border-zinc-800 bg-zinc-900/80">
+                <th className="px-4 py-3 font-medium">Candidate</th>
+                <th className="px-4 py-3 font-medium">Client</th>
+                <th className="px-4 py-3 font-medium">Role</th>
+                <th className="px-4 py-3 font-medium">Fee</th>
+                <th className="px-4 py-3 font-medium">Stage</th>
+                <th className="px-4 py-3 font-medium">Expected Close</th>
+                <th className="px-4 py-3 font-medium text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800/50">
+              {deals.map((d) => (
+                <tr key={d.candidate + d.client} className="hover:bg-zinc-800/20 transition-colors">
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-semibold text-zinc-300 shrink-0">
+                        {d.candidate.split(' ').map((w) => w[0]).join('')}
+                      </div>
+                      <span className="text-sm font-medium text-white">{d.candidate}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center gap-1.5 text-sm text-zinc-300">
+                      <Building2 className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                      {d.client}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3.5 text-sm text-zinc-400">{d.role}</td>
+                  <td className="px-4 py-3.5">
+                    <span className="text-sm font-semibold text-red-400">{d.fee}</span>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <span className={`text-xs px-2.5 py-1 rounded-full ${dealStageColors[d.stage]}`}>
+                      {d.stage}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+                      <Calendar className="w-3 h-3" />
+                      {d.expectedClose}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3.5 text-center">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 cursor-default"><Eye className="w-3.5 h-3.5" /></button>
+                      <button className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 cursor-default"><FileText className="w-3.5 h-3.5" /></button>
+                      <button className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 cursor-default"><MoreHorizontal className="w-3.5 h-3.5" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

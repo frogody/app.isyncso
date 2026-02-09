@@ -25,6 +25,11 @@ import {
   Target,
   Megaphone,
   MessageSquare,
+  Sparkles,
+  Zap,
+  RefreshCw,
+  Database,
+  Search,
 } from 'lucide-react';
 
 // ─── INVESTORS ────────────────────────────────────────────────────────────────
@@ -525,6 +530,138 @@ export function DemoRaiseCampaigns({ companyName = 'Acme Corp', recipientName = 
                   <Mail className="w-3 h-3" />
                   <span>{step.subject.replace('{companyName}', companyName)}</span>
                 </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ENRICH ──────────────────────────────────────────────────────────────────
+
+const enrichStats = [
+  { label: 'Enriched Today', value: '34', icon: Sparkles, color: 'bg-orange-500/15 text-orange-400' },
+  { label: 'Success Rate', value: '92%', icon: CheckCircle2, color: 'bg-emerald-500/15 text-emerald-400' },
+  { label: 'Credits Remaining', value: '1,240', icon: Zap, color: 'bg-orange-500/15 text-orange-400' },
+];
+
+const enrichQueueStatusStyles = {
+  Completed: 'bg-emerald-500/15 text-emerald-400',
+  Processing: 'bg-orange-500/15 text-orange-400',
+  Queued: 'bg-zinc-700/50 text-zinc-300',
+  Failed: 'bg-red-500/15 text-red-400',
+};
+
+const enrichQueue = [
+  { investor: 'Emily Zhang', firm: 'Lightspeed Ventures', status: 'Completed', dataPoints: 18, source: 'LinkedIn + Crunchbase', enrichedAt: '2 min ago' },
+  { investor: 'Dalton Caldwell', firm: 'Y Combinator', status: 'Completed', dataPoints: 24, source: 'LinkedIn + PitchBook', enrichedAt: '8 min ago' },
+  { investor: 'Marcus Eriksson', firm: 'Atomico', status: 'Processing', dataPoints: 12, source: 'LinkedIn', enrichedAt: '...' },
+  { investor: 'Rachel Chen', firm: 'Accel Partners', status: 'Queued', dataPoints: 0, source: '--', enrichedAt: '--' },
+  { investor: 'David Park', firm: 'Andreessen Horowitz', status: 'Queued', dataPoints: 0, source: '--', enrichedAt: '--' },
+  { investor: 'Sophie Laurent', firm: 'Index Ventures', status: 'Failed', dataPoints: 0, source: 'LinkedIn', enrichedAt: '15 min ago' },
+  { investor: 'Jessica Schultz', firm: 'Northzone', status: 'Completed', dataPoints: 21, source: 'LinkedIn + Crunchbase', enrichedAt: '22 min ago' },
+  { investor: 'Sarah Lin', firm: 'Sequoia Capital', status: 'Completed', dataPoints: 27, source: 'LinkedIn + PitchBook', enrichedAt: '30 min ago' },
+];
+
+const dataPointCategories = [
+  { label: 'Contact Info', count: 89, pct: 94 },
+  { label: 'Investment History', count: 72, pct: 76 },
+  { label: 'Portfolio Companies', count: 68, pct: 72 },
+  { label: 'Social Profiles', count: 84, pct: 89 },
+  { label: 'Board Seats', count: 45, pct: 47 },
+];
+
+export function DemoRaiseEnrich({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  return (
+    <div className="space-y-6" data-demo="raise-enrich">
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {enrichStats.map((stat) => (
+          <div key={stat.label} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 flex items-center gap-4">
+            <div className={`p-2.5 rounded-xl ${stat.color}`}>
+              <stat.icon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xl font-bold text-white">{stat.value}</p>
+              <p className="text-xs text-zinc-500">{stat.label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Action Bar */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              readOnly
+              placeholder="Search investors..."
+              className="bg-zinc-900/80 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-zinc-400 placeholder-zinc-600 w-56 cursor-default focus:outline-none"
+            />
+          </div>
+        </div>
+        <button className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-orange-500/20 text-orange-400 text-sm font-medium border border-orange-500/25 cursor-default">
+          <RefreshCw className="w-3.5 h-3.5" /> Start Enrichment
+        </button>
+      </div>
+
+      {/* Enrichment Queue Table */}
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-white">Enrichment Queue</h2>
+          <span className="text-[11px] text-zinc-500">{enrichQueue.length} investors</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="text-left text-[11px] text-zinc-500 border-b border-zinc-800/40 bg-zinc-900/80 uppercase tracking-wider">
+                <th className="px-5 py-3 font-medium">Investor</th>
+                <th className="px-5 py-3 font-medium">Firm</th>
+                <th className="px-5 py-3 font-medium">Status</th>
+                <th className="px-5 py-3 font-medium">Data Points</th>
+                <th className="px-5 py-3 font-medium">Source</th>
+                <th className="px-5 py-3 font-medium">Enriched</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800/30">
+              {enrichQueue.map((entry) => (
+                <tr key={entry.investor} className="hover:bg-zinc-800/20 transition-colors">
+                  <td className="px-5 py-3.5 text-sm font-medium text-white">{entry.investor}</td>
+                  <td className="px-5 py-3.5 text-sm text-zinc-400">{entry.firm}</td>
+                  <td className="px-5 py-3.5">
+                    <span className={`text-[11px] px-2.5 py-1 rounded-full ${enrichQueueStatusStyles[entry.status]}`}>{entry.status}</span>
+                  </td>
+                  <td className="px-5 py-3.5 text-sm text-white font-semibold">
+                    {entry.dataPoints > 0 ? entry.dataPoints : '--'}
+                  </td>
+                  <td className="px-5 py-3.5 text-xs text-zinc-500">{entry.source}</td>
+                  <td className="px-5 py-3.5 text-xs text-zinc-500">{entry.enrichedAt}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Data Points Breakdown */}
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Database className="w-4 h-4 text-orange-400" />
+          <h2 className="text-sm font-semibold text-white">Data Coverage</h2>
+        </div>
+        <div className="space-y-3">
+          {dataPointCategories.map((cat) => (
+            <div key={cat.label} className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-zinc-400">{cat.label}</span>
+                <span className="text-xs text-zinc-500">{cat.count} found ({cat.pct}%)</span>
+              </div>
+              <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-full bg-orange-500/70 rounded-full" style={{ width: `${cat.pct}%` }} />
               </div>
             </div>
           ))}

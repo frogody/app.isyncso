@@ -32,25 +32,28 @@ import DemoIntegrations from '@/components/demo/pages/DemoIntegrations';
 import DemoSync from '@/components/demo/pages/DemoSync';
 
 // Finance sub-pages
-import { DemoFinanceInvoices, DemoFinanceProposals, DemoFinanceExpenses, DemoFinanceLedger, DemoFinancePayables, DemoFinanceReports } from '@/components/demo/pages/DemoFinanceSub';
+import { DemoFinanceInvoices, DemoFinanceProposals, DemoFinanceExpenses, DemoFinanceLedger, DemoFinancePayables, DemoFinanceReports, DemoFinanceOverview, DemoFinanceAccounts, DemoFinanceVendors, DemoFinanceBills, DemoFinanceBillPayments, DemoFinanceSubscriptions, DemoFinanceJournalEntries } from '@/components/demo/pages/DemoFinanceSub';
 // Growth sub-pages
-import { DemoGrowthPipeline, DemoGrowthCampaigns, DemoGrowthSignals, DemoGrowthOpportunities } from '@/components/demo/pages/DemoGrowthSub';
+import { DemoGrowthPipeline, DemoGrowthCampaigns, DemoGrowthSignals, DemoGrowthOpportunities, DemoGrowthProspects, DemoGrowthAssistant, DemoGrowthResearch, DemoGrowthTemplates, DemoGrowthNests, DemoGrowthEnrich, DemoGrowthFlows } from '@/components/demo/pages/DemoGrowthSub';
 // CRM sub-pages
-import { DemoCRMLeads, DemoCRMProspects, DemoCRMCustomers, DemoCRMCompanies } from '@/components/demo/pages/DemoCRMSub';
+import { DemoCRMLeads, DemoCRMProspects, DemoCRMCustomers, DemoCRMCompanies, DemoCRMSuppliers, DemoCRMPartners, DemoCRMCandidatesCRM, DemoCRMTargets, DemoCRMImport } from '@/components/demo/pages/DemoCRMSub';
 // Talent sub-pages
-import { DemoTalentCandidates, DemoTalentProjects, DemoTalentCampaigns, DemoTalentNests, DemoTalentOutreach } from '@/components/demo/pages/DemoTalentSub';
+import { DemoTalentCandidates, DemoTalentProjects, DemoTalentCampaigns, DemoTalentNests, DemoTalentOutreach, DemoTalentClients, DemoTalentDeals } from '@/components/demo/pages/DemoTalentSub';
 // Learn sub-pages
-import { DemoLearnCourses, DemoLearnSkills, DemoLearnBuilder, DemoLearnCertifications } from '@/components/demo/pages/DemoLearnSub';
+import { DemoLearnCourses, DemoLearnSkills, DemoLearnBuilder, DemoLearnCertifications, DemoLearnAITools, DemoLearnAssistant, DemoLearnLeaderboard } from '@/components/demo/pages/DemoLearnSub';
 // Create sub-pages
 import { DemoCreateBranding, DemoCreateImages, DemoCreateVideos, DemoCreateLibrary } from '@/components/demo/pages/DemoCreateSub';
 // Products sub-pages
-import { DemoProductsDigital, DemoProductsPhysical, DemoProductsShipping, DemoProductsReceiving, DemoProductsInventory } from '@/components/demo/pages/DemoProductsSub';
+import { DemoProductsDigital, DemoProductsPhysical, DemoProductsShipping, DemoProductsReceiving, DemoProductsInventory, DemoProductsStockPurchases, DemoProductsImport } from '@/components/demo/pages/DemoProductsSub';
 // Raise sub-pages
-import { DemoRaiseInvestors, DemoRaisePitchDecks, DemoRaiseDataRoom, DemoRaiseCampaigns } from '@/components/demo/pages/DemoRaiseSub';
+import { DemoRaiseInvestors, DemoRaisePitchDecks, DemoRaiseDataRoom, DemoRaiseCampaigns, DemoRaiseEnrich } from '@/components/demo/pages/DemoRaiseSub';
 // Sentinel sub-pages
 import { DemoSentinelSystems, DemoSentinelRoadmap, DemoSentinelDocuments } from '@/components/demo/pages/DemoSentinelSub';
 // Sync sub-pages
-import { DemoSyncAgent, DemoSyncActivity } from '@/components/demo/pages/DemoSyncSub';
+import { DemoSyncAgent, DemoSyncActivity, DemoSyncJournals } from '@/components/demo/pages/DemoSyncSub';
+// Standalone pages
+import DemoProjects from '@/components/demo/pages/DemoProjects';
+import DemoAnalytics from '@/components/demo/pages/DemoAnalytics';
 
 import useDemoOrchestrator from '@/hooks/useDemoOrchestrator';
 import useDemoVoice from '@/hooks/useDemoVoice';
@@ -71,37 +74,63 @@ const PAGE_COMPONENTS = {
   sentinel: DemoSentinel,
   inbox: DemoInbox,
   tasks: DemoTasks,
+  projects: DemoProjects,
+  analytics: DemoAnalytics,
   integrations: DemoIntegrations,
   'sync-showcase': DemoSync,
   sync: DemoSync,
   // Finance sub-pages
+  'finance-overview': DemoFinanceOverview,
   'finance-invoices': DemoFinanceInvoices,
   'finance-proposals': DemoFinanceProposals,
   'finance-expenses': DemoFinanceExpenses,
   'finance-ledger': DemoFinanceLedger,
   'finance-payables': DemoFinancePayables,
   'finance-reports': DemoFinanceReports,
+  'finance-accounts': DemoFinanceAccounts,
+  'finance-vendors': DemoFinanceVendors,
+  'finance-bills': DemoFinanceBills,
+  'finance-billpayments': DemoFinanceBillPayments,
+  'finance-subscriptions': DemoFinanceSubscriptions,
+  'finance-journalentries': DemoFinanceJournalEntries,
   // Growth sub-pages
   'growth-pipeline': DemoGrowthPipeline,
   'growth-campaigns': DemoGrowthCampaigns,
   'growth-signals': DemoGrowthSignals,
   'growth-opportunities': DemoGrowthOpportunities,
+  'growth-prospects': DemoGrowthProspects,
+  'growth-assistant': DemoGrowthAssistant,
+  'growth-research': DemoGrowthResearch,
+  'growth-templates': DemoGrowthTemplates,
+  'growth-nests': DemoGrowthNests,
+  'growth-enrich': DemoGrowthEnrich,
+  'growth-flows': DemoGrowthFlows,
   // CRM sub-pages
   'crm-leads': DemoCRMLeads,
   'crm-prospects': DemoCRMProspects,
   'crm-customers': DemoCRMCustomers,
   'crm-companies': DemoCRMCompanies,
+  'crm-suppliers': DemoCRMSuppliers,
+  'crm-partners': DemoCRMPartners,
+  'crm-candidates': DemoCRMCandidatesCRM,
+  'crm-targets': DemoCRMTargets,
+  'crm-import': DemoCRMImport,
   // Talent sub-pages
   'talent-candidates': DemoTalentCandidates,
   'talent-projects': DemoTalentProjects,
   'talent-campaigns': DemoTalentCampaigns,
   'talent-nests': DemoTalentNests,
   'talent-outreach': DemoTalentOutreach,
+  'talent-clients': DemoTalentClients,
+  'talent-deals': DemoTalentDeals,
   // Learn sub-pages
   'learn-courses': DemoLearnCourses,
   'learn-skills': DemoLearnSkills,
   'learn-builder': DemoLearnBuilder,
   'learn-certifications': DemoLearnCertifications,
+  'learn-aitools': DemoLearnAITools,
+  'learn-assistant': DemoLearnAssistant,
+  'learn-leaderboard': DemoLearnLeaderboard,
   // Create sub-pages
   'create-branding': DemoCreateBranding,
   'create-images': DemoCreateImages,
@@ -113,11 +142,14 @@ const PAGE_COMPONENTS = {
   'products-shipping': DemoProductsShipping,
   'products-receiving': DemoProductsReceiving,
   'products-inventory': DemoProductsInventory,
+  'products-stockpurchases': DemoProductsStockPurchases,
+  'products-import': DemoProductsImport,
   // Raise sub-pages
   'raise-investors': DemoRaiseInvestors,
   'raise-pitchdecks': DemoRaisePitchDecks,
   'raise-dataroom': DemoRaiseDataRoom,
   'raise-campaigns': DemoRaiseCampaigns,
+  'raise-enrich': DemoRaiseEnrich,
   // Sentinel sub-pages
   'sentinel-systems': DemoSentinelSystems,
   'sentinel-roadmap': DemoSentinelRoadmap,
@@ -125,6 +157,7 @@ const PAGE_COMPONENTS = {
   // Sync sub-pages
   'sync-agent': DemoSyncAgent,
   'sync-activity': DemoSyncActivity,
+  'sync-journals': DemoSyncJournals,
 };
 
 // Resolve fuzzy page keys from LLM output to exact PAGE_COMPONENTS keys
@@ -143,6 +176,8 @@ const PAGE_KEY_ALIASES = {
   'ai compliance': 'sentinel', compliance: 'sentinel',
   'unified inbox': 'inbox', messages: 'inbox', messaging: 'inbox',
   'task management': 'tasks', task: 'tasks',
+  'project management': 'projects', 'project board': 'projects', 'all projects': 'projects',
+  'analytics dashboard': 'analytics', 'business analytics': 'analytics', 'data analytics': 'analytics',
   'integration': 'integrations', apps: 'integrations',
   'sync showcase': 'sync-showcase', 'meet sync': 'sync-showcase',
   // Finance sub-page aliases
@@ -152,26 +187,50 @@ const PAGE_KEY_ALIASES = {
   ledger: 'finance-ledger', 'general ledger': 'finance-ledger', 'chart of accounts': 'finance-ledger',
   payables: 'finance-payables', 'accounts payable': 'finance-payables', 'ap aging': 'finance-payables',
   'financial reports': 'finance-reports', 'finance reports': 'finance-reports',
+  'finance overview': 'finance-overview', 'financial overview': 'finance-overview',
+  'bank accounts': 'finance-accounts', 'finance accounts': 'finance-accounts',
+  vendors: 'finance-vendors', 'vendor management': 'finance-vendors',
+  bills: 'finance-bills', 'bill management': 'finance-bills',
+  'bill payments': 'finance-billpayments', 'pay bills': 'finance-billpayments',
+  subscriptions: 'finance-subscriptions', 'recurring payments': 'finance-subscriptions',
+  'journal entries': 'finance-journalentries', 'manual entries': 'finance-journalentries',
   // Growth sub-page aliases
   campaigns: 'growth-campaigns', 'outbound campaigns': 'growth-campaigns', 'campaign management': 'growth-campaigns',
   signals: 'growth-signals', 'customer signals': 'growth-signals', 'buying signals': 'growth-signals', 'growth signals': 'growth-signals',
   opportunities: 'growth-opportunities', 'opportunity tracking': 'growth-opportunities',
+  'growth prospects': 'growth-prospects',
+  'growth assistant': 'growth-assistant', 'ai growth assistant': 'growth-assistant',
+  'market research': 'growth-research', 'growth research': 'growth-research',
+  'outreach templates': 'growth-templates', 'growth templates': 'growth-templates',
+  'data nests': 'growth-nests', 'growth nests': 'growth-nests',
+  'contact enrichment': 'growth-enrich', 'growth enrich': 'growth-enrich',
+  'outreach flows': 'growth-flows', 'growth flows': 'growth-flows', 'automation flows': 'growth-flows',
   // CRM sub-page aliases
   leads: 'crm-leads', 'lead management': 'crm-leads', 'lead scoring': 'crm-leads',
   prospects: 'crm-prospects', 'prospect list': 'crm-prospects',
   customers: 'crm-customers', 'customer management': 'crm-customers', 'customer health': 'crm-customers',
   companies: 'crm-companies', 'company profiles': 'crm-companies', 'company intel': 'crm-companies',
+  suppliers: 'crm-suppliers', 'supplier management': 'crm-suppliers',
+  partners: 'crm-partners', 'partner management': 'crm-partners',
+  'crm candidates': 'crm-candidates',
+  targets: 'crm-targets', 'target accounts': 'crm-targets',
+  'crm import': 'crm-import', 'import contacts': 'crm-import',
   // Talent sub-page aliases
   candidates: 'talent-candidates', 'candidate database': 'talent-candidates', 'candidate list': 'talent-candidates',
   'talent projects': 'talent-projects', 'recruitment projects': 'talent-projects', 'open roles': 'talent-projects',
   'talent campaigns': 'talent-campaigns', 'outreach campaigns': 'talent-campaigns',
   nests: 'talent-nests', 'candidate pools': 'talent-nests', 'talent nests': 'talent-nests', 'nest marketplace': 'talent-nests',
   outreach: 'talent-outreach', 'sms outreach': 'talent-outreach', 'email outreach': 'talent-outreach',
+  'talent clients': 'talent-clients', 'recruitment clients': 'talent-clients',
+  'talent deals': 'talent-deals', 'placement deals': 'talent-deals',
   // Learn sub-page aliases
   courses: 'learn-courses', 'course catalog': 'learn-courses', 'course list': 'learn-courses',
   skills: 'learn-skills', 'skill matrix': 'learn-skills', 'skill tracking': 'learn-skills',
   'course builder': 'learn-builder', 'learning builder': 'learn-builder',
   certifications: 'learn-certifications', certificates: 'learn-certifications',
+  'ai tools': 'learn-aitools', 'learning tools': 'learn-aitools',
+  'learn assistant': 'learn-assistant', 'learning assistant': 'learn-assistant',
+  leaderboard: 'learn-leaderboard', 'learning leaderboard': 'learn-leaderboard',
   // Create sub-page aliases
   branding: 'create-branding', 'brand kit': 'create-branding', 'brand assets': 'create-branding',
   images: 'create-images', 'image generation': 'create-images', 'ai images': 'create-images',
@@ -183,11 +242,14 @@ const PAGE_KEY_ALIASES = {
   shipping: 'products-shipping', 'shipping management': 'products-shipping',
   receiving: 'products-receiving', 'receiving log': 'products-receiving',
   inventory: 'products-inventory', 'inventory management': 'products-inventory', 'stock levels': 'products-inventory',
+  'stock purchases': 'products-stockpurchases', 'purchase orders': 'products-stockpurchases',
+  'product import': 'products-import', 'import products': 'products-import',
   // Raise sub-page aliases
   investors: 'raise-investors', 'investor pipeline': 'raise-investors', 'investor database': 'raise-investors',
   'pitch decks': 'raise-pitchdecks', 'pitch deck': 'raise-pitchdecks', pitchdecks: 'raise-pitchdecks',
   'data room': 'raise-dataroom', dataroom: 'raise-dataroom',
   'raise campaigns': 'raise-campaigns', 'investor outreach': 'raise-campaigns',
+  'investor enrichment': 'raise-enrich', 'raise enrich': 'raise-enrich',
   // Sentinel sub-page aliases
   'ai systems': 'sentinel-systems', 'system inventory': 'sentinel-systems', 'ai inventory': 'sentinel-systems',
   roadmap: 'sentinel-roadmap', 'compliance roadmap': 'sentinel-roadmap',
@@ -195,6 +257,7 @@ const PAGE_KEY_ALIASES = {
   // Sync sub-page aliases
   'sync agent': 'sync-agent', agent: 'sync-agent',
   'sync activity': 'sync-activity', 'activity log': 'sync-activity',
+  'daily journals': 'sync-journals', journals: 'sync-journals', 'sync journals': 'sync-journals',
 };
 
 function resolvePageKey(raw) {
@@ -231,6 +294,8 @@ const PAGE_HIGHLIGHTS = {
   sentinel: [{ selector: 'compliance', tooltip: 'EU AI Act compliance tracking' }],
   inbox: [{ selector: 'conversations', tooltip: 'Unified inbox across all channels' }],
   tasks: [{ selector: 'task-board', tooltip: 'AI-prioritized task management' }],
+  projects: [{ selector: 'projects-board', tooltip: 'Project management dashboard' }],
+  analytics: [{ selector: 'analytics-dashboard', tooltip: 'Cross-module analytics and insights' }],
   integrations: [{ selector: 'integrations', tooltip: '30+ third-party integrations' }],
   // Finance sub-pages
   'finance-invoices': [{ selector: 'invoices-list', tooltip: 'All invoices with status tracking' }],
@@ -239,27 +304,51 @@ const PAGE_HIGHLIGHTS = {
   'finance-ledger': [{ selector: 'ledger', tooltip: 'Full chart of accounts' }],
   'finance-payables': [{ selector: 'payables-list', tooltip: 'Vendor payment tracking' }],
   'finance-reports': [{ selector: 'reports-grid', tooltip: 'Financial reports and analytics' }],
+  'finance-overview': [{ selector: 'finance-overview', tooltip: 'Financial overview and KPIs' }],
+  'finance-accounts': [{ selector: 'accounts-list', tooltip: 'Bank and financial accounts' }],
+  'finance-vendors': [{ selector: 'vendors-list', tooltip: 'Vendor management and payments' }],
+  'finance-bills': [{ selector: 'bills-list', tooltip: 'Bill tracking and approvals' }],
+  'finance-billpayments': [{ selector: 'bill-payments', tooltip: 'Bill payment scheduling' }],
+  'finance-subscriptions': [{ selector: 'subscriptions-list', tooltip: 'Recurring subscription management' }],
+  'finance-journalentries': [{ selector: 'journal-entries', tooltip: 'Manual journal entries' }],
   // Growth sub-pages
   'growth-pipeline': [{ selector: 'pipeline-board', tooltip: 'Deal pipeline board view' }],
   'growth-campaigns': [{ selector: 'campaigns-list', tooltip: 'Outbound campaign management' }],
   'growth-signals': [{ selector: 'signals-feed', tooltip: 'AI-detected buying signals' }],
   'growth-opportunities': [{ selector: 'opportunities-table', tooltip: 'Opportunity tracking and forecast' }],
+  'growth-prospects': [{ selector: 'growth-prospects', tooltip: 'AI-enriched prospect database' }],
+  'growth-assistant': [{ selector: 'growth-assistant', tooltip: 'AI growth strategy assistant' }],
+  'growth-research': [{ selector: 'growth-research', tooltip: 'Market and competitor research' }],
+  'growth-templates': [{ selector: 'growth-templates', tooltip: 'Outreach and campaign templates' }],
+  'growth-nests': [{ selector: 'growth-nests', tooltip: 'Data enrichment pools' }],
+  'growth-enrich': [{ selector: 'growth-enrich', tooltip: 'Contact and company enrichment' }],
+  'growth-flows': [{ selector: 'growth-flows', tooltip: 'Automated outreach workflows' }],
   // CRM sub-pages
   'crm-leads': [{ selector: 'leads-table', tooltip: 'Lead scoring and management' }],
   'crm-prospects': [{ selector: 'prospects-grid', tooltip: 'Prospect enrichment pipeline' }],
   'crm-customers': [{ selector: 'customers-table', tooltip: 'Customer health monitoring' }],
   'crm-companies': [{ selector: 'companies-grid', tooltip: 'Company intelligence profiles' }],
+  'crm-suppliers': [{ selector: 'suppliers-table', tooltip: 'Supplier relationship management' }],
+  'crm-partners': [{ selector: 'partners-table', tooltip: 'Partner ecosystem management' }],
+  'crm-candidates': [{ selector: 'crm-candidates', tooltip: 'CRM candidate contacts' }],
+  'crm-targets': [{ selector: 'targets-table', tooltip: 'Target account tracking' }],
+  'crm-import': [{ selector: 'import-wizard', tooltip: 'Bulk contact import tools' }],
   // Talent sub-pages
   'talent-candidates': [{ selector: 'candidates-table', tooltip: 'AI-matched candidate database' }],
   'talent-projects': [{ selector: 'projects-grid', tooltip: 'Recruitment project tracking' }],
   'talent-campaigns': [{ selector: 'talent-campaigns', tooltip: 'Outreach campaign analytics' }],
   'talent-nests': [{ selector: 'nests-marketplace', tooltip: 'Candidate pool marketplace' }],
   'talent-outreach': [{ selector: 'outreach-messages', tooltip: 'Multi-channel outreach tracking' }],
+  'talent-clients': [{ selector: 'clients-table', tooltip: 'Recruitment client management' }],
+  'talent-deals': [{ selector: 'deals-table', tooltip: 'Placement deal tracking' }],
   // Learn sub-pages
   'learn-courses': [{ selector: 'course-catalog', tooltip: 'Browse and enroll in courses' }],
   'learn-skills': [{ selector: 'skills-matrix', tooltip: 'Team skill competency overview' }],
   'learn-builder': [{ selector: 'course-builder', tooltip: 'Create custom training content' }],
   'learn-certifications': [{ selector: 'certifications-grid', tooltip: 'Verified certifications tracking' }],
+  'learn-aitools': [{ selector: 'ai-tools', tooltip: 'AI-powered learning tools' }],
+  'learn-assistant': [{ selector: 'learn-assistant', tooltip: 'AI learning assistant' }],
+  'learn-leaderboard': [{ selector: 'leaderboard', tooltip: 'Team learning leaderboard' }],
   // Create sub-pages
   'create-branding': [{ selector: 'brand-kit', tooltip: 'Brand colors, fonts, and guidelines' }],
   'create-images': [{ selector: 'image-generator', tooltip: 'AI image generation with prompts' }],
@@ -271,11 +360,14 @@ const PAGE_HIGHLIGHTS = {
   'products-shipping': [{ selector: 'shipping-table', tooltip: 'Shipment tracking and carriers' }],
   'products-receiving': [{ selector: 'receiving-log', tooltip: 'Supplier receiving and QC' }],
   'products-inventory': [{ selector: 'inventory-table', tooltip: 'Stock levels and reorder alerts' }],
+  'products-stockpurchases': [{ selector: 'stock-purchases', tooltip: 'Stock purchase order management' }],
+  'products-import': [{ selector: 'products-import', tooltip: 'Bulk product import tools' }],
   // Raise sub-pages
   'raise-investors': [{ selector: 'investor-pipeline', tooltip: 'Investor relationship tracking' }],
   'raise-pitchdecks': [{ selector: 'pitch-decks', tooltip: 'Deck analytics and viewer tracking' }],
   'raise-dataroom': [{ selector: 'data-room', tooltip: 'Encrypted document sharing' }],
   'raise-campaigns': [{ selector: 'raise-campaigns', tooltip: 'Investor outreach campaigns' }],
+  'raise-enrich': [{ selector: 'raise-enrich', tooltip: 'Investor data enrichment' }],
   // Sentinel sub-pages
   'sentinel-systems': [{ selector: 'ai-systems', tooltip: 'Register and classify AI systems' }],
   'sentinel-roadmap': [{ selector: 'compliance-roadmap', tooltip: 'Regulatory deadline tracking' }],
@@ -283,6 +375,7 @@ const PAGE_HIGHLIGHTS = {
   // Sync sub-pages
   'sync-agent': [{ selector: 'sync-agent', tooltip: 'SYNC AI assistant interface' }],
   'sync-activity': [{ selector: 'sync-activity', tooltip: 'SYNC action history and stats' }],
+  'sync-journals': [{ selector: 'daily-journals', tooltip: 'AI-generated daily journals' }],
 };
 
 export default function DemoExperience() {

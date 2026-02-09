@@ -23,6 +23,17 @@ import {
   Shield,
   Eye,
   Pen,
+  Cpu,
+  Sparkles,
+  MessageSquare,
+  Bot,
+  Zap,
+  Trophy,
+  Flame,
+  Crown,
+  Medal,
+  Brain,
+  ListChecks,
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -656,6 +667,401 @@ export function DemoLearnCertifications({ companyName = 'Acme Corp', recipientNa
               </div>
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ================================================================== */
+/*  5. DemoLearnAITools                                                */
+/* ================================================================== */
+
+export function DemoLearnAITools({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  const aiTools = [
+    {
+      name: 'AI Tutor',
+      icon: Bot,
+      description: 'Personalized 1-on-1 tutoring powered by AI. Ask questions, get explanations, and practice concepts in real-time.',
+      usageCount: 1284,
+      activeUsers: 89,
+      satisfaction: 94,
+    },
+    {
+      name: 'Quiz Generator',
+      icon: ListChecks,
+      description: 'Automatically generate quizzes from any course content. Supports multiple choice, true/false, and open-ended questions.',
+      usageCount: 856,
+      activeUsers: 67,
+      satisfaction: 88,
+    },
+    {
+      name: 'Content Summarizer',
+      icon: FileText,
+      description: 'Condense long articles, videos, and course materials into concise summaries with key takeaways highlighted.',
+      usageCount: 2140,
+      activeUsers: 124,
+      satisfaction: 91,
+    },
+    {
+      name: 'Skill Assessor',
+      icon: Brain,
+      description: 'AI-driven skill assessment that evaluates proficiency levels and identifies specific knowledge gaps to address.',
+      usageCount: 542,
+      activeUsers: 45,
+      satisfaction: 86,
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-black p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 rounded-xl bg-teal-500/20">
+          <Cpu className="w-6 h-6 text-teal-400" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-semibold text-white">AI Learning Tools</h1>
+          <p className="text-zinc-400 mt-0.5 text-sm">AI-powered tools to enhance learning at {companyName}.</p>
+        </div>
+      </div>
+
+      {/* Stats Pills */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/60 border border-zinc-800">
+          <span className="text-sm font-bold text-white">4</span>
+          <span className="text-xs text-zinc-500">AI Tools</span>
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/60 border border-zinc-800">
+          <span className="text-sm font-bold text-white">4,822</span>
+          <span className="text-xs text-zinc-500">Total Uses</span>
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/60 border border-zinc-800">
+          <span className="text-sm font-bold text-teal-400">90%</span>
+          <span className="text-xs text-zinc-500">Avg Satisfaction</span>
+        </div>
+      </div>
+
+      {/* AI Tool Cards */}
+      <div data-demo="ai-tools" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {aiTools.map((tool) => (
+          <div key={tool.name} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-4 hover:border-zinc-700 transition-colors">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-xl bg-teal-500/15 text-teal-400 shrink-0">
+                <tool.icon className="w-6 h-6" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-white font-semibold">{tool.name}</h3>
+                <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">{tool.description}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center p-2.5 rounded-xl bg-zinc-800/30 border border-zinc-700/40">
+                <p className="text-sm font-bold text-white">{tool.usageCount.toLocaleString()}</p>
+                <p className="text-[10px] text-zinc-500">Total Uses</p>
+              </div>
+              <div className="text-center p-2.5 rounded-xl bg-zinc-800/30 border border-zinc-700/40">
+                <p className="text-sm font-bold text-white">{tool.activeUsers}</p>
+                <p className="text-[10px] text-zinc-500">Active Users</p>
+              </div>
+              <div className="text-center p-2.5 rounded-xl bg-zinc-800/30 border border-zinc-700/40">
+                <p className="text-sm font-bold text-teal-400">{tool.satisfaction}%</p>
+                <p className="text-[10px] text-zinc-500">Satisfaction</p>
+              </div>
+            </div>
+
+            <button className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-teal-500/15 text-teal-400 text-xs font-medium border border-teal-500/20 cursor-default hover:bg-teal-500/25 transition-colors">
+              <Zap className="w-3.5 h-3.5" /> Try {tool.name}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ================================================================== */
+/*  6. DemoLearnAssistant                                              */
+/* ================================================================== */
+
+export function DemoLearnAssistant({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  const chatMessages = [
+    { role: 'user', text: 'I want to learn about data analytics but I\'m not sure where to start.' },
+    { role: 'assistant', text: 'Great choice! Based on your current skill profile, I recommend starting with "Data Analytics 101" by Marcus Lee. It covers foundational concepts like data cleaning, visualization, and basic statistical analysis. You already have strong Excel skills, so you\'ll progress quickly through the first module.' },
+    { role: 'user', text: 'How long will it take me to complete?' },
+    { role: 'assistant', text: 'The course is 10 hours total. Given your background, I estimate you can complete it in about 7-8 hours. I\'d suggest dedicating 1-2 hours per day over the next week. After that, you\'ll be ready for the intermediate "Python for Data Analysis" track.' },
+  ];
+
+  const suggestedPaths = [
+    { name: 'Data Analytics Track', courses: 4, duration: '32 hours', match: 94 },
+    { name: 'Business Intelligence', courses: 3, duration: '24 hours', match: 87 },
+    { name: 'AI & Machine Learning', courses: 5, duration: '40 hours', match: 72 },
+  ];
+
+  const recentRecommendations = [
+    { course: 'Data Analytics 101', reason: 'Matches your skill gaps', priority: 'High' },
+    { course: 'AI for Business', reason: 'Trending in your team', priority: 'Medium' },
+    { course: 'Communication Skills', reason: 'Complements leadership track', priority: 'Low' },
+  ];
+
+  const recPriorityColors = {
+    High: 'bg-teal-500/15 text-teal-400',
+    Medium: 'bg-amber-500/15 text-amber-400',
+    Low: 'bg-zinc-700 text-zinc-300',
+  };
+
+  return (
+    <div className="min-h-screen bg-black p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 rounded-xl bg-teal-500/20">
+          <Sparkles className="w-6 h-6 text-teal-400" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-semibold text-white">Learning Assistant</h1>
+          <p className="text-zinc-400 mt-0.5 text-sm">AI-powered learning guidance for {companyName} team.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Chat Interface */}
+        <div data-demo="learning-assistant-chat" className="lg:col-span-2 bg-zinc-900/50 border border-zinc-800 rounded-2xl flex flex-col">
+          <div className="px-5 py-4 border-b border-zinc-800 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center">
+              <Bot className="w-4 h-4 text-teal-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-white">Learning AI</p>
+              <p className="text-[10px] text-teal-400">Online</p>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 p-5 space-y-4 min-h-[360px]">
+            {chatMessages.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-xs leading-relaxed ${
+                  msg.role === 'user'
+                    ? 'bg-teal-600/20 text-teal-100 rounded-br-md'
+                    : 'bg-zinc-800/50 text-zinc-300 rounded-bl-md border border-zinc-700/40'
+                }`}>
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Input */}
+          <div className="px-5 py-4 border-t border-zinc-800">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-500 cursor-default">
+                Ask about courses, skills, or learning paths...
+              </div>
+              <button className="p-2.5 rounded-xl bg-teal-600 text-white cursor-default">
+                <MessageSquare className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-4">
+          {/* Suggested Learning Paths */}
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 space-y-4">
+            <h2 className="text-white font-semibold text-sm">Suggested Paths</h2>
+            <div className="space-y-3">
+              {suggestedPaths.map((path) => (
+                <div key={path.name} className="p-3 rounded-xl bg-zinc-800/30 border border-zinc-700/40 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-white font-medium">{path.name}</p>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-400 font-bold">{path.match}%</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-[10px] text-zinc-500">
+                    <span>{path.courses} courses</span>
+                    <span>{path.duration}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent Recommendations */}
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 space-y-4">
+            <h2 className="text-white font-semibold text-sm">Recent Recommendations</h2>
+            <div className="space-y-3">
+              {recentRecommendations.map((rec) => (
+                <div key={rec.course} className="flex items-start gap-3">
+                  <div className="p-1.5 rounded-lg bg-teal-500/15 text-teal-400 mt-0.5">
+                    <BookOpen className="w-3 h-3" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-white font-medium">{rec.course}</p>
+                    <p className="text-[10px] text-zinc-500 mt-0.5">{rec.reason}</p>
+                  </div>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full shrink-0 ${recPriorityColors[rec.priority]}`}>
+                    {rec.priority}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ================================================================== */
+/*  7. DemoLearnLeaderboard                                            */
+/* ================================================================== */
+
+export function DemoLearnLeaderboard({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  const timePeriods = ['Week', 'Month', 'All Time'];
+
+  const topThree = [
+    { rank: 1, name: 'Jessica Martinez', xp: 4820, courses: 12, streak: 45, badges: 8 },
+    { rank: 2, name: 'Tom van der Berg', xp: 4350, courses: 11, streak: 38, badges: 7 },
+    { rank: 3, name: 'Laura Chen', xp: 3980, courses: 9, streak: 32, badges: 6 },
+  ];
+
+  const leaderboard = [
+    { rank: 1, name: 'Jessica Martinez', xp: 4820, courses: 12, streak: 45, badges: 8 },
+    { rank: 2, name: 'Tom van der Berg', xp: 4350, courses: 11, streak: 38, badges: 7 },
+    { rank: 3, name: 'Laura Chen', xp: 3980, courses: 9, streak: 32, badges: 6 },
+    { rank: 4, name: 'Marcus Lee', xp: 3640, courses: 8, streak: 28, badges: 5 },
+    { rank: 5, name: 'Aisha Rahman', xp: 3210, courses: 7, streak: 22, badges: 5 },
+    { rank: 6, name: 'Daniel Park', xp: 2890, courses: 6, streak: 19, badges: 4 },
+    { rank: 7, name: 'Priya Shah', xp: 2540, courses: 5, streak: 15, badges: 3 },
+    { rank: 8, name: 'Carlos Diaz', xp: 2180, courses: 5, streak: 12, badges: 3 },
+    { rank: 9, name: 'Nina Patel', xp: 1920, courses: 4, streak: 10, badges: 2 },
+    { rank: 10, name: 'David Kim', xp: 1650, courses: 3, streak: 7, badges: 2 },
+  ];
+
+  const podiumIcons = [Crown, Medal, Award];
+  const podiumColors = [
+    'bg-amber-500/15 border-amber-500/30 text-amber-400',
+    'bg-zinc-600/20 border-zinc-500/30 text-zinc-300',
+    'bg-orange-500/15 border-orange-500/30 text-orange-400',
+  ];
+  const podiumHeights = ['h-32', 'h-24', 'h-20'];
+  const podiumOrder = [1, 0, 2];
+
+  return (
+    <div className="min-h-screen bg-black p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-teal-500/20">
+            <Trophy className="w-6 h-6 text-teal-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-white">Leaderboard</h1>
+            <p className="text-zinc-400 mt-0.5 text-sm">Top learners at {companyName}.</p>
+          </div>
+        </div>
+        {/* Time Period Tabs */}
+        <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-xl p-1">
+          {timePeriods.map((period, i) => (
+            <button
+              key={period}
+              className={`px-4 py-1.5 rounded-lg text-sm cursor-default transition-colors ${
+                i === 1 ? 'bg-teal-500/15 text-teal-400 font-medium' : 'text-zinc-400 hover:bg-zinc-800/50'
+              }`}
+            >
+              {period}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Top 3 Podium */}
+      <div data-demo="leaderboard-podium" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
+        <div className="flex items-end justify-center gap-4">
+          {podiumOrder.map((idx) => {
+            const person = topThree[idx];
+            const PodiumIcon = podiumIcons[idx];
+            return (
+              <div key={person.rank} className="flex flex-col items-center gap-3">
+                {/* Avatar */}
+                <div className="relative">
+                  <div className={`w-16 h-16 rounded-full bg-zinc-800 border-2 flex items-center justify-center text-sm font-bold ${podiumColors[idx]}`}>
+                    {person.name.split(' ').map((w) => w[0]).join('')}
+                  </div>
+                  <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center ${podiumColors[idx]} border`}>
+                    <PodiumIcon className="w-3 h-3" />
+                  </div>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-white">{person.name.split(' ')[0]}</p>
+                  <p className="text-xs text-teal-400 font-bold">{person.xp.toLocaleString()} XP</p>
+                </div>
+                {/* Podium Bar */}
+                <div className={`w-24 ${podiumHeights[idx]} rounded-t-xl bg-gradient-to-t from-teal-900/40 to-teal-600/20 border border-teal-500/20 border-b-0 flex items-center justify-center`}>
+                  <span className="text-2xl font-bold text-teal-400/60">#{person.rank}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Full Leaderboard Table */}
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="text-left text-xs text-zinc-500 border-b border-zinc-800 bg-zinc-900/80">
+                <th className="px-4 py-3 font-medium text-center w-16">Rank</th>
+                <th className="px-4 py-3 font-medium">Learner</th>
+                <th className="px-4 py-3 font-medium text-center">XP Points</th>
+                <th className="px-4 py-3 font-medium text-center">Courses</th>
+                <th className="px-4 py-3 font-medium text-center">Streak</th>
+                <th className="px-4 py-3 font-medium text-center">Badges</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800/50">
+              {leaderboard.map((user) => (
+                <tr key={user.rank} className={`hover:bg-zinc-800/20 transition-colors ${user.rank <= 3 ? 'bg-teal-500/[0.03]' : ''}`}>
+                  <td className="px-4 py-3.5 text-center">
+                    {user.rank <= 3 ? (
+                      <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${podiumColors[user.rank - 1]}`}>
+                        {user.rank}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-zinc-400 font-medium">{user.rank}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[10px] font-semibold text-zinc-300">
+                        {user.name.split(' ').map((w) => w[0]).join('')}
+                      </div>
+                      <span className="text-sm font-medium text-white">{user.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3.5 text-center">
+                    <span className="text-sm font-bold text-teal-400">{user.xp.toLocaleString()}</span>
+                  </td>
+                  <td className="px-4 py-3.5 text-center">
+                    <span className="text-sm text-zinc-300">{user.courses}</span>
+                  </td>
+                  <td className="px-4 py-3.5 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Flame className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="text-sm text-zinc-300">{user.streak}d</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3.5 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Award className="w-3.5 h-3.5 text-teal-400" />
+                      <span className="text-sm text-zinc-300">{user.badges}</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

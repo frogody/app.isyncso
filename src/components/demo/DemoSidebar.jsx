@@ -2,17 +2,18 @@ import React from 'react';
 import {
   LayoutDashboard, Contact, FolderKanban, Package, Inbox,
   Euro, Rocket, GraduationCap, UserPlus, Shield, TrendingUp, Palette,
-  Settings, Bell,
+  Settings, Bell, BarChart2, CheckSquare,
   // Finance sub-nav
   Receipt, FileText, CreditCard, BookOpen, ScrollText, BarChart3,
+  Wallet, Building, FileInput, RefreshCw, CalendarCheck,
   // Growth sub-nav
-  Megaphone, Radio, Target,
+  Megaphone, Radio, Target, Bot, Search, FileTemplate, Database, Zap, GitBranch,
   // CRM sub-nav
   Users, UserCheck, Truck, Handshake, Crosshair, FileSpreadsheet,
   // Talent sub-nav
   Briefcase, Building2, MessageSquare,
   // Learn sub-nav
-  Library, Sparkles,
+  Library, Sparkles, Award, Trophy,
   // Create sub-nav
   PaintBucket, Image, Video, FolderOpen,
   // Products sub-nav
@@ -29,9 +30,11 @@ import {
 const coreNavItems = [
   { key: 'dashboard', icon: LayoutDashboard, title: 'Dashboard' },
   { key: 'crm', icon: Contact, title: 'CRM' },
-  { key: 'tasks', icon: FolderKanban, title: 'Projects' },
+  { key: 'projects', icon: FolderKanban, title: 'Projects' },
+  { key: 'tasks', icon: CheckSquare, title: 'Tasks' },
   { key: 'products', icon: Package, title: 'Products' },
   { key: 'inbox', icon: Inbox, title: 'Inbox' },
+  { key: 'analytics', icon: BarChart2, title: 'Analytics' },
 ];
 
 // Matches production ENGINE_ITEMS_CONFIG exactly
@@ -55,12 +58,12 @@ const MODULE_SUB_PAGES = {
       { key: 'crm-leads', icon: Target, title: 'Leads' },
       { key: 'crm-prospects', icon: TrendingUp, title: 'Prospects' },
       { key: 'crm-customers', icon: UserCheck, title: 'Customers' },
-      { key: 'crm-suppliers', icon: Truck, title: 'Suppliers', fallback: 'crm' },
-      { key: 'crm-partners', icon: Handshake, title: 'Partners', fallback: 'crm' },
-      { key: 'crm-candidates', icon: UserPlus, title: 'Candidates', fallback: 'crm' },
-      { key: 'crm-targets', icon: Crosshair, title: 'Targets', fallback: 'crm' },
+      { key: 'crm-suppliers', icon: Truck, title: 'Suppliers' },
+      { key: 'crm-partners', icon: Handshake, title: 'Partners' },
+      { key: 'crm-candidates', icon: UserPlus, title: 'Candidates' },
+      { key: 'crm-targets', icon: Crosshair, title: 'Targets' },
       { key: 'crm-companies', icon: Users, title: 'All Contacts' },
-      { key: 'crm-import', icon: FileSpreadsheet, title: 'Import', fallback: 'crm' },
+      { key: 'crm-import', icon: FileSpreadsheet, title: 'Import' },
     ],
   },
   products: {
@@ -72,8 +75,8 @@ const MODULE_SUB_PAGES = {
       { key: 'products-physical', icon: Box, title: 'Physical' },
       { key: 'products-receiving', icon: PackageCheck, title: 'Receiving' },
       { key: 'products-shipping', icon: Truck, title: 'Shipping' },
-      { key: 'products-stockpurchases', icon: Receipt, title: 'Stock Purchases', fallback: 'products' },
-      { key: 'products-import', icon: FileSpreadsheet, title: 'Import', fallback: 'products' },
+      { key: 'products-stockpurchases', icon: Receipt, title: 'Stock Purchases' },
+      { key: 'products-import', icon: FileSpreadsheet, title: 'Import' },
     ],
   },
   finance: {
@@ -81,11 +84,18 @@ const MODULE_SUB_PAGES = {
     color: 'amber',
     items: [
       { key: 'finance', icon: LayoutDashboard, title: 'Dashboard' },
+      { key: 'finance-overview', icon: BarChart3, title: 'Overview' },
       { key: 'finance-invoices', icon: Receipt, title: 'Invoices' },
       { key: 'finance-proposals', icon: FileText, title: 'Proposals' },
       { key: 'finance-expenses', icon: CreditCard, title: 'Expenses' },
       { key: 'finance-ledger', icon: BookOpen, title: 'Ledger' },
       { key: 'finance-payables', icon: ScrollText, title: 'Payables' },
+      { key: 'finance-accounts', icon: Wallet, title: 'Accounts' },
+      { key: 'finance-vendors', icon: Building, title: 'Vendors' },
+      { key: 'finance-bills', icon: FileInput, title: 'Bills' },
+      { key: 'finance-billpayments', icon: CalendarCheck, title: 'Bill Payments' },
+      { key: 'finance-subscriptions', icon: RefreshCw, title: 'Subscriptions' },
+      { key: 'finance-journalentries', icon: ScrollText, title: 'Journal Entries' },
       { key: 'finance-reports', icon: BarChart3, title: 'Reports' },
     ],
   },
@@ -94,10 +104,17 @@ const MODULE_SUB_PAGES = {
     color: 'indigo',
     items: [
       { key: 'growth', icon: LayoutDashboard, title: 'Dashboard' },
-      { key: 'growth-campaigns', icon: Megaphone, title: 'New Campaign' },
-      { key: 'growth-signals', icon: Radio, title: 'Customer Signals' },
+      { key: 'growth-pipeline', icon: Package, title: 'Pipeline' },
+      { key: 'growth-campaigns', icon: Megaphone, title: 'Campaigns' },
+      { key: 'growth-signals', icon: Radio, title: 'Signals' },
       { key: 'growth-opportunities', icon: Target, title: 'Opportunities' },
-      { key: 'growth-pipeline', icon: Package, title: 'Data Nests' },
+      { key: 'growth-prospects', icon: Users, title: 'Prospects' },
+      { key: 'growth-assistant', icon: Bot, title: 'AI Assistant' },
+      { key: 'growth-research', icon: Search, title: 'Research' },
+      { key: 'growth-templates', icon: FileText, title: 'Templates' },
+      { key: 'growth-nests', icon: Database, title: 'Data Nests' },
+      { key: 'growth-enrich', icon: Zap, title: 'Enrich' },
+      { key: 'growth-flows', icon: GitBranch, title: 'Flows' },
     ],
   },
   learn: {
@@ -108,7 +125,10 @@ const MODULE_SUB_PAGES = {
       { key: 'learn-courses', icon: BookOpen, title: 'My Courses' },
       { key: 'learn-skills', icon: Target, title: 'Skills' },
       { key: 'learn-builder', icon: Library, title: 'Course Builder' },
-      { key: 'learn-certifications', icon: Sparkles, title: 'AI Tools' },
+      { key: 'learn-certifications', icon: Award, title: 'Certifications' },
+      { key: 'learn-aitools', icon: Sparkles, title: 'AI Tools' },
+      { key: 'learn-assistant', icon: Bot, title: 'AI Assistant' },
+      { key: 'learn-leaderboard', icon: Trophy, title: 'Leaderboard' },
     ],
   },
   talent: {
@@ -119,8 +139,8 @@ const MODULE_SUB_PAGES = {
       { key: 'talent-candidates', icon: Users, title: 'Candidates' },
       { key: 'talent-projects', icon: Briefcase, title: 'Projects' },
       { key: 'talent-campaigns', icon: Megaphone, title: 'Campaigns' },
-      { key: 'talent-clients', icon: Building2, title: 'Clients', fallback: 'talent' },
-      { key: 'talent-deals', icon: Handshake, title: 'Deals', fallback: 'talent' },
+      { key: 'talent-clients', icon: Building2, title: 'Clients' },
+      { key: 'talent-deals', icon: Handshake, title: 'Deals' },
       { key: 'talent-outreach', icon: MessageSquare, title: 'SMS Outreach' },
       { key: 'talent-nests', icon: Package, title: 'Nests' },
     ],
@@ -144,7 +164,7 @@ const MODULE_SUB_PAGES = {
       { key: 'raise-pitchdecks', icon: Presentation, title: 'Pitch Decks' },
       { key: 'raise-dataroom', icon: FolderKey, title: 'Data Room' },
       { key: 'raise-campaigns', icon: Rocket, title: 'Campaigns' },
-      { key: 'raise-enrich', icon: FileSpreadsheet, title: 'Enrich', fallback: 'raise' },
+      { key: 'raise-enrich', icon: FileSpreadsheet, title: 'Enrich' },
     ],
   },
   create: {
@@ -164,7 +184,7 @@ const MODULE_SUB_PAGES = {
     items: [
       { key: 'sync-agent', icon: Brain, title: 'SYNC Agent' },
       { key: 'sync-activity', icon: Activity, title: 'Activity' },
-      { key: 'sync-journals', icon: BookOpen, title: 'Daily Journals', fallback: 'sync-showcase' },
+      { key: 'sync-journals', icon: BookOpen, title: 'Daily Journals' },
     ],
   },
 };

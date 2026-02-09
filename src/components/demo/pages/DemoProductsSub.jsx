@@ -17,6 +17,16 @@ import {
   Search,
   ChevronRight,
   ArrowDownToLine,
+  ShoppingCart,
+  ClipboardList,
+  Calendar,
+  Plus,
+  Upload,
+  FileSpreadsheet,
+  FileText,
+  Clock,
+  Table2,
+  ArrowRight,
 } from 'lucide-react';
 
 // ─── 1. DemoProductsDigital ─────────────────────────────────────────────────────
@@ -652,6 +662,255 @@ export function DemoProductsInventory({ companyName = 'Acme Corp', recipientName
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── 6. DemoProductsStockPurchases ────────────────────────────────────────────
+
+const poStats = [
+  { label: 'Open Orders', value: '8', icon: ClipboardList },
+  { label: 'Total Value', value: '$47.2K', icon: DollarSign },
+  { label: 'Arriving This Week', value: '3', icon: Truck },
+  { label: 'Vendors', value: '12', icon: Users },
+];
+
+const poStatusStyles = {
+  Ordered: 'bg-cyan-500/15 text-cyan-400',
+  Received: 'bg-emerald-500/15 text-emerald-400',
+  Partial: 'bg-amber-500/15 text-amber-400',
+};
+
+const purchaseOrders = [
+  { po: 'PO-9001', vendor: 'TechParts BV', items: 8, total: '$12,400', status: 'Ordered', expected: 'Feb 12, 2026' },
+  { po: 'PO-9002', vendor: 'Nordic Components', items: 3, total: '$4,200', status: 'Received', expected: 'Feb 7, 2026' },
+  { po: 'PO-9003', vendor: 'ShenzhenDirect', items: 15, total: '$8,900', status: 'Partial', expected: 'Feb 14, 2026' },
+  { po: 'PO-9004', vendor: 'EuroSupply GmbH', items: 5, total: '$6,350', status: 'Ordered', expected: 'Feb 18, 2026' },
+  { po: 'PO-9005', vendor: 'PackRight Co', items: 20, total: '$3,100', status: 'Ordered', expected: 'Feb 20, 2026' },
+  { po: 'PO-9006', vendor: 'TechParts BV', items: 12, total: '$9,800', status: 'Received', expected: 'Feb 5, 2026' },
+  { po: 'PO-9007', vendor: 'Nordic Components', items: 2, total: '$1,450', status: 'Partial', expected: 'Feb 15, 2026' },
+  { po: 'PO-9008', vendor: 'ShenzhenDirect', items: 6, total: '$1,000', status: 'Ordered', expected: 'Feb 22, 2026' },
+];
+
+export function DemoProductsStockPurchases({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  return (
+    <div data-demo="stock-purchases" className="min-h-screen bg-black p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-cyan-500/20 rounded-xl">
+            <ShoppingCart className="w-6 h-6 text-cyan-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-white">Stock Purchases</h1>
+            <p className="text-zinc-400 mt-0.5">Purchase orders and vendor management for {companyName}.</p>
+          </div>
+        </div>
+        <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-500/20 text-cyan-400 text-xs font-medium border border-cyan-500/25 cursor-default">
+          <Plus className="w-3.5 h-3.5" /> Create PO
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-4">
+        {poStats.map((stat) => (
+          <div key={stat.label} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-zinc-400 text-sm">{stat.label}</span>
+              <div className="p-2 bg-cyan-500/15 rounded-lg">
+                <stat.icon className="w-4 h-4 text-cyan-400" />
+              </div>
+            </div>
+            <span className="text-2xl font-bold text-white">{stat.value}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* PO Table */}
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between">
+          <h2 className="text-white font-semibold">Purchase Orders</h2>
+          <span className="text-[11px] text-zinc-500">{purchaseOrders.length} orders</span>
+        </div>
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-zinc-800/50">
+              <th className="text-left text-xs text-zinc-500 font-medium px-6 py-3">PO Number</th>
+              <th className="text-left text-xs text-zinc-500 font-medium px-4 py-3">Vendor</th>
+              <th className="text-left text-xs text-zinc-500 font-medium px-4 py-3">Items</th>
+              <th className="text-left text-xs text-zinc-500 font-medium px-4 py-3">Total</th>
+              <th className="text-left text-xs text-zinc-500 font-medium px-4 py-3">Status</th>
+              <th className="text-left text-xs text-zinc-500 font-medium px-4 py-3">Expected Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {purchaseOrders.map((po) => (
+              <tr key={po.po} className="border-b border-zinc-800/30 hover:bg-zinc-800/20 cursor-default">
+                <td className="px-6 py-3.5 text-sm text-cyan-400 font-mono">{po.po}</td>
+                <td className="px-4 py-3.5 text-sm text-white">{po.vendor}</td>
+                <td className="px-4 py-3.5 text-sm text-zinc-400">{po.items}</td>
+                <td className="px-4 py-3.5 text-sm text-white font-semibold">{po.total}</td>
+                <td className="px-4 py-3.5">
+                  <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${poStatusStyles[po.status]}`}>
+                    {po.status}
+                  </span>
+                </td>
+                <td className="px-4 py-3.5 text-sm text-zinc-500">{po.expected}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── 7. DemoProductsImport ───────────────────────────────────────────────────
+
+const supportedFormats = [
+  { name: 'CSV', ext: '.csv', icon: Table2 },
+  { name: 'Excel', ext: '.xlsx', icon: FileSpreadsheet },
+  { name: 'JSON', ext: '.json', icon: FileText },
+];
+
+const fieldMappingPreview = [
+  { source: 'product_name', target: 'Name', matched: true },
+  { source: 'sku_code', target: 'SKU', matched: true },
+  { source: 'unit_price', target: 'Price', matched: true },
+  { source: 'qty_on_hand', target: 'Stock Quantity', matched: true },
+  { source: 'cat', target: 'Category', matched: false },
+  { source: 'desc', target: 'Description', matched: false },
+];
+
+const importHistory = [
+  { filename: 'products_q1_2026.csv', date: 'Feb 5, 2026', records: 142, status: 'Completed', errors: 0 },
+  { filename: 'inventory_update.xlsx', date: 'Jan 28, 2026', records: 87, status: 'Completed', errors: 3 },
+  { filename: 'new_skus_batch.csv', date: 'Jan 15, 2026', records: 34, status: 'Completed', errors: 0 },
+  { filename: 'vendor_catalog.xlsx', date: 'Jan 8, 2026', records: 256, status: 'Partial', errors: 12 },
+  { filename: 'holiday_products.json', date: 'Dec 20, 2025', records: 18, status: 'Completed', errors: 0 },
+];
+
+const importHistoryStatusStyles = {
+  Completed: 'bg-emerald-500/15 text-emerald-400',
+  Partial: 'bg-amber-500/15 text-amber-400',
+  Failed: 'bg-red-500/15 text-red-400',
+};
+
+export function DemoProductsImport({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  return (
+    <div data-demo="product-import" className="min-h-screen bg-black p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 bg-cyan-500/20 rounded-xl">
+          <Upload className="w-6 h-6 text-cyan-400" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-semibold text-white">Import Products</h1>
+          <p className="text-zinc-400 mt-0.5">Bulk import products into {companyName} catalog.</p>
+        </div>
+      </div>
+
+      {/* Upload Area */}
+      <div className="bg-zinc-900/50 border-2 border-dashed border-zinc-700 rounded-2xl p-10 flex flex-col items-center justify-center text-center cursor-default hover:border-cyan-500/40 transition-colors">
+        <div className="p-4 bg-cyan-500/10 rounded-2xl mb-4">
+          <Upload className="w-8 h-8 text-cyan-400" />
+        </div>
+        <h3 className="text-white font-semibold mb-1">Drop your file here or click to browse</h3>
+        <p className="text-sm text-zinc-500 mb-4">Upload a CSV, Excel, or JSON file to import products</p>
+        <div className="flex items-center gap-3">
+          {supportedFormats.map((fmt) => (
+            <div key={fmt.name} className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/60 border border-zinc-700/50 rounded-lg">
+              <fmt.icon className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-xs text-zinc-300">{fmt.name}</span>
+              <span className="text-[10px] text-zinc-600">{fmt.ext}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Field Mapping Preview */}
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between">
+          <h2 className="text-white font-semibold">Field Mapping Preview</h2>
+          <span className="text-[11px] text-zinc-500">Auto-mapped {fieldMappingPreview.filter(f => f.matched).length}/{fieldMappingPreview.length} fields</span>
+        </div>
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-zinc-800/50">
+              <th className="text-left text-xs text-zinc-500 font-medium px-6 py-3">Source Column</th>
+              <th className="text-left text-xs text-zinc-500 font-medium px-4 py-3" />
+              <th className="text-left text-xs text-zinc-500 font-medium px-4 py-3">Target Field</th>
+              <th className="text-left text-xs text-zinc-500 font-medium px-4 py-3">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {fieldMappingPreview.map((field) => (
+              <tr key={field.source} className="border-b border-zinc-800/30 hover:bg-zinc-800/20 cursor-default">
+                <td className="px-6 py-3.5 text-sm text-zinc-300 font-mono">{field.source}</td>
+                <td className="px-4 py-3.5">
+                  <ArrowRight className="w-4 h-4 text-zinc-600" />
+                </td>
+                <td className="px-4 py-3.5 text-sm text-white">{field.target}</td>
+                <td className="px-4 py-3.5">
+                  {field.matched ? (
+                    <span className="flex items-center gap-1.5 text-[11px] text-cyan-400">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Matched
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-[11px] text-amber-400">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Needs Review
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Import History */}
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between">
+          <h2 className="text-white font-semibold">Import History</h2>
+          <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+            <Clock className="w-3.5 h-3.5" />
+            Last 5 imports
+          </div>
+        </div>
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-zinc-800/50">
+              <th className="text-left text-xs text-zinc-500 font-medium px-6 py-3">File</th>
+              <th className="text-left text-xs text-zinc-500 font-medium px-4 py-3">Date</th>
+              <th className="text-left text-xs text-zinc-500 font-medium px-4 py-3">Records</th>
+              <th className="text-left text-xs text-zinc-500 font-medium px-4 py-3">Errors</th>
+              <th className="text-left text-xs text-zinc-500 font-medium px-4 py-3">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {importHistory.map((imp) => (
+              <tr key={imp.filename} className="border-b border-zinc-800/30 hover:bg-zinc-800/20 cursor-default">
+                <td className="px-6 py-3.5">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-zinc-500" />
+                    <span className="text-sm text-white">{imp.filename}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-3.5 text-sm text-zinc-400">{imp.date}</td>
+                <td className="px-4 py-3.5 text-sm text-zinc-400">{imp.records}</td>
+                <td className="px-4 py-3.5 text-sm">
+                  <span className={imp.errors > 0 ? 'text-red-400' : 'text-zinc-500'}>{imp.errors}</span>
+                </td>
+                <td className="px-4 py-3.5">
+                  <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${importHistoryStatusStyles[imp.status]}`}>
+                    {imp.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
