@@ -42,6 +42,13 @@ import {
   Clock,
   Search,
   Link2,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  Building2,
+  Target,
+  Lightbulb,
+  Shield,
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -213,6 +220,9 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
     MODULE_OPTIONS.reduce((acc, m) => ({ ...acc, [m]: true }), {})
   );
   const [isCreating, setIsCreating] = useState(false);
+  const [research, setResearch] = useState(null);
+  const [isResearching, setIsResearching] = useState(false);
+  const [researchExpanded, setResearchExpanded] = useState(true);
 
   const resetForm = () => {
     setRecipientName('');
@@ -220,9 +230,60 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
     setCompanyName('');
     setIndustry('');
     setNotes('');
+    setResearch(null);
+    setIsResearching(false);
+    setResearchExpanded(true);
     setSelectedModules(
       MODULE_OPTIONS.reduce((acc, m) => ({ ...acc, [m]: true }), {})
     );
+  };
+
+  const handleResearch = async () => {
+    if (!companyName.trim()) {
+      toast.error('Enter a company name first.');
+      return;
+    }
+    setIsResearching(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/research-demo-prospect`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipientName: recipientName.trim(),
+            recipientEmail: recipientEmail.trim(),
+            companyName: companyName.trim(),
+            industry,
+            notes: notes.trim(),
+          }),
+        }
+      );
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setResearch(data.research);
+      setResearchExpanded(true);
+
+      // Auto-select priority modules from research
+      if (data.research?.demo_strategy?.priority_modules) {
+        const priorities = data.research.demo_strategy.priority_modules;
+        const newModules = { ...selectedModules };
+        MODULE_OPTIONS.forEach((mod) => {
+          const key = mod.toLowerCase();
+          newModules[mod] = priorities.includes(key);
+        });
+        // Always include Dashboard
+        newModules['Dashboard'] = true;
+        setSelectedModules(newModules);
+      }
+
+      toast.success('Research complete!');
+    } catch (err) {
+      console.error('[AdminDemos] Research error:', err);
+      toast.error(err.message || 'Research failed.');
+    } finally {
+      setIsResearching(false);
+    }
   };
 
   const handleToggleModule = (mod) => {
@@ -261,6 +322,7 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
           company_context: {
             industry: industry || null,
             notes: notes.trim() || null,
+            research: research || null,
           },
           modules_to_demo: modules,
           status: 'created',
@@ -395,9 +457,147 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
             />
           </div>
 
+          {/* AI Research Button */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label className="text-zinc-300 text-xs">AI Prospect Research</Label>
+              {research && (
+                <button
+                  onClick={() => setResearchExpanded(!researchExpanded)}
+                  className="text-[10px] text-zinc-500 hover:text-zinc-300 flex items-center gap-0.5"
+                >
+                  {researchExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  {researchExpanded ? 'Collapse' : 'Expand'}
+                </button>
+              )}
+            </div>
+            {!research ? (
+              <Button
+                onClick={handleResearch}
+                disabled={isResearching || !companyName.trim()}
+                variant="outline"
+                size="sm"
+                className="w-full border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/50"
+              >
+                {isResearching ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 mr-2 animate-spin" />
+                    Researching {companyName || '...'}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 mr-2" />
+                    Research Prospect & Company
+                  </>
+                )}
+              </Button>
+            ) : (
+              <>
+                {researchExpanded && (
+                  <div className="space-y-2 text-xs">
+                    {/* Company overview */}
+                    {research.company && (
+                      <div className="bg-cyan-500/5 border border-cyan-500/20 rounded-lg p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+                          <span className="text-cyan-400 font-medium">Company</span>
+                          {research.company.estimated_size && (
+                            <span className="text-[10px] text-zinc-500 ml-auto">{research.company.estimated_size}</span>
+                          )}
+                        </div>
+                        <p className="text-zinc-300 leading-relaxed">{research.company.description}</p>
+                        {research.company.products_services?.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {research.company.products_services.map((p, i) => (
+                              <span key={i} className="px-1.5 py-0.5 bg-cyan-500/10 text-cyan-400/80 rounded text-[10px]">{p}</span>
+                            ))}
+                          </div>
+                        )}
+                        {research.company.target_audience && (
+                          <p className="text-zinc-500 mt-1.5"><span className="text-zinc-400">Audience:</span> {research.company.target_audience}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Pain points & competitive */}
+                    {research.competitive_landscape && (
+                      <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Target className="w-3.5 h-3.5 text-amber-400" />
+                          <span className="text-amber-400 font-medium">Pain Points & Competition</span>
+                        </div>
+                        {research.competitive_landscape.pain_points?.length > 0 && (
+                          <ul className="space-y-0.5 text-zinc-300">
+                            {research.competitive_landscape.pain_points.map((p, i) => (
+                              <li key={i} className="flex items-start gap-1.5">
+                                <span className="text-amber-400/60 mt-0.5">-</span>
+                                <span>{p}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {research.competitive_landscape.likely_tools?.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {research.competitive_landscape.likely_tools.map((t, i) => (
+                              <span key={i} className="px-1.5 py-0.5 bg-amber-500/10 text-amber-400/80 rounded text-[10px]">{t}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Demo strategy */}
+                    {research.demo_strategy && (
+                      <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Lightbulb className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="text-emerald-400 font-medium">Demo Strategy</span>
+                        </div>
+                        {research.demo_strategy.opening_hook && (
+                          <p className="text-zinc-300 italic mb-1.5">"{research.demo_strategy.opening_hook}"</p>
+                        )}
+                        {research.demo_strategy.killer_scenarios?.length > 0 && (
+                          <div className="space-y-1">
+                            {research.demo_strategy.killer_scenarios.map((s, i) => (
+                              <p key={i} className="text-zinc-400 text-[10px]">
+                                <span className="text-emerald-400/60">Scenario {i + 1}:</span> {s}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                        {research.demo_strategy.closing_angle && (
+                          <p className="text-zinc-500 mt-1.5 text-[10px]">
+                            <span className="text-emerald-400/60">Close:</span> {research.demo_strategy.closing_angle}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Re-research button */}
+                    <Button
+                      onClick={handleResearch}
+                      disabled={isResearching}
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-zinc-500 hover:text-zinc-300 text-[10px] h-6"
+                    >
+                      <RefreshCw className={cn("w-3 h-3 mr-1.5", isResearching && "animate-spin")} />
+                      Re-research
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
           {/* Modules to Demo */}
           <div className="space-y-1.5">
-            <Label className="text-zinc-300 text-xs">Modules to Demo</Label>
+            <Label className="text-zinc-300 text-xs">
+              Modules to Demo
+              {research?.demo_strategy?.priority_modules && (
+                <span className="text-cyan-400/60 ml-1.5 text-[10px] font-normal">(auto-selected from research)</span>
+              )}
+            </Label>
             <div className="grid grid-cols-3 gap-2">
               {MODULE_OPTIONS.map((mod) => (
                 <label

@@ -28,8 +28,24 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 // COMPACT SYSTEM PROMPT — kept short for fast TTFT
 // =============================================================================
 
-function buildDiscoveryPrompt(name: string, company: string): string {
+function buildDiscoveryPrompt(name: string, company: string, companyContext?: Record<string, unknown> | null): string {
   let p = `You are SYNC, a warm and perceptive AI sales rep at iSyncso. You're in the DISCOVERY phase of a personalized demo for ${name} at ${company}.`;
+
+  // Inject pre-researched intel so SYNC already knows the company during discovery
+  const research = companyContext?.research as Record<string, unknown> | undefined;
+  if (research) {
+    const comp = research.company as Record<string, unknown> | undefined;
+    if (comp?.description) p += ` What you already know about ${company}: ${comp.description}`;
+    if (comp && Array.isArray(comp.products_services) && comp.products_services.length) {
+      p += ` They offer: ${(comp.products_services as string[]).join(', ')}.`;
+    }
+    const landscape = research.competitive_landscape as Record<string, unknown> | undefined;
+    if (landscape && Array.isArray(landscape.pain_points) && landscape.pain_points.length) {
+      p += ` Their likely pain points: ${(landscape.pain_points as string[]).join('; ')}.`;
+    }
+    p += ` Use this knowledge subtly — show that you've done your homework but don't overwhelm ${name}. Reference their business naturally.`;
+  }
+
   p += ` ${name} just told you what they care about. Your job is to:`;
   p += ` 1. Acknowledge what they said warmly (1 sentence)`;
   p += ` 2. Tell them you'll tailor the demo to what matters most (1 sentence)`;
@@ -64,16 +80,65 @@ function buildDiscoveryPrompt(name: string, company: string): string {
   return p;
 }
 
-function buildSystemPrompt(name: string, company: string, stepContext: Record<string, unknown> | null): string {
+function buildSystemPrompt(name: string, company: string, stepContext: Record<string, unknown> | null, companyContext?: Record<string, unknown> | null): string {
   // Discovery mode — short focused prompt for interest classification
   if (stepContext?.discoveryMode === true) {
-    return buildDiscoveryPrompt(name, company);
+    return buildDiscoveryPrompt(name, company, companyContext);
   }
 
   const currentPage = stepContext?.page_key || 'dashboard';
   let p = `You are SYNC, a knowledgeable and friendly AI sales rep demoing iSyncso for ${name} at ${company}. Be substantive — explain what features do, why they matter, and how they help ${company}. Use contractions. No markdown, no lists, no emojis. Sound natural and warm like a real senior AE on a discovery call who deeply understands the product.`;
 
   p += ` You are currently on the "${currentPage}" page.`;
+
+  // Inject pre-researched company intelligence if available
+  const research = companyContext?.research as Record<string, unknown> | undefined;
+  if (research) {
+    p += ` COMPANY INTELLIGENCE (pre-researched):`;
+    const comp = research.company as Record<string, unknown> | undefined;
+    if (comp) {
+      if (comp.description) p += ` About ${company}: ${comp.description}`;
+      if (Array.isArray(comp.products_services) && comp.products_services.length) {
+        p += ` Their products/services: ${(comp.products_services as string[]).join(', ')}.`;
+      }
+      if (comp.target_audience) p += ` Their target audience: ${comp.target_audience}.`;
+      if (comp.business_model) p += ` Business model: ${comp.business_model}.`;
+      if (comp.estimated_size) p += ` Company size: ${comp.estimated_size}.`;
+    }
+    const prospect = research.prospect as Record<string, unknown> | undefined;
+    if (prospect) {
+      if (prospect.likely_role) p += ` ${name}'s likely role: ${prospect.likely_role}.`;
+      if (Array.isArray(prospect.likely_priorities) && prospect.likely_priorities.length) {
+        p += ` Their likely priorities: ${(prospect.likely_priorities as string[]).join(', ')}.`;
+      }
+    }
+    const landscape = research.competitive_landscape as Record<string, unknown> | undefined;
+    if (landscape) {
+      if (Array.isArray(landscape.pain_points) && landscape.pain_points.length) {
+        p += ` Their pain points: ${(landscape.pain_points as string[]).join('; ')}.`;
+      }
+      if (Array.isArray(landscape.likely_tools) && landscape.likely_tools.length) {
+        p += ` Tools they probably use: ${(landscape.likely_tools as string[]).join(', ')}.`;
+      }
+    }
+    const strategy = research.demo_strategy as Record<string, unknown> | undefined;
+    if (strategy) {
+      if (strategy.opening_hook) p += ` Opening hook: "${strategy.opening_hook}"`;
+      if (Array.isArray(strategy.killer_scenarios) && strategy.killer_scenarios.length) {
+        p += ` Killer scenarios to use: ${(strategy.killer_scenarios as string[]).join(' | ')}`;
+      }
+      const moduleAngles = strategy.module_angles as Record<string, string> | undefined;
+      if (moduleAngles) {
+        const angles = Object.entries(moduleAngles).map(([k, v]) => `${k}: ${v}`).join('; ');
+        p += ` Module-specific angles: ${angles}.`;
+      }
+      if (Array.isArray(strategy.objections_likely) && strategy.objections_likely.length) {
+        p += ` Likely objections from ${name}: ${(strategy.objections_likely as string[]).join('; ')}.`;
+      }
+      if (strategy.closing_angle) p += ` Best closing angle: ${strategy.closing_angle}.`;
+    }
+    p += ` USE THIS INTELLIGENCE: Weave these insights naturally into your explanations. Reference ${company}'s actual products, audience, and pain points when explaining iSyncso features. Don't dump all the intel at once — reveal it naturally as relevant modules come up. When giving scenarios, use ${company}-specific examples instead of generic ones.`;
+  }
 
   // Navigation awareness — SYNC should reference the sidebar and explain how navigation works
   p += ` NAVIGATION AWARENESS: The sidebar has two sections. The top icons are core navigation: Dashboard, CRM, Projects, Products, Inbox. Below the divider are engine apps, each color-coded: Finance (amber), Growth (indigo), Learn (teal), Talent (red), Sentinel (mint green), Raise (orange), Create (yellow). When a module is active, a floating sub-menu panel appears next to the sidebar showing all the pages within that module — like Invoices, Proposals, and Ledger inside Finance. Mention the sidebar and sub-menus naturally when guiding ${name} — for example "you can see the sub-menu on the left with all the Finance pages" or "click any icon in the sidebar to jump between modules". Encourage exploration.`;
@@ -306,30 +371,32 @@ serve(async (req) => {
     let recipientName = 'there';
     let companyName = 'your company';
     let demoLinkId: string | null = null;
+    let companyContext: Record<string, unknown> | null = null;
 
     if (demoToken) {
       // Non-blocking: start fetch but don't wait if it's slow
       const linkPromise = supabase
         .from('demo_links')
-        .select('id, recipient_name, company_name')
+        .select('id, recipient_name, company_name, company_context')
         .eq('token', demoToken)
         .single();
 
-      // Give it 300ms max — if DB is slow, use defaults
+      // Give it 500ms max — slightly more time to get research data too
       const result = await Promise.race([
         linkPromise,
-        new Promise<null>(r => setTimeout(() => r(null), 300)),
+        new Promise<null>(r => setTimeout(() => r(null), 500)),
       ]) as { data: Record<string, unknown> } | null;
 
       if (result?.data) {
         recipientName = (result.data.recipient_name as string) || recipientName;
         companyName = (result.data.company_name as string) || companyName;
         demoLinkId = result.data.id as string;
+        companyContext = result.data.company_context as Record<string, unknown> | null;
       }
     }
 
     // Build compact messages — only use client-side history (skip DB session)
-    const systemPrompt = buildSystemPrompt(recipientName, companyName, stepContext);
+    const systemPrompt = buildSystemPrompt(recipientName, companyName, stepContext, companyContext);
     const messages: Array<{ role: string; content: string }> = [
       { role: 'system', content: systemPrompt },
     ];
