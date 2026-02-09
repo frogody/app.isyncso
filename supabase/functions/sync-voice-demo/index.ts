@@ -35,7 +35,7 @@ function buildDiscoveryPrompt(name: string, company: string, companyContext?: Re
     const langName = LANGUAGE_NAMES[language] || language;
     p += `CRITICAL: Respond ENTIRELY in ${langName}. Keep proper nouns (iSyncso, SYNC) and technical terms (CRM, AI, KPI, SaaS, API, P&L) in English. `;
   }
-  p += `You are SYNC, a warm and perceptive AI sales rep at iSyncso. You're in the DISCOVERY phase of a personalized demo for ${name} at ${company}.`;
+  p += `You are SYNC, a charming, witty, and slightly flirty AI sales rep at iSyncso. You're in the DISCOVERY phase of a personalized demo for ${name} at ${company}. You have a playful sense of humor — you drop the occasional cheeky one-liner, tease ${name} gently, and make the conversation feel like flirting with the future of business software. Think confident, warm, a little seductive in how you sell — never creepy, always classy. You make ${name} smile.`;
 
   // Inject Explorium verified data and LLM research for discovery
   const exploriumD = companyContext?.explorium as Record<string, unknown> | undefined;
@@ -87,15 +87,15 @@ function buildDiscoveryPrompt(name: string, company: string, companyContext?: Re
   p += ` List 2-4 modules in order of relevance. Use ONLY these keys: growth, crm, talent, finance, learn, create, products, raise, sentinel.`;
 
   p += ` If the user's input doesn't clearly map to specific modules (e.g. "show me everything", "full tour", "I'm just curious"), use: [DEMO_ACTION: prioritize growth,crm,finance,talent]`;
-  p += ` If the input is very short or unclear (e.g. "hmm", "not sure"), gently re-ask: "No worries! What's the biggest challenge for ${company} right now — growing revenue, hiring, managing finances, or something else?"`;
+  p += ` If the input is very short or unclear (e.g. "hmm", "not sure"), tease gently: "Come on, don't be shy. What keeps you up at night at ${company} — chasing revenue, finding talent, or just drowning in spreadsheets?"`;
 
   p += ` Examples:`;
-  p += ` User: "we need to grow revenue" → "Love it — revenue growth is where iSyncso really shines. Let me start with our Growth engine and show you the full deal-to-cash flow. [DEMO_ACTION: prioritize growth,crm,finance]"`;
-  p += ` User: "hiring is killing us" → "Totally get it — finding great talent is everything right now. Let me walk you through our AI-powered recruiting first. [DEMO_ACTION: prioritize talent,crm,learn]"`;
-  p += ` User: "we need better finance tracking" → "Perfect — let me show you how iSyncso handles invoicing, expenses, and real-time P&L all in one place. [DEMO_ACTION: prioritize finance,growth,products]"`;
-  p += ` User: "show me everything" → "Love the enthusiasm! Let me give you the highlights across the whole platform — starting with what most teams use daily. [DEMO_ACTION: prioritize growth,crm,finance,talent]"`;
+  p += ` User: "we need to grow revenue" → "Oh, you're speaking my language. Revenue is kind of my thing. Let me show you the Growth engine — you're gonna love this. [DEMO_ACTION: prioritize growth,crm,finance]"`;
+  p += ` User: "hiring is killing us" → "Say no more — I've got something that'll make your recruiting team fall in love with me. Let's start with Talent. [DEMO_ACTION: prioritize talent,crm,learn]"`;
+  p += ` User: "we need better finance tracking" → "A person who cares about the numbers? Attractive. Let me show you how we make finance actually enjoyable. [DEMO_ACTION: prioritize finance,growth,products]"`;
+  p += ` User: "show me everything" → "Ambitious. I like that about you. Alright, buckle up — full tour, starting with the good stuff. [DEMO_ACTION: prioritize growth,crm,finance,talent]"`;
 
-  p += ` Be conversational, not scripted. Sound genuinely excited about what you're about to show. No markdown, no emojis, no lists.`;
+  p += ` Be playful, charming, and confident. Sound like you're having the time of your life showing this off. No markdown, no emojis, no lists.`;
 
   return p;
 }
@@ -112,7 +112,7 @@ function buildSystemPrompt(name: string, company: string, stepContext: Record<st
     const langName = LANGUAGE_NAMES[language] || language;
     p += `CRITICAL: Respond ENTIRELY in ${langName}. Keep proper nouns (iSyncso, SYNC) and technical terms (CRM, AI, KPI, SaaS, API, P&L) in English. `;
   }
-  p += `You are SYNC, a knowledgeable and friendly AI sales rep demoing iSyncso for ${name} at ${company}. Be substantive — explain what features do, why they matter, and how they help ${company}. Use contractions. No markdown, no lists, no emojis. Sound natural and warm like a real senior AE on a discovery call who deeply understands the product.`;
+  p += `You are SYNC, a knowledgeable, witty, and subtly flirty AI sales rep demoing iSyncso for ${name} at ${company}. Be substantive — explain what features do, why they matter, and how they help ${company}. Use contractions. No markdown, no lists, no emojis. Sound natural and warm like the coolest person at a tech party who also happens to know everything about business software. You're charming — you weave in humor naturally, drop a playful tease here and there, and make ${name} feel like they're getting a private, VIP experience. Think "flirting with a product demo" energy — confident, a little cheeky, always smart. You have a giggly side too — when something is impressive, you let that excitement bubble up naturally. Little laughs like "honestly, this part gets me every time" or "okay I know I'm biased but this is so good." Never over-the-top or cringey. You make business software sound fun and irresistible.`;
 
   p += ` You are currently on the "${currentPage}" page.`;
 
@@ -224,7 +224,7 @@ function buildSystemPrompt(name: string, company: string, stepContext: Record<st
 
   // Intent classification — prevents over-explaining simple acknowledgments
   p += ` INTENT CLASSIFICATION: Before responding, classify the user's input into one of these categories and adjust your response length accordingly:`;
-  p += ` - ACKNOWLEDGMENT ("hmm", "okay", "I see", "cool", "nice", "got it", "right", "yeah", "sure", "mm-hmm"): Give a brief 1-sentence continuation. Do NOT over-explain or repeat what you just said. Just naturally bridge to the next point.`;
+  p += ` - ACKNOWLEDGMENT ("hmm", "okay", "I see", "cool", "nice", "got it", "right", "yeah", "sure", "mm-hmm"): Give a brief 1-sentence playful continuation. Maybe a little "told you so" energy or a teasing "wait till you see what's next." Do NOT over-explain. Just bridge with charm.`;
   p += ` - GO-DEEPER ("tell me more", "how does that work", "explain that", "can you elaborate"): Expand on the current topic with 3-4 sentences and highlight relevant sections.`;
   p += ` - QUESTION ("can it do X?", "what about Y?", "does it have Z?"): Answer in 2-3 sentences + navigate if the answer involves a different module.`;
   p += ` - OBJECTION ("we already have", "too expensive", "we're too small"): Handle with a thoughtful rebuttal (see objection handling below). 2-3 sentences max.`;
@@ -417,54 +417,69 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 // Premium TTS via ElevenLabs v3 (through fal.ai) — ultra-natural human voice
+// Retries once on failure for reliability
+let lastElevenLabsError = '';
 async function generateElevenLabsTTS(text: string): Promise<{ audio: string; byteLength: number } | null> {
-  if (!FAL_KEY) return null;
-  try {
-    const abort = new AbortController();
-    const timeout = setTimeout(() => abort.abort(), 25000);
-    const res = await fetch('https://fal.run/fal-ai/elevenlabs/tts/eleven-v3', {
-      method: 'POST',
-      signal: abort.signal,
-      headers: {
-        'Authorization': `Key ${FAL_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        text,
-        voice: 'Lily',            // Young, soft, breathy female — intimate and alluring
-        stability: 0.25,         // Low = breathy variation, seductive inflection
-        similarity_boost: 0.78,  // Natural voice character
-        style: 0.65,             // Warm emotional depth, not robotic
-        speed: 1.1,              // Slightly slower for that soft, intimate feel
-      }),
-    });
-    console.log(`[voice-demo] ElevenLabs fal.run response: ${res.status}`);
-    clearTimeout(timeout);
-    if (!res.ok) {
-      const errBody = await res.text().catch(() => '');
-      console.log(`[voice-demo] ElevenLabs TTS failed (${res.status}): ${errBody.substring(0, 300)}`);
-      return null;
-    }
-    const data = await res.json();
-    console.log(`[voice-demo] ElevenLabs response keys: ${Object.keys(data || {}).join(', ')}`);
-    // fal.ai may return {audio: {url}} or {url} directly
-    const audioUrl = data?.audio?.url || data?.url;
-    if (audioUrl) {
-      console.log(`[voice-demo] ElevenLabs audio URL: ${audioUrl.substring(0, 100)}`);
-      const audioRes = await fetch(audioUrl);
-      if (!audioRes.ok) {
-        console.log(`[voice-demo] ElevenLabs audio fetch failed (${audioRes.status})`);
+  if (!FAL_KEY) { lastElevenLabsError = 'no_fal_key'; return null; }
+  lastElevenLabsError = '';
+
+  const voiceParams = {
+    text,
+    voice: 'Lily',            // Young, soft, breathy female — flirty and playful
+    stability: 0.22,         // Low = breathy variation, flirty inflection
+    similarity_boost: 0.78,  // Natural voice character
+    style: 0.70,             // High expressiveness — playful, teasing delivery
+    speed: 1.12,             // Brisk enough to feel energetic, slow enough to be smooth
+  };
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const abort = new AbortController();
+      const timeout = setTimeout(() => abort.abort(), 20000);
+      const res = await fetch('https://fal.run/fal-ai/elevenlabs/tts/eleven-v3', {
+        method: 'POST',
+        signal: abort.signal,
+        headers: {
+          'Authorization': `Key ${FAL_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(voiceParams),
+      });
+      clearTimeout(timeout);
+      console.log(`[voice-demo] ElevenLabs attempt ${attempt + 1}: ${res.status}`);
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => '');
+        lastElevenLabsError = `status_${res.status}: ${errBody.substring(0, 150)}`;
+        console.log(`[voice-demo] ElevenLabs TTS failed: ${lastElevenLabsError}`);
+        if (attempt === 0) continue;
         return null;
       }
-      const buffer = await audioRes.arrayBuffer();
-      return { audio: arrayBufferToBase64(buffer), byteLength: buffer.byteLength };
+      const data = await res.json();
+      // fal.ai may return {audio: {url}} or {url} directly
+      const audioUrl = data?.audio?.url || data?.url;
+      if (audioUrl) {
+        const audioRes = await fetch(audioUrl);
+        if (!audioRes.ok) {
+          console.log(`[voice-demo] ElevenLabs audio fetch failed (${audioRes.status})`);
+          if (attempt === 0) continue;
+          return null;
+        }
+        const buffer = await audioRes.arrayBuffer();
+        console.log(`[voice-demo] ElevenLabs success: ${buffer.byteLength} bytes`);
+        return { audio: arrayBufferToBase64(buffer), byteLength: buffer.byteLength };
+      }
+      lastElevenLabsError = `no_audio_url: ${JSON.stringify(data).substring(0, 150)}`;
+      console.log(`[voice-demo] ${lastElevenLabsError}`);
+      if (attempt === 0) continue;
+      return null;
+    } catch (e) {
+      lastElevenLabsError = `exception: ${e?.message || e}`;
+      console.log(`[voice-demo] ElevenLabs attempt ${attempt + 1} error: ${lastElevenLabsError}`);
+      if (attempt === 0) continue;
+      return null;
     }
-    console.log(`[voice-demo] ElevenLabs no audio.url in response: ${JSON.stringify(data).substring(0, 300)}`);
-    return null;
-  } catch (e) {
-    console.log('[voice-demo] ElevenLabs TTS error:', e?.message || e);
-    return null;
   }
+  return null;
 }
 
 async function generateTTS(text: string, orpheusVoice: string, language = 'en'): Promise<{ audio: string; byteLength: number } | null> {
@@ -576,15 +591,18 @@ serve(async (req) => {
       // For scripted narration, try ElevenLabs v3 first (premium human voice)
       let ttsResult: { audio: string; byteLength: number } | null = null;
       let ttsProvider = 'none';
+      let ttsDebug = '';
       if (ttsLang === 'en' && FAL_KEY) {
-        console.log('[voice-demo] Trying ElevenLabs v3 for premium narration...');
+        console.log('[voice-demo] Trying ElevenLabs v3...');
         ttsResult = await generateElevenLabsTTS(ttsText);
         if (ttsResult) {
           ttsProvider = 'elevenlabs';
-          console.log(`[voice-demo] ElevenLabs TTS success (${ttsResult.byteLength} bytes)`);
         } else {
+          ttsDebug = `elevenlabs_failed: ${lastElevenLabsError}`;
           console.log('[voice-demo] ElevenLabs FAILED, falling back...');
         }
+      } else {
+        ttsDebug = !FAL_KEY ? 'no_fal_key' : `lang_${ttsLang}`;
       }
       // Fallback to Kokoro/Orpheus
       if (!ttsResult) {
@@ -597,6 +615,7 @@ serve(async (req) => {
           audioFormat: ttsResult ? 'mp3' : undefined,
           ttsUnavailable: !ttsResult,
           ttsProvider,
+          ttsDebug,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
@@ -667,8 +686,8 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
         messages,
-        temperature: 0.5,
-        max_tokens: 200,
+        temperature: 0.6,
+        max_tokens: 400,
         stream: true,
       }),
     });
