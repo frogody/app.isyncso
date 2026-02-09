@@ -719,7 +719,7 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
                     )}
 
                     {/* Pain points & competitive */}
-                    {research.competitive_landscape && (
+                    {research?.competitive_landscape && (
                       <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-2.5">
                         <div className="flex items-center gap-1.5 mb-1.5">
                           <Target className="w-3.5 h-3.5 text-amber-400" />
@@ -746,7 +746,7 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
                     )}
 
                     {/* Demo strategy */}
-                    {research.demo_strategy && (
+                    {research?.demo_strategy && (
                       <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-2.5">
                         <div className="flex items-center gap-1.5 mb-1.5">
                           <Lightbulb className="w-3.5 h-3.5 text-emerald-400" />
