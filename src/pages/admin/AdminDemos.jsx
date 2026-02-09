@@ -553,25 +553,6 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
             />
           </div>
 
-          {/* Demo Language */}
-          <div className="space-y-1.5">
-            <Label className="text-zinc-300 text-xs flex items-center gap-1.5">
-              <Languages className="w-3 h-3" />
-              Demo Language
-            </Label>
-            <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-                <SelectValue placeholder="Select language..." />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
-                {LANGUAGES.map(lang => (
-                  <SelectItem key={lang.code} value={lang.code}>
-                    {lang.nativeLabel} ({lang.label})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
           {/* AI Research Button */}
           <div className="space-y-1.5">
