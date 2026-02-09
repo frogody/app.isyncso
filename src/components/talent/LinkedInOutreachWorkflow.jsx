@@ -79,30 +79,30 @@ const LinkedInOutreachWorkflow = ({ campaign, organizationId }) => {
   const currentStageConfig = STAGE_CONFIG.find((s) => s.key === activeStage);
 
   // Fetch candidates + tasks
+  // Uses campaign.matched_candidates JSONB as primary data source (same pattern as OutreachPipeline)
+  // Intelligence fields (outreach_hooks, best_outreach_angle, etc.) live in matched_candidates entries
+  // Candidate details (linkedin_url, first_name, etc.) fetched separately from candidates table
   const fetchData = useCallback(async () => {
     if (!campaign?.id || !organizationId) return;
     setLoading(true);
 
     try {
-      // 1. Fetch matched candidates from candidate_campaign_matches
-      const { data: matches, error: matchError } = await supabase
-        .from("candidate_campaign_matches")
-        .select(
-          `
-          id, candidate_id, match_score, match_reasons, intelligence_score, recommended_approach,
-          candidates:candidate_id (
-            id, first_name, last_name, job_title, company_name, linkedin_url,
-            skills, intelligence_score, intelligence_level, recommended_approach,
-            intelligence_factors, timing_signals, intelligence_timing,
-            outreach_hooks, best_outreach_angle, company_pain_points,
-            key_insights, lateral_opportunities
-          )
-        `
-        )
-        .eq("campaign_id", campaign.id)
-        .not("candidates", "is", null);
+      const matchedCandidates = campaign.matched_candidates || [];
+      if (matchedCandidates.length === 0) {
+        setCandidates([]);
+        setOutreachTasks([]);
+        setLoading(false);
+        return;
+      }
 
-      if (matchError) throw matchError;
+      // 1. Fetch candidate details from candidates table (only columns that exist)
+      const candidateIds = matchedCandidates.map((m) => m.candidate_id).filter(Boolean);
+      const { data: candidateDetails, error: candidateError } = await supabase
+        .from("candidates")
+        .select("id, first_name, last_name, job_title, company_name, linkedin_url, skills, intelligence_score, intelligence_level, recommended_approach, intelligence_factors, intelligence_timing")
+        .in("id", candidateIds);
+
+      if (candidateError) throw candidateError;
 
       // 2. Fetch outreach tasks for this campaign + current stage
       const { data: tasks, error: taskError } = await supabase
@@ -113,25 +113,54 @@ const LinkedInOutreachWorkflow = ({ campaign, organizationId }) => {
 
       if (taskError) throw taskError;
 
-      // 3. Merge candidates with their tasks
+      // 3. Build lookup maps
+      const detailMap = new Map();
+      (candidateDetails || []).forEach((c) => detailMap.set(c.id, c));
+
       const taskMap = new Map();
       (tasks || []).forEach((t) => taskMap.set(t.candidate_id, t));
 
-      const merged = (matches || [])
-        .filter((m) => m.candidates)
-        .map((m) => ({
-          ...m.candidates,
-          // Normalize intelligence fields
-          timing_signals: m.candidates.timing_signals || m.candidates.intelligence_timing || [],
-          // Match data from candidate_campaign_matches
-          match_score: m.match_score,
-          match_reasons: m.match_reasons,
-          recommended_approach: m.recommended_approach || m.candidates.recommended_approach,
-          intelligence_score: m.intelligence_score || m.candidates.intelligence_score,
-          // The linked task (if any)
-          _task: taskMap.get(m.candidate_id) || null,
-          _matchId: m.id,
-        }));
+      // 4. Merge: matched_candidates (intelligence) + candidateDetails (profile) + tasks
+      const merged = matchedCandidates
+        .filter((m) => m.candidate_id && detailMap.has(m.candidate_id))
+        .map((m) => {
+          const detail = detailMap.get(m.candidate_id);
+          return {
+            // Candidate profile from candidates table
+            id: detail.id,
+            first_name: detail.first_name,
+            last_name: detail.last_name,
+            job_title: detail.job_title,
+            company_name: detail.company_name,
+            linkedin_url: detail.linkedin_url,
+            skills: detail.skills,
+            intelligence_factors: detail.intelligence_factors,
+
+            // Intelligence data from matched_candidates JSONB (the gold mine)
+            intelligence_score: m.intelligence_score || detail.intelligence_score,
+            intelligence_level: detail.intelligence_level,
+            recommended_approach: m.recommended_approach || detail.recommended_approach,
+            outreach_hooks: m.outreach_hooks || [],
+            best_outreach_angle: m.best_outreach_angle || "",
+            timing_signals: m.timing_signals || detail.intelligence_timing || [],
+            company_pain_points: m.company_pain_points || [],
+            key_insights: m.key_insights || [],
+            lateral_opportunities: m.lateral_opportunities || [],
+
+            // Match data from matched_candidates JSONB
+            match_score: m.match_score || 0,
+            match_reasons: m.match_reasons || [],
+            match_details: m.match_details,
+            candidate_id: m.candidate_id,
+
+            // Outreach messages already generated (stored in matched_candidates JSONB)
+            outreach_messages: m.outreach_messages || {},
+
+            // The linked outreach task (if any)
+            _task: taskMap.get(m.candidate_id) || null,
+            _matchEntry: m,
+          };
+        });
 
       setCandidates(merged);
       setOutreachTasks(tasks || []);
@@ -141,7 +170,7 @@ const LinkedInOutreachWorkflow = ({ campaign, organizationId }) => {
     } finally {
       setLoading(false);
     }
-  }, [campaign?.id, organizationId, currentStageConfig?.dbStage]);
+  }, [campaign?.id, campaign?.matched_candidates, organizationId, currentStageConfig?.dbStage]);
 
   useEffect(() => {
     fetchData();
@@ -208,6 +237,10 @@ const LinkedInOutreachWorkflow = ({ campaign, organizationId }) => {
 
       const fullName = `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim();
 
+      // Intelligence data comes from matched_candidates JSONB entry (_matchEntry)
+      // Profile data comes from candidates table
+      const matchEntry = candidate._matchEntry || {};
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generateCampaignOutreach`,
         {
@@ -221,26 +254,27 @@ const LinkedInOutreachWorkflow = ({ campaign, organizationId }) => {
             candidate_id: candidateId,
             organization_id: organizationId,
 
-            // Basic candidate info
+            // Basic candidate info (from candidates table)
             candidate_name: fullName,
             candidate_title: candidate.job_title,
             candidate_company: candidate.company_name,
             candidate_skills: candidate.skills,
 
-            // Match data
-            match_score: candidate.match_score,
-            match_reasons: candidate.match_reasons,
+            // Match data (from matched_candidates JSONB)
+            match_score: matchEntry.match_score || candidate.match_score,
+            match_reasons: matchEntry.match_reasons || candidate.match_reasons,
+            match_details: matchEntry.match_details,
 
-            // Intelligence data
-            intelligence_score: candidate.intelligence_score,
-            recommended_approach: candidate.recommended_approach,
-            outreach_hooks: candidate.outreach_hooks,
-            best_outreach_angle: candidate.best_outreach_angle,
-            timing_signals: candidate.timing_signals,
-            company_pain_points: candidate.company_pain_points,
-            key_insights: candidate.key_insights,
-            lateral_opportunities: candidate.lateral_opportunities,
-            intelligence_factors: candidate.intelligence_factors,
+            // Intelligence data (from matched_candidates JSONB — the gold mine)
+            intelligence_score: matchEntry.intelligence_score || candidate.intelligence_score,
+            recommended_approach: matchEntry.recommended_approach || candidate.recommended_approach,
+            outreach_hooks: matchEntry.outreach_hooks || candidate.outreach_hooks,
+            best_outreach_angle: matchEntry.best_outreach_angle || candidate.best_outreach_angle,
+            timing_signals: matchEntry.timing_signals || candidate.timing_signals,
+            company_pain_points: matchEntry.company_pain_points || candidate.company_pain_points,
+            key_insights: matchEntry.key_insights || candidate.key_insights,
+            lateral_opportunities: matchEntry.lateral_opportunities || candidate.lateral_opportunities,
+            intelligence_factors: matchEntry.intelligence_factors || candidate.intelligence_factors,
 
             // Role context
             role_context: campaign.role_context,
