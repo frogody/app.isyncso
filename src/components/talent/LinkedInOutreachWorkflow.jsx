@@ -79,26 +79,30 @@ const LinkedInOutreachWorkflow = ({ campaign, organizationId }) => {
   const currentStageConfig = STAGE_CONFIG.find((s) => s.key === activeStage);
 
   // Fetch candidates + tasks
-  // Primary: candidate_campaign_matches with corrected candidates join (valid columns only)
+  // Primary: candidate_campaign_matches with candidates join (verified column names)
   // Fallback: campaign.matched_candidates JSONB if candidate_campaign_matches is empty
-  // Intelligence fields (outreach_hooks, best_outreach_angle, etc.) come from match_details
-  // or from campaign.matched_candidates entries when available
   const fetchData = useCallback(async () => {
     if (!campaign?.id || !organizationId) return;
     setLoading(true);
 
     try {
-      // 1. Primary: fetch from candidate_campaign_matches with valid candidate columns only
+      // 1. Primary: fetch from candidate_campaign_matches with verified candidate columns
+      // candidate_campaign_matches columns: id, candidate_id, match_score, match_reasons,
+      //   intelligence_score, recommended_approach, status, role_id, role_title, ...
+      // candidates columns: linkedin_profile (NOT linkedin_url), outreach_hooks,
+      //   best_outreach_angle, key_insights, company_pain_points, lateral_opportunities, etc.
       const { data: matches, error: matchError } = await supabase
         .from("candidate_campaign_matches")
         .select(
           `
-          id, candidate_id, match_score, match_reasons, match_details,
+          id, candidate_id, match_score, match_reasons,
           intelligence_score, recommended_approach,
           candidates:candidate_id (
             id, first_name, last_name, job_title, company_name,
-            linkedin_url, skills, intelligence_score, intelligence_level,
+            linkedin_profile, skills, intelligence_score, intelligence_level,
             recommended_approach, intelligence_factors, intelligence_timing,
+            outreach_hooks, best_outreach_angle, key_insights,
+            company_pain_points, lateral_opportunities,
             outreach_status, outreach_stage, last_outreach_at
           )
         `
@@ -120,7 +124,7 @@ const LinkedInOutreachWorkflow = ({ campaign, organizationId }) => {
       const taskMap = new Map();
       (tasks || []).forEach((t) => taskMap.set(t.candidate_id, t));
 
-      // Build a lookup from campaign.matched_candidates JSONB for intelligence data fallback
+      // Build a lookup from campaign.matched_candidates JSONB for extra intelligence fallback
       const matchedCandidatesMap = new Map();
       (campaign.matched_candidates || []).forEach((m) => {
         if (m.candidate_id) matchedCandidatesMap.set(m.candidate_id, m);
@@ -134,8 +138,6 @@ const LinkedInOutreachWorkflow = ({ campaign, organizationId }) => {
           .filter((m) => m.candidates)
           .map((m) => {
             const c = m.candidates;
-            // Intelligence data: check match_details first, then campaign.matched_candidates fallback
-            const details = m.match_details || {};
             const fallback = matchedCandidatesMap.get(m.candidate_id) || {};
 
             return {
@@ -145,27 +147,26 @@ const LinkedInOutreachWorkflow = ({ campaign, organizationId }) => {
               last_name: c.last_name,
               job_title: c.job_title,
               company_name: c.company_name,
-              linkedin_url: c.linkedin_url,
+              linkedin_url: c.linkedin_profile, // DB column is linkedin_profile
               skills: c.skills,
               intelligence_factors: c.intelligence_factors,
               intelligence_level: c.intelligence_level,
               outreach_status: c.outreach_status,
               outreach_stage: c.outreach_stage,
 
-              // Intelligence data (match_details → campaign.matched_candidates fallback → empty)
+              // Intelligence from candidates table (these columns exist!) + fallback
               intelligence_score: m.intelligence_score || c.intelligence_score,
               recommended_approach: m.recommended_approach || c.recommended_approach,
-              outreach_hooks: details.outreach_hooks || fallback.outreach_hooks || [],
-              best_outreach_angle: details.best_outreach_angle || fallback.best_outreach_angle || "",
-              timing_signals: details.timing_signals || fallback.timing_signals || c.intelligence_timing || [],
-              company_pain_points: details.company_pain_points || fallback.company_pain_points || [],
-              key_insights: details.key_insights || fallback.key_insights || [],
-              lateral_opportunities: details.lateral_opportunities || fallback.lateral_opportunities || [],
+              outreach_hooks: c.outreach_hooks || fallback.outreach_hooks || [],
+              best_outreach_angle: c.best_outreach_angle || fallback.best_outreach_angle || "",
+              timing_signals: c.intelligence_timing || fallback.timing_signals || [],
+              company_pain_points: c.company_pain_points || fallback.company_pain_points || [],
+              key_insights: c.key_insights || fallback.key_insights || [],
+              lateral_opportunities: c.lateral_opportunities || fallback.lateral_opportunities || [],
 
               // Match data from candidate_campaign_matches
               match_score: m.match_score || 0,
               match_reasons: m.match_reasons || [],
-              match_details: m.match_details,
               candidate_id: m.candidate_id,
 
               // Outreach messages from campaign.matched_candidates fallback
@@ -181,7 +182,7 @@ const LinkedInOutreachWorkflow = ({ campaign, organizationId }) => {
         const candidateIds = campaign.matched_candidates.map((m) => m.candidate_id).filter(Boolean);
         const { data: candidateDetails } = await supabase
           .from("candidates")
-          .select("id, first_name, last_name, job_title, company_name, linkedin_url, skills, intelligence_score, intelligence_level, recommended_approach, intelligence_factors, intelligence_timing")
+          .select("id, first_name, last_name, job_title, company_name, linkedin_profile, skills, intelligence_score, intelligence_level, recommended_approach, intelligence_factors, intelligence_timing, outreach_hooks, best_outreach_angle, key_insights, company_pain_points, lateral_opportunities")
           .in("id", candidateIds);
 
         const detailMap = new Map();
@@ -197,23 +198,22 @@ const LinkedInOutreachWorkflow = ({ campaign, organizationId }) => {
               last_name: detail.last_name,
               job_title: detail.job_title,
               company_name: detail.company_name,
-              linkedin_url: detail.linkedin_url,
+              linkedin_url: detail.linkedin_profile, // DB column is linkedin_profile
               skills: detail.skills,
               intelligence_factors: detail.intelligence_factors,
               intelligence_level: detail.intelligence_level,
 
               intelligence_score: m.intelligence_score || detail.intelligence_score,
               recommended_approach: m.recommended_approach || detail.recommended_approach,
-              outreach_hooks: m.outreach_hooks || [],
-              best_outreach_angle: m.best_outreach_angle || "",
-              timing_signals: m.timing_signals || detail.intelligence_timing || [],
-              company_pain_points: m.company_pain_points || [],
-              key_insights: m.key_insights || [],
-              lateral_opportunities: m.lateral_opportunities || [],
+              outreach_hooks: detail.outreach_hooks || m.outreach_hooks || [],
+              best_outreach_angle: detail.best_outreach_angle || m.best_outreach_angle || "",
+              timing_signals: detail.intelligence_timing || m.timing_signals || [],
+              company_pain_points: detail.company_pain_points || m.company_pain_points || [],
+              key_insights: detail.key_insights || m.key_insights || [],
+              lateral_opportunities: detail.lateral_opportunities || m.lateral_opportunities || [],
 
               match_score: m.match_score || 0,
               match_reasons: m.match_reasons || [],
-              match_details: m.match_details,
               candidate_id: m.candidate_id,
               outreach_messages: m.outreach_messages || {},
 
