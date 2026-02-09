@@ -435,7 +435,7 @@ async function generateElevenLabsTTS(text: string): Promise<{ audio: string; byt
         stability: 0.30,         // Low = very expressive intonation
         similarity_boost: 0.80,  // Keeps voice identity strong
         style: 0.55,             // High emotional expressiveness
-        speed: 1.0,              // Normal pace
+        speed: 1.15,             // Slightly faster pace
       }),
     });
     clearTimeout(timeout);
