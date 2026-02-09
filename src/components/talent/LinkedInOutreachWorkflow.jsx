@@ -79,30 +79,34 @@ const LinkedInOutreachWorkflow = ({ campaign, organizationId }) => {
   const currentStageConfig = STAGE_CONFIG.find((s) => s.key === activeStage);
 
   // Fetch candidates + tasks
-  // Uses campaign.matched_candidates JSONB as primary data source (same pattern as OutreachPipeline)
-  // Intelligence fields (outreach_hooks, best_outreach_angle, etc.) live in matched_candidates entries
-  // Candidate details (linkedin_url, first_name, etc.) fetched separately from candidates table
+  // Primary: candidate_campaign_matches with corrected candidates join (valid columns only)
+  // Fallback: campaign.matched_candidates JSONB if candidate_campaign_matches is empty
+  // Intelligence fields (outreach_hooks, best_outreach_angle, etc.) come from match_details
+  // or from campaign.matched_candidates entries when available
   const fetchData = useCallback(async () => {
     if (!campaign?.id || !organizationId) return;
     setLoading(true);
 
     try {
-      const matchedCandidates = campaign.matched_candidates || [];
-      if (matchedCandidates.length === 0) {
-        setCandidates([]);
-        setOutreachTasks([]);
-        setLoading(false);
-        return;
-      }
+      // 1. Primary: fetch from candidate_campaign_matches with valid candidate columns only
+      const { data: matches, error: matchError } = await supabase
+        .from("candidate_campaign_matches")
+        .select(
+          `
+          id, candidate_id, match_score, match_reasons, match_details,
+          intelligence_score, recommended_approach,
+          candidates:candidate_id (
+            id, first_name, last_name, job_title, company_name,
+            linkedin_url, skills, intelligence_score, intelligence_level,
+            recommended_approach, intelligence_factors, intelligence_timing,
+            outreach_status, outreach_stage, last_outreach_at
+          )
+        `
+        )
+        .eq("campaign_id", campaign.id)
+        .not("candidates", "is", null);
 
-      // 1. Fetch candidate details from candidates table (only columns that exist)
-      const candidateIds = matchedCandidates.map((m) => m.candidate_id).filter(Boolean);
-      const { data: candidateDetails, error: candidateError } = await supabase
-        .from("candidates")
-        .select("id, first_name, last_name, job_title, company_name, linkedin_url, skills, intelligence_score, intelligence_level, recommended_approach, intelligence_factors, intelligence_timing")
-        .in("id", candidateIds);
-
-      if (candidateError) throw candidateError;
+      if (matchError) throw matchError;
 
       // 2. Fetch outreach tasks for this campaign + current stage
       const { data: tasks, error: taskError } = await supabase
@@ -113,54 +117,111 @@ const LinkedInOutreachWorkflow = ({ campaign, organizationId }) => {
 
       if (taskError) throw taskError;
 
-      // 3. Build lookup maps
-      const detailMap = new Map();
-      (candidateDetails || []).forEach((c) => detailMap.set(c.id, c));
-
       const taskMap = new Map();
       (tasks || []).forEach((t) => taskMap.set(t.candidate_id, t));
 
-      // 4. Merge: matched_candidates (intelligence) + candidateDetails (profile) + tasks
-      const merged = matchedCandidates
-        .filter((m) => m.candidate_id && detailMap.has(m.candidate_id))
-        .map((m) => {
-          const detail = detailMap.get(m.candidate_id);
-          return {
-            // Candidate profile from candidates table
-            id: detail.id,
-            first_name: detail.first_name,
-            last_name: detail.last_name,
-            job_title: detail.job_title,
-            company_name: detail.company_name,
-            linkedin_url: detail.linkedin_url,
-            skills: detail.skills,
-            intelligence_factors: detail.intelligence_factors,
+      // Build a lookup from campaign.matched_candidates JSONB for intelligence data fallback
+      const matchedCandidatesMap = new Map();
+      (campaign.matched_candidates || []).forEach((m) => {
+        if (m.candidate_id) matchedCandidatesMap.set(m.candidate_id, m);
+      });
 
-            // Intelligence data from matched_candidates JSONB (the gold mine)
-            intelligence_score: m.intelligence_score || detail.intelligence_score,
-            intelligence_level: detail.intelligence_level,
-            recommended_approach: m.recommended_approach || detail.recommended_approach,
-            outreach_hooks: m.outreach_hooks || [],
-            best_outreach_angle: m.best_outreach_angle || "",
-            timing_signals: m.timing_signals || detail.intelligence_timing || [],
-            company_pain_points: m.company_pain_points || [],
-            key_insights: m.key_insights || [],
-            lateral_opportunities: m.lateral_opportunities || [],
+      let merged = [];
 
-            // Match data from matched_candidates JSONB
-            match_score: m.match_score || 0,
-            match_reasons: m.match_reasons || [],
-            match_details: m.match_details,
-            candidate_id: m.candidate_id,
+      if (matches && matches.length > 0) {
+        // 3a. Primary path: merge candidate_campaign_matches + candidates join + tasks
+        merged = matches
+          .filter((m) => m.candidates)
+          .map((m) => {
+            const c = m.candidates;
+            // Intelligence data: check match_details first, then campaign.matched_candidates fallback
+            const details = m.match_details || {};
+            const fallback = matchedCandidatesMap.get(m.candidate_id) || {};
 
-            // Outreach messages already generated (stored in matched_candidates JSONB)
-            outreach_messages: m.outreach_messages || {},
+            return {
+              // Candidate profile from candidates table join
+              id: c.id,
+              first_name: c.first_name,
+              last_name: c.last_name,
+              job_title: c.job_title,
+              company_name: c.company_name,
+              linkedin_url: c.linkedin_url,
+              skills: c.skills,
+              intelligence_factors: c.intelligence_factors,
+              intelligence_level: c.intelligence_level,
+              outreach_status: c.outreach_status,
+              outreach_stage: c.outreach_stage,
 
-            // The linked outreach task (if any)
-            _task: taskMap.get(m.candidate_id) || null,
-            _matchEntry: m,
-          };
-        });
+              // Intelligence data (match_details → campaign.matched_candidates fallback → empty)
+              intelligence_score: m.intelligence_score || c.intelligence_score,
+              recommended_approach: m.recommended_approach || c.recommended_approach,
+              outreach_hooks: details.outreach_hooks || fallback.outreach_hooks || [],
+              best_outreach_angle: details.best_outreach_angle || fallback.best_outreach_angle || "",
+              timing_signals: details.timing_signals || fallback.timing_signals || c.intelligence_timing || [],
+              company_pain_points: details.company_pain_points || fallback.company_pain_points || [],
+              key_insights: details.key_insights || fallback.key_insights || [],
+              lateral_opportunities: details.lateral_opportunities || fallback.lateral_opportunities || [],
+
+              // Match data from candidate_campaign_matches
+              match_score: m.match_score || 0,
+              match_reasons: m.match_reasons || [],
+              match_details: m.match_details,
+              candidate_id: m.candidate_id,
+
+              // Outreach messages from campaign.matched_candidates fallback
+              outreach_messages: fallback.outreach_messages || {},
+
+              // The linked outreach task (if any)
+              _task: taskMap.get(m.candidate_id) || null,
+              _matchEntry: fallback,
+            };
+          });
+      } else if (campaign.matched_candidates?.length > 0) {
+        // 3b. Fallback: use campaign.matched_candidates JSONB when candidate_campaign_matches is empty
+        const candidateIds = campaign.matched_candidates.map((m) => m.candidate_id).filter(Boolean);
+        const { data: candidateDetails } = await supabase
+          .from("candidates")
+          .select("id, first_name, last_name, job_title, company_name, linkedin_url, skills, intelligence_score, intelligence_level, recommended_approach, intelligence_factors, intelligence_timing")
+          .in("id", candidateIds);
+
+        const detailMap = new Map();
+        (candidateDetails || []).forEach((c) => detailMap.set(c.id, c));
+
+        merged = campaign.matched_candidates
+          .filter((m) => m.candidate_id && detailMap.has(m.candidate_id))
+          .map((m) => {
+            const detail = detailMap.get(m.candidate_id);
+            return {
+              id: detail.id,
+              first_name: detail.first_name,
+              last_name: detail.last_name,
+              job_title: detail.job_title,
+              company_name: detail.company_name,
+              linkedin_url: detail.linkedin_url,
+              skills: detail.skills,
+              intelligence_factors: detail.intelligence_factors,
+              intelligence_level: detail.intelligence_level,
+
+              intelligence_score: m.intelligence_score || detail.intelligence_score,
+              recommended_approach: m.recommended_approach || detail.recommended_approach,
+              outreach_hooks: m.outreach_hooks || [],
+              best_outreach_angle: m.best_outreach_angle || "",
+              timing_signals: m.timing_signals || detail.intelligence_timing || [],
+              company_pain_points: m.company_pain_points || [],
+              key_insights: m.key_insights || [],
+              lateral_opportunities: m.lateral_opportunities || [],
+
+              match_score: m.match_score || 0,
+              match_reasons: m.match_reasons || [],
+              match_details: m.match_details,
+              candidate_id: m.candidate_id,
+              outreach_messages: m.outreach_messages || {},
+
+              _task: taskMap.get(m.candidate_id) || null,
+              _matchEntry: m,
+            };
+          });
+      }
 
       setCandidates(merged);
       setOutreachTasks(tasks || []);
