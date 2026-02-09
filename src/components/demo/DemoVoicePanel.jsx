@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { t } from '@/constants/demoTranslations';
 
 // Contextual suggestion chips per page (including sub-pages)
 const PAGE_SUGGESTIONS = {
@@ -71,12 +72,14 @@ const PAGE_SUGGESTIONS = {
   'sync-activity': ["How many actions this month?", "Show me agent", "Show me dashboard"],
 };
 
-const DISCOVERY_SUGGESTIONS = [
-  "Revenue & Sales Growth",
-  "Hiring & Talent",
-  "Finance & Operations",
-  "Show me everything",
-];
+function getDiscoverySuggestions(lang) {
+  return [
+    t('discovery.revenue', lang),
+    t('discovery.talent', lang),
+    t('discovery.finance', lang),
+    t('discovery.everything', lang),
+  ];
+}
 
 export default function DemoVoicePanel({
   voiceState = 'idle',
@@ -88,6 +91,7 @@ export default function DemoVoicePanel({
   currentPage = 'dashboard',
   responseTime = null,
   discoveryPhase = false,
+  language = 'en',
 }) {
   const [textInput, setTextInput] = useState('');
   const [collapsed, setCollapsed] = useState(false);
@@ -95,11 +99,11 @@ export default function DemoVoicePanel({
   const transcriptRef = useRef(null);
 
   const stateLabels = {
-    idle: 'Ready',
-    off: 'Ready',
-    listening: 'Listening...',
-    processing: 'Thinking...',
-    speaking: 'Speaking...',
+    idle: t('state.ready', language),
+    off: t('state.ready', language),
+    listening: t('state.listening', language),
+    processing: t('state.thinking', language),
+    speaking: t('state.speaking', language),
   };
 
   const stateColors = {
@@ -151,7 +155,7 @@ export default function DemoVoicePanel({
   ];
 
   const suggestions = discoveryPhase
-    ? DISCOVERY_SUGGESTIONS
+    ? getDiscoverySuggestions(language)
     : (PAGE_SUGGESTIONS[currentPage] || PAGE_SUGGESTIONS.dashboard);
 
   const handleChipClick = (chipText) => {
@@ -230,7 +234,7 @@ export default function DemoVoicePanel({
               </div>
             ) : (
               <div className="text-center py-3">
-                <p className="text-zinc-600 text-xs">Speak anytime to ask questions</p>
+                <p className="text-zinc-600 text-xs">{t('voice.speakAnytime', language)}</p>
               </div>
             )}
           </div>
@@ -290,7 +294,7 @@ export default function DemoVoicePanel({
                     setTextInput('');
                   }
                 }}
-                placeholder="Type a question..."
+                placeholder={t('voice.typeQuestion', language)}
                 className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-cyan-500/50"
               />
               <button

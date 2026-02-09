@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { getLanguageConfig } from '../constants/languages';
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 export const hasSpeechRecognition = !!SpeechRecognition;
@@ -10,7 +11,7 @@ const VOICE_STATES = {
   SPEAKING: 'speaking',
 };
 
-export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, onUserSpoke } = {}) {
+export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, onUserSpoke, language = 'en' } = {}) {
   const [voiceState, setVoiceState] = useState(VOICE_STATES.OFF);
   const [transcript, setTranscript] = useState('');
   const [isMuted, setIsMuted] = useState(false);
@@ -48,6 +49,8 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
       } catch (_) {}
       audioElRef.current = null;
     }
+    // Also cancel any browser speechSynthesis
+    try { window.speechSynthesis?.cancel(); } catch (_) {}
   }, []);
 
   const playAudio = useCallback((base64, turnId, onDone) => {
@@ -74,6 +77,26 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
     }
   }, [stopAudio]);
 
+  // Browser speechSynthesis fallback (for languages without Kokoro TTS)
+  const browserSpeak = useCallback((text, turnId, onDone) => {
+    if (turnIdRef.current !== turnId || !window.speechSynthesis) {
+      onDone?.();
+      return;
+    }
+    try {
+      window.speechSynthesis.cancel();
+      const langConfig = getLanguageConfig(language);
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = langConfig.speechCode;
+      utterance.rate = 1.0;
+      utterance.onend = () => { if (turnIdRef.current === turnId) onDone?.(); };
+      utterance.onerror = () => { if (turnIdRef.current === turnId) onDone?.(); };
+      window.speechSynthesis.speak(utterance);
+    } catch (_) {
+      onDone?.();
+    }
+  }, [language]);
+
   // Speech recognition
   const startListeningFnRef = useRef(null);
 
@@ -89,7 +112,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
       const rec = new SpeechRecognition();
       rec.continuous = false;
       rec.interimResults = false;
-      rec.lang = 'en-US';
+      rec.lang = getLanguageConfig(language).speechCode;
 
       rec.onend = () => {
         recognitionRef.current = null;
@@ -124,7 +147,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
     } catch (e) {
       if (activeRef.current) setTimeout(() => startListeningFnRef.current?.(), 300);
     }
-  }, [stopAudio, isMuted]);
+  }, [stopAudio, isMuted, language]);
 
   useEffect(() => { startListeningFnRef.current = startListening; }, [startListening]);
 
@@ -181,6 +204,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
           history: historyRef.current.slice(-12),
           demoToken,
           stepContext: stepContextRef.current,
+          language,
         }),
       });
 
@@ -201,13 +225,19 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
 
       if (!activeRef.current || turnIdRef.current !== turnId) return;
 
-      // Play audio from combined response (single round-trip) or fall back to TTS-only call
+      // Play audio from combined response (single round-trip) or fall back to TTS-only/browser TTS
       if (reply) {
         setVoiceState(VOICE_STATES.SPEAKING);
 
         // Check if audio was included in the response (combined LLM+TTS)
         if (data.audio) {
           playAudio(data.audio, turnId, () => resumeListening());
+          return;
+        }
+
+        // Server says no TTS available for this language — use browser speechSynthesis
+        if (data.ttsUnavailable) {
+          browserSpeak(reply, turnId, () => resumeListening());
           return;
         }
 
@@ -219,7 +249,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
             method: 'POST',
             signal: controller.signal,
             headers,
-            body: JSON.stringify({ ttsOnly: true, ttsText: reply }),
+            body: JSON.stringify({ ttsOnly: true, ttsText: reply, language }),
           });
           clearTimeout(ttsTimeout);
           if (turnIdRef.current !== turnId) return;
@@ -227,6 +257,11 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
             const audioData = await audioRes.json();
             if (audioData.audio) {
               playAudio(audioData.audio, turnId, () => resumeListening());
+              return;
+            }
+            // TTS unavailable from fallback call — use browser TTS
+            if (audioData.ttsUnavailable) {
+              browserSpeak(reply, turnId, () => resumeListening());
               return;
             }
           }
@@ -241,7 +276,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
       }
       if (activeRef.current) setTimeout(() => resumeListening(), 300);
     }
-  }, [demoToken, stopListening, stopAudio, playAudio, resumeListening, parseDemoActions, voiceUrl, headers]);
+  }, [demoToken, language, stopListening, stopAudio, playAudio, browserSpeak, resumeListening, parseDemoActions, voiceUrl, headers]);
 
   // Pre-cache TTS audio for upcoming scripted dialogue (fire-and-forget)
   const preCacheAudio = useCallback((texts) => {
@@ -253,19 +288,21 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
       fetch(voiceUrl, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ ttsOnly: true, ttsText: text }),
+        body: JSON.stringify({ ttsOnly: true, ttsText: text, language }),
       })
         .then(res => res.ok ? res.json() : null)
         .then(data => {
           if (data?.audio) {
             audioCacheRef.current.set(text, data.audio);
           } else {
-            audioCacheRef.current.delete(text);
+            // ttsUnavailable or error — mark as 'browser' so speakDialogue uses browser TTS
+            audioCacheRef.current.set(text, data?.ttsUnavailable ? 'browser' : null);
+            if (!data?.ttsUnavailable) audioCacheRef.current.delete(text);
           }
         })
         .catch(() => audioCacheRef.current.delete(text));
     });
-  }, [voiceUrl, headers]);
+  }, [voiceUrl, headers, language]);
 
   // Speak pre-written dialogue (scripted steps)
   const speakDialogue = useCallback(async (text) => {
@@ -286,8 +323,13 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
 
     // Check pre-cache first
     const cached = audioCacheRef.current.get(text);
-    if (cached && cached !== 'pending') {
+    if (cached && cached !== 'pending' && cached !== 'browser') {
       playAudio(cached, turnId, handleDone);
+      return;
+    }
+    // Pre-cache indicated browser TTS for this language
+    if (cached === 'browser') {
+      browserSpeak(text, turnId, handleDone);
       return;
     }
 
@@ -298,7 +340,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
         method: 'POST',
         signal: controller.signal,
         headers,
-        body: JSON.stringify({ ttsOnly: true, ttsText: text }),
+        body: JSON.stringify({ ttsOnly: true, ttsText: text, language }),
       });
       clearTimeout(ttsTimeout);
 
@@ -312,6 +354,12 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
           playAudio(audioData.audio, turnId, handleDone);
           return;
         }
+        // No server TTS — use browser speechSynthesis
+        if (audioData.ttsUnavailable) {
+          audioCacheRef.current.set(text, 'browser');
+          browserSpeak(text, turnId, handleDone);
+          return;
+        }
       }
     } catch (_) {}
 
@@ -321,7 +369,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
       await new Promise(r => setTimeout(r, readTime));
       handleDone();
     }
-  }, [voiceUrl, headers, stopListening, stopAudio, playAudio, resumeListening]);
+  }, [voiceUrl, headers, language, stopListening, stopAudio, playAudio, browserSpeak, resumeListening]);
 
   // Generate and speak a tailored walkthrough via LLM (for priority modules after discovery)
   // Unlike speakDialogue (pre-written text→TTS), this calls the LLM to generate contextual dialogue
@@ -351,6 +399,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
           history: historyRef.current.slice(-12),
           demoToken,
           stepContext: stepContextRef.current,
+          language,
         }),
       });
 
@@ -380,6 +429,12 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
           return;
         }
 
+        // Server says no TTS for this language — use browser speechSynthesis
+        if (data.ttsUnavailable) {
+          browserSpeak(reply, turnId, handleDone);
+          return;
+        }
+
         // Fallback TTS
         try {
           const controller = new AbortController();
@@ -388,7 +443,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
             method: 'POST',
             signal: controller.signal,
             headers,
-            body: JSON.stringify({ ttsOnly: true, ttsText: reply }),
+            body: JSON.stringify({ ttsOnly: true, ttsText: reply, language }),
           });
           clearTimeout(ttsTimeout);
           if (turnIdRef.current !== turnId) return;
@@ -396,6 +451,10 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
             const audioData = await audioRes.json();
             if (audioData.audio) {
               playAudio(audioData.audio, turnId, handleDone);
+              return;
+            }
+            if (audioData.ttsUnavailable) {
+              browserSpeak(reply, turnId, handleDone);
               return;
             }
           }
@@ -415,7 +474,7 @@ export default function useDemoVoice({ demoToken, onDemoAction, onDialogueEnd, o
       }
       if (activeRef.current) setTimeout(() => handleDone(), 300);
     }
-  }, [demoToken, stopListening, stopAudio, playAudio, resumeListening, parseDemoActions, voiceUrl, headers]);
+  }, [demoToken, language, stopListening, stopAudio, playAudio, browserSpeak, resumeListening, parseDemoActions, voiceUrl, headers]);
 
   // Set step context (called by orchestrator before each step)
   const setStepContext = useCallback((ctx) => {

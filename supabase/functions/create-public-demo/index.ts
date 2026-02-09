@@ -15,7 +15,13 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English', nl: 'Dutch', es: 'Spanish', fr: 'French', de: 'German',
+  it: 'Italian', pt: 'Portuguese', ja: 'Japanese', ko: 'Korean', zh: 'Chinese', hi: 'Hindi',
+};
 
 const DEFAULT_DEMO_STEPS = [
   { step_order: 1, title: 'Welcome & Dashboard', page_key: 'dashboard', wait_for_user: false },
@@ -72,6 +78,80 @@ function getSyncDialogue(stepOrder: number, recipientName: string, companyName: 
   }
 }
 
+async function translateDialogues(
+  dialogues: Array<{ step: number; text: string }>,
+  language: string,
+  recipientName: string,
+  companyName: string,
+): Promise<Array<{ step: number; text: string }>> {
+  if (!TOGETHER_API_KEY) {
+    console.warn('[create-public-demo] No TOGETHER_API_KEY — skipping translation');
+    return dialogues;
+  }
+
+  const languageName = LANGUAGE_NAMES[language] || language;
+
+  const prompt = `Translate these 15 sales demo dialogues into ${languageName}.
+
+RULES:
+- Translate naturally — sound like a native speaker giving a product demo
+- Keep these proper nouns EXACTLY as-is: iSyncso, SYNC, TechVentures, Alex Morgan, ${recipientName}, ${companyName}
+- Keep these universal terms in English: CRM, SaaS, AI, API, P&L, KPI, AP, EU AI Act, Annex IV, Article 47, SKU
+- Keep module names in English: Dashboard, Growth, CRM, Talent, Finance, Learn, Create, Products, Raise, Sentinel, Inbox, Tasks, Integrations
+- Keep sub-page names in English when referencing navigation: Invoices, Proposals, Expenses, Ledger, etc.
+- Return ONLY a valid JSON array: [{"step":1,"text":"..."},{"step":2,"text":"..."},...]
+
+INPUT:
+${JSON.stringify(dialogues)}`;
+
+  try {
+    const res = await fetch('https://api.together.xyz/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${TOGETHER_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
+        messages: [
+          { role: 'system', content: 'You are a professional translator. Return ONLY valid JSON, no explanation.' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.3,
+        max_tokens: 16000,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error(`[create-public-demo] Translation LLM error: ${res.status}`);
+      return dialogues;
+    }
+
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content || '';
+
+    // Extract JSON array from response (may be wrapped in markdown code block)
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      console.error('[create-public-demo] Could not extract JSON from translation response');
+      return dialogues;
+    }
+
+    const translated = JSON.parse(jsonMatch[0]) as Array<{ step: number; text: string }>;
+
+    if (!Array.isArray(translated) || translated.length !== dialogues.length) {
+      console.error(`[create-public-demo] Translation returned ${translated?.length} items, expected ${dialogues.length}`);
+      return dialogues;
+    }
+
+    console.log(`[create-public-demo] Translated ${translated.length} dialogues to ${languageName}`);
+    return translated;
+  } catch (err) {
+    console.error('[create-public-demo] Translation error:', err);
+    return dialogues; // Fallback to English
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -89,7 +169,10 @@ serve(async (req) => {
       explorium,
       prospectData,
       selectedModules,
+      language: rawLanguage,
     } = await req.json();
+
+    const language = (rawLanguage && LANGUAGE_NAMES[rawLanguage]) ? rawLanguage : 'en';
 
     // ── Validate required fields ──────────────────────────────────────
     if (!recipientName || !recipientEmail || !companyName) {
@@ -119,6 +202,7 @@ serve(async (req) => {
           prospect: prospectData || null,
         },
         modules_to_demo: selectedModules || [],
+        language,
         status: 'created',
       })
       .select('id')
@@ -134,14 +218,26 @@ serve(async (req) => {
 
     const demoLinkId = demoLink.id;
 
-    // ── Insert demo script steps with personalized dialogues ──────────
+    // ── Generate English dialogues ──────────────────────────────────────
+    let dialogues = DEFAULT_DEMO_STEPS.map((step) => ({
+      step: step.step_order,
+      text: getSyncDialogue(step.step_order, recipientName, companyName),
+    }));
+
+    // ── Translate dialogues if non-English ────────────────────────────
+    if (language !== 'en') {
+      dialogues = await translateDialogues(dialogues, language, recipientName, companyName);
+    }
+
+    // ── Insert demo script steps ────────────────────────────────────────
+    const dialogueMap = new Map(dialogues.map(d => [d.step, d.text]));
     const stepsToInsert = DEFAULT_DEMO_STEPS.map((step) => ({
       demo_link_id: demoLinkId,
       step_order: step.step_order,
       title: step.title,
       page_key: step.page_key,
       wait_for_user: step.wait_for_user,
-      sync_dialogue: getSyncDialogue(step.step_order, recipientName, companyName),
+      sync_dialogue: dialogueMap.get(step.step_order) || getSyncDialogue(step.step_order, recipientName, companyName),
     }));
 
     const { error: stepsError } = await supabase
@@ -158,7 +254,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[create-public-demo] Created demo for ${recipientName} at ${companyName} — token: ${token}, steps: ${stepsToInsert.length}`);
+    console.log(`[create-public-demo] Created demo for ${recipientName} at ${companyName} — token: ${token}, steps: ${stepsToInsert.length}, lang: ${language}`);
 
     return new Response(
       JSON.stringify({ token, demoLinkId }),

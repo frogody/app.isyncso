@@ -28,8 +28,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 // COMPACT SYSTEM PROMPT — kept short for fast TTFT
 // =============================================================================
 
-function buildDiscoveryPrompt(name: string, company: string, companyContext?: Record<string, unknown> | null): string {
-  let p = `You are SYNC, a warm and perceptive AI sales rep at iSyncso. You're in the DISCOVERY phase of a personalized demo for ${name} at ${company}.`;
+function buildDiscoveryPrompt(name: string, company: string, companyContext?: Record<string, unknown> | null, language = 'en'): string {
+  let p = '';
+  if (language !== 'en') {
+    const langName = LANGUAGE_NAMES[language] || language;
+    p += `CRITICAL: Respond ENTIRELY in ${langName}. Keep proper nouns (iSyncso, SYNC) and technical terms (CRM, AI, KPI, SaaS, API, P&L) in English. `;
+  }
+  p += `You are SYNC, a warm and perceptive AI sales rep at iSyncso. You're in the DISCOVERY phase of a personalized demo for ${name} at ${company}.`;
 
   // Inject Explorium verified data and LLM research for discovery
   const exploriumD = companyContext?.explorium as Record<string, unknown> | undefined;
@@ -94,14 +99,19 @@ function buildDiscoveryPrompt(name: string, company: string, companyContext?: Re
   return p;
 }
 
-function buildSystemPrompt(name: string, company: string, stepContext: Record<string, unknown> | null, companyContext?: Record<string, unknown> | null): string {
+function buildSystemPrompt(name: string, company: string, stepContext: Record<string, unknown> | null, companyContext?: Record<string, unknown> | null, language = 'en'): string {
   // Discovery mode — short focused prompt for interest classification
   if (stepContext?.discoveryMode === true) {
-    return buildDiscoveryPrompt(name, company, companyContext);
+    return buildDiscoveryPrompt(name, company, companyContext, language);
   }
 
   const currentPage = stepContext?.page_key || 'dashboard';
-  let p = `You are SYNC, a knowledgeable and friendly AI sales rep demoing iSyncso for ${name} at ${company}. Be substantive — explain what features do, why they matter, and how they help ${company}. Use contractions. No markdown, no lists, no emojis. Sound natural and warm like a real senior AE on a discovery call who deeply understands the product.`;
+  let p = '';
+  if (language !== 'en') {
+    const langName = LANGUAGE_NAMES[language] || language;
+    p += `CRITICAL: Respond ENTIRELY in ${langName}. Keep proper nouns (iSyncso, SYNC) and technical terms (CRM, AI, KPI, SaaS, API, P&L) in English. `;
+  }
+  p += `You are SYNC, a knowledgeable and friendly AI sales rep demoing iSyncso for ${name} at ${company}. Be substantive — explain what features do, why they matter, and how they help ${company}. Use contractions. No markdown, no lists, no emojis. Sound natural and warm like a real senior AE on a discovery call who deeply understands the product.`;
 
   p += ` You are currently on the "${currentPage}" page.`;
 
@@ -376,6 +386,26 @@ const KOKORO_DEFAULT_VOICE = 'af_heart'; // Warm feminine voice, best for demo A
 const ORPHEUS_VOICES = ['tara', 'leah', 'jess', 'leo'];
 const KOKORO_VOICES = ['af_heart', 'af_bella', 'af_nicole', 'af_sarah', 'af_sky', 'am_adam', 'am_echo'];
 
+// Language-specific Kokoro voices — null means no Kokoro support (client uses browser TTS)
+const KOKORO_VOICE_MAP: Record<string, string | null> = {
+  en: 'af_heart',
+  nl: null,     // No Kokoro voice — browser speechSynthesis fallback
+  es: 'ef_dora',
+  fr: 'ff_siwis',
+  de: null,     // No Kokoro voice — browser speechSynthesis fallback
+  it: 'if_sara',
+  pt: 'pf_dora',
+  ja: 'jf_alpha',
+  ko: null,     // No Kokoro voice — browser speechSynthesis fallback
+  zh: 'zf_xiaobei',
+  hi: 'hf_alpha',
+};
+
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English', nl: 'Dutch', es: 'Spanish', fr: 'French', de: 'German',
+  it: 'Italian', pt: 'Portuguese', ja: 'Japanese', ko: 'Korean', zh: 'Chinese', hi: 'Hindi',
+};
+
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = '';
@@ -385,7 +415,16 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-async function generateTTS(text: string, orpheusVoice: string): Promise<{ audio: string; byteLength: number }> {
+async function generateTTS(text: string, orpheusVoice: string, language = 'en'): Promise<{ audio: string; byteLength: number } | null> {
+  // Check if language has a Kokoro voice
+  const kokoroVoice = KOKORO_VOICE_MAP[language] ?? KOKORO_VOICE_MAP['en'];
+
+  // No Kokoro voice for this language — return null so client uses browser speechSynthesis
+  if (!kokoroVoice) {
+    console.log(`[voice-demo] No Kokoro voice for ${language}, client will use browser TTS`);
+    return null;
+  }
+
   // Try Kokoro first (97ms TTFB vs 187ms Orpheus)
   try {
     const response = await fetch('https://api.together.ai/v1/audio/speech', {
@@ -397,7 +436,7 @@ async function generateTTS(text: string, orpheusVoice: string): Promise<{ audio:
       body: JSON.stringify({
         model: 'hexgrad/Kokoro-82M',
         input: text,
-        voice: KOKORO_DEFAULT_VOICE,
+        voice: kokoroVoice,
         response_format: 'mp3',
       }),
     });
@@ -406,13 +445,18 @@ async function generateTTS(text: string, orpheusVoice: string): Promise<{ audio:
       const buffer = await response.arrayBuffer();
       return { audio: arrayBufferToBase64(buffer), byteLength: buffer.byteLength };
     }
-    // Kokoro failed — fall through to Orpheus
+    // Kokoro failed — fall through to Orpheus (only for English)
     console.log(`[voice-demo] Kokoro TTS failed (${response.status}), falling back to Orpheus`);
   } catch (e) {
     console.log('[voice-demo] Kokoro TTS error, falling back to Orpheus');
   }
 
-  // Fallback: Orpheus with original voice names
+  // Fallback: Orpheus only supports English
+  if (language !== 'en') {
+    console.log(`[voice-demo] Orpheus fallback not available for ${language}`);
+    return null;
+  }
+
   const response = await fetch('https://api.together.ai/v1/audio/speech', {
     method: 'POST',
     headers: {
@@ -454,24 +498,23 @@ serve(async (req) => {
       voice: requestedVoice,
       ttsOnly = false,
       ttsText,
+      language: requestLanguage,
     } = body;
 
     const voice = ORPHEUS_VOICES.includes(requestedVoice) ? requestedVoice : ORPHEUS_DEFAULT_VOICE;
 
     // TTS-only mode (for scripted dialogue)
     if (ttsOnly && ttsText) {
-      try {
-        const ttsResult = await generateTTS(ttsText, voice);
-        return new Response(
-          JSON.stringify({ audio: ttsResult.audio, audioFormat: 'mp3' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-        );
-      } catch (_) {
-        return new Response(
-          JSON.stringify({ audio: null }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-        );
-      }
+      const ttsLang = requestLanguage || 'en';
+      const ttsResult = await generateTTS(ttsText, voice, ttsLang);
+      return new Response(
+        JSON.stringify({
+          audio: ttsResult?.audio || null,
+          audioFormat: ttsResult ? 'mp3' : undefined,
+          ttsUnavailable: !ttsResult,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     if (!message) {
@@ -483,17 +526,18 @@ serve(async (req) => {
 
     const startTime = Date.now();
 
-    // Fetch demo link (for name/company) — only select what we need
+    // Fetch demo link (for name/company/language) — only select what we need
     let recipientName = 'there';
     let companyName = 'your company';
     let demoLinkId: string | null = null;
     let companyContext: Record<string, unknown> | null = null;
+    let language = requestLanguage || 'en';
 
     if (demoToken) {
       // Non-blocking: start fetch but don't wait if it's slow
       const linkPromise = supabase
         .from('demo_links')
-        .select('id, recipient_name, company_name, company_context')
+        .select('id, recipient_name, company_name, company_context, language')
         .eq('token', demoToken)
         .single();
 
@@ -508,11 +552,12 @@ serve(async (req) => {
         companyName = (result.data.company_name as string) || companyName;
         demoLinkId = result.data.id as string;
         companyContext = result.data.company_context as Record<string, unknown> | null;
+        language = (result.data.language as string) || language;
       }
     }
 
     // Build compact messages — only use client-side history (skip DB session)
-    const systemPrompt = buildSystemPrompt(recipientName, companyName, stepContext, companyContext);
+    const systemPrompt = buildSystemPrompt(recipientName, companyName, stepContext, companyContext, language);
     const messages: Array<{ role: string; content: string }> = [
       { role: 'system', content: systemPrompt },
     ];
@@ -580,7 +625,7 @@ serve(async (req) => {
                 firstSentence = match[1];
                 const firstSpoken = firstSentence.replace(/\[DEMO_ACTION:\s*[^\]]+\]/g, '').trim();
                 if (firstSpoken) {
-                  firstSentenceTtsPromise = generateTTS(firstSpoken, voice).catch(() => null);
+                  firstSentenceTtsPromise = generateTTS(firstSpoken, voice, language).catch(() => null);
                   console.log(`[voice-demo] ${Date.now() - llmStart}ms → first sentence TTS fired`);
                 }
               }
@@ -615,11 +660,11 @@ serve(async (req) => {
       // Short response — race first-sentence vs full TTS for faster delivery
       ttsPromise = Promise.race([
         firstSentenceTtsPromise,
-        spokenText ? generateTTS(spokenText, voice).catch(() => null) : Promise.resolve(null),
+        spokenText ? generateTTS(spokenText, voice, language).catch(() => null) : Promise.resolve(null),
       ]);
     } else {
       // Long response or no first-sentence TTS — always generate full audio
-      ttsPromise = spokenText ? generateTTS(spokenText, voice).catch(() => null) : Promise.resolve(null);
+      ttsPromise = spokenText ? generateTTS(spokenText, voice, language).catch(() => null) : Promise.resolve(null);
     }
 
     // Fire-and-forget: save conversation log
@@ -642,6 +687,7 @@ serve(async (req) => {
         response: responseText,
         audio: ttsResult?.audio || null,
         audioFormat: ttsResult ? 'mp3' : undefined,
+        ttsUnavailable: !ttsResult,
         timing: { total: totalTime, llm: llmTime },
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },

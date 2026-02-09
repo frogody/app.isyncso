@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronRight, ChevronLeft, MessageCircle, X, Play } from 'lucide-react';
+import { t } from '@/constants/demoTranslations';
 
 export default function DemoControls({
   currentStep = 0,
@@ -11,6 +12,7 @@ export default function DemoControls({
   onResumeScript,
   onBack,
   canGoBack = false,
+  language = 'en',
 }) {
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40" style={{ marginLeft: '-160px' }}>
@@ -33,7 +35,7 @@ export default function DemoControls({
 
         {/* Step indicator */}
         <span className="text-zinc-400 text-sm whitespace-nowrap">
-          Step {currentStep + 1} of {totalSteps}
+          {t('controls.step', language, { current: currentStep + 1, total: totalSteps })}
         </span>
 
         <div className="w-px h-6 bg-zinc-700" />
@@ -46,7 +48,7 @@ export default function DemoControls({
             title="Go back"
           >
             <ChevronLeft className="w-4 h-4" />
-            Back
+            {t('controls.back', language)}
           </button>
         )}
 
@@ -57,14 +59,14 @@ export default function DemoControls({
             className="flex items-center gap-2 px-4 py-1.5 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors text-sm font-medium"
           >
             <Play className="w-4 h-4" />
-            Continue Demo
+            {t('controls.continueDemo', language)}
           </button>
         ) : (
           <button
             onClick={onNext}
             className="flex items-center gap-2 px-4 py-1.5 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors text-sm font-medium"
           >
-            Next
+            {t('controls.next', language)}
             <ChevronRight className="w-4 h-4" />
           </button>
         )}

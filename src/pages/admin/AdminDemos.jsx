@@ -49,7 +49,9 @@ import {
   Target,
   Lightbulb,
   Shield,
+  Languages,
 } from 'lucide-react';
+import { LANGUAGES, DEFAULT_LANGUAGE, LANGUAGE_NAMES } from '@/constants/languages';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -220,6 +222,7 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
   const [selectedModules, setSelectedModules] = useState(
     MODULE_OPTIONS.reduce((acc, m) => ({ ...acc, [m]: true }), {})
   );
+  const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
   const [isCreating, setIsCreating] = useState(false);
   const [research, setResearch] = useState(null);
   const [explorium, setExplorium] = useState(null);
@@ -235,6 +238,7 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
     setCompanyDomain('');
     setIndustry('');
     setNotes('');
+    setLanguage(DEFAULT_LANGUAGE);
     setResearch(null);
     setExplorium(null);
     setProspectData(null);
@@ -401,6 +405,7 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
             prospect: prospectData || null,
           },
           modules_to_demo: modules,
+          language,
           status: 'created',
         })
         .select()
@@ -546,6 +551,26 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
               rows={3}
               className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 resize-none"
             />
+          </div>
+
+          {/* Demo Language */}
+          <div className="space-y-1.5">
+            <Label className="text-zinc-300 text-xs flex items-center gap-1.5">
+              <Languages className="w-3 h-3" />
+              Demo Language
+            </Label>
+            <Select value={language} onValueChange={setLanguage}>
+              <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                <SelectValue placeholder="Select language..." />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700">
+                {LANGUAGES.map(lang => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    {lang.nativeLabel} ({lang.label})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* AI Research Button */}
@@ -1142,6 +1167,9 @@ export default function AdminDemos() {
                       Company
                     </th>
                     <th className="text-left text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">
+                      Lang
+                    </th>
+                    <th className="text-left text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">
                       Status
                     </th>
                     <th className="text-left text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">
@@ -1191,6 +1219,13 @@ export default function AdminDemos() {
                               {demo.company_context.industry}
                             </p>
                           )}
+                        </td>
+
+                        {/* Language */}
+                        <td className="px-2 py-1.5">
+                          <Badge className="text-[10px] px-1.5 py-px bg-indigo-500/20 text-indigo-400 border-indigo-500/30">
+                            {(demo.language || 'en').toUpperCase()}
+                          </Badge>
                         </td>
 
                         {/* Status */}

@@ -54,6 +54,7 @@ import { DemoSyncAgent, DemoSyncActivity } from '@/components/demo/pages/DemoSyn
 
 import useDemoOrchestrator from '@/hooks/useDemoOrchestrator';
 import useDemoVoice from '@/hooks/useDemoVoice';
+import { t } from '@/constants/demoTranslations';
 
 // Map page keys to mock page components — includes all module dashboards + sub-pages
 const PAGE_COMPONENTS = {
@@ -398,11 +399,14 @@ export default function DemoExperience() {
     orchestrator.goToPage(pageKey);
   }, [orchestrator]);
 
+  const demoLanguage = orchestrator.demoLink?.language || 'en';
+
   const voice = useDemoVoice({
     demoToken: token,
     onDemoAction: handleDemoAction,
     onDialogueEnd: handleDialogueEnd,
     onUserSpoke: handleUserSpoke,
+    language: demoLanguage,
   });
 
   // Load demo on mount
@@ -523,7 +527,7 @@ export default function DemoExperience() {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-white mb-2">No Demo Token</h1>
+          <h1 className="text-xl font-bold text-white mb-2">{t('demo.noToken', demoLanguage)}</h1>
           <p className="text-zinc-400">Please use a valid demo link to access this experience.</p>
         </div>
       </div>
@@ -550,11 +554,11 @@ export default function DemoExperience() {
           <div className="w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center mx-auto mb-6 animate-pulse">
             <Sparkles className="w-8 h-8 text-cyan-400" />
           </div>
-          <h1 className="text-xl font-bold text-white mb-2">Preparing your demo...</h1>
+          <h1 className="text-xl font-bold text-white mb-2">{t('demo.preparing', demoLanguage)}</h1>
           <p className="text-zinc-400">
             {orchestrator.demoLink?.recipient_name
-              ? `Welcome, ${orchestrator.demoLink.recipient_name}`
-              : 'Setting up your personalized experience'}
+              ? t('demo.welcome', demoLanguage, { name: orchestrator.demoLink.recipient_name })
+              : t('demo.settingUp', demoLanguage)}
           </p>
           <div className="mt-6 flex items-center justify-center gap-1">
             {[0, 1, 2].map(i => (
@@ -579,7 +583,7 @@ export default function DemoExperience() {
             <CheckCircle className="w-10 h-10 text-emerald-400" />
           </div>
           <h1 className="text-2xl font-bold text-white mb-3">
-            Thanks for exploring iSyncso{orchestrator.demoLink?.recipient_name ? `, ${orchestrator.demoLink.recipient_name}` : ''}!
+            {t('demo.thanks', demoLanguage, { name: orchestrator.demoLink?.recipient_name || '' })}
           </h1>
           <p className="text-zinc-400 mb-8 leading-relaxed">
             We've built iSyncso to be the operating system for modern businesses.
@@ -593,7 +597,7 @@ export default function DemoExperience() {
               className="flex items-center gap-2 px-6 py-3 bg-cyan-500 text-black font-semibold rounded-xl hover:bg-cyan-400 transition-colors"
             >
               <Calendar className="w-5 h-5" />
-              Schedule a Call
+              {t('demo.scheduleCall', demoLanguage)}
             </a>
             <button
               onClick={() => {
@@ -603,7 +607,7 @@ export default function DemoExperience() {
               className="flex items-center gap-2 px-6 py-3 bg-zinc-800 text-white font-medium rounded-xl hover:bg-zinc-700 transition-colors border border-zinc-700"
             >
               <ArrowRight className="w-5 h-5" />
-              Replay Demo
+              {t('demo.replayDemo', demoLanguage)}
             </button>
           </div>
         </div>
@@ -627,6 +631,7 @@ export default function DemoExperience() {
             onTextSubmit={voice.submitText}
             currentPage={orchestrator.currentPage}
             discoveryPhase={orchestrator.discoveryPhase}
+            language={demoLanguage}
           />
         }
       >
@@ -635,7 +640,7 @@ export default function DemoExperience() {
             <div className="w-24 h-24 rounded-3xl bg-emerald-500/20 border-emerald-500/30 border flex items-center justify-center mx-auto mb-8">
               <Sparkles className={`w-12 h-12 text-emerald-400 ${voice.isSpeaking ? 'animate-pulse' : ''}`} />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-3">Ready to Get Started?</h2>
+            <h2 className="text-2xl font-bold text-white mb-3">{t('demo.readyToStart', demoLanguage)}</h2>
             <p className="text-zinc-400 leading-relaxed">
               {`That was a quick tour of iSyncso for ${orchestrator.demoLink?.company_name || 'your team'}. Speak or type to ask any final questions.`}
             </p>
@@ -652,6 +657,7 @@ export default function DemoExperience() {
           conversationMode={orchestrator.conversationMode}
           canGoBack={!!orchestrator.previousPage}
           onBack={() => orchestrator.goBack()}
+          language={demoLanguage}
           onResumeScript={() => {
             const nextIndex = orchestrator.resumeScript();
             if (nextIndex >= 0) {
@@ -701,7 +707,7 @@ export default function DemoExperience() {
             />
           ) : (
             <div className="flex items-center justify-center h-64">
-              <p className="text-zinc-500">Loading page...</p>
+              <p className="text-zinc-500">{t('demo.loadingPage', demoLanguage)}</p>
             </div>
           )}
         </motion.div>
