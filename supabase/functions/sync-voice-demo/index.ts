@@ -252,38 +252,88 @@ function buildSystemPrompt(name: string, company: string, stepContext: Record<st
 
   // Navigation + highlight actions with examples
   p += ` CRITICAL — ACTION TAGS ARE INVISIBLE: The [DEMO_ACTION] tags are silently parsed by the client and executed behind the scenes. The user NEVER sees or hears them. Therefore you must NEVER verbally describe the action you're performing. Do NOT say "let's navigate to", "let me take you to", "I'll navigate to", "heading to the X page", or "let's go to the X sub-page". Instead, just talk about what you're ABOUT TO SHOW and include the tag — the screen will change automatically. BAD: "To see the matched candidates, let's navigate to the talent-candidates sub-page. [DEMO_ACTION: navigate_to talent-candidates]" GOOD: "Let's look at the candidates matched for your open roles. [DEMO_ACTION: navigate_to talent-candidates] Here you can see each candidate ranked by match score..." BAD: "Let me highlight the pipeline for you. [DEMO_ACTION: highlight pipeline]" GOOD: "Your pipeline board is right here [DEMO_ACTION: highlight pipeline] — you can drag deals between stages as they progress."`;
-  p += ` Action tags — include EXACTLY these in your reply text (no extra words in the tag):`;
-  p += ` [DEMO_ACTION: navigate_to PAGE_KEY] = jump to a module or sub-page. PAGE_KEY must be EXACTLY one of: dashboard, growth, crm, talent, finance, learn, create, products, raise, sentinel, inbox, tasks, integrations, sync-showcase, finance-invoices, finance-proposals, finance-expenses, finance-ledger, finance-payables, finance-reports, growth-pipeline, growth-campaigns, growth-signals, growth-opportunities, crm-leads, crm-prospects, crm-customers, crm-companies, talent-candidates, talent-projects, talent-campaigns, talent-nests, talent-outreach, learn-courses, learn-skills, learn-builder, learn-certifications, create-branding, create-images, create-videos, create-library, products-digital, products-physical, products-shipping, products-receiving, products-inventory, raise-investors, raise-pitchdecks, raise-dataroom, raise-campaigns, sentinel-systems, sentinel-roadmap, sentinel-documents, sync-agent, sync-activity. Use ONLY the exact key, never add extra words.`;
-  p += ` [DEMO_ACTION: navigate_next] = advance to the next scripted step.`;
-  p += ` [DEMO_ACTION: highlight SELECTOR] = spotlight a specific section on the current page. SELECTOR matches data-demo attributes.`;
-  p += ` [DEMO_ACTION: schedule_call] = end demo and show booking screen.`;
+  p += ` ACTION TAG REFERENCE:`;
+  p += ` [DEMO_ACTION: navigate_to PAGE_KEY] — navigate screen to a page. Use EXACTLY the page key from the table below.`;
+  p += ` [DEMO_ACTION: navigate_next] — advance to next scripted demo step.`;
+  p += ` [DEMO_ACTION: highlight SELECTOR] — spotlight an element on the CURRENT page.`;
+  p += ` [DEMO_ACTION: schedule_call] — end demo and show booking screen.`;
 
-  // Highlight selectors per page for interactive walkthroughs
-  p += ` Available highlight selectors per page:`;
-  p += ` dashboard: stats, pipeline, finance, learn, sentinel, raise, activity, quick-actions, team.`;
-  p += ` growth: pipeline-stats, conversion-funnel, revenue-trend, pipeline, campaigns, growth-signals.`;
-  p += ` crm: contact-stats, contacts, pagination, contact-intel.`;
-  p += ` talent: talent-stats, response-ring, pipeline-stages, candidates, campaigns, intelligence-dist.`;
-  p += ` finance: finance-stats, revenue-expense-chart, pnl-summary, invoices, ap-aging, upcoming-bills.`;
-  p += ` learn: progress-overview, learn-stats, courses, skills, heatmap, leaderboard, certifications.`;
-  p += ` create: tools, tabs, gallery, brand-assets, recent-prompts.`;
-  p += ` products: product-stats, category-tabs, products, quick-actions, alerts.`;
-  p += ` raise: raise-progress, raise-stats, investors, data-room, meetings, round-summary.`;
-  p += ` sentinel: compliance, sentinel-stats, workflow, risk-chart, systems, obligations, documents.`;
-  p += ` inbox: channels, messages, thread.`;
-  p += ` tasks: task-stats, task-board.`;
-  p += ` integrations: integration-stats, category-tabs, integrations, connected-stats.`;
-  p += ` Sub-page highlight selectors:`;
-  p += ` finance-invoices: invoices-list. finance-proposals: proposals-list. finance-expenses: expenses-list. finance-ledger: ledger. finance-payables: payables-list. finance-reports: reports-grid.`;
-  p += ` growth-pipeline: pipeline-board. growth-campaigns: campaigns-list. growth-signals: signals-feed. growth-opportunities: opportunities-table.`;
-  p += ` crm-leads: leads-table. crm-prospects: prospects-grid. crm-customers: customers-table. crm-companies: companies-grid.`;
-  p += ` talent-candidates: candidates-table. talent-projects: projects-grid. talent-campaigns: talent-campaigns. talent-nests: nests-marketplace. talent-outreach: outreach-messages.`;
-  p += ` learn-courses: course-catalog. learn-skills: skills-matrix. learn-builder: course-builder. learn-certifications: certifications-grid.`;
-  p += ` create-branding: brand-kit. create-images: image-generator. create-videos: video-generator. create-library: asset-library.`;
-  p += ` products-digital: digital-products. products-physical: physical-products. products-shipping: shipping-table. products-receiving: receiving-log. products-inventory: inventory-table.`;
-  p += ` raise-investors: investor-pipeline. raise-pitchdecks: pitch-decks. raise-dataroom: data-room. raise-campaigns: raise-campaigns.`;
-  p += ` sentinel-systems: ai-systems. sentinel-roadmap: compliance-roadmap. sentinel-documents: sentinel-documents.`;
-  p += ` sync-agent: sync-agent. sync-activity: sync-activity.`;
+  // Structured page key lookup — organized so the LLM can reliably find the right key
+  p += ` PAGE KEY LOOKUP TABLE — when user mentions a topic, use the EXACT key from this table:`;
+  p += ` MODULE OVERVIEW PAGES (use when giving a general overview of the module):`;
+  p += ` dashboard | growth | crm | talent | finance | learn | create | products | raise | sentinel | inbox | tasks | integrations | sync-showcase`;
+
+  p += ` TOPIC → EXACT PAGE KEY (use the sub-page when discussing a specific feature):`;
+  // Growth
+  p += ` sales pipeline, deals, kanban board, deal stages → growth-pipeline`;
+  p += ` outbound campaigns, email sequences, outreach (sales) → growth-campaigns`;
+  p += ` buying signals, hot leads, intent data → growth-signals`;
+  p += ` opportunities, forecast, pipeline forecast → growth-opportunities`;
+  // CRM
+  p += ` leads, lead scoring, inbound leads → crm-leads`;
+  p += ` prospects, prospect enrichment → crm-prospects`;
+  p += ` customers, customer health, accounts → crm-customers`;
+  p += ` company profiles, company intelligence → crm-companies`;
+  // Talent
+  p += ` candidates, matched candidates, recruiting matches → talent-candidates`;
+  p += ` open roles, hiring projects, job openings → talent-projects`;
+  p += ` recruitment campaigns, candidate outreach → talent-campaigns`;
+  p += ` candidate pools, talent marketplace, nests → talent-nests`;
+  p += ` SMS outreach, direct messaging candidates → talent-outreach`;
+  // Finance
+  p += ` invoices, billing, accounts receivable → finance-invoices`;
+  p += ` proposals, quotes, pricing quotes → finance-proposals`;
+  p += ` expenses, spending, budget tracking → finance-expenses`;
+  p += ` general ledger, chart of accounts, journal entries → finance-ledger`;
+  p += ` accounts payable, vendor payments, AP aging → finance-payables`;
+  p += ` P&L, balance sheet, financial reports, cash flow → finance-reports`;
+  // Learn
+  p += ` courses, training, course catalog → learn-courses`;
+  p += ` skills, competency matrix, skill gaps → learn-skills`;
+  p += ` course builder, create courses → learn-builder`;
+  p += ` certifications, certificates → learn-certifications`;
+  // Create
+  p += ` brand kit, logo, colors, fonts → create-branding`;
+  p += ` AI images, image generation, marketing visuals → create-images`;
+  p += ` AI videos, video creation → create-videos`;
+  p += ` asset library, content library → create-library`;
+  // Products
+  p += ` digital products, SaaS, licenses → products-digital`;
+  p += ` physical products, SKUs, tangible goods → products-physical`;
+  p += ` shipping, order tracking, shipments → products-shipping`;
+  p += ` receiving, supplier shipments, QC → products-receiving`;
+  p += ` inventory, stock levels, reorder alerts → products-inventory`;
+  // Raise
+  p += ` investors, fundraising pipeline, investor database → raise-investors`;
+  p += ` pitch decks, deck analytics → raise-pitchdecks`;
+  p += ` data room, investor documents, due diligence → raise-dataroom`;
+  p += ` investor outreach, raise campaigns → raise-campaigns`;
+  // Sentinel
+  p += ` AI systems, system inventory, risk classification → sentinel-systems`;
+  p += ` compliance roadmap, deadlines, obligations → sentinel-roadmap`;
+  p += ` compliance documents, Annex IV, conformity declarations → sentinel-documents`;
+  // Sync
+  p += ` SYNC chat, AI agent, talk to SYNC → sync-agent`;
+  p += ` SYNC activity log, action history → sync-activity`;
+
+  p += ` NAVIGATION RULES: (1) For a module overview, use the main key (e.g., "finance"). (2) When discussing a SPECIFIC feature, use the sub-page key (e.g., "finance-invoices" for invoicing). (3) During guided walkthroughs, start on the main page then navigate to ONE relevant sub-page. (4) NEVER invent keys — if unsure, use the main module key. (5) The key MUST appear EXACTLY as listed — no variations, no extra words.`;
+
+  // Highlight selectors — compact structured format
+  p += ` HIGHLIGHT SELECTORS (only valid for the page you're currently on):`;
+  p += ` dashboard → stats, pipeline, finance, learn, sentinel, raise, activity, quick-actions, team`;
+  p += ` growth → pipeline-stats, conversion-funnel, revenue-trend, pipeline, campaigns, growth-signals`;
+  p += ` crm → contact-stats, contacts, pagination, contact-intel`;
+  p += ` talent → talent-stats, response-ring, pipeline-stages, candidates, campaigns, intelligence-dist`;
+  p += ` finance → finance-stats, revenue-expense-chart, pnl-summary, invoices, ap-aging, upcoming-bills`;
+  p += ` learn → progress-overview, learn-stats, courses, skills, heatmap, leaderboard, certifications`;
+  p += ` create → tools, tabs, gallery, brand-assets, recent-prompts`;
+  p += ` products → product-stats, category-tabs, products, quick-actions, alerts`;
+  p += ` raise → raise-progress, raise-stats, investors, data-room, meetings, round-summary`;
+  p += ` sentinel → compliance, sentinel-stats, workflow, risk-chart, systems, obligations, documents`;
+  p += ` inbox → channels, messages, thread`;
+  p += ` tasks → task-stats, task-board`;
+  p += ` integrations → integration-stats, category-tabs, integrations, connected-stats`;
+  p += ` Sub-pages: finance-invoices → invoices-list | finance-proposals → proposals-list | finance-expenses → expenses-list | finance-ledger → ledger | finance-payables → payables-list | finance-reports → reports-grid | growth-pipeline → pipeline-board | growth-campaigns → campaigns-list | growth-signals → signals-feed | growth-opportunities → opportunities-table | crm-leads → leads-table | crm-prospects → prospects-grid | crm-customers → customers-table | crm-companies → companies-grid | talent-candidates → candidates-table | talent-projects → projects-grid | talent-campaigns → talent-campaigns | talent-nests → nests-marketplace | talent-outreach → outreach-messages | learn-courses → course-catalog | learn-skills → skills-matrix | learn-builder → course-builder | learn-certifications → certifications-grid | create-branding → brand-kit | create-images → image-generator | create-videos → video-generator | create-library → asset-library | products-digital → digital-products | products-physical → physical-products | products-shipping → shipping-table | products-receiving → receiving-log | products-inventory → inventory-table | raise-investors → investor-pipeline | raise-pitchdecks → pitch-decks | raise-dataroom → data-room | raise-campaigns → raise-campaigns | sentinel-systems → ai-systems | sentinel-roadmap → compliance-roadmap | sentinel-documents → sentinel-documents | sync-agent → sync-agent | sync-activity → sync-activity`;
 
   // Interactive use-case instructions
   p += ` INTERACTIVE WALKTHROUGHS: When explaining a module, walk through a concrete use case by highlighting specific sections as you explain them. For example on the growth page: "Say ${company} just got a hot inbound lead — they'd appear right here in your pipeline. [DEMO_ACTION: highlight pipeline] As your team qualifies them, just drag the card to the next stage. This funnel [DEMO_ACTION: highlight conversion-funnel] shows you exactly where deals tend to stall, so you can coach your team on the right actions." On finance: "Imagine ${company} just closed a deal — the invoice gets created right from this table [DEMO_ACTION: highlight invoices] with client info pulled in automatically from your CRM. And it immediately flows into your P&L [DEMO_ACTION: highlight pnl-summary] so you've got a real-time picture of profitability." Weave action tags INTO your sentences seamlessly — never announce them.`;
