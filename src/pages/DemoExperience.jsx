@@ -563,11 +563,15 @@ export default function DemoExperience() {
       // Small delay for UX
       await new Promise(r => setTimeout(r, 800));
 
+      // Find the sync-showcase step to start on (the SYNC agent page)
+      const syncStepIndex = orchestrator.steps.findIndex(s => s.page_key === 'sync-showcase');
+      const startIndex = syncStepIndex >= 0 ? syncStepIndex : 0;
+
       if (orchestrator.discoveryPhase) {
         // Discovery: enter conversation mode first to prevent scripted dialogue
         orchestrator.enterConversationMode();
-        // Show dashboard
-        orchestrator.goToStep(0);
+        // Show sync-showcase page
+        orchestrator.goToStep(startIndex);
         // Wait for page to render
         await new Promise(r => setTimeout(r, 1200));
         // Speak discovery greeting in the demo's language
@@ -576,8 +580,8 @@ export default function DemoExperience() {
         const greeting = t('discovery.greeting', demoLanguage, { name, company });
         voice.speakDialogue(greeting);
       } else {
-        // No discovery — start scripted demo directly
-        orchestrator.goToStep(0);
+        // No discovery — start scripted demo directly on sync page
+        orchestrator.goToStep(startIndex);
       }
     };
 
@@ -766,7 +770,8 @@ export default function DemoExperience() {
             <button
               onClick={() => {
                 setShowEndScreen(false);
-                orchestrator.goToStep(0);
+                const syncIdx = orchestrator.steps.findIndex(s => s.page_key === 'sync-showcase');
+                orchestrator.goToStep(syncIdx >= 0 ? syncIdx : 0);
               }}
               className="flex items-center gap-2 px-6 py-3 bg-zinc-800 text-white font-medium rounded-xl hover:bg-zinc-700 transition-colors border border-zinc-700"
             >
