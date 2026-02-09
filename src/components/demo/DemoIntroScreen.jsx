@@ -794,12 +794,12 @@ function buildNarrationScript(name, company) {
   const n = name || 'there';
   const c = company || 'your company';
   return [
-    { key: 'greeting', text: `${n} — welcome. I'm SYNC. The intelligence behind iSyncSO. And right now, every part of me is focused on ${c}.`, minMs: 5000 },
-    { key: 'engines', text: `Ten engines. CRM. Finance. Growth. Talent. Learn. Create. Products. Raise. Sentinel. Analytics. Individually powerful. Together? Unstoppable.`, minMs: 6000 },
-    { key: 'orchestrator', text: `Fifty-one actions. All voice-controlled. Draft an invoice. Enrich a lead. Match a candidate. Generate a campaign visual. You speak — I execute. Instantly.`, minMs: 6000 },
-    { key: 'activity', text: `Every move your team makes — every decision, every deal, every conversation — captured in real time. I even write your daily journals. Nothing slips through.`, minMs: 6000 },
-    { key: 'integrations', text: `Slack, HubSpot, Gmail, Stripe — over thirty integrations, one workspace. EU AI Act compliance? Built in from day one. You're already ahead.`, minMs: 6000 },
-    { key: 'ready', text: `Now — let me show you what this actually feels like. Step inside.`, minMs: 3500 },
+    { key: 'greeting', text: `Hey ${n}. This is SYNC. And what you're about to see was built for ${c}.`, minMs: 4000 },
+    { key: 'problem', text: `Your tools don't talk to each other. Your data lives in silos. Your team wastes hours switching between apps. That ends today.`, minMs: 5500 },
+    { key: 'reveal', text: `Introducing iSyncSO. One platform. Ten engines. CRM, Finance, Growth, Talent, and six more — all connected, all intelligent, all working together.`, minMs: 6000 },
+    { key: 'orchestrator', text: `And at the center of it all — me. Fifty-one actions, all voice-controlled. Just say what you need. I handle the rest.`, minMs: 5000 },
+    { key: 'integrations', text: `It connects to everything you already use. Slack. HubSpot. Gmail. Stripe. Over thirty integrations. One workspace. Zero friction.`, minMs: 5500 },
+    { key: 'ready', text: `Enough talking. Let me show you.`, minMs: 2500 },
   ];
 }
 
