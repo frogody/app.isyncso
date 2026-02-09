@@ -166,6 +166,36 @@ const translations = {
     it: 'Caricamento pagina...', pt: 'Carregando p\u00e1gina...', ja: '\u30da\u30fc\u30b8\u3092\u8aad\u307f\u8fbc\u307f\u4e2d...', ko: '\ud398\uc774\uc9c0 \ub85c\ub529 \uc911...', zh: '\u6b63\u5728\u52a0\u8f7d\u9875\u9762...', hi: '\u092a\u0947\u091c \u0932\u094b\u0921 \u0939\u094b \u0930\u0939\u093e \u0939\u0948...',
   },
 
+  // Closing page
+  'demo.closingText': {
+    en: "That was a quick tour of iSyncso for {company}. Speak or type to ask any final questions.",
+    nl: "Dat was een korte rondleiding door iSyncso voor {company}. Spreek of typ om eventuele laatste vragen te stellen.",
+    es: "Eso fue un recorrido rápido por iSyncso para {company}. Habla o escribe para hacer preguntas finales.",
+    fr: "C'était un aperçu rapide d'iSyncso pour {company}. Parlez ou tapez pour poser vos dernières questions.",
+    de: "Das war eine kurze Tour durch iSyncso für {company}. Sprechen oder tippen Sie, um letzte Fragen zu stellen.",
+    it: "Questo è stato un tour rapido di iSyncso per {company}. Parla o scrivi per fare le ultime domande.",
+    pt: "Esse foi um tour rápido pelo iSyncso para a {company}. Fale ou digite para fazer perguntas finais.",
+    ja: "{company}のためのiSyncsoクイックツアーでした。最後の質問があれば、話すか入力してください。",
+    ko: "{company}를 위한 iSyncso 간단한 투어였습니다. 마지막 질문이 있으면 말하거나 입력하세요.",
+    zh: "这是为{company}准备的 iSyncso 快速导览。如有最后的问题，请说或输入。",
+    hi: "यह {company} के लिए iSyncso का एक त्वरित दौरा था। अंतिम प्रश्न पूछने के लिए बोलें या टाइप करें।",
+  },
+
+  // Discovery greeting (spoken by SYNC at demo start)
+  'discovery.greeting': {
+    en: "Hey {name}! Before I walk you through iSyncso, I'd love to know — what's most important for {company} right now? Are you looking to grow revenue, hire talent, streamline finances, or something else entirely?",
+    nl: "Hoi {name}! Voordat ik je door iSyncso leid, wil ik graag weten — wat is op dit moment het belangrijkst voor {company}? Wil je de omzet laten groeien, talent aannemen, de financiën stroomlijnen, of iets anders?",
+    es: "¡Hola {name}! Antes de mostrarte iSyncso, me encantaría saber — ¿qué es lo más importante para {company} ahora mismo? ¿Buscas aumentar ingresos, contratar talento, optimizar finanzas, o algo completamente diferente?",
+    fr: "Salut {name} ! Avant de vous présenter iSyncso, j'aimerais savoir — qu'est-ce qui est le plus important pour {company} en ce moment ? Vous cherchez à augmenter le chiffre d'affaires, recruter des talents, optimiser les finances, ou autre chose ?",
+    de: "Hey {name}! Bevor ich dir iSyncso zeige, würde ich gerne wissen — was ist für {company} gerade am wichtigsten? Möchtest du den Umsatz steigern, Talente einstellen, die Finanzen optimieren, oder etwas ganz anderes?",
+    it: "Ciao {name}! Prima di mostrarti iSyncso, vorrei sapere — cosa è più importante per {company} in questo momento? Vuoi far crescere il fatturato, assumere talenti, ottimizzare le finanze, o qualcos'altro?",
+    pt: "Olá {name}! Antes de te mostrar o iSyncso, gostaria de saber — o que é mais importante para a {company} agora? Procura aumentar receitas, contratar talentos, otimizar finanças, ou algo completamente diferente?",
+    ja: "こんにちは{name}さん！iSyncsoをご紹介する前に、{company}にとって今一番大切なことを教えてください。売上を伸ばしたい、人材を採用したい、財務を効率化したい、それとも他に何かありますか？",
+    ko: "안녕하세요 {name}님! iSyncso를 안내해 드리기 전에, {company}에서 지금 가장 중요한 것이 무엇인지 알고 싶습니다. 매출 성장, 인재 채용, 재무 관리, 아니면 다른 것을 찾고 계신가요?",
+    zh: "你好 {name}！在我带你了解 iSyncso 之前，我想知道——{company} 现在最重要的是什么？你想增长收入、招聘人才、优化财务，还是其他什么？",
+    hi: "नमस्ते {name}! iSyncso के बारे में बताने से पहले, मैं जानना चाहूंगा — {company} के लिए अभी सबसे ज़रूरी क्या है? क्या आप राजस्व बढ़ाना चाहते हैं, प्रतिभा भर्ती करना, वित्त को सुव्यवस्थित करना, या कुछ और?",
+  },
+
   // Language selector
   'language.label': {
     en: 'Demo language', nl: 'Demotaal', es: 'Idioma de la demo', fr: 'Langue de la d\u00e9mo', de: 'Demo-Sprache',

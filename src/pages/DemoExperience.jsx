@@ -434,10 +434,10 @@ export default function DemoExperience() {
         orchestrator.goToStep(0);
         // Wait for page to render
         await new Promise(r => setTimeout(r, 1200));
-        // Speak discovery greeting
+        // Speak discovery greeting in the demo's language
         const name = orchestrator.demoLink?.recipient_name || 'there';
         const company = orchestrator.demoLink?.company_name || 'your company';
-        const greeting = `Hey ${name}! Before I walk you through iSyncso, I'd love to know — what's most important for ${company} right now? Are you looking to grow revenue, hire talent, streamline finances, or something else entirely?`;
+        const greeting = t('discovery.greeting', demoLanguage, { name, company });
         voice.speakDialogue(greeting);
       } else {
         // No discovery — start scripted demo directly
@@ -642,7 +642,7 @@ export default function DemoExperience() {
             </div>
             <h2 className="text-2xl font-bold text-white mb-3">{t('demo.readyToStart', demoLanguage)}</h2>
             <p className="text-zinc-400 leading-relaxed">
-              {`That was a quick tour of iSyncso for ${orchestrator.demoLink?.company_name || 'your team'}. Speak or type to ask any final questions.`}
+              {t('demo.closingText', demoLanguage, { company: orchestrator.demoLink?.company_name || 'your team' })}
             </p>
           </div>
         </div>
