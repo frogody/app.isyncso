@@ -20,6 +20,7 @@ const corsHeaders = {
 };
 
 const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
+const FAL_KEY = Deno.env.get("FAL_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -415,6 +416,43 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
+// High-quality TTS via fal.ai Dia TTS — expressive narration with natural intonation
+async function generateDiaTTS(text: string): Promise<{ audio: string; byteLength: number } | null> {
+  if (!FAL_KEY) return null;
+  try {
+    const abort = new AbortController();
+    const timeout = setTimeout(() => abort.abort(), 20000);
+    // Dia uses [S1] speaker tags for single-voice narration
+    const diaText = text.startsWith('[S') ? text : `[S1] ${text}`;
+    const res = await fetch('https://fal.run/fal-ai/dia-tts', {
+      method: 'POST',
+      signal: abort.signal,
+      headers: {
+        'Authorization': `Key ${FAL_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: diaText }),
+    });
+    clearTimeout(timeout);
+    if (!res.ok) {
+      console.log(`[voice-demo] Dia TTS failed (${res.status})`);
+      return null;
+    }
+    const data = await res.json();
+    if (data?.audio?.url) {
+      // Fetch the generated MP3 from fal.ai CDN
+      const audioRes = await fetch(data.audio.url);
+      if (!audioRes.ok) return null;
+      const buffer = await audioRes.arrayBuffer();
+      return { audio: arrayBufferToBase64(buffer), byteLength: buffer.byteLength };
+    }
+    return null;
+  } catch (e) {
+    console.log('[voice-demo] Dia TTS error:', e?.message || e);
+    return null;
+  }
+}
+
 async function generateTTS(text: string, orpheusVoice: string, language = 'en'): Promise<{ audio: string; byteLength: number } | null> {
   // Check if language has a Kokoro voice (null = explicitly unsupported, undefined = unknown)
   const kokoroVoice = language in KOKORO_VOICE_MAP ? KOKORO_VOICE_MAP[language] : KOKORO_VOICE_MAP['en'];
@@ -514,7 +552,17 @@ serve(async (req) => {
     // TTS-only mode (for scripted dialogue)
     if (ttsOnly && ttsText) {
       const ttsLang = requestLanguage || 'en';
-      const ttsResult = await generateTTS(ttsText, voice, ttsLang);
+      // For scripted narration, try Dia TTS first (much more expressive/natural)
+      let ttsResult: { audio: string; byteLength: number } | null = null;
+      if (ttsLang === 'en' && FAL_KEY) {
+        console.log('[voice-demo] Trying Dia TTS for high-quality narration...');
+        ttsResult = await generateDiaTTS(ttsText);
+        if (ttsResult) console.log(`[voice-demo] Dia TTS success (${ttsResult.byteLength} bytes)`);
+      }
+      // Fallback to Kokoro/Orpheus
+      if (!ttsResult) {
+        ttsResult = await generateTTS(ttsText, voice, ttsLang);
+      }
       return new Response(
         JSON.stringify({
           audio: ttsResult?.audio || null,

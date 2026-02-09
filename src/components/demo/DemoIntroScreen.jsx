@@ -21,17 +21,19 @@ const AGENT_SEGMENTS = [
   { id: 'inbox',        color: '#14b8a6', from: 0.92, to: 0.98 },
 ];
 
-// ─── Generative Ambient Audio Engine ────────────────────────────────────────
-// Creates an evolving ambient soundscape with layered pads, random chimes,
-// filtered noise texture, and slow modulation — not a static drone.
+// ─── Modern Ambient Audio Engine ────────────────────────────────────────────
+// Upbeat, cool, immersive — subtle rhythmic pulse, patterned arpeggios,
+// filtered saw pads, shimmer textures. Think modern tech product soundtrack.
 function createAmbientAudio() {
   let ctx = null;
   let masterGain = null;
   let oscs = [];
-  let chimeInterval = null;
+  let arpTimer = null;
   let started = false;
   let padFilters = [];
   let currentIntensity = 0.3;
+  const BPM = 110;
+  const beat = 60 / BPM;
 
   const start = () => {
     if (started) return;
@@ -41,195 +43,282 @@ function createAmbientAudio() {
       masterGain.gain.value = 0;
       masterGain.connect(ctx.destination);
 
-      // ── Reverb (convolver simulation via delay network) ──
+      // ── Stereo Delay (ping-pong feel) ──
+      const delayL = ctx.createDelay(2);
+      delayL.delayTime.value = beat * 0.75; // dotted eighth
+      const delayR = ctx.createDelay(2);
+      delayR.delayTime.value = beat * 0.5; // eighth
+      const delayFbL = ctx.createGain();
+      delayFbL.gain.value = 0.25;
+      const delayFbR = ctx.createGain();
+      delayFbR.gain.value = 0.22;
+      const delayFilter = ctx.createBiquadFilter();
+      delayFilter.type = 'lowpass';
+      delayFilter.frequency.value = 3500;
+      const delayMix = ctx.createGain();
+      delayMix.gain.value = 0.2;
+      delayL.connect(delayFilter);
+      delayFilter.connect(delayFbL);
+      delayFbL.connect(delayR);
+      delayR.connect(delayFbR);
+      delayFbR.connect(delayL);
+      delayL.connect(delayMix);
+      delayR.connect(delayMix);
+      delayMix.connect(masterGain);
+
+      // Send bus
+      const delaySend = ctx.createGain();
+      delaySend.gain.value = 0.35;
+      delaySend.connect(delayL);
+
+      // ── Reverb via feedback delay network ──
       const reverbGain = ctx.createGain();
-      reverbGain.gain.value = 0.3;
-      const delays = [0.07, 0.13, 0.21, 0.34].map(t => {
+      reverbGain.gain.value = 0.25;
+      [0.053, 0.097, 0.149, 0.223].forEach(t => {
         const d = ctx.createDelay(1);
         d.delayTime.value = t;
         const fb = ctx.createGain();
-        fb.gain.value = 0.2;
+        fb.gain.value = 0.18;
         const filt = ctx.createBiquadFilter();
         filt.type = 'lowpass';
-        filt.frequency.value = 2000 - t * 2000;
+        filt.frequency.value = 2800 - t * 4000;
         d.connect(filt);
         filt.connect(fb);
-        fb.connect(d); // feedback loop
+        fb.connect(d);
         filt.connect(reverbGain);
-        return d;
+        delaySend.connect(d);
       });
       reverbGain.connect(masterGain);
 
-      // Send bus into reverb
-      const reverbSend = ctx.createGain();
-      reverbSend.gain.value = 0.4;
-      delays.forEach(d => reverbSend.connect(d));
-
-      // ── Evolving Pad Layer — triangle waves with slow LFO modulation ──
-      const padNotes = [
-        { freq: 130.81, detune: -8 },   // C3
-        { freq: 196.00, detune: 5 },    // G3
-        { freq: 261.63, detune: -3 },   // C4
-        { freq: 329.63, detune: 7 },    // E4
-        { freq: 392.00, detune: -6 },   // G4
+      // ── Warm Pad — two detuned saws per voice, LP filtered ──
+      const padChord = [
+        { freq: 130.81 },  // C3
+        { freq: 164.81 },  // E3
+        { freq: 196.00 },  // G3
+        { freq: 261.63 },  // C4
       ];
 
-      padNotes.forEach((note, i) => {
-        // Main oscillator — triangle for warmth
-        const osc = ctx.createOscillator();
-        osc.type = 'triangle';
-        osc.frequency.value = note.freq;
-        osc.detune.value = note.detune;
+      padChord.forEach((note, i) => {
+        // Two detuned oscillators for thickness
+        [-7, 7].forEach((det) => {
+          const osc = ctx.createOscillator();
+          osc.type = 'sawtooth';
+          osc.frequency.value = note.freq;
+          osc.detune.value = det + (Math.random() - 0.5) * 4;
 
-        // Slow detune wobble — each voice drifts differently
-        const detuneLfo = ctx.createOscillator();
-        const detuneDepth = ctx.createGain();
-        detuneLfo.type = 'sine';
-        detuneLfo.frequency.value = 0.05 + i * 0.02; // Very slow, staggered
-        detuneDepth.gain.value = 4 + i * 2; // ±4-14 cents drift
-        detuneLfo.connect(detuneDepth);
-        detuneDepth.connect(osc.detune);
-        detuneLfo.start();
+          // Slow drift
+          const dLfo = ctx.createOscillator();
+          const dDepth = ctx.createGain();
+          dLfo.type = 'sine';
+          dLfo.frequency.value = 0.06 + i * 0.025;
+          dDepth.gain.value = 5 + i * 2;
+          dLfo.connect(dDepth);
+          dDepth.connect(osc.detune);
+          dLfo.start();
 
-        // Per-voice filter with LFO sweep
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 300 + i * 60;
-        filter.Q.value = 0.7;
+          osc.connect(padFilters.length > i ? padFilters[i] : (() => {
+            const f = ctx.createBiquadFilter();
+            f.type = 'lowpass';
+            f.frequency.value = 400 + i * 80;
+            f.Q.value = 1.2;
+            padFilters.push(f);
+            return f;
+          })());
+          osc.start();
+          oscs.push(osc, dLfo);
+        });
 
-        const filterLfo = ctx.createOscillator();
-        const filterDepth = ctx.createGain();
-        filterLfo.type = 'sine';
-        filterLfo.frequency.value = 0.03 + i * 0.015; // Each filter sweeps at different rate
-        filterDepth.gain.value = 150 + i * 40;
-        filterLfo.connect(filterDepth);
-        filterDepth.connect(filter.frequency);
-        filterLfo.start();
-
-        // Amplitude tremolo — very gentle
-        const ampLfo = ctx.createOscillator();
-        const ampDepth = ctx.createGain();
-        const voiceGain = ctx.createGain();
-        ampLfo.type = 'sine';
-        ampLfo.frequency.value = 0.08 + i * 0.03;
-        ampDepth.gain.value = 0.008;
-        voiceGain.gain.value = 0.025;
-        ampLfo.connect(ampDepth);
-        ampDepth.connect(voiceGain.gain);
-        ampLfo.start();
-
-        osc.connect(filter);
-        filter.connect(voiceGain);
-        voiceGain.connect(masterGain);
-        voiceGain.connect(reverbSend);
-        osc.start();
-
-        padFilters.push(filter);
-        oscs.push(osc, detuneLfo, filterLfo, ampLfo);
+        // Filter modulation — medium speed for movement
+        if (padFilters[i]) {
+          const fLfo = ctx.createOscillator();
+          const fDepth = ctx.createGain();
+          fLfo.type = 'sine';
+          fLfo.frequency.value = 0.12 + i * 0.04;
+          fDepth.gain.value = 200 + i * 80;
+          fLfo.connect(fDepth);
+          fDepth.connect(padFilters[i].frequency);
+          fLfo.start();
+          oscs.push(fLfo);
+        }
       });
 
-      // ── Noise Texture — filtered white noise for "air" ──
-      const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 4, ctx.sampleRate);
-      const noiseData = noiseBuffer.getChannelData(0);
-      for (let i = 0; i < noiseData.length; i++) noiseData[i] = Math.random() * 2 - 1;
-      const noise = ctx.createBufferSource();
-      noise.buffer = noiseBuffer;
-      noise.loop = true;
+      // Pad output with sidechain-style pumping
+      const padGain = ctx.createGain();
+      padGain.gain.value = 0.018;
+      padFilters.forEach(f => f.connect(padGain));
+      padGain.connect(masterGain);
+      padGain.connect(delaySend);
 
-      const noiseBand = ctx.createBiquadFilter();
-      noiseBand.type = 'bandpass';
-      noiseBand.frequency.value = 800;
-      noiseBand.Q.value = 0.3;
+      // Sidechain pump on pad — LFO at beat rate for rhythmic feel
+      const pumpLfo = ctx.createOscillator();
+      const pumpDepth = ctx.createGain();
+      pumpLfo.type = 'sine';
+      pumpLfo.frequency.value = BPM / 60; // 1 pump per beat
+      pumpDepth.gain.value = 0.006;
+      pumpLfo.connect(pumpDepth);
+      pumpDepth.connect(padGain.gain);
+      pumpLfo.start();
+      oscs.push(pumpLfo);
 
-      const noiseGain = ctx.createGain();
-      noiseGain.value = 0.008;
-      noiseGain.gain.value = 0.008;
-
-      // Slow noise sweep
-      const noiseLfo = ctx.createOscillator();
-      const noiseDepth = ctx.createGain();
-      noiseLfo.type = 'sine';
-      noiseLfo.frequency.value = 0.04;
-      noiseDepth.gain.value = 400;
-      noiseLfo.connect(noiseDepth);
-      noiseDepth.connect(noiseBand.frequency);
-      noiseLfo.start();
-
-      noise.connect(noiseBand);
-      noiseBand.connect(noiseGain);
-      noiseGain.connect(masterGain);
-      noise.start();
-      oscs.push(noiseLfo);
-
-      // ── Random Chime Layer — gentle bell tones at harmonic intervals ──
-      const chimeNotes = [
-        523.25, 587.33, 659.25, 783.99, 880.00, // C5, D5, E5, G5, A5
-        1046.50, 1174.66, 1318.51,               // C6, D6, E6
+      // ── Arpeggio Layer — patterned melodic sequence ──
+      // A minor pentatonic across octaves — modern, clean
+      const arpScale = [
+        440.00, 523.25, 659.25, 783.99, 880.00,     // A4 C5 E5 G5 A5
+        1046.50, 1318.51, 1567.98, 1760.00,          // C6 E6 G6 A6
       ];
+      // Pattern: up-up-skip-down, repeating — gives forward motion
+      const arpPattern = [0, 2, 4, 3, 1, 3, 5, 4, 2, 4, 6, 5, 3, 5, 7, 6];
+      let arpStep = 0;
+      let arpNextTime = 0;
 
-      const scheduleChime = () => {
+      const scheduleArp = () => {
         if (!ctx || ctx.state === 'closed') return;
-        const t = ctx.currentTime;
-        const freq = chimeNotes[Math.floor(Math.random() * chimeNotes.length)];
+        const now = ctx.currentTime;
+        // Schedule a few notes ahead for tight timing
+        while (arpNextTime < now + 0.15) {
+          const t = Math.max(arpNextTime, now);
+          const idx = arpPattern[arpStep % arpPattern.length];
+          const freq = arpScale[Math.min(idx, arpScale.length - 1)];
 
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        const filter = ctx.createBiquadFilter();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const filt = ctx.createBiquadFilter();
 
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        // Slight random detune for organic feel
-        osc.detune.value = (Math.random() - 0.5) * 10;
+          // Soft sine/triangle blend via two oscillators
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          osc.detune.value = (Math.random() - 0.5) * 6;
 
-        filter.type = 'lowpass';
-        filter.frequency.value = 3000;
-        filter.Q.value = 0.5;
+          filt.type = 'lowpass';
+          filt.frequency.value = 2500 + currentIntensity * 2000;
+          filt.Q.value = 0.8;
 
-        // Bell envelope — quick attack, long exponential decay
-        const vol = 0.015 + Math.random() * 0.012 * currentIntensity;
-        gain.gain.setValueAtTime(0, t);
-        gain.gain.linearRampToValueAtTime(vol, t + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t + 2.5 + Math.random() * 2);
+          // Pluck envelope — snappy attack, smooth decay
+          const vol = (0.02 + currentIntensity * 0.015) * (0.85 + Math.random() * 0.3);
+          gain.gain.setValueAtTime(0, t);
+          gain.gain.linearRampToValueAtTime(vol, t + 0.008);
+          gain.gain.exponentialRampToValueAtTime(vol * 0.3, t + 0.12);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.6 + Math.random() * 0.3);
 
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(masterGain);
-        gain.connect(reverbSend); // Chimes get extra reverb
-        osc.start(t);
-        osc.stop(t + 5);
-      };
+          osc.connect(filt);
+          filt.connect(gain);
+          gain.connect(masterGain);
+          gain.connect(delaySend); // Arps ping-pong nicely
+          osc.start(t);
+          osc.stop(t + 1.2);
 
-      // Schedule chimes at random intervals (1.5-4s apart)
-      const chimeLoop = () => {
-        scheduleChime();
-        // Occasionally play two notes close together (gentle chord)
-        if (Math.random() > 0.6) {
-          setTimeout(scheduleChime, 80 + Math.random() * 150);
+          arpStep++;
+          // Sixteenth note grid with occasional skip
+          const stepLen = beat * 0.25;
+          // Every 4th step, add a tiny swing
+          const swing = (arpStep % 4 === 2) ? stepLen * 0.08 : 0;
+          arpNextTime += stepLen + swing;
         }
-        const nextDelay = 1500 + Math.random() * 2500;
-        chimeInterval = setTimeout(chimeLoop, nextDelay);
       };
-      // Start first chime after a moment
-      chimeInterval = setTimeout(chimeLoop, 2000);
 
-      // ── Sub bass — very gentle sine, barely felt ──
+      arpNextTime = ctx.currentTime + beat * 2; // Start after 2 beats
+      const arpLoop = () => {
+        scheduleArp();
+        arpTimer = setTimeout(arpLoop, 80); // Schedule lookahead
+      };
+      arpTimer = setTimeout(arpLoop, (beat * 2) * 1000);
+
+      // ── Shimmer Layer — high-freq filtered noise, rhythmic ──
+      const shimBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+      const shimData = shimBuf.getChannelData(0);
+      for (let i = 0; i < shimData.length; i++) shimData[i] = Math.random() * 2 - 1;
+      const shimNoise = ctx.createBufferSource();
+      shimNoise.buffer = shimBuf;
+      shimNoise.loop = true;
+
+      const shimHP = ctx.createBiquadFilter();
+      shimHP.type = 'highpass';
+      shimHP.frequency.value = 6000;
+      shimHP.Q.value = 0.3;
+
+      const shimLP = ctx.createBiquadFilter();
+      shimLP.type = 'lowpass';
+      shimLP.frequency.value = 12000;
+
+      const shimGain = ctx.createGain();
+      shimGain.gain.value = 0.004;
+
+      // Rhythmic gate on shimmer
+      const shimGateLfo = ctx.createOscillator();
+      const shimGateDepth = ctx.createGain();
+      shimGateLfo.type = 'sine';
+      shimGateLfo.frequency.value = BPM / 60 * 2; // 8th notes
+      shimGateDepth.gain.value = 0.003;
+      shimGateLfo.connect(shimGateDepth);
+      shimGateDepth.connect(shimGain.gain);
+      shimGateLfo.start();
+
+      shimNoise.connect(shimHP);
+      shimHP.connect(shimLP);
+      shimLP.connect(shimGain);
+      shimGain.connect(masterGain);
+      shimNoise.start();
+      oscs.push(shimGateLfo);
+
+      // ── Low-mid texture — warm noise bed ──
+      const bedBuf = ctx.createBuffer(1, ctx.sampleRate * 4, ctx.sampleRate);
+      const bedData = bedBuf.getChannelData(0);
+      for (let i = 0; i < bedData.length; i++) bedData[i] = Math.random() * 2 - 1;
+      const bedNoise = ctx.createBufferSource();
+      bedNoise.buffer = bedBuf;
+      bedNoise.loop = true;
+
+      const bedBand = ctx.createBiquadFilter();
+      bedBand.type = 'bandpass';
+      bedBand.frequency.value = 500;
+      bedBand.Q.value = 0.6;
+
+      const bedGain = ctx.createGain();
+      bedGain.gain.value = 0.005;
+
+      // Slow sweep
+      const bedLfo = ctx.createOscillator();
+      const bedDepth = ctx.createGain();
+      bedLfo.type = 'sine';
+      bedLfo.frequency.value = 0.06;
+      bedDepth.gain.value = 250;
+      bedLfo.connect(bedDepth);
+      bedDepth.connect(bedBand.frequency);
+      bedLfo.start();
+
+      bedNoise.connect(bedBand);
+      bedBand.connect(bedGain);
+      bedGain.connect(masterGain);
+      bedNoise.start();
+      oscs.push(bedLfo);
+
+      // ── Sub Bass — gentle pulse with slight envelope ──
       const sub = ctx.createOscillator();
       const subGain = ctx.createGain();
       const subFilter = ctx.createBiquadFilter();
       sub.type = 'sine';
-      sub.frequency.value = 65.41; // C2
+      sub.frequency.value = 55.00; // A1
       subFilter.type = 'lowpass';
-      subFilter.frequency.value = 100;
-      subGain.gain.value = 0.025;
+      subFilter.frequency.value = 90;
+      subGain.gain.value = 0.03;
+      // Sub also pumps gently
+      const subPump = ctx.createOscillator();
+      const subPumpD = ctx.createGain();
+      subPump.type = 'sine';
+      subPump.frequency.value = BPM / 60 * 0.5; // half-note pulse
+      subPumpD.gain.value = 0.01;
+      subPump.connect(subPumpD);
+      subPumpD.connect(subGain.gain);
+      subPump.start();
       sub.connect(subFilter);
       subFilter.connect(subGain);
       subGain.connect(masterGain);
       sub.start();
-      oscs.push(sub);
+      oscs.push(sub, subPump);
 
-      // Fade in over 4 seconds
+      // Fade in over 3 seconds
       masterGain.gain.setValueAtTime(0, ctx.currentTime);
-      masterGain.gain.linearRampToValueAtTime(0.55, ctx.currentTime + 4);
+      masterGain.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 3);
       started = true;
     } catch (_) {}
   };
@@ -240,23 +329,23 @@ function createAmbientAudio() {
     const t = ctx.currentTime;
     masterGain.gain.cancelScheduledValues(t);
     masterGain.gain.setValueAtTime(masterGain.gain.value, t);
-    masterGain.gain.linearRampToValueAtTime(0.3 + val * 0.4, t + 0.8);
+    masterGain.gain.linearRampToValueAtTime(0.35 + val * 0.4, t + 0.6);
 
-    // Open pad filters with intensity — more brightness when speaking
+    // Open pad filters — more brightness when speaking
     padFilters.forEach((f, i) => {
       f.frequency.cancelScheduledValues(t);
       f.frequency.setValueAtTime(f.frequency.value, t);
-      f.frequency.linearRampToValueAtTime(300 + i * 60 + val * 500, t + 1.2);
+      f.frequency.linearRampToValueAtTime(400 + i * 80 + val * 800, t + 0.8);
     });
   };
 
   const stop = () => {
     if (!ctx || !masterGain) return;
-    if (chimeInterval) { clearTimeout(chimeInterval); chimeInterval = null; }
+    if (arpTimer) { clearTimeout(arpTimer); arpTimer = null; }
     const t = ctx.currentTime;
     masterGain.gain.cancelScheduledValues(t);
     masterGain.gain.setValueAtTime(masterGain.gain.value, t);
-    masterGain.gain.linearRampToValueAtTime(0, t + 2);
+    masterGain.gain.linearRampToValueAtTime(0, t + 1.8);
     setTimeout(() => {
       oscs.forEach(o => { try { o.stop(); } catch (_) {} });
       oscs = [];
@@ -264,7 +353,7 @@ function createAmbientAudio() {
       try { ctx.close(); } catch (_) {}
       ctx = null;
       started = false;
-    }, 2500);
+    }, 2200);
   };
 
   return { start, setIntensity, stop };
@@ -528,23 +617,83 @@ function IntroSyncAvatar({ size = 180, mood = 'idle', level = 0.18 }) {
   );
 }
 
-// ─── Word-by-Word Text Reveal ───────────────────────────────────────────────
-function WordReveal({ text, className = '' }) {
+// ─── Lyric-Video Text Display ───────────────────────────────────────────────
+// Words illuminate progressively timed to narration, like a lyric video.
+// Active word glows, past words dim, future words invisible.
+function LyricDisplay({ text, durationMs = 5000, speaking, className = '' }) {
   const words = text.split(' ');
+  const [cursor, setCursor] = useState(-1);
+  const cursorRef = useRef(-1);
+  const intervalRef = useRef(null);
+  const WORDS_PER_LINE = 8;
+
+  useEffect(() => {
+    setCursor(-1);
+    cursorRef.current = -1;
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    if (!speaking) return;
+    // Start revealing after a short breath
+    const startDelay = setTimeout(() => {
+      cursorRef.current = 0;
+      setCursor(0);
+      // Time per word — slightly faster at start, natural speech cadence
+      const msPerWord = (durationMs * 0.85) / words.length;
+      intervalRef.current = setInterval(() => {
+        cursorRef.current++;
+        if (cursorRef.current >= words.length) {
+          clearInterval(intervalRef.current);
+          return;
+        }
+        setCursor(cursorRef.current);
+      }, msPerWord);
+    }, 250);
+
+    return () => {
+      clearTimeout(startDelay);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [text, speaking, durationMs, words.length]);
+
   return (
-    <span className={className}>
-      {words.map((word, i) => (
-        <motion.span
-          key={`${word}-${i}`}
-          initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          transition={{ delay: i * 0.045, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="inline-block"
-        >
-          {word}&nbsp;
-        </motion.span>
-      ))}
-    </span>
+    <div className={className}>
+      {words.map((word, i) => {
+        const isRevealed = i <= cursor;
+        const isActive = i === cursor;
+        const isPast = i < cursor && i >= cursor - 3;
+        const isFar = i < cursor - 3;
+        const isLineBreak = i > 0 && i % WORDS_PER_LINE === 0;
+
+        return (
+          <React.Fragment key={i}>
+            {isLineBreak && <br />}
+            <motion.span
+              animate={isRevealed ? {
+                opacity: isActive ? 1 : isPast ? 0.75 : isFar ? 0.45 : 0,
+                y: 0,
+                filter: 'blur(0px)',
+                scale: isActive ? 1.03 : 1,
+              } : {
+                opacity: 0,
+                y: 10,
+                filter: 'blur(8px)',
+                scale: 0.97,
+              }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="inline-block"
+              style={isActive ? {
+                textShadow: '0 0 25px rgba(6,182,212,0.5), 0 0 50px rgba(168,85,247,0.25)',
+                color: '#fff',
+              } : (isPast || isFar) ? {
+                color: `rgba(255,255,255,${isFar ? 0.4 : 0.65})`,
+              } : {}}
+            >
+              {word}&nbsp;
+            </motion.span>
+          </React.Fragment>
+        );
+      })}
+    </div>
   );
 }
 
@@ -633,6 +782,7 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
   const [phase, setPhase] = useState(-1);
   const [speaking, setSpeaking] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [currentDuration, setCurrentDuration] = useState(5000);
   const [skipping, setSkipping] = useState(false);
   const [letterboxOpen, setLetterboxOpen] = useState(false);
   const audioRef = useRef(null);
@@ -676,6 +826,7 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
     phaseRef.current = phase;
     const step = script[phase];
     setTranscript(step.text);
+    setCurrentDuration(step.minMs);
     setSpeaking(true);
 
     let voiceDone = false, timerDone = false, advanced = false;
@@ -724,24 +875,34 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
 
       {/* ─── Cinematic Background Layers ─── */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Central nebula */}
+        {/* Beat pulse — subtle full-screen flash at BPM */}
         <motion.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-          style={{ width: '140vw', height: '140vh', background: 'radial-gradient(ellipse at center, rgba(168,85,247,0.08) 0%, rgba(99,102,241,0.03) 25%, transparent 55%)' }}
-          animate={{ scale: speaking ? [1, 1.06, 1] : [1, 1.02, 1], rotate: [0, 0.5, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute inset-0"
+          style={{ background: 'radial-gradient(ellipse at center, rgba(6,182,212,0.04) 0%, transparent 50%)' }}
+          animate={speaking ? { opacity: [0, 0.8, 0] } : { opacity: 0 }}
+          transition={{ duration: 60 / 110, repeat: Infinity, ease: 'easeOut' }}
         />
 
-        {/* Breathing orbs */}
-        <motion.div className="absolute w-[800px] h-[800px] rounded-full" style={{ top: '10%', left: '5%', background: 'radial-gradient(circle, rgba(6,182,212,0.05) 0%, transparent 60%)', filter: 'blur(60px)' }}
-          animate={{ x: [0, 40, 0], y: [0, -30, 0], scale: [1, 1.1, 1] }} transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }} />
-        <motion.div className="absolute w-[600px] h-[600px] rounded-full" style={{ bottom: '5%', right: '0%', background: 'radial-gradient(circle, rgba(236,72,153,0.04) 0%, transparent 60%)', filter: 'blur(60px)' }}
-          animate={{ x: [0, -30, 0], y: [0, 25, 0], scale: [1, 1.15, 1] }} transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut', delay: 4 }} />
-        <motion.div className="absolute w-[500px] h-[500px] rounded-full" style={{ top: '50%', right: '20%', background: 'radial-gradient(circle, rgba(245,158,11,0.03) 0%, transparent 60%)', filter: 'blur(50px)' }}
-          animate={{ x: [0, 25, 0], y: [0, -35, 0] }} transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 7 }} />
+        {/* Central nebula — bigger, more vivid */}
+        <motion.div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+          style={{ width: '160vw', height: '160vh', background: 'radial-gradient(ellipse at center, rgba(168,85,247,0.1) 0%, rgba(6,182,212,0.04) 20%, rgba(99,102,241,0.02) 35%, transparent 55%)' }}
+          animate={{ scale: speaking ? [1, 1.08, 1] : [1, 1.03, 1], rotate: [0, 1, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+
+        {/* Flowing orbs — more movement, varied speeds */}
+        <motion.div className="absolute w-[900px] h-[900px] rounded-full" style={{ top: '5%', left: '-5%', background: 'radial-gradient(circle, rgba(6,182,212,0.06) 0%, transparent 55%)', filter: 'blur(70px)' }}
+          animate={{ x: [0, 60, 0], y: [0, -40, 0], scale: [1, 1.15, 1] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} />
+        <motion.div className="absolute w-[700px] h-[700px] rounded-full" style={{ bottom: '0%', right: '-5%', background: 'radial-gradient(circle, rgba(236,72,153,0.05) 0%, transparent 55%)', filter: 'blur(60px)' }}
+          animate={{ x: [0, -50, 0], y: [0, 35, 0], scale: [1, 1.2, 1] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }} />
+        <motion.div className="absolute w-[600px] h-[600px] rounded-full" style={{ top: '40%', right: '10%', background: 'radial-gradient(circle, rgba(245,158,11,0.04) 0%, transparent 55%)', filter: 'blur(50px)' }}
+          animate={{ x: [0, 35, 0], y: [0, -50, 0], scale: [0.9, 1.1, 0.9] }} transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut', delay: 5 }} />
+        <motion.div className="absolute w-[500px] h-[500px] rounded-full" style={{ top: '20%', left: '40%', background: 'radial-gradient(circle, rgba(99,102,241,0.04) 0%, transparent 55%)', filter: 'blur(50px)' }}
+          animate={{ x: [0, -40, 0], y: [0, 30, 0] }} transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut', delay: 8 }} />
 
         {/* Vignette */}
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 25%, rgba(0,0,0,0.75) 100%)' }} />
       </div>
 
       {/* ─── Cinematic Letterbox ─── */}
@@ -761,118 +922,124 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
       {/* ─── Main Content ─── */}
       <div className="relative z-10 max-w-4xl w-full flex flex-col items-center px-6">
 
-        {/* ─── SYNC Avatar — Large, Cinematic ─── */}
+        {/* ─── SYNC Avatar — Dramatic Cinematic Entrance ─── */}
         <AnimatePresence>
           {phase >= 0 && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.1, filter: 'blur(30px)' }}
-              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-              transition={{ duration: 2, ease: [0.16, 1, 0.3, 1] }}
-              className="mb-3"
+              initial={{ opacity: 0, scale: 0.05, filter: 'blur(40px)', rotate: -30 }}
+              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)', rotate: 0 }}
+              transition={{ duration: 2.5, ease: [0.16, 1, 0.3, 1] }}
+              className="mb-4 relative"
             >
-              <IntroSyncAvatar size={180} mood={avatarMood} level={avatarLevel} />
+              {/* Beat pulse ring behind avatar */}
+              <motion.div
+                className="absolute inset-0 rounded-full"
+                style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.15) 0%, transparent 70%)', transform: 'scale(2.2)' }}
+                animate={speaking ? { scale: [2.2, 2.5, 2.2], opacity: [0.3, 0.6, 0.3] } : { scale: [2.2, 2.3, 2.2], opacity: [0.1, 0.2, 0.1] }}
+                transition={{ duration: 60 / 110, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <IntroSyncAvatar size={220} mood={avatarMood} level={avatarLevel} />
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ─── Speaking waveform ─── */}
+        {/* ─── Speaking waveform — wider, more bars, color sweep ─── */}
         <AnimatePresence>
           {speaking && (
             <motion.div
-              initial={{ opacity: 0, scaleX: 0.3 }}
+              initial={{ opacity: 0, scaleX: 0.2 }}
               animate={{ opacity: 1, scaleX: 1 }}
-              exit={{ opacity: 0, scaleX: 0.3 }}
-              transition={{ duration: 0.4 }}
-              className="flex items-center justify-center gap-[3px] h-5 mb-5"
+              exit={{ opacity: 0, scaleX: 0.2, transition: { duration: 0.2 } }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="flex items-center justify-center gap-[2px] h-6 mb-6"
             >
-              {[...Array(9)].map((_, i) => (
+              {[...Array(15)].map((_, i) => (
                 <motion.div
                   key={i}
                   className="w-[2px] rounded-full"
-                  style={{ background: `linear-gradient(to top, ${AGENT_SEGMENTS[i]?.color || '#a855f7'}88, ${AGENT_SEGMENTS[i]?.color || '#06b6d4'})` }}
-                  animate={{ height: [3, 12 + Math.sin(i * 0.7) * 8, 3] }}
-                  transition={{ duration: 0.45 + i * 0.03, repeat: Infinity, delay: i * 0.05, ease: 'easeInOut' }}
+                  style={{ background: `linear-gradient(to top, ${AGENT_SEGMENTS[i % 10]?.color || '#a855f7'}66, ${AGENT_SEGMENTS[i % 10]?.color || '#06b6d4'})` }}
+                  animate={{ height: [2, 14 + Math.sin(i * 0.5) * 10, 2] }}
+                  transition={{ duration: 0.35 + (i % 4) * 0.05, repeat: Infinity, delay: i * 0.035, ease: 'easeInOut' }}
                 />
               ))}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ─── Welcome badge ─── */}
-        <AnimatePresence>
-          {phase === 0 && recipientName && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="mb-5"
-            >
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-500/80 tracking-[0.25em] uppercase font-medium">
-                <Sparkles className="w-3 h-3 text-purple-400/60" />
-                Prepared for {recipientName}
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ─── Narration Text (word-by-word reveal) ─── */}
+        {/* ─── Lyric Display — words illuminate with narration ─── */}
         <AnimatePresence mode="wait">
           {phase >= 0 && transcript && (
             <motion.div
               key={phase}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0, y: -8, transition: { duration: 0.3 } }}
-              transition={{ duration: 0.3 }}
-              className="text-center mb-10 max-w-2xl mx-auto"
+              exit={{ opacity: 0, y: -12, filter: 'blur(6px)', transition: { duration: 0.35 } }}
+              transition={{ duration: 0.4 }}
+              className="text-center mb-10 max-w-2xl mx-auto relative"
             >
-              <WordReveal
+              {/* Glow behind text */}
+              <motion.div
+                className="absolute inset-0 -inset-x-12 -inset-y-6 pointer-events-none"
+                style={{ background: 'radial-gradient(ellipse at center, rgba(6,182,212,0.06) 0%, transparent 60%)', filter: 'blur(20px)' }}
+                animate={speaking ? { opacity: [0.5, 1, 0.5] } : { opacity: 0.2 }}
+                transition={{ duration: 60 / 110 * 2, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <LyricDisplay
                 text={transcript}
-                className="text-white/90 text-lg sm:text-xl md:text-[1.65rem] leading-relaxed font-light tracking-[-0.01em]"
+                durationMs={currentDuration}
+                speaking={speaking}
+                className="text-white/90 text-xl sm:text-2xl md:text-[1.9rem] leading-relaxed font-light tracking-[-0.01em] relative z-10"
               />
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ─── Module Icons ─── */}
+        {/* ─── Module Icons — wave reveal with rhythmic glow ─── */}
         <AnimatePresence>
           {showModules && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.8 }}
+              transition={{ duration: 0.6 }}
               className="flex items-center justify-center gap-3 sm:gap-4 md:gap-5 mb-10 flex-wrap"
             >
               {MODULES.map((mod, i) => {
                 const Icon = mod.icon;
+                // Wave effect — each icon offsets from center
+                const waveY = Math.sin((i - 4.5) * 0.4) * 8;
                 return (
                   <motion.div
                     key={mod.label}
-                    initial={{ opacity: 0, scale: 0, y: 30 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ delay: 0.06 + i * 0.07, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                    initial={{ opacity: 0, scale: 0, y: 50, rotate: -15 + i * 3 }}
+                    animate={{ opacity: 1, scale: 1, y: waveY, rotate: 0 }}
+                    transition={{ delay: i * 0.06, duration: 0.8, type: 'spring', stiffness: 200, damping: 18 }}
                     className="flex flex-col items-center gap-2"
                   >
                     <motion.div
-                      className="w-14 h-14 rounded-2xl flex items-center justify-center relative overflow-hidden"
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center relative overflow-hidden backdrop-blur-sm"
                       style={{
-                        border: `1px solid ${mod.color}18`,
-                        background: `linear-gradient(135deg, ${mod.color}08, transparent)`,
+                        border: `1px solid ${mod.color}20`,
+                        background: `linear-gradient(135deg, ${mod.color}0A, ${mod.color}03)`,
                       }}
-                      animate={phase === 1 ? {
-                        boxShadow: [`0 0 0px ${mod.color}00`, `0 0 30px ${mod.color}30`, `0 0 0px ${mod.color}00`],
-                        borderColor: [`${mod.color}18`, `${mod.color}50`, `${mod.color}18`],
-                      } : {}}
-                      transition={phase === 1 ? { duration: 3, repeat: Infinity, delay: i * 0.2 } : {}}
+                      animate={{
+                        boxShadow: [`0 0 0px ${mod.color}00`, `0 0 24px ${mod.color}25`, `0 0 0px ${mod.color}00`],
+                        borderColor: [`${mod.color}20`, `${mod.color}55`, `${mod.color}20`],
+                        y: [0, -3, 0],
+                      }}
+                      transition={{ duration: 2 + i * 0.15, repeat: Infinity, delay: i * 0.12, ease: 'easeInOut' }}
                     >
-                      {phase === 1 && (
-                        <motion.div className="absolute inset-0" style={{ background: `radial-gradient(circle at center, ${mod.color}12, transparent 70%)` }}
-                          animate={{ opacity: [0, 1, 0] }} transition={{ duration: 3, repeat: Infinity, delay: i * 0.2 }} />
-                      )}
+                      <motion.div className="absolute inset-0" style={{ background: `radial-gradient(circle at center, ${mod.color}15, transparent 70%)` }}
+                        animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 2, repeat: Infinity, delay: i * 0.12 }} />
                       <Icon className="w-6 h-6 relative z-10" style={{ color: mod.color }} />
                     </motion.div>
-                    <span className="text-[10px] text-zinc-600 font-medium tracking-wider">{mod.label}</span>
+                    <motion.span
+                      className="text-[10px] font-medium tracking-wider"
+                      style={{ color: mod.color + '80' }}
+                      animate={{ opacity: [0.5, 0.9, 0.5] }}
+                      transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.12 }}
+                    >
+                      {mod.label}
+                    </motion.span>
                   </motion.div>
                 );
               })}
@@ -921,20 +1088,33 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
           )}
         </AnimatePresence>
 
-        {/* ─── Stats ─── */}
+        {/* ─── Stats — count-up with glow ─── */}
         <AnimatePresence>
           {showStats && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7, delay: 0.15 }}
-              className="flex items-center justify-center gap-8 sm:gap-12 md:gap-16 mb-8">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.1 }}
+              className="flex items-center justify-center gap-6 sm:gap-10 md:gap-14 mb-8">
               {[
-                { value: '51', label: 'AI Actions' },
-                { value: '10', label: 'Engines' },
-                { value: '30+', label: 'Integrations' },
-                { value: '11', label: 'Languages' },
+                { value: '51', label: 'AI Actions', color: '#a855f7' },
+                { value: '10', label: 'Engines', color: '#06b6d4' },
+                { value: '30+', label: 'Integrations', color: '#f59e0b' },
+                { value: '11', label: 'Languages', color: '#3b82f6' },
               ].map((stat, i) => (
-                <motion.div key={stat.label} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 + i * 0.1 }} className="text-center">
-                  <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">{stat.value}</div>
-                  <div className="text-[9px] sm:text-[10px] text-zinc-600 uppercase tracking-[0.2em] mt-1 font-medium">{stat.label}</div>
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: 0.15 + i * 0.08, type: 'spring', stiffness: 200, damping: 20 }}
+                  className="text-center"
+                >
+                  <motion.div
+                    className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight"
+                    style={{ color: stat.color }}
+                    animate={{ textShadow: [`0 0 0px ${stat.color}00`, `0 0 20px ${stat.color}40`, `0 0 0px ${stat.color}00`] }}
+                    transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.3 }}
+                  >
+                    {stat.value}
+                  </motion.div>
+                  <div className="text-[9px] sm:text-[10px] text-zinc-500 uppercase tracking-[0.2em] mt-1.5 font-medium">{stat.label}</div>
                 </motion.div>
               ))}
             </motion.div>
