@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTheme } from '@/contexts/GlobalThemeContext';
+import SyncAvatarMini from '@/components/icons/SyncAvatarMini';
 import {
   LayoutDashboard, Contact, FolderKanban, Package, Inbox,
   Euro, Rocket, GraduationCap, UserPlus, Shield, TrendingUp, Palette,
@@ -219,82 +220,6 @@ function calculateFlyoutOffset(moduleKey) {
 }
 
 // Simplified SYNC avatar ring (no animation dependencies)
-function DemoSyncAvatar({ size = 36, isLight = false }) {
-  const r = size / 2;
-  const segmentR = r - 2;
-  const innerR = r * 0.58;
-
-  const segments = [
-    { color: '#ec4899', from: 0.02, to: 0.08 },
-    { color: '#06b6d4', from: 0.12, to: 0.18 },
-    { color: '#6366f1', from: 0.22, to: 0.28 },
-    { color: '#10b981', from: 0.32, to: 0.38 },
-    { color: '#86EFAC', from: 0.42, to: 0.48 },
-    { color: '#f59e0b', from: 0.52, to: 0.58 },
-    { color: '#f43f5e', from: 0.62, to: 0.68 },
-    { color: '#f97316', from: 0.72, to: 0.78 },
-    { color: '#3b82f6', from: 0.82, to: 0.88 },
-    { color: '#14b8a6', from: 0.92, to: 0.98 },
-  ];
-
-  const polar = (cx, cy, radius, a) => {
-    const ang = (a - 0.25) * Math.PI * 2;
-    return { x: cx + radius * Math.cos(ang), y: cy + radius * Math.sin(ang) };
-  };
-
-  const arcPath = (cx, cy, radius, a0, a1) => {
-    const p0 = polar(cx, cy, radius, a0);
-    const p1 = polar(cx, cy, radius, a1);
-    const large = a1 - a0 > 0.5 ? 1 : 0;
-    return `M ${p0.x} ${p0.y} A ${radius} ${radius} 0 ${large} 1 ${p1.x} ${p1.y}`;
-  };
-
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <div
-        className="absolute inset-0 rounded-full pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle, rgba(168,85,247,0.3) 0%, transparent 70%)',
-          transform: 'scale(1.2)',
-          opacity: isLight ? 0.15 : 0.3,
-        }}
-      />
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="absolute inset-0">
-        <defs>
-          <filter id="demoGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation={1.5} result="b" />
-            <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
-        <g filter="url(#demoGlow)">
-          {segments.map((seg, i) => (
-            <path
-              key={i}
-              d={arcPath(r, r, segmentR, seg.from, seg.to)}
-              fill="none"
-              stroke={seg.color}
-              strokeWidth={3}
-              strokeLinecap="round"
-              opacity={0.75}
-            />
-          ))}
-        </g>
-      </svg>
-      <div
-        className="absolute rounded-full"
-        style={{
-          top: size / 2 - innerR,
-          left: size / 2 - innerR,
-          width: innerR * 2,
-          height: innerR * 2,
-          background: isLight
-            ? 'radial-gradient(circle, rgba(168,85,247,0.35) 0%, rgba(248,250,252,0.6) 100%)'
-            : 'radial-gradient(circle, rgba(168,85,247,0.35) 0%, rgba(0,0,0,0.6) 100%)',
-        }}
-      />
-    </div>
-  );
-}
 
 export default function DemoSidebar({ currentPage = 'dashboard', onNavigate }) {
   const { theme, toggleTheme } = useTheme();
@@ -320,7 +245,7 @@ export default function DemoSidebar({ currentPage = 'dashboard', onNavigate }) {
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-1 scrollbar-hide">
           {/* SYNC Avatar at top */}
           <div className="flex items-center justify-center min-h-[44px] w-full p-2 mb-2 rounded-xl">
-            <DemoSyncAvatar size={36} isLight={isLight} />
+            <SyncAvatarMini size={36} />
           </div>
 
           {/* Core Navigation */}
