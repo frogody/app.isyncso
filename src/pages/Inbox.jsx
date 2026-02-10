@@ -79,11 +79,11 @@ export default function InboxPage() {
 
   // Callback for new message notifications
   const handleNewMessageNotification = useCallback((message) => {
-    // Find channel info for the notification
-    const allChannels = [...realtimeChannels, ...resolvedDMs, ...realtimeSupportChannels];
+    // Find channel info for the notification (use raw hook data, not resolved names)
+    const allChannels = [...realtimeChannels, ...realtimeDMs, ...realtimeSupportChannels];
     const channel = allChannels.find(c => c.id === message.channel_id);
     notifyNewMessage(message, channel);
-  }, [realtimeChannels, resolvedDMs, realtimeSupportChannels, notifyNewMessage]);
+  }, [realtimeChannels, realtimeDMs, realtimeSupportChannels, notifyNewMessage]);
 
   // Realtime messages subscription (changes when selectedChannel changes)
   const {
