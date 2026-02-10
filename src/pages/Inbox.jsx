@@ -242,13 +242,33 @@ export default function InboxPage() {
       if (!user) return;
       try {
         const usersResponse = await db.functions.invoke('getTeamMembers');
-        setTeamMembers((usersResponse?.data?.users || []).filter(u => u.id !== user?.id));
+        const team = (usersResponse?.data?.users || []).filter(u => u.id !== user?.id);
+        setTeamMembers(team);
       } catch (e) {
         console.warn('getTeamMembers not available:', e.message);
       }
     };
     loadTeamMembers();
   }, [user]);
+
+  // Load DM partner profiles that aren't in teamMembers (cross-org users)
+  useEffect(() => {
+    if (!user?.id || realtimeDMs.length === 0) return;
+    const missingIds = realtimeDMs
+      .map(dm => dm.members?.find(id => id !== user.id))
+      .filter(id => id && !teamMembers.some(m => m.id === id));
+    if (missingIds.length === 0) return;
+    const uniqueIds = [...new Set(missingIds)];
+    supabase
+      .from('users')
+      .select('id, full_name, email, avatar_url')
+      .in('id', uniqueIds)
+      .then(({ data }) => {
+        if (data?.length) {
+          setTeamMembers(prev => [...prev, ...data.filter(d => !prev.some(p => p.id === d.id))]);
+        }
+      });
+  }, [user?.id, realtimeDMs, teamMembers.length]);
 
   // Auto-select first channel when channels load
   useEffect(() => {
