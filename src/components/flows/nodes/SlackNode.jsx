@@ -6,6 +6,7 @@
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Hash, MessageSquare, Plus } from 'lucide-react';
+import SettingsIndicator from './SettingsIndicator';
 
 const ACTION_LABELS = {
   send_message: 'Send Message',
@@ -42,6 +43,7 @@ function SlackNode({ data, selected }) {
         <div className="flex-1 min-w-0">
           <span className="text-[13px] font-semibold text-white tracking-tight">Slack</span>
         </div>
+        <SettingsIndicator />
         <div className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
       </div>
 

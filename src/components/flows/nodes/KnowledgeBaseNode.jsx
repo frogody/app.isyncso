@@ -6,6 +6,7 @@
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { BookOpen, Database, FileText } from 'lucide-react';
+import SettingsIndicator from './SettingsIndicator';
 
 function KnowledgeBaseNode({ data, selected }) {
   const collections = data?.collections || [];
@@ -42,6 +43,7 @@ function KnowledgeBaseNode({ data, selected }) {
             {collections.length}
           </span>
         )}
+        <SettingsIndicator />
         <div className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
       </div>
 

@@ -6,6 +6,7 @@
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Sparkles } from 'lucide-react';
+import SettingsIndicator from './SettingsIndicator';
 
 function AIAnalysisNode({ data, selected }) {
   const isConfigured = !!data?.prompt;
@@ -38,6 +39,7 @@ function AIAnalysisNode({ data, selected }) {
         <div className="flex-1 min-w-0">
           <span className="text-[13px] font-semibold text-white tracking-tight">AI Analysis</span>
         </div>
+        <SettingsIndicator />
         <div className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
       </div>
 

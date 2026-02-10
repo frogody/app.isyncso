@@ -6,6 +6,7 @@
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Linkedin, UserPlus, MessageCircle } from 'lucide-react';
+import SettingsIndicator from './SettingsIndicator';
 
 const MESSAGE_TYPES = {
   connection_request: { label: 'Connection Request', icon: UserPlus, limit: 300 },
@@ -44,6 +45,7 @@ function LinkedInNode({ data, selected }) {
         <div className="flex-1 min-w-0">
           <span className="text-[13px] font-semibold text-white tracking-tight">LinkedIn</span>
         </div>
+        <SettingsIndicator />
         <div className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
       </div>
 

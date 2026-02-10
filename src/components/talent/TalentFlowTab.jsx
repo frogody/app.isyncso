@@ -145,54 +145,14 @@ export default function TalentFlowTab({ campaign, onFlowSaved }) {
     toast.success('Nodes auto-arranged');
   };
 
-  // Node/edge change handlers for FlowCanvas
-  const onNodesChange = useCallback((changes) => {
-    setNodes((nds) => {
-      const updated = [...nds];
-      for (const change of changes) {
-        if (change.type === 'position' && change.position) {
-          const idx = updated.findIndex(n => n.id === change.id);
-          if (idx !== -1) {
-            updated[idx] = { ...updated[idx], position: change.position };
-          }
-        } else if (change.type === 'remove') {
-          const idx = updated.findIndex(n => n.id === change.id);
-          if (idx !== -1) updated.splice(idx, 1);
-        } else if (change.type === 'select') {
-          const idx = updated.findIndex(n => n.id === change.id);
-          if (idx !== -1) {
-            updated[idx] = { ...updated[idx], selected: change.selected };
-            if (change.selected) setSelectedNode(updated[idx]);
-          }
-        }
-      }
-      return updated;
-    });
+  // Sync handlers — FlowCanvas manages its own state internally;
+  // these callbacks keep TalentFlowTab's state in sync for save/validate/regenerate
+  const onNodesChange = useCallback((changes, currentNodes) => {
+    setNodes(currentNodes || []);
   }, []);
 
-  const onEdgesChange = useCallback((changes) => {
-    setEdges((eds) => {
-      const updated = [...eds];
-      for (const change of changes) {
-        if (change.type === 'remove') {
-          const idx = updated.findIndex(e => e.id === change.id);
-          if (idx !== -1) updated.splice(idx, 1);
-        }
-      }
-      return updated;
-    });
-  }, []);
-
-  const onConnect = useCallback((connection) => {
-    const newEdge = {
-      id: `edge_${connection.source}_${connection.sourceHandle || 'default'}_${connection.target}`,
-      source: connection.source,
-      target: connection.target,
-      sourceHandle: connection.sourceHandle,
-      targetHandle: connection.targetHandle,
-      type: 'custom',
-    };
-    setEdges((eds) => [...eds, newEdge]);
+  const onEdgesChange = useCallback((changes, currentEdges) => {
+    setEdges(currentEdges || []);
   }, []);
 
   // Update node data from config panel
@@ -308,12 +268,12 @@ export default function TalentFlowTab({ campaign, onFlowSaved }) {
         {/* Center: Flow Canvas */}
         <div className="flex-1 relative">
           <FlowCanvas
-            nodes={nodes}
-            edges={edges}
+            initialNodes={nodes}
+            initialEdges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={(_, node) => setSelectedNode(node)}
+            onNodeSelect={(node) => setSelectedNode(node)}
+            onSave={(n, e) => { setNodes(n); setEdges(e); handleSave(); }}
           />
         </div>
 

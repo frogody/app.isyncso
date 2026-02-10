@@ -6,6 +6,7 @@
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { RefreshCw, Tag } from 'lucide-react';
+import SettingsIndicator from './SettingsIndicator';
 
 const STATUS_STYLES = {
   new: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/20',
@@ -47,6 +48,7 @@ function UpdateStatusNode({ data, selected }) {
         <div className="flex-1 min-w-0">
           <span className="text-[13px] font-semibold text-white tracking-tight">Update Status</span>
         </div>
+        <SettingsIndicator />
         <div className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
       </div>
 

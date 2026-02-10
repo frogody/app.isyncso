@@ -6,6 +6,7 @@
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { MessageSquare, Phone } from 'lucide-react';
+import SettingsIndicator from './SettingsIndicator';
 
 function SMSNode({ data, selected }) {
   const isConfigured = !!(data?.prompt || data?.message);
@@ -36,6 +37,7 @@ function SMSNode({ data, selected }) {
         <div className="flex-1 min-w-0">
           <span className="text-[13px] font-semibold text-white tracking-tight">SMS</span>
         </div>
+        <SettingsIndicator />
         <div className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
       </div>
 

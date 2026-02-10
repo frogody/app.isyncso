@@ -240,7 +240,7 @@ serve(async (req) => {
         }
 
         const recipientUrl = task.candidates?.linkedin_profile || task.metadata?.linkedin_url;
-        const message = task.generated_message || task.metadata?.message;
+        const message = task.message_content || task.generated_message || task.metadata?.message;
 
         if (!recipientUrl || !message) {
           summary.failed++;
@@ -268,8 +268,8 @@ serve(async (req) => {
         }
 
         const recipientEmail = task.candidates?.email || task.metadata?.email;
-        const subject = task.metadata?.subject || `Opportunity at ${task.metadata?.company_name || 'our company'}`;
-        const body = task.generated_message || task.metadata?.message;
+        const subject = task.subject || task.metadata?.subject || `Opportunity at ${task.metadata?.company_name || 'our company'}`;
+        const body = task.message_content || task.generated_message || task.metadata?.message;
 
         if (!recipientEmail || !body) {
           summary.failed++;
@@ -290,7 +290,7 @@ serve(async (req) => {
 
       } else if (channel === 'sms') {
         const phoneNumber = task.candidates?.phone || task.metadata?.phone;
-        const message = task.generated_message || task.metadata?.message;
+        const message = task.message_content || task.generated_message || task.metadata?.message;
 
         if (!phoneNumber || !message) {
           summary.failed++;

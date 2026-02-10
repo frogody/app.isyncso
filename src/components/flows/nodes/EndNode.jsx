@@ -6,6 +6,7 @@
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { CircleStop, CheckCircle2 } from 'lucide-react';
+import SettingsIndicator from './SettingsIndicator';
 
 function EndNode({ data, selected }) {
   return (
@@ -34,6 +35,7 @@ function EndNode({ data, selected }) {
         <div className="flex-1 min-w-0">
           <span className="text-[13px] font-semibold text-white tracking-tight">End</span>
         </div>
+        <SettingsIndicator />
         <div className="w-2 h-2 rounded-full bg-emerald-400" />
       </div>
 

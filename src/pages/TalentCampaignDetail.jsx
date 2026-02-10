@@ -1034,17 +1034,27 @@ export default function TalentCampaignDetail() {
     setCreatingTasks(true);
     try {
       // Create outreach tasks for each message
+      // Map campaign_type to channel
+      const channelMap = { linkedin: 'linkedin', email: 'email', gmail: 'email', sms: 'sms' };
+      const channel = channelMap[campaign?.campaign_type] || 'linkedin';
+
       const tasks = messages.map(msg => ({
         organization_id: user.organization_id,
         campaign_id: campaign.id,
         candidate_id: msg.candidate_id,
         task_type: 'initial_outreach',
         message_content: msg.content,
+        subject: msg.subject || null,
+        channel,
         status: 'approved_ready',
         stage: 'first_message',
         attempt_number: 1,
+        approved_at: new Date().toISOString(),
+        approved_by: user.id,
+        candidate_name: msg.candidate_name || null,
         metadata: {
           subject: msg.subject,
+          message: msg.content, // duplicate for edge function fallback
           personalization_points: msg.intelligence_used,
           match_score: msg.match_score,
           outreach_angle: msg.outreach_angle,
@@ -1112,9 +1122,9 @@ export default function TalentCampaignDetail() {
     try {
       const { data, error } = await supabase
         .from('outreach_tasks')
-        .select('*, candidate:candidate_id(id, first_name, last_name, job_title, email, company_name)')
+        .select('*, candidate:candidate_id(id, first_name, last_name, name, job_title, email, company_name, linkedin_profile, phone)')
         .eq('campaign_id', campaign.id)
-        .order('created_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setOutreachTasks(data || []);
@@ -1123,24 +1133,98 @@ export default function TalentCampaignDetail() {
     }
   };
 
-  // Handle sending an outreach task
+  // Handle sending an outreach task via executeTalentOutreach edge function
   const handleSendTask = async (taskId) => {
     try {
-      const { error } = await supabase
+      // First approve the specific task if not already approved
+      await supabase
         .from('outreach_tasks')
-        .update({
-          status: 'sent',
-          sent_at: new Date().toISOString(),
-        })
-        .eq('id', taskId);
+        .update({ status: 'approved_ready', approved_at: new Date().toISOString(), approved_by: user?.id })
+        .eq('id', taskId)
+        .eq('status', 'approved_ready'); // no-op if already approved
 
-      if (error) throw error;
+      // Call the real execution engine
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/executeTalentOutreach`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            campaign_id: campaign.id,
+            user_id: user?.id,
+            limit: 1, // Send just this one task
+          }),
+        }
+      );
 
-      toast.success('Message marked as sent!');
+      const result = await response.json();
+
+      if (result.error) throw new Error(result.error);
+
+      if (result.sent > 0) {
+        toast.success('Message sent successfully!');
+      } else if (result.skipped_no_connection > 0) {
+        toast.error('No integration connected. Connect LinkedIn/Gmail in Settings → Integrations.');
+      } else if (result.skipped_rate_limit > 0) {
+        toast.warning('Daily rate limit reached. Try again tomorrow.');
+      } else if (result.failed > 0) {
+        const detail = result.details?.[0];
+        toast.error(`Send failed: ${detail?.error || 'Unknown error'}`);
+      } else {
+        toast.warning('No approved tasks to send');
+      }
+
       fetchOutreachTasks();
     } catch (err) {
       console.error('Failed to send task:', err);
-      toast.error('Failed to update task status');
+      toast.error(`Failed to send: ${err.message}`);
+    }
+  };
+
+  // Handle sending ALL approved_ready tasks in batch
+  const handleSendAllTasks = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/executeTalentOutreach`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            campaign_id: campaign.id,
+            user_id: user?.id,
+            limit: 50,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.error) throw new Error(result.error);
+
+      const parts = [];
+      if (result.sent > 0) parts.push(`${result.sent} sent`);
+      if (result.failed > 0) parts.push(`${result.failed} failed`);
+      if (result.skipped_rate_limit > 0) parts.push(`${result.skipped_rate_limit} rate-limited`);
+      if (result.skipped_no_connection > 0) parts.push(`${result.skipped_no_connection} no connection`);
+
+      if (result.sent > 0) {
+        toast.success(`Batch complete: ${parts.join(', ')}`);
+      } else if (parts.length > 0) {
+        toast.warning(`Batch complete: ${parts.join(', ')}`);
+      } else {
+        toast.info('No approved tasks to send');
+      }
+
+      fetchOutreachTasks();
+    } catch (err) {
+      console.error('Failed to send batch:', err);
+      toast.error(`Batch send failed: ${err.message}`);
     }
   };
 
@@ -1958,6 +2042,7 @@ export default function TalentCampaignDetail() {
                   tasks={outreachTasks}
                   onRefresh={fetchOutreachTasks}
                   onSendTask={handleSendTask}
+                  onSendAll={handleSendAllTasks}
                   onCancelTask={handleCancelTask}
                 />
               )}

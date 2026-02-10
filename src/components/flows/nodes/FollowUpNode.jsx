@@ -6,6 +6,7 @@
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Layers, Mail, Linkedin, MessageSquare } from 'lucide-react';
+import SettingsIndicator from './SettingsIndicator';
 
 const CHANNEL_ICONS = {
   email: Mail,
@@ -48,6 +49,7 @@ function FollowUpNode({ data, selected }) {
         <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/[0.06] text-zinc-400 font-mono font-medium">
           #{followUpCount}
         </span>
+        <SettingsIndicator />
         <div className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
       </div>
 

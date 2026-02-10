@@ -6,6 +6,7 @@
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Webhook, Zap } from 'lucide-react';
+import SettingsIndicator from './SettingsIndicator';
 
 function WebhookTriggerNode({ data, selected }) {
   const isConfigured = !!data?.integration && !!data?.trigger_type;
@@ -29,6 +30,7 @@ function WebhookTriggerNode({ data, selected }) {
         <div className="flex-1 min-w-0">
           <span className="text-[13px] font-semibold text-white tracking-tight">Webhook Trigger</span>
         </div>
+        <SettingsIndicator />
         <div className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
       </div>
 
