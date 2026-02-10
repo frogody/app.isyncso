@@ -5,6 +5,13 @@ import { useEnrichmentProgress } from '@/hooks/useEnrichmentProgress';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   CheckCircle2,
   Loader2,
   AlertCircle,
@@ -15,9 +22,13 @@ import {
   Building2,
   Brain,
   Sparkles,
+  RotateCcw,
+  PlayCircle,
+  Settings2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const STAGE_CONFIG = {
   pending: { label: 'Queued', icon: Loader2, color: 'text-zinc-400' },
@@ -32,6 +43,7 @@ function EnrichmentProgressBarInner({ organizationId, onDismiss }) {
   const [queueItems, setQueueItems] = useState([]);
   const [isExpanded, setIsExpanded] = useState(true);
   const [isVisible, setIsVisible] = useState(true);
+  const [retrying, setRetrying] = useState(false);
 
   const fetchQueueStatus = useCallback(async () => {
     if (!organizationId) return;
@@ -93,6 +105,37 @@ function EnrichmentProgressBarInner({ organizationId, onDismiss }) {
     ? (currentItem.candidates.name || `${currentItem.candidates.first_name || ''} ${currentItem.candidates.last_name || ''}`.trim())
     : null;
 
+  // Re-queue items by resetting status to 'pending'
+  const handleRetry = async (mode) => {
+    setRetrying(true);
+    try {
+      let query = supabase
+        .from('sync_intel_queue')
+        .update({ status: 'pending', error_message: null, current_stage: null })
+        .eq('organization_id', organizationId);
+
+      let label = '';
+      if (mode === 'failed') {
+        query = query.eq('status', 'failed');
+        label = `${failed} failed`;
+      } else if (mode === 'all') {
+        query = query.in('status', ['failed', 'completed']);
+        label = `${failed + completed} (all)`;
+      }
+
+      const { error } = await query;
+      if (error) throw error;
+
+      toast.success(`Re-queued ${label} candidates for enrichment`);
+      await fetchQueueStatus();
+    } catch (err) {
+      console.error('Retry failed:', err);
+      toast.error('Failed to re-queue candidates');
+    } finally {
+      setRetrying(false);
+    }
+  };
+
   if (!isVisible || total === 0) return null;
 
   return (
@@ -117,6 +160,50 @@ function EnrichmentProgressBarInner({ organizationId, onDismiss }) {
               </span>
             </div>
             <div className="flex items-center gap-1">
+              {/* Actions dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 text-zinc-400 hover:text-zinc-200"
+                    disabled={retrying}
+                  >
+                    {retrying ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Settings2 className="w-3.5 h-3.5" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-700 text-zinc-200 w-52">
+                  {failed > 0 && (
+                    <DropdownMenuItem
+                      onClick={() => handleRetry('failed')}
+                      className="text-zinc-300 focus:bg-zinc-800 focus:text-white cursor-pointer"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2 text-red-400" />
+                      Retry failed ({failed})
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    onClick={() => handleRetry('all')}
+                    className="text-zinc-300 focus:bg-zinc-800 focus:text-white cursor-pointer"
+                  >
+                    <PlayCircle className="w-4 h-4 mr-2 text-red-400" />
+                    Force re-run all
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-zinc-700" />
+                  <DropdownMenuItem
+                    onClick={() => { setIsVisible(false); onDismiss?.(); }}
+                    className="text-zinc-400 focus:bg-zinc-800 focus:text-white cursor-pointer"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Dismiss
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Button
                 variant="ghost"
                 size="sm"
@@ -125,16 +212,6 @@ function EnrichmentProgressBarInner({ organizationId, onDismiss }) {
               >
                 {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
               </Button>
-              {isComplete && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 text-zinc-400 hover:text-zinc-200"
-                  onClick={() => { setIsVisible(false); onDismiss?.(); }}
-                >
-                  <X className="w-3.5 h-3.5" />
-                </Button>
-              )}
             </div>
           </div>
 
@@ -225,9 +302,11 @@ function EnrichmentProgressBarInner({ organizationId, onDismiss }) {
                       <span>All {completed} candidate{completed !== 1 ? 's' : ''} enriched!</span>
                     </div>
                     {failed > 0 && (
-                      <p className="text-xs text-zinc-500 ml-6 mt-1">
-                        {failed} failed — retry from candidate details
-                      </p>
+                      <div className="mt-2 ml-6">
+                        <p className="text-xs text-zinc-500">
+                          {failed} failed — use <Settings2 className="w-3 h-3 inline" /> to retry
+                        </p>
+                      </div>
                     )}
                   </div>
                 )}
