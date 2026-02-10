@@ -129,7 +129,7 @@ export default function MessageInput({
       setUploading(true);
       try {
         const result = await db.integrations.Core.UploadFile({ file: files[0] });
-        fileUrl = result.file_url;
+        fileUrl = result.url || result.file_url;
         fileName = files[0].name;
         messageType = files[0].type.startsWith('image/') ? 'image' : 'file';
       } catch (error) {
