@@ -1068,7 +1068,7 @@ export default function AdminApps() {
                   <SelectContent className="bg-zinc-900 border-zinc-800">
                     <SelectItem value="trial" className="text-xs">Trial</SelectItem>
                     <SelectItem value="subscription" className="text-xs">Subscription</SelectItem>
-                    <SelectItem value="lifetime" className="text-xs">Lifetime</SelectItem>
+                    <SelectItem value="perpetual" className="text-xs">Lifetime</SelectItem>
                     <SelectItem value="enterprise" className="text-xs">Enterprise</SelectItem>
                   </SelectContent>
                 </Select>

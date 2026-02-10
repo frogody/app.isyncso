@@ -4124,7 +4124,11 @@ serve(async (req) => {
   } catch (error) {
     console.error("[Admin API] Error:", error);
 
-    const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+    const errorMessage = error instanceof Error
+      ? error.message
+      : (typeof error === "object" && error !== null && "message" in error)
+        ? (error as { message: string }).message
+        : "An unexpected error occurred";
 
     return new Response(
       JSON.stringify({ error: errorMessage }),
