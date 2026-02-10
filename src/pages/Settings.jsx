@@ -662,9 +662,6 @@ export default function Settings() {
               color="cyan"
             />
             <div className="flex items-center gap-2">
-              <button onClick={toggleTheme} className={`p-2 rounded-lg border transition-colors ${st('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-zinc-700 hover:bg-zinc-800 text-zinc-400')}`}>
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
               {isSuperAdmin && (
                 <Link
                   to="/admin"
@@ -1060,20 +1057,32 @@ export default function Settings() {
                       <div>
                         <Label className={`${st('text-slate-500', 'text-zinc-400')} text-sm mb-3 block`}>Theme</Label>
                         <div className="grid grid-cols-2 gap-4">
-                          <div className="p-4 rounded-xl border-2 border-pink-500 bg-pink-500/10 cursor-pointer">
+                          <button
+                            onClick={() => { if (theme !== 'dark') toggleTheme(); }}
+                            className={`p-4 rounded-xl text-left transition-all ${theme === 'dark' ? 'border-2 border-cyan-500 bg-cyan-500/10' : `border ${st('border-slate-200 bg-slate-50', 'border-zinc-700 bg-zinc-800/30')}`}`}
+                          >
                             <div className="flex items-center justify-between mb-2">
-                              <span className={`${st('text-slate-900', 'text-white')} font-medium`}>Dark</span>
-                              <CheckCircle className="w-5 h-5 text-pink-400" />
+                              <div className="flex items-center gap-2">
+                                <Moon className="w-4 h-4 text-blue-400" />
+                                <span className={`${theme === 'dark' ? st('text-slate-900', 'text-white') : st('text-slate-400', 'text-zinc-400')} font-medium`}>Dark</span>
+                              </div>
+                              {theme === 'dark' && <CheckCircle className="w-5 h-5 text-cyan-400" />}
                             </div>
-                            <div className={`w-full h-16 rounded-lg ${st('bg-slate-200 border border-slate-300', 'bg-zinc-900 border border-zinc-700')}`} />
-                          </div>
-                          <div className={`p-4 rounded-xl border ${st('border-slate-200 bg-slate-50', 'border-zinc-700 bg-zinc-800/30')} cursor-not-allowed opacity-50`}>
+                            <div className="w-full h-16 rounded-lg bg-zinc-900 border border-zinc-700" />
+                          </button>
+                          <button
+                            onClick={() => { if (theme !== 'light') toggleTheme(); }}
+                            className={`p-4 rounded-xl text-left transition-all ${theme === 'light' ? 'border-2 border-cyan-500 bg-cyan-500/10' : `border ${st('border-slate-200 bg-slate-50', 'border-zinc-700 bg-zinc-800/30')}`}`}
+                          >
                             <div className="flex items-center justify-between mb-2">
-                              <span className={`${st('text-slate-400', 'text-zinc-400')} font-medium`}>Light</span>
-                              <Badge className={`${st('bg-slate-200 text-slate-400', 'bg-zinc-700 text-zinc-400')} text-xs`}>Coming Soon</Badge>
+                              <div className="flex items-center gap-2">
+                                <Sun className="w-4 h-4 text-amber-400" />
+                                <span className={`${theme === 'light' ? st('text-slate-900', 'text-white') : st('text-slate-400', 'text-zinc-400')} font-medium`}>Light</span>
+                              </div>
+                              {theme === 'light' && <CheckCircle className="w-5 h-5 text-cyan-400" />}
                             </div>
-                            <div className="w-full h-16 rounded-lg bg-zinc-200" />
-                          </div>
+                            <div className="w-full h-16 rounded-lg bg-slate-100 border border-slate-300" />
+                          </button>
                         </div>
                       </div>
 

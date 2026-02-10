@@ -79,8 +79,6 @@ import {
   Building2,
   Monitor,
   ExternalLink,
-  Sun,
-  Moon,
   FolderPlus,
   Mail,
   Plus,
@@ -864,7 +862,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
   const syncKnock = useSyncKnock();
 
   // Global theme
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
 
   // Get team-based app access
   const { effectiveApps, hasTeams, isLoading: teamLoading } = useTeamAccess();
@@ -1247,20 +1245,6 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         })}
 
         <div className="h-px bg-white/5 mx-2 my-1" />
-
-        {/* Theme Toggle */}
-        <button
-          onClick={toggleTheme}
-          className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10`}
-          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-        >
-          {theme === 'dark' ? (
-            <Sun size={20} className="flex-shrink-0 text-amber-400 group-hover:text-amber-300" />
-          ) : (
-            <Moon size={20} className="flex-shrink-0 text-blue-400 group-hover:text-blue-300" />
-          )}
-          {isMobile && <span className="text-sm font-medium">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
-        </button>
 
         {/* Credits / CTA */}
         {me ? (
