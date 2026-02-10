@@ -632,7 +632,7 @@ export default function ContactsImport() {
   return (
     <CRMPageTransition>
       <div className={cn("min-h-screen px-4 lg:px-6 py-4", crt('bg-slate-50', 'bg-black'))}>
-        <div className="max-w-4xl mx-auto space-y-4">
+        <div className="w-full space-y-4">
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">
             <Button
