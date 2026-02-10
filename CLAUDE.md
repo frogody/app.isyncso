@@ -2332,7 +2332,7 @@ FROM enrichment_cache_companies;
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 0 | Database Foundation & Infrastructure | **Complete** |
-| 1 | Purchasing Overhaul | Not Started |
+| 1 | Purchasing Overhaul | **In Progress** (P1-1 through P1-7 done, P1-8 pending) |
 | 2 | Receiving Enhancements | Not Started |
 | 3 | Pallet Management (3a/3b/3c) | Not Started |
 | 4 | bol.com Retailer API | Not Started |

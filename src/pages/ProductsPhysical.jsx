@@ -66,7 +66,9 @@ export default function ProductsPhysical() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
+  const [channelFilter, setChannelFilter] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
+  const [channelsMap, setChannelsMap] = useState({});
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -199,6 +201,16 @@ export default function ProductsPhysical() {
           console.warn('Failed to load suppliers:', e);
         }
 
+        let channelsData = [];
+        try {
+          const { data } = await supabase
+            .from('product_sales_channels')
+            .select('product_id, channel');
+          channelsData = data || [];
+        } catch (e) {
+          console.warn('Failed to load sales channels:', e);
+        }
+
         if (!isMounted) return;
 
         setProducts(productsData);
@@ -215,6 +227,13 @@ export default function ProductsPhysical() {
           suppliersMap[s.id] = s;
         });
         setSuppliers(suppliersMap);
+
+        const chMap = {};
+        (channelsData || []).forEach(ch => {
+          if (!chMap[ch.product_id]) chMap[ch.product_id] = [];
+          chMap[ch.product_id].push(ch.channel);
+        });
+        setChannelsMap(chMap);
       } catch (error) {
         console.error('Failed to load physical products:', error);
       } finally {
@@ -246,9 +265,14 @@ export default function ProductsPhysical() {
         if (stockStatus !== stockFilter) return false;
       }
 
+      if (channelFilter !== 'all') {
+        const channels = channelsMap[p.id] || [];
+        if (!channels.includes(channelFilter)) return false;
+      }
+
       return true;
     });
-  }, [products, physicalProducts, searchQuery, statusFilter, categoryFilter, stockFilter]);
+  }, [products, physicalProducts, channelsMap, searchQuery, statusFilter, categoryFilter, stockFilter, channelFilter]);
 
   const stats = useMemo(() => {
     const stockCounts = { in_stock: 0, low_stock: 0, out_of_stock: 0 };
@@ -365,6 +389,18 @@ export default function ProductsPhysical() {
               </SelectContent>
             </Select>
 
+            {/* Channel Filter */}
+            <Select value={channelFilter} onValueChange={setChannelFilter}>
+              <SelectTrigger className={`w-[140px] ${t('bg-slate-50 border-slate-200 text-slate-900', 'bg-zinc-900/50 border-zinc-800/60 text-white')}`}>
+                <SelectValue placeholder="Kanaal" />
+              </SelectTrigger>
+              <SelectContent className={t('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800/60')}>
+                <SelectItem value="all">Alle Kanalen</SelectItem>
+                <SelectItem value="b2b">B2B</SelectItem>
+                <SelectItem value="b2c">B2C</SelectItem>
+              </SelectContent>
+            </Select>
+
             {/* View Toggle */}
             <div className={`flex items-center gap-1 p-1 rounded-lg ${t('bg-slate-100 border border-slate-200', 'bg-zinc-800/50 border border-zinc-800/60')}`}>
               <Button
@@ -409,6 +445,7 @@ export default function ProductsPhysical() {
                     product={product}
                     productType="physical"
                     details={physicalProducts[product.id]}
+                    salesChannels={channelsMap[product.id]}
                     index={index}
                     onEdit={handleEditProduct}
                     onArchive={handleArchiveProduct}
@@ -425,6 +462,7 @@ export default function ProductsPhysical() {
                     product={product}
                     productType="physical"
                     details={physicalProducts[product.id]}
+                    salesChannels={channelsMap[product.id]}
                     index={index}
                     onEdit={handleEditProduct}
                     onArchive={handleArchiveProduct}
@@ -441,7 +479,7 @@ export default function ProductsPhysical() {
             </div>
             <h4 className={`text-lg font-medium mb-2 ${t('text-slate-900', 'text-white')}`}>No physical products found</h4>
             <p className={`text-sm mb-4 ${t('text-slate-500', 'text-zinc-500')}`}>
-              {searchQuery || statusFilter !== 'all' || categoryFilter !== 'all' || stockFilter !== 'all'
+              {searchQuery || statusFilter !== 'all' || categoryFilter !== 'all' || stockFilter !== 'all' || channelFilter !== 'all'
                 ? 'Try adjusting your filters'
                 : 'Get started by adding your first physical product'}
             </p>

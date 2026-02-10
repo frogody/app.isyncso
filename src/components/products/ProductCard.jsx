@@ -44,10 +44,16 @@ const TYPE_ICONS = {
   service: Briefcase,
 };
 
+const CHANNEL_COLORS = {
+  b2b: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30', label: 'B2B' },
+  b2c: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/30', label: 'B2C' },
+};
+
 export function ProductGridCard({
   product,
   productType = 'digital',
   details,
+  salesChannels,
   onEdit,
   onDuplicate,
   onArchive,
@@ -109,7 +115,7 @@ export function ProductGridCard({
             </p>
 
             {/* Status Badges */}
-            <div className="flex items-center gap-2 mt-3">
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
               <Badge className={`${status.bg} ${status.text} ${status.border} text-xs`}>
                 {status.label}
               </Badge>
@@ -126,6 +132,16 @@ export function ProductGridCard({
                   </Badge>
                 )
               )}
+
+              {/* Physical: Channel badges */}
+              {isPhysical && salesChannels?.length > 0 && salesChannels.map(ch => {
+                const style = CHANNEL_COLORS[ch];
+                return style ? (
+                  <Badge key={ch} className={`${style.bg} ${style.text} border ${style.border} text-xs`}>
+                    {style.label}
+                  </Badge>
+                ) : null;
+              })}
 
               {/* Digital: Trial badge */}
               {isDigital && details?.trial_available && (
@@ -225,6 +241,7 @@ export function ProductListRow({
   product,
   productType = 'digital',
   details,
+  salesChannels,
   onEdit,
   onDuplicate,
   onArchive,
@@ -300,6 +317,16 @@ export function ProductListRow({
                   </Badge>
                 )
               )}
+
+              {/* Physical: Channel badges */}
+              {isPhysical && salesChannels?.length > 0 && salesChannels.map(ch => {
+                const style = CHANNEL_COLORS[ch];
+                return style ? (
+                  <Badge key={ch} className={`${style.bg} ${style.text} border ${style.border} text-xs`}>
+                    {style.label}
+                  </Badge>
+                ) : null;
+              })}
 
               {/* Digital: Trial badge */}
               {isDigital && details?.trial_available && (

@@ -95,6 +95,7 @@ export default function ProductModal({
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
   const [categories, setCategories] = useState([]);
+  const [productChannels, setProductChannels] = useState([]);
 
   // Base product fields
   const [formData, setFormData] = useState({
@@ -363,10 +364,11 @@ export default function ProductModal({
         scope: { included: [], excluded: [], prerequisites: [] },
       });
       setAiContext(DEFAULT_AI_CONTEXT);
-      // Reset supplier state for new products
+      // Reset supplier and channel state for new products
       setPendingSuppliers([]);
       setProductSuppliers([]);
       setPurchaseHistory([]);
+      setProductChannels([]);
       setActiveTab('basic');
     }
   }, [product, open, productType]);
@@ -392,6 +394,26 @@ export default function ProductModal({
     };
 
     loadSuppliersData();
+  }, [product?.id, open, productType]);
+
+  // Load sales channels for physical products
+  useEffect(() => {
+    const loadChannels = async () => {
+      if (!product?.id || !open || productType !== 'physical') {
+        setProductChannels([]);
+        return;
+      }
+      try {
+        const { data } = await supabase
+          .from('product_sales_channels')
+          .select('channel')
+          .eq('product_id', product.id);
+        setProductChannels((data || []).map(r => r.channel));
+      } catch (e) {
+        console.warn('Failed to load channels:', e);
+      }
+    };
+    loadChannels();
   }, [product?.id, open, productType]);
 
   // Load available suppliers for adding
@@ -674,6 +696,53 @@ export default function ProductModal({
               console.warn('Failed to link supplier:', ps.supplier_id, e);
             }
           }
+        }
+
+        // Sync sales channels
+        const { data: existingChannels } = await supabase
+          .from('product_sales_channels')
+          .select('channel')
+          .eq('product_id', savedProduct.id);
+        const oldChannels = (existingChannels || []).map(r => r.channel);
+        const added = productChannels.filter(ch => !oldChannels.includes(ch));
+        const removed = oldChannels.filter(ch => !productChannels.includes(ch));
+
+        if (removed.length > 0) {
+          await supabase
+            .from('product_sales_channels')
+            .delete()
+            .eq('product_id', savedProduct.id)
+            .in('channel', removed);
+        }
+        if (added.length > 0) {
+          await supabase
+            .from('product_sales_channels')
+            .insert(added.map(ch => ({
+              product_id: savedProduct.id,
+              channel: ch,
+              company_id: user.company_id,
+            })));
+        }
+
+        // Audit log for channel changes
+        const auditEntries = [
+          ...added.map(ch => ({
+            product_id: savedProduct.id,
+            company_id: user.company_id,
+            changed_by: user.id,
+            old_channel: null,
+            new_channel: ch,
+          })),
+          ...removed.map(ch => ({
+            product_id: savedProduct.id,
+            company_id: user.company_id,
+            changed_by: user.id,
+            old_channel: ch,
+            new_channel: null,
+          })),
+        ];
+        if (auditEntries.length > 0) {
+          await supabase.from('channel_audit_log').insert(auditEntries);
         }
       }
 
@@ -1166,6 +1235,37 @@ export default function ProductModal({
             {/* Inventory Tab (Physical only) */}
             {productType === 'physical' && (
               <TabsContent value="inventory" className="space-y-4 m-0">
+                {/* Sales Channels */}
+                <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20">
+                  <h4 className={cn(`${t('text-slate-900', 'text-white')} font-medium mb-3 flex items-center gap-2`)}>
+                    <Tag className="w-4 h-4 text-blue-400" /> Verkoopkanalen
+                  </h4>
+                  <div className="flex items-center gap-4">
+                    {[
+                      { value: 'b2b', label: 'B2B', color: 'blue' },
+                      { value: 'b2c', label: 'B2C', color: 'cyan' },
+                    ].map(ch => (
+                      <label key={ch.value} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={productChannels.includes(ch.value)}
+                          onChange={(e) => {
+                            setProductChannels(prev =>
+                              e.target.checked
+                                ? [...prev, ch.value]
+                                : prev.filter(c => c !== ch.value)
+                            );
+                          }}
+                          className={`w-4 h-4 rounded border-${ch.color}-500/50 text-${ch.color}-500 focus:ring-${ch.color}-500`}
+                        />
+                        <span className={cn(`text-sm ${t('text-slate-700', 'text-zinc-300')}`)}>
+                          {ch.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/20">
                   <div className="flex items-center justify-between">
                     <div>

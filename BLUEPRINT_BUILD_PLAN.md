@@ -2980,13 +2980,13 @@ CREATE INDEX idx_receiving_log_session ON receiving_log(receiving_session_id) WH
 - [x] `P0-8` Test migration on local/staging
 
 ### Phase 1: Purchasing Overhaul
-- [ ] `P1-1` ManualPurchaseModal component
-- [ ] `P1-2` Purchase group management (create, list, filter)
-- [ ] `P1-3` Integrate manual entry into StockPurchases page
-- [ ] `P1-4` Add B2B/B2C channel field to purchase flow
-- [ ] `P1-5` Add channel badges to ProductsPhysical (from `product_sales_channels` junction table, multi-select edit)
-- [ ] `P1-6` Channel audit logging
-- [ ] `P1-7` Fix orphaned trigger: wire `create_expected_deliveries_on_insert()` to `stock_purchases` INSERT or consolidate with approval trigger
+- [x] `P1-1` ManualPurchaseModal component
+- [x] `P1-2` Purchase group management (create, list, filter)
+- [x] `P1-3` Integrate manual entry into StockPurchases page
+- [x] `P1-4` Add B2B/B2C channel field to purchase flow
+- [x] `P1-5` Add channel badges to ProductsPhysical (from `product_sales_channels` junction table, multi-select edit)
+- [x] `P1-6` Channel audit logging
+- [x] `P1-7` Fix orphaned trigger: wire `create_expected_deliveries_on_insert()` to `stock_purchases` INSERT or consolidate with approval trigger
 - [ ] `P1-8` Test: create manual purchase with groups and channel
 
 ### Phase 2: Receiving Enhancements

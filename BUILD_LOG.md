@@ -1,8 +1,8 @@
 # BUILD LOG — Blueprint Build Plan
 
-## Active Phase: Phase 0 — Database Foundation & Infrastructure
-## Last Updated: 2026-02-10T23:45:00Z
-## Next Task: P1-1 — ManualPurchaseModal component (Phase 1 start)
+## Active Phase: Phase 1 — Purchasing Overhaul
+## Last Updated: 2026-02-11T01:00:00Z
+## Next Task: P1-8 — Test: create manual purchase with groups and channel
 
 ---
 
@@ -87,4 +87,50 @@ If you've just started a new session or context was compacted, read these files 
 - pg_cron enabled for scheduled jobs in later phases
 - RLS gap on `sales_order_items` fixed
 - Tenant scoping convention documented
+
+---
+
+### Phase 1: Purchasing Overhaul
+
+> **Started**: 2026-02-11
+> **Status**: In Progress
+
+#### Task: P1-1 — ManualPurchaseModal component
+- **What was done**: Created `ManualPurchaseModal.jsx` — full manual purchase entry form with supplier selector (existing + create new), purchase group name, date picker, sales channel radio (B2B/B2C/Onbepaald), dynamic line items (EAN lookup, product name, qty, price, country, URL, remarks), auto-create products for unknown EANs, totals calculation.
+- **Key decisions**: Dutch UI labels (Leverancier, Groepsnaam, Verkoopkanaal). Sets `entry_method='manual'`, `status='approved'` on submit. Auto-creates products for unknown EANs. Creates purchase_group if group name provided.
+- **Files changed**: `src/components/purchases/ManualPurchaseModal.jsx` (created)
+- **Gotchas/Notes**: Uses `scanBarcode()` from inventory.ts for EAN lookup with UPC-A/EAN-13 conversion support.
+
+#### Task: P1-3 — Integrate manual entry into StockPurchases page
+- **What was done**: Added "Handmatige Inkoop" button (variant="outline" with ShoppingCart icon) next to "Upload Invoice" button. Added ManualPurchaseModal rendering with `onPurchaseCreated={loadStockPurchases}` for auto-refresh.
+- **Files changed**: `src/pages/StockPurchases.jsx` (modified — import, state, button, modal render)
+
+#### Task: P1-4 — Add B2B/B2C channel field to purchase flow
+- **What was done**: Built into ManualPurchaseModal as radio group (B2B/B2C/Onbepaald). Channel is stored on the purchase_group record via `sales_channel` column.
+- **Files changed**: Part of P1-1 (ManualPurchaseModal.jsx)
+
+#### Task: P1-7 — Fix orphaned trigger
+- **What was done**: Created `create_expected_deliveries_on_insert()` function (didn't exist despite plan saying it did) and wired INSERT trigger with `WHEN (NEW.status = 'approved')` guard.
+- **Key decisions**: Modeled function on existing `_on_approval` version. INSERT trigger only fires for approved status to avoid creating deliveries for draft/pending purchases.
+- **Gotchas/Notes**: Both the function AND the trigger were missing. Plan said function existed but it didn't.
+- **Verification**: 5 triggers now on stock_purchases confirmed via pg_trigger query.
+
+#### Task: P1-5 — Channel badges on ProductsPhysical + multi-select edit
+- **What was done**:
+  - **ProductsPhysical.jsx**: Added `channelFilter` state, `channelsMap` state, loads `product_sales_channels` data in loadData(), added "Kanaal" filter dropdown (Alle Kanalen / B2B / B2C), channel filter logic in `filteredProducts`, passes `salesChannels` prop to grid/list cards.
+  - **ProductCard.jsx**: Added `CHANNEL_COLORS` map (B2B=blue, B2C=cyan), `salesChannels` prop to both `ProductGridCard` and `ProductListRow`, renders channel badges after stock badge with `flex-wrap` on grid card badge container.
+  - **ProductModal.jsx**: Added `productChannels` state, loads existing channels from `product_sales_channels` on edit, added channel checkboxes (B2B/B2C) in Inventory tab under "Verkoopkanalen" section, syncs `product_sales_channels` on save (diff-based: only inserts added, deletes removed).
+- **Key decisions**: B2B = blue-500, B2C = cyan-500 (consistent with app palette). Channel edit uses checkboxes not dropdown (per spec: "multi-select"). Diff-based sync avoids unnecessary deletes/inserts.
+- **Files changed**: `src/pages/ProductsPhysical.jsx`, `src/components/products/ProductCard.jsx`, `src/components/products/ProductModal.jsx`
+
+#### Task: P1-6 — Channel audit logging
+- **What was done**: On save in ProductModal, after syncing `product_sales_channels`, inserts audit entries into `channel_audit_log` for each added channel (`old_channel=null, new_channel=ch`) and removed channel (`old_channel=ch, new_channel=null`).
+- **Key decisions**: Uses correct `channel_audit_log` schema (old_channel/new_channel, not change_type). Only inserts when there are actual changes.
+- **Files changed**: `src/components/products/ProductModal.jsx`
+
+#### Task: P1-2 — Purchase group management
+- **What was done**:
+  - **StockPurchases.jsx**: Added `purchaseGroups` and `expandedGroups` state, loads groups alongside purchases, organizes expenses into `groupedExpenses` (keyed by group_id) and `ungroupedExpenses`. Added group filter Select dropdown (Alle Groepen / Ongegroepeerd / per group). Created `PurchaseGroupHeader` component with expand/collapse showing group name, channel badge, invoice count, supplier, date, total items, total value. Groups render first with their purchases indented under a left border, then ungrouped purchases below. Updated approve/reject handlers to use `loadStockPurchases()` for full refresh including groups.
+- **Key decisions**: Groups show at top of list for visibility. Expand/collapse with left-border indentation for visual hierarchy. Channel badge on group header matches B2B/B2C/Onbepaald styling.
+- **Files changed**: `src/pages/StockPurchases.jsx` (added Select imports, Layers + ChevronDown icons, PurchaseGroupHeader component, grouped list rendering, group filter)
 

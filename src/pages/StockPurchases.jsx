@@ -3,10 +3,10 @@ import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import {
   Receipt, Search, Filter, Clock, Check, X, AlertTriangle,
-  Eye, FileText, Upload, Sparkles, ChevronRight, Edit2,
+  Eye, FileText, Upload, Sparkles, ChevronRight, ChevronDown, Edit2,
   CheckCircle2, XCircle, RefreshCw, Euro, Calendar,
   Building, Percent, ExternalLink, Image, FileUp, Loader2,
-  Send, Package
+  Send, Package, ShoppingCart, Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,13 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useUser } from "@/components/context/UserContext";
 import { PermissionGuard } from "@/components/guards";
 import { toast } from "sonner";
@@ -41,6 +48,7 @@ import {
 } from "@/lib/db/queries";
 import { MIN_CONFIDENCE } from "@/lib/db/schema";
 import { storage, supabase } from "@/api/supabaseClient";
+import ManualPurchaseModal from "@/components/purchases/ManualPurchaseModal";
 
 // Set up PDF.js worker using bundled worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -606,6 +614,70 @@ function ExpenseCard({ expense, onReview, onRetry }) {
   );
 }
 
+// Purchase group header with expand/collapse
+function PurchaseGroupHeader({ group, expenses, isExpanded, onToggle }) {
+  const totalValue = expenses.reduce((sum, e) => sum + (e.total || 0), 0);
+  const totalItems = expenses.reduce((sum, e) => sum + (e.stock_purchase_line_items?.length || 0), 0);
+
+  const CHANNEL_LABELS = { b2b: 'B2B', b2c: 'B2C', onbepaald: 'Onbepaald' };
+
+  return (
+    <button
+      onClick={onToggle}
+      className="w-full p-3 rounded-lg bg-zinc-900/80 border border-cyan-500/20 hover:border-cyan-500/40 transition-all text-left"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
+            <Layers className="w-4 h-4 text-cyan-400" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-white">{group.name}</h3>
+              {group.sales_channel && (
+                <Badge className={`text-xs ${
+                  group.sales_channel === 'b2b'
+                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                    : group.sales_channel === 'b2c'
+                      ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
+                      : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
+                }`}>
+                  {CHANNEL_LABELS[group.sales_channel] || group.sales_channel}
+                </Badge>
+              )}
+              <Badge className="bg-zinc-500/10 text-zinc-400 border-zinc-500/30 text-xs">
+                {expenses.length} facturen
+              </Badge>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-zinc-500 mt-1">
+              {group.suppliers?.name && (
+                <span className="flex items-center gap-1">
+                  <Building className="w-3 h-3" /> {group.suppliers.name}
+                </span>
+              )}
+              {group.purchase_date && (
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {new Date(group.purchase_date).toLocaleDateString('nl-NL')}
+                </span>
+              )}
+              <span>{totalItems} items</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <p className="text-sm font-semibold text-white">€ {totalValue.toFixed(2)}</p>
+          {isExpanded ? (
+            <ChevronDown className="w-4 h-4 text-zinc-400" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-zinc-400" />
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
+
 // Review queue banner
 function ReviewQueueBanner({ count, onClick }) {
   if (count === 0) return null;
@@ -988,12 +1060,16 @@ export default function StockPurchases() {
   const { user } = useUser();
   const [expenses, setExpenses] = useState([]);
   const [reviewQueue, setReviewQueue] = useState([]);
+  const [purchaseGroups, setPurchaseGroups] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [groupFilter, setGroupFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState({});
 
   const companyId = user?.company_id;
 
@@ -1003,12 +1079,18 @@ export default function StockPurchases() {
 
     setIsLoading(true);
     try {
-      const [purchaseData, queueData] = await Promise.all([
+      const [purchaseData, queueData, groupsResult] = await Promise.all([
         listStockPurchases(companyId),
         getStockPurchaseReviewQueue(companyId),
+        supabase
+          .from('purchase_groups')
+          .select('*, suppliers(id, name)')
+          .eq('company_id', companyId)
+          .order('purchase_date', { ascending: false }),
       ]);
       setExpenses(purchaseData);
       setReviewQueue(queueData);
+      setPurchaseGroups(groupsResult.data || []);
     } catch (error) {
       console.error("Failed to load stock purchases:", error);
       toast.error("Failed to load stock purchases");
@@ -1029,6 +1111,12 @@ export default function StockPurchases() {
     if (filter === "approved" && expense.status !== "approved") return false;
     if (filter === "pending" && expense.status !== "pending_review") return false;
 
+    // Group filter
+    if (groupFilter !== "all") {
+      if (groupFilter === "ungrouped" && expense.purchase_group_id) return false;
+      if (groupFilter !== "ungrouped" && expense.purchase_group_id !== groupFilter) return false;
+    }
+
     // Search filter
     if (search) {
       const searchLower = search.toLowerCase();
@@ -1041,6 +1129,24 @@ export default function StockPurchases() {
 
     return true;
   });
+
+  // Organize expenses by group
+  const groupedExpenses = {};
+  const ungroupedExpenses = [];
+  filteredExpenses.forEach(expense => {
+    if (expense.purchase_group_id) {
+      if (!groupedExpenses[expense.purchase_group_id]) {
+        groupedExpenses[expense.purchase_group_id] = [];
+      }
+      groupedExpenses[expense.purchase_group_id].push(expense);
+    } else {
+      ungroupedExpenses.push(expense);
+    }
+  });
+
+  const toggleGroup = (groupId) => {
+    setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
+  };
 
   // Calculate stats
   const totalAmount = expenses.reduce((sum, e) => sum + (e.total || 0), 0);
@@ -1200,24 +1306,13 @@ export default function StockPurchases() {
       }
     }
 
-    // Refresh
-    const [purchaseData, queueData] = await Promise.all([
-      listStockPurchases(companyId),
-      getStockPurchaseReviewQueue(companyId),
-    ]);
-    setExpenses(purchaseData);
-    setReviewQueue(queueData);
+    // Refresh all data including groups
+    await loadStockPurchases();
   };
 
   const handleReject = async (purchaseId, notes) => {
     await rejectStockPurchase(purchaseId, user?.id, notes);
-    // Refresh
-    const [purchaseData, queueData] = await Promise.all([
-      listStockPurchases(companyId),
-      getStockPurchaseReviewQueue(companyId),
-    ]);
-    setExpenses(purchaseData);
-    setReviewQueue(queueData);
+    await loadStockPurchases();
   };
 
   return (
@@ -1229,6 +1324,13 @@ export default function StockPurchases() {
             <p className="text-xs text-zinc-400">Manage purchase orders and stock procurement</p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowManualModal(true)}
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              Handmatige Inkoop
+            </Button>
             <Button
               className="bg-cyan-600 hover:bg-cyan-700"
               onClick={() => setShowUploadModal(true)}
@@ -1289,6 +1391,22 @@ export default function StockPurchases() {
                 className="pl-9 bg-zinc-900/50 border-white/10"
               />
             </div>
+            {/* Group filter */}
+            {purchaseGroups.length > 0 && (
+              <Select value={groupFilter} onValueChange={setGroupFilter}>
+                <SelectTrigger className="w-[180px] bg-zinc-900/50 border-white/10 text-white">
+                  <SelectValue placeholder="Groep" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800/60">
+                  <SelectItem value="all">Alle Groepen</SelectItem>
+                  <SelectItem value="ungrouped">Ongegroepeerd</SelectItem>
+                  {purchaseGroups.map(g => (
+                    <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
             <Tabs value={filter} onValueChange={setFilter}>
               <TabsList className="bg-zinc-900/50">
                 <TabsTrigger value="all">Alles</TabsTrigger>
@@ -1320,7 +1438,34 @@ export default function StockPurchases() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredExpenses.map((expense) => (
+            {/* Grouped purchases */}
+            {purchaseGroups
+              .filter(g => groupedExpenses[g.id]?.length > 0)
+              .map(group => (
+                <div key={group.id} className="space-y-2">
+                  <PurchaseGroupHeader
+                    group={group}
+                    expenses={groupedExpenses[group.id]}
+                    isExpanded={expandedGroups[group.id]}
+                    onToggle={() => toggleGroup(group.id)}
+                  />
+                  {expandedGroups[group.id] && (
+                    <div className="ml-6 space-y-2 border-l-2 border-cyan-500/20 pl-3">
+                      {groupedExpenses[group.id].map(expense => (
+                        <ExpenseCard
+                          key={expense.id}
+                          expense={expense}
+                          onReview={handleReview}
+                          onRetry={handleRetry}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+            {/* Ungrouped purchases */}
+            {ungroupedExpenses.map((expense) => (
               <ExpenseCard
                 key={expense.id}
                 expense={expense}
@@ -1349,6 +1494,15 @@ export default function StockPurchases() {
           isOpen={showUploadModal}
           onClose={() => setShowUploadModal(false)}
           onUploadComplete={loadStockPurchases}
+          companyId={companyId}
+          userId={user?.id}
+        />
+
+        {/* Manual purchase modal */}
+        <ManualPurchaseModal
+          isOpen={showManualModal}
+          onClose={() => setShowManualModal(false)}
+          onPurchaseCreated={loadStockPurchases}
           companyId={companyId}
           userId={user?.id}
         />
