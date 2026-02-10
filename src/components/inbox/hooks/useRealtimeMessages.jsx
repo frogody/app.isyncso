@@ -208,6 +208,16 @@ export function useRealtimeMessages(channelId, userId, options = {}) {
     if (!channelId || !userId) return null;
 
     try {
+      // Build attachments array if file data is provided
+      const attachments = [];
+      if (messageData.file_url) {
+        attachments.push({
+          url: messageData.file_url,
+          name: messageData.file_name || 'file',
+          type: messageData.type || 'file',
+        });
+      }
+
       const { data: newMessage, error } = await supabase
         .from('messages')
         .insert({
@@ -219,9 +229,7 @@ export function useRealtimeMessages(channelId, userId, options = {}) {
           type: messageData.type || 'text',
           thread_id: messageData.thread_id || null,
           mentions: messageData.mentions || [],
-          // Store file info as top-level fields (matching database schema)
-          file_url: messageData.file_url || null,
-          file_name: messageData.file_name || null,
+          attachments: attachments.length > 0 ? attachments : [],
         })
         .select()
         .single();
