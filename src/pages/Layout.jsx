@@ -918,7 +918,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
   }, [hasPermission, permLoading, isAdmin]);
 
   // Memoize engine items based on company licenses + team app access
-  // All users (including admins) only see licensed/team-assigned apps
+  // Having a valid license (via effectiveApps) is sufficient — no additional RBAC check needed
   // Base apps (Dashboard, CRM, Products, Projects, Inbox) are always in core nav
   const engineItems = useMemo(() => {
     let appsToShow;
@@ -934,19 +934,10 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
       appsToShow = [];
     }
 
-    const items = appsToShow
+    return appsToShow
       .map(appId => ENGINE_ITEMS_CONFIG[appId])
       .filter(Boolean);
-
-    // While permissions are loading, show items without permission requirements
-    if (permLoading) {
-      return items.filter(item => !item.permission);
-    }
-    return items.filter(item => {
-      if (!item.permission) return true;
-      return hasPermission(item.permission);
-    });
-  }, [effectiveApps, teamLoading, hasPermission, permLoading]);
+  }, [effectiveApps, teamLoading]);
 
   // Report visible engine IDs to parent for submenu positioning
   const visibleEngineIds = useMemo(() => engineItems.map(e => e.id), [engineItems]);
