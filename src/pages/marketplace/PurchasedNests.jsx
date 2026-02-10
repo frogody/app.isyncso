@@ -264,7 +264,7 @@ export default function PurchasedNests() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => navigate(`/marketplace/nests/${nest.id}`)}
+                              onClick={() => navigate(`/TalentNestDetail?id=${nest.id}`)}
                               className="text-zinc-400 hover:text-white"
                             >
                               View

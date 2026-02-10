@@ -713,7 +713,7 @@ export default function TalentNestDetail() {
     return (
       <div className="w-full px-6 lg:px-8 py-6">
         <button
-          onClick={() => navigate(createPageUrl("TalentNests"))}
+          onClick={() => navigate('/marketplace/nests')}
           className="flex items-center gap-2 text-zinc-500 hover:text-white mb-8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -734,7 +734,7 @@ export default function TalentNestDetail() {
     <div className="w-full px-6 lg:px-8 py-6">
       {/* Back Button */}
       <button
-        onClick={() => navigate(createPageUrl("TalentNests"))}
+        onClick={() => navigate('/marketplace/nests')}
         className="flex items-center gap-2 text-zinc-500 hover:text-white mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -798,6 +798,20 @@ export default function TalentNestDetail() {
                 { icon: TrendingUp, title: "Enrichment Ready", desc: "All companies are pre-validated and ready for enrichment with additional data points and contact discovery." },
                 { icon: Globe, title: "Domain & Web Data", desc: "Verified company domains, website data, and online presence information." },
                 { icon: FileText, title: "Export Anytime", desc: "Export company data to CSV or integrate directly with your CRM system." },
+              ] : nestType === 'prospects' ? [
+                { icon: Brain, title: "SYNC Intel Analysis", desc: "Every prospect is analyzed for buying intent, budget signals, decision-making authority, and engagement readiness." },
+                { icon: Target, title: "Auto-Match to ICPs", desc: "Define your ideal customer profile and SYNC automatically scores and ranks the most relevant prospects." },
+                { icon: MessageSquare, title: "Personalized Outreach", desc: "Generate highly personalized sales messages based on each prospect's company context and pain points." },
+                { icon: BarChart3, title: "Deep Insights", desc: "View company growth signals, technology stack, hiring trends, and buying readiness indicators." },
+                { icon: Mail, title: "Contact Details", desc: "Full contact information including email, phone, and LinkedIn profiles for direct sales outreach." },
+                { icon: FileText, title: "Export Anytime", desc: "Export prospect data to CSV or integrate directly with your CRM system." },
+              ] : nestType === 'investors' ? [
+                { icon: Brain, title: "Investor Intelligence", desc: "Every investor is analyzed for investment thesis alignment, portfolio fit, check size, and activity level." },
+                { icon: Target, title: "Auto-Match to Round", desc: "Define your fundraising parameters and SYNC matches the most relevant investors for your stage and sector." },
+                { icon: MessageSquare, title: "Personalized Outreach", desc: "Generate tailored pitch messages based on each investor's portfolio, thesis, and recent investments." },
+                { icon: BarChart3, title: "Deep Insights", desc: "View investment history, portfolio companies, fund size, preferred stages, and sector focus." },
+                { icon: Mail, title: "Contact Details", desc: "Full contact information including email, phone, and LinkedIn profiles for direct fundraising outreach." },
+                { icon: FileText, title: "Export Anytime", desc: "Export investor data to CSV or integrate directly with your fundraising tools." },
               ] : [
                 { icon: Brain, title: "SYNC Intel Analysis", desc: "Every profile is analyzed for job satisfaction, recruitment urgency, career trajectory, and openness to opportunities." },
                 { icon: Target, title: "Auto-Match to Roles", desc: "Add your open positions and SYNC automatically matches and scores the most relevant candidates." },
@@ -825,7 +839,185 @@ export default function TalentNestDetail() {
               </Badge>
             </div>
 
-            {nestType === 'companies' ? (
+            {nestType === 'prospects' ? (
+              /* Prospect Card Preview */
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/[0.08]">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 space-y-5">
+                    <div className="flex items-start gap-4">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 flex items-center justify-center border border-red-500/20 flex-shrink-0">
+                        <Briefcase className="w-7 h-7 text-red-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="h-5 w-32 bg-zinc-700 rounded blur-[2px]" />
+                          <div className="h-5 w-24 bg-zinc-700 rounded blur-[2px]" />
+                        </div>
+                        <p className="text-zinc-400 mt-1">VP of Sales at SaaS Company</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
+                            Decision Maker
+                          </span>
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
+                            High Intent
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-3">
+                      {[
+                        { label: "Company Size", value: "201-500" },
+                        { label: "Industry", value: "SaaS" },
+                        { label: "Budget", value: "€50-100k", highlight: true },
+                        { label: "Decision Level", value: "C-Suite" },
+                      ].map((stat, i) => (
+                        <div key={i} className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                          <p className="text-xs text-zinc-500 mb-1">{stat.label}</p>
+                          <p className={`text-lg font-semibold ${stat.highlight ? 'text-red-400' : 'text-white'}`}>{stat.value}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Target className="w-4 h-4 text-red-400" />
+                        <span className="text-sm font-medium text-white">Sales Assessment</span>
+                      </div>
+                      <p className="text-sm text-zinc-400 leading-relaxed">
+                        This prospect shows strong buying signals. Their company recently expanded and is actively evaluating solutions in your space. Decision-maker with budget authority and a history of fast procurement cycles.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {["CRM", "Marketing Automation", "Sales Enablement", "Data Analytics", "Cloud Infrastructure"].map((interest, i) => (
+                        <span key={i} className="px-3 py-1.5 rounded-lg bg-white/[0.04] text-zinc-400 text-sm border border-white/[0.05]">
+                          {interest}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                      <p className="text-sm font-medium text-white mb-3">Contact Information</p>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <Mail className="w-4 h-4 text-zinc-500" />
+                          <div className="h-4 w-full bg-zinc-700 rounded blur-[3px]" />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Phone className="w-4 h-4 text-zinc-500" />
+                          <div className="h-4 w-24 bg-zinc-700 rounded blur-[3px]" />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Linkedin className="w-4 h-4 text-zinc-500" />
+                          <span className="text-sm text-red-400 blur-[2px]">linkedin.com/in/████████</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <MapPin className="w-4 h-4 text-zinc-500" />
+                          <span className="text-sm text-zinc-400">Amsterdam, NL</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-2 py-3">
+                      <Lock className="w-4 h-4 text-red-400" />
+                      <span className="text-sm text-zinc-500">Purchase to unlock full data</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : nestType === 'investors' ? (
+              /* Investor Card Preview */
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/[0.08]">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 space-y-5">
+                    <div className="flex items-start gap-4">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 flex items-center justify-center border border-red-500/20 flex-shrink-0">
+                        <Building2 className="w-7 h-7 text-red-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="h-5 w-32 bg-zinc-700 rounded blur-[2px]" />
+                          <div className="h-5 w-24 bg-zinc-700 rounded blur-[2px]" />
+                        </div>
+                        <p className="text-zinc-400 mt-1">Partner at Venture Capital Firm</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
+                            Series A-B
+                          </span>
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
+                            Active Investor
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-3">
+                      {[
+                        { label: "Fund Size", value: "€200M" },
+                        { label: "Check Size", value: "€2-10M", highlight: true },
+                        { label: "Investments", value: "45+" },
+                        { label: "Focus", value: "B2B SaaS" },
+                      ].map((stat, i) => (
+                        <div key={i} className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                          <p className="text-xs text-zinc-500 mb-1">{stat.label}</p>
+                          <p className={`text-lg font-semibold ${stat.highlight ? 'text-red-400' : 'text-white'}`}>{stat.value}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Target className="w-4 h-4 text-red-400" />
+                        <span className="text-sm font-medium text-white">Investor Assessment</span>
+                      </div>
+                      <p className="text-sm text-zinc-400 leading-relaxed">
+                        Highly active investor focused on B2B SaaS in Europe. Recently led 3 rounds in the past quarter. Known for hands-on support and strong network in the enterprise space. Thesis aligns with growth-stage companies.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {["B2B SaaS", "Enterprise", "AI/ML", "Fintech", "Climate Tech", "Marketplace"].map((focus, i) => (
+                        <span key={i} className="px-3 py-1.5 rounded-lg bg-white/[0.04] text-zinc-400 text-sm border border-white/[0.05]">
+                          {focus}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                      <p className="text-sm font-medium text-white mb-3">Contact Information</p>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <Mail className="w-4 h-4 text-zinc-500" />
+                          <div className="h-4 w-full bg-zinc-700 rounded blur-[3px]" />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Phone className="w-4 h-4 text-zinc-500" />
+                          <div className="h-4 w-24 bg-zinc-700 rounded blur-[3px]" />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Linkedin className="w-4 h-4 text-zinc-500" />
+                          <span className="text-sm text-red-400 blur-[2px]">linkedin.com/in/████████</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <MapPin className="w-4 h-4 text-zinc-500" />
+                          <span className="text-sm text-zinc-400">Amsterdam, NL</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-2 py-3">
+                      <Lock className="w-4 h-4 text-red-400" />
+                      <span className="text-sm text-zinc-500">Purchase to unlock full data</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : nestType === 'companies' ? (
               /* Company Card Preview */
               <div className="p-6 rounded-2xl bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/[0.08]">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1089,6 +1281,16 @@ export default function TalentNestDetail() {
                 { step: 2, icon: Factory, title: "Browse Companies", desc: "Explore company profiles and data" },
                 { step: 3, icon: Sparkles, title: "Enrich Data", desc: "Add contacts, tech stack & more" },
                 { step: 4, icon: ExternalLink, title: "Export / Integrate", desc: "Export to CSV or push to CRM" },
+              ] : nestType === 'prospects' ? [
+                { step: 1, icon: CreditCard, title: "Purchase Nest", desc: "Get instant access to all prospects" },
+                { step: 2, icon: Briefcase, title: "Define Your ICP", desc: "Set ideal customer criteria" },
+                { step: 3, icon: Sparkles, title: "SYNC Matches", desc: "AI scores & ranks prospects" },
+                { step: 4, icon: Rocket, title: "Reach Out", desc: "Send personalized sales outreach" },
+              ] : nestType === 'investors' ? [
+                { step: 1, icon: CreditCard, title: "Purchase Nest", desc: "Get instant access to all investors" },
+                { step: 2, icon: Briefcase, title: "Set Your Round", desc: "Define fundraising parameters" },
+                { step: 3, icon: Sparkles, title: "SYNC Matches", desc: "AI matches relevant investors" },
+                { step: 4, icon: Rocket, title: "Reach Out", desc: "Send tailored pitch messages" },
               ] : [
                 { step: 1, icon: CreditCard, title: "Purchase Nest", desc: "Get instant access to all profiles" },
                 { step: 2, icon: Briefcase, title: "Add Your Roles", desc: "Define your open positions" },

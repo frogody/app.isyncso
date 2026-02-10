@@ -91,8 +91,6 @@ import GrowthSignals from "./GrowthSignals";
 
 import GrowthTemplates from "./GrowthTemplates";
 
-import GrowthNestsMarketplace from "./growth/GrowthNestsMarketplace";
-
 import GrowthEnrich from "./growth/GrowthEnrich";
 
 import GrowthDashboard from "./growth/GrowthDashboard";
@@ -141,7 +139,6 @@ import LessonViewer from "./LessonViewer";
 
 // Marketplace pages
 import NestsMarketplace from "./marketplace/NestsMarketplace";
-import NestDetail from "./marketplace/NestDetail";
 import PurchasedNests from "./marketplace/PurchasedNests";
 
 import ManageCourses from "./ManageCourses";
@@ -299,8 +296,6 @@ import TalentAnalytics from "./TalentAnalytics";
 
 import TalentClients from "./TalentClients";
 
-import TalentNests from "./TalentNests";
-
 import TalentNestDetail from "./TalentNestDetail";
 
 import TalentSMSOutreach from "./TalentSMSOutreach";
@@ -345,7 +340,13 @@ import ClientProjects from "./portal/ClientProjects";
 import ClientApprovals from "./portal/ClientApprovals";
 import ClientActivity from "./portal/ClientActivity";
 
-import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation, useParams, Navigate } from 'react-router-dom';
+
+// Redirect /marketplace/nests/:nestId to /TalentNestDetail?id=:nestId
+function NestDetailRedirect() {
+  const { nestId } = useParams();
+  return <Navigate to={`/TalentNestDetail?id=${nestId}`} replace />;
+}
 
 const PAGES = {
 
@@ -438,8 +439,6 @@ const PAGES = {
     GrowthSignals: GrowthSignals,
     
     GrowthTemplates: GrowthTemplates,
-
-    GrowthNestsMarketplace: GrowthNestsMarketplace,
 
     GrowthEnrich: GrowthEnrich,
 
@@ -639,8 +638,6 @@ const PAGES = {
     TalentAnalytics: TalentAnalytics,
 
     TalentClients: TalentClients,
-
-    TalentNests: TalentNests,
 
     TalentNestDetail: TalentNestDetail,
 
@@ -855,7 +852,7 @@ function PagesContent() {
                 
                 <Route path="/GrowthTemplates" element={<GrowthTemplates />} />
 
-                <Route path="/GrowthNestsMarketplace" element={<GrowthNestsMarketplace />} />
+                <Route path="/GrowthNestsMarketplace" element={<Navigate to="/marketplace/nests" replace />} />
 
                 <Route path="/GrowthEnrich" element={<GrowthEnrich />} />
 
@@ -926,7 +923,7 @@ function PagesContent() {
                 {/* Marketplace Routes */}
                 <Route path="/marketplace/nests" element={<NestsMarketplace />} />
                 <Route path="/marketplace/nests/purchased" element={<PurchasedNests />} />
-                <Route path="/marketplace/nests/:nestId" element={<NestDetail />} />
+                <Route path="/marketplace/nests/:nestId" element={<NestDetailRedirect />} />
                 
                 <Route path="/ManageCourses" element={<ManageCourses />} />
                 
@@ -1093,7 +1090,7 @@ function PagesContent() {
 
                 <Route path="/TalentAnalytics" element={<Navigate to="/TalentDashboard" replace />} />
 
-                <Route path="/TalentNests" element={<TalentNests />} />
+                <Route path="/TalentNests" element={<Navigate to="/marketplace/nests" replace />} />
 
                 <Route path="/TalentNestDetail" element={<TalentNestDetail />} />
 

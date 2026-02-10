@@ -817,7 +817,7 @@ export default function TalentCandidates() {
               <Plus className="w-4 h-4 mr-2" />
               Add Manually
             </Button>
-            <Button onClick={() => navigate(createPageUrl("TalentNests"))} className="bg-red-500 hover:bg-red-600">
+            <Button onClick={() => navigate("/marketplace/nests")} className="bg-red-500 hover:bg-red-600">
               <Package className="w-4 h-4 mr-2" />
               Browse Talent Nests
             </Button>

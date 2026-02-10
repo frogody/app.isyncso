@@ -405,7 +405,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Clients', path: createPageUrl('TalentClients'), icon: Building2 },
         { label: 'Deals', path: createPageUrl('TalentDeals'), icon: Handshake },
         { label: 'SMS Outreach', path: createPageUrl('TalentSMSOutreach'), icon: MessageSquare },
-        { label: 'Nests', path: createPageUrl('TalentNests'), icon: Package },
+        { label: 'Nests', path: '/marketplace/nests', icon: Package },
       ]
     };
   }
@@ -421,7 +421,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       items: [
         { label: 'Dashboard', path: '/growth/dashboard', icon: LayoutDashboard },
         { label: 'New Campaign', path: '/growth/campaign/new', icon: Megaphone },
-        { label: 'Data Nests', path: createPageUrl('GrowthNestsMarketplace'), icon: Package },
+        { label: 'Data Nests', path: '/marketplace/nests', icon: Package },
         { label: 'Customer Signals', path: '/growth/signals', icon: Radio },
         { label: 'Opportunities', path: '/growth/opportunities', icon: Target },
       ]

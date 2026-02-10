@@ -163,7 +163,7 @@ const TalentActivityFeed = ({ organizationId, limit = 10, showHeader = true }) =
           type: 'nest_purchased',
           description: `Purchased "${nestName}"`,
           timestamp: purchase.created_at,
-          link: `/marketplace/nests/${purchase.nest?.id || ''}`,
+          link: `/TalentNestDetail?id=${purchase.nest?.id || ''}`,
         });
       });
 

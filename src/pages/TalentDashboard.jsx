@@ -243,7 +243,7 @@ function RecCard({ icon: Icon, title, description, actionLabel, actionUrl }) {
 // ─── Nest Card ────────────────────────────────────────────────────────────────
 function NestCard({ nest }) {
   return (
-    <Link to={`/marketplace/nests/${nest.id}`}>
+    <Link to={`/TalentNestDetail?id=${nest.id}`}>
       <motion.div
         className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-4 hover:border-red-500/20 transition-all h-full flex flex-col"
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}

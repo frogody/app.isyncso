@@ -46,7 +46,7 @@ export default function GlobalShortcuts() {
   // g+n = Go to Nests
   useShortcut(
     "g+n",
-    () => navigate(createPageUrl("TalentNests")),
+    () => navigate("/marketplace/nests"),
     "Go to Nests",
     "Navigation"
   );

@@ -60,7 +60,7 @@ export default function CommandPalette({ open, onClose, onAction }) {
         icon: Package,
         category: "Navigation",
         keywords: ["talent", "pools"],
-        action: () => navigate(createPageUrl("TalentNests")),
+        action: () => navigate("/marketplace/nests"),
       },
       {
         id: "marketplace",

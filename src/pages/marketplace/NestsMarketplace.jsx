@@ -47,9 +47,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useUser } from "@/components/context/UserContext";
+import { useUser, useTeamAccess } from "@/components/context/UserContext";
 import { supabase } from "@/api/supabaseClient";
 import { toast } from "sonner";
+
+// Map nest types to licensed app slugs
+const NEST_TYPE_TO_APP = {
+  candidates: 'talent',
+  prospects: 'growth',
+  investors: 'raise',
+  companies: 'growth',
+};
 
 // Nest type config
 const NEST_TYPE_CONFIG = {
@@ -418,7 +426,7 @@ function NestPreviewModal({ nest, open, onOpenChange }) {
           <Button
             onClick={() => {
               onOpenChange(false);
-              navigate(`/marketplace/nests/${nest?.id}`);
+              navigate(`/TalentNestDetail?id=${nest?.id}`);
             }}
             className="bg-red-500 hover:bg-red-600"
           >
@@ -564,7 +572,44 @@ function FilterSidebar({ filters, setFilters, activeFiltersCount }) {
 
 export default function NestsMarketplace() {
   const { user, company } = useUser();
+  const { effectiveApps, isLoading: appsLoading } = useTeamAccess();
   const navigate = useNavigate();
+
+  // License-gated tabs: only show nest types for licensed apps
+  const licensedTypes = useMemo(() => {
+    // While loading or no apps, show all (graceful fallback)
+    if (appsLoading || !effectiveApps || effectiveApps.length === 0) {
+      return Object.keys(NEST_TYPE_TO_APP);
+    }
+    return Object.entries(NEST_TYPE_TO_APP)
+      .filter(([, app]) => effectiveApps.includes(app))
+      .map(([type]) => type);
+  }, [effectiveApps, appsLoading]);
+
+  // "New" badge tracking: detect newly granted licenses
+  const [newApps, setNewApps] = useState(new Set());
+  useEffect(() => {
+    if (appsLoading || !effectiveApps || effectiveApps.length === 0) return;
+    try {
+      const stored = JSON.parse(localStorage.getItem('nests-known-apps') || '[]');
+      const newlyGranted = effectiveApps.filter(app => !stored.includes(app));
+      if (newlyGranted.length > 0) {
+        setNewApps(new Set(newlyGranted));
+      }
+      localStorage.setItem('nests-known-apps', JSON.stringify(effectiveApps));
+    } catch { /* ignore localStorage errors */ }
+  }, [effectiveApps, appsLoading]);
+
+  const clearNewBadge = (nestType) => {
+    const app = NEST_TYPE_TO_APP[nestType];
+    if (app && newApps.has(app)) {
+      setNewApps(prev => {
+        const next = new Set(prev);
+        next.delete(app);
+        return next;
+      });
+    }
+  };
 
   // State
   const [activeTab, setActiveTab] = useState('all');
@@ -574,6 +619,13 @@ export default function NestsMarketplace() {
   const [searchQuery, setSearchQuery] = useState('');
   const [previewNest, setPreviewNest] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+
+  // Auto-select single licensed type
+  useEffect(() => {
+    if (licensedTypes.length === 1 && activeTab === 'all') {
+      setActiveTab(licensedTypes[0]);
+    }
+  }, [licensedTypes]);
 
   // Filters
   const [filters, setFilters] = useState({
@@ -642,9 +694,14 @@ export default function NestsMarketplace() {
     fetchData();
   }, [fetchData]);
 
-  // Apply client-side filters
+  // Apply client-side filters (including license filter)
   const filteredNests = useMemo(() => {
     return nests.filter(nest => {
+      // License filter: only show nests for licensed types
+      if (activeTab === 'all' && nest.nest_type && !licensedTypes.includes(nest.nest_type)) {
+        return false;
+      }
+
       // Industry filter
       if (filters.industry && filters.industry !== 'all' && nest.category?.toLowerCase() !== filters.industry) {
         return false;
@@ -674,11 +731,11 @@ export default function NestsMarketplace() {
 
       return true;
     });
-  }, [nests, filters]);
+  }, [nests, filters, licensedTypes, activeTab]);
 
-  // Navigate to detail page
+  // Navigate to detail page (unified TalentNestDetail)
   const handleViewDetails = (nest) => {
-    navigate(`/marketplace/nests/${nest.id}`);
+    navigate(`/TalentNestDetail?id=${nest.id}`);
   };
 
   // Open preview modal
@@ -687,15 +744,31 @@ export default function NestsMarketplace() {
     setShowPreview(true);
   };
 
-  // Stats
+  // Stats (only count licensed types)
+  const licensedNests = useMemo(() =>
+    nests.filter(n => licensedTypes.includes(n.nest_type)),
+    [nests, licensedTypes]
+  );
   const stats = {
-    total: nests.length,
+    total: licensedNests.length,
     purchased: purchasedIds.size,
     candidates: nests.filter(n => n.nest_type === 'candidates').length,
     prospects: nests.filter(n => n.nest_type === 'prospects').length,
     investors: nests.filter(n => n.nest_type === 'investors').length,
     companies: nests.filter(n => n.nest_type === 'companies').length,
   };
+
+  // Stat card definitions (filtered by license)
+  const statCards = useMemo(() => {
+    const cards = [
+      { key: 'total', icon: Package, count: stats.total, label: 'Available Nests', alwaysShow: true },
+      { key: 'candidates', icon: Users, count: stats.candidates, label: 'Candidate Nests', type: 'candidates' },
+      { key: 'prospects', icon: Briefcase, count: stats.prospects, label: 'Prospect Nests', type: 'prospects' },
+      { key: 'investors', icon: Building2, count: stats.investors, label: 'Investor Nests', type: 'investors' },
+      { key: 'companies', icon: Factory, count: stats.companies, label: 'Company Nests', type: 'companies' },
+    ];
+    return cards.filter(c => c.alwaysShow || licensedTypes.includes(c.type));
+  }, [stats, licensedTypes]);
 
   return (
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
@@ -720,87 +793,52 @@ export default function NestsMarketplace() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <Card className="bg-zinc-900/50 border-white/5">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-500/20 rounded-lg">
-                  <Package className="w-4 h-4 text-red-400" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-white">{stats.total}</p>
-                  <p className="text-xs text-zinc-500">Available Nests</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-zinc-900/50 border-white/5">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-500/20 rounded-lg">
-                  <Users className="w-4 h-4 text-red-400" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-white">{stats.candidates}</p>
-                  <p className="text-xs text-zinc-500">Candidate Nests</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-zinc-900/50 border-white/5">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-500/20 rounded-lg">
-                  <Briefcase className="w-4 h-4 text-red-400" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-white">{stats.prospects}</p>
-                  <p className="text-xs text-zinc-500">Prospect Nests</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-zinc-900/50 border-white/5">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-500/20 rounded-lg">
-                  <Building2 className="w-4 h-4 text-red-400" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-white">{stats.investors}</p>
-                  <p className="text-xs text-zinc-500">Investor Nests</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className={`grid grid-cols-1 md:grid-cols-${Math.min(statCards.length, 5)} gap-3`}>
+          {statCards.map(card => {
+            const Icon = card.icon;
+            return (
+              <Card key={card.key} className="bg-zinc-900/50 border-white/5">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-500/20 rounded-lg">
+                      <Icon className="w-4 h-4 text-red-400" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-white">{card.count}</p>
+                      <p className="text-xs text-zinc-500">{card.label}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Tabs & Search */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); clearNewBadge(val); }}>
             <TabsList className="bg-zinc-900/50 border border-white/5">
               <TabsTrigger value="all" className="data-[state=active]:bg-white/10">
                 All
               </TabsTrigger>
-              <TabsTrigger value="candidates" className="data-[state=active]:bg-white/10">
-                <Users className="w-4 h-4 mr-2" />
-                Candidates
-              </TabsTrigger>
-              <TabsTrigger value="prospects" className="data-[state=active]:bg-white/10">
-                <Briefcase className="w-4 h-4 mr-2" />
-                Prospects
-              </TabsTrigger>
-              <TabsTrigger value="investors" className="data-[state=active]:bg-white/10">
-                <Building2 className="w-4 h-4 mr-2" />
-                Investors
-              </TabsTrigger>
-              <TabsTrigger value="companies" className="data-[state=active]:bg-white/10">
-                <Factory className="w-4 h-4 mr-2" />
-                Companies
-              </TabsTrigger>
+              {licensedTypes.map(type => {
+                const config = NEST_TYPE_CONFIG[type];
+                if (!config) return null;
+                const Icon = config.icon;
+                const app = NEST_TYPE_TO_APP[type];
+                const isNew = app && newApps.has(app);
+                return (
+                  <TabsTrigger key={type} value={type} className="data-[state=active]:bg-white/10 relative">
+                    <Icon className="w-4 h-4 mr-2" />
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                    {isNew && (
+                      <span className="ml-1.5 px-1.5 py-0.5 text-[9px] font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded-full leading-none">
+                        New
+                      </span>
+                    )}
+                  </TabsTrigger>
+                );
+              })}
             </TabsList>
           </Tabs>
 
