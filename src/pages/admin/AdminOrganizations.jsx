@@ -29,6 +29,8 @@ import {
   Link as LinkIcon,
   Plus,
   Loader2,
+  UserPlus,
+  X,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -140,11 +142,66 @@ function OrganizationDetailModal({ org, open, onClose, onUpdate, adminRole }) {
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
 
+  // Add User state
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [userSearchInput, setUserSearchInput] = useState('');
+  const [userSearchResults, setUserSearchResults] = useState([]);
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(null);
+
   useEffect(() => {
     if (open && org) {
       fetchOrgUsers();
     }
+    if (!open) {
+      setShowAddUser(false);
+      setUserSearchInput('');
+      setUserSearchResults([]);
+    }
   }, [open, org]);
+
+  // Debounced user search
+  useEffect(() => {
+    if (!userSearchInput || userSearchInput.length < 2) {
+      setUserSearchResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearchingUsers(true);
+      try {
+        const data = await adminApi(`/users?search=${encodeURIComponent(userSearchInput)}&limit=10`);
+        const users = data.users || data || [];
+        // Filter out users already in this org
+        const orgUserIds = new Set(orgUsers.map(u => u.id));
+        setUserSearchResults(users.filter(u => !orgUserIds.has(u.id)));
+      } catch (error) {
+        console.error('Error searching users:', error);
+      } finally {
+        setIsSearchingUsers(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [userSearchInput, orgUsers]);
+
+  const handleAssignUser = async (user) => {
+    if (!org) return;
+    setIsAssigning(user.id);
+    try {
+      await adminApi(`/users/${user.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ company_id: org.id }),
+      });
+      toast.success(`${user.full_name || user.email} added to ${org.name}`);
+      setUserSearchInput('');
+      setUserSearchResults([]);
+      setShowAddUser(false);
+      fetchOrgUsers();
+    } catch (error) {
+      toast.error(error.message || 'Failed to assign user');
+    } finally {
+      setIsAssigning(null);
+    }
+  };
 
   const fetchOrgUsers = async () => {
     if (!org) return;
@@ -297,6 +354,80 @@ function OrganizationDetailModal({ org, open, onClose, onUpdate, adminRole }) {
           </TabsContent>
 
           <TabsContent value="users" className="mt-4">
+            {/* Add User Button + Search */}
+            <div className="mb-3">
+              {!showAddUser ? (
+                <Button
+                  size="sm"
+                  onClick={() => setShowAddUser(true)}
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs"
+                >
+                  <UserPlus className="w-3 h-3 mr-1.5" />
+                  Add User
+                </Button>
+              ) : (
+                <div className="p-3 rounded-lg border border-zinc-700 bg-zinc-800/50 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-zinc-300 font-medium">Search users to add</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { setShowAddUser(false); setUserSearchInput(''); setUserSearchResults([]); }}
+                      className="h-6 w-6 p-0 text-zinc-400 hover:text-white"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3 h-3 text-zinc-500" />
+                    <Input
+                      placeholder="Search by name or email..."
+                      value={userSearchInput}
+                      onChange={(e) => setUserSearchInput(e.target.value)}
+                      className="pl-8 h-8 text-xs bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-500"
+                      autoFocus
+                    />
+                    {isSearchingUsers && (
+                      <Loader2 className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3 h-3 text-zinc-400 animate-spin" />
+                    )}
+                  </div>
+                  {userSearchResults.length > 0 && (
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                      {userSearchResults.map((user) => (
+                        <div
+                          key={user.id}
+                          className="flex items-center justify-between p-2 rounded-md bg-zinc-900/50 hover:bg-zinc-900 transition-colors cursor-pointer"
+                          onClick={() => handleAssignUser(user)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Avatar className="w-7 h-7">
+                              <AvatarImage src={user.avatar_url} />
+                              <AvatarFallback className="bg-cyan-500/20 text-cyan-400 text-[10px]">
+                                {(user.full_name || user.email)?.[0]?.toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-white text-xs">{user.full_name || 'Unnamed'}</p>
+                              <p className="text-zinc-500 text-[10px]">{user.email}</p>
+                            </div>
+                          </div>
+                          {isAssigning === user.id ? (
+                            <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
+                          ) : (
+                            <Plus className="w-3.5 h-3.5 text-cyan-400" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {userSearchInput.length >= 2 && !isSearchingUsers && userSearchResults.length === 0 && (
+                    <p className="text-zinc-500 text-xs text-center py-2">No matching users found</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* User List */}
             {isLoadingUsers ? (
               <div className="text-center py-8">
                 <RefreshCw className="w-6 h-6 text-zinc-400 animate-spin mx-auto" />

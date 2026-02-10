@@ -761,7 +761,7 @@ serve(async (req) => {
       }
 
       // Allowed fields to update
-      const allowedFields = ["role", "job_title", "credits", "onboarding_completed", "full_name"];
+      const allowedFields = ["role", "job_title", "credits", "onboarding_completed", "full_name", "company_id"];
       const updates: Record<string, unknown> = {};
 
       for (const field of allowedFields) {
@@ -2112,9 +2112,7 @@ serve(async (req) => {
         );
       }
 
-      // Get user.id from auth_id
-      const { data: userData } = await supabaseAdmin.from("users").select("id").eq("auth_id", userId).single();
-
+      // Use auth uid directly for granted_by
       const { data, error } = await supabaseAdmin
         .from("app_licenses")
         .insert({
@@ -2127,7 +2125,7 @@ serve(async (req) => {
           billing_cycle: billing_cycle || "monthly",
           user_limit: user_limit || null,
           notes: notes || null,
-          granted_by: userData?.id || null,
+          granted_by: userId || null,
         })
         .select()
         .single();
@@ -2135,6 +2133,47 @@ serve(async (req) => {
       if (error) throw error;
 
       await createAuditLog(userId!, adminEmail, "create", "app_licenses", data.id, null, data, ipAddress, userAgent);
+
+      // Send notification emails to all company users
+      try {
+        const { data: appData } = await supabaseAdmin
+          .from("platform_apps")
+          .select("name")
+          .eq("id", app_id)
+          .single();
+
+        const { data: companyData } = await supabaseAdmin
+          .from("companies")
+          .select("name")
+          .eq("id", company_id)
+          .single();
+
+        const { data: companyUsers } = await supabaseAdmin
+          .from("users")
+          .select("email")
+          .eq("company_id", company_id)
+          .not("email", "is", null);
+
+        if (companyUsers?.length && appData?.name) {
+          const emails = companyUsers.map((u: { email: string }) => u.email).filter(Boolean);
+
+          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-license-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            },
+            body: JSON.stringify({
+              emails,
+              appName: appData.name,
+              companyName: companyData?.name || "your organization",
+              grantedBy: adminEmail,
+            }),
+          });
+        }
+      } catch (emailErr) {
+        console.error("[Admin API] Failed to send license notification emails:", emailErr);
+      }
 
       return new Response(
         JSON.stringify(data),
