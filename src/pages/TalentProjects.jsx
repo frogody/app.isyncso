@@ -1578,6 +1578,8 @@ export default function TalentProjects() {
   useEffect(() => {
     if (user?.organization_id) {
       fetchData();
+    } else if (user) {
+      setLoading(false);
     }
   }, [user]);
 

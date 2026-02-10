@@ -455,6 +455,8 @@ export default function TalentAnalytics({ embedded = false }) {
   useEffect(() => {
     if (user?.organization_id) {
       fetchData();
+    } else if (user) {
+      setLoading(false);
     }
   }, [user, timeRange]);
 

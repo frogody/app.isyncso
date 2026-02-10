@@ -286,6 +286,8 @@ export default function TalentDashboard() {
     if (user?.organization_id) {
       fetchData();
       fetchRecommendedNests();
+    } else if (user) {
+      setLoading(false);
     }
   }, [user, timeRange]);
 

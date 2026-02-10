@@ -249,6 +249,8 @@ export default function TalentClients() {
   useEffect(() => {
     if (user?.organization_id) {
       loadData();
+    } else if (user) {
+      setLoading(false);
     }
   }, [user]);
 

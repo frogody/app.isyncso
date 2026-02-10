@@ -298,10 +298,12 @@ export default function TalentCandidateProfile() {
   const [generatingMessage, setGeneratingMessage] = useState(false);
 
   useEffect(() => {
-    if (candidateId) {
+    if (candidateId && user?.organization_id) {
       fetchCandidate();
       fetchOutreachTasks();
       fetchCampaignMatches();
+    } else if (user && !user.organization_id) {
+      setLoading(false);
     }
   }, [candidateId, user]);
 

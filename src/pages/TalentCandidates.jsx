@@ -431,7 +431,11 @@ export default function TalentCandidates() {
   }, [currentPage, searchQuery, filters]);
 
   useEffect(() => {
-    fetchCandidates();
+    if (user?.organization_id) {
+      fetchCandidates();
+    } else if (user) {
+      setLoading(false);
+    }
   }, [user]);
 
   const fetchCandidates = async () => {

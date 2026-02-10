@@ -378,8 +378,12 @@ export default function TalentSMSOutreach() {
   }, [user?.organization_id, fetchPhoneNumbers]);
 
   useEffect(() => {
-    fetchConversations();
-  }, [fetchConversations]);
+    if (user?.organization_id) {
+      fetchConversations();
+    } else if (user) {
+      setLoading(false);
+    }
+  }, [fetchConversations, user]);
 
   // Filter conversations
   const filteredConversations = useMemo(() => {

@@ -470,7 +470,11 @@ export default function TalentCampaigns() {
   }, [searchParams, setSearchParams]);
 
   useEffect(() => {
-    fetchCampaigns();
+    if (user?.organization_id) {
+      fetchCampaigns();
+    } else if (user) {
+      setLoading(false);
+    }
   }, [user]);
 
   const fetchCampaigns = async () => {
