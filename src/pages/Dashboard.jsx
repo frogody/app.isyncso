@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { db } from "@/api/supabaseClient";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { useUser } from "@/components/context/UserContext";
+import { useUser, useTeamAccess } from "@/components/context/UserContext";
 import { usePermissions } from "@/components/context/PermissionContext";
 import { Plus, LayoutGrid, Users, TrendingUp, Award, Target, BookOpen, Briefcase, Shield, Euro, AlertTriangle, FileCheck, Activity, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,7 @@ const WIDGET_CONFIG = {
 
 export default function Dashboard() {
   const { user, isLoading: userLoading } = useUser();
+  const { effectiveApps } = useTeamAccess();
   const { isManager, isAdmin, hierarchyLevel, isLoading: permLoading } = usePermissions();
   const [dataLoading, setDataLoading] = useState(true);
   const [enabledApps, setEnabledApps] = useState(['learn', 'growth', 'sentinel']);
@@ -484,9 +485,9 @@ export default function Dashboard() {
     return "Here's what's happening across your workspace";
   };
 
-  // Helper to check enabled
+  // Helper to check enabled — must be in user prefs AND licensed
   const isWidgetEnabled = (widgetId) => enabledWidgets.includes(widgetId);
-  const isAppEnabled = (appId) => !appId || enabledApps.includes(appId);
+  const isAppEnabled = (appId) => !appId || (enabledApps.includes(appId) && effectiveApps.includes(appId));
 
   // Build widget components map
   const getWidgetComponent = (widgetId) => {
@@ -526,7 +527,7 @@ export default function Dashboard() {
       case 'raise_meetings': return <RaiseMeetingsWidget meetingCount={d.investorMeetings} upcomingCount={d.upcomingMeetings} />;
       // Core
       case 'actions_recent': return <RecentActionsWidget actions={d.recentActions} />;
-      case 'quick_actions': return <QuickActionsWidget enabledApps={enabledApps} />;
+      case 'quick_actions': return <QuickActionsWidget enabledApps={enabledApps.filter(a => effectiveApps.includes(a))} />;
       default: return null;
     }
   };
@@ -694,9 +695,10 @@ export default function Dashboard() {
                   </Card>
                 </div>
 
-                {/* Module Cards Grid */}
+                {/* Module Cards Grid — only show licensed modules */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* LEARN Module Card */}
+                  {effectiveApps.includes('learn') && (
                   <Card className="bg-zinc-900/50 border-zinc-800">
                     <CardHeader className="border-b border-zinc-800 py-3">
                       <CardTitle className="text-white flex items-center gap-2 text-base">
@@ -722,8 +724,10 @@ export default function Dashboard() {
                       </Link>
                     </CardContent>
                   </Card>
+                  )}
 
                   {/* GROWTH Module Card */}
+                  {effectiveApps.includes('growth') && (
                   <Card className="bg-zinc-900/50 border-zinc-800">
                     <CardHeader className="border-b border-zinc-800 py-3">
                       <CardTitle className="text-white flex items-center gap-2 text-base">
@@ -753,8 +757,10 @@ export default function Dashboard() {
                       </Link>
                     </CardContent>
                   </Card>
+                  )}
 
                   {/* SENTINEL Module Card */}
+                  {effectiveApps.includes('sentinel') && (
                   <Card className="bg-zinc-900/50 border-zinc-800">
                     <CardHeader className="border-b border-zinc-800 py-3">
                       <CardTitle className="text-white flex items-center gap-2 text-base">
@@ -784,8 +790,10 @@ export default function Dashboard() {
                       </Link>
                     </CardContent>
                   </Card>
+                  )}
 
                   {/* FINANCE Module Card */}
+                  {effectiveApps.includes('finance') && (
                   <Card className="bg-zinc-900/50 border-zinc-800">
                     <CardHeader className="border-b border-zinc-800 py-3">
                       <CardTitle className="text-white flex items-center gap-2 text-base">
@@ -815,6 +823,7 @@ export default function Dashboard() {
                       </Link>
                     </CardContent>
                   </Card>
+                  )}
                 </div>
 
                 {/* Quick Actions for Managers */}

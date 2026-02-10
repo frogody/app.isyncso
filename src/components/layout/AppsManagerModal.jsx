@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
+import { useTeamAccess } from '@/components/context/UserContext';
 
 // Import widget definitions
 import { LEARN_WIDGETS } from '@/components/dashboard/widgets/LearnWidgets';
@@ -206,6 +207,7 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
   const [enabledApps, setEnabledApps] = useState(['learn', 'growth', 'sentinel']);
   const [enabledWidgets, setEnabledWidgets] = useState([]);
   const [selectedApp, setSelectedApp] = useState(null);
+  const { effectiveApps = [] } = useTeamAccess();
 
 
   useEffect(() => {
@@ -263,7 +265,13 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
     ];
   };
 
+  const isAppLicensed = (appId) => effectiveApps.length === 0 || effectiveApps.includes(appId);
+
   const toggleApp = (appId) => {
+    if (!isAppLicensed(appId)) {
+      toast.error('This app is not included in your current license');
+      return;
+    }
     setEnabledApps(prev => {
       if (prev.includes(appId)) {
         if (prev.length === 1) {
@@ -350,17 +358,20 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
                   const colors = COLOR_CLASSES[app.color];
                   const isEnabled = enabledApps.includes(app.id);
                   const isSelected = selectedApp === app.id;
-                  
+                  const isLicensed = isAppLicensed(app.id);
+
                   return (
                     <div
                       key={app.id}
                       className={`
                         rounded-xl border transition-all cursor-pointer
-                        ${isSelected 
-                          ? `${colors.activeBg} ${colors.border} ring-1 ring-${app.color === 'sage' ? '[#86EFAC]' : app.color}-500/50` 
-                          : isEnabled 
-                            ? `${colors.bg} ${colors.border} hover:${colors.activeBg}` 
-                            : 'bg-zinc-800/30 border-zinc-800 hover:border-zinc-700'
+                        ${!isLicensed
+                          ? 'bg-zinc-800/20 border-zinc-800/50 opacity-60'
+                          : isSelected
+                            ? `${colors.activeBg} ${colors.border} ring-1 ring-${app.color === 'sage' ? '[#86EFAC]' : app.color}-500/50`
+                            : isEnabled
+                              ? `${colors.bg} ${colors.border} hover:${colors.activeBg}`
+                              : 'bg-zinc-800/30 border-zinc-800 hover:border-zinc-700'
                         }
                       `}
                       onClick={() => setSelectedApp(app.id)}
@@ -368,25 +379,34 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
                       <div className="p-3 flex items-center gap-3">
                         <div className={`
                           w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
-                          ${isEnabled ? colors.iconBg : 'bg-zinc-800'} 
-                          border ${isEnabled ? colors.border : 'border-zinc-700'}
+                          ${isEnabled && isLicensed ? colors.iconBg : 'bg-zinc-800'}
+                          border ${isEnabled && isLicensed ? colors.border : 'border-zinc-700'}
                         `}>
-                          <Icon className={`w-5 h-5 ${isEnabled ? colors.text : 'text-zinc-500'}`} />
+                          <Icon className={`w-5 h-5 ${isEnabled && isLicensed ? colors.text : 'text-zinc-500'}`} />
                         </div>
-                        
+
                         <div className="flex-1 min-w-0">
-                          <h4 className={`font-medium text-sm ${isEnabled ? 'text-zinc-100' : 'text-zinc-400'}`}>
-                            {app.name}
-                          </h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className={`font-medium text-sm ${isEnabled && isLicensed ? 'text-zinc-100' : 'text-zinc-400'}`}>
+                              {app.name}
+                            </h4>
+                            {!isLicensed && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-zinc-700/50 text-zinc-400 flex items-center gap-1">
+                                <Lock className="w-2 h-2" />
+                                No License
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-zinc-500 truncate">
                             {app.widgets.length} widget{app.widgets.length !== 1 ? 's' : ''}
                           </p>
                         </div>
-                        
+
                         <Switch
-                          checked={isEnabled}
+                          checked={isEnabled && isLicensed}
                           onCheckedChange={() => toggleApp(app.id)}
                           onClick={(e) => e.stopPropagation()}
+                          disabled={!isLicensed}
                           className="data-[state=checked]:bg-cyan-600"
                         />
                       </div>
@@ -451,8 +471,9 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
                       <p className="text-sm text-zinc-500">{selectedAppData.description}</p>
                     </div>
                     <Switch
-                      checked={enabledApps.includes(selectedAppData.id)}
+                      checked={enabledApps.includes(selectedAppData.id) && isAppLicensed(selectedAppData.id)}
                       onCheckedChange={() => toggleApp(selectedAppData.id)}
+                      disabled={!isAppLicensed(selectedAppData.id)}
                       className="data-[state=checked]:bg-cyan-600"
                     />
                   </div>

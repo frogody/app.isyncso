@@ -646,7 +646,7 @@ const CORE_NAV_INDICES = {
 };
 
 // Calculate offset for secondary sidebar based on config
-function calculateSecondaryNavOffset(config) {
+function calculateSecondaryNavOffset(config, visibleEngineIds = []) {
   const { AVATAR_SECTION, NAV_PADDING, CORE_ITEM_HEIGHT, ITEM_GAP, DIVIDER_HEIGHT, ALIGNMENT_ADJUST } = SIDEBAR_CONSTANTS;
 
   // Check if this is a core nav item (CRM, Products) or an engine app
@@ -659,10 +659,9 @@ function calculateSecondaryNavOffset(config) {
     return AVATAR_SECTION + NAV_PADDING + (coreNavIndex * (CORE_ITEM_HEIGHT + ITEM_GAP)) + ALIGNMENT_ADJUST;
   }
 
-  // Engine app: calculate based on engine index
+  // Engine app: calculate based on engine index within VISIBLE items only
   const agentId = config?.agent;
-  const engineOrder = Object.keys(ENGINE_ITEMS_CONFIG);
-  const engineIndex = agentId ? engineOrder.indexOf(agentId) : 0;
+  const engineIndex = agentId ? visibleEngineIds.indexOf(agentId) : 0;
 
   // Count visible core items (5: Dashboard, CRM, Projects, Products, Inbox)
   const CORE_ITEMS_COUNT = 5;
@@ -678,7 +677,7 @@ function calculateSecondaryNavOffset(config) {
 }
 
 // Submenu Flyout Component - Floating panel that appears on click/hover
-function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location }) {
+function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location, visibleEngineIds = [] }) {
   // Get submenu identifier (agent for engine apps, title for core items like CRM/Products)
   const submenuId = config?.agent || config?.title?.toLowerCase();
 
@@ -689,7 +688,7 @@ function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location }) {
 
   // Calculate dynamic offset to align with the active primary nav item
   // Subtract header height (title + padding + border + container padding) so first nav item aligns
-  const baseOffset = calculateSecondaryNavOffset(config);
+  const baseOffset = calculateSecondaryNavOffset(config, visibleEngineIds);
   const headerHeight = 44; // title (~14px) + pb-2 (8px) + mb-2 (8px) + p-3 container (12px) + border (1px)
   const navOffset = baseOffset - headerHeight;
 
@@ -847,7 +846,7 @@ function MobileSecondaryNav({ config, location }) {
 }
 
 // Reusable Sidebar Content - must be rendered inside PermissionProvider
-function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig, enabledApps, onOpenAppsManager, openSubmenu, setOpenSubmenu, onSubmenuClose, onSubmenuEnter }) {
+function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig, enabledApps, onOpenAppsManager, openSubmenu, setOpenSubmenu, onSubmenuClose, onSubmenuEnter, onEngineItemsChange }) {
     const location = useLocation();
     const navigate = useNavigate();
   const [me, setMe] = React.useState(null);
@@ -946,6 +945,12 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
       return hasPermission(item.permission);
     });
   }, [effectiveApps, teamLoading, hasPermission, permLoading]);
+
+  // Report visible engine IDs to parent for submenu positioning
+  const visibleEngineIds = useMemo(() => engineItems.map(e => e.id), [engineItems]);
+  useEffect(() => {
+    onEngineItemsChange?.(visibleEngineIds);
+  }, [visibleEngineIds, onEngineItemsChange]);
 
   const handleLogin = async () => {
     db.auth.redirectToLogin(window.location.href);
@@ -1336,6 +1341,7 @@ export default function Layout({ children, currentPageName }) {
 
   // Submenu flyout state
   const [openSubmenu, setOpenSubmenu] = useState(null); // engine id or null
+  const [visibleEngineIds, setVisibleEngineIds] = useState([]);
   const closeTimeoutRef = useRef(null);
 
   const handleSubmenuClose = useCallback(() => {
@@ -3291,6 +3297,7 @@ export default function Layout({ children, currentPageName }) {
               setOpenSubmenu={setOpenSubmenu}
               onSubmenuClose={handleSubmenuClose}
               onSubmenuEnter={handleSubmenuEnter}
+              onEngineItemsChange={setVisibleEngineIds}
             />
             {/* Submenu Flyout - positioned absolutely relative to sidebar */}
             <SubmenuFlyout
@@ -3299,6 +3306,7 @@ export default function Layout({ children, currentPageName }) {
               onClose={handleSubmenuClose}
               onEnter={handleSubmenuEnter}
               location={location}
+              visibleEngineIds={visibleEngineIds}
             />
           </div>
 
