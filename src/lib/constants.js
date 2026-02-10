@@ -50,12 +50,12 @@ export const THEME_COLORS = {
     glow: 'shadow-[0_0_10px_rgba(168,85,247,0.5)]'
   },
   finance: {
-    // Amber
-    text: 'text-amber-400',
-    bg: 'bg-amber-500/10',
-    border: 'border-amber-500/20',
-    solid: 'bg-amber-500',
-    glow: 'shadow-[0_0_10px_rgba(245,158,11,0.5)]'
+    // Blue
+    text: 'text-blue-400',
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/20',
+    solid: 'bg-blue-500',
+    glow: 'shadow-[0_0_10px_rgba(59,130,246,0.5)]'
   },
   raise: {
     // Orange

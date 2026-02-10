@@ -432,7 +432,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   if (path.startsWith('/finance') || path.startsWith('/proposal')) {
     return {
       title: 'FINANCE',
-      color: 'amber',
+      color: 'blue',
       agent: 'finance',
       items: [
         { label: 'Dashboard', path: createPageUrl('FinanceDashboard'), icon: LayoutDashboard },
@@ -578,7 +578,7 @@ const COLOR_CLASSES = {
     borderSolid: THEME_COLORS.learn.solid,
     glow: THEME_COLORS.learn.glow
   },
-  amber: {
+  blue: {
     text: THEME_COLORS.finance.text,
     bg: THEME_COLORS.finance.bg,
     border: THEME_COLORS.finance.border,
@@ -636,7 +636,7 @@ const SIDEBAR_CONSTANTS = {
   CORE_ITEM_HEIGHT: 44,    // min-h-[44px]
   ITEM_GAP: 4,             // space-y-1
   DIVIDER_HEIGHT: 17,      // h-px + my-2 (1px + 8px + 8px)
-  ALIGNMENT_ADJUST: -8,    // Fine-tune adjustment to align items perfectly
+  ALIGNMENT_ADJUST: -24,   // Fine-tune adjustment to align items perfectly
 };
 
 // Core nav item indices (Dashboard, CRM, Projects, Products, Inbox)
@@ -1080,7 +1080,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
               if (isSentinel) return { text: 'text-[#86EFAC]', bg: 'bg-[#86EFAC]/10', solid: 'bg-[#86EFAC]', glow: 'shadow-[0_0_10px_rgba(134,239,172,0.5)]' };
               if (isGrowth) return { text: 'text-indigo-400', bg: 'bg-indigo-950/30', solid: 'bg-indigo-500', glow: 'shadow-[0_0_10px_rgba(99,102,241,0.5)]' };
               if (isSync) return { text: 'text-purple-400', bg: 'bg-purple-950/30', solid: 'bg-purple-500', glow: 'shadow-[0_0_10px_rgba(168,85,247,0.5)]' };
-              if (isFinance) return { text: 'text-amber-400', bg: 'bg-amber-950/30', solid: 'bg-amber-500', glow: 'shadow-[0_0_10px_rgba(245,158,11,0.5)]' };
+              if (isFinance) return { text: 'text-blue-400', bg: 'bg-blue-950/30', solid: 'bg-blue-500', glow: 'shadow-[0_0_10px_rgba(59,130,246,0.5)]' };
               if (isRaise) return { text: 'text-orange-400', bg: 'bg-orange-950/30', solid: 'bg-orange-500', glow: 'shadow-[0_0_10px_rgba(249,115,22,0.5)]' };
               if (isTalent) return { text: 'text-red-400', bg: 'bg-red-950/30', solid: 'bg-red-500', glow: 'shadow-[0_0_10px_rgba(239,68,68,0.5)]' };
               if (isCreate) return { text: 'text-yellow-400', bg: 'bg-yellow-950/30', solid: 'bg-yellow-500', glow: 'shadow-[0_0_10px_rgba(234,179,8,0.5)]' };
@@ -1183,12 +1183,6 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
           </div>
         )}
 
-        {/* Agent Trigger - show when on agent-enabled pages */}
-        {secondaryNavConfig?.agent && (
-          <div className="mt-4 flex justify-center">
-            <FloatingAgentTrigger agentType={secondaryNavConfig.agent} />
-          </div>
-        )}
 
         {/* Mobile Secondary Navigation - shows context nav in mobile sheet */}
         {isMobile && secondaryNavConfig && (
