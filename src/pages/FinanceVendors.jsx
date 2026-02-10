@@ -366,16 +366,16 @@ export default function FinanceVendors({ embedded = false }) {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: 'Total Vendors', value: stats.total, sub: `${stats.active} active`, icon: Users, color: 'blue' },
-              { label: 'Active Vendors', value: stats.active, sub: `${stats.total - stats.active} inactive`, icon: Building2, color: 'blue' },
-              { label: 'Total Outstanding', value: formatCurrency(stats.outstanding), sub: 'Unpaid balance', icon: DollarSign, color: 'amber' },
-              { label: 'Overdue Amount', value: formatCurrency(stats.overdue), sub: 'Past due date', icon: Clock, color: 'red' },
+              { label: 'Total Vendors', value: stats.total, sub: `${stats.active} active`, icon: Users, color: 'blue', textClass: 'text-blue-400' },
+              { label: 'Active Vendors', value: stats.active, sub: `${stats.total - stats.active} inactive`, icon: Building2, color: 'blue', textClass: 'text-blue-400' },
+              { label: 'Total Outstanding', value: formatCurrency(stats.outstanding), sub: 'Unpaid balance', icon: DollarSign, color: 'amber', textClass: 'text-amber-400' },
+              { label: 'Overdue Amount', value: formatCurrency(stats.overdue), sub: 'Past due date', icon: Clock, color: 'red', textClass: 'text-red-400' },
             ].map((s, i) => (
               <Card key={i} className={ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between mb-1">
                     <span className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>{s.label}</span>
-                    <s.icon className={`w-3.5 h-3.5 text-${s.color}-400`} />
+                    <s.icon className={`w-3.5 h-3.5 ${s.textClass}`} />
                   </div>
                   <p className={`text-lg font-bold ${s.color === 'red' && stats.overdue > 0 ? 'text-red-400' : s.color === 'amber' && stats.outstanding > 0 ? 'text-amber-400' : ft('text-slate-900', 'text-white')}`}>
                     {s.value}

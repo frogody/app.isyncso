@@ -118,18 +118,26 @@ const ExpandableText = ({ text, maxLength = 200 }) => {
 };
 
 // Stat Card
-const StatCard = ({ label, value, icon: Icon, color = "red", subtext }) => (
-  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 hover:bg-white/[0.05] transition-colors">
-    <div className="flex items-start justify-between mb-3">
-      <div className={`p-2.5 rounded-xl bg-${color}-500/10`}>
-        <Icon className={`w-5 h-5 text-${color}-400`} />
+const statCardColorMap = {
+  red: { bg: "bg-red-500/10", text: "text-red-400" },
+  zinc: { bg: "bg-zinc-500/10", text: "text-zinc-400" },
+};
+
+const StatCard = ({ label, value, icon: Icon, color = "red", subtext }) => {
+  const colors = statCardColorMap[color] || statCardColorMap.red;
+  return (
+    <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 hover:bg-white/[0.05] transition-colors">
+      <div className="flex items-start justify-between mb-3">
+        <div className={`p-2.5 rounded-xl ${colors.bg}`}>
+          <Icon className={`w-5 h-5 ${colors.text}`} />
+        </div>
       </div>
+      <p className="text-2xl font-bold text-white mb-1">{value}</p>
+      <p className="text-sm text-white/50">{label}</p>
+      {subtext && <p className="text-xs text-white/30 mt-1">{subtext}</p>}
     </div>
-    <p className="text-2xl font-bold text-white mb-1">{value}</p>
-    <p className="text-sm text-white/50">{label}</p>
-    {subtext && <p className="text-xs text-white/30 mt-1">{subtext}</p>}
-  </div>
-);
+  );
+};
 
 // Info Row
 const InfoRow = ({ icon: Icon, label, value, link }) => {

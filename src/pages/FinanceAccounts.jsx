@@ -29,11 +29,11 @@ import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 
 const ACCOUNT_TYPE_CONFIG = {
-  Asset:     { color: 'blue',   icon: Landmark,   order: 1 },
-  Liability: { color: 'amber',  icon: Scale,      order: 2 },
-  Equity:    { color: 'purple', icon: Layers,      order: 3 },
-  Revenue:   { color: 'green',  icon: TrendingUp,  order: 4 },
-  Expense:   { color: 'red',    icon: DollarSign,  order: 5 },
+  Asset:     { color: 'blue',   icon: Landmark,   order: 1, bgClass: 'bg-blue-500/10',   textClass: 'text-blue-400' },
+  Liability: { color: 'amber',  icon: Scale,      order: 2, bgClass: 'bg-amber-500/10',  textClass: 'text-amber-400' },
+  Equity:    { color: 'purple', icon: Layers,      order: 3, bgClass: 'bg-purple-500/10', textClass: 'text-purple-400' },
+  Revenue:   { color: 'green',  icon: TrendingUp,  order: 4, bgClass: 'bg-green-500/10',  textClass: 'text-green-400' },
+  Expense:   { color: 'red',    icon: DollarSign,  order: 5, bgClass: 'bg-red-500/10',    textClass: 'text-red-400' },
 };
 
 const TYPE_BADGE_CLASSES = {
@@ -553,8 +553,8 @@ export default function FinanceAccounts({ embedded = false }) {
                   onClick={() => toggleSection(typeName)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`p-1.5 bg-${config.color}-500/10 rounded-lg`}>
-                      <TypeIcon className={`w-4 h-4 text-${config.color}-400`} />
+                    <div className={`p-1.5 ${config.bgClass} rounded-lg`}>
+                      <TypeIcon className={`w-4 h-4 ${config.textClass}`} />
                     </div>
                     <div className="text-left">
                       <p className={`text-sm font-semibold ${ft('text-slate-900', 'text-white')}`}>

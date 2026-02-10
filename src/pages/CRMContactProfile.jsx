@@ -88,12 +88,22 @@ const itemVariants = {
   },
 };
 
+// Static color class map for StatCard (avoids Tailwind purge issues with dynamic interpolation)
+const statCardColorClasses = {
+  cyan:   { bg: 'bg-cyan-500/10',   text: 'text-cyan-400' },
+  green:  { bg: 'bg-green-500/10',  text: 'text-green-400' },
+  blue:   { bg: 'bg-blue-500/10',   text: 'text-blue-400' },
+  purple: { bg: 'bg-purple-500/10', text: 'text-purple-400' },
+};
+
 // Stat Card Component - Responsive sizing
-const StatCard = ({ label, value, icon: Icon, color = 'cyan', subtext, trend, crt }) => (
+const StatCard = ({ label, value, icon: Icon, color = 'cyan', subtext, trend, crt }) => {
+  const colorCls = statCardColorClasses[color] || statCardColorClasses.cyan;
+  return (
   <div className={`${crt('bg-slate-100 border border-slate-200', 'bg-white/[0.03] border border-white/[0.06]')} rounded-xl p-3 ${crt('hover:bg-slate-50', 'hover:bg-white/[0.05]')} transition-colors group`}>
     <div className="flex items-start justify-between mb-2">
-      <div className={`p-2 rounded-lg bg-${color}-500/10`}>
-        <Icon className={`w-4 h-4 text-${color}-400`} />
+      <div className={`p-2 rounded-lg ${colorCls.bg}`}>
+        <Icon className={`w-4 h-4 ${colorCls.text}`} />
       </div>
       {trend && (
         <div className={`flex items-center gap-1 text-[10px] sm:text-xs ${trend > 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -106,7 +116,8 @@ const StatCard = ({ label, value, icon: Icon, color = 'cyan', subtext, trend, cr
     <p className={`text-xs ${crt('text-slate-500', 'text-white/50')}`}>{label}</p>
     {subtext && <p className={`text-[10px] ${crt('text-slate-400', 'text-white/30')} mt-0.5`}>{subtext}</p>}
   </div>
-);
+  );
+};
 
 // Info Row Component - Touch-friendly
 const InfoRow = ({ icon: Icon, label, value, link, copyable, crt }) => {
@@ -191,16 +202,16 @@ const ExpandableText = ({ text, maxLength = 300, crt }) => {
 const EmailStatusBadge = ({ status }) => {
   if (!status) return null;
   const statusConfig = {
-    valid: { color: 'green', icon: CheckCircle, label: 'Valid' },
-    invalid: { color: 'red', icon: XCircle, label: 'Invalid' },
-    'catch-all': { color: 'yellow', icon: AlertCircle, label: 'Catch-all' },
-    unknown: { color: 'gray', icon: AlertCircle, label: 'Unknown' },
+    valid: { icon: CheckCircle, label: 'Valid', bgClass: 'bg-green-500/20', textClass: 'text-green-400', borderClass: 'border-green-500/30' },
+    invalid: { icon: XCircle, label: 'Invalid', bgClass: 'bg-red-500/20', textClass: 'text-red-400', borderClass: 'border-red-500/30' },
+    'catch-all': { icon: AlertCircle, label: 'Catch-all', bgClass: 'bg-yellow-500/20', textClass: 'text-yellow-400', borderClass: 'border-yellow-500/30' },
+    unknown: { icon: AlertCircle, label: 'Unknown', bgClass: 'bg-gray-500/20', textClass: 'text-gray-400', borderClass: 'border-gray-500/30' },
   };
   const config = statusConfig[status.toLowerCase()] || statusConfig.unknown;
   const IconComponent = config.icon;
 
   return (
-    <Badge className={`bg-${config.color}-500/20 text-${config.color}-400 border-${config.color}-500/30 ml-2`}>
+    <Badge className={`${config.bgClass} ${config.textClass} ${config.borderClass} ml-2`}>
       <IconComponent className="w-3 h-3 mr-1" />
       {config.label}
     </Badge>
@@ -932,13 +943,17 @@ export default function CRMContactProfile() {
                       ].filter(Boolean).length;
                       const totalPoints = 14;
                       const score = Math.round((dataPoints / totalPoints) * 100);
-                      const scoreColor = score >= 80 ? 'green' : score >= 50 ? 'yellow' : 'red';
+                      const scoreColorClasses = score >= 80
+                        ? { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/30' }
+                        : score >= 50
+                        ? { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30' }
+                        : { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30' };
 
                       return (
                         <div className={`mb-3 p-3 ${crt('bg-slate-50 border border-slate-100', 'bg-gradient-to-r from-white/[0.02] to-white/[0.04] border border-white/[0.06]')} rounded-xl`}>
                           <div className="flex items-center justify-between mb-2">
                             <p className={`text-sm ${crt('text-slate-500', 'text-white/50')}`}>Data Quality Score</p>
-                            <Badge className={`bg-${scoreColor}-500/20 text-${scoreColor}-400 border-${scoreColor}-500/30`}>
+                            <Badge className={`${scoreColorClasses.bg} ${scoreColorClasses.text} ${scoreColorClasses.border}`}>
                               {score}%
                             </Badge>
                           </div>

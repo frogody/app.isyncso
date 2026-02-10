@@ -29,16 +29,16 @@ import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 
 const EXPENSE_CATEGORIES = [
-  { value: 'software', label: 'Software & Tools', color: 'blue', icon: Monitor },
-  { value: 'marketing', label: 'Marketing', color: 'blue', icon: Megaphone },
-  { value: 'office', label: 'Office & Equipment', color: 'blue', icon: Briefcase },
-  { value: 'travel', label: 'Travel', color: 'blue', icon: Plane },
-  { value: 'salary', label: 'Salaries', color: 'blue', icon: Users },
-  { value: 'contractors', label: 'Contractors', color: 'blue', icon: Handshake },
-  { value: 'utilities', label: 'Utilities', color: 'blue', icon: Zap },
-  { value: 'insurance', label: 'Insurance', color: 'blue', icon: Shield },
-  { value: 'legal', label: 'Legal & Professional', color: 'blue', icon: Scale },
-  { value: 'other', label: 'Other', color: 'zinc', icon: Package }
+  { value: 'software', label: 'Software & Tools', color: 'blue', icon: Monitor, bgClass: 'bg-blue-500/10' },
+  { value: 'marketing', label: 'Marketing', color: 'blue', icon: Megaphone, bgClass: 'bg-blue-500/10' },
+  { value: 'office', label: 'Office & Equipment', color: 'blue', icon: Briefcase, bgClass: 'bg-blue-500/10' },
+  { value: 'travel', label: 'Travel', color: 'blue', icon: Plane, bgClass: 'bg-blue-500/10' },
+  { value: 'salary', label: 'Salaries', color: 'blue', icon: Users, bgClass: 'bg-blue-500/10' },
+  { value: 'contractors', label: 'Contractors', color: 'blue', icon: Handshake, bgClass: 'bg-blue-500/10' },
+  { value: 'utilities', label: 'Utilities', color: 'blue', icon: Zap, bgClass: 'bg-blue-500/10' },
+  { value: 'insurance', label: 'Insurance', color: 'blue', icon: Shield, bgClass: 'bg-blue-500/10' },
+  { value: 'legal', label: 'Legal & Professional', color: 'blue', icon: Scale, bgClass: 'bg-blue-500/10' },
+  { value: 'other', label: 'Other', color: 'zinc', icon: Package, bgClass: 'bg-zinc-500/10' }
 ];
 
 export default function FinanceExpenses({ embedded = false }) {
@@ -531,7 +531,7 @@ export default function FinanceExpenses({ embedded = false }) {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 flex-1">
-                            <div className={`p-1.5 rounded-lg bg-${catConfig.color}-500/10`}>
+                            <div className={`p-1.5 rounded-lg ${catConfig.bgClass}`}>
                               {catConfig.icon && <catConfig.icon className="w-4 h-4 text-blue-400" />}
                             </div>
                             <div className="flex-1 min-w-0">

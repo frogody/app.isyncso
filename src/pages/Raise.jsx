@@ -596,15 +596,15 @@ function RaiseContent({
                 <RaiseCardContent>
                   <div className="space-y-3">
                     {[
-                      { stage: 'Contacted', count: investors.filter(i => i.status === 'contacted').length, color: 'zinc' },
-                      { stage: 'Interested', count: investors.filter(i => i.status === 'interested').length, color: 'orange' },
-                      { stage: 'In Discussions', count: investors.filter(i => i.status === 'in_discussions').length, color: 'orange' },
-                      { stage: 'Due Diligence', count: investors.filter(i => i.status === 'due_diligence').length, color: 'orange' },
-                      { stage: 'Committed', count: investors.filter(i => i.status === 'committed').length, color: 'orange' }
+                      { stage: 'Contacted', count: investors.filter(i => i.status === 'contacted').length, dotClass: 'bg-zinc-500' },
+                      { stage: 'Interested', count: investors.filter(i => i.status === 'interested').length, dotClass: 'bg-orange-500' },
+                      { stage: 'In Discussions', count: investors.filter(i => i.status === 'in_discussions').length, dotClass: 'bg-orange-500' },
+                      { stage: 'Due Diligence', count: investors.filter(i => i.status === 'due_diligence').length, dotClass: 'bg-orange-500' },
+                      { stage: 'Committed', count: investors.filter(i => i.status === 'committed').length, dotClass: 'bg-orange-500' }
                     ].map((stage) => (
                       <div key={stage.stage} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full bg-${stage.color}-500`} />
+                          <div className={`w-3 h-3 rounded-full ${stage.dotClass}`} />
                           <span className={`${rt('text-slate-600', 'text-zinc-300')} text-sm`}>{stage.stage}</span>
                         </div>
                         <span className={`${rt('text-slate-900', 'text-white')} font-medium text-sm`}>{stage.count}</span>

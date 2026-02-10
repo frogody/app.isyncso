@@ -4170,7 +4170,7 @@ export default function Projects() {
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={() => { setShowModal(false); setEditingProject(null); }} className={`flex-1 ${pt('border-slate-300','border-zinc-700')}`}>
+              <Button variant="outline" onClick={() => { setShowModal(false); setFormData(emptyProject); setEditingProject(null); }} className={`flex-1 ${pt('border-slate-300','border-zinc-700')}`}>
                 Cancel
               </Button>
               <Button onClick={handleSaveProject} className={`flex-1 bg-cyan-600/80 hover:bg-cyan-600 text-white`}>
@@ -4234,7 +4234,7 @@ export default function Projects() {
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={() => setShowTaskModal(false)} className={`flex-1 ${pt('border-slate-300','border-zinc-700')}`}>
+              <Button variant="outline" onClick={() => { setShowTaskModal(false); setTaskFormData({ title: "", description: "", priority: "medium", due_date: "", status: "todo" }); }} className={`flex-1 ${pt('border-slate-300','border-zinc-700')}`}>
                 Cancel
               </Button>
               <Button onClick={handleSaveTask} className={`flex-1 bg-cyan-600/80 hover:bg-cyan-600 text-white`}>

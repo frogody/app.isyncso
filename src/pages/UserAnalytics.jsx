@@ -810,16 +810,21 @@ export default function UserAnalytics() {
 }
 
 // Helper Components
+const METRIC_COLOR_CLASSES = {
+  cyan: { bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
+};
+
 function MetricCard({ icon: Icon, label, value, subValue, trend, trendLabel, color = 'cyan', className = '' }) {
   const isPositive = trend > 0;
+  const colorClasses = METRIC_COLOR_CLASSES[color] || METRIC_COLOR_CLASSES.cyan;
   return (
     <motion.div
 
       className={`bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3 ${className}`}
     >
       <div className="flex items-center justify-between mb-2">
-        <div className={`p-1.5 rounded-lg bg-${color}-500/15`}>
-          <Icon className={`w-4 h-4 text-${color}-400`} />
+        <div className={`p-1.5 rounded-lg ${colorClasses.bg}`}>
+          <Icon className={`w-4 h-4 ${colorClasses.text}`} />
         </div>
         {trend !== undefined && (
           <div className={`flex items-center gap-1 text-[10px] ${isPositive ? 'text-cyan-400' : 'text-zinc-500'}`}>

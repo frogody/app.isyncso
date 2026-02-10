@@ -6,13 +6,19 @@ import { getCrossCheckedTenure } from "@/utils/tenureCrossCheck";
 /**
  * ExperienceWidget - Displays career trajectory metrics
  */
+const statCardColorMap = {
+  red: { bg: "bg-red-500/10", text: "text-red-400" },
+  zinc: { bg: "bg-zinc-500/10", text: "text-zinc-400" },
+};
+
 const StatCard = ({ icon: Icon, label, value, color = "zinc" }) => {
   if (value == null) return null;
+  const colors = statCardColorMap[color] || statCardColorMap.zinc;
 
   return (
     <div className="flex items-center gap-3 p-3 bg-zinc-700/30 rounded-lg">
-      <div className={`p-2 rounded-lg bg-${color}-500/10`}>
-        <Icon className={`w-4 h-4 text-${color}-400`} />
+      <div className={`p-2 rounded-lg ${colors.bg}`}>
+        <Icon className={`w-4 h-4 ${colors.text}`} />
       </div>
       <div>
         <p className="text-lg font-bold text-white">{value}</p>

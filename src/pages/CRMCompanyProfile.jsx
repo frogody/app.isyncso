@@ -61,19 +61,30 @@ const itemVariants = {
   },
 };
 
+// Static color class map for StatCard (avoids Tailwind purge issues with dynamic interpolation)
+const statCardColorClasses = {
+  cyan:   { bg: 'bg-cyan-500/10',   text: 'text-cyan-400' },
+  green:  { bg: 'bg-green-500/10',  text: 'text-green-400' },
+  blue:   { bg: 'bg-blue-500/10',   text: 'text-blue-400' },
+  purple: { bg: 'bg-purple-500/10', text: 'text-purple-400' },
+};
+
 // Reusable components - Mobile responsive
-const StatCard = ({ label, value, icon: Icon, color = 'cyan', subtext, crt }) => (
+const StatCard = ({ label, value, icon: Icon, color = 'cyan', subtext, crt }) => {
+  const colorCls = statCardColorClasses[color] || statCardColorClasses.cyan;
+  return (
   <div className={`${crt('bg-slate-50 border border-slate-200 shadow-sm', 'bg-white/[0.03] border border-white/[0.06]')} rounded-lg sm:rounded-xl p-3 sm:p-4 ${crt('hover:bg-slate-100', 'hover:bg-white/[0.05]')} transition-colors`}>
     <div className="flex items-start justify-between mb-2 sm:mb-2">
-      <div className={`p-2 sm:p-2 rounded-lg sm:rounded-lg bg-${color}-500/10`}>
-        <Icon className={`w-4 h-4 sm:w-4 sm:h-4 text-${color}-400`} />
+      <div className={`p-2 sm:p-2 rounded-lg sm:rounded-lg ${colorCls.bg}`}>
+        <Icon className={`w-4 h-4 sm:w-4 sm:h-4 ${colorCls.text}`} />
       </div>
     </div>
     <p className={`text-lg sm:text-lg font-bold ${crt('text-slate-900', 'text-white')} mb-0.5 sm:mb-1`}>{value || '-'}</p>
     <p className={`text-xs sm:text-xs ${crt('text-slate-500', 'text-white/50')}`}>{label}</p>
     {subtext && <p className={`text-[10px] sm:text-[10px] ${crt('text-slate-400', 'text-white/30')} mt-0.5 sm:mt-1`}>{subtext}</p>}
   </div>
-);
+  );
+};
 
 const InfoRow = ({ icon: Icon, label, value, link, crt }) => {
   if (!value) return null;

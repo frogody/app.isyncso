@@ -273,7 +273,7 @@ export default function ClayStatePanel({ sessionId: propSessionId, onSendPrompt 
 
     return () => {
       console.log('[ClayStatePanel] Cleanup');
-      channel.unsubscribe();
+      supabase.removeChannel(channel);
       clearInterval(pollInterval);
       clearInterval(timeInterval);
     };

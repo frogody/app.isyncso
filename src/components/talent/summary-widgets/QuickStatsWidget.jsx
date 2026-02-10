@@ -6,12 +6,18 @@ import { getCrossCheckedTenure } from "@/utils/tenureCrossCheck";
 /**
  * QuickStatsWidget - Compact stats row with key metrics
  */
+const statItemTextMap = {
+  red: "text-red-400",
+  zinc: "text-zinc-400",
+};
+
 const StatItem = ({ icon: Icon, label, value, color = "zinc" }) => {
   if (value == null && value !== 0) return null;
+  const textClass = statItemTextMap[color] || statItemTextMap.zinc;
 
   return (
     <div className="flex items-center gap-2 px-3 py-2 bg-zinc-700/30 rounded-lg">
-      <Icon className={`w-4 h-4 text-${color}-400`} />
+      <Icon className={`w-4 h-4 ${textClass}`} />
       <div className="min-w-0">
         <p className="text-xs font-semibold text-white truncate">{value}</p>
         <p className="text-[9px] text-zinc-500 uppercase tracking-wider">{label}</p>

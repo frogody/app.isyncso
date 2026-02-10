@@ -173,10 +173,10 @@ const MetricCard = ({ title, value, subtitle, icon: Icon, color = "red", trend }
 // Outreach Type Stats Component
 const OutreachTypeStats = ({ data }) => {
   const types = [
-    { key: "email", label: "Email", icon: Mail, color: "red" },
-    { key: "linkedin", label: "LinkedIn", icon: Linkedin, color: "red" },
-    { key: "linkedin_connection", label: "Connection", icon: Linkedin, color: "red" },
-    { key: "call", label: "Call", icon: Phone, color: "red" },
+    { key: "email", label: "Email", icon: Mail, color: "red", bgClass: "bg-red-500/20", textClass: "text-red-400" },
+    { key: "linkedin", label: "LinkedIn", icon: Linkedin, color: "red", bgClass: "bg-red-500/20", textClass: "text-red-400" },
+    { key: "linkedin_connection", label: "Connection", icon: Linkedin, color: "red", bgClass: "bg-red-500/20", textClass: "text-red-400" },
+    { key: "call", label: "Call", icon: Phone, color: "red", bgClass: "bg-red-500/20", textClass: "text-red-400" },
   ];
 
   const total = Object.values(data).reduce((a, b) => a + b, 0);
@@ -187,8 +187,8 @@ const OutreachTypeStats = ({ data }) => {
       <div className="space-y-4">
         {types.map((type) => (
           <div key={type.key} className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg bg-${type.color}-500/20`}>
-              <type.icon className={`w-4 h-4 text-${type.color}-400`} />
+            <div className={`p-2 rounded-lg ${type.bgClass}`}>
+              <type.icon className={`w-4 h-4 ${type.textClass}`} />
             </div>
             <div className="flex-1">
               <ProgressBar
@@ -209,10 +209,10 @@ const OutreachTypeStats = ({ data }) => {
 // Intelligence Distribution Component
 const IntelligenceDistribution = ({ data }) => {
   const levels = [
-    { key: "Critical", color: "red", count: data.critical || 0 },
-    { key: "High", color: "red", count: data.high || 0 },
-    { key: "Medium", color: "red", count: data.medium || 0 },
-    { key: "Low", color: "zinc", count: data.low || 0 },
+    { key: "Critical", color: "red", count: data.critical || 0, barClass: "bg-red-500", textClass: "text-red-400" },
+    { key: "High", color: "red", count: data.high || 0, barClass: "bg-red-500", textClass: "text-red-400" },
+    { key: "Medium", color: "red", count: data.medium || 0, barClass: "bg-red-500", textClass: "text-red-400" },
+    { key: "Low", color: "zinc", count: data.low || 0, barClass: "bg-zinc-500", textClass: "text-zinc-400" },
   ];
 
   const total = levels.reduce((a, b) => a + b.count, 0);
@@ -229,7 +229,7 @@ const IntelligenceDistribution = ({ data }) => {
               initial={{ width: 0 }}
               animate={{ width: `${width}%` }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className={`h-full bg-${level.color}-500`}
+              className={`h-full ${level.barClass}`}
               title={`${level.key}: ${level.count}`}
             />
           );
@@ -238,7 +238,7 @@ const IntelligenceDistribution = ({ data }) => {
       <div className="grid grid-cols-4 gap-1.5">
         {levels.map((level) => (
           <div key={level.key} className="text-center">
-            <div className={`text-sm font-bold text-${level.color}-400`}>{level.count}</div>
+            <div className={`text-sm font-bold ${level.textClass}`}>{level.count}</div>
             <div className="text-[10px] text-white/50">{level.key}</div>
           </div>
         ))}

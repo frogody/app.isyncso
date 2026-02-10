@@ -6,10 +6,10 @@ import ContactSelector from '@/components/shared/ContactSelector';
 import { Label } from '@/components/ui/label';
 
 const STAGES = [
-  { id: 'qualification', label: 'Qualification', color: 'blue' },
-  { id: 'proposal', label: 'Proposal', color: 'purple' },
-  { id: 'negotiation', label: 'Negotiation', color: 'orange' },
-  { id: 'closed', label: 'Closed Won', color: 'green' }
+  { id: 'qualification', label: 'Qualification', color: 'blue', dotClass: 'bg-blue-500' },
+  { id: 'proposal', label: 'Proposal', color: 'purple', dotClass: 'bg-purple-500' },
+  { id: 'negotiation', label: 'Negotiation', color: 'orange', dotClass: 'bg-orange-500' },
+  { id: 'closed', label: 'Closed Won', color: 'green', dotClass: 'bg-green-500' }
 ];
 
 const initialDeals = {
@@ -142,7 +142,7 @@ export default function Deals() {
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full bg-${stage.color}-500`} />
+                  <div className={`w-2 h-2 rounded-full ${stage.dotClass}`} />
                   <h3 className="text-xs font-semibold text-white">{stage.label}</h3>
                   <span className="text-[10px] text-zinc-500">({deals[stage.id].length})</span>
                 </div>

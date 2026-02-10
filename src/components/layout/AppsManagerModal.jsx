@@ -148,7 +148,8 @@ const COLOR_CLASSES = {
     text: 'text-teal-400',
     activeBg: 'bg-teal-950/60',
     iconBg: 'bg-teal-500/20',
-    gradient: 'from-teal-500/20 to-teal-500/5'
+    gradient: 'from-teal-500/20 to-teal-500/5',
+    ringClass: 'ring-teal-500/50'
   },
   cyan: {
     bg: 'bg-cyan-950/40',
@@ -156,7 +157,8 @@ const COLOR_CLASSES = {
     text: 'text-cyan-400',
     activeBg: 'bg-cyan-950/60',
     iconBg: 'bg-cyan-500/20',
-    gradient: 'from-cyan-500/20 to-cyan-500/5'
+    gradient: 'from-cyan-500/20 to-cyan-500/5',
+    ringClass: 'ring-cyan-500/50'
   },
   indigo: {
     bg: 'bg-indigo-950/40',
@@ -164,7 +166,8 @@ const COLOR_CLASSES = {
     text: 'text-indigo-400',
     activeBg: 'bg-indigo-950/60',
     iconBg: 'bg-indigo-500/20',
-    gradient: 'from-indigo-500/20 to-indigo-500/5'
+    gradient: 'from-indigo-500/20 to-indigo-500/5',
+    ringClass: 'ring-indigo-500/50'
   },
   sage: {
     bg: 'bg-emerald-950/40',
@@ -172,7 +175,8 @@ const COLOR_CLASSES = {
     text: 'text-[#86EFAC]',
     activeBg: 'bg-emerald-950/60',
     iconBg: 'bg-[#86EFAC]/20',
-    gradient: 'from-[#86EFAC]/20 to-[#86EFAC]/5'
+    gradient: 'from-[#86EFAC]/20 to-[#86EFAC]/5',
+    ringClass: 'ring-[#86EFAC]/50'
   },
   violet: {
     bg: 'bg-violet-950/40',
@@ -180,7 +184,8 @@ const COLOR_CLASSES = {
     text: 'text-violet-400',
     activeBg: 'bg-violet-950/60',
     iconBg: 'bg-violet-500/20',
-    gradient: 'from-violet-500/20 to-violet-500/5'
+    gradient: 'from-violet-500/20 to-violet-500/5',
+    ringClass: 'ring-violet-500/50'
   },
   red: {
     bg: 'bg-red-950/40',
@@ -188,7 +193,8 @@ const COLOR_CLASSES = {
     text: 'text-red-400',
     activeBg: 'bg-red-950/60',
     iconBg: 'bg-red-500/20',
-    gradient: 'from-red-500/20 to-red-500/5'
+    gradient: 'from-red-500/20 to-red-500/5',
+    ringClass: 'ring-red-500/50'
   },
   blue: {
     bg: 'bg-blue-950/40',
@@ -196,7 +202,8 @@ const COLOR_CLASSES = {
     text: 'text-blue-400',
     activeBg: 'bg-blue-950/60',
     iconBg: 'bg-blue-500/20',
-    gradient: 'from-blue-500/20 to-blue-500/5'
+    gradient: 'from-blue-500/20 to-blue-500/5',
+    ringClass: 'ring-blue-500/50'
   }
 };
 
@@ -368,7 +375,7 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
                         ${!isLicensed
                           ? 'bg-zinc-800/20 border-zinc-800/50 opacity-60'
                           : isSelected
-                            ? `${colors.activeBg} ${colors.border} ring-1 ring-${app.color === 'sage' ? '[#86EFAC]' : app.color}-500/50`
+                            ? `${colors.activeBg} ${colors.border} ring-1 ${colors.ringClass}`
                             : isEnabled
                               ? `${colors.bg} ${colors.border} hover:${colors.activeBg}`
                               : 'bg-zinc-800/30 border-zinc-800 hover:border-zinc-700'

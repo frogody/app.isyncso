@@ -272,17 +272,33 @@ const SettingsPopover = ({
 };
 
 // Metric Display Components
-const MetricBadge = ({ children, color = "red", className = "" }) => (
-  <span className={`px-2 py-0.5 text-[10px] font-medium bg-${color}-500/10 text-${color}-400 rounded-full border border-${color}-500/20 ${className}`}>
-    {children}
-  </span>
-);
+const metricBadgeColorMap = {
+  red: { badge: "bg-red-500/10 text-red-400 border-red-500/20" },
+  zinc: { badge: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20" },
+  yellow: { badge: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" },
+};
+
+const MetricBadge = ({ children, color = "red", className = "" }) => {
+  const colors = metricBadgeColorMap[color] || metricBadgeColorMap.red;
+  return (
+    <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full border ${colors.badge} ${className}`}>
+      {children}
+    </span>
+  );
+};
+
+const metricRowTextMap = {
+  red: "text-red-400",
+  zinc: "text-zinc-400",
+  yellow: "text-yellow-400",
+};
 
 const MetricRow = ({ icon: Icon, label, value, color = "zinc" }) => {
   if (!value && value !== 0) return null;
+  const textClass = metricRowTextMap[color] || metricRowTextMap.zinc;
   return (
     <div className="flex items-center gap-2 text-[11px]">
-      <Icon className={`w-3 h-3 text-${color}-400 flex-shrink-0`} />
+      <Icon className={`w-3 h-3 ${textClass} flex-shrink-0`} />
       <span className="text-zinc-500">{label}:</span>
       <span className="text-zinc-300 truncate">{value}</span>
     </div>
@@ -384,10 +400,10 @@ const ProfileSummaryCard = ({
   const getFlightRiskIndicator = () => {
     const level = candidate.intelligence_level?.toLowerCase();
     if (level === "critical" || level === "high") {
-      return { show: true, color: "red", label: "High Flight Risk" };
+      return { show: true, color: "red", label: "High Flight Risk", bgClass: "bg-red-500/10", borderClass: "border-red-500/20", textClass: "text-red-400" };
     }
     if (level === "medium") {
-      return { show: true, color: "yellow", label: "Moderate Risk" };
+      return { show: true, color: "yellow", label: "Moderate Risk", bgClass: "bg-yellow-500/10", borderClass: "border-yellow-500/20", textClass: "text-yellow-400" };
     }
     return { show: false };
   };
@@ -518,9 +534,9 @@ const ProfileSummaryCard = ({
                   <ApproachBadge approach={candidate.recommended_approach} size="xs" />
                 )}
                 {showFlightRisk && (
-                  <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full bg-${flightRisk.color}-500/10 border border-${flightRisk.color}-500/20`}>
-                    <AlertTriangle className={`w-3 h-3 text-${flightRisk.color}-400`} />
-                    <span className={`text-[9px] font-medium text-${flightRisk.color}-400`}>
+                  <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${flightRisk.bgClass} border ${flightRisk.borderClass}`}>
+                    <AlertTriangle className={`w-3 h-3 ${flightRisk.textClass}`} />
+                    <span className={`text-[9px] font-medium ${flightRisk.textClass}`}>
                       {flightRisk.label}
                     </span>
                   </div>

@@ -517,16 +517,16 @@ export default function FinanceBillPayments({ embedded = false }) {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: 'Total Payments', value: stats.total, sub: `${filteredPayments.length} shown`, icon: Wallet, color: 'blue' },
-              { label: 'Paid This Month', value: formatCurrency(stats.thisMonth), sub: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }), icon: Calendar, color: 'green' },
-              { label: 'Paid This Week', value: formatCurrency(stats.thisWeek), sub: 'Current week', icon: TrendingUp, color: 'blue' },
-              { label: 'Average Payment', value: formatCurrency(stats.average), sub: 'Per payment', icon: DollarSign, color: 'blue' },
+              { label: 'Total Payments', value: stats.total, sub: `${filteredPayments.length} shown`, icon: Wallet, color: 'blue', textClass: 'text-blue-400' },
+              { label: 'Paid This Month', value: formatCurrency(stats.thisMonth), sub: new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }), icon: Calendar, color: 'green', textClass: 'text-green-400' },
+              { label: 'Paid This Week', value: formatCurrency(stats.thisWeek), sub: 'Current week', icon: TrendingUp, color: 'blue', textClass: 'text-blue-400' },
+              { label: 'Average Payment', value: formatCurrency(stats.average), sub: 'Per payment', icon: DollarSign, color: 'blue', textClass: 'text-blue-400' },
             ].map((s, i) => (
               <Card key={i} className={ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between mb-1">
                     <span className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>{s.label}</span>
-                    <s.icon className={`w-3.5 h-3.5 text-${s.color}-400`} />
+                    <s.icon className={`w-3.5 h-3.5 ${s.textClass}`} />
                   </div>
                   <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>{s.value}</p>
                   <p className={`text-[10px] ${ft('text-slate-400', 'text-zinc-500')}`}>{s.sub}</p>

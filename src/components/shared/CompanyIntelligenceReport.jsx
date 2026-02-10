@@ -101,6 +101,18 @@ const TechBadge = ({ name }) => (
 /**
  * SectionCard - Styled like IntelligenceReport sections
  */
+const ICON_COLOR_CLASSES = {
+  white: 'text-white',
+  blue: 'text-blue-400',
+  yellow: 'text-yellow-400',
+  green: 'text-green-400',
+  purple: 'text-purple-400',
+  orange: 'text-orange-400',
+  indigo: 'text-indigo-400',
+  red: 'text-red-400',
+  cyan: 'text-cyan-400',
+};
+
 const SectionCard = ({ icon: Icon, title, iconColor = "white", headerBg = "", children, badge, className = "" }) => (
   <motion.div
     variants={itemVariants}
@@ -108,7 +120,7 @@ const SectionCard = ({ icon: Icon, title, iconColor = "white", headerBg = "", ch
   >
     <div className={`flex items-center justify-between px-4 py-3 border-b border-white/[0.06] ${headerBg}`}>
       <div className="flex items-center gap-2">
-        <Icon className={`w-4 h-4 text-${iconColor}-400`} />
+        <Icon className={`w-4 h-4 ${ICON_COLOR_CLASSES[iconColor] || ICON_COLOR_CLASSES.white}`} />
         <h3 className="font-semibold text-white text-sm">{title}</h3>
       </div>
       {badge}
@@ -120,13 +132,19 @@ const SectionCard = ({ icon: Icon, title, iconColor = "white", headerBg = "", ch
 /**
  * DataQualityBadge - Shows what data is available
  */
+const QUALITY_BADGE_CLASSES = {
+  green: 'bg-green-500/20 text-green-400',
+  yellow: 'bg-yellow-500/20 text-yellow-400',
+  red: 'bg-red-500/20 text-red-400',
+};
+
 const DataQualityBadge = ({ quality }) => {
   if (!quality) return null;
   const { completeness } = quality;
   const color = completeness >= 6 ? "green" : completeness >= 4 ? "yellow" : "red";
 
   return (
-    <span className={`text-xs px-2 py-0.5 rounded bg-${color}-500/20 text-${color}-400`}>
+    <span className={`text-xs px-2 py-0.5 rounded ${QUALITY_BADGE_CLASSES[color]}`}>
       {completeness}/8 sources
     </span>
   );

@@ -25,7 +25,8 @@ const CONTACT_TYPES = [
     color: 'cyan',
     bgColor: 'bg-cyan-500/10',
     textColor: 'text-cyan-400',
-    borderColor: 'border-cyan-500/30'
+    borderColor: 'border-cyan-500/30',
+    bgSolid: 'bg-cyan-500'
   },
   {
     id: 'lead',
@@ -35,6 +36,7 @@ const CONTACT_TYPES = [
     bgColor: 'bg-zinc-500/10',
     textColor: 'text-zinc-400',
     borderColor: 'border-zinc-500/30',
+    bgSolid: 'bg-zinc-500',
     description: 'Unqualified contacts'
   },
   {
@@ -45,6 +47,7 @@ const CONTACT_TYPES = [
     bgColor: 'bg-blue-500/10',
     textColor: 'text-blue-400',
     borderColor: 'border-blue-500/30',
+    bgSolid: 'bg-blue-500',
     description: 'Qualified leads in pipeline'
   },
   {
@@ -55,6 +58,7 @@ const CONTACT_TYPES = [
     bgColor: 'bg-green-500/10',
     textColor: 'text-green-400',
     borderColor: 'border-green-500/30',
+    bgSolid: 'bg-green-500',
     description: 'Paying customers'
   },
   {
@@ -65,6 +69,7 @@ const CONTACT_TYPES = [
     bgColor: 'bg-orange-500/10',
     textColor: 'text-orange-400',
     borderColor: 'border-orange-500/30',
+    bgSolid: 'bg-orange-500',
     description: 'Product suppliers',
     isExternal: true // Links to suppliers table
   },
@@ -76,6 +81,7 @@ const CONTACT_TYPES = [
     bgColor: 'bg-purple-500/10',
     textColor: 'text-purple-400',
     borderColor: 'border-purple-500/30',
+    bgSolid: 'bg-purple-500',
     description: 'Business partners'
   },
   {
@@ -86,6 +92,7 @@ const CONTACT_TYPES = [
     bgColor: 'bg-rose-500/10',
     textColor: 'text-rose-400',
     borderColor: 'border-rose-500/30',
+    bgSolid: 'bg-rose-500',
     description: 'Job applicants'
   },
   {
@@ -96,6 +103,7 @@ const CONTACT_TYPES = [
     bgColor: 'bg-amber-500/10',
     textColor: 'text-amber-400',
     borderColor: 'border-amber-500/30',
+    bgSolid: 'bg-amber-500',
     description: 'Target accounts for outreach'
   },
 ];
@@ -159,7 +167,7 @@ export default function CRMSidebar({
         {isSelected && (
           <motion.div
             layoutId="activeType"
-            className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-${type.color}-500 rounded-r-full`}
+            className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 ${type.bgSolid} rounded-r-full`}
           />
         )}
 

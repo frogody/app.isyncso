@@ -248,7 +248,10 @@ export default function RaiseDataRoom() {
           </RaiseCard>
 
           {/* Add Dialog */}
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+            if (open) setNewRoom({ name: '', description: '', is_active: true, requires_nda: true, access_level: 'invited_only' });
+            setIsAddDialogOpen(open);
+          }}>
             <DialogContent className={rt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
               <DialogHeader>
                 <DialogTitle className={rt('text-slate-900', 'text-white')}>Create Data Room</DialogTitle>

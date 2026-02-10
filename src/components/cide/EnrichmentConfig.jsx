@@ -14,7 +14,11 @@ const ENRICHMENT_OPTIONS = [
     description: 'Company name, industry, size, revenue, location',
     icon: Database,
     tier: 'Free',
-    color: 'indigo'
+    color: 'indigo',
+    borderClass: 'border-indigo-400',
+    enabledBgClass: 'bg-indigo-500/10',
+    iconBgClass: 'bg-indigo-500/20',
+    iconTextClass: 'text-indigo-400'
   },
   {
     id: 'technographics',
@@ -22,7 +26,11 @@ const ENRICHMENT_OPTIONS = [
     description: 'Full tech stack, sales tools, marketing tools, DevOps',
     icon: Zap,
     tier: 'Premium',
-    color: 'purple'
+    color: 'purple',
+    borderClass: 'border-purple-400',
+    enabledBgClass: 'bg-purple-500/10',
+    iconBgClass: 'bg-purple-500/20',
+    iconTextClass: 'text-purple-400'
   },
   {
     id: 'funding',
@@ -30,7 +38,11 @@ const ENRICHMENT_OPTIONS = [
     description: 'Funding rounds, total raised, investors, last round date',
     icon: TrendingUp,
     tier: 'Premium',
-    color: 'green'
+    color: 'green',
+    borderClass: 'border-green-400',
+    enabledBgClass: 'bg-green-500/10',
+    iconBgClass: 'bg-green-500/20',
+    iconTextClass: 'text-green-400'
   }
 ];
 
@@ -120,14 +132,14 @@ export default function EnrichmentConfig({ config, onSubmit, onBack, selectedCou
                 key={option.id}
                 className={`p-4 rounded-lg border-2 transition-all ${
                   isEnabled
-                    ? `border-${option.color}-400 bg-${option.color}-500/10`
+                    ? `${option.borderClass} ${option.enabledBgClass}`
                     : 'border-gray-700 bg-gray-900/30'
                 }`}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg bg-${option.color}-500/20 flex items-center justify-center`}>
-                      <Icon className={`w-5 h-5 text-${option.color}-400`} />
+                    <div className={`w-10 h-10 rounded-lg ${option.iconBgClass} flex items-center justify-center`}>
+                      <Icon className={`w-5 h-5 ${option.iconTextClass}`} />
                     </div>
                     <div>
                       <h3 className="text-white font-semibold">{option.name}</h3>
