@@ -2096,14 +2096,14 @@ serve(async (req) => {
         );
       }
 
-      // Check if license already exists
+      // Check if license already exists (maybeSingle for 0-or-1 results)
       const { data: existing } = await supabaseAdmin
         .from("app_licenses")
         .select("id, status")
         .eq("app_id", app_id)
         .eq("company_id", company_id)
         .eq("status", "active")
-        .single();
+        .maybeSingle();
 
       if (existing) {
         return new Response(
@@ -2112,7 +2112,13 @@ serve(async (req) => {
         );
       }
 
-      // Use auth uid directly for granted_by
+      // Get user's internal ID for granted_by FK
+      const { data: grantUser } = await supabaseAdmin
+        .from("users")
+        .select("id")
+        .eq("auth_id", userId)
+        .maybeSingle();
+
       const { data, error } = await supabaseAdmin
         .from("app_licenses")
         .insert({
@@ -2125,7 +2131,7 @@ serve(async (req) => {
           billing_cycle: billing_cycle || "monthly",
           user_limit: user_limit || null,
           notes: notes || null,
-          granted_by: userId || null,
+          granted_by: grantUser?.id || null,
         })
         .select()
         .single();
@@ -2134,42 +2140,27 @@ serve(async (req) => {
 
       await createAuditLog(userId!, adminEmail, "create", "app_licenses", data.id, null, data, ipAddress, userAgent);
 
-      // Send notification emails to all company users
+      // Send notification emails to all company users (fire-and-forget)
       try {
-        const { data: appData } = await supabaseAdmin
-          .from("platform_apps")
-          .select("name")
-          .eq("id", app_id)
-          .single();
+        const [appResult, companyResult, usersResult] = await Promise.all([
+          supabaseAdmin.from("platform_apps").select("name").eq("id", app_id).maybeSingle(),
+          supabaseAdmin.from("companies").select("name").eq("id", company_id).maybeSingle(),
+          supabaseAdmin.from("users").select("email").eq("company_id", company_id).not("email", "is", null),
+        ]);
 
-        const { data: companyData } = await supabaseAdmin
-          .from("companies")
-          .select("name")
-          .eq("id", company_id)
-          .single();
+        const appName = appResult.data?.name;
+        const companyName = companyResult.data?.name || "your organization";
+        const emails = (usersResult.data || []).map((u: { email: string }) => u.email).filter(Boolean);
 
-        const { data: companyUsers } = await supabaseAdmin
-          .from("users")
-          .select("email")
-          .eq("company_id", company_id)
-          .not("email", "is", null);
-
-        if (companyUsers?.length && appData?.name) {
-          const emails = companyUsers.map((u: { email: string }) => u.email).filter(Boolean);
-
-          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-license-email`, {
+        if (emails.length > 0 && appName) {
+          fetch(`${SUPABASE_URL}/functions/v1/send-license-email`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+              "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
             },
-            body: JSON.stringify({
-              emails,
-              appName: appData.name,
-              companyName: companyData?.name || "your organization",
-              grantedBy: adminEmail,
-            }),
-          });
+            body: JSON.stringify({ emails, appName, companyName, grantedBy: adminEmail }),
+          }).catch((err: Error) => console.error("[Admin API] License email fetch failed:", err.message));
         }
       } catch (emailErr) {
         console.error("[Admin API] Failed to send license notification emails:", emailErr);
