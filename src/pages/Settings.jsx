@@ -40,9 +40,9 @@ import { useTheme } from '@/contexts/GlobalThemeContext';
 import { SettingsPageTransition } from '@/components/settings/ui';
 
 export default function Settings() {
-  const { user, company, settings: userSettings, updateUser, updateSettings, isLoading: userLoading } = useUser();
+  const { user, company, settings: userSettings, updateUser, updateCompany, updateSettings, isLoading: userLoading } = useUser();
   const { theme, toggleTheme, st } = useTheme();
-  const { isAdmin } = usePermissions();
+  const { isAdmin, isSuperAdmin } = usePermissions();
   const [saving, setSaving] = useState(false);
   const [refreshingCompany, setRefreshingCompany] = useState(false);
   const [settings, setSettings] = useState(null);
@@ -287,12 +287,35 @@ export default function Settings() {
   const saveCompany = async () => {
     setSaving(true);
     try {
+      // Only send user-editable fields (exclude enrichment/computed fields)
+      const editableFields = {
+        name: companyData.name,
+        domain: companyData.domain,
+        description: companyData.description,
+        industry: companyData.industry,
+        logo_url: companyData.logo_url,
+        tech_stack: companyData.tech_stack,
+        knowledge_files: companyData.knowledge_files,
+        size_range: companyData.size_range,
+        revenue_range: companyData.revenue_range,
+        linkedin_url: companyData.linkedin_url,
+        headquarters: companyData.headquarters,
+        founded_year: companyData.founded_year,
+        website_url: companyData.website_url,
+        twitter_url: companyData.twitter_url,
+        facebook_url: companyData.facebook_url,
+        hq_city: companyData.hq_city,
+        hq_state: companyData.hq_state,
+        hq_country: companyData.hq_country,
+        phone: companyData.phone,
+        email: companyData.email,
+      };
+
       if (company?.id) {
-        await db.entities.Company.update(company.id, companyData);
+        await updateCompany(editableFields);
         toast.success('Company profile updated!');
-        window.location.reload();
       } else {
-        const newCompany = await db.entities.Company.create(companyData);
+        const newCompany = await db.entities.Company.create(editableFields);
         await db.auth.updateMe({ company_id: newCompany.id });
         toast.success('Company profile created!');
         window.location.reload();
@@ -604,7 +627,7 @@ export default function Settings() {
     { id: 'integrations', label: 'Integrations', icon: Plug, color: 'cyan' },
     { id: 'workspace', label: 'Workspace', icon: LayoutGrid, color: 'cyan' },
     { id: 'privacy', label: 'Privacy', icon: Lock, color: 'red' },
-    ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: Brain, color: 'purple' }] : [])
+    ...(isSuperAdmin ? [{ id: 'admin', label: 'Admin', icon: Brain, color: 'purple' }] : [])
   ];
 
   const colorClasses = {
@@ -642,7 +665,7 @@ export default function Settings() {
               <button onClick={toggleTheme} className={`p-2 rounded-lg border transition-colors ${st('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-zinc-700 hover:bg-zinc-800 text-zinc-400')}`}>
                 {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
-              {isAdmin && (
+              {isSuperAdmin && (
                 <Link
                   to="/admin"
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-sm transition-colors"
@@ -1553,7 +1576,7 @@ export default function Settings() {
 
 
               {/* ADMIN TAB */}
-              {activeTab === 'admin' && isAdmin && (
+              {activeTab === 'admin' && isSuperAdmin && (
                 <motion.div
                   key="admin"
                   initial={{ opacity: 0, y: 20 }}
