@@ -15,7 +15,6 @@ import {
   RefreshCw,
   Loader2,
   Sparkles,
-  ExternalLink,
   AlertCircle,
   MessageSquare,
   UserCheck,

@@ -41,11 +41,11 @@ import { QuickAddClientModal } from '@/components/talent';
 
 // Client Pipeline Stages - all red shades
 const CLIENT_STAGES = [
-  { id: 'lead', label: 'Lead', color: 'bg-zinc-500', textColor: 'text-zinc-400' },
-  { id: 'prospect', label: 'Prospect', color: 'bg-red-400', textColor: 'text-red-300' },
-  { id: 'active', label: 'Active', color: 'bg-red-500', textColor: 'text-red-400' },
-  { id: 'retained', label: 'Retained', color: 'bg-red-600', textColor: 'text-red-400' },
-  { id: 'dormant', label: 'Dormant', color: 'bg-red-800', textColor: 'text-red-500' },
+  { id: 'lead', label: 'Lead', color: 'bg-zinc-500', textColor: 'text-zinc-400', badgeClass: 'bg-zinc-500/20 text-zinc-400' },
+  { id: 'prospect', label: 'Prospect', color: 'bg-red-400', textColor: 'text-red-300', badgeClass: 'bg-red-400/20 text-red-300' },
+  { id: 'active', label: 'Active', color: 'bg-red-500', textColor: 'text-red-400', badgeClass: 'bg-red-500/20 text-red-400' },
+  { id: 'retained', label: 'Retained', color: 'bg-red-600', textColor: 'text-red-400', badgeClass: 'bg-red-600/20 text-red-400' },
+  { id: 'dormant', label: 'Dormant', color: 'bg-red-800', textColor: 'text-red-500', badgeClass: 'bg-red-800/20 text-red-500' },
 ];
 
 const emptyForm = {
@@ -142,7 +142,7 @@ function ClientCard({ client, onEdit, onDelete, onView }) {
 
         {/* Footer */}
         <div className="mt-3 pt-2 border-t border-zinc-800/50 flex items-center justify-between">
-          <Badge className={`text-[10px] px-2 py-0.5 h-5 ${stage.color}/20 ${stage.textColor} border-0`}>
+          <Badge className={`text-[10px] px-2 py-0.5 h-5 ${stage.badgeClass} border-0`}>
             {stage.label}
           </Badge>
           {client.recruitment_fee_percentage && (
@@ -196,7 +196,7 @@ function ClientTableRow({ client, onEdit, onDelete, onView, reducedMotion }) {
         )}
       </TableCell>
       <TableCell>
-        <Badge className={`text-[10px] px-2 py-0.5 ${stage.color}/20 ${stage.textColor} border-0`}>
+        <Badge className={`text-[10px] px-2 py-0.5 ${stage.badgeClass} border-0`}>
           {stage.label}
         </Badge>
       </TableCell>
@@ -357,6 +357,7 @@ export default function TalentClients() {
             }
           } catch (err) {
             console.error('Retroactive exclusion failed:', err);
+            toast.error('Failed to exclude existing candidates for this client');
           }
         }
       }
@@ -374,6 +375,7 @@ export default function TalentClients() {
           }
         } catch (err) {
           console.error('Recovery failed:', err);
+          toast.error('Failed to recover excluded candidates');
         }
       }
 
@@ -710,7 +712,13 @@ export default function TalentClients() {
         )}
 
         {/* Modal */}
-        <Dialog open={showModal} onOpenChange={setShowModal}>
+        <Dialog open={showModal} onOpenChange={(open) => {
+          if (!open) {
+            setFormData(emptyForm);
+            setSelectedClient(null);
+          }
+          setShowModal(open);
+        }}>
           <DialogContent className="bg-zinc-900 border-zinc-800 max-w-xl p-0 overflow-hidden">
             <div className="px-6 py-4 border-b border-zinc-800 bg-gradient-to-r from-red-500/10 to-red-600/10">
               <DialogTitle className="text-base font-semibold text-white flex items-center gap-2">

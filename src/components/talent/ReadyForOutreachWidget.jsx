@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/api/supabaseClient';
+import { toast } from 'sonner';
 
 const ReadyForOutreachWidget = ({ organizationId, onRefresh }) => {
   const navigate = useNavigate();
@@ -98,6 +99,7 @@ const ReadyForOutreachWidget = ({ organizationId, onRefresh }) => {
       setReadyCandidates(readyList.slice(0, 5));
     } catch (error) {
       console.error('Error fetching ready candidates:', error);
+      toast.error('Failed to load ready candidates');
     } finally {
       setLoading(false);
     }

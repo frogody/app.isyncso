@@ -19,7 +19,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -403,6 +402,10 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
       setSelectedProject(null);
       setSelectedRole(null);
       setProjectSearch("");
+      setShowNewProject(false);
+      setNewProject({ name: "", client_name: "", description: "" });
+      setShowNewRole(false);
+      setNewRole({ title: "", department: "", location: "", job_type: "full_time" });
       setRoleContext({
         perfect_fit_criteria: "",
         selling_points: "",

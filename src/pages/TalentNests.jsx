@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "@/components/context/UserContext";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -157,7 +156,6 @@ const FilterSheet = ({
 // ============================================================================
 export default function TalentNests() {
   const navigate = useNavigate();
-  const { user } = useUser();
   const [loading, setLoading] = useState(true);
   const [nests, setNests] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");

@@ -80,18 +80,21 @@ const AnimatedNumber = ({ value, color }) => {
   const [display, setDisplay] = React.useState(0);
 
   React.useEffect(() => {
+    setDisplay(0);
     const duration = 800;
     const startTime = performance.now();
+    let animationId;
 
     const animate = (now) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       setDisplay(Math.round(eased * value));
-      if (progress < 1) requestAnimationFrame(animate);
+      if (progress < 1) animationId = requestAnimationFrame(animate);
     };
 
-    requestAnimationFrame(animate);
+    animationId = requestAnimationFrame(animate);
+    return () => { if (animationId) cancelAnimationFrame(animationId); };
   }, [value]);
 
   return (

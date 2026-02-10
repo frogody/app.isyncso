@@ -61,7 +61,7 @@ export function EnrichmentButtons({
       }
       const enriched = await fullEnrichFromLinkedIn(linkedinUrl);
 
-      await supabase.from('candidates').update({
+      const { error: updateError } = await supabase.from('candidates').update({
         verified_email: enriched.email || candidate.verified_email,
         verified_phone: enriched.phone || candidate.verified_phone,
         verified_mobile: enriched.mobile_phone || candidate.verified_mobile,
@@ -89,6 +89,8 @@ export function EnrichmentButtons({
         interests: enriched.interests?.length ? enriched.interests : candidate.interests,
         company_domain: enriched.company_domain || candidate.company_domain,
       }).eq('id', candidate.id);
+
+      if (updateError) throw updateError;
 
       toast.success('LinkedIn enriched!', { description: freeEnrichment ? 'Included with nest' : `${creditCost} credits deducted` });
       onEnrichmentComplete?.();
@@ -123,7 +125,7 @@ export function EnrichmentButtons({
       }
       const companyData = await enrichCompanyOnly({ company_name: companyName, domain: companyDomain });
 
-      await supabase.from('candidates').update({
+      const { error: companyUpdateError } = await supabase.from('candidates').update({
         company_industry: companyData.industry,
         company_employee_count: companyData.employee_count,
         company_revenue_range: companyData.revenue_range,
@@ -136,6 +138,8 @@ export function EnrichmentButtons({
         explorium_business_id: companyData.business_id,
         company_enriched_at: new Date().toISOString(),
       }).eq('id', candidate.id);
+
+      if (companyUpdateError) throw companyUpdateError;
 
       toast.success('Company enriched!', { description: freeEnrichment ? 'Included with nest' : `${creditCost} credits deducted` });
       onEnrichmentComplete?.();

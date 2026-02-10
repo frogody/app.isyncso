@@ -210,6 +210,7 @@ export default function OutreachQueue({ campaignId, compact = false }) {
 
   const bulkApprove = async () => {
     if (selectedIds.size === 0) return;
+    const approveCount = selectedIds.size;
 
     setIsApproving(true);
     try {
@@ -229,7 +230,7 @@ export default function OutreachQueue({ campaignId, compact = false }) {
         )
       );
       setSelectedIds(new Set());
-      toast.success(`${selectedIds.size} tasks approved`);
+      toast.success(`${approveCount} tasks approved`);
     } catch (error) {
       console.error("Error approving tasks:", error);
       toast.error("Failed to approve tasks");
@@ -240,6 +241,7 @@ export default function OutreachQueue({ campaignId, compact = false }) {
 
   const bulkDelete = async () => {
     if (selectedIds.size === 0) return;
+    const deleteCount = selectedIds.size;
 
     setIsDeleting(true);
     try {
@@ -253,7 +255,7 @@ export default function OutreachQueue({ campaignId, compact = false }) {
       setTasks((prev) => prev.filter((t) => !selectedIds.has(t.id)));
       setSelectedIds(new Set());
       setShowDeleteDialog(false);
-      toast.success(`${selectedIds.size} tasks deleted`);
+      toast.success(`${deleteCount} tasks deleted`);
     } catch (error) {
       console.error("Error deleting tasks:", error);
       toast.error("Failed to delete tasks");

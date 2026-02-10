@@ -26,7 +26,6 @@ import {
   Heart,
   Scale,
   SlidersHorizontal,
-  Globe,
   Palette,
   Settings2,
   Info,

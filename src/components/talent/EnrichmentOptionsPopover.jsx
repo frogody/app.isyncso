@@ -157,7 +157,10 @@ export function EnrichmentOptionsPopover({
               if (option.key === 'company_enrich') {
                 throw companyErr;
               }
-              // For full_package, log but continue
+              // For full_package, warn but continue with intelligence
+              if (option.key === 'full_package') {
+                toast.warning('Company enrichment skipped, continuing with intelligence...');
+              }
             }
           }
         }

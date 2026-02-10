@@ -127,9 +127,9 @@ export default function EditCandidateModal({ isOpen, onClose, candidate, onSucce
     intelligence_factors: [],
   });
 
-  // Populate form when candidate changes
+  // Populate form when candidate changes or modal opens with new candidate
   useEffect(() => {
-    if (candidate) {
+    if (isOpen && candidate) {
       setFormData({
         first_name: candidate.first_name || "",
         last_name: candidate.last_name || "",
@@ -149,8 +149,11 @@ export default function EditCandidateModal({ isOpen, onClose, candidate, onSucce
         recommended_approach: candidate.recommended_approach || "nurture",
         intelligence_factors: candidate.intelligence_factors || [],
       });
+      setActiveTab("basic");
+      setTagInput("");
+      setSignalInput("");
     }
-  }, [candidate]);
+  }, [isOpen, candidate?.id]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

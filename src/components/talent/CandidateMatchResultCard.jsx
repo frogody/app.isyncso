@@ -88,19 +88,19 @@ const NestSourceBadge = ({ nestName }) => {
 
 // Signal badges for matched signals
 const signalBgMap = {
-  red: "bg-red-500/20", orange: "bg-red-500/20", purple: "bg-red-500/20",
-  emerald: "bg-red-500/20", amber: "bg-red-500/20", blue: "bg-red-500/20",
-  zinc: "bg-zinc-500/20", rose: "bg-red-500/20",
+  red: "bg-red-500/20", orange: "bg-orange-500/20", purple: "bg-purple-500/20",
+  emerald: "bg-emerald-500/20", amber: "bg-amber-500/20", blue: "bg-blue-500/20",
+  zinc: "bg-zinc-500/20", rose: "bg-rose-500/20",
 };
 const signalTextMap = {
-  red: "text-red-400", orange: "text-red-400", purple: "text-red-400",
-  emerald: "text-red-400", amber: "text-red-400", blue: "text-red-400",
-  zinc: "text-zinc-400", rose: "text-red-400",
+  red: "text-red-400", orange: "text-orange-400", purple: "text-purple-400",
+  emerald: "text-emerald-400", amber: "text-amber-400", blue: "text-blue-400",
+  zinc: "text-zinc-400", rose: "text-rose-400",
 };
 const signalBorderMap = {
-  red: "border-red-500/30", orange: "border-red-500/30", purple: "border-red-500/30",
-  emerald: "border-red-500/30", amber: "border-red-500/30", blue: "border-red-500/30",
-  zinc: "border-zinc-500/30", rose: "border-red-500/30",
+  red: "border-red-500/20", orange: "border-orange-500/20", purple: "border-purple-500/20",
+  emerald: "border-emerald-500/20", amber: "border-amber-500/20", blue: "border-blue-500/20",
+  zinc: "border-zinc-500/20", rose: "border-rose-500/20",
 };
 
 const SignalBadges = ({ signals }) => {
