@@ -545,7 +545,7 @@ function AgentChannel({ messages, isActive, highlightBorders }) {
   );
 }
 
-function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = null, activeAgentAngle = null }) {
+export function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = null, activeAgentAngle = null }) {
   const ringRef = useRef(null);
   const segmentsRef = useRef(null);
   const dotsRef = useRef(null);
@@ -897,7 +897,7 @@ function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = 
 // INNER VISUALIZATION COMPONENT (Canvas-based particles + waves)
 // ============================================================================
 
-function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, actionEffect = null, activeAgentColor = null, showSuccess = false, activeAgentAngle = null }) {
+export function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, actionEffect = null, activeAgentColor = null, showSuccess = false, activeAgentAngle = null }) {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const stateRef = useRef({

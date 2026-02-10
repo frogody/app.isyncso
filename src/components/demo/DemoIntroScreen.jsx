@@ -1,25 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import anime from '@/lib/anime-wrapper';
+import { OuterRing, InnerViz } from '@/pages/SyncAgent';
 import {
   Brain, BarChart3, Shield, Puzzle, Activity,
   Rocket, Euro, GraduationCap, UserPlus, Palette, Package,
   TrendingUp, Contact, SkipForward, Sparkles,
 } from 'lucide-react';
-
-// ─── AGENT SEGMENTS — identical to SyncAvatarMini ───────────────────────────
-const AGENT_SEGMENTS = [
-  { id: 'orchestrator', color: '#ec4899', from: 0.02, to: 0.08 },
-  { id: 'learn',        color: '#06b6d4', from: 0.12, to: 0.18 },
-  { id: 'growth',       color: '#6366f1', from: 0.22, to: 0.28 },
-  { id: 'products',     color: '#10b981', from: 0.32, to: 0.38 },
-  { id: 'sentinel',     color: '#86EFAC', from: 0.42, to: 0.48 },
-  { id: 'finance',      color: '#f59e0b', from: 0.52, to: 0.58 },
-  { id: 'create',       color: '#f43f5e', from: 0.62, to: 0.68 },
-  { id: 'tasks',        color: '#f97316', from: 0.72, to: 0.78 },
-  { id: 'research',     color: '#3b82f6', from: 0.82, to: 0.88 },
-  { id: 'inbox',        color: '#14b8a6', from: 0.92, to: 0.98 },
-];
 
 // ─── Modern Electronic Beat Engine (~108 BPM) ──────────────────────────────
 // Clean, minimal electronic production — Apple keynote energy.
@@ -570,144 +556,6 @@ function StarfieldCanvas({ speaking, phase }) {
   );
 }
 
-// ─── SYNC Avatar (self-contained, anime.js + canvas particles) ──────────────
-function IntroSyncAvatar({ size = 180, mood = 'idle', level = 0.18 }) {
-  const canvasRef = useRef(null);
-  const animationRef = useRef(null);
-  const segmentsRef = useRef(null);
-  const glowRef = useRef(null);
-  const stateRef = useRef({ particles: [], time: 0, currentLevel: 0.18 });
-
-  const r = size / 2;
-  const segmentR = r - 4;
-  const innerR = r * 0.58;
-
-  const polar = (cx, cy, radius, a) => {
-    const ang = (a - 0.25) * Math.PI * 2;
-    return { x: cx + radius * Math.cos(ang), y: cy + radius * Math.sin(ang) };
-  };
-  const arcPath = (cx, cy, radius, a0, a1) => {
-    const p0 = polar(cx, cy, radius, a0);
-    const p1 = polar(cx, cy, radius, a1);
-    return `M ${p0.x} ${p0.y} A ${radius} ${radius} 0 0 1 ${p1.x} ${p1.y}`;
-  };
-
-  useEffect(() => {
-    if (!segmentsRef.current) return;
-    const paths = segmentsRef.current.querySelectorAll('path');
-    anime.remove(paths);
-    const configs = {
-      speaking: { strokeWidth: [4, 7, 4], opacity: [0.85, 1, 0.85], duration: 400 },
-      thinking: { strokeWidth: [4, 6, 4], opacity: [0.8, 1, 0.8], duration: 800 },
-      idle:     { strokeWidth: [4, 4.8, 4], opacity: [0.7, 0.9, 0.7], duration: 2000 },
-    };
-    const config = configs[mood] || configs.idle;
-    anime({ targets: paths, strokeWidth: config.strokeWidth, opacity: config.opacity, duration: config.duration, loop: true, easing: 'easeInOutSine', delay: anime.stagger(50) });
-    return () => anime.remove(paths);
-  }, [mood]);
-
-  useEffect(() => {
-    if (!glowRef.current) return;
-    anime.remove(glowRef.current);
-    const configs = {
-      speaking: { scale: [1, 1.2, 1], opacity: [0.5, 0.95, 0.5], duration: 400 },
-      thinking: { scale: [1, 1.12, 1], opacity: [0.4, 0.7, 0.4], duration: 1000 },
-      idle:     { scale: [1, 1.06, 1], opacity: [0.25, 0.4, 0.25], duration: 3000 },
-    };
-    const config = configs[mood] || configs.idle;
-    anime({ targets: glowRef.current, scale: config.scale, opacity: config.opacity, duration: config.duration, loop: true, easing: 'easeInOutSine' });
-    return () => { if (glowRef.current) anime.remove(glowRef.current); };
-  }, [mood]);
-
-  useEffect(() => {
-    const st = stateRef.current;
-    const N = 28;
-    const rand = (a) => { const x = Math.sin(a * 9999) * 10000; return x - Math.floor(x); };
-    st.particles = Array.from({ length: N }).map((_, i) => {
-      const pr = innerR * 0.8 * Math.sqrt(rand(i + 1));
-      const ang = rand(i + 7) * Math.PI * 2;
-      return { x: r + pr * Math.cos(ang), y: r + pr * Math.sin(ang), vx: (rand(i + 11) - 0.5) * 0.12, vy: (rand(i + 17) - 0.5) * 0.12, s: 0.6 + rand(i + 23) * 0.9, hue: rand(i + 31) * 60 + 250 };
-    });
-  }, [size, innerR, r]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const st = stateRef.current;
-    let running = true;
-    const render = () => {
-      if (!running) return;
-      st.time += 0.016;
-      const targetLevel = level || 0.18;
-      st.currentLevel += (targetLevel - st.currentLevel) * 0.05;
-      const intensity = st.currentLevel;
-      const cx = size / 2, cy = size / 2;
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
-      if (canvas.width !== size * dpr) {
-        canvas.width = size * dpr; canvas.height = size * dpr;
-        canvas.style.width = `${size}px`; canvas.style.height = `${size}px`;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      }
-      ctx.clearRect(0, 0, size, size);
-      ctx.fillStyle = 'rgba(0,0,0,0.7)';
-      ctx.beginPath(); ctx.arc(cx, cy, innerR, 0, Math.PI * 2); ctx.fill();
-      ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, innerR, 0, Math.PI * 2); ctx.clip();
-      const g = ctx.createRadialGradient(cx - 2, cy - 2, 1, cx, cy, innerR);
-      const ba = 0.3 + intensity * 0.45;
-      g.addColorStop(0, `rgba(168,85,247,${ba})`);
-      g.addColorStop(0.5, `rgba(139,92,246,${ba * 0.6})`);
-      g.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, size, size);
-      const speedBoost = 0.5 + intensity * 1.5;
-      ctx.globalCompositeOperation = 'screen';
-      for (let i = 0; i < st.particles.length; i++) {
-        const a = st.particles[i];
-        const dx = a.x - cx, dy = a.y - cy;
-        const ang = Math.atan2(dy, dx) + 0.003 * speedBoost;
-        const pr = Math.sqrt(dx * dx + dy * dy);
-        a.vx += (cx + pr * Math.cos(ang) - a.x) * 0.002 * speedBoost;
-        a.vy += (cy + pr * Math.sin(ang) - a.y) * 0.002 * speedBoost;
-        a.x += a.vx * speedBoost; a.y += a.vy * speedBoost;
-        const rr = Math.sqrt((a.x - cx) ** 2 + (a.y - cy) ** 2);
-        const maxR = innerR * 0.85;
-        if (rr > maxR) { const k = maxR / rr; a.x = cx + (a.x - cx) * k; a.y = cy + (a.y - cy) * k; a.vx *= -0.3; a.vy *= -0.3; }
-        const linkOp = 0.15 + intensity * 0.35;
-        for (let j = i + 1; j < st.particles.length; j++) {
-          const b = st.particles[j]; const dist = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
-          if (dist < 18) { ctx.strokeStyle = `rgba(255,255,255,${(1 - dist / 18) * linkOp})`; ctx.lineWidth = 0.6; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
-        }
-      }
-      ctx.globalCompositeOperation = 'lighter';
-      const dotOp = 0.25 + intensity * 0.5;
-      for (const p of st.particles) { ctx.fillStyle = `rgba(255,255,255,${dotOp})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.s * (0.8 + intensity * 0.5), 0, Math.PI * 2); ctx.fill(); }
-      ctx.restore(); ctx.globalCompositeOperation = 'source-over';
-      animationRef.current = requestAnimationFrame(render);
-    };
-    animationRef.current = requestAnimationFrame(render);
-    return () => { running = false; cancelAnimationFrame(animationRef.current); };
-  }, [size, level, innerR]);
-
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <div ref={glowRef} className="absolute inset-0 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.4) 0%, rgba(139,92,246,0.15) 40%, transparent 70%)', transform: 'scale(1.6)', opacity: 0.3 }} />
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="absolute inset-0">
-        <defs>
-          <filter id="introSegGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation={2.5} result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
-        <g ref={segmentsRef} filter="url(#introSegGlow)">
-          {AGENT_SEGMENTS.map((seg) => (
-            <path key={seg.id} data-agent={seg.id} d={arcPath(r, r, segmentR, seg.from, seg.to)} fill="none" stroke={seg.color} strokeWidth={4} strokeLinecap="round" opacity={0.8} />
-          ))}
-        </g>
-      </svg>
-      <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" style={{ width: size, height: size }} />
-    </div>
-  );
-}
-
 // ─── Lyric-Video Text Display ───────────────────────────────────────────────
 // Words illuminate progressively timed to narration, like a lyric video.
 // Active word glows with gradient, past words dim, future words invisible.
@@ -981,8 +829,8 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
           if (!mountedRef.current) return;
           const next = phaseRef.current + 1;
           if (next < script.length) { setPhase(next); }
-          else { setTimeout(() => { if (mountedRef.current) { ambientRef.current?.stop(); onStart(); } }, 1200); }
-        }, 600);
+          else { setTimeout(() => { if (mountedRef.current) { ambientRef.current?.stop(); onStart(); } }, 500); }
+        }, 150);
       }
     };
 
@@ -1138,7 +986,10 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
                 transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
               />
 
-              <IntroSyncAvatar size={140} mood={avatarMood} level={avatarLevel} />
+              <div className="relative" style={{ width: 180, height: 180 }}>
+                <OuterRing size={180} mood={avatarMood === 'idle' ? 'listening' : avatarMood} level={avatarLevel} />
+                <InnerViz size={180} mood={avatarMood === 'idle' ? 'listening' : avatarMood} level={avatarLevel} seed={1} />
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
