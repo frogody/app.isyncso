@@ -62,14 +62,41 @@ serve(async (req) => {
 
     if (teamError) {
       console.error("Error fetching team members:", teamError);
-      return new Response(
-        JSON.stringify({ users: [] }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    }
+
+    // Also fetch platform admins (super_admin, hierarchy_level >= 100) from any organization
+    const { data: adminRoleUsers } = await supabaseClient
+      .from("rbac_user_roles")
+      .select("user_id, rbac_roles!inner(hierarchy_level)")
+      .gte("rbac_roles.hierarchy_level", 100);
+
+    let platformAdmins: any[] = [];
+    if (adminRoleUsers && adminRoleUsers.length > 0) {
+      const adminUserIds = adminRoleUsers.map((r: any) => r.user_id);
+      const { data: adminUsers } = await supabaseClient
+        .from("users")
+        .select("id, full_name, email, avatar_url, job_title")
+        .in("id", adminUserIds);
+      platformAdmins = (adminUsers || []).map((u: any) => ({
+        ...u,
+        is_platform_admin: true,
+      }));
+    }
+
+    // Merge and deduplicate (team members + platform admins)
+    const teamList = (teamMembers || []).map((u: any) => ({ ...u, is_platform_admin: false }));
+    const teamIds = new Set(teamList.map((u: any) => u.id));
+    const uniqueAdmins = platformAdmins.filter((a: any) => !teamIds.has(a.id));
+
+    // Mark team members who are also platform admins
+    for (const member of teamList) {
+      if (platformAdmins.some((a: any) => a.id === member.id)) {
+        member.is_platform_admin = true;
+      }
     }
 
     return new Response(
-      JSON.stringify({ users: teamMembers || [] }),
+      JSON.stringify({ users: [...teamList, ...uniqueAdmins] }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

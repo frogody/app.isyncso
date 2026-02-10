@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MessageSquare, Loader2, X, Lock } from 'lucide-react';
+import { Search, MessageSquare, Loader2, X, Lock, Shield } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { db } from '@/api/supabaseClient';
 
@@ -9,20 +9,23 @@ const getDomain = (email) => email?.split('@')[1]?.toLowerCase() || '';
 // Check if current user can message target user
 const canMessageUser = (currentUser, targetUser) => {
   if (!currentUser?.email || !targetUser?.email) return false;
-  
+
+  // Platform admins can always be messaged by anyone
+  if (targetUser.is_platform_admin) return true;
+
   const currentDomain = getDomain(currentUser.email);
   const targetDomain = getDomain(targetUser.email);
-  
+
   // @isyncso.com users can message everyone and everyone can message them
   if (currentDomain === 'isyncso.com' || targetDomain === 'isyncso.com') {
     return true;
   }
-  
+
   // Same domain = always allowed
   if (currentDomain === targetDomain) {
     return true;
   }
-  
+
   // Cross-domain: check if target allows external messages
   return targetUser.allow_external_messages !== false;
 };
@@ -143,10 +146,18 @@ export default function NewDMModal({
                         <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-zinc-900" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className={`text-sm font-medium truncate transition-colors ${
-                          canMessage ? 'text-white group-hover:text-cyan-400' : 'text-zinc-500'
-                        }`}>
-                          {user.full_name || 'Unknown'}
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-sm font-medium truncate transition-colors ${
+                            canMessage ? 'text-white group-hover:text-cyan-400' : 'text-zinc-500'
+                          }`}>
+                            {user.full_name || 'Unknown'}
+                          </span>
+                          {user.is_platform_admin && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/15 text-cyan-400 border border-cyan-500/20 flex-shrink-0">
+                              <Shield className="w-2.5 h-2.5" />
+                              Admin
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs text-zinc-500 truncate">{user.email}</div>
                       </div>
