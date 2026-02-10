@@ -1,446 +1,470 @@
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import {
-  TrendingUp,
-  Search,
-  Plus,
-  Building2,
-  User,
-  DollarSign,
-  Target,
-  Handshake,
-  Trophy,
-  CalendarCheck,
-  BarChart3,
-  Megaphone,
-  Mail,
-  Zap,
-  Clock,
-  ArrowUpRight,
-  AlertTriangle,
-  ArrowRight,
+  TrendingUp, TrendingDown, Search, Plus, Building2, User, DollarSign, Target,
+  Handshake, Trophy, CalendarCheck, BarChart3, Megaphone, Mail, Zap, Clock,
+  ArrowUpRight, ArrowRight, AlertTriangle, Bell, Send, Users, Euro, Layers,
 } from 'lucide-react';
+import {
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, PieChart, Pie, Cell,
+} from 'recharts';
 
-/* ── Stats ─────────────────────────────────────────────────── */
-const pipelineStats = [
-  { label: 'Total Pipeline', value: '$387K', sub: '42 deals', icon: DollarSign, change: '+14%' },
-  { label: 'Active Deals', value: '23', sub: 'across 4 stages', icon: Target, change: '+3' },
-  { label: 'Won This Month', value: '5', sub: '$142K revenue', icon: Trophy, change: '+2' },
-  { label: 'Win Rate', value: '34%', sub: 'vs 28% last month', icon: BarChart3, change: '+6%' },
-  { label: 'Meetings', value: '12', sub: 'this week', icon: CalendarCheck, change: '+4' },
+// ─── Mock Data ──────────────────────────────────────────────────────────────────
+
+const PIPELINE_VALUE = 387000;
+const TOTAL_PROSPECTS = 245;
+const WON_VALUE = 142000;
+const NEW_SIGNALS = 7;
+
+const STAGE_DATA = [
+  { name: 'New', value: 45, fill: '#818cf8' },
+  { name: 'Contacted', value: 32, fill: '#6366f1' },
+  { name: 'Qualified', value: 23, fill: '#4f46e5' },
+  { name: 'Proposal', value: 12, fill: '#4338ca' },
+  { name: 'Negotiation', value: 8, fill: '#3730a3' },
+  { name: 'Won', value: 5, fill: '#312e81' },
 ];
 
-/* ── Funnel ────────────────────────────────────────────────── */
-const funnelStages = [
-  { label: 'New', count: 45, pct: 100, shade: 'bg-indigo-400/40' },
-  { label: 'Contacted', count: 32, pct: 71, shade: 'bg-indigo-400/50' },
-  { label: 'Qualified', count: 23, pct: 51, shade: 'bg-indigo-500/55' },
-  { label: 'Proposal', count: 12, pct: 27, shade: 'bg-indigo-500/65' },
-  { label: 'Negotiation', count: 8, pct: 18, shade: 'bg-indigo-600/70' },
-  { label: 'Won', count: 5, pct: 11, shade: 'bg-indigo-600/80' },
+const PIE_DATA = [
+  { name: 'Inbound', value: 34, fill: '#6366f1' },
+  { name: 'Outbound', value: 22, fill: '#818cf8' },
+  { name: 'Referral', value: 18, fill: '#a5b4fc' },
+  { name: 'Partner', value: 12, fill: '#c7d2fe' },
+  { name: 'Other', value: 6, fill: '#52525b' },
 ];
 
-/* ── Revenue bars ──────────────────────────────────────────── */
-const revenueMonths = [
-  { month: 'Jul', value: 28, height: 33 },
-  { month: 'Aug', value: 41, height: 48 },
-  { month: 'Sep', value: 35, height: 41 },
-  { month: 'Oct', value: 52, height: 61 },
-  { month: 'Nov', value: 47, height: 55 },
-  { month: 'Dec', value: 68, height: 80 },
-  { month: 'Jan', value: 59, height: 69 },
-  { month: 'Feb', value: 85, height: 100 },
+const REVENUE_DATA = [
+  { month: 'Sep', value: 48000 },
+  { month: 'Oct', value: 62000 },
+  { month: 'Nov', value: 55000 },
+  { month: 'Dec', value: 78000 },
+  { month: 'Jan', value: 71000 },
+  { month: 'Feb', value: 85000 },
 ];
 
-/* ── Campaigns ─────────────────────────────────────────────── */
-const campaigns = [
-  {
-    name: 'Q1 Enterprise Push',
-    status: 'Active',
-    prospects: 128,
-    responseRate: 24,
-    meetings: 8,
-  },
-  {
-    name: 'Product-Led Inbound',
-    status: 'Active',
-    prospects: 312,
-    responseRate: 18,
-    meetings: 14,
-  },
-  {
-    name: 'Partner Co-Sell',
-    status: 'Paused',
-    prospects: 67,
-    responseRate: 31,
-    meetings: 4,
-  },
-];
-
-/* ── Signals ───────────────────────────────────────────────── */
-const growthSignals = [
-  {
-    title: 'TechVentures showing buying signals',
-    detail: 'Visited pricing page 4 times in the last week. Key contact opened 3 emails.',
-    border: 'border-l-indigo-500',
-    badge: 'Hot Lead',
-    badgeColor: 'bg-red-500/15 text-red-400',
-  },
-  {
-    title: 'Meridian Health contract renewal approaching',
-    detail: 'Current contract expires in 28 days. NPS score: 72. Upsell opportunity identified.',
-    border: 'border-l-amber-500',
-    badge: 'Renewal',
-    badgeColor: 'bg-amber-500/15 text-amber-400',
-  },
-  {
-    title: 'Summit Analytics expanding to EU',
-    detail: 'Public announcement of EU expansion. They will need local compliance tooling.',
-    border: 'border-l-emerald-500',
-    badge: 'Expansion',
-    badgeColor: 'bg-emerald-500/15 text-emerald-400',
-  },
-];
-
-/* ── Kanban stage styles ───────────────────────────────────── */
-const stageStyles = {
-  Lead: { border: 'border-zinc-600', pill: 'bg-zinc-700 text-zinc-300' },
-  Qualified: { border: 'border-indigo-500/40', pill: 'bg-indigo-500/15 text-indigo-400' },
-  Proposal: { border: 'border-violet-500/40', pill: 'bg-violet-500/15 text-violet-400' },
-  'Closed Won': { border: 'border-emerald-500/40', pill: 'bg-emerald-500/15 text-emerald-400' },
+const STAGE_BADGES = {
+  new: 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20',
+  contacted: 'bg-indigo-500/15 text-indigo-400/70 border border-indigo-500/25',
+  qualified: 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30',
+  proposal: 'bg-indigo-500/25 text-indigo-400/80 border border-indigo-500/35',
+  negotiation: 'bg-indigo-500/30 text-indigo-400/90 border border-indigo-500/40',
+  won: 'bg-indigo-500/35 text-indigo-300 border border-indigo-500/45',
+  lost: 'bg-red-500/20 text-red-400 border border-red-500/30',
 };
 
-const sourceBadgeColors = {
-  Inbound: 'bg-indigo-500/15 text-indigo-400',
-  Referral: 'bg-cyan-500/15 text-cyan-400',
-  Outbound: 'bg-zinc-700 text-zinc-300',
-  'Platform License': 'bg-violet-500/15 text-violet-400',
-  Enterprise: 'bg-indigo-500/15 text-indigo-400',
-  'Q1 Expansion': 'bg-amber-500/15 text-amber-400',
-  'Add-on': 'bg-zinc-700 text-zinc-300',
-  'New Deal': 'bg-indigo-500/15 text-indigo-400',
-  Renewed: 'bg-emerald-500/15 text-emerald-400',
-  Won: 'bg-emerald-500/15 text-emerald-400',
+const TOP_DEALS = [
+  { id: 1, company: 'TechVentures Inc.', contact: 'Alex Morgan', value: 45000, stage: 'proposal' },
+  { id: 2, company: 'Summit Analytics', contact: 'Priya Shah', value: 41000, stage: 'qualified' },
+  { id: 3, company: 'Pinnacle Group', contact: 'Robert Kim', value: 55000, stage: 'won' },
+  { id: 4, company: 'DataBridge Corp', contact: 'Michael Chen', value: 22500, stage: 'negotiation' },
+];
+
+const PROSPECT_LISTS = [
+  { id: 1, name: 'Enterprise SaaS Targets', count: 128, status: 'active' },
+  { id: 2, name: 'EU Expansion Leads', count: 86, status: 'active' },
+  { id: 3, name: 'Partner Referrals Q1', count: 34, status: 'active' },
+  { id: 4, name: 'Conference Follow-ups', count: 67, status: 'paused' },
+];
+
+const SIGNALS = [
+  { id: 1, company: 'TechVentures', headline: 'Visited pricing page 4 times this week', type: 'intent', score: 92 },
+  { id: 2, company: 'Meridian Health', headline: 'Contract renewal in 28 days', type: 'renewal', score: 85 },
+  { id: 3, company: 'Summit Analytics', headline: 'Announced EU expansion', type: 'expansion', score: 78 },
+  { id: 4, company: 'NovaTech Solutions', headline: 'Series B funding announced ($24M)', type: 'funding', score: 72 },
+];
+
+const CAMPAIGNS = [
+  { name: 'Q1 Enterprise Push', status: 'active', contacts: 128, meetings: 8, responseRate: 24 },
+  { name: 'Product-Led Inbound', status: 'active', contacts: 312, meetings: 14, responseRate: 18 },
+  { name: 'Partner Co-Sell', status: 'paused', contacts: 67, meetings: 4, responseRate: 31 },
+];
+
+const QUICK_ACTIONS = [
+  { icon: Target, label: 'Pipeline', desc: '42 deals', color: 'indigo' },
+  { icon: Users, label: 'Prospects', desc: '4 lists', color: 'indigo' },
+  { icon: Send, label: 'Campaigns', desc: '3 active', color: 'indigo' },
+  { icon: Bell, label: 'Signals', desc: '7 new', color: 'indigo' },
+];
+
+// ─── Tooltip Style ──────────────────────────────────────────────────────────────
+const tooltipStyle = {
+  backgroundColor: '#18181b',
+  border: '1px solid #27272a',
+  borderRadius: '8px',
 };
+
+// ─── Component ──────────────────────────────────────────────────────────────────
 
 export default function DemoGrowth({ companyName = 'Acme Corp', recipientName = 'there' }) {
-  /* ── Kanban columns ──────────────────────────────────────── */
-  const columns = [
-    {
-      stage: 'Lead',
-      deals: [
-        { company: 'NovaTech Solutions', value: '$18,000', contact: 'James Park', tag: 'Inbound', days: 3 },
-        { company: 'Meridian Health', value: '$32,000', contact: 'Lisa Tran', tag: 'Referral', days: 7 },
-        { company: 'UrbanEdge Media', value: '$9,500', contact: 'Carlos Diaz', tag: 'Outbound', days: 1 },
-        { company: 'BlueRidge Capital', value: '$14,200', contact: 'Hannah Cole', tag: 'Inbound', days: 5 },
-      ],
-    },
-    {
-      stage: 'Qualified',
-      deals: [
-        { company: 'TechVentures', value: '$28,000', contact: 'Alex Morgan', tag: 'Platform License', days: 12 },
-        { company: 'Summit Analytics', value: '$41,000', contact: 'Priya Shah', tag: 'Enterprise', days: 9 },
-        { company: 'Apex Dynamics', value: '$19,500', contact: 'Tom Brady', tag: 'Inbound', days: 4 },
-      ],
-    },
-    {
-      stage: 'Proposal',
-      deals: [
-        { company: companyName, value: '$45,000', contact: recipientName, tag: 'Q1 Expansion', days: 6 },
-        { company: 'DataBridge Corp', value: '$22,500', contact: 'Michael Chen', tag: 'Add-on', days: 14 },
-        { company: 'GreenLeaf Ventures', value: '$36,000', contact: 'Nina Patel', tag: 'New Deal', days: 3 },
-      ],
-    },
-    {
-      stage: 'Closed Won',
-      deals: [
-        { company: 'Pinnacle Group', value: '$55,000', contact: 'Robert Kim', tag: 'Renewed', days: 0 },
-        { company: 'Orion Systems', value: '$19,800', contact: 'Emma Wilson', tag: 'Won', days: 0 },
-        { company: 'Catalyst Labs', value: '$67,200', contact: 'David Nguyen', tag: 'Won', days: 0 },
-      ],
-    },
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Funnel data calculated from stage data
+  const leadsCount = 128;
+  const qualifiedCount = 23;
+  const proposalCount = 12;
+  const wonCount = 5;
+  const maxFunnel = Math.max(leadsCount, 1);
+  const funnelStages = [
+    { label: 'Leads', value: leadsCount, pct: 100 },
+    { label: 'Qualified', value: qualifiedCount, pct: (qualifiedCount / maxFunnel) * 100 },
+    { label: 'Proposal', value: proposalCount, pct: (proposalCount / maxFunnel) * 100 },
+    { label: 'Won', value: wonCount, pct: (wonCount / maxFunnel) * 100 },
   ];
 
-  /* ── Y-axis helpers for revenue chart ────────────────────── */
-  const yLabels = ['$90K', '$60K', '$30K', '$0'];
+  const wonDeals = 5;
+  const lostDeals = 3;
+  const winRate = Math.round((wonDeals / (wonDeals + lostDeals)) * 100);
 
   return (
-    <div className="min-h-screen bg-black p-6 space-y-6">
-      {/* ── Page Header ─────────────────────────────────────── */}
-      <div data-demo="page-header" className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-2xl bg-indigo-500/20">
-            <TrendingUp className="w-6 h-6 text-indigo-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-white">Growth Pipeline</h1>
-            <p className="text-zinc-400 text-sm mt-0.5">Track deals from prospect to close for {companyName}.</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2 w-64">
-            <Search className="w-4 h-4 text-zinc-500" />
-            <span className="text-sm text-zinc-500">Search deals...</span>
-          </div>
-          <button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors cursor-default">
-            <Plus className="w-4 h-4" />
-            Add Prospect
-          </button>
-        </div>
+    <div className="min-h-screen bg-black relative">
+      {/* Background effects */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-indigo-400/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
-      {/* ── Stats Row ───────────────────────────────────────── */}
-      <div data-demo="pipeline-stats" className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        {pipelineStats.map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 flex items-center gap-3"
-          >
-            <div className="p-2.5 rounded-xl bg-indigo-500/15 text-indigo-400 shrink-0">
-              <stat.icon className="w-5 h-5" />
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+        {/* ── Page Header ────────────────────────────────────────── */}
+        <div data-demo="page-header" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-indigo-500/15">
+              <TrendingUp className="w-5 h-5 text-indigo-400" />
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-bold text-white">{stat.value}</span>
-                <span className="text-xs font-medium text-indigo-400 flex items-center gap-0.5">
-                  <ArrowUpRight className="w-3 h-3" />
-                  {stat.change}
-                </span>
-              </div>
-              <p className="text-xs text-zinc-500 truncate">{stat.label}</p>
-              <p className="text-[10px] text-zinc-600 truncate">{stat.sub}</p>
+            <div>
+              <h1 className="text-lg font-bold text-white">Growth Dashboard</h1>
+              <p className="text-xs text-zinc-400">Pipeline, prospects, and revenue intelligence</p>
             </div>
           </div>
-        ))}
-      </div>
+          <div className="flex gap-2">
+            <button className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 bg-zinc-800/50 text-zinc-300 text-sm hover:bg-zinc-700 transition-colors cursor-default">
+              <Search className="w-4 h-4" />
+              Research
+            </button>
+            <button className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-400 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors cursor-default">
+              <Plus className="w-4 h-4" />
+              New Campaign
+            </button>
+          </div>
+        </div>
 
-      {/* ── Conversion Funnel + Revenue Trend ───────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Conversion Funnel */}
-        <div data-demo="conversion-funnel" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-white font-semibold">Conversion Funnel</h2>
-            <span className="text-xs text-zinc-500">Last 30 days</span>
+        {/* ── Quick Prospect Search ──────────────────────────────── */}
+        <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Quick search: e.g., 'VP Sales at SaaS companies in Europe'"
+                className="w-full pl-8 h-8 text-xs bg-zinc-800/50 border border-zinc-700/60 text-white rounded-lg focus:border-indigo-500/40 focus:outline-none px-3"
+              />
+            </div>
+            <button className="bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium h-8 text-xs px-3 rounded-lg transition-colors cursor-default">
+              Find Prospects
+            </button>
           </div>
-          <div className="space-y-3">
-            {funnelStages.map((stage, i) => {
-              const convRate = i === 0 ? '100%' : `${Math.round((stage.count / funnelStages[0].count) * 100)}%`;
-              return (
-                <div key={stage.label} className="flex items-center gap-3">
-                  <span className="text-xs text-zinc-400 w-20 text-right shrink-0">{stage.label}</span>
-                  <div className="flex-1 h-8 bg-zinc-800/50 rounded-lg overflow-hidden relative">
-                    <div
-                      className={`h-full ${stage.shade} rounded-lg transition-all flex items-center justify-end pr-3`}
-                      style={{ width: `${stage.pct}%` }}
-                    >
-                      {stage.pct > 20 && (
-                        <span className="text-xs font-semibold text-white/90">{stage.count}</span>
-                      )}
-                    </div>
-                    {stage.pct <= 20 && (
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-zinc-300">
-                        {stage.count}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-xs text-zinc-500 w-10 shrink-0">{convRate}</span>
-                  {i > 0 && (
-                    <span className="text-[10px] text-zinc-600 w-12 shrink-0">
-                      {Math.round((stage.count / funnelStages[i - 1].count) * 100)}% conv
-                    </span>
-                  )}
+        </div>
+
+        {/* ── Stats Row ──────────────────────────────────────────── */}
+        <div data-demo="stats" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { icon: Euro, label: 'Pipeline Value', value: `€${(PIPELINE_VALUE / 1000).toFixed(0)}K`, change: '+14%' },
+            { icon: Users, label: 'Total Prospects', value: TOTAL_PROSPECTS.toString(), change: '+28' },
+            { icon: Target, label: 'Won Revenue', value: `€${(WON_VALUE / 1000).toFixed(0)}K`, change: '+22%' },
+            { icon: Bell, label: 'New Signals', value: NEW_SIGNALS.toString(), change: '+3' },
+          ].map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.4, delay: i * 0.1 }}
+              className="bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-xl p-3"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-indigo-500/20 border border-indigo-500/30">
+                  <stat.icon className="w-4 h-4 text-indigo-400" />
                 </div>
-              );
-            })}
-          </div>
+                {stat.change && (
+                  <span className="text-xs font-medium rounded-lg px-1.5 py-0.5 text-green-400 bg-green-500/20">
+                    ↑ {stat.change}
+                  </span>
+                )}
+              </div>
+              <div className="text-lg font-bold text-white mb-0.5">{stat.value}</div>
+              <div className="text-xs text-zinc-400">{stat.label}</div>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Revenue Trend */}
-        <div data-demo="revenue-trend" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-white font-semibold">Revenue Trend</h2>
-            <span className="text-xs text-zinc-500">Monthly closed revenue (K)</span>
+        {/* ── Quick Actions ──────────────────────────────────────── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {QUICK_ACTIONS.map((action, i) => (
+            <motion.div
+              key={action.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 + i * 0.05 }}
+              className="p-3 text-center cursor-default rounded-xl bg-zinc-900/50 border border-zinc-800/60 hover:border-indigo-500/30 transition-all"
+            >
+              <action.icon className="w-5 h-5 text-indigo-400/70 mx-auto mb-1.5" />
+              <h3 className="font-semibold text-white text-sm">{action.label}</h3>
+              <p className="text-[10px] text-zinc-500">{action.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* ── Main Content: Pipeline Chart + Conversion Funnel ──── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Pipeline Over Time (Recharts Line) */}
+          <div className="lg:col-span-2">
+            <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+              <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-indigo-400/70" />
+                Pipeline Over Time
+              </h3>
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={REVENUE_DATA}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                    <XAxis dataKey="month" stroke="#71717a" fontSize={11} />
+                    <YAxis stroke="#71717a" fontSize={11} tickFormatter={(v) => `€${(v / 1000)}k`} />
+                    <Tooltip
+                      contentStyle={tooltipStyle}
+                      labelStyle={{ color: '#fff' }}
+                      formatter={(value) => [`€${value.toLocaleString()}`, 'Pipeline']}
+                    />
+                    <Line type="monotone" dataKey="value" stroke="#818cf8" strokeWidth={2} dot={{ fill: '#818cf8', r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-1">
-            {/* Y-axis labels */}
-            <div className="flex flex-col justify-between h-48 pr-2 pb-6">
-              {yLabels.map((lbl) => (
-                <span key={lbl} className="text-[10px] text-zinc-600 leading-none">{lbl}</span>
+
+          {/* Conversion Funnel */}
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+              <Zap className="w-4 h-4 text-indigo-400/70" />
+              Conversion Funnel
+            </h3>
+            <div className="space-y-3">
+              {funnelStages.map((stage, i) => (
+                <motion.div
+                  key={stage.label}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5 + i * 0.05 }}
+                  className="space-y-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-zinc-400">{stage.label}</span>
+                    <span className="text-xs font-bold text-indigo-400/80">{stage.value}</span>
+                  </div>
+                  <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.max(stage.pct, 5)}%` }}
+                      transition={{ duration: 0.8, delay: 0.6 + i * 0.1 }}
+                      className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 rounded-full"
+                    />
+                  </div>
+                </motion.div>
               ))}
             </div>
-            {/* Bars */}
-            <div className="flex-1 flex items-end justify-between gap-2 h-48">
-              {revenueMonths.map((bar) => (
-                <div key={bar.month} className="flex-1 flex flex-col items-center gap-1">
-                  <span className="text-[10px] text-indigo-300 font-medium">${bar.value}K</span>
-                  <div
-                    className="w-full bg-gradient-to-t from-indigo-600/40 to-indigo-400/70 rounded-t-lg transition-all"
-                    style={{ height: `${bar.height}%` }}
-                  />
-                  <span className="text-[10px] text-zinc-500 mt-1">{bar.month}</span>
+          </div>
+        </div>
+
+        {/* ── Analytics Section ───────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Deals by Stage (Recharts Bar) */}
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-indigo-400/70" />
+              Deals by Stage
+            </h3>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={STAGE_DATA}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                  <XAxis dataKey="name" stroke="#71717a" fontSize={11} />
+                  <YAxis stroke="#71717a" fontSize={11} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                    {STAGE_DATA.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Win/Loss Analysis */}
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-indigo-400/70" />
+              Win/Loss Analysis
+            </h3>
+            <div className="grid grid-cols-3 gap-3 text-center py-4">
+              <div>
+                <p className="text-2xl font-bold text-indigo-400/70">{wonDeals}</p>
+                <p className="text-zinc-500 text-xs mt-0.5">Won</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-zinc-600">{lostDeals}</p>
+                <p className="text-zinc-500 text-xs mt-0.5">Lost</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-indigo-400/80">{winRate}%</p>
+                <p className="text-zinc-500 text-xs mt-0.5">Win Rate</p>
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${winRate}%` }}
+                  transition={{ duration: 1, delay: 0.3 }}
+                  className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 rounded-full"
+                />
+              </div>
+              <div className="flex justify-between mt-1.5 text-[10px] text-zinc-500">
+                <span>Won: €{WON_VALUE.toLocaleString()}</span>
+                <span>Lost: €{(lostDeals * 18000).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Source Breakdown ────────────────────────────────────── */}
+        <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <h3 className="text-sm font-semibold text-white mb-3">Deals by Source</h3>
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="h-40 w-40">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={PIE_DATA} dataKey="value" cx="50%" cy="50%" innerRadius={32} outerRadius={56}>
+                    {PIE_DATA.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                  </Pie>
+                  <Tooltip contentStyle={tooltipStyle} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex-1 grid grid-cols-2 gap-2">
+              {PIE_DATA.map((item) => (
+                <div key={item.name} className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.fill }} />
+                  <span className="text-zinc-300 text-xs">{item.name}</span>
+                  <span className="text-zinc-500 text-xs ml-auto">{item.value}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ── Kanban Pipeline ─────────────────────────────────── */}
-      <div data-demo="pipeline" className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-white font-semibold">Pipeline Board</h2>
-          <span className="text-xs text-zinc-500">{columns.reduce((n, c) => n + c.deals.length, 0)} deals total</span>
-        </div>
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {columns.map((col) => {
-            const style = stageStyles[col.stage];
-            const stageTotal = col.deals.reduce((sum, d) => sum + parseInt(d.value.replace(/[$,]/g, ''), 10), 0);
-            return (
-              <div key={col.stage} className="min-w-[280px] flex-1 space-y-3">
-                {/* Column Header */}
-                <div className={`flex items-center justify-between pb-3 border-b-2 ${style.border}`}>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-sm font-semibold ${style.pill.split(' ')[1]}`}>
-                      {col.stage}
-                    </span>
-                    <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full">
-                      {col.deals.length}
-                    </span>
-                  </div>
-                  <span className="text-xs text-zinc-500">${(stageTotal / 1000).toFixed(0)}K</span>
-                </div>
-
-                {/* Deal Cards */}
-                {col.deals.map((deal, i) => (
-                  <div
-                    key={i}
-                    data-demo="deal-card"
-                    className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 space-y-3 hover:border-zinc-700 transition-colors"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Building2 className="w-4 h-4 text-zinc-500 shrink-0" />
-                        <span className="text-sm font-medium text-white truncate">{deal.company}</span>
-                      </div>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full shrink-0 ml-2 ${sourceBadgeColors[deal.tag] || 'bg-zinc-700 text-zinc-300'}`}>
-                        {deal.tag}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-sm font-semibold text-emerald-400">{deal.value}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-zinc-500">
-                        <User className="w-3.5 h-3.5" />
-                        <span className="text-xs">{deal.contact}</span>
-                      </div>
-                      {deal.days > 0 && (
-                        <span className="flex items-center gap-1 text-[10px] text-zinc-600">
-                          <Clock className="w-3 h-3" />
-                          {deal.days}d
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── Active Campaigns + Growth Signals ───────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Active Campaigns */}
-        <div data-demo="campaigns" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2">
-              <Megaphone className="w-4 h-4 text-indigo-400" />
-              <h2 className="text-white font-semibold">Active Campaigns</h2>
+        {/* ── Bottom Grid: Top Deals + Prospect Lists + Signals ─── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Top Deals */}
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Euro className="w-4 h-4 text-indigo-400/70" />
+                Top Deals
+              </h3>
+              <span className="text-indigo-400/80 text-xs flex items-center gap-1 cursor-default">
+                View All <ArrowRight className="w-3 h-3" />
+              </span>
             </div>
-            <span className="text-xs text-indigo-400 cursor-default">View all</span>
-          </div>
-          <div className="space-y-4">
-            {campaigns.map((campaign) => (
-              <div
-                key={campaign.name}
-                className="border border-zinc-800 rounded-xl p-4 space-y-3 hover:border-zinc-700 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-white">{campaign.name}</span>
-                  <span
-                    className={`text-[10px] px-2 py-0.5 rounded-full ${
-                      campaign.status === 'Active'
-                        ? 'bg-indigo-500/15 text-indigo-400'
-                        : 'bg-zinc-700 text-zinc-400'
-                    }`}
-                  >
-                    {campaign.status}
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div>
-                    <p className="text-sm font-bold text-white">{campaign.prospects}</p>
-                    <p className="text-[10px] text-zinc-500">Prospects</p>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-center gap-1">
-                      <Mail className="w-3 h-3 text-zinc-500" />
-                      <p className="text-sm font-bold text-white">{campaign.responseRate}%</p>
+            <div className="space-y-2">
+              {TOP_DEALS.map((opp, i) => (
+                <motion.div
+                  key={opp.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors border border-zinc-700/30"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-white text-xs truncate">{opp.company}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-zinc-500">
+                      <Users className="w-2.5 h-2.5" />{opp.contact}
                     </div>
-                    <p className="text-[10px] text-zinc-500">Response</p>
                   </div>
-                  <div>
-                    <div className="flex items-center justify-center gap-1">
-                      <CalendarCheck className="w-3 h-3 text-zinc-500" />
-                      <p className="text-sm font-bold text-white">{campaign.meetings}</p>
-                    </div>
-                    <p className="text-[10px] text-zinc-500">Meetings</p>
+                  <div className="text-right ml-3">
+                    <p className="text-indigo-400/80 font-bold text-xs">€{opp.value.toLocaleString()}</p>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-md inline-block ${STAGE_BADGES[opp.stage]}`}>
+                      {opp.stage}
+                    </span>
                   </div>
-                </div>
-                {/* Response rate mini-bar */}
-                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-indigo-500/70 rounded-full"
-                    style={{ width: `${campaign.responseRate}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Growth Signals */}
-        <div data-demo="growth-signals" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-amber-400" />
-              <h2 className="text-white font-semibold">Growth Signals</h2>
+                </motion.div>
+              ))}
             </div>
-            <span className="text-xs text-zinc-500">3 new today</span>
           </div>
-          <div className="space-y-4">
-            {growthSignals.map((signal) => (
-              <div
-                key={signal.title}
-                className={`border border-zinc-800 border-l-2 ${signal.border} rounded-xl p-4 space-y-2 hover:border-zinc-700 transition-colors`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-zinc-500 shrink-0 mt-0.5" />
-                    <span className="text-sm font-medium text-white">{signal.title}</span>
+
+          {/* Prospect Lists */}
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Users className="w-4 h-4 text-indigo-400/70" />
+                Prospect Lists
+              </h3>
+              <span className="text-indigo-400/80 text-xs flex items-center gap-1 cursor-default">
+                View All <ArrowRight className="w-3 h-3" />
+              </span>
+            </div>
+            <div className="space-y-2">
+              {PROSPECT_LISTS.map((list, i) => (
+                <motion.div
+                  key={list.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors border border-zinc-700/30 cursor-default"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-white text-xs truncate">{list.name}</p>
+                    <p className="text-[10px] text-zinc-500">{list.count} prospects</p>
                   </div>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full shrink-0 ${signal.badgeColor}`}>
-                    {signal.badge}
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-indigo-500/15 text-indigo-400 border border-indigo-500/25">
+                    {list.status}
                   </span>
-                </div>
-                <p className="text-xs text-zinc-400 pl-6">{signal.detail}</p>
-                <div className="pl-6">
-                  <span className="flex items-center gap-1 text-xs text-indigo-400 cursor-default">
-                    View details <ArrowRight className="w-3 h-3" />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Signals */}
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Bell className="w-4 h-4 text-indigo-400/70" />
+                Signals
+              </h3>
+              <span className="text-indigo-400/80 text-xs flex items-center gap-1 cursor-default">
+                View All <ArrowRight className="w-3 h-3" />
+              </span>
+            </div>
+            <div className="space-y-2">
+              {SIGNALS.map((signal, i) => (
+                <motion.div
+                  key={signal.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors border border-zinc-700/30 cursor-default"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-white text-xs truncate">{signal.company}</p>
+                    <p className="text-[10px] text-zinc-500 truncate">{signal.headline}</p>
+                  </div>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md shrink-0 ml-2 ${
+                    signal.score >= 80
+                      ? 'bg-red-500/20 text-red-400/80 border border-red-500/30'
+                      : 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25'
+                  }`}>
+                    {signal.type}
                   </span>
-                </div>
-              </div>
-            ))}
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

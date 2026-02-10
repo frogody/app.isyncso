@@ -1,355 +1,267 @@
+import { motion } from 'framer-motion';
 import {
-  Euro,
-  TrendingUp,
-  Clock,
-  FileText,
-  ArrowUpRight,
-  ArrowDownRight,
-  Plus,
-  Receipt,
-  CreditCard,
-  AlertTriangle,
-  CheckCircle2,
-  Wallet,
+  Euro, TrendingUp, TrendingDown, CreditCard, Receipt,
+  PieChart, BarChart3, ArrowUpRight, ArrowDownRight, Plus,
+  Download, Calendar, FileText, ChevronRight,
+  Wallet, Target, AlertCircle,
 } from 'lucide-react';
 
-/* ------------------------------------------------------------------ */
-/*  Static data                                                        */
-/* ------------------------------------------------------------------ */
+// ─── Mock Data ──────────────────────────────────────────────────────────────────
 
-const topStats = [
-  { label: 'Monthly Revenue', value: '$87.4K', change: '+18.2%', up: true, icon: TrendingUp },
-  { label: 'Outstanding', value: '$34.2K', change: '8 invoices', up: false, icon: Clock },
-  { label: 'Expenses', value: '$23.1K', change: '+4.6%', up: false, icon: CreditCard },
-  { label: 'Net Profit', value: '$64.3K', change: '+22%', up: true, icon: Wallet },
-];
-
-const revenueExpenseData = [
-  { month: 'Sep', revenue: 58, expense: 28 },
-  { month: 'Oct', revenue: 72, expense: 32 },
-  { month: 'Nov', revenue: 65, expense: 26 },
-  { month: 'Dec', revenue: 80, expense: 35 },
-  { month: 'Jan', revenue: 74, expense: 30 },
-  { month: 'Feb', revenue: 87, expense: 23 },
-];
-
-const plItems = [
-  { label: 'Revenue', amount: '$87,400', pct: '+18.2%', up: true, indent: false, bold: true },
-  { label: 'Cost of Goods Sold', amount: '-$12,600', pct: '+5.1%', up: false, indent: false, bold: false },
-  { label: 'Gross Profit', amount: '$74,800', pct: '+21.3%', up: true, indent: false, bold: true },
-  { label: 'Marketing', amount: '-$6,200', pct: '+12%', up: false, indent: true, bold: false },
-  { label: 'Salaries', amount: '-$11,400', pct: '0%', up: null, indent: true, bold: false },
-  { label: 'Tools & Software', amount: '-$2,800', pct: '-8%', up: true, indent: true, bold: false },
-  { label: 'Operating Profit', amount: '$54,400', pct: '+26.1%', up: true, indent: false, bold: true },
-  { label: 'Tax Provision', amount: '-$9,100', pct: '', up: null, indent: false, bold: false },
-  { label: 'Net Income', amount: '$45,300', pct: '+22%', up: true, indent: false, bold: true },
-];
-
-const statusStyles = {
-  Paid: 'bg-emerald-500/15 text-emerald-400',
-  Pending: 'bg-amber-500/15 text-amber-400',
-  Overdue: 'bg-red-500/15 text-red-400',
-  Draft: 'bg-zinc-700/50 text-zinc-400',
+const METRICS = {
+  totalRevenue: 124500,
+  totalExpenses: 67200,
+  pendingInvoices: 34200,
+  monthlyRecurring: 18400,
+  netIncome: 57300,
+  profitMargin: 46.0,
+  pendingCount: 8,
+  activeSubscriptions: 12,
 };
 
-const apAging = [
-  { label: 'Current', amount: '$14,200', bar: 42, color: 'bg-emerald-500' },
-  { label: '1-30 days', amount: '$9,800', bar: 29, color: 'bg-amber-400' },
-  { label: '31-60 days', amount: '$6,100', bar: 18, color: 'bg-orange-500' },
-  { label: '60+ days', amount: '$4,100', bar: 11, color: 'bg-red-500' },
+const EXPENSE_CATEGORIES = [
+  { name: 'software', amount: 18400 },
+  { name: 'marketing', amount: 14200 },
+  { name: 'salary', amount: 12800 },
+  { name: 'travel', amount: 8600 },
+  { name: 'office', amount: 5200 },
 ];
 
-const upcomingBills = [
-  { vendor: 'AWS Cloud Services', amount: '$3,240', due: 'Feb 12', urgent: false },
-  { vendor: 'Figma Enterprise', amount: '$1,180', due: 'Feb 14', urgent: false },
-  { vendor: 'WeWork Office Space', amount: '$8,500', due: 'Feb 15', urgent: true },
-  { vendor: 'Slack Business+', amount: '$620', due: 'Feb 28', urgent: false },
+const RECENT_TRANSACTIONS = [
+  { id: 1, type: 'invoice', client_name: 'TechVentures Inc.', total: 8400, date: '2026-02-08', status: 'paid' },
+  { id: 2, type: 'expense', description: 'AWS Cloud Services', amount: 2340, date: '2026-02-07', category: 'software' },
+  { id: 3, type: 'invoice', client_name: 'Summit Analytics', total: 12500, date: '2026-02-06', status: 'pending' },
+  { id: 4, type: 'expense', description: 'Google Ads Campaign', amount: 3800, date: '2026-02-05', category: 'marketing' },
+  { id: 5, type: 'invoice', client_name: 'Pinnacle Group', total: 55000, date: '2026-02-04', status: 'paid' },
 ];
 
-/* ------------------------------------------------------------------ */
-/*  Component                                                          */
-/* ------------------------------------------------------------------ */
+// ─── Component ──────────────────────────────────────────────────────────────────
 
 export default function DemoFinance({ companyName = 'Acme Corp', recipientName = 'there' }) {
-  const invoices = [
-    { id: 'INV-1052', client: companyName, amount: '$14,800', status: 'Paid', due: 'Feb 5, 2026', created: 'Jan 20, 2026' },
-    { id: 'INV-1051', client: 'TechVentures BV', amount: '$8,200', status: 'Pending', due: 'Feb 12, 2026', created: 'Jan 25, 2026' },
-    { id: 'INV-1050', client: 'Summit Analytics', amount: '$22,400', status: 'Paid', due: 'Feb 1, 2026', created: 'Jan 18, 2026' },
-    { id: 'INV-1049', client: 'Meridian Health', amount: '$4,100', status: 'Overdue', due: 'Jan 28, 2026', created: 'Jan 10, 2026' },
-    { id: 'INV-1048', client: 'DataBridge Corp', amount: '$6,900', status: 'Pending', due: 'Feb 18, 2026', created: 'Feb 1, 2026' },
-    { id: 'INV-1047', client: 'NovaStar Inc.', amount: '$3,450', status: 'Draft', due: '-', created: 'Feb 4, 2026' },
-  ];
+  const colorClasses = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+
+  const getCategoryColor = (category) => {
+    const colors = {
+      software: 'bg-blue-500',
+      marketing: 'bg-blue-400',
+      salary: 'bg-blue-600',
+      travel: 'bg-blue-500',
+      office: 'bg-blue-500',
+    };
+    return colors[category] || 'bg-zinc-500';
+  };
 
   return (
-    <div className="min-h-screen bg-black p-6 space-y-6">
-      {/* ---- Page Header ---- */}
-      <div data-demo="finance-header" className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-amber-500/20">
-            <Euro className="w-6 h-6 text-amber-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-white">Finance</h1>
-            <p className="text-zinc-400 mt-0.5 text-sm">
-              Revenue, invoices, and expense tracking for {companyName}.
-            </p>
-          </div>
-        </div>
-        <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-semibold transition-colors cursor-default">
-          <Plus className="w-4 h-4" />
-          Create Invoice
-        </button>
-      </div>
+    <div className="min-h-screen bg-black">
+      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
 
-      {/* ---- Top Stats ---- */}
-      <div data-demo="finance-stats" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {topStats.map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 flex flex-col gap-3"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-zinc-400 text-sm font-medium">{stat.label}</span>
-              <div className="p-2 rounded-lg bg-amber-500/15 text-amber-400">
-                <stat.icon className="w-4 h-4" />
-              </div>
+        {/* ── Header ─────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-blue-500/15">
+              <Euro className="w-5 h-5 text-blue-400" />
             </div>
-            <div className="flex items-end justify-between">
-              <span className="text-2xl font-bold text-white">{stat.value}</span>
-              <span
-                className={`flex items-center gap-1 text-xs font-medium ${
-                  stat.up ? 'text-emerald-400' : 'text-amber-400'
-                }`}
-              >
-                {stat.up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                {stat.change}
-              </span>
+            <div>
+              <h1 className="text-lg font-bold text-white">Finance Overview</h1>
+              <p className="text-xs text-zinc-400">Track revenue, expenses, and financial health</p>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* ---- Revenue vs Expenses Chart + P&L ---- */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Revenue vs Expenses dual bar chart */}
-        <div
-          data-demo="revenue-expense-chart"
-          className="lg:col-span-3 bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-white font-semibold">Revenue vs Expenses</h2>
-            <div className="flex items-center gap-4 text-xs text-zinc-500">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm bg-amber-500" />
-                Revenue
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm bg-zinc-600" />
-                Expenses
-              </span>
-            </div>
-          </div>
-          <p className="text-xs text-zinc-500 mb-5">Last 6 months</p>
-          <div className="flex items-end justify-between gap-3 h-52">
-            {revenueExpenseData.map((bar) => (
-              <div key={bar.month} className="flex-1 flex flex-col items-center gap-1">
-                <div className="w-full flex items-end justify-center gap-1 h-44">
-                  {/* Revenue bar */}
-                  <div
-                    className="flex-1 max-w-5 rounded-t-md bg-gradient-to-t from-amber-600/40 to-amber-400/80"
-                    style={{ height: `${bar.revenue}%` }}
-                  />
-                  {/* Expense bar */}
-                  <div
-                    className="flex-1 max-w-5 rounded-t-md bg-gradient-to-t from-zinc-700/60 to-zinc-500/60"
-                    style={{ height: `${bar.expense}%` }}
-                  />
-                </div>
-                <span className="text-[10px] text-zinc-500 mt-1">{bar.month}</span>
-              </div>
-            ))}
-          </div>
+          <button className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 text-zinc-300 text-sm hover:bg-zinc-800 transition-colors cursor-default">
+            <Download className="w-4 h-4" />
+            Export Report
+          </button>
         </div>
 
-        {/* P&L Summary */}
-        <div
-          data-demo="pnl-summary"
-          className="lg:col-span-2 bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5"
-        >
-          <h2 className="text-white font-semibold mb-4">P&L Summary</h2>
-          <div className="space-y-0">
-            {plItems.map((item, idx) => {
-              const isSeparator = item.label === 'Gross Profit' || item.label === 'Operating Profit' || item.label === 'Net Income';
-              return (
-                <div key={item.label}>
-                  {isSeparator && idx > 0 && <div className="border-t border-zinc-800 my-2" />}
-                  <div
-                    className={`flex items-center justify-between py-1.5 ${
-                      item.indent ? 'pl-4' : ''
-                    }`}
-                  >
-                    <span
-                      className={`text-sm ${
-                        item.bold ? 'text-white font-semibold' : 'text-zinc-400'
-                      }`}
-                    >
-                      {item.label}
-                    </span>
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`text-sm font-mono ${
-                          item.bold ? 'text-white font-semibold' : 'text-zinc-300'
-                        }`}
-                      >
-                        {item.amount}
-                      </span>
-                      {item.pct && (
-                        <span
-                          className={`text-[10px] font-medium min-w-[40px] text-right ${
-                            item.up === true
-                              ? 'text-emerald-400'
-                              : item.up === false
-                              ? 'text-red-400'
-                              : 'text-zinc-500'
-                          }`}
-                        >
-                          {item.pct}
-                        </span>
-                      )}
-                    </div>
+        {/* ── Key Metrics Grid ───────────────────────────────────── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { title: 'Total Revenue', value: `€${METRICS.totalRevenue.toLocaleString()}`, change: '+12.5%', trend: 'up', icon: Euro },
+            { title: 'Total Expenses', value: `€${METRICS.totalExpenses.toLocaleString()}`, change: '-3.2%', trend: 'down', icon: CreditCard },
+            { title: 'Pending Invoices', value: `€${METRICS.pendingInvoices.toLocaleString()}`, change: `${METRICS.pendingCount} invoices`, trend: 'neutral', icon: Receipt },
+            { title: 'Monthly Recurring', value: `€${METRICS.monthlyRecurring.toLocaleString()}`, change: `${METRICS.activeSubscriptions} active`, trend: 'up', icon: TrendingUp },
+          ].map((metric, i) => (
+            <motion.div
+              key={metric.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 + i * 0.07 }}
+            >
+              <div className="bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 transition-colors rounded-xl p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className={`p-2 rounded-lg ${colorClasses}`}>
+                    <metric.icon className="w-4 h-4" />
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* ---- Invoices Table ---- */}
-      <div
-        data-demo="invoices"
-        className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-white font-semibold">Recent Invoices</h2>
-          <span className="text-xs text-amber-400 cursor-default">View all</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-xs text-zinc-500 border-b border-zinc-800">
-                <th className="pb-3 font-medium">Invoice</th>
-                <th className="pb-3 font-medium">Client</th>
-                <th className="pb-3 font-medium">Amount</th>
-                <th className="pb-3 font-medium">Status</th>
-                <th className="pb-3 font-medium">Due Date</th>
-                <th className="pb-3 font-medium">Created</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800/50">
-              {invoices.map((inv) => (
-                <tr key={inv.id} className="text-sm hover:bg-zinc-800/20 transition-colors">
-                  <td className="py-3">
-                    <div className="flex items-center gap-2 text-zinc-300">
-                      <FileText className="w-3.5 h-3.5 text-zinc-500" />
-                      {inv.id}
-                    </div>
-                  </td>
-                  <td className="py-3 text-white font-medium">{inv.client}</td>
-                  <td className="py-3">
-                    <span className="text-zinc-300 font-mono text-xs">{inv.amount}</span>
-                  </td>
-                  <td className="py-3">
-                    <span
-                      className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusStyles[inv.status]}`}
-                    >
-                      {inv.status}
+                  {metric.trend === 'up' && (
+                    <span className="text-[10px] px-1.5 py-px rounded-md text-blue-400 border border-blue-500/30 bg-blue-500/10 flex items-center gap-0.5">
+                      <ArrowUpRight className="w-2.5 h-2.5" />
+                      {metric.change}
                     </span>
-                  </td>
-                  <td className="py-3 text-zinc-500 text-xs">{inv.due}</td>
-                  <td className="py-3 text-zinc-500 text-xs">{inv.created}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* ---- AP Aging + Upcoming Bills ---- */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* AP Aging */}
-        <div
-          data-demo="ap-aging"
-          className="lg:col-span-2 bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5"
-        >
-          <h2 className="text-white font-semibold mb-5">Accounts Payable Aging</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            {apAging.map((bucket) => (
-              <div
-                key={bucket.label}
-                className="bg-zinc-800/40 border border-zinc-700/50 rounded-xl p-3 text-center"
-              >
-                <p className="text-xs text-zinc-500 mb-1">{bucket.label}</p>
-                <p className="text-lg font-bold text-white">{bucket.amount}</p>
-              </div>
-            ))}
-          </div>
-          {/* Proportion bar */}
-          <div className="w-full h-3 rounded-full overflow-hidden flex">
-            {apAging.map((bucket) => (
-              <div
-                key={bucket.label}
-                className={`h-full ${bucket.color}`}
-                style={{ width: `${bucket.bar}%` }}
-              />
-            ))}
-          </div>
-          <div className="flex items-center justify-between mt-2">
-            {apAging.map((bucket) => (
-              <span key={bucket.label} className="text-[10px] text-zinc-500">
-                {bucket.bar}%
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Upcoming Bills */}
-        <div
-          data-demo="upcoming-bills"
-          className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5"
-        >
-          <h2 className="text-white font-semibold mb-4">Upcoming Bills</h2>
-          <div className="space-y-3">
-            {upcomingBills.map((bill) => (
-              <div
-                key={bill.vendor}
-                className="flex items-center gap-3 p-3 rounded-xl bg-zinc-800/30 border border-zinc-700/40"
-              >
-                <div
-                  className={`p-2 rounded-lg ${
-                    bill.urgent
-                      ? 'bg-red-500/15 text-red-400'
-                      : 'bg-amber-500/15 text-amber-400'
-                  }`}
-                >
-                  <Receipt className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white font-medium truncate">{bill.vendor}</p>
-                  <p className="text-xs text-zinc-500">Due {bill.due}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-white font-mono">{bill.amount}</p>
-                  {bill.urgent && (
-                    <span className="flex items-center gap-1 text-[10px] text-red-400 mt-0.5">
-                      <AlertTriangle className="w-2.5 h-2.5" />
-                      Urgent
+                  )}
+                  {metric.trend === 'down' && (
+                    <span className="text-[10px] px-1.5 py-px rounded-md text-blue-400 border border-blue-500/30 bg-blue-500/10 flex items-center gap-0.5">
+                      <ArrowDownRight className="w-2.5 h-2.5" />
+                      {metric.change}
+                    </span>
+                  )}
+                  {metric.trend === 'neutral' && (
+                    <span className="text-[10px] px-1.5 py-px rounded-md text-zinc-400 border border-zinc-500/30">
+                      {metric.change}
                     </span>
                   )}
                 </div>
+                <p className="text-lg font-bold text-white">{metric.value}</p>
+                <p className="text-xs text-zinc-500">{metric.title}</p>
               </div>
-            ))}
+            </motion.div>
+          ))}
+        </div>
+
+        {/* ── Profit Overview Banner ─────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="bg-gradient-to-r from-blue-950/30 to-blue-950/30 border border-blue-500/20 rounded-xl p-4"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-zinc-400 text-xs mb-0.5">Net Income</p>
+              <p className="text-xl font-bold text-white">
+                +€{METRICS.netIncome.toLocaleString()}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-zinc-400 text-xs mb-0.5">Profit Margin</p>
+              <p className="text-lg font-bold text-white">
+                {METRICS.profitMargin}%
+              </p>
+            </div>
           </div>
+          <div className="mt-3">
+            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${METRICS.profitMargin}%` }}
+                transition={{ duration: 1, delay: 0.5 }}
+                className="h-full bg-blue-500 rounded-full"
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ── Content Grid: Expense Breakdown + Recent Transactions */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Expense Breakdown */}
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="bg-zinc-900/50 border border-zinc-800 rounded-xl lg:col-span-1"
+          >
+            <div className="p-4 border-b border-zinc-800">
+              <h3 className="text-white font-semibold flex items-center gap-2">
+                <PieChart className="w-5 h-5 text-blue-400" />
+                Expense Breakdown
+              </h3>
+              <p className="text-xs text-zinc-500 mt-0.5">By category</p>
+            </div>
+            <div className="p-4 space-y-3">
+              {EXPENSE_CATEGORIES.map((cat) => (
+                <div key={cat.name} className="flex items-center gap-3">
+                  <div className={`w-3 h-3 rounded-full ${getCategoryColor(cat.name)}`} />
+                  <div className="flex-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-zinc-300 capitalize">{cat.name}</span>
+                      <span className="text-white font-medium">€{cat.amount.toLocaleString()}</span>
+                    </div>
+                    <div className="h-1.5 mt-1 bg-zinc-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full transition-all"
+                        style={{ width: `${(cat.amount / METRICS.totalExpenses) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <button className="w-full mt-4 text-blue-400 hover:bg-blue-500/10 text-sm py-2 rounded-lg transition-colors cursor-default flex items-center justify-center gap-1">
+                View All Expenses
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+
+          {/* Recent Transactions */}
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="bg-zinc-900/50 border border-zinc-800 rounded-xl lg:col-span-2"
+          >
+            <div className="p-4 border-b border-zinc-800">
+              <h3 className="text-white font-semibold flex items-center gap-2">
+                <Wallet className="w-5 h-5 text-blue-400" />
+                Recent Transactions
+              </h3>
+              <p className="text-xs text-zinc-500 mt-0.5">Latest financial activity</p>
+            </div>
+            <div className="p-4 space-y-3">
+              {RECENT_TRANSACTIONS.map((tx) => (
+                <div
+                  key={`${tx.type}-${tx.id}`}
+                  className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg hover:bg-zinc-800/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-500/10">
+                      {tx.type === 'invoice' ? (
+                        <FileText className="w-4 h-4 text-blue-400" />
+                      ) : (
+                        <CreditCard className="w-4 h-4 text-blue-400" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">
+                        {tx.type === 'invoice' ? tx.client_name : tx.description}
+                      </p>
+                      <p className="text-xs text-zinc-500">
+                        {new Date(tx.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="font-medium text-white">
+                    {tx.type === 'invoice' ? '+' : '-'}€{(tx.total || tx.amount || 0).toLocaleString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+
+        {/* ── Quick Actions ──────────────────────────────────────── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            { icon: Receipt, label: 'Invoices', desc: '24 total', path: 'invoices' },
+            { icon: CreditCard, label: 'Expenses', desc: '156 recorded', path: 'expenses' },
+            { icon: Euro, label: 'Subscriptions', desc: `${METRICS.activeSubscriptions} active`, path: 'subscriptions' },
+          ].map((action, i) => (
+            <motion.div
+              key={action.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 + i * 0.1 }}
+              className="bg-zinc-900/50 border border-zinc-800 hover:border-blue-500/30 transition-colors cursor-default rounded-xl group"
+            >
+              <div className="p-6 flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                  <action.icon className="w-6 h-6 text-blue-400" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-white font-medium">{action.label}</h3>
+                  <p className="text-sm text-zinc-500">{action.desc}</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-zinc-500 group-hover:text-blue-400 transition-colors" />
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
     </div>
