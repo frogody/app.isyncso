@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 export function useRealtimeChannels(userId) {
   const [channels, setChannels] = useState([]);
   const [directMessages, setDirectMessages] = useState([]);
+  const [supportChannels, setSupportChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const channelRef = useRef(null);
@@ -30,11 +31,14 @@ export function useRealtimeChannels(userId) {
 
       if (error) throw error;
 
-      const publicChannels = (data || []).filter(c => c.type !== 'dm');
-      const dms = (data || []).filter(c => c.type === 'dm');
+      const allChannels = data || [];
+      const publicChannels = allChannels.filter(c => c.type !== 'dm' && c.type !== 'support');
+      const dms = allChannels.filter(c => c.type === 'dm');
+      const support = allChannels.filter(c => c.type === 'support');
 
       setChannels(publicChannels);
       setDirectMessages(dms);
+      setSupportChannels(support);
     } catch (error) {
       console.error('[useRealtimeChannels] Failed to load channels:', error);
       toast.error('Failed to load channels');
@@ -64,7 +68,14 @@ export function useRealtimeChannels(userId) {
 
           if (newChannel.is_archived) return;
 
-          if (newChannel.type === 'dm') {
+          if (newChannel.type === 'support') {
+            if (newChannel.members?.includes(userId) || newChannel.user_id === userId) {
+              setSupportChannels(prev => {
+                if (prev.some(c => c.id === newChannel.id)) return prev;
+                return [newChannel, ...prev];
+              });
+            }
+          } else if (newChannel.type === 'dm') {
             // Check if user is a member of this DM
             if (newChannel.members?.includes(userId) || newChannel.user_id === userId) {
               setDirectMessages(prev => {
@@ -95,10 +106,15 @@ export function useRealtimeChannels(userId) {
           if (updatedChannel.is_archived) {
             setChannels(prev => prev.filter(c => c.id !== updatedChannel.id));
             setDirectMessages(prev => prev.filter(c => c.id !== updatedChannel.id));
+            setSupportChannels(prev => prev.filter(c => c.id !== updatedChannel.id));
             return;
           }
 
-          if (updatedChannel.type === 'dm') {
+          if (updatedChannel.type === 'support') {
+            setSupportChannels(prev =>
+              prev.map(c => c.id === updatedChannel.id ? updatedChannel : c)
+            );
+          } else if (updatedChannel.type === 'dm') {
             setDirectMessages(prev =>
               prev.map(c => c.id === updatedChannel.id ? updatedChannel : c)
             );
@@ -119,6 +135,7 @@ export function useRealtimeChannels(userId) {
         (payload) => {
           setChannels(prev => prev.filter(c => c.id !== payload.old.id));
           setDirectMessages(prev => prev.filter(c => c.id !== payload.old.id));
+          setSupportChannels(prev => prev.filter(c => c.id !== payload.old.id));
         }
       )
       .subscribe((status) => {
@@ -261,6 +278,7 @@ export function useRealtimeChannels(userId) {
   return {
     channels,
     directMessages,
+    supportChannels,
     loading,
     isConnected,
     createChannel,

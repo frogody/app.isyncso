@@ -31,7 +31,7 @@ const DialogContent = React.forwardRef(({ className, children, hideDescription =
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-y-0 right-0 z-50 grid h-full w-full max-w-lg overflow-y-auto border bg-background shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right data-[state=closed]:duration-300 data-[state=open]:duration-300 rounded-l-lg",
+        "fixed top-0 right-0 bottom-0 z-50 flex flex-col w-full max-w-lg overflow-y-auto border bg-background shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right data-[state=closed]:duration-300 data-[state=open]:duration-300 rounded-l-lg",
         compact ? "gap-3 p-4" : "gap-4 p-6",
         className
       )}

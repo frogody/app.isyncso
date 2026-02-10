@@ -3,7 +3,7 @@ import {
   Hash, Lock, Plus, ChevronDown, MessageSquare,
   Search, Settings, BellOff, Bell, Star, StarOff, MoreHorizontal,
   Archive, Trash2, UserPlus, Bookmark, AtSign,
-  Circle, Clock, MinusCircle, Moon, X
+  Circle, Clock, MinusCircle, Moon, X, Headset
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -61,7 +61,7 @@ const ChannelItem = memo(function ChannelItem({
   onDeleteChannel,
   user
 }) {
-  const Icon = isDM ? MessageSquare : channel.type === 'private' ? Lock : Hash;
+  const Icon = isDM ? MessageSquare : channel.type === 'support' ? Headset : channel.type === 'private' ? Lock : Hash;
 
   return (
     <div
@@ -191,6 +191,7 @@ const ChannelItem = memo(function ChannelItem({
 export default function ChannelSidebar({
   channels,
   directMessages,
+  supportChannels = [],
   selectedChannel,
   onSelectChannel,
   onCreateChannel,
@@ -201,9 +202,11 @@ export default function ChannelSidebar({
   onDeleteChannel,
   onOpenSettings,
   onClose,
+  isAdmin = false,
 }) {
   const [channelsExpanded, setChannelsExpanded] = useState(true);
   const [dmsExpanded, setDmsExpanded] = useState(true);
+  const [supportExpanded, setSupportExpanded] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [starredChannels, setStarredChannels] = useState(() => {
     try {
@@ -279,6 +282,11 @@ export default function ChannelSidebar({
   const filteredDMs = useMemo(() =>
     directMessages.filter(dm => dm.name.toLowerCase().includes(searchTerm.toLowerCase())),
     [directMessages, searchTerm]
+  );
+
+  const filteredSupportChannels = useMemo(() =>
+    supportChannels.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase())),
+    [supportChannels, searchTerm]
   );
 
   // Toggle star
@@ -452,6 +460,23 @@ export default function ChannelSidebar({
             </div>
           )}
         </div>
+
+        {/* Support Section */}
+        {filteredSupportChannels.length > 0 && (
+          <div>
+            <SectionHeader
+              title="Support"
+              count={filteredSupportChannels.length}
+              expanded={supportExpanded}
+              onToggle={() => setSupportExpanded(!supportExpanded)}
+            />
+            {supportExpanded && (
+              <div className="space-y-0.5">
+                {filteredSupportChannels.map(channel => renderChannelItem(channel, false))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Direct Messages Section */}
         <div>

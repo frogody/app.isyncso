@@ -9,6 +9,7 @@ import {
 import { toast } from 'sonner';
 import { db, supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
+import { usePermissions } from '@/components/context/PermissionContext';
 import {
   detectAgentMentions,
   extractAgentPrompt,
@@ -44,6 +45,7 @@ import BookmarksPanel from '@/components/inbox/BookmarksPanel';
 
 export default function InboxPage() {
   const { user } = useUser();
+  const { isAdmin } = usePermissions();
 
   // ========================================
   // REALTIME HOOKS (replacing polling)
@@ -53,6 +55,7 @@ export default function InboxPage() {
   const {
     channels: realtimeChannels,
     directMessages: realtimeDMs,
+    supportChannels: realtimeSupportChannels,
     loading: channelsLoading,
     isConnected: channelsConnected,
     createChannel: rtCreateChannel,
@@ -77,10 +80,10 @@ export default function InboxPage() {
   // Callback for new message notifications
   const handleNewMessageNotification = useCallback((message) => {
     // Find channel info for the notification
-    const allChannels = [...realtimeChannels, ...realtimeDMs];
+    const allChannels = [...realtimeChannels, ...resolvedDMs, ...realtimeSupportChannels];
     const channel = allChannels.find(c => c.id === message.channel_id);
     notifyNewMessage(message, channel);
-  }, [realtimeChannels, realtimeDMs, notifyNewMessage]);
+  }, [realtimeChannels, resolvedDMs, realtimeSupportChannels, notifyNewMessage]);
 
   // Realtime messages subscription (changes when selectedChannel changes)
   const {
@@ -150,6 +153,27 @@ export default function InboxPage() {
 
   // Team members (still loaded once)
   const [teamMembers, setTeamMembers] = useState([]);
+
+  // Resolve DM display names to show the OTHER person's name (not your own)
+  const resolvedDMs = useMemo(() => {
+    if (!user?.id) return realtimeDMs;
+    return realtimeDMs.map(dm => {
+      const otherMemberId = dm.members?.find(id => id !== user.id);
+      if (!otherMemberId) return dm;
+      const otherMember = teamMembers.find(m => m.id === otherMemberId);
+      if (!otherMember) return dm;
+      return { ...dm, name: otherMember.full_name || otherMember.email || dm.name };
+    });
+  }, [realtimeDMs, user?.id, teamMembers]);
+
+  // Display name for selected channel (for DMs, show the other person's name)
+  const selectedChannelDisplayName = useMemo(() => {
+    if (!selectedChannel) return '';
+    if (selectedChannel.type !== 'dm') return selectedChannel.name;
+    const otherMemberId = selectedChannel.members?.find(id => id !== user?.id);
+    const otherMember = teamMembers.find(m => m.id === otherMemberId);
+    return otherMember?.full_name || otherMember?.email || selectedChannel.name;
+  }, [selectedChannel, user?.id, teamMembers]);
 
   // Database-backed unread tracking (syncs across devices)
   const {
@@ -250,6 +274,86 @@ export default function InboxPage() {
     };
     createDefaultChannels();
   }, [channelsLoading, realtimeChannels.length, user, rtCreateChannel]);
+
+  // Auto-create support channel for each user (once)
+  const supportChannelCreatedRef = useRef(false);
+  useEffect(() => {
+    const ensureSupportChannel = async () => {
+      if (channelsLoading || !user || supportChannelCreatedRef.current) return;
+      if (realtimeSupportChannels.some(c => c.user_id === user.id)) return;
+      supportChannelCreatedRef.current = true;
+      try {
+        await supabase.from('channels').insert({
+          name: `Support - ${user.full_name || user.email}`,
+          type: 'support',
+          user_id: user.id,
+          members: [user.id],
+          last_message_at: new Date().toISOString(),
+        });
+      } catch (e) {
+        console.warn('Failed to create support channel:', e);
+      }
+    };
+    ensureSupportChannel();
+  }, [channelsLoading, user, realtimeSupportChannels]);
+
+  // For admins: load ALL support channels (not just their own)
+  const [allSupportChannels, setAllSupportChannels] = useState([]);
+  useEffect(() => {
+    if (!isAdmin || !user) return;
+    const loadAllSupport = async () => {
+      try {
+        const { data } = await supabase
+          .from('channels')
+          .select('*')
+          .eq('type', 'support')
+          .eq('is_archived', false)
+          .order('last_message_at', { ascending: false, nullsFirst: false });
+        setAllSupportChannels(data || []);
+      } catch (e) {
+        console.warn('Failed to load support channels:', e);
+      }
+    };
+    loadAllSupport();
+
+    // Subscribe to support channel changes for admins
+    const sub = supabase.channel('admin:support-channels')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'channels' }, (payload) => {
+        const ch = payload.new;
+        if (payload.eventType === 'DELETE') {
+          setAllSupportChannels(prev => prev.filter(c => c.id !== payload.old.id));
+          return;
+        }
+        if (ch?.type !== 'support') return;
+        if (ch.is_archived) {
+          setAllSupportChannels(prev => prev.filter(c => c.id !== ch.id));
+          return;
+        }
+        setAllSupportChannels(prev => {
+          const exists = prev.some(c => c.id === ch.id);
+          if (exists) return prev.map(c => c.id === ch.id ? ch : c);
+          return [ch, ...prev];
+        });
+      }).subscribe();
+
+    return () => { supabase.removeChannel(sub); };
+  }, [isAdmin, user]);
+
+  // Merge support channels: admins see all, regular users see their own
+  const supportChannels = useMemo(() => {
+    if (isAdmin) return allSupportChannels;
+    return realtimeSupportChannels;
+  }, [isAdmin, allSupportChannels, realtimeSupportChannels]);
+
+  // Resolve support channel names for admins (show the user's name, not "Support - X")
+  const resolvedSupportChannels = useMemo(() => {
+    return supportChannels.map(ch => {
+      // For the current user's own support channel, show "My Support"
+      if (ch.user_id === user?.id) return { ...ch, name: 'My Support' };
+      // For admin viewing other users' channels, use the stored name
+      return ch;
+    });
+  }, [supportChannels, user?.id]);
 
   // Track which channels we've marked as read to avoid re-calling
   const markedReadRef = useRef(new Set());
@@ -492,7 +596,7 @@ export default function InboxPage() {
 
   // Create DM (uses realtime hook)
   const handleCreateDM = useCallback(async (targetUser) => {
-    const existingDM = realtimeDMs.find(dm =>
+    const existingDM = resolvedDMs.find(dm =>
       dm.members?.includes(targetUser.id) && dm.members?.includes(user?.id)
     );
 
@@ -507,7 +611,7 @@ export default function InboxPage() {
     } catch (error) {
       console.error('Failed to create DM:', error);
     }
-  }, [user, realtimeDMs, rtCreateDM]);
+  }, [user, resolvedDMs, rtCreateDM]);
 
   // Archive channel (uses realtime hook)
   const handleArchiveChannel = useCallback(async (channel) => {
@@ -626,7 +730,8 @@ export default function InboxPage() {
       >
         <ChannelSidebar
           channels={realtimeChannels}
-          directMessages={realtimeDMs}
+          directMessages={resolvedDMs}
+          supportChannels={resolvedSupportChannels}
           selectedChannel={selectedChannel}
           onSelectChannel={handleSelectChannel}
           onCreateChannel={() => setShowCreateChannel(true)}
@@ -638,6 +743,7 @@ export default function InboxPage() {
           onOpenSettings={() => setShowWorkspaceSettings(true)}
           isConnected={isConnected}
           onClose={() => setMobileMenuOpen(false)}
+          isAdmin={isAdmin}
         />
       </div>
 
@@ -681,7 +787,7 @@ export default function InboxPage() {
                   </div>
                 )}
                 <div className="min-w-0">
-                  <h2 className="font-medium text-white text-sm truncate">{selectedChannel.name}</h2>
+                  <h2 className="font-medium text-white text-sm truncate">{selectedChannelDisplayName}</h2>
                   {selectedChannel.description && (
                     <p className="text-[11px] text-zinc-500 max-w-[150px] sm:max-w-md truncate hidden sm:block">{selectedChannel.description}</p>
                   )}
@@ -795,7 +901,7 @@ export default function InboxPage() {
             {/* Message Input - hide for special views */}
             {selectedChannel.type !== 'special' && (
               <MessageInput
-                channelName={selectedChannel.name}
+                channelName={selectedChannel.type === 'dm' ? selectedChannelDisplayName : selectedChannel.name}
                 channelId={selectedChannel.id}
                 onSend={handleSendMessage}
                 members={[user, ...teamMembers].filter(Boolean)}
@@ -909,7 +1015,7 @@ export default function InboxPage() {
             onRemoveBookmark={removeBookmark}
             onJumpToMessage={(bookmark) => {
               // Find channel and select it
-              const channel = [...realtimeChannels, ...realtimeDMs].find(c => c.id === bookmark.channel_id);
+              const channel = [...realtimeChannels, ...resolvedDMs].find(c => c.id === bookmark.channel_id);
               if (channel) {
                 setSelectedChannel(channel);
               }
@@ -981,7 +1087,7 @@ export default function InboxPage() {
         }}
         message={messageToForward}
         channels={realtimeChannels}
-        directMessages={realtimeDMs}
+        directMessages={resolvedDMs}
         currentUser={user}
       />
     </div>

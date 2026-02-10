@@ -222,41 +222,45 @@ function MessageBubble({
     <motion.div
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`group relative flex gap-2.5 px-4 sm:px-5 py-1 hover:bg-zinc-800/20 transition-colors ${
+      className={`group relative flex ${isOwn ? 'flex-row-reverse' : ''} gap-2.5 px-4 sm:px-5 py-1.5 ${!isOwn ? 'hover:bg-zinc-800/20' : ''} transition-colors ${
         message.is_pinned ? 'bg-zinc-800/30 border-l-2 border-zinc-600' : ''
       } ${isAgentMessage ? 'bg-cyan-950/10 border-l border-cyan-500/20' : ''}`}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => !dropdownOpen && !emojiPopoverOpen && setShowActions(false)}
     >
-      {/* Avatar */}
-      <div className="flex-shrink-0 mt-0.5">
-        {isAgentMessage ? (
-          <div className="w-7 h-7 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-sm relative">
-            {agent?.icon || '🤖'}
-            {message.sender_avatar && (
-              <img
-                src={message.sender_avatar}
-                alt=""
-                className="w-3.5 h-3.5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-zinc-950"
-              />
-            )}
-          </div>
-        ) : message.sender_avatar ? (
-          <img src={message.sender_avatar} alt="" className="w-7 h-7 rounded-full border border-zinc-700/50" />
-        ) : (
-          <div className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
-            {message.sender_name?.charAt(0) || '?'}
-          </div>
-        )}
-      </div>
+      {/* Avatar - only for other people's messages */}
+      {!isOwn && (
+        <div className="flex-shrink-0 mt-0.5">
+          {isAgentMessage ? (
+            <div className="w-7 h-7 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-sm relative">
+              {agent?.icon || '🤖'}
+              {message.sender_avatar && (
+                <img
+                  src={message.sender_avatar}
+                  alt=""
+                  className="w-3.5 h-3.5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-zinc-950"
+                />
+              )}
+            </div>
+          ) : message.sender_avatar ? (
+            <img src={message.sender_avatar} alt="" className="w-7 h-7 rounded-full border border-zinc-700/50" />
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
+              {message.sender_name?.charAt(0) || '?'}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-sm text-white">
-            {message.sender_name}
-          </span>
-          {isAgentMessage && (
+      <div className={isOwn ? "max-w-[75%] flex flex-col items-end" : "flex-1 min-w-0"}>
+        <div className={`flex items-center gap-2 flex-wrap ${isOwn ? 'justify-end' : ''}`}>
+          {!isOwn && (
+            <span className="font-semibold text-sm text-white">
+              {message.sender_name}
+            </span>
+          )}
+          {!isOwn && isAgentMessage && (
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400/80 border border-cyan-500/20">
               AI
             </span>
@@ -266,37 +270,42 @@ function MessageBubble({
           {message.is_pinned && <Pin className="w-3 h-3 text-zinc-500" />}
         </div>
 
-        {isEditing ? (
-          <div className="mt-2">
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              className="w-full bg-zinc-800 border border-cyan-500 rounded-lg p-3 text-sm text-white focus:outline-none resize-none"
-              rows={2}
-              autoFocus
-            />
-            <div className="flex gap-2 mt-2">
-              <button 
-                onClick={handleSaveEdit}
-                className="px-4 py-1.5 bg-cyan-500 text-white text-xs rounded-lg hover:bg-cyan-400 transition-colors"
-              >
-                Save
-              </button>
-              <button 
-                onClick={() => setIsEditing(false)}
-                className="px-4 py-1.5 bg-zinc-700 text-zinc-300 text-xs rounded-lg hover:bg-zinc-600 transition-colors"
-              >
-                Cancel
-              </button>
+        <div className={`mt-1 rounded-2xl px-3.5 py-2 ${
+          isOwn
+            ? 'bg-cyan-600/15 border border-cyan-500/20 rounded-tr-sm'
+            : 'bg-zinc-800/60 border border-zinc-700/40 rounded-tl-sm'
+        }`}>
+          {isEditing ? (
+            <div>
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full bg-zinc-800 border border-cyan-500 rounded-lg p-3 text-sm text-white focus:outline-none resize-none"
+                rows={2}
+                autoFocus
+              />
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={handleSaveEdit}
+                  className="px-4 py-1.5 bg-cyan-500 text-white text-xs rounded-lg hover:bg-cyan-400 transition-colors"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-1.5 bg-zinc-700 text-zinc-300 text-xs rounded-lg hover:bg-zinc-600 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-          </div>
-        ) : (
-          <p className="text-zinc-200 text-[13px] whitespace-pre-wrap break-words mt-0.5 leading-normal">
-            {renderMessageContent(message.content, teamMembers)}
-          </p>
-        )}
-
-        {renderAttachment()}
+          ) : (
+            <p className={`text-[13px] whitespace-pre-wrap break-words leading-normal ${isOwn ? 'text-zinc-100' : 'text-zinc-200'}`}>
+              {renderMessageContent(message.content, teamMembers)}
+            </p>
+          )}
+          {renderAttachment()}
+        </div>
         {renderReactions()}
 
         {/* Read receipts indicator (only for own messages) */}
@@ -453,7 +462,7 @@ function MessageBubble({
             initial={{ opacity: 0, scale: 0.95, y: -5 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -5 }}
-            className="absolute -top-3 right-6 flex items-center gap-0.5 bg-zinc-900 border border-zinc-700 rounded-lg p-0.5 shadow-2xl"
+            className={`absolute -top-3 ${isOwn ? 'left-6' : 'right-6'} flex items-center gap-0.5 bg-zinc-900 border border-zinc-700 rounded-lg p-0.5 shadow-2xl`}
           >
             {/* Quick reactions */}
             <Popover open={emojiPopoverOpen} onOpenChange={setEmojiPopoverOpen}>

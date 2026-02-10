@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { db } from "@/api/supabaseClient";
+import { db, supabase } from "@/api/supabaseClient";
 import { SENTINEL, THEME_COLORS, UI, FEATURES } from "@/lib/constants";
 import { useTheme } from "@/contexts/GlobalThemeContext";
 import { logError } from "@/components/utils/errorHandler";
@@ -981,7 +981,14 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                   `}
                   title={item.title}
                 >
-                  <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'group-hover:text-white'}`} />
+                  <span className="relative">
+                    <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'group-hover:text-white'}`} />
+                    {item.title === 'Inbox' && inboxUnreadCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 text-[9px] font-bold bg-cyan-500 text-white rounded-full flex items-center justify-center leading-none">
+                        {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
+                      </span>
+                    )}
+                  </span>
                   <span className="text-sm font-medium">{item.title}</span>
                   {isActive && (
                     <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-500 rounded-l-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
@@ -1041,7 +1048,14 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                 `}
                 title={item.title}
               >
-                <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'group-hover:text-white'}`} />
+                <span className="relative">
+                  <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'group-hover:text-white'}`} />
+                  {item.title === 'Inbox' && inboxUnreadCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 text-[9px] font-bold bg-cyan-500 text-white rounded-full flex items-center justify-center leading-none">
+                      {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
+                    </span>
+                  )}
+                </span>
                 {isActive && (
                   <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-500 rounded-l-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
                 )}
@@ -1281,6 +1295,51 @@ export default function Layout({ children, currentPageName }) {
   const [enabledApps, setEnabledApps] = useState(FEATURES.DEFAULT_ENABLED_APPS);
   const [appsManagerOpen, setAppsManagerOpen] = useState(false);
   const [productsSettings, setProductsSettings] = useState({ digitalEnabled: true, physicalEnabled: true, serviceEnabled: true });
+
+  // Inbox unread badge count
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let channelSub = null;
+    const loadInboxUnread = async () => {
+      try {
+        const user = await db.auth.me();
+        if (!user) return;
+        const { data } = await supabase
+          .from('channel_read_status')
+          .select('unread_count')
+          .eq('user_id', user.id)
+          .gt('unread_count', 0);
+        const total = (data || []).reduce((sum, r) => sum + (r.unread_count || 0), 0);
+        setInboxUnreadCount(total);
+
+        // Subscribe to changes
+        channelSub = supabase.channel('layout:inbox-unread')
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'channel_read_status',
+            filter: `user_id=eq.${user.id}`,
+          }, () => {
+            // Reload on any change
+            supabase
+              .from('channel_read_status')
+              .select('unread_count')
+              .eq('user_id', user.id)
+              .gt('unread_count', 0)
+              .then(({ data: d }) => {
+                const t = (d || []).reduce((s, r) => s + (r.unread_count || 0), 0);
+                setInboxUnreadCount(t);
+              });
+          })
+          .subscribe();
+      } catch (e) {
+        // Silently fail - badge is non-critical
+      }
+    };
+    loadInboxUnread();
+    return () => { if (channelSub) supabase.removeChannel(channelSub); };
+  }, []);
 
   // SYNC floating chat and voice mode state
   const [isFloatingChatOpen, setIsFloatingChatOpen] = useState(false);
