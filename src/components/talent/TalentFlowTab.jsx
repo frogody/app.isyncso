@@ -259,7 +259,7 @@ export default function TalentFlowTab({ campaign, onFlowSaved }) {
       </div>
 
       {/* 3-Panel Layout */}
-      <div className="flex gap-0 rounded-xl border border-zinc-800 overflow-hidden bg-zinc-900/50" style={{ height: '600px' }}>
+      <div className="flex gap-0 rounded-xl border border-zinc-800 overflow-hidden bg-zinc-900/50" style={{ height: 'calc(100vh - 280px)', minHeight: '500px' }}>
         {/* Left: Node Palette */}
         <div className="w-[220px] border-r border-zinc-800 overflow-y-auto bg-zinc-900/80 flex-shrink-0">
           <NodePalette onAddNode={handleAddNode} />

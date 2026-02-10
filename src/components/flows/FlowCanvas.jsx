@@ -125,11 +125,16 @@ function FlowCanvasInner({
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  // Handle node selection
-  const onSelectionChange = useCallback(({ nodes: selectedNodes }) => {
-    if (onNodeSelect && selectedNodes.length === 1) {
-      onNodeSelect(selectedNodes[0]);
-    } else if (onNodeSelect && selectedNodes.length === 0) {
+  // Handle node click - open config panel
+  const onNodeClick = useCallback((event, node) => {
+    if (onNodeSelect) {
+      onNodeSelect(node);
+    }
+  }, [onNodeSelect]);
+
+  // Handle pane click - close config panel when clicking empty canvas
+  const onPaneClick = useCallback(() => {
+    if (onNodeSelect) {
       onNodeSelect(null);
     }
   }, [onNodeSelect]);
@@ -179,7 +184,8 @@ function FlowCanvasInner({
         onConnect={onConnect}
         onDrop={onDrop}
         onDragOver={onDragOver}
-        onSelectionChange={onSelectionChange}
+        onNodeClick={onNodeClick}
+        onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
