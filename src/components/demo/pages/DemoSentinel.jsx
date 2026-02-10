@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import {
   ShieldCheck,
   Cpu,
@@ -16,6 +17,7 @@ import {
   Calendar,
   User,
   MoreHorizontal,
+  Plus,
 } from 'lucide-react';
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
@@ -109,20 +111,31 @@ export default function DemoSentinel({ companyName = 'Acme Corp', recipientName 
     <div className="min-h-screen bg-black p-4 sm:p-6 space-y-6">
 
       {/* ─── Page Header ───────────────────────────────────────────────────── */}
-      <div data-demo="header" className="flex items-center gap-3">
-        <div className="p-2.5 bg-[#86EFAC]/20 rounded-xl">
-          <ShieldCheck className="w-6 h-6 text-[#86EFAC]" />
+      <div data-demo="header" className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-[#86EFAC]/20 rounded-xl">
+            <ShieldCheck className="w-6 h-6 text-[#86EFAC]" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-white">Sentinel - EU AI Act Compliance</h1>
+            <p className="text-zinc-400 text-xs mt-0.5">
+              Track, assess, and document AI system compliance for {companyName}.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-semibold text-white">Sentinel - EU AI Act Compliance</h1>
-          <p className="text-zinc-400 text-sm mt-0.5">
-            Track, assess, and document AI system compliance for {companyName}.
-          </p>
-        </div>
+        <button className="flex items-center gap-2 px-3 py-2 bg-[#86EFAC]/10 border border-[#86EFAC]/30 text-[#86EFAC] text-sm rounded-xl font-medium cursor-default">
+          <Plus className="w-4 h-4" />
+          Register AI System
+        </button>
       </div>
 
       {/* ─── Hero: Gauge + Stats ───────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="grid grid-cols-1 lg:grid-cols-3 gap-4"
+      >
         {/* Compliance Gauge */}
         <div
           data-demo="compliance-gauge"
@@ -135,12 +148,14 @@ export default function DemoSentinel({ companyName = 'Acme Corp', recipientName 
                 cx="70" cy="70" r={normalizedR}
                 fill="none" stroke="#27272a" strokeWidth={gaugeStroke}
               />
-              <circle
+              <motion.circle
                 cx="70" cy="70" r={normalizedR}
                 fill="none" stroke="#86EFAC" strokeWidth={gaugeStroke}
                 strokeLinecap="round"
                 strokeDasharray={circumference}
-                strokeDashoffset={strokeOffset}
+                initial={{ strokeDashoffset: circumference }}
+                animate={{ strokeDashoffset: strokeOffset }}
+                transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -177,10 +192,13 @@ export default function DemoSentinel({ companyName = 'Acme Corp', recipientName 
             </div>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* ─── Workflow Stepper ──────────────────────────────────────────────── */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
         data-demo="workflow-stepper"
         className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-5"
       >
@@ -225,10 +243,15 @@ export default function DemoSentinel({ companyName = 'Acme Corp', recipientName 
             );
           })}
         </div>
-      </div>
+      </motion.div>
 
       {/* ─── Risk Classification + AI Systems Table ────────────────────────── */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="grid grid-cols-1 xl:grid-cols-3 gap-4"
+      >
 
         {/* Risk Classification Chart */}
         <div
@@ -324,10 +347,15 @@ export default function DemoSentinel({ companyName = 'Acme Corp', recipientName 
             </table>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* ─── Obligations + Document Status ──────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+        className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+      >
 
         {/* Upcoming Obligations */}
         <div
@@ -415,7 +443,7 @@ export default function DemoSentinel({ companyName = 'Acme Corp', recipientName 
             })}
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

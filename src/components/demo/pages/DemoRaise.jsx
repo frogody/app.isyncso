@@ -1,549 +1,582 @@
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import {
-  TrendingUp,
-  Target,
-  Users,
-  FileText,
-  DollarSign,
-  Eye,
-  Clock,
-  Plus,
-  Calendar,
-  CheckCircle2,
-  Circle,
-  ArrowUpRight,
-  ArrowDownRight,
-  Download,
-  Video,
-  Phone,
-  Briefcase,
-  Building2,
-  ChevronRight,
-  Shield,
-  Scale,
+  Rocket, Download, Plus, Target, Euro, Users, FileText,
+  BarChart3, Briefcase, Building2, Mail, ExternalLink,
+  MessageSquare, MoreHorizontal,
 } from 'lucide-react';
 
-const raiseStats = [
-  { label: 'Target', value: '$2.5M', icon: Target, color: 'bg-orange-500/15 text-orange-400' },
-  { label: 'Committed', value: '$1.8M', icon: DollarSign, color: 'bg-orange-500/15 text-orange-400' },
-  { label: 'Investors', value: '14', icon: Users, color: 'bg-orange-500/15 text-orange-400' },
-  { label: 'Term Sheets', value: '3', icon: FileText, color: 'bg-orange-500/15 text-orange-400' },
+// ─── Investor Pipeline Stages ───────────────────────────────────────────────────
+const INVESTOR_STAGES = [
+  { id: 'contacted', label: 'Contacted', color: 'from-zinc-500 to-zinc-600', dotBg: 'bg-zinc-500' },
+  { id: 'interested', label: 'Interested', color: 'from-orange-500 to-orange-600', dotBg: 'bg-orange-500' },
+  { id: 'in_discussions', label: 'In Discussions', color: 'from-orange-400 to-orange-500', dotBg: 'bg-orange-400' },
+  { id: 'due_diligence', label: 'Due Diligence', color: 'from-orange-500 to-orange-600', dotBg: 'bg-orange-500' },
+  { id: 'committed', label: 'Committed', color: 'from-green-500 to-green-600', dotBg: 'bg-green-500' },
+  { id: 'passed', label: 'Passed', color: 'from-red-500 to-red-600', dotBg: 'bg-red-500' },
 ];
 
-const kanbanColumns = [
-  {
-    stage: 'Sourced',
-    borderColor: 'border-zinc-600',
-    headingColor: 'text-zinc-400',
-    count: 3,
-    investors: [
-      {
-        firm: 'Lightspeed Ventures',
-        name: 'Emily Zhang',
-        checkSize: '$200K',
-        lastMeeting: 'Jan 15',
-        notes: 'Interested in SaaS vertical. Warm intro via Alex.',
-        dots: [true, false, false, false],
-      },
-      {
-        firm: 'Y Combinator',
-        name: 'Dalton Caldwell',
-        checkSize: '$500K',
-        lastMeeting: 'Jan 20',
-        notes: 'Reviewing application. Follow up next week.',
-        dots: [true, false, false, false],
-      },
-      {
-        firm: 'Atomico',
-        name: 'Marcus Eriksson',
-        checkSize: '$350K',
-        lastMeeting: 'Jan 22',
-        notes: 'Prefers European-focused B2B. Good fit.',
-        dots: [true, false, false, false],
-      },
-    ],
-  },
-  {
-    stage: 'Interested',
-    borderColor: 'border-orange-500/40',
-    headingColor: 'text-orange-400',
-    count: 3,
-    investors: [
-      {
-        firm: 'Accel Partners',
-        name: 'Rachel Chen',
-        checkSize: '$400K',
-        lastMeeting: 'Jan 28',
-        notes: 'Wants to see Q1 metrics. Positive on product vision.',
-        dots: [true, true, false, false],
-      },
-      {
-        firm: 'Northzone',
-        name: 'Jessica Schultz',
-        checkSize: '$300K',
-        lastMeeting: 'Feb 1',
-        notes: 'Requesting financial model and customer references.',
-        dots: [true, true, false, false],
-      },
-      {
-        firm: 'Balderton Capital',
-        name: 'James Wise',
-        checkSize: '$250K',
-        lastMeeting: 'Feb 2',
-        notes: 'Comparing with 2 other deals. Strong interest.',
-        dots: [true, true, false, false],
-      },
-    ],
-  },
-  {
-    stage: 'Due Diligence',
-    borderColor: 'border-amber-500/40',
-    headingColor: 'text-amber-400',
-    count: 2,
-    investors: [
-      {
-        firm: 'Andreessen Horowitz',
-        name: 'David Park',
-        checkSize: '$750K',
-        lastMeeting: 'Feb 3',
-        notes: 'Technical DD complete. Legal review in progress.',
-        dots: [true, true, true, false],
-      },
-      {
-        firm: 'Index Ventures',
-        name: 'Sophie Laurent',
-        checkSize: '$350K',
-        lastMeeting: 'Feb 4',
-        notes: 'Customer calls scheduled. Very engaged.',
-        dots: [true, true, true, false],
-      },
-    ],
-  },
-  {
-    stage: 'Committed',
-    borderColor: 'border-emerald-500/40',
-    headingColor: 'text-emerald-400',
-    count: 3,
-    investors: [
-      {
-        firm: 'Sequoia Capital',
-        name: 'Sarah Lin',
-        checkSize: '$500K',
-        lastMeeting: 'Feb 5',
-        notes: 'Lead investor. Term sheet signed.',
-        dots: [true, true, true, true],
-      },
-      {
-        firm: 'Felicis Ventures',
-        name: 'Aydin Senkut',
-        checkSize: '$300K',
-        lastMeeting: 'Feb 4',
-        notes: 'Verbal commitment confirmed. Docs pending.',
-        dots: [true, true, true, true],
-      },
-      {
-        firm: 'Creandum',
-        name: 'Carl Fritjofsson',
-        checkSize: '$200K',
-        lastMeeting: 'Feb 3',
-        notes: 'Committed. Follow-on rights requested.',
-        dots: [true, true, true, true],
-      },
-    ],
-  },
-];
-
-const documents = [
-  { name: 'Pitch Deck', views: 47, updated: '2 days ago', trend: 'up', trendValue: '+12' },
-  { name: 'Financial Model', views: 31, updated: '1 week ago', trend: 'up', trendValue: '+5' },
-  { name: 'Cap Table', views: 22, updated: '3 days ago', trend: 'down', trendValue: '-2' },
-  { name: 'Term Sheet', views: 18, updated: '5 days ago', trend: 'up', trendValue: '+8' },
-  { name: 'Legal Docs', views: 9, updated: '1 week ago', trend: 'flat', trendValue: '0' },
-];
-
-const trendStyle = {
-  up: { icon: ArrowUpRight, color: 'text-emerald-400' },
-  down: { icon: ArrowDownRight, color: 'text-red-400' },
-  flat: { icon: null, color: 'text-zinc-500' },
+// ─── Mock Campaign ──────────────────────────────────────────────────────────────
+const ACTIVE_CAMPAIGN = {
+  name: 'Series A Round',
+  round_type: 'Series A',
+  target_amount: 2500000,
+  raised_amount: 1800000,
+  status: 'active',
 };
 
-const meetingTypeBadge = {
-  Intro: 'bg-blue-500/15 text-blue-400',
-  'Follow-up': 'bg-orange-500/15 text-orange-400',
-  'Due Diligence': 'bg-amber-500/15 text-amber-400',
-};
-
-const prepStatusStyle = {
-  Ready: 'text-emerald-400',
-  'In Progress': 'text-amber-400',
-  'Not Started': 'text-zinc-500',
-};
-
-const meetings = [
-  {
-    investor: 'David Park',
-    firm: 'Andreessen Horowitz',
-    date: 'Feb 10, 2026',
-    time: '2:00 PM',
-    type: 'Due Diligence',
-    prep: 'Ready',
-    icon: Video,
-  },
-  {
-    investor: 'Jessica Schultz',
-    firm: 'Northzone',
-    date: 'Feb 11, 2026',
-    time: '10:30 AM',
-    type: 'Follow-up',
-    prep: 'In Progress',
-    icon: Phone,
-  },
-  {
-    investor: 'Marcus Eriksson',
-    firm: 'Atomico',
-    date: 'Feb 12, 2026',
-    time: '4:00 PM',
-    type: 'Intro',
-    prep: 'Not Started',
-    icon: Video,
-  },
+// ─── Mock Investors (12 across all stages) ──────────────────────────────────────
+const MOCK_INVESTORS = [
+  // Contacted (2)
+  { id: 'inv-1', name: 'Emily Zhang', firm: 'Lightspeed Ventures', status: 'contacted', check_size: 200000, email: 'e.zhang@lightspeed.com', linkedin: 'https://linkedin.com/in/emilyzhang' },
+  { id: 'inv-2', name: 'Marcus Eriksson', firm: 'Atomico', status: 'contacted', check_size: 350000, email: 'm.eriksson@atomico.com', linkedin: 'https://linkedin.com/in/meriksson' },
+  // Interested (3)
+  { id: 'inv-3', name: 'Rachel Chen', firm: 'Accel Partners', status: 'interested', check_size: 400000, email: 'r.chen@accel.com', linkedin: 'https://linkedin.com/in/rachelchen' },
+  { id: 'inv-4', name: 'Jessica Schultz', firm: 'Northzone', status: 'interested', check_size: 300000, email: 'j.schultz@northzone.com', linkedin: null },
+  { id: 'inv-5', name: 'James Wise', firm: 'Balderton Capital', status: 'interested', check_size: 250000, email: 'j.wise@balderton.com', linkedin: 'https://linkedin.com/in/jameswise' },
+  // In Discussions (2)
+  { id: 'inv-6', name: 'David Park', firm: 'Andreessen Horowitz', status: 'in_discussions', check_size: 750000, email: 'd.park@a16z.com', linkedin: 'https://linkedin.com/in/davidpark' },
+  { id: 'inv-7', name: 'Sophie Laurent', firm: 'Index Ventures', status: 'in_discussions', check_size: 350000, email: 's.laurent@indexventures.com', linkedin: 'https://linkedin.com/in/sophielaurent' },
+  // Due Diligence (1)
+  { id: 'inv-8', name: 'Michael Torres', firm: 'General Catalyst', status: 'due_diligence', check_size: 500000, email: 'm.torres@generalcatalyst.com', linkedin: 'https://linkedin.com/in/michaeltorres' },
+  // Committed (3)
+  { id: 'inv-9', name: 'Sarah Lin', firm: 'Sequoia Capital', status: 'committed', check_size: 500000, email: 's.lin@sequoiacap.com', linkedin: 'https://linkedin.com/in/sarahlin' },
+  { id: 'inv-10', name: 'Aydin Senkut', firm: 'Felicis Ventures', status: 'committed', check_size: 300000, email: 'a.senkut@felicis.com', linkedin: 'https://linkedin.com/in/aydinsenkut' },
+  { id: 'inv-11', name: 'Carl Fritjofsson', firm: 'Creandum', status: 'committed', check_size: 200000, email: 'c.fritjofsson@creandum.com', linkedin: null },
+  // Passed (1)
+  { id: 'inv-12', name: 'Laura Kim', firm: 'Benchmark', status: 'passed', check_size: 400000, email: 'l.kim@benchmark.com', linkedin: 'https://linkedin.com/in/laurakim' },
 ];
 
-const milestones = [
-  { pct: 25, label: '25%', value: '$625K' },
-  { pct: 50, label: '50%', value: '$1.25M' },
-  { pct: 75, label: '75%', value: '$1.875M' },
-  { pct: 100, label: '100%', value: '$2.5M' },
+// ─── Mock Pitch Decks ───────────────────────────────────────────────────────────
+const MOCK_PITCH_DECKS = [
+  { id: 'deck-1', name: 'Series A Pitch Deck', version: 'v2.3', description: 'Main investor presentation' },
+  { id: 'deck-2', name: 'One-Pager', version: 'v1.1', description: 'Executive summary document' },
+  { id: 'deck-3', name: 'Financial Model', version: 'v3.0', description: '3-year financial projections' },
 ];
 
+// ─── Mock Data Rooms ────────────────────────────────────────────────────────────
+const MOCK_DATA_ROOMS = [
+  { id: 'dr-1', name: 'Series A Data Room', documents_count: 24, viewers: 8 },
+  { id: 'dr-2', name: 'Legal Documents', documents_count: 12, viewers: 3 },
+];
+
+// ─── Animation Variants ─────────────────────────────────────────────────────────
+const slideUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.35, ease: 'easeOut' },
+};
+
+const staggerContainer = {
+  animate: { transition: { staggerChildren: 0.08 } },
+};
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
 export default function DemoRaise({ companyName = 'Acme Corp', recipientName = 'there' }) {
-  const progressPct = 72;
-  const committed = 1800000;
-  const pipeline = 450000;
-  const target = 2500000;
+  const [activeTab, setActiveTab] = useState('investors');
+
+  // Campaign metrics
+  const targetAmount = ACTIVE_CAMPAIGN.target_amount;
+  const raisedAmount = ACTIVE_CAMPAIGN.raised_amount;
+  const progressPercent = Math.round((raisedAmount / targetAmount) * 100);
+  const totalInvestors = MOCK_INVESTORS.length;
+  const interestedInvestors = MOCK_INVESTORS.filter(i => i.status === 'interested' || i.status === 'in_discussions').length;
+  const committedInvestors = MOCK_INVESTORS.filter(i => i.status === 'committed').length;
+
+  const metrics = [
+    {
+      label: 'Raise Target',
+      value: `\u20AC${(targetAmount / 1000000).toFixed(1)}M`,
+      subtitle: ACTIVE_CAMPAIGN.name,
+      icon: Target,
+      accentColor: 'orange',
+    },
+    {
+      label: 'Amount Raised',
+      value: `\u20AC${(raisedAmount / 1000000).toFixed(1)}M`,
+      subtitle: `${progressPercent}% of target`,
+      icon: Euro,
+      accentColor: 'green',
+    },
+    {
+      label: 'Investor Pipeline',
+      value: totalInvestors,
+      subtitle: `${interestedInvestors} interested, ${committedInvestors} committed`,
+      icon: Users,
+      accentColor: 'blue',
+    },
+    {
+      label: 'Pitch Decks',
+      value: MOCK_PITCH_DECKS.length,
+      subtitle: `${MOCK_DATA_ROOMS.length} data rooms`,
+      icon: FileText,
+      accentColor: 'purple',
+    },
+  ];
+
+  const accentBarColors = {
+    orange: 'bg-orange-400',
+    green: 'bg-green-400',
+    blue: 'bg-blue-400',
+    purple: 'bg-purple-400',
+  };
+
+  const iconBgColors = {
+    orange: 'bg-orange-500/10 text-orange-400',
+    green: 'bg-green-500/10 text-green-400',
+    blue: 'bg-blue-500/10 text-blue-400',
+    purple: 'bg-purple-500/10 text-purple-400',
+  };
+
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'investors', label: 'Investors', icon: Users },
+    { id: 'materials', label: 'Materials', icon: FileText },
+    { id: 'dataroom', label: 'Data Room', icon: Briefcase },
+  ];
+
+  // Pipeline stage data for overview
+  const pipelineStages = [
+    { stage: 'Contacted', count: MOCK_INVESTORS.filter(i => i.status === 'contacted').length, color: 'bg-zinc-500' },
+    { stage: 'Interested', count: MOCK_INVESTORS.filter(i => i.status === 'interested').length, color: 'bg-orange-500' },
+    { stage: 'In Discussions', count: MOCK_INVESTORS.filter(i => i.status === 'in_discussions').length, color: 'bg-orange-400' },
+    { stage: 'Due Diligence', count: MOCK_INVESTORS.filter(i => i.status === 'due_diligence').length, color: 'bg-orange-500' },
+    { stage: 'Committed', count: MOCK_INVESTORS.filter(i => i.status === 'committed').length, color: 'bg-green-500' },
+  ];
+
+  const getStatusBadgeStyle = (status) => {
+    const map = {
+      contacted: 'bg-zinc-700/30 text-zinc-400 border-zinc-600/30',
+      interested: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
+      in_discussions: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
+      due_diligence: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
+      committed: 'bg-green-500/10 text-green-400 border-green-500/30',
+      passed: 'bg-red-500/10 text-red-400 border-red-500/30',
+    };
+    return map[status] || 'bg-zinc-700/30 text-zinc-400 border-zinc-600/30';
+  };
 
   return (
-    <div className="min-h-screen bg-black p-6 space-y-6">
-      {/* Page Header */}
-      <div data-demo="header" className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-orange-500/20 rounded-xl">
-            <TrendingUp className="w-6 h-6 text-orange-400" />
-          </div>
+    <div className="min-h-screen bg-black">
+      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
+
+        {/* ─── Header ──────────────────────────────────────────────────────── */}
+        <div data-demo="header" className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-white">Raise</h1>
-            <p className="text-zinc-400 mt-0.5">
-              Manage {companyName}'s fundraising pipeline.
-            </p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-bold text-white">Raise</h1>
+            </div>
+            <p className="text-xs text-zinc-400">Fundraising toolkit &amp; investor management</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="cursor-default inline-flex items-center justify-center gap-2 font-medium rounded-full transition-colors duration-200 h-8 px-4 text-xs bg-transparent text-white border border-zinc-700 hover:bg-zinc-800/50">
+              <Download className="w-4 h-4" />
+              Export
+            </button>
+            <button className="cursor-default inline-flex items-center justify-center gap-2 font-medium rounded-full transition-colors duration-200 h-8 px-4 text-xs bg-orange-500 text-white hover:bg-orange-400">
+              <Plus className="w-4 h-4" />
+              New Campaign
+            </button>
           </div>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-400 text-black font-medium text-sm rounded-xl transition-colors">
-          <Plus className="w-4 h-4" />
-          Add Investor
-        </button>
-      </div>
 
-      {/* Fundraise Progress Hero */}
-      <div data-demo="progress-hero" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-white font-semibold text-lg">Fundraise Progress</h2>
-            <p className="text-sm text-zinc-500 mt-0.5">Series A Round</p>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-white">
-              ${(committed / 1000000).toFixed(1)}M
-              <span className="text-zinc-500 font-normal text-base ml-1">
-                of ${(target / 1000000).toFixed(1)}M
+        {/* ─── Active Campaign Progress Bar ─────────────────────────────────── */}
+        <motion.div
+          data-demo="campaign-progress"
+          initial={slideUp.initial}
+          animate={slideUp.animate}
+          transition={{ ...slideUp.transition, delay: 0.05 }}
+          className="relative rounded-[20px] border backdrop-blur-sm bg-gradient-to-r from-orange-950/50 to-orange-950/50 border-orange-500/20 transition-all duration-200"
+        >
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-white">{ACTIVE_CAMPAIGN.name}</h3>
+                <p className="text-sm text-zinc-400">{ACTIVE_CAMPAIGN.round_type}</p>
+              </div>
+              <span className="inline-flex items-center rounded-full border font-medium px-2.5 py-0.5 text-xs bg-orange-500/10 text-orange-400 border-orange-500/30">
+                Active
               </span>
-            </p>
-            <p className="text-sm text-orange-400 font-semibold">{progressPct}% complete</p>
-          </div>
-        </div>
-
-        {/* Progress Bar with Milestones */}
-        <div className="relative mb-8">
-          {/* Bar background */}
-          <div className="h-4 bg-zinc-800 rounded-full overflow-hidden">
-            {/* Committed portion */}
-            <div
-              className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full relative"
-              style={{ width: `${progressPct}%` }}
-            >
-              {/* Pipeline overlay */}
-              <div
-                className="absolute right-0 top-0 h-full bg-orange-300/30 rounded-r-full"
-                style={{ width: `${((pipeline / target) * 100 / progressPct) * 100}%`, maxWidth: '100%' }}
-              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-400">Progress</span>
+                <span className="text-white font-medium">
+                  {'\u20AC'}{(raisedAmount / 1000000).toFixed(2)}M / {'\u20AC'}{(targetAmount / 1000000).toFixed(2)}M
+                </span>
+              </div>
+              {/* Progress bar */}
+              <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-orange-500 rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progressPercent}%` }}
+                  transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
+                />
+              </div>
+              <p className="text-xs text-zinc-500 text-right">{progressPercent}% raised</p>
             </div>
           </div>
+        </motion.div>
 
-          {/* Milestone markers */}
-          <div className="relative mt-1">
-            {milestones.map((m) => (
-              <div
-                key={m.pct}
-                className="absolute flex flex-col items-center"
-                style={{ left: `${m.pct}%`, transform: 'translateX(-50%)' }}
+        {/* ─── Metrics Grid (RaiseStatCard pattern) ─────────────────────────── */}
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3"
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+        >
+          {metrics.map((metric, index) => {
+            const IconComp = metric.icon;
+            return (
+              <motion.div
+                key={metric.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.08, duration: 0.3, ease: 'easeOut' }}
               >
-                <div className={`w-0.5 h-3 ${m.pct <= progressPct ? 'bg-orange-400' : 'bg-zinc-700'}`} />
-                <span className={`text-[10px] mt-0.5 ${m.pct <= progressPct ? 'text-orange-400' : 'text-zinc-600'}`}>
-                  {m.label}
-                </span>
-                <span className="text-[9px] text-zinc-600">{m.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Committed vs Pipeline */}
-        <div className="flex items-center gap-6 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-orange-500" />
-            <span className="text-zinc-400">Committed</span>
-            <span className="text-white font-semibold">${(committed / 1000000).toFixed(1)}M</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-orange-300/40" />
-            <span className="text-zinc-400">Pipeline</span>
-            <span className="text-white font-semibold">${(pipeline / 1000).toFixed(0)}K</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-zinc-700" />
-            <span className="text-zinc-400">Remaining</span>
-            <span className="text-white font-semibold">${((target - committed - pipeline) / 1000).toFixed(0)}K</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Row */}
-      <div data-demo="raise-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {raiseStats.map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 flex items-center gap-4"
-          >
-            <div className={`p-2.5 rounded-xl ${stat.color}`}>
-              <stat.icon className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xl font-bold text-white">{stat.value}</p>
-              <p className="text-xs text-zinc-500">{stat.label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Investor Kanban */}
-      <div data-demo="investor-kanban" className="overflow-x-auto pb-4">
-        <div className="flex gap-4 min-w-[1100px]">
-          {kanbanColumns.map((col) => (
-            <div key={col.stage} className="flex-1 min-w-[260px] space-y-3">
-              {/* Column Header */}
-              <div className={`flex items-center justify-between pb-3 border-b-2 ${col.borderColor}`}>
-                <span className={`text-sm font-semibold ${col.headingColor}`}>
-                  {col.stage}
-                </span>
-                <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full">
-                  {col.count}
-                </span>
-              </div>
-
-              {/* Investor Cards */}
-              {col.investors.map((inv, idx) => (
-                <div
-                  key={idx}
-                  data-demo="investor-card"
-                  className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 space-y-3 cursor-default hover:border-zinc-700 transition-colors"
-                >
-                  {/* Firm + Name */}
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Building2 className="w-3.5 h-3.5 text-zinc-500" />
-                      <span className="text-sm font-semibold text-white">{inv.firm}</span>
-                    </div>
-                    <p className="text-xs text-zinc-400 mt-0.5 ml-5.5">{inv.name}</p>
-                  </div>
-
-                  {/* Check Size */}
-                  <div className="flex items-center gap-1.5">
-                    <DollarSign className="w-3.5 h-3.5 text-orange-400" />
-                    <span className="text-sm font-semibold text-orange-400">{inv.checkSize}</span>
-                  </div>
-
-                  {/* Status Timeline Dots */}
-                  <div className="flex items-center gap-1.5">
-                    {inv.dots.map((active, di) => (
-                      active ? (
-                        <CheckCircle2 key={di} className="w-3.5 h-3.5 text-orange-400" />
-                      ) : (
-                        <Circle key={di} className="w-3.5 h-3.5 text-zinc-700" />
-                      )
-                    ))}
-                    <span className="text-[10px] text-zinc-600 ml-1">
-                      {inv.dots.filter(Boolean).length}/4
-                    </span>
-                  </div>
-
-                  {/* Last meeting + Notes */}
-                  <div className="space-y-1.5 pt-1 border-t border-zinc-800/50">
-                    <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-                      <Calendar className="w-3 h-3" />
-                      Last: {inv.lastMeeting}
-                    </div>
-                    <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">{inv.notes}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Data Room + Meetings + Round Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Data Room */}
-        <div data-demo="data-room" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-white font-semibold">Data Room</h2>
-            <span className="text-xs text-orange-400 cursor-default">Manage Files</span>
-          </div>
-          <div className="space-y-3">
-            {documents.map((doc) => {
-              const TrendIcon = trendStyle[doc.trend].icon;
-              return (
-                <div
-                  key={doc.name}
-                  className="flex items-center justify-between p-3 rounded-xl bg-zinc-800/30 border border-zinc-800/50"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-4 h-4 text-zinc-500" />
-                    <span className="text-sm text-zinc-300">{doc.name}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 text-xs text-zinc-500">
-                      <Eye className="w-3 h-3" />
-                      {doc.views}
-                    </div>
-                    {TrendIcon && (
-                      <div className={`flex items-center gap-0.5 text-[10px] ${trendStyle[doc.trend].color}`}>
-                        <TrendIcon className="w-3 h-3" />
-                        {doc.trendValue}
+                <div className="relative rounded-[20px] border backdrop-blur-sm bg-zinc-900/50 border-zinc-800/60 text-white transition-all duration-200 overflow-hidden">
+                  {/* Left accent bar */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-[20px] ${accentBarColors[metric.accentColor]}`} />
+                  <div className="p-5 pl-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium uppercase tracking-wider mb-2 text-zinc-500">{metric.label}</p>
+                        <p className="text-2xl font-bold text-white">{metric.value}</p>
+                        <p className="text-xs mt-1 text-zinc-500">{metric.subtitle}</p>
                       </div>
-                    )}
-                    <div className="flex items-center gap-1 text-[10px] text-zinc-600">
-                      <Clock className="w-3 h-3" />
-                      {doc.updated}
+                      <div className={`p-2.5 rounded-xl ${iconBgColors[metric.accentColor]}`}>
+                        <IconComp className="w-5 h-5" />
+                      </div>
                     </div>
                   </div>
                 </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+
+        {/* ─── Tabs ────────────────────────────────────────────────────────── */}
+        <div className="space-y-4">
+          <div className="inline-flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-lg p-1">
+            {tabs.map((tab) => {
+              const TabIcon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`cursor-default inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-150 ${
+                    isActive
+                      ? 'bg-zinc-800 text-white'
+                      : 'text-zinc-400 hover:text-zinc-300'
+                  }`}
+                >
+                  <TabIcon className="w-4 h-4" />
+                  {tab.label}
+                </button>
               );
             })}
           </div>
-        </div>
 
-        {/* Upcoming Meetings */}
-        <div data-demo="meetings" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-white font-semibold">Upcoming Meetings</h2>
-            <span className="text-xs text-zinc-500">This week</span>
-          </div>
-          <div className="space-y-3">
-            {meetings.map((m, idx) => (
-              <div
-                key={idx}
-                className="p-3.5 rounded-xl bg-zinc-800/30 border border-zinc-800/50 space-y-3"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-white font-medium">{m.investor}</p>
-                    <p className="text-xs text-zinc-500">{m.firm}</p>
+          {/* ─── Tab Content ─────────────────────────────────────────────── */}
+
+          {/* Overview Tab */}
+          {activeTab === 'overview' && (
+            <motion.div
+              key="overview"
+              initial={slideUp.initial}
+              animate={slideUp.animate}
+              transition={slideUp.transition}
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Investor Pipeline Breakdown */}
+                <div className="relative rounded-[20px] border backdrop-blur-sm bg-zinc-900/50 border-zinc-800/60 text-white transition-all duration-200">
+                  <div className="flex flex-col space-y-1.5 p-6">
+                    <div className="font-semibold leading-none tracking-tight text-white">Investor Pipeline</div>
+                    <div className="text-sm text-zinc-400">Breakdown by stage</div>
                   </div>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${meetingTypeBadge[m.type]}`}>
-                    {m.type}
-                  </span>
+                  <div className="p-6 pt-0">
+                    <div className="space-y-3">
+                      {pipelineStages.map((stage) => (
+                        <div key={stage.stage} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${stage.color}`} />
+                            <span className="text-zinc-300 text-sm">{stage.stage}</span>
+                          </div>
+                          <span className="text-white font-medium text-sm">{stage.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
+
+                {/* Recent Activity */}
+                <div className="relative rounded-[20px] border backdrop-blur-sm bg-zinc-900/50 border-zinc-800/60 text-white transition-all duration-200">
+                  <div className="flex flex-col space-y-1.5 p-6">
+                    <div className="font-semibold leading-none tracking-tight text-white">Recent Activity</div>
+                    <div className="text-sm text-zinc-400">Latest investor interactions</div>
+                  </div>
+                  <div className="p-6 pt-0">
+                    <div className="space-y-3">
+                      {MOCK_INVESTORS.slice(0, 5).map((investor) => (
+                        <div key={investor.id} className="flex items-start gap-2 p-2 bg-zinc-800/50 rounded-xl">
+                          <div className="p-1.5 bg-orange-500/10 rounded-lg">
+                            <Building2 className="w-3 h-3 text-orange-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-white truncate">{investor.name}</p>
+                            <p className="text-[10px] text-zinc-500">{investor.firm}</p>
+                          </div>
+                          <span className={`inline-flex items-center rounded-full border font-medium px-2 py-0.5 text-[10px] ${getStatusBadgeStyle(investor.status)}`}>
+                            {investor.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Investors Tab (Kanban) */}
+          {activeTab === 'investors' && (
+            <motion.div
+              key="investors"
+              initial={slideUp.initial}
+              animate={slideUp.animate}
+              transition={slideUp.transition}
+            >
+              <div className="space-y-3">
+                {/* Sub-header */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-xs text-zinc-400">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {m.date}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {m.time}
-                    </span>
+                  <div>
+                    <h2 className="text-lg font-semibold text-white">Investor Pipeline</h2>
+                    <p className="text-zinc-500 text-xs">{totalInvestors} investors in pipeline</p>
                   </div>
-                  <m.icon className="w-3.5 h-3.5 text-zinc-600" />
+                  <div className="flex items-center gap-2">
+                    <div className="flex bg-zinc-900 rounded-full border border-zinc-800 p-0.5">
+                      <button className="cursor-default inline-flex items-center justify-center gap-2 font-medium rounded-full transition-colors duration-200 h-8 px-4 text-xs bg-transparent text-white border border-zinc-700 hover:bg-zinc-800/50">
+                        <BarChart3 className="w-3 h-3" />
+                        Board
+                      </button>
+                      <button className="cursor-default inline-flex items-center justify-center gap-2 font-medium rounded-full transition-colors duration-200 h-8 px-4 text-xs bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800/30">
+                        <Users className="w-3 h-3" />
+                        List
+                      </button>
+                    </div>
+                    <button className="cursor-default inline-flex items-center justify-center gap-2 font-medium rounded-full transition-colors duration-200 h-8 px-4 text-xs bg-orange-500 text-white hover:bg-orange-400">
+                      <Plus className="w-3 h-3" />
+                      Add
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs">
-                  <span className="text-zinc-600">Prep:</span>
-                  <span className={`font-medium ${prepStatusStyle[m.prep]}`}>{m.prep}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Round Summary */}
-        <div data-demo="round-summary" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-white font-semibold">Round Summary</h2>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/15 text-orange-400 font-medium">
-              Active
-            </span>
-          </div>
-          <div className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between py-2.5 border-b border-zinc-800/50">
-                <span className="text-xs text-zinc-500">Round Type</span>
-                <span className="text-sm text-white font-medium">Series A</span>
-              </div>
-              <div className="flex items-center justify-between py-2.5 border-b border-zinc-800/50">
-                <span className="text-xs text-zinc-500">Pre-Money Valuation</span>
-                <span className="text-sm text-white font-medium">$10M</span>
-              </div>
-              <div className="flex items-center justify-between py-2.5 border-b border-zinc-800/50">
-                <span className="text-xs text-zinc-500">Lead Investor</span>
-                <span className="text-sm text-white font-medium">Sequoia Capital</span>
-              </div>
-              <div className="flex items-center justify-between py-2.5 border-b border-zinc-800/50">
-                <span className="text-xs text-zinc-500">Post-Money</span>
-                <span className="text-sm text-white font-medium">$12.5M</span>
-              </div>
-              <div className="flex items-center justify-between py-2.5 border-b border-zinc-800/50">
-                <span className="text-xs text-zinc-500">Dilution</span>
-                <span className="text-sm text-white font-medium">20%</span>
-              </div>
-            </div>
+                {/* Kanban Board */}
+                <div className="flex gap-3 overflow-x-auto pb-4">
+                  {INVESTOR_STAGES.map((stage) => {
+                    const stageInvestors = MOCK_INVESTORS.filter(i => i.status === stage.id);
+                    const totalCheckSize = stageInvestors.reduce((sum, i) => sum + (i.check_size || 0), 0);
 
-            {/* Key Terms */}
-            <div>
-              <p className="text-xs text-zinc-500 mb-2">Key Terms</p>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-xs">
-                  <Shield className="w-3.5 h-3.5 text-orange-400/70" />
-                  <span className="text-zinc-400">1x non-participating liquidation preference</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <Briefcase className="w-3.5 h-3.5 text-orange-400/70" />
-                  <span className="text-zinc-400">Board seat for lead investor</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <Scale className="w-3.5 h-3.5 text-orange-400/70" />
-                  <span className="text-zinc-400">Standard pro-rata rights</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <Users className="w-3.5 h-3.5 text-orange-400/70" />
-                  <span className="text-zinc-400">10% ESOP pool post-close</span>
+                    return (
+                      <div key={stage.id} className="flex-shrink-0 w-72">
+                        {/* Column Header - sticky */}
+                        <div className="sticky top-0 z-10 pb-3 bg-black">
+                          <div className="bg-zinc-900/70 backdrop-blur-xl rounded-[20px] border border-zinc-800/60 p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className={`w-3 h-3 rounded-full bg-gradient-to-br ${stage.color}`} />
+                                <h3 className="text-white font-semibold text-sm">{stage.label}</h3>
+                                <span className="inline-flex items-center rounded-full border font-medium px-2 py-0.5 text-[10px] bg-zinc-700/30 text-zinc-400 border-zinc-600/30">
+                                  {stageInvestors.length}
+                                </span>
+                              </div>
+                              <button className="cursor-default h-7 w-7 inline-flex items-center justify-center rounded-full bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800/30 transition-colors">
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex items-baseline justify-between">
+                                <span className="text-lg font-bold text-orange-400/80">
+                                  {'\u20AC'}{(totalCheckSize / 1000).toLocaleString()}k
+                                </span>
+                                <span className="text-xs text-zinc-600">potential</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Investor Cards */}
+                        <div className="space-y-3 min-h-[300px] rounded-[20px] p-2 border-2 border-transparent">
+                          {stageInvestors.map((investor, index) => (
+                            <motion.div
+                              key={investor.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.05, duration: 0.25 }}
+                              className="group relative bg-zinc-900/60 backdrop-blur-sm rounded-[20px] border border-zinc-800/60 hover:border-zinc-700/60 transition-all duration-200"
+                            >
+                              {/* Top gradient bar */}
+                              <div className={`absolute top-0 left-0 right-0 h-1 rounded-t-[20px] bg-gradient-to-r ${stage.color} opacity-60`} />
+
+                              <div className="p-4">
+                                {/* Header: Firm name + actions */}
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-semibold text-white truncate">{investor.name}</h4>
+                                    <p className="text-zinc-500 text-sm flex items-center gap-1.5 mt-1">
+                                      <Building2 className="w-3 h-3" />
+                                      <span className="truncate">{investor.firm}</span>
+                                    </p>
+                                  </div>
+                                  <button className="cursor-default h-7 w-7 inline-flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-zinc-800">
+                                    <MoreHorizontal className="w-4 h-4 text-zinc-400" />
+                                  </button>
+                                </div>
+
+                                {/* Check Size */}
+                                <div className="mt-3">
+                                  <span className="text-lg font-bold text-white">
+                                    {'\u20AC'}{(investor.check_size / 1000).toFixed(0)}k
+                                  </span>
+                                  <span className="text-zinc-600 text-sm ml-2">check size</span>
+                                </div>
+
+                                {/* Contact Info */}
+                                <div className="mt-3 pt-3 border-t border-zinc-800/50 flex items-center gap-3 text-xs">
+                                  {investor.email && (
+                                    <span className="flex items-center gap-1 text-zinc-500">
+                                      <Mail className="w-3 h-3" />
+                                      <span className="truncate max-w-[100px]">{investor.email}</span>
+                                    </span>
+                                  )}
+                                  {investor.linkedin && (
+                                    <span className="flex items-center gap-1 text-zinc-500 cursor-default">
+                                      <ExternalLink className="w-3 h-3" />
+                                      LinkedIn
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))}
+
+                          {/* Empty state for columns with no investors */}
+                          {stageInvestors.length === 0 && (
+                            <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-zinc-800 hover:border-zinc-700 rounded-[20px] cursor-default transition-colors">
+                              <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${stage.color} opacity-20 flex items-center justify-center mb-3`}>
+                                <Plus className="w-5 h-5 text-white" />
+                              </div>
+                              <p className="text-zinc-600 text-sm">Drop investor here</p>
+                              <p className="text-zinc-700 text-xs mt-1">or click to add</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
+            </motion.div>
+          )}
 
-            <button className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs rounded-xl transition-colors mt-2">
-              <Download className="w-3.5 h-3.5" />
-              Download Term Sheet
-            </button>
-          </div>
+          {/* Materials Tab */}
+          {activeTab === 'materials' && (
+            <motion.div
+              key="materials"
+              initial={slideUp.initial}
+              animate={slideUp.animate}
+              transition={slideUp.transition}
+            >
+              <div className="relative rounded-[20px] border backdrop-blur-sm bg-zinc-900/50 border-zinc-800/60 text-white transition-all duration-200">
+                <div className="flex flex-col space-y-1.5 p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold leading-none tracking-tight text-white">Pitch Materials</div>
+                      <div className="text-sm text-zinc-400 mt-1.5">Decks, one-pagers, and presentations</div>
+                    </div>
+                    <button className="cursor-default inline-flex items-center justify-center gap-2 font-medium rounded-full transition-colors duration-200 h-8 px-4 text-xs bg-orange-500 text-white hover:bg-orange-400">
+                      <Plus className="w-3 h-3" />
+                      Upload
+                    </button>
+                  </div>
+                </div>
+                <div className="p-6 pt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {MOCK_PITCH_DECKS.map((deck) => (
+                      <div
+                        key={deck.id}
+                        className="p-3 bg-zinc-800/50 border border-zinc-700 hover:border-orange-500/50 rounded-xl transition-colors cursor-default"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="p-1.5 bg-orange-500/10 rounded-lg">
+                            <FileText className="w-4 h-4 text-orange-400" />
+                          </div>
+                          <span className="inline-flex items-center rounded-full border font-medium px-2 py-0.5 text-[10px] bg-zinc-700/30 text-zinc-400 border-zinc-600/30">
+                            {deck.version}
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-medium text-white mb-0.5">{deck.name}</h4>
+                        <p className="text-xs text-zinc-500">{deck.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Data Room Tab */}
+          {activeTab === 'dataroom' && (
+            <motion.div
+              key="dataroom"
+              initial={slideUp.initial}
+              animate={slideUp.animate}
+              transition={slideUp.transition}
+            >
+              <div className="relative rounded-[20px] border backdrop-blur-sm bg-zinc-900/50 border-zinc-800/60 text-white transition-all duration-200">
+                <div className="flex flex-col space-y-1.5 p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold leading-none tracking-tight text-white">Data Rooms</div>
+                      <div className="text-sm text-zinc-400 mt-1.5">Secure document sharing with investors</div>
+                    </div>
+                    <button className="cursor-default inline-flex items-center justify-center gap-2 font-medium rounded-full transition-colors duration-200 h-8 px-4 text-xs bg-orange-500 text-white hover:bg-orange-400">
+                      <Plus className="w-3 h-3" />
+                      Create
+                    </button>
+                  </div>
+                </div>
+                <div className="p-6 pt-0">
+                  <div className="space-y-2">
+                    {MOCK_DATA_ROOMS.map((room) => (
+                      <div key={room.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 bg-orange-500/10 rounded-lg">
+                            <Briefcase className="w-4 h-4 text-orange-400" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-white">{room.name}</p>
+                            <p className="text-xs text-zinc-500">{room.documents_count} documents</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-zinc-400">{room.viewers} viewers</span>
+                          <button className="cursor-default inline-flex items-center justify-center gap-2 font-medium rounded-full transition-colors duration-200 h-8 px-4 text-xs bg-transparent text-white border border-zinc-700 hover:bg-zinc-800/50">
+                            <ExternalLink className="w-3 h-3" />
+                            Open
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
     </div>

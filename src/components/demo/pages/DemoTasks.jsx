@@ -1,254 +1,240 @@
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import {
-  CheckSquare,
-  ListTodo,
-  Clock,
-  CheckCircle2,
-  Circle,
-  Loader2,
-  Plus,
-  LayoutGrid,
-  List,
-  Brain,
-  Calendar,
-  MoreHorizontal,
+  Plus, GripVertical, Calendar, Clock, CheckCircle2, Circle, AlertCircle,
+  MoreHorizontal, Search, LayoutGrid, List, Flag, Tag,
+  ChevronDown, Edit2, Trash2, Filter,
 } from 'lucide-react';
 
-// ─── Stats ────────────────────────────────────────────────────────────────────
-const taskStats = [
-  { label: 'Total', value: '34', icon: ListTodo, bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
-  { label: 'In Progress', value: '12', icon: Loader2, bg: 'bg-amber-500/15', text: 'text-amber-400' },
-  { label: 'Due Today', value: '8', icon: Clock, bg: 'bg-red-500/15', text: 'text-red-400' },
-  { label: 'Completed This Week', value: '14', icon: CheckCircle2, bg: 'bg-emerald-500/15', text: 'text-emerald-400' },
+// ─── Task Columns ──────────────────────────────────────────────────────────────
+
+const TASK_COLUMNS = [
+  { id: 'todo', label: 'To Do', icon: Circle, dotColor: 'bg-zinc-600' },
+  { id: 'in_progress', label: 'In Progress', icon: Clock, dotColor: 'bg-cyan-500/80' },
+  { id: 'review', label: 'In Review', icon: AlertCircle, dotColor: 'bg-cyan-400/80' },
+  { id: 'completed', label: 'Completed', icon: CheckCircle2, dotColor: 'bg-cyan-400' },
 ];
 
-// ─── Priority & label styles ─────────────────────────────────────────────────
-const priorityBadge = {
-  High: 'bg-red-500/15 text-red-400 border border-red-500/20',
-  Medium: 'bg-amber-500/15 text-amber-400 border border-amber-500/20',
-  Low: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20',
-};
-
-const labelBadge = {
-  'Sales': 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/15',
-  'Product': 'bg-violet-500/10 text-violet-400 border border-violet-500/15',
-  'Marketing': 'bg-rose-500/10 text-rose-400 border border-rose-500/15',
-  'Engineering': 'bg-blue-500/10 text-blue-400 border border-blue-500/15',
-  'Design': 'bg-amber-500/10 text-amber-400 border border-amber-500/15',
-  'Finance': 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/15',
-  'Ops': 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/15',
-};
-
-const columnBorders = {
-  Todo: 'border-t-zinc-500',
-  'In Progress': 'border-t-amber-500',
-  Review: 'border-t-violet-500',
-  Done: 'border-t-emerald-500',
-};
-
-// ─── Kanban Columns ───────────────────────────────────────────────────────────
-const kanbanColumns = [
-  {
-    name: 'Todo',
-    tasks: [
-      { title: 'Prepare Q1 board presentation', desc: 'Compile revenue and growth metrics for board review', priority: 'High', assignee: 'SM', due: 'Today', subtasks: '1/4', labels: ['Sales'], aiPrioritized: true },
-      { title: 'Update competitor analysis doc', desc: 'Add latest feature comparison matrix', priority: 'Medium', assignee: 'RC', due: 'Feb 10', subtasks: '0/3', labels: ['Product'] },
-      { title: 'Schedule team retrospective', desc: 'Book conference room and send invites', priority: 'Low', assignee: 'LT', due: 'Feb 12', subtasks: '2/2', labels: ['Ops'] },
-      { title: 'Review new design mockups', desc: 'Provide feedback on settings page redesign', priority: 'Medium', assignee: 'TM', due: 'Feb 11', subtasks: '0/5', labels: ['Design'] },
-    ],
-  },
-  {
-    name: 'In Progress',
-    tasks: [
-      { title: 'Follow up with {companyName}', desc: 'Send expansion proposal and schedule call', priority: 'High', assignee: 'SM', due: 'Today', subtasks: '2/5', labels: ['Sales'], aiPrioritized: true },
-      { title: 'Finalize contract terms', desc: 'Legal review of enterprise agreement', priority: 'High', assignee: 'DP', due: 'Today', subtasks: '3/6', labels: ['Sales'] },
-      { title: 'Build integration dashboard', desc: 'API usage metrics and health indicators', priority: 'Medium', assignee: 'MR', due: 'Feb 14', subtasks: '4/8', labels: ['Engineering'] },
-    ],
-  },
-  {
-    name: 'Review',
-    tasks: [
-      { title: 'Q1 marketing campaign brief', desc: 'Waiting for stakeholder sign-off', priority: 'Medium', assignee: 'RC', due: 'Feb 9', subtasks: '5/5', labels: ['Marketing'] },
-      { title: 'Expense report - Jan 2026', desc: 'Pending manager approval', priority: 'Low', assignee: 'LT', due: 'Feb 8', subtasks: '3/3', labels: ['Finance'] },
-    ],
-  },
-  {
-    name: 'Done',
-    tasks: [
-      { title: 'Deploy staging build v2.4.1', desc: 'All smoke tests passing', priority: 'Medium', assignee: 'MR', due: 'Feb 5', subtasks: '6/6', labels: ['Engineering'], done: true },
-      { title: 'Send onboarding materials', desc: 'Welcome kit sent to 3 new hires', priority: 'Low', assignee: 'DP', due: 'Feb 4', subtasks: '4/4', labels: ['Ops'], done: true },
-      { title: 'Update pitch deck with Q4 data', desc: 'Added revenue charts and case studies', priority: 'High', assignee: 'TM', due: 'Feb 3', subtasks: '7/7', labels: ['Sales'], done: true },
-    ],
-  },
+const PRIORITY_LEVELS = [
+  { id: 'low', label: 'Low', color: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30' },
+  { id: 'medium', label: 'Medium', color: 'bg-cyan-500/10 text-cyan-400/70 border-cyan-500/25' },
+  { id: 'high', label: 'High', color: 'bg-cyan-500/15 text-cyan-400/85 border-cyan-500/35' },
+  { id: 'critical', label: 'Critical', color: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/45' },
 ];
 
+// ─── Mock Tasks ────────────────────────────────────────────────────────────────
 
-// ─── Task Card Sub-component ──────────────────────────────────────────────────
-function TaskCard({ task, companyName }) {
-  const title = task.title.replace('{companyName}', companyName);
-  const isDone = task.done;
-  const isOverdue = task.due === 'Today' || task.due === 'Yesterday';
-  const subtaskParts = task.subtasks.split('/');
-  const subtaskDone = parseInt(subtaskParts[0], 10);
-  const subtaskTotal = parseInt(subtaskParts[1], 10);
-  const subtaskPct = subtaskTotal > 0 ? (subtaskDone / subtaskTotal) * 100 : 0;
+const TASKS = [
+  { id: 't1', title: 'Finalize Q1 sales report', description: 'Compile revenue data and prepare slides for board meeting', status: 'todo', priority: 'high', due_date: '2026-02-14', project: 'Sales Operations', assignee: 'SM' },
+  { id: 't2', title: 'Review TechVentures onboarding plan', description: 'Ensure all deliverables are mapped to timeline', status: 'todo', priority: 'critical', due_date: '2026-02-12', project: 'Client Success', assignee: 'JP' },
+  { id: 't3', title: 'Update product roadmap for Q2', description: 'Incorporate feedback from customer interviews', status: 'todo', priority: 'medium', due_date: '2026-02-18', project: 'Product', assignee: 'LT' },
+  { id: 't4', title: 'Prepare investor update email', description: 'Monthly KPI summary for investors', status: 'todo', priority: 'low', due_date: '2026-02-20', project: 'Finance', assignee: 'EW' },
+  { id: 't5', title: 'Implement SSO integration', description: 'OAuth2 SAML integration for enterprise clients', status: 'in_progress', priority: 'high', due_date: '2026-02-15', project: 'Engineering', assignee: 'MC' },
+  { id: 't6', title: 'Design new analytics dashboard', description: 'Create mockups for pipeline analytics view', status: 'in_progress', priority: 'medium', due_date: '2026-02-17', project: 'Design', assignee: 'AM' },
+  { id: 't7', title: 'Configure CI/CD pipeline', description: 'Set up automated testing and deployment', status: 'in_progress', priority: 'high', due_date: '2026-02-13', project: 'Engineering', assignee: 'DN' },
+  { id: 't8', title: 'Write API documentation', description: 'Document all REST endpoints for v2 API', status: 'review', priority: 'medium', due_date: '2026-02-16', project: 'Engineering', assignee: 'MC' },
+  { id: 't9', title: 'Test DataBridge integration', description: 'End-to-end testing of data sync', status: 'review', priority: 'high', due_date: '2026-02-11', project: 'Engineering', assignee: 'JP' },
+  { id: 't10', title: 'Launch email campaign for Meridian', description: 'Outreach sequence for healthcare vertical', status: 'completed', priority: 'medium', due_date: '2026-02-08', project: 'Marketing', assignee: 'SM' },
+  { id: 't11', title: 'Fix invoice PDF export bug', description: 'Currency formatting issue in generated PDFs', status: 'completed', priority: 'critical', due_date: '2026-02-09', project: 'Engineering', assignee: 'DN' },
+  { id: 't12', title: 'Onboard Pinnacle Group', description: 'Complete setup and training for new client', status: 'completed', priority: 'high', due_date: '2026-02-10', project: 'Client Success', assignee: 'LT' },
+];
+
+// ─── Task Card Component ───────────────────────────────────────────────────────
+
+function TaskCard({ task }) {
+  const priorityConfig = PRIORITY_LEVELS.find(p => p.id === task.priority) || PRIORITY_LEVELS[1];
+  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed';
+  const dueDate = task.due_date ? new Date(task.due_date) : null;
 
   return (
-    <div
-      className={`bg-zinc-900/60 border border-zinc-800/50 rounded-xl p-3.5 space-y-2.5 hover:border-zinc-700/60 transition-colors cursor-default ${
-        isDone ? 'opacity-60' : ''
-      }`}
-    >
-      {/* Title row */}
-      <div className="flex items-start gap-2">
-        {isDone ? (
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-        ) : (
-          <Circle className="w-4 h-4 text-zinc-600 mt-0.5 shrink-0" />
-        )}
-        <span className={`text-sm font-medium leading-tight flex-1 ${isDone ? 'text-zinc-500 line-through' : 'text-white'}`}>
-          {title}
-        </span>
-        {task.aiPrioritized && (
-          <div className="p-1 bg-violet-500/10 rounded-md shrink-0" title="AI prioritized">
-            <Brain className="w-3 h-3 text-violet-400" />
+    <div className="group bg-zinc-900/80 rounded-xl border border-zinc-800/60 hover:border-zinc-700 transition-all">
+      <div className="p-3">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <GripVertical className="w-4 h-4 text-zinc-600 shrink-0" />
+            <h4 className="text-sm font-medium text-white truncate">{task.title}</h4>
           </div>
+          <button className="p-1 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-white cursor-default">
+            <MoreHorizontal className="w-4 h-4" />
+          </button>
+        </div>
+        {task.description && (
+          <p className="text-xs text-zinc-500 mb-2 pl-6 line-clamp-2">{task.description}</p>
         )}
-      </div>
-
-      {/* Description */}
-      <p className="text-[11px] text-zinc-500 leading-relaxed pl-6 line-clamp-1">{task.desc}</p>
-
-      {/* Labels */}
-      <div className="flex items-center gap-1.5 pl-6 flex-wrap">
-        {task.labels.map((label) => (
-          <span key={label} className={`text-[9px] px-1.5 py-0.5 rounded-md ${labelBadge[label] || 'bg-zinc-800 text-zinc-400'}`}>
-            {label}
-          </span>
-        ))}
-      </div>
-
-      {/* Subtask progress bar */}
-      {subtaskTotal > 0 && (
-        <div className="pl-6 flex items-center gap-2">
-          <div className="flex-1 bg-zinc-800/80 rounded-full h-1 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${isDone ? 'bg-emerald-500' : 'bg-cyan-500'}`}
-              style={{ width: `${subtaskPct}%` }}
-            />
+        <div className="flex items-center justify-between pl-6">
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] px-1.5 py-px rounded-md border ${priorityConfig.color}`}>
+              {priorityConfig.label}
+            </span>
+            {dueDate && (
+              <span className={`text-[10px] flex items-center gap-1 ${isOverdue ? 'text-cyan-300' : 'text-zinc-500'}`}>
+                <Calendar className="w-2.5 h-2.5" />
+                {dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
+            )}
           </div>
-          <span className="text-[10px] text-zinc-500 shrink-0">{task.subtasks}</span>
-        </div>
-      )}
-
-      {/* Bottom metadata */}
-      <div className="flex items-center justify-between pl-6">
-        <div className="flex items-center gap-2">
-          {/* Priority */}
-          <span className={`text-[9px] px-1.5 py-0.5 rounded-md ${priorityBadge[task.priority]}`}>
-            {task.priority}
-          </span>
-          {/* Due date */}
-          <span className={`text-[10px] flex items-center gap-0.5 ${isOverdue && !isDone ? 'text-red-400' : 'text-zinc-500'}`}>
-            <Calendar className="w-2.5 h-2.5" />
-            {task.due}
-          </span>
-        </div>
-        {/* Assignee avatar */}
-        <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[9px] font-bold text-zinc-400 shrink-0">
-          {task.assignee}
+          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-500/15 to-cyan-400/10 flex items-center justify-center shrink-0">
+            <span className="text-cyan-400/80 text-[9px] font-medium">{task.assignee}</span>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
+// ─── Main Component ────────────────────────────────────────────────────────────
 
-// =============================================================================
-// MAIN COMPONENT
-// =============================================================================
 export default function DemoTasks({ companyName = 'Acme Corp', recipientName = 'there' }) {
-  return (
-    <div className="min-h-screen bg-black p-4 sm:p-6 space-y-5">
+  const [viewMode, setViewMode] = useState('kanban');
 
-      {/* ─── Page Header ───────────────────────────────────────────────────── */}
-      <div data-demo="header" className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-cyan-500/20 rounded-xl">
-            <CheckSquare className="w-6 h-6 text-cyan-400" />
-          </div>
+  // Group tasks by status
+  const tasksByColumn = {};
+  TASK_COLUMNS.forEach(col => { tasksByColumn[col.id] = []; });
+  TASKS.forEach(t => {
+    if (tasksByColumn[t.status]) tasksByColumn[t.status].push(t);
+  });
+
+  const stats = {
+    total: TASKS.length,
+    completed: TASKS.filter(t => t.status === 'completed').length,
+    overdue: TASKS.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'completed').length,
+  };
+
+  return (
+    <div className="min-h-screen bg-black">
+      <div className="max-w-full mx-auto p-4 sm:p-6">
+
+        {/* ── Header ────────────────────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-white">Tasks</h1>
-            <p className="text-zinc-400 text-sm mt-0.5">Track and manage your team's work.</p>
+            <h1 className="text-lg font-bold text-white">Tasks</h1>
+            <div className="flex items-center gap-4 mt-1 text-sm text-zinc-400">
+              <span>{stats.total} total</span>
+              <span className="text-cyan-400/80">{stats.completed} completed</span>
+              {stats.overdue > 0 && <span className="text-cyan-300">{stats.overdue} overdue</span>}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center bg-zinc-800/50 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('kanban')}
+                className={`p-2 rounded cursor-default ${viewMode === 'kanban' ? 'bg-zinc-700 text-white' : 'text-zinc-400'}`}
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded cursor-default ${viewMode === 'list' ? 'bg-zinc-700 text-white' : 'text-zinc-400'}`}
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+            <button className="flex items-center gap-1 px-3 py-2 rounded-lg bg-cyan-600/80 text-white text-sm font-medium cursor-default">
+              <Plus className="w-4 h-4" /> Add Task
+            </button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {/* View Toggle */}
-          <div className="flex p-0.5 bg-zinc-900/60 border border-zinc-800/60 rounded-lg">
-            <button className="p-1.5 rounded-md bg-cyan-500/15 text-cyan-400 cursor-default">
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-            <button className="p-1.5 rounded-md text-zinc-500 cursor-default">
-              <List className="w-4 h-4" />
-            </button>
+
+        {/* ── Search & Filter ───────────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-700"
+              readOnly
+            />
           </div>
-          {/* Add Task */}
-          <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-500/20 text-cyan-400 text-xs font-medium border border-cyan-500/25 cursor-default">
-            <Plus className="w-3.5 h-3.5" /> Add Task
+          <button className="flex items-center gap-2 px-3 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-zinc-400 cursor-default">
+            All Priorities
+            <ChevronDown className="w-3 h-3" />
           </button>
         </div>
-      </div>
 
-      {/* ─── Stats Row ─────────────────────────────────────────────────────── */}
-      <div data-demo="task-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {taskStats.map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4 flex items-center gap-4"
-          >
-            <div className={`p-2.5 rounded-xl ${stat.bg}`}>
-              <stat.icon className={`w-5 h-5 ${stat.text}`} />
-            </div>
-            <div>
-              <p className="text-xl font-bold text-white">{stat.value}</p>
-              <p className="text-xs text-zinc-500">{stat.label}</p>
-            </div>
+        {/* ── Kanban View ───────────────────────────────────────── */}
+        {viewMode === 'kanban' && (
+          <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x scrollbar-hide">
+            {TASK_COLUMNS.map((column, ci) => {
+              const columnTasks = tasksByColumn[column.id] || [];
+              const StatusIcon = column.icon;
+              return (
+                <motion.div
+                  key={column.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: ci * 0.05 }}
+                  className="w-72 shrink-0 snap-start"
+                >
+                  <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30">
+                    {/* Column Header */}
+                    <div className="p-3 border-b border-zinc-800/50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2.5 h-2.5 rounded-full ${column.dotColor}`} />
+                          <h3 className="text-sm font-medium text-white">{column.label}</h3>
+                          <span className="text-xs text-zinc-600 bg-zinc-800/80 px-1.5 py-0.5 rounded">{columnTasks.length}</span>
+                        </div>
+                        <button className="text-zinc-600 hover:text-zinc-400 cursor-default">
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    {/* Tasks */}
+                    <div className="p-2 space-y-2 min-h-[100px] max-h-[calc(100vh-320px)] overflow-y-auto">
+                      {columnTasks.map(task => (
+                        <TaskCard key={task.id} task={task} />
+                      ))}
+                      {columnTasks.length === 0 && (
+                        <div className="py-8 text-center">
+                          <p className="text-xs text-zinc-600">No tasks</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
-        ))}
-      </div>
+        )}
 
-      {/* ─── Kanban Board ──────────────────────────────────────────────────── */}
-      <div
-        data-demo="kanban-board"
-        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"
-      >
-        {kanbanColumns.map((column) => (
-          <div key={column.name} className="flex flex-col">
-            {/* Column header */}
-            <div className={`bg-zinc-900/50 border border-zinc-800/60 rounded-t-xl border-t-2 ${columnBorders[column.name]} px-4 py-3 flex items-center justify-between`}>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-white">{column.name}</h3>
-                <span className="text-[10px] font-medium bg-zinc-800 text-zinc-400 rounded-full px-2 py-0.5">
-                  {column.tasks.length}
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <button className="p-1 rounded-md hover:bg-zinc-800 transition-colors cursor-default">
-                  <Plus className="w-3.5 h-3.5 text-zinc-500" />
-                </button>
-                <button className="p-1 rounded-md hover:bg-zinc-800 transition-colors cursor-default">
-                  <MoreHorizontal className="w-3.5 h-3.5 text-zinc-500" />
-                </button>
-              </div>
-            </div>
+        {/* ── List View ─────────────────────────────────────────── */}
+        {viewMode === 'list' && (
+          <div className="divide-y divide-zinc-800/60 rounded-xl border border-zinc-800/60 bg-zinc-900/30 overflow-hidden">
+            {TASKS.map(task => {
+              const priorityConfig = PRIORITY_LEVELS.find(p => p.id === task.priority) || PRIORITY_LEVELS[1];
+              const statusConfig = TASK_COLUMNS.find(c => c.id === task.status) || TASK_COLUMNS[0];
+              const StatusIcon = statusConfig.icon;
+              const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed';
 
-            {/* Column body */}
-            <div className="bg-zinc-950/30 border border-t-0 border-zinc-800/40 rounded-b-xl p-2.5 space-y-2.5 flex-1 min-h-[200px]">
-              {column.tasks.map((task, i) => (
-                <TaskCard key={i} task={task} companyName={companyName} />
-              ))}
-            </div>
+              return (
+                <div key={task.id} className="flex items-center gap-2 px-3 py-2 hover:bg-white/[0.03] transition-colors">
+                  <div className="w-6 h-6 rounded flex items-center justify-center bg-cyan-500/10">
+                    <StatusIcon className="w-3 h-3 text-cyan-400/80" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium text-white">{task.title}</h4>
+                    {task.description && <p className="text-xs text-zinc-500 truncate">{task.description}</p>}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {task.due_date && (
+                      <span className={`text-[10px] flex items-center gap-1 ${isOverdue ? 'text-cyan-300' : 'text-zinc-500'}`}>
+                        <Calendar className="w-2.5 h-2.5" />
+                        {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
+                    )}
+                    <span className={`text-[10px] px-1.5 py-px rounded-md border ${priorityConfig.color}`}>
+                      {priorityConfig.label}
+                    </span>
+                    <button className="p-1 text-zinc-400 hover:text-white cursor-default">
+                      <MoreHorizontal className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
