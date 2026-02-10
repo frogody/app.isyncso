@@ -913,24 +913,21 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     });
   }, [hasPermission, permLoading, isAdmin]);
 
-  // Memoize engine items based on team app access, licenses, AND permissions
-  // Priority: Admin gets all, otherwise use effectiveApps (teams + licenses), fallback to enabledApps
+  // Memoize engine items based on company licenses + team app access
+  // All users (including admins) only see licensed/team-assigned apps
+  // Base apps (Dashboard, CRM, Products, Projects, Inbox) are always in core nav
   const engineItems = useMemo(() => {
-    // Determine which apps to show based on team membership, licenses, and admin status
     let appsToShow;
 
-    if (isAdmin) {
-      // Admins get all apps regardless of team membership
-      appsToShow = Object.keys(ENGINE_ITEMS_CONFIG);
-    } else if (effectiveApps.length > 0) {
-      // Users get apps from team_app_access + company licenses (via get_user_effective_apps)
+    if (effectiveApps.length > 0) {
+      // Apps from company licenses + team_app_access (via get_user_effective_apps)
       appsToShow = effectiveApps;
     } else if (!teamLoading) {
-      // No team apps and no licensed apps — minimal access
+      // No licensed or team apps — only base apps (handled in core nav)
       appsToShow = [];
     } else {
-      // Fallback to user's personal config while loading
-      appsToShow = enabledApps;
+      // Still loading — show nothing to avoid flash
+      appsToShow = [];
     }
 
     const items = appsToShow
@@ -942,12 +939,10 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
       return items.filter(item => !item.permission);
     }
     return items.filter(item => {
-      // No permission required - always show
       if (!item.permission) return true;
-      // Check permission
       return hasPermission(item.permission);
     });
-  }, [enabledApps, effectiveApps, hasTeams, isAdmin, teamLoading, hasPermission, permLoading]);
+  }, [effectiveApps, teamLoading, hasPermission, permLoading]);
 
   const handleLogin = async () => {
     db.auth.redirectToLogin(window.location.href);

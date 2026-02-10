@@ -1,5 +1,6 @@
--- Update get_user_effective_apps to include apps from company licenses
--- Previously only checked team_app_access, now also checks app_licenses
+-- Update get_user_effective_apps to be license-driven
+-- ALL users (including admins) only see apps their company has licensed
+-- Base apps (Dashboard, CRM, Products, Projects, Inbox) are handled in frontend nav
 
 CREATE OR REPLACE FUNCTION public.get_user_effective_apps(p_user_id UUID)
 RETURNS TEXT[]
@@ -8,22 +9,11 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_hierarchy_level INT;
   v_company_id UUID;
   v_team_apps TEXT[];
   v_license_apps TEXT[];
   v_all_apps TEXT[];
 BEGIN
-  -- Check if user is admin (hierarchy >= 80) - they get all apps
-  SELECT MAX(r.hierarchy_level) INTO v_hierarchy_level
-  FROM public.rbac_user_roles ur
-  JOIN public.rbac_roles r ON ur.role_id = r.id
-  WHERE ur.user_id = p_user_id;
-
-  IF v_hierarchy_level >= 80 THEN
-    RETURN ARRAY['learn', 'growth', 'sentinel', 'finance', 'inbox', 'projects', 'analytics', 'talent', 'raise', 'create'];
-  END IF;
-
   -- Get user's company_id
   SELECT company_id INTO v_company_id
   FROM public.users
@@ -56,7 +46,7 @@ BEGIN
 END;
 $$;
 
--- Also update user_has_app_access to check licenses
+-- Also update user_has_app_access to check licenses (no admin override)
 CREATE OR REPLACE FUNCTION public.user_has_app_access(p_user_id UUID, p_app_name TEXT)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -64,19 +54,8 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_hierarchy_level INT;
   v_company_id UUID;
 BEGIN
-  -- Admin check
-  SELECT MAX(r.hierarchy_level) INTO v_hierarchy_level
-  FROM public.rbac_user_roles ur
-  JOIN public.rbac_roles r ON ur.role_id = r.id
-  WHERE ur.user_id = p_user_id;
-
-  IF v_hierarchy_level >= 80 THEN
-    RETURN true;
-  END IF;
-
   -- Check team_app_access
   IF EXISTS (
     SELECT 1
