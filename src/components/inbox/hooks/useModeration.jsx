@@ -301,7 +301,7 @@ export function useModeration(channelId, userId) {
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      supabase.removeChannel(subscription);
     };
   }, [channelId, userId, checkMuteStatus, loadMutedUsers]);
 

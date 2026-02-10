@@ -25,6 +25,7 @@ const FILE_TYPE_CONFIG = {
     icon: Image,
     color: 'text-green-400',
     bgColor: 'bg-green-500/20',
+    borderColor: 'border-green-400/30',
     extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico']
   },
   // Videos
@@ -32,6 +33,7 @@ const FILE_TYPE_CONFIG = {
     icon: Film,
     color: 'text-purple-400',
     bgColor: 'bg-purple-500/20',
+    borderColor: 'border-purple-400/30',
     extensions: ['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', 'wmv']
   },
   // Audio
@@ -39,6 +41,7 @@ const FILE_TYPE_CONFIG = {
     icon: Music,
     color: 'text-pink-400',
     bgColor: 'bg-pink-500/20',
+    borderColor: 'border-pink-400/30',
     extensions: ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma']
   },
   // Documents
@@ -46,18 +49,21 @@ const FILE_TYPE_CONFIG = {
     icon: FileText,
     color: 'text-red-400',
     bgColor: 'bg-red-500/20',
+    borderColor: 'border-red-400/30',
     extensions: ['pdf']
   },
   document: {
     icon: FileText,
     color: 'text-blue-400',
     bgColor: 'bg-blue-500/20',
+    borderColor: 'border-blue-400/30',
     extensions: ['doc', 'docx', 'odt', 'rtf', 'txt']
   },
   spreadsheet: {
     icon: FileSpreadsheet,
     color: 'text-emerald-400',
     bgColor: 'bg-emerald-500/20',
+    borderColor: 'border-emerald-400/30',
     extensions: ['xls', 'xlsx', 'csv', 'ods']
   },
   // Code
@@ -65,6 +71,7 @@ const FILE_TYPE_CONFIG = {
     icon: FileCode,
     color: 'text-yellow-400',
     bgColor: 'bg-yellow-500/20',
+    borderColor: 'border-yellow-400/30',
     extensions: ['js', 'jsx', 'ts', 'tsx', 'py', 'rb', 'java', 'cpp', 'c', 'h', 'go', 'rs', 'php', 'html', 'css', 'scss', 'json', 'xml', 'yaml', 'yml', 'md']
   },
   // Archives
@@ -72,6 +79,7 @@ const FILE_TYPE_CONFIG = {
     icon: FileArchive,
     color: 'text-orange-400',
     bgColor: 'bg-orange-500/20',
+    borderColor: 'border-orange-400/30',
     extensions: ['zip', 'rar', '7z', 'tar', 'gz', 'bz2']
   },
   // Default
@@ -79,6 +87,7 @@ const FILE_TYPE_CONFIG = {
     icon: File,
     color: 'text-zinc-400',
     bgColor: 'bg-zinc-500/20',
+    borderColor: 'border-zinc-400/30',
     extensions: []
   }
 };
@@ -396,7 +405,7 @@ function GenericFilePreview({ src, filename, fileSize }) {
       rel="noopener noreferrer"
       className="mt-3 flex items-center gap-3 p-3 bg-zinc-800/50 border border-zinc-700 rounded-xl hover:bg-zinc-800 hover:border-zinc-600 transition-all max-w-sm group"
     >
-      <div className={`w-12 h-12 rounded-lg ${config.bgColor} border border-${config.color.replace('text-', '')}/30 flex items-center justify-center`}>
+      <div className={`w-12 h-12 rounded-lg ${config.bgColor} border ${config.borderColor} flex items-center justify-center`}>
         <Icon className={`w-6 h-6 ${config.color}`} />
       </div>
       <div className="flex-1 min-w-0">

@@ -75,7 +75,7 @@ export function useChannelRoles(channelId, userId) {
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      supabase.removeChannel(subscription);
     };
   }, [channelId, loadMembers]);
 

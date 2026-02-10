@@ -12,6 +12,12 @@ export function useReadReceipts(channelId, user, messages = []) {
   const [readReceipts, setReadReceipts] = useState({});
   const [loading, setLoading] = useState(false);
   const channelRef = useRef(null);
+  const messagesRef = useRef(messages);
+
+  // Keep messagesRef in sync
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   // Fetch initial read receipts for visible messages
   useEffect(() => {
@@ -72,10 +78,6 @@ export function useReadReceipts(channelId, user, messages = []) {
   useEffect(() => {
     if (!channelId || !user?.id) return;
 
-    // Get message IDs for filtering
-    const messageIds = messages.map(m => m.id).filter(Boolean);
-    if (messageIds.length === 0) return;
-
     const channel = supabase
       .channel(`read_receipts:${channelId}`)
       .on(
@@ -88,8 +90,9 @@ export function useReadReceipts(channelId, user, messages = []) {
         async (payload) => {
           const { message_id, user_id, read_at } = payload.new;
 
-          // Only process if this message is in our visible list
-          if (!messageIds.includes(message_id)) return;
+          // Only process if this message is in our visible list (read from ref)
+          const currentMessageIds = messagesRef.current.map(m => m.id).filter(Boolean);
+          if (!currentMessageIds.includes(message_id)) return;
 
           // Fetch user details
           const { data: userData } = await supabase
@@ -128,7 +131,7 @@ export function useReadReceipts(channelId, user, messages = []) {
         supabase.removeChannel(channelRef.current);
       }
     };
-  }, [channelId, user?.id, messages]);
+  }, [channelId, user?.id]);
 
   // Mark a single message as read
   const markAsRead = useCallback(async (messageId) => {

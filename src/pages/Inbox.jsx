@@ -88,6 +88,7 @@ export default function InboxPage() {
   // Realtime messages subscription (changes when selectedChannel changes)
   const {
     messages: realtimeMessages,
+    setMessages,
     loading: messagesLoading,
     loadingMore: messagesLoadingMore,
     hasMore: hasMoreMessages,

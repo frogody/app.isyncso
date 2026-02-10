@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Info, Hash, Lock, Users, Calendar, Edit2, Trash2, Archive, Bell, BellOff, Clock, Shield, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
@@ -23,8 +23,46 @@ export default function ChannelDetailsPanel({
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(channel?.name || '');
   const [editDescription, setEditDescription] = useState(channel?.description || '');
-  const [isMuted, setIsMuted] = useState(false);
   const [showModerationSettings, setShowModerationSettings] = useState(false);
+
+  // Mute state — syncs with localStorage (shared with ChannelSidebar)
+  const MUTED_KEY = 'inbox_muted_channels';
+  const [isMuted, setIsMuted] = useState(() => {
+    try {
+      const stored = localStorage.getItem(MUTED_KEY);
+      const muted = stored ? JSON.parse(stored) : [];
+      return channel?.id ? muted.includes(channel.id) : false;
+    } catch {
+      return false;
+    }
+  });
+
+  // Re-sync muted state when channel changes
+  useEffect(() => {
+    if (!channel?.id) return;
+    try {
+      const stored = localStorage.getItem(MUTED_KEY);
+      const muted = stored ? JSON.parse(stored) : [];
+      setIsMuted(muted.includes(channel.id));
+    } catch {
+      setIsMuted(false);
+    }
+  }, [channel?.id]);
+
+  const toggleMute = useCallback(() => {
+    if (!channel?.id) return;
+    try {
+      const stored = localStorage.getItem(MUTED_KEY);
+      const muted = stored ? JSON.parse(stored) : [];
+      const newMuted = isMuted
+        ? muted.filter(id => id !== channel.id)
+        : [...muted, channel.id];
+      localStorage.setItem(MUTED_KEY, JSON.stringify(newMuted));
+      setIsMuted(!isMuted);
+    } catch {
+      // silently fail
+    }
+  }, [channel?.id, isMuted]);
 
   // Rate limit settings form state
   const [messagesPerMinute, setMessagesPerMinute] = useState(30);
@@ -178,8 +216,8 @@ export default function ChannelDetailsPanel({
         <div className="p-4 space-y-2">
           <h5 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Settings</h5>
           
-          <button 
-            onClick={() => setIsMuted(!isMuted)}
+          <button
+            onClick={toggleMute}
             className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-800/50 transition-colors text-left"
           >
             {isMuted ? (

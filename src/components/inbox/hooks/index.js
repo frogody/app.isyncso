@@ -12,7 +12,3 @@ export { useReadReceipts } from './useReadReceipts.jsx';
 export { useBookmarks } from './useBookmarks.jsx';
 export { useChannelRoles } from './useChannelRoles.jsx';
 export { useModeration } from './useModeration.jsx';
-
-// Legacy hooks (kept for backwards compatibility)
-export { useMessages } from './useMessages.js.jsx';
-export { useUnreadTracking } from './useUnreadTracking.js.jsx';

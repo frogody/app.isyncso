@@ -351,6 +351,7 @@ export function useRealtimeMessages(channelId, userId, options = {}) {
 
   return {
     messages,
+    setMessages,
     loading,
     loadingMore,
     hasMore,

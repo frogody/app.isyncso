@@ -2,7 +2,7 @@
  * ForwardMessageModal - Modal for forwarding messages to other channels
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Search, Hash, Users, Lock, Forward, Loader2 } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
@@ -20,6 +20,15 @@ export default function ForwardMessageModal({
   const [selectedChannelId, setSelectedChannelId] = useState(null);
   const [addComment, setAddComment] = useState('');
   const [forwarding, setForwarding] = useState(false);
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setSearchQuery('');
+      setSelectedChannelId(null);
+      setAddComment('');
+    }
+  }, [isOpen]);
 
   // Filter channels by search
   const filteredChannels = useMemo(() => {
