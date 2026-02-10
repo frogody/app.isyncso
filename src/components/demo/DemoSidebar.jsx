@@ -1,21 +1,19 @@
 import React from 'react';
 import { useTheme } from '@/contexts/GlobalThemeContext';
-import { ThemeToggle } from '@/components/sentinel/ThemeToggle';
 import {
   LayoutDashboard, Contact, FolderKanban, Package, Inbox,
   Euro, Rocket, GraduationCap, UserPlus, Shield, TrendingUp, Palette,
-  Settings, Bell, BarChart2, CheckSquare,
+  Settings, Bell, Sun, Moon,
   // Finance sub-nav
   Receipt, FileText, CreditCard, BookOpen, ScrollText, BarChart3,
-  Wallet, Building, FileInput, RefreshCw, CalendarCheck,
   // Growth sub-nav
-  Megaphone, Radio, Target, Bot, Search, FileTemplate, Database, Zap, GitBranch,
+  Megaphone, Radio, Target, Database,
   // CRM sub-nav
   Users, UserCheck, Truck, Handshake, Crosshair, FileSpreadsheet,
   // Talent sub-nav
   Briefcase, Building2, MessageSquare,
   // Learn sub-nav
-  Library, Sparkles, Award, Trophy,
+  Library, Sparkles,
   // Create sub-nav
   PaintBucket, Image, Video, FolderOpen,
   // Products sub-nav
@@ -23,20 +21,19 @@ import {
   // Raise sub-nav
   Presentation, FolderKey,
   // Sentinel sub-nav
-  Cpu, Map, FileCheck,
+  Cpu, Map,
   // Sync sub-nav
   Brain, Activity,
 } from 'lucide-react';
 
 // Matches production Layout.jsx navigationItems exactly
+// Matches production Layout.jsx navigationItems exactly (5 items)
 const coreNavItems = [
   { key: 'dashboard', icon: LayoutDashboard, title: 'Dashboard' },
   { key: 'crm', icon: Contact, title: 'CRM' },
   { key: 'projects', icon: FolderKanban, title: 'Projects' },
-  { key: 'tasks', icon: CheckSquare, title: 'Tasks' },
   { key: 'products', icon: Package, title: 'Products' },
   { key: 'inbox', icon: Inbox, title: 'Inbox' },
-  { key: 'analytics', icon: BarChart2, title: 'Analytics' },
 ];
 
 // Matches production ENGINE_ITEMS_CONFIG exactly
@@ -86,18 +83,11 @@ const MODULE_SUB_PAGES = {
     color: 'amber',
     items: [
       { key: 'finance', icon: LayoutDashboard, title: 'Dashboard' },
-      { key: 'finance-overview', icon: BarChart3, title: 'Overview' },
       { key: 'finance-invoices', icon: Receipt, title: 'Invoices' },
       { key: 'finance-proposals', icon: FileText, title: 'Proposals' },
       { key: 'finance-expenses', icon: CreditCard, title: 'Expenses' },
       { key: 'finance-ledger', icon: BookOpen, title: 'Ledger' },
       { key: 'finance-payables', icon: ScrollText, title: 'Payables' },
-      { key: 'finance-accounts', icon: Wallet, title: 'Accounts' },
-      { key: 'finance-vendors', icon: Building, title: 'Vendors' },
-      { key: 'finance-bills', icon: FileInput, title: 'Bills' },
-      { key: 'finance-billpayments', icon: CalendarCheck, title: 'Bill Payments' },
-      { key: 'finance-subscriptions', icon: RefreshCw, title: 'Subscriptions' },
-      { key: 'finance-journalentries', icon: ScrollText, title: 'Journal Entries' },
       { key: 'finance-reports', icon: BarChart3, title: 'Reports' },
     ],
   },
@@ -106,17 +96,10 @@ const MODULE_SUB_PAGES = {
     color: 'indigo',
     items: [
       { key: 'growth', icon: LayoutDashboard, title: 'Dashboard' },
-      { key: 'growth-pipeline', icon: Package, title: 'Pipeline' },
-      { key: 'growth-campaigns', icon: Megaphone, title: 'Campaigns' },
-      { key: 'growth-signals', icon: Radio, title: 'Signals' },
-      { key: 'growth-opportunities', icon: Target, title: 'Opportunities' },
-      { key: 'growth-prospects', icon: Users, title: 'Prospects' },
-      { key: 'growth-assistant', icon: Bot, title: 'AI Assistant' },
-      { key: 'growth-research', icon: Search, title: 'Research' },
-      { key: 'growth-templates', icon: FileText, title: 'Templates' },
+      { key: 'growth-campaigns', icon: Megaphone, title: 'New Campaign' },
       { key: 'growth-nests', icon: Database, title: 'Data Nests' },
-      { key: 'growth-enrich', icon: Zap, title: 'Enrich' },
-      { key: 'growth-flows', icon: GitBranch, title: 'Flows' },
+      { key: 'growth-signals', icon: Radio, title: 'Customer Signals' },
+      { key: 'growth-opportunities', icon: Target, title: 'Opportunities' },
     ],
   },
   learn: {
@@ -127,10 +110,7 @@ const MODULE_SUB_PAGES = {
       { key: 'learn-courses', icon: BookOpen, title: 'My Courses' },
       { key: 'learn-skills', icon: Target, title: 'Skills' },
       { key: 'learn-builder', icon: Library, title: 'Course Builder' },
-      { key: 'learn-certifications', icon: Award, title: 'Certifications' },
       { key: 'learn-aitools', icon: Sparkles, title: 'AI Tools' },
-      { key: 'learn-assistant', icon: Bot, title: 'AI Assistant' },
-      { key: 'learn-leaderboard', icon: Trophy, title: 'Leaderboard' },
     ],
   },
   talent: {
@@ -213,27 +193,29 @@ function getParentModule(pageKey) {
 }
 
 // Calculate flyout top offset to align with the active sidebar item (matches production calculateSecondaryNavOffset)
+// Matches production SIDEBAR_CONSTANTS + calculateSecondaryNavOffset exactly
 function calculateFlyoutOffset(moduleKey) {
-  const AVATAR_HEIGHT = 60; // avatar + margin
-  const NAV_PADDING = 16;   // py-4
-  const ITEM_HEIGHT = 44;
-  const ITEM_GAP = 4;
-  const DIVIDER_HEIGHT = 20;
+  const AVATAR_SECTION = 80;   // pt-4 (16px) + avatar (52px) + pb-3 (12px)
+  const NAV_PADDING = 16;      // py-4 top padding
+  const ITEM_HEIGHT = 44;      // min-h-[44px]
+  const ITEM_GAP = 4;          // space-y-1
+  const DIVIDER_HEIGHT = 17;   // h-px + my-2 (1px + 8px + 8px)
+  const ALIGNMENT_ADJUST = -8; // Fine-tune to align perfectly
 
   // Check if this is a core nav item (crm, products)
   const coreIndex = coreNavItems.findIndex(n => n.key === moduleKey);
   if (coreIndex >= 0) {
-    return AVATAR_HEIGHT + NAV_PADDING + (coreIndex * (ITEM_HEIGHT + ITEM_GAP));
+    return AVATAR_SECTION + NAV_PADDING + (coreIndex * (ITEM_HEIGHT + ITEM_GAP)) + ALIGNMENT_ADJUST;
   }
 
   // Engine item — offset past core items + divider
-  const coreTotal = coreNavItems.length * (ITEM_HEIGHT + ITEM_GAP);
+  const coreTotal = (coreNavItems.length * ITEM_HEIGHT) + ((coreNavItems.length - 1) * ITEM_GAP);
   const engineIndex = engineItems.findIndex(e => e.key === moduleKey);
   if (engineIndex >= 0) {
-    return AVATAR_HEIGHT + NAV_PADDING + coreTotal + DIVIDER_HEIGHT + (engineIndex * (ITEM_HEIGHT + ITEM_GAP));
+    return AVATAR_SECTION + NAV_PADDING + coreTotal + DIVIDER_HEIGHT + (engineIndex * (ITEM_HEIGHT + ITEM_GAP)) + ALIGNMENT_ADJUST;
   }
 
-  return AVATAR_HEIGHT + NAV_PADDING;
+  return AVATAR_SECTION + NAV_PADDING;
 }
 
 // Simplified SYNC avatar ring (no animation dependencies)
@@ -315,7 +297,7 @@ function DemoSyncAvatar({ size = 36, isLight = false }) {
 }
 
 export default function DemoSidebar({ currentPage = 'dashboard', onNavigate }) {
-  const { theme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const isLight = theme === 'light';
   const activeModule = getParentModule(currentPage);
   const moduleConfig = activeModule ? MODULE_SUB_PAGES[activeModule] : null;
@@ -327,14 +309,14 @@ export default function DemoSidebar({ currentPage = 'dashboard', onNavigate }) {
 
   // Calculate flyout position to align with active sidebar item
   const flyoutTop = activeModule ? calculateFlyoutOffset(activeModule) : 0;
-  // Subtract header height so the first item aligns with the sidebar icon
-  const headerHeight = 36;
+  // Subtract header height (title + padding + border + container padding) so first nav item aligns
+  const headerHeight = 44;
   const flyoutOffset = Math.max(0, flyoutTop - headerHeight);
 
   return (
     <div className="hidden md:flex h-screen shrink-0 overflow-visible relative z-20">
       {/* Main icon sidebar — matches production exactly */}
-      <div className="flex flex-col w-[72px] lg:w-[80px] bg-black/95 border-r border-zinc-800">
+      <div className="flex flex-col sidebar-shell w-[72px] lg:w-[80px] bg-black/95 border-r border-zinc-800">
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-1 scrollbar-hide">
           {/* SYNC Avatar at top */}
           <div className="flex items-center justify-center min-h-[44px] w-full p-2 mb-2 rounded-xl">
@@ -391,18 +373,34 @@ export default function DemoSidebar({ currentPage = 'dashboard', onNavigate }) {
           </div>
         </nav>
 
-        {/* Bottom Section */}
+        {/* Bottom Section — matches production Layout.jsx bottom section */}
         <div className="p-4 space-y-1 bg-gradient-to-t from-black via-black to-transparent">
-          <div className="flex items-center justify-center min-h-[44px] p-3 rounded-xl text-gray-400 cursor-default" title="Notifications">
+          {/* Notifications bell */}
+          <div className="flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 text-gray-400 hover:text-white hover:bg-white/5 cursor-default" title="Notifications">
             <Bell className="w-5 h-5" />
           </div>
-          <div className="flex items-center justify-center min-h-[44px] p-3 rounded-xl text-gray-400 cursor-default" title="Settings">
+          {/* Settings */}
+          <div className="flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 text-gray-400 hover:text-white hover:bg-white/5 cursor-default" title="Settings">
             <Settings className="w-5 h-5" />
           </div>
-          <div className="flex items-center justify-center min-h-[44px]">
-            <ThemeToggle />
-          </div>
-          <div className="flex items-center justify-center min-h-[44px] p-3 rounded-xl text-gray-400 cursor-default" title="Credits">
+
+          <div className="h-px bg-white/5 mx-2 my-1" />
+
+          {/* Theme Toggle — inline Sun/Moon matching production */}
+          <button
+            onClick={toggleTheme}
+            className="flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 w-full"
+            title={`Switch to ${isLight ? 'dark' : 'light'} mode`}
+          >
+            {!isLight ? (
+              <Sun size={20} className="flex-shrink-0 text-amber-400 group-hover:text-amber-300" />
+            ) : (
+              <Moon size={20} className="flex-shrink-0 text-blue-400 group-hover:text-blue-300" />
+            )}
+          </button>
+
+          {/* Credits */}
+          <div className="flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 text-gray-400 hover:text-white hover:bg-white/5 cursor-default" title="Credits">
             <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 flex items-center justify-center flex-shrink-0">
               <span className="text-[10px] font-bold text-cyan-400">50</span>
             </div>

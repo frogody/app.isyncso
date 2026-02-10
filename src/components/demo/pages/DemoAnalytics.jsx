@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import {
   BarChart3,
   Users,
@@ -15,9 +16,9 @@ import {
 // ─── Stats ────────────────────────────────────────────────────────────────────
 const analyticsStats = [
   { label: 'Total Users', value: '342', icon: Users, change: '+12%', up: true, bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
-  { label: 'Active Today', value: '89', icon: Activity, change: '+8%', up: true, bg: 'bg-emerald-500/15', text: 'text-emerald-400' },
-  { label: 'Page Views', value: '12.4K', icon: Eye, change: '+23%', up: true, bg: 'bg-blue-500/15', text: 'text-blue-400' },
-  { label: 'Avg. Session', value: '4m 32s', icon: Clock, change: '-5%', up: false, bg: 'bg-violet-500/15', text: 'text-violet-400' },
+  { label: 'Active Today', value: '89', icon: Activity, change: '+8%', up: true, bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
+  { label: 'Page Views', value: '12.4K', icon: Eye, change: '+23%', up: true, bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
+  { label: 'Avg. Session', value: '4m 32s', icon: Clock, change: '-5%', up: false, bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
 ];
 
 // ─── Time Periods ─────────────────────────────────────────────────────────────
@@ -97,7 +98,7 @@ export default function DemoAnalytics({ companyName = 'Acme Corp', recipientName
   return (
     <div className="min-h-screen bg-black p-4 sm:p-6 space-y-5">
       {/* ─── Page Header ───────────────────────────────────────────────────── */}
-      <div data-demo="header" className="flex items-center justify-between">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} data-demo="header" className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-cyan-500/20 rounded-xl">
             <BarChart3 className="w-6 h-6 text-cyan-400" />
@@ -122,10 +123,10 @@ export default function DemoAnalytics({ companyName = 'Acme Corp', recipientName
             </button>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* ─── Stats Row ─────────────────────────────────────────────────────── */}
-      <div data-demo="analytics-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.05 }} data-demo="analytics-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {analyticsStats.map((stat) => (
           <div
             key={stat.label}
@@ -139,17 +140,17 @@ export default function DemoAnalytics({ companyName = 'Acme Corp', recipientName
             </div>
             <div className="flex items-end justify-between">
               <span className="text-2xl font-bold text-white">{stat.value}</span>
-              <span className={`flex items-center gap-0.5 text-xs ${stat.up ? 'text-emerald-400' : 'text-red-400'}`}>
+              <span className={`flex items-center gap-0.5 text-xs ${stat.up ? 'text-cyan-400' : 'text-red-400'}`}>
                 {stat.up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                 {stat.change}
               </span>
             </div>
           </div>
         ))}
-      </div>
+      </motion.div>
 
       {/* ─── Charts Row ────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.1 }} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Revenue Bar Chart */}
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-6">
@@ -157,7 +158,7 @@ export default function DemoAnalytics({ companyName = 'Acme Corp', recipientName
               <h2 className="text-sm font-semibold text-white">Revenue</h2>
               <p className="text-xs text-zinc-500 mt-0.5">Monthly recurring revenue trend</p>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-400">
+            <div className="flex items-center gap-1.5 text-xs text-cyan-400">
               <TrendingUp className="w-3.5 h-3.5" />
               +27% vs last period
             </div>
@@ -183,7 +184,7 @@ export default function DemoAnalytics({ companyName = 'Acme Corp', recipientName
               <h2 className="text-sm font-semibold text-white">User Growth</h2>
               <p className="text-xs text-zinc-500 mt-0.5">Total registered users over time</p>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-400">
+            <div className="flex items-center gap-1.5 text-xs text-cyan-400">
               <TrendingUp className="w-3.5 h-3.5" />
               +90% in 6 months
             </div>
@@ -204,10 +205,10 @@ export default function DemoAnalytics({ companyName = 'Acme Corp', recipientName
             })}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* ─── Module Usage + Top Pages ──────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.15 }} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Module Usage */}
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
@@ -262,10 +263,10 @@ export default function DemoAnalytics({ companyName = 'Acme Corp', recipientName
             </table>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* ─── Activity Heatmap ──────────────────────────────────────────────── */}
-      <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.2 }} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-sm font-semibold text-white">Activity Heatmap</h2>
@@ -310,7 +311,7 @@ export default function DemoAnalytics({ companyName = 'Acme Corp', recipientName
             </div>
           ))}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

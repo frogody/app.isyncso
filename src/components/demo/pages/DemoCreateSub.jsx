@@ -1,599 +1,1319 @@
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Brush,
-  Type,
-  Copy,
-  Image,
-  Sparkles,
-  Download,
-  Pencil,
-  Clock,
-  Video,
-  Play,
-  Timer,
+  Paintbrush,
+  Camera,
+  Clapperboard,
   FolderOpen,
-  Filter,
-  Search,
+  ChevronLeft,
+  ChevronDown,
+  Image as ImageIcon,
+  Palette,
+  Type,
+  MessageSquare,
+  Sparkles,
+  Plus,
+  X,
+  Wand2,
+  Package,
+  Clock,
+  Film,
+  Zap,
+  Download,
+  RefreshCw,
+  History,
+  Play,
   Trash2,
-  Share2,
-  FileImage,
-  FileVideo,
-  LayoutTemplate,
-  HardDrive,
+  Search,
+  Grid,
+  List,
+  CheckSquare,
+  Square,
+  Heart,
+  Eye,
+  Video,
+  ArrowLeft,
+  Loader2,
+  Check,
+  Droplets,
+  Monitor,
+  Box,
 } from 'lucide-react';
 
-// ─── 1. DemoCreateBranding ──────────────────────────────────────────────────────
+// =====================================================================================
+// SHARED MOCK DATA
+// =====================================================================================
 
-const brandColors = [
-  { hex: '#EAB308', label: 'Primary' },
-  { hex: '#F59E0B', label: 'Secondary' },
-  { hex: '#78716C', label: 'Neutral' },
-  { hex: '#1C1917', label: 'Dark' },
-  { hex: '#FAFAF9', label: 'Light' },
-  { hex: '#3B82F6', label: 'Accent' },
+const BRAND_COLORS = {
+  primary: '#22d3ee',
+  secondary: '#f59e0b',
+  accent: '#8b5cf6',
+  background: '#0a0a0a',
+  text: '#ffffff',
+};
+
+const COLOR_LABELS = {
+  primary: 'Primary',
+  secondary: 'Secondary',
+  accent: 'Accent',
+  background: 'Background',
+  text: 'Text',
+};
+
+const TONE_OPTIONS = [
+  { value: 'professional', label: 'Professional' },
+  { value: 'friendly', label: 'Friendly' },
+  { value: 'casual', label: 'Casual' },
+  { value: 'formal', label: 'Formal' },
+  { value: 'playful', label: 'Playful' },
+  { value: 'authoritative', label: 'Authoritative' },
+  { value: 'bold', label: 'Bold' },
 ];
 
-const logoVariations = ['Full Logo', 'Icon Only', 'Monochrome', 'Dark / Light'];
-
-const brandedTemplates = [
-  { name: 'Social Post', uses: 48, gradient: 'from-yellow-600 to-amber-800' },
-  { name: 'Email Header', uses: 31, gradient: 'from-violet-600 to-purple-900' },
-  { name: 'Presentation Slide', uses: 22, gradient: 'from-emerald-600 to-teal-800' },
-  { name: 'Product Banner', uses: 17, gradient: 'from-rose-600 to-pink-900' },
+const MOOD_OPTIONS = [
+  { value: 'modern', label: 'Modern' },
+  { value: 'classic', label: 'Classic' },
+  { value: 'minimalist', label: 'Minimal' },
+  { value: 'bold', label: 'Bold' },
+  { value: 'elegant', label: 'Elegant' },
+  { value: 'tech', label: 'Tech' },
+  { value: 'playful', label: 'Playful' },
 ];
+
+const FONT_OPTIONS = [
+  'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Montserrat',
+  'Source Sans Pro', 'Nunito', 'Raleway', 'Work Sans', 'Playfair Display',
+  'Merriweather', 'DM Sans', 'Space Grotesk',
+];
+
+const IMAGE_STYLE_PRESETS = [
+  { id: 'photorealistic', label: 'Photo', icon: Camera },
+  { id: 'illustration', label: 'Illustr.', icon: Paintbrush },
+  { id: '3d_render', label: '3D', icon: Box },
+  { id: 'digital_art', label: 'Digital', icon: Monitor },
+  { id: 'watercolor', label: 'Water', icon: Droplets },
+  { id: 'minimalist', label: 'Minimal', icon: Square },
+  { id: 'vintage', label: 'Vintage', icon: Clock },
+  { id: 'cinematic', label: 'Cinema', icon: Film },
+];
+
+const IMAGE_ASPECT_RATIOS = [
+  { id: '1:1', label: '1:1', shape: 'w-5 h-5' },
+  { id: '16:9', label: '16:9', shape: 'w-7 h-4' },
+  { id: '9:16', label: '9:16', shape: 'w-4 h-7' },
+  { id: '4:3', label: '4:3', shape: 'w-6 h-5' },
+  { id: '3:4', label: '3:4', shape: 'w-5 h-6' },
+];
+
+const IMAGE_QUICK_SUGGESTIONS = [
+  'Product on marble',
+  'Lifestyle scene',
+  'Social media post',
+  'Marketing banner',
+  'Portrait photo',
+];
+
+const IMAGE_MODES = [
+  {
+    id: 'product',
+    label: 'Product Shot',
+    description: 'Best for product photography with reference images',
+    icon: Camera,
+  },
+  {
+    id: 'marketing',
+    label: 'Marketing Creative',
+    description: 'Text-to-image for ads, social content & marketing',
+    icon: Sparkles,
+  },
+  {
+    id: 'draft',
+    label: 'Quick Draft',
+    description: 'Fast generation for brainstorming & concepts',
+    icon: Zap,
+  },
+];
+
+const VIDEO_STYLE_PRESETS = [
+  { id: 'cinematic', label: 'Cinematic', icon: Film },
+  { id: 'documentary', label: 'Documentary', icon: Video },
+  { id: 'animated', label: 'Animated', icon: Clapperboard },
+  { id: 'product_showcase', label: 'Product', icon: Package },
+  { id: 'social_media', label: 'Social', icon: Camera },
+  { id: 'creative', label: 'Creative', icon: Zap },
+];
+
+const VIDEO_DURATIONS = [
+  { id: '5', seconds: 5 },
+  { id: '10', seconds: 10 },
+  { id: '15', seconds: 15 },
+  { id: '30', seconds: 30 },
+];
+
+const VIDEO_ASPECT_RATIOS = [
+  { id: '16:9', label: 'Landscape', sublabel: '16:9' },
+  { id: '9:16', label: 'Portrait', sublabel: '9:16' },
+  { id: '1:1', label: 'Square', sublabel: '1:1' },
+  { id: '4:5', label: 'Instagram', sublabel: '4:5' },
+];
+
+const VIDEO_QUICK_SUGGESTIONS = [
+  'Product showcase',
+  'Talking head',
+  'Cinematic intro',
+  'Social ad',
+  'Explainer',
+];
+
+const LIBRARY_FILTER_CHIPS = [
+  { value: 'all', label: 'All' },
+  { value: 'image', label: 'Images' },
+  { value: 'video', label: 'Videos' },
+  { value: 'favorites', label: 'Favorites' },
+  { value: 'recent', label: 'Recent' },
+];
+
+const LIBRARY_SORT_OPTIONS = [
+  { value: '-created_at', label: 'Newest' },
+  { value: 'created_at', label: 'Oldest' },
+  { value: 'name', label: 'Name A-Z' },
+  { value: '-name', label: 'Name Z-A' },
+];
+
+const LIBRARY_ITEMS = [
+  { id: '1', name: 'Product Hero Shot', content_type: 'image', created_at: '2026-02-08', prompt: 'Professional product shot on marble surface', style: 'photorealistic', gradient: 'from-yellow-600 to-amber-800' },
+  { id: '2', name: 'Social Ad Campaign', content_type: 'image', created_at: '2026-02-07', prompt: 'Abstract geometric brand pattern', style: 'abstract', gradient: 'from-violet-600 to-purple-900' },
+  { id: '3', name: 'Product Launch Teaser', content_type: 'video', created_at: '2026-02-06', prompt: 'Cinematic product launch video', style: 'cinematic', duration: 15, gradient: 'from-emerald-600 to-teal-800' },
+  { id: '4', name: 'Email Banner v3', content_type: 'image', created_at: '2026-02-05', prompt: 'Clean email header with gradient', style: 'minimalist', gradient: 'from-rose-600 to-pink-900' },
+  { id: '5', name: 'Instagram Carousel', content_type: 'image', created_at: '2026-02-04', prompt: 'LinkedIn carousel data visual', style: 'digital_art', gradient: 'from-indigo-600 to-blue-900' },
+  { id: '6', name: 'Feature Walkthrough', content_type: 'video', created_at: '2026-02-03', prompt: 'Explainer video for product features', style: 'explainer', duration: 30, gradient: 'from-amber-600 to-orange-800' },
+  { id: '7', name: 'Brand Pattern Pack', content_type: 'image', created_at: '2026-02-02', prompt: 'Minimalist icon set for landing page', style: 'illustration', gradient: 'from-cyan-600 to-teal-800' },
+  { id: '8', name: 'Testimonial Edit', content_type: 'video', created_at: '2026-02-01', prompt: 'Customer testimonial compilation', style: 'documentary', duration: 45, gradient: 'from-pink-600 to-rose-900' },
+  { id: '9', name: 'Blog Header Image', content_type: 'image', created_at: '2026-01-31', prompt: 'Abstract tech illustration for blog', style: 'illustration', gradient: 'from-sky-600 to-blue-900' },
+  { id: '10', name: 'Social Reel Cut', content_type: 'video', created_at: '2026-01-30', prompt: 'Quick social media reel', style: 'social', duration: 10, gradient: 'from-lime-600 to-green-800' },
+];
+
+// =====================================================================================
+// SHARED SUB-COMPONENTS
+// =====================================================================================
+
+function BrandingSection({ icon: Icon, title, defaultOpen = true, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors cursor-default"
+      >
+        <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+          <Icon className="w-4 h-4 text-yellow-400" />
+        </div>
+        <span className="text-white font-semibold text-sm flex-1">{title}</span>
+        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
+          <ChevronDown className="w-4 h-4 text-zinc-500" />
+        </motion.div>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-5 pt-1">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function PillSelect({ options, value }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map(opt => (
+        <span
+          key={opt.value}
+          className={`px-4 py-1.5 text-xs font-medium rounded-full border transition-all cursor-default ${
+            value === opt.value
+              ? 'bg-yellow-500/15 border-yellow-500/40 text-yellow-400'
+              : 'bg-zinc-800/40 border-zinc-700/50 text-zinc-400'
+          }`}
+        >
+          {opt.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function FontPickerDisplay({ value, label }) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium text-zinc-400">{label}</p>
+      <div className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-zinc-800/50 border border-zinc-700/60 cursor-default">
+        <span className="text-white text-sm" style={{ fontFamily: value }}>{value}</span>
+        <ChevronDown className="w-4 h-4 text-zinc-500" />
+      </div>
+    </div>
+  );
+}
+
+function ChipDisplay({ items, variant = 'yellow' }) {
+  const colors = variant === 'red'
+    ? 'bg-red-500/10 text-red-400 border-red-500/20'
+    : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+
+  if (!items || items.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map(item => (
+        <span
+          key={item}
+          className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full border cursor-default ${colors}`}
+        >
+          {item}
+          <X className="w-3 h-3" />
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// =====================================================================================
+// 1. DemoCreateBranding
+// =====================================================================================
 
 export function DemoCreateBranding({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  const brandData = {
+    colors: BRAND_COLORS,
+    typography: { primary_font: 'Inter', secondary_font: 'Roboto' },
+    voice: {
+      tone: 'professional',
+      keywords: ['innovative', 'reliable', 'modern'],
+      style_guide: 'Use clear, concise language. Avoid jargon unless speaking to technical audiences.',
+      sample_copy: 'We build tools that empower teams to do their best work.',
+    },
+    visual_style: {
+      mood: 'modern',
+      image_style: 'clean',
+      preferred_themes: ['tech', 'collaboration', 'growth'],
+      avoid_themes: ['cluttered', 'dark imagery'],
+    },
+  };
+
+  const toneLabel = TONE_OPTIONS.find(t => t.value === brandData.voice.tone)?.label || brandData.voice.tone;
+
   return (
-    <div data-demo="brand-kit" className="min-h-screen bg-black p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-yellow-500/20 rounded-xl">
-            <Brush className="w-6 h-6 text-yellow-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-white">Brand Kit</h1>
-            <p className="text-zinc-400 mt-0.5">Manage the {companyName} brand identity.</p>
-          </div>
-        </div>
-        <button className="flex items-center gap-2 px-4 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-black font-medium text-sm rounded-xl transition-colors">
-          <Pencil className="w-4 h-4" />
-          Edit Brand Kit
-        </button>
-      </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="min-h-screen bg-[#09090b]">
+        <div className="w-full px-4 lg:px-6 py-5 space-y-5">
 
-      {/* Brand Overview */}
-      <div className="grid grid-cols-3 gap-4">
-        {/* Logo */}
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-4">
-          <span className="text-xs text-zinc-500 font-medium uppercase tracking-wider">Company Logo</span>
-          <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center text-black font-bold text-3xl mx-auto">
-            {companyName.charAt(0)}
-          </div>
-          <p className="text-sm text-zinc-400 text-center">{companyName} Primary Mark</p>
-        </div>
-
-        {/* Colors */}
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-4">
-          <span className="text-xs text-zinc-500 font-medium uppercase tracking-wider">Primary / Secondary / Accent</span>
-          <div className="flex items-center gap-2">
-            {brandColors.slice(0, 3).map((c) => (
-              <div key={c.hex} className="flex flex-col items-center gap-1">
-                <div className="w-14 h-14 rounded-xl border border-zinc-700" style={{ backgroundColor: c.hex }} />
-                <span className="text-[10px] text-zinc-500">{c.label}</span>
-                <span className="text-[9px] text-zinc-600 font-mono">{c.hex}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Typography */}
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-4">
-          <span className="text-xs text-zinc-500 font-medium uppercase tracking-wider">Typography</span>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Type className="w-5 h-5 text-yellow-400" />
-              <div>
-                <p className="text-sm text-white font-semibold">Inter</p>
-                <p className="text-[11px] text-zinc-500">Heading Font &middot; 24 / 20 / 16px</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Type className="w-5 h-5 text-zinc-500" />
-              <div>
-                <p className="text-sm text-zinc-300">Inter</p>
-                <p className="text-[11px] text-zinc-500">Body Font &middot; 14 / 12px</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Color Palette */}
-      <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-        <h2 className="text-white font-semibold mb-4">Color Palette</h2>
-        <div className="flex items-center gap-4">
-          {brandColors.map((c) => (
-            <div key={c.hex} className="flex flex-col items-center gap-2 group cursor-default">
-              <div className="w-16 h-16 rounded-xl border border-zinc-700 relative" style={{ backgroundColor: c.hex }}>
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 rounded-xl">
-                  <Copy className="w-4 h-4 text-white" />
+          {/* Header Row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1.5 text-xs text-zinc-500 cursor-default">
+                <ChevronLeft className="w-3.5 h-3.5" />
+                Create Studio
+              </span>
+              <div className="w-px h-5 bg-zinc-800" />
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+                  <Paintbrush className="w-4 h-4 text-yellow-400" />
+                </div>
+                <div>
+                  <h1 className="text-base font-semibold text-white leading-tight">Brand Identity Designer</h1>
+                  <p className="text-[11px] text-zinc-500">Complete Brand Kits</p>
                 </div>
               </div>
-              <span className="text-xs text-zinc-400">{c.label}</span>
-              <span className="text-[10px] text-zinc-600 font-mono">{c.hex}</span>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* Logo Variations */}
-      <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-        <h2 className="text-white font-semibold mb-4">Logo Variations</h2>
-        <div className="grid grid-cols-4 gap-3">
-          {logoVariations.map((v) => (
-            <div key={v} className="bg-zinc-800/40 border border-zinc-800/50 rounded-xl p-5 flex flex-col items-center gap-3">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-yellow-500/80 to-amber-600/80 flex items-center justify-center text-black font-bold text-xl">
-                {companyName.charAt(0)}
+          {/* Live Brand Preview */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="rounded-[20px] bg-zinc-900/50 border border-yellow-500/10 shadow-[0_0_40px_-12px_rgba(234,179,8,0.06)] p-5"
+          >
+            <div className="flex items-center gap-6 flex-wrap">
+              {/* Logo placeholder */}
+              <div className="w-16 h-16 rounded-xl bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center overflow-hidden shrink-0">
+                <ImageIcon className="w-5 h-5 text-zinc-600" />
               </div>
-              <span className="text-xs text-zinc-400">{v}</span>
+
+              {/* Color swatches */}
+              <div className="flex items-center gap-2">
+                {Object.entries(brandData.colors).map(([key, color]) => (
+                  <div
+                    key={key}
+                    className="w-8 h-8 rounded-full border-2 border-zinc-800"
+                    style={{ backgroundColor: color }}
+                    title={`${COLOR_LABELS[key]}: ${color}`}
+                  />
+                ))}
+              </div>
+
+              {/* Typography preview */}
+              <div className="flex-1 min-w-[180px]">
+                <p className="text-sm font-bold text-white truncate" style={{ fontFamily: brandData.typography.primary_font }}>
+                  {brandData.typography.primary_font}
+                </p>
+                <p className="text-xs text-zinc-400 truncate" style={{ fontFamily: brandData.typography.secondary_font }}>
+                  Body text in {brandData.typography.secondary_font}
+                </p>
+              </div>
+
+              {/* Tone badge */}
+              <span className="px-3 py-1 text-xs font-medium rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 capitalize shrink-0">
+                {toneLabel}
+              </span>
             </div>
-          ))}
-        </div>
-      </div>
+          </motion.div>
 
-      {/* Brand Guidelines */}
-      <div className="bg-gradient-to-br from-yellow-600/10 to-amber-900/10 border border-yellow-500/20 rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-2">
-          <Sparkles className="w-5 h-5 text-yellow-400" />
-          <h2 className="text-white font-semibold">AI Brand Compliance</h2>
-        </div>
-        <p className="text-sm text-zinc-400">
-          All AI-generated content automatically uses your brand kit. Colors, fonts, and tone of voice are applied consistently across every asset.
-        </p>
-      </div>
+          {/* Section 1: Logos */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+            <BrandingSection icon={ImageIcon} title="Brand Identity (Logos)">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {['Primary Logo', 'Secondary Logo', 'Icon'].map((label) => (
+                  <div key={label} className="space-y-2">
+                    <p className="text-xs font-medium text-zinc-400">{label}</p>
+                    <div className="aspect-video bg-zinc-800/30 rounded-xl border-2 border-dashed border-zinc-700/60 flex flex-col items-center justify-center gap-2 cursor-default">
+                      <Camera className="w-5 h-5 text-zinc-600" />
+                      <span className="text-xs text-zinc-500">Drop or click</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-600">
+                      {label === 'Primary Logo' ? 'Main logo for headers and documents' :
+                       label === 'Secondary Logo' ? 'Alternative for dark/light backgrounds' :
+                       'Square icon for favicons and apps'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </BrandingSection>
+          </motion.div>
 
-      {/* Template Gallery */}
-      <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-white font-semibold">Branded Templates</h2>
-          <span className="text-xs text-zinc-500">{brandedTemplates.length} templates</span>
-        </div>
-        <div className="grid grid-cols-4 gap-3">
-          {brandedTemplates.map((t) => (
-            <div key={t.name} className="bg-zinc-800/30 border border-zinc-800/50 rounded-xl overflow-hidden group cursor-default">
-              <div className={`h-28 bg-gradient-to-br ${t.gradient} flex items-center justify-center`}>
-                <LayoutTemplate className="w-8 h-8 text-white/20" />
+          {/* Section 2: Colors */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <BrandingSection icon={Palette} title="Color Palette">
+              <div className="flex items-start gap-5 flex-wrap">
+                {Object.entries(brandData.colors).map(([key, color]) => (
+                  <div key={key} className="flex flex-col items-center gap-2 min-w-[72px]">
+                    <div
+                      className="w-14 h-14 rounded-full border-2 border-zinc-700/60 shadow-lg cursor-default"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span className="text-[11px] text-zinc-500 capitalize">{COLOR_LABELS[key]}</span>
+                    <span className="w-20 text-center text-[11px] font-mono text-zinc-300 bg-zinc-800/50 border border-zinc-700/40 rounded-lg px-1.5 py-1">
+                      {color}
+                    </span>
+                  </div>
+                ))}
               </div>
-              <div className="p-3">
-                <p className="text-sm text-white font-medium">{t.name}</p>
-                <p className="text-[11px] text-zinc-500">{t.uses} uses</p>
+
+              {/* Preview */}
+              <div className="mt-5 p-4 rounded-xl border border-zinc-700/40 bg-zinc-800/30">
+                <h4 className="text-sm font-bold mb-2 text-white">Preview Header</h4>
+                <p className="text-xs mb-3 text-zinc-400">This is how your brand colors will look in generated content.</p>
+                <div className="flex gap-2 flex-wrap">
+                  {['primary', 'secondary', 'accent'].map(key => (
+                    <span
+                      key={key}
+                      className="px-4 py-1.5 rounded-full text-xs font-medium"
+                      style={{ backgroundColor: brandData.colors[key], color: '#fff' }}
+                    >
+                      {COLOR_LABELS[key]}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            </BrandingSection>
+          </motion.div>
+
+          {/* Section 3: Typography */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <BrandingSection icon={Type} title="Typography">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FontPickerDisplay label="Heading Font" value={brandData.typography.primary_font} />
+                <FontPickerDisplay label="Body Font" value={brandData.typography.secondary_font} />
+              </div>
+              <div className="mt-4 p-4 bg-zinc-800/30 rounded-xl border border-zinc-700/40 space-y-1.5">
+                <h4
+                  className="text-lg font-bold text-white"
+                  style={{ fontFamily: brandData.typography.primary_font }}
+                >
+                  Your Heading
+                </h4>
+                <p
+                  className="text-sm text-zinc-400 leading-relaxed"
+                  style={{ fontFamily: brandData.typography.secondary_font }}
+                >
+                  Your body text looks like this. It should be easy to read and reflect your brand personality across all generated content.
+                </p>
+              </div>
+            </BrandingSection>
+          </motion.div>
+
+          {/* Section 4: Voice & Tone */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <BrandingSection icon={MessageSquare} title="Voice & Tone">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs font-medium text-zinc-400 mb-2">Tone</p>
+                  <PillSelect options={TONE_OPTIONS} value={brandData.voice.tone} />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-zinc-400 mb-2">Keywords</p>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        readOnly
+                        placeholder="Add a keyword..."
+                        className="flex-1 bg-zinc-800/50 border border-zinc-700/60 text-white text-sm rounded-xl px-4 py-2.5 cursor-default focus:outline-none"
+                      />
+                      <span className="shrink-0 p-2.5 rounded-xl bg-zinc-800/50 border border-zinc-700/60 text-zinc-400 cursor-default">
+                        <Plus className="w-4 h-4" />
+                      </span>
+                    </div>
+                    <ChipDisplay items={brandData.voice.keywords} />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-zinc-400 mb-1.5">Style Guide</p>
+                  <div className="bg-zinc-800/50 border border-zinc-700/60 text-zinc-300 text-sm min-h-[80px] rounded-xl p-3 cursor-default">
+                    {brandData.voice.style_guide}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-zinc-400 mb-1.5">Sample Copy</p>
+                  <div className="bg-zinc-800/50 border border-zinc-700/60 text-zinc-300 text-sm min-h-[100px] rounded-xl p-3 cursor-default">
+                    {brandData.voice.sample_copy}
+                  </div>
+                </div>
+              </div>
+            </BrandingSection>
+          </motion.div>
+
+          {/* Section 5: Visual Style */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+            <BrandingSection icon={Sparkles} title="Visual Style">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs font-medium text-zinc-400 mb-2">Mood</p>
+                  <PillSelect options={MOOD_OPTIONS} value={brandData.visual_style.mood} />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-zinc-400 mb-1.5">Image Style</p>
+                  <div className="bg-zinc-800/50 border border-zinc-700/60 text-zinc-300 text-sm rounded-xl px-4 py-2.5 cursor-default">
+                    {brandData.visual_style.image_style}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-medium text-zinc-400 mb-2">Preferred Themes</p>
+                    <ChipDisplay items={brandData.visual_style.preferred_themes} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-zinc-400 mb-2">Themes to Avoid</p>
+                    <ChipDisplay items={brandData.visual_style.avoid_themes} variant="red" />
+                  </div>
+                </div>
+              </div>
+            </BrandingSection>
+          </motion.div>
+
+          {/* Bottom spacer */}
+          <div className="h-8" />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
-// ─── 2. DemoCreateImages ────────────────────────────────────────────────────────
-
-const stylePresets = ['Photorealistic', 'Illustration', 'Product Photo', 'Social Media', 'Abstract'];
-
-const recentImages = [
-  { prompt: 'Professional product shot on marble surface...', style: 'Photorealistic', resolution: '2048x2048', date: 'Feb 6, 2026', gradient: 'from-yellow-600 to-amber-800' },
-  { prompt: 'Abstract geometric brand pattern...', style: 'Abstract', resolution: '1920x1080', date: 'Feb 5, 2026', gradient: 'from-violet-600 to-purple-900' },
-  { prompt: 'Team collaboration illustration, flat...', style: 'Illustration', resolution: '1200x628', date: 'Feb 4, 2026', gradient: 'from-emerald-600 to-teal-800' },
-  { prompt: 'E-commerce product banner, clean white...', style: 'Product Photo', resolution: '2400x600', date: 'Feb 3, 2026', gradient: 'from-rose-600 to-pink-900' },
-  { prompt: 'LinkedIn carousel slide, data visual...', style: 'Social Media', resolution: '1080x1080', date: 'Feb 2, 2026', gradient: 'from-indigo-600 to-blue-900' },
-  { prompt: 'Minimalist icon set for landing page...', style: 'Illustration', resolution: '512x512', date: 'Feb 1, 2026', gradient: 'from-amber-600 to-orange-800' },
-];
-
-const imageStats = [
-  { label: 'Images Generated', value: '156' },
-  { label: 'This Week', value: '12' },
-  { label: 'Avg Quality Score', value: '4.2 / 5' },
-];
+// =====================================================================================
+// 2. DemoCreateImages
+// =====================================================================================
 
 export function DemoCreateImages({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  const [selectedMode, setSelectedMode] = useState('marketing');
+  const [selectedStyle, setSelectedStyle] = useState('photorealistic');
+  const [aspectRatio, setAspectRatio] = useState('1:1');
+
   return (
-    <div data-demo="image-generator" className="min-h-screen bg-black p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-yellow-500/20 rounded-xl">
-            <Image className="w-6 h-6 text-yellow-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-white">Image Generation</h1>
-            <p className="text-zinc-400 mt-0.5">Create AI-powered visuals for {companyName}.</p>
-          </div>
-        </div>
-      </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="min-h-screen bg-[#09090b]">
+        <div className="w-full px-4 lg:px-6 py-6 space-y-5">
 
-      {/* Generation Interface */}
-      <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-4">
-        <div className="bg-black/30 border border-zinc-800/50 rounded-xl p-3">
-          <input
-            type="text"
-            readOnly
-            placeholder="Describe the image you want to generate..."
-            className="w-full bg-transparent text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none cursor-default"
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <select className="bg-zinc-800/60 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-300 cursor-default appearance-none">
-            {stylePresets.map((s) => (
-              <option key={s}>{s}</option>
-            ))}
-          </select>
-          <select className="bg-zinc-800/60 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-300 cursor-default appearance-none">
-            <option>1:1</option>
-            <option>16:9</option>
-            <option>4:3</option>
-            <option>9:16</option>
-          </select>
-          <button className="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-medium text-sm rounded-xl transition-colors ml-auto">
-            <Sparkles className="w-3.5 h-3.5" />
-            Generate
-          </button>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        {imageStats.map((stat) => (
-          <div key={stat.label} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
-            <span className="text-zinc-400 text-sm">{stat.label}</span>
-            <p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
+          {/* Back nav + Header row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1.5 text-sm text-zinc-500 cursor-default">
+                <ArrowLeft className="w-4 h-4" />
+                Create Studio
+              </span>
+              <div className="w-px h-5 bg-zinc-800" />
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+                  <Camera className="w-4 h-4 text-yellow-400" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-white leading-tight">AI Image Generation</h1>
+                  <p className="text-xs text-zinc-500">FLUX Pro & Kontext</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="p-2.5 rounded-full border bg-zinc-900/50 border-zinc-800/60 text-zinc-500 cursor-default">
+                <History className="w-4 h-4" />
+              </span>
+            </div>
           </div>
-        ))}
-      </div>
 
-      {/* Style Presets */}
-      <div className="flex items-center gap-2">
-        {stylePresets.map((s, i) => (
-          <div
-            key={s}
-            className={`px-4 py-2 rounded-xl text-sm cursor-default transition-colors ${
-              i === 0
-                ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
-                : 'bg-zinc-900/50 text-zinc-400 border border-zinc-800'
-            }`}
+          {/* Hero Prompt Area */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="rounded-[20px] bg-zinc-900/50 border-zinc-800/60 border p-5"
           >
-            {s}
-          </div>
-        ))}
-      </div>
-
-      {/* Recent Generations Grid */}
-      <div className="grid grid-cols-3 gap-4">
-        {recentImages.map((img, idx) => (
-          <div key={idx} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden group">
-            <div className={`h-40 bg-gradient-to-br ${img.gradient} flex items-center justify-center relative`}>
-              <Image className="w-8 h-8 text-white/20" />
+            <div className="min-h-[80px] text-base text-zinc-600 cursor-default">
+              Describe the image you want to create...
             </div>
-            <div className="p-4 space-y-2">
-              <p className="text-sm text-zinc-300 truncate">{img.prompt}</p>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400">{img.style}</span>
-                <span className="text-[11px] text-zinc-600">{img.resolution}</span>
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-800/40">
+              <div className="flex flex-wrap gap-1.5">
+                {IMAGE_QUICK_SUGGESTIONS.map(chip => (
+                  <span
+                    key={chip}
+                    className="px-3 py-1 text-xs rounded-full bg-zinc-800/60 border-zinc-700/40 text-zinc-400 border cursor-default"
+                  >
+                    {chip}
+                  </span>
+                ))}
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 text-xs text-zinc-500">
-                  <Clock className="w-3 h-3" />
-                  {img.date}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Download className="w-3.5 h-3.5 text-zinc-600 hover:text-zinc-400 cursor-default" />
-                  <Pencil className="w-3.5 h-3.5 text-zinc-600 hover:text-zinc-400 cursor-default" />
-                </div>
-              </div>
+              <span className="text-[10px] text-zinc-600 flex-shrink-0 ml-3">0/1000</span>
             </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+          </motion.div>
 
-// ─── 3. DemoCreateVideos ────────────────────────────────────────────────────────
-
-const recentVideos = [
-  { title: 'Product Launch Teaser', duration: '30s', status: 'Complete', statusStyle: 'bg-emerald-500/15 text-emerald-400', gradient: 'from-yellow-600 to-amber-800' },
-  { title: 'Social Ad - Q1 Campaign', duration: '15s', status: 'Generating', statusStyle: 'bg-amber-500/15 text-amber-400', gradient: 'from-violet-600 to-purple-900' },
-  { title: 'Feature Walkthrough', duration: '60s', status: 'Complete', statusStyle: 'bg-emerald-500/15 text-emerald-400', gradient: 'from-emerald-600 to-teal-800' },
-  { title: 'Customer Testimonial Edit', duration: '30s', status: 'Processing', statusStyle: 'bg-indigo-500/15 text-indigo-400', gradient: 'from-rose-600 to-pink-900' },
-];
-
-const videoStats = [
-  { label: 'Videos Created', value: '24' },
-  { label: 'In Queue', value: '3' },
-  { label: 'Total Duration', value: '12m' },
-];
-
-const timelineSegments = [
-  { label: 'Intro', width: '25%', color: 'bg-yellow-500/60' },
-  { label: 'Main', width: '50%', color: 'bg-amber-500/60' },
-  { label: 'CTA', width: '25%', color: 'bg-yellow-400/60' },
-];
-
-export function DemoCreateVideos({ companyName = 'Acme Corp', recipientName = 'there' }) {
-  return (
-    <div data-demo="video-generator" className="min-h-screen bg-black p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-yellow-500/20 rounded-xl">
-            <Video className="w-6 h-6 text-yellow-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-white">Video Generation</h1>
-            <p className="text-zinc-400 mt-0.5">Create and manage video content for {companyName}.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Video Creation Panel */}
-      <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-4">
-        <div className="bg-black/30 border border-zinc-800/50 rounded-xl p-3">
-          <input
-            type="text"
-            readOnly
-            placeholder="Describe the video you want to create..."
-            className="w-full bg-transparent text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none cursor-default"
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <Timer className="w-4 h-4 text-zinc-500" />
-            {['15s', '30s', '60s'].map((d, i) => (
-              <button
-                key={d}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  i === 1
-                    ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
-                    : 'bg-zinc-800/60 text-zinc-400 border border-zinc-700'
-                }`}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-          <select className="bg-zinc-800/60 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-300 cursor-default appearance-none">
-            <option>Cinematic</option>
-            <option>Product Demo</option>
-            <option>Social Reel</option>
-            <option>Animation</option>
-          </select>
-          <button className="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-medium text-sm rounded-xl transition-colors ml-auto">
-            <Sparkles className="w-3.5 h-3.5" />
-            Create Video
-          </button>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        {videoStats.map((stat) => (
-          <div key={stat.label} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
-            <span className="text-zinc-400 text-sm">{stat.label}</span>
-            <p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Recent Videos Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        {recentVideos.map((v, idx) => (
-          <div key={idx} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden group">
-            <div className={`h-44 bg-gradient-to-br ${v.gradient} flex items-center justify-center relative`}>
-              <div className="p-3 bg-black/40 rounded-full backdrop-blur-sm">
-                <Play className="w-6 h-6 text-white" />
-              </div>
-              <div className="absolute top-3 right-3">
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${v.statusStyle}`}>
-                  {v.status}
-                </span>
-              </div>
-              <div className="absolute bottom-3 right-3 flex items-center gap-1 text-xs text-white/70 bg-black/40 px-2 py-0.5 rounded-lg backdrop-blur-sm">
-                <Timer className="w-3 h-3" />
-                {v.duration}
-              </div>
-            </div>
-            <div className="p-4">
-              <h3 className="text-sm font-medium text-white">{v.title}</h3>
-              <p className="text-[11px] text-zinc-500 mt-1">{v.duration} &middot; {v.status}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Project Timeline */}
-      <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-        <h2 className="text-white font-semibold mb-4">Project Timeline</h2>
-        <div className="flex items-center gap-1 h-10 rounded-xl overflow-hidden">
-          {timelineSegments.map((seg) => (
-            <div
-              key={seg.label}
-              className={`h-full ${seg.color} flex items-center justify-center rounded-lg`}
-              style={{ width: seg.width }}
-            >
-              <span className="text-[11px] text-white font-medium">{seg.label}</span>
-            </div>
-          ))}
-        </div>
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-[11px] text-zinc-600">0:00</span>
-          <span className="text-[11px] text-zinc-600">0:30</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── 4. DemoCreateLibrary ───────────────────────────────────────────────────────
-
-const typeBadgeMap = {
-  Image: 'bg-yellow-500/15 text-yellow-400',
-  Video: 'bg-amber-500/15 text-amber-400',
-  Template: 'bg-violet-500/15 text-violet-400',
-  Document: 'bg-zinc-700/50 text-zinc-300',
-};
-
-const typeIconMap = {
-  Image: FileImage,
-  Video: FileVideo,
-  Template: LayoutTemplate,
-  Document: FolderOpen,
-};
-
-const libraryAssets = [
-  { name: 'Hero Banner v3', type: 'Image', size: '2.4 MB', date: 'Feb 6, 2026', uses: 12, gradient: 'from-yellow-600 to-amber-800' },
-  { name: 'Product Demo Clip', type: 'Video', size: '18.7 MB', date: 'Feb 5, 2026', uses: 8, gradient: 'from-violet-600 to-purple-900' },
-  { name: 'Email Campaign', type: 'Template', size: '340 KB', date: 'Feb 4, 2026', uses: 24, gradient: 'from-emerald-600 to-teal-800' },
-  { name: 'Brand Guidelines PDF', type: 'Document', size: '5.1 MB', date: 'Feb 3, 2026', uses: 6, gradient: 'from-rose-600 to-pink-900' },
-  { name: 'Social Pack Q1', type: 'Image', size: '8.2 MB', date: 'Feb 2, 2026', uses: 31, gradient: 'from-indigo-600 to-blue-900' },
-  { name: 'Onboarding Video', type: 'Video', size: '42.1 MB', date: 'Jan 30, 2026', uses: 5, gradient: 'from-amber-600 to-orange-800' },
-  { name: 'Pitch Deck Template', type: 'Template', size: '1.8 MB', date: 'Jan 28, 2026', uses: 14, gradient: 'from-cyan-600 to-teal-800' },
-  { name: 'Logo Variations', type: 'Image', size: '3.6 MB', date: 'Jan 25, 2026', uses: 9, gradient: 'from-pink-600 to-rose-900' },
-];
-
-const folders = [
-  { name: 'Marketing', count: 42 },
-  { name: 'Product', count: 28 },
-  { name: 'Social', count: 35 },
-  { name: 'Internal', count: 18 },
-  { name: 'Brand Assets', count: 12 },
-];
-
-export function DemoCreateLibrary({ companyName = 'Acme Corp', recipientName = 'there' }) {
-  const storageUsed = 2.4;
-  const storageTotal = 10;
-  const storagePercent = (storageUsed / storageTotal) * 100;
-
-  return (
-    <div data-demo="asset-library" className="min-h-screen bg-black p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-yellow-500/20 rounded-xl">
-            <FolderOpen className="w-6 h-6 text-yellow-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-white">Asset Library</h1>
-            <p className="text-zinc-400 mt-0.5">{companyName} creative assets and files.</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              readOnly
-              placeholder="Search assets..."
-              className="bg-zinc-900/80 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-zinc-400 placeholder-zinc-600 w-56 cursor-default focus:outline-none"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="flex gap-6">
-        {/* Sidebar Folders */}
-        <div className="w-48 shrink-0 space-y-2">
-          <h3 className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-3">Folders</h3>
-          {folders.map((f, i) => (
-            <div
-              key={f.name}
-              className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-default transition-colors ${
-                i === 0 ? 'bg-yellow-500/10 text-yellow-400' : 'text-zinc-400 hover:bg-zinc-800/50'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <FolderOpen className="w-4 h-4" />
-                <span className="text-sm">{f.name}</span>
-              </div>
-              <span className="text-[10px] text-zinc-600">{f.count}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 space-y-4">
-          {/* Filter Bar */}
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-zinc-500" />
-            {['All', 'Images', 'Videos', 'Templates'].map((t, i) => (
-              <button
-                key={t}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  i === 0
-                    ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
-                    : 'bg-zinc-800/60 text-zinc-400 border border-zinc-700'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-            <div className="ml-auto flex items-center gap-2">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/60 border border-zinc-700 rounded-lg text-xs text-zinc-400">
-                <Download className="w-3 h-3" />
-                Download
-              </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/60 border border-zinc-700 rounded-lg text-xs text-zinc-400">
-                <Share2 className="w-3 h-3" />
-                Share
-              </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/60 border border-zinc-700 rounded-lg text-xs text-zinc-400">
-                <Trash2 className="w-3 h-3" />
-                Delete
-              </button>
-            </div>
-          </div>
-
-          {/* Asset Grid */}
-          <div className="grid grid-cols-4 gap-3">
-            {libraryAssets.map((asset, idx) => {
-              const TypeIcon = typeIconMap[asset.type] || FileImage;
+          {/* Mode Selector */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.05 }}
+            className="grid grid-cols-3 gap-3"
+          >
+            {IMAGE_MODES.map(mode => {
+              const IconComp = mode.icon;
+              const isSelected = selectedMode === mode.id;
               return (
-                <div key={idx} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden group cursor-default">
-                  <div className={`h-28 bg-gradient-to-br ${asset.gradient} flex items-center justify-center`}>
-                    <TypeIcon className="w-6 h-6 text-white/20" />
+                <span
+                  key={mode.id}
+                  onClick={() => setSelectedMode(mode.id)}
+                  className={`relative rounded-[20px] p-4 text-left transition-all border cursor-default ${
+                    isSelected
+                      ? 'bg-yellow-500/[0.03] border-yellow-500/30'
+                      : 'bg-zinc-900/50 border-zinc-800/60'
+                  }`}
+                >
+                  {isSelected && (
+                    <div className="absolute left-0 top-4 bottom-4 w-[3px] rounded-full bg-yellow-500" />
+                  )}
+                  <IconComp className={`w-5 h-5 mb-2 ${isSelected ? 'text-yellow-400' : 'text-zinc-500'}`} />
+                  <div className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-zinc-300'}`}>
+                    {mode.label}
                   </div>
-                  <div className="p-3 space-y-1.5">
-                    <p className="text-sm text-white font-medium truncate">{asset.name}</p>
-                    <div className="flex items-center justify-between">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full ${typeBadgeMap[asset.type]}`}>{asset.type}</span>
-                      <span className="text-[10px] text-zinc-600">{asset.size}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-zinc-600">{asset.date}</span>
-                      <span className="text-[10px] text-zinc-500">{asset.uses} uses</span>
-                    </div>
-                  </div>
-                </div>
+                  <div className="text-[11px] text-zinc-500 mt-0.5 leading-snug">{mode.description}</div>
+                </span>
               );
             })}
+          </motion.div>
+
+          {/* Settings Row */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.1 }}
+            className="rounded-[20px] bg-zinc-900/50 border-zinc-800/60 border p-4"
+          >
+            <div className="flex flex-wrap items-start gap-6">
+              {/* Style swatches */}
+              <div className="space-y-1.5">
+                <span className="text-zinc-500 text-[11px] uppercase tracking-wider">Style</span>
+                <div className="flex gap-1.5">
+                  {IMAGE_STYLE_PRESETS.map(style => {
+                    const Ic = style.icon;
+                    const isSel = selectedStyle === style.id;
+                    return (
+                      <span
+                        key={style.id}
+                        onClick={() => setSelectedStyle(style.id)}
+                        title={style.label}
+                        className={`p-2 rounded-lg transition-all cursor-default ${
+                          isSel
+                            ? 'bg-yellow-500/10 ring-2 ring-yellow-500/40 text-yellow-400'
+                            : 'bg-zinc-800/40 text-zinc-500'
+                        }`}
+                      >
+                        <Ic className="w-4 h-4" />
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Aspect Ratio */}
+              <div className="space-y-1.5">
+                <span className="text-zinc-500 text-[11px] uppercase tracking-wider">Ratio</span>
+                <div className="flex gap-1.5">
+                  {IMAGE_ASPECT_RATIOS.map(ratio => {
+                    const isSel = aspectRatio === ratio.id;
+                    return (
+                      <span
+                        key={ratio.id}
+                        onClick={() => setAspectRatio(ratio.id)}
+                        title={ratio.label}
+                        className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all cursor-default ${
+                          isSel
+                            ? 'bg-yellow-400 text-black'
+                            : 'bg-zinc-800/40 text-zinc-500'
+                        }`}
+                      >
+                        <div className={`border-2 rounded-sm ${isSel ? 'border-black' : 'border-current'} ${ratio.shape}`} />
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Generate Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.15 }}
+            className="flex items-center justify-center gap-3"
+          >
+            <span className="bg-zinc-800 text-zinc-600 font-bold rounded-full px-8 py-3 text-sm flex items-center gap-2 cursor-default">
+              <Wand2 className="w-4 h-4" />
+              Generate Image
+            </span>
+            <span className="text-xs px-2.5 py-1 rounded-full border-zinc-700 text-zinc-400 border">
+              ~$0.025
+            </span>
+          </motion.div>
+
+          {/* Empty state */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="rounded-[20px] border border-dashed border-zinc-800/60 py-16 flex flex-col items-center justify-center"
+          >
+            <ImageIcon className="w-12 h-12 text-zinc-800 mb-3" />
+            <p className="text-zinc-500 text-sm">Your generated image will appear here</p>
+            <p className="text-zinc-700 text-xs mt-1">Enter a prompt and click Generate</p>
+          </motion.div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// =====================================================================================
+// 3. DemoCreateVideos
+// =====================================================================================
+
+export function DemoCreateVideos({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  const [selectedStyle, setSelectedStyle] = useState('cinematic');
+  const [duration, setDuration] = useState('10');
+  const [aspectRatio, setAspectRatio] = useState('16:9');
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="min-h-screen bg-[#09090b]">
+        <div className="w-full px-4 lg:px-6 py-5 space-y-5">
+
+          {/* Back Nav + Page Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1.5 text-sm text-zinc-500 cursor-default">
+                <ArrowLeft className="w-4 h-4" />
+                Create Studio
+              </span>
+              <div className="w-px h-5 bg-zinc-800" />
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+                  <Clapperboard className="w-4 h-4 text-yellow-400" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold text-white leading-tight">Cinematic Video Studio</h1>
+                  <p className="text-xs text-zinc-500">Kling v2.1 & Minimax</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="p-2 rounded-full border border-zinc-800/60 bg-zinc-900/50 text-zinc-400 cursor-default">
+                <Clock className="w-4 h-4" />
+              </span>
+              <span className="px-3.5 py-1.5 rounded-full text-sm font-medium text-zinc-400 border border-zinc-800/60 bg-zinc-900/50 cursor-default">
+                Templates
+              </span>
+            </div>
           </div>
 
-          {/* Storage Usage */}
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <HardDrive className="w-4 h-4 text-zinc-500" />
-                <span className="text-sm text-zinc-300">Storage</span>
-              </div>
-              <span className="text-xs text-zinc-500">{storageUsed} GB of {storageTotal} GB used</span>
+          {/* Hero Prompt Area */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 p-5"
+          >
+            <div className="min-h-[100px] text-base text-zinc-600 cursor-default">
+              Describe your video scene...
             </div>
-            <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-yellow-500 rounded-full"
-                style={{ width: `${storagePercent}%` }}
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-800/40">
+              <div className="flex flex-wrap gap-1.5">
+                {VIDEO_QUICK_SUGGESTIONS.map(s => (
+                  <span
+                    key={s}
+                    className="px-2.5 py-1 rounded-full text-xs text-zinc-500 border border-zinc-800/60 cursor-default"
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+              <span className="text-xs text-zinc-600">0/1000</span>
+            </div>
+          </motion.div>
+
+          {/* Mode Selector (2 cards) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <span className="text-left p-4 rounded-[20px] border transition-all border-yellow-500/30 bg-yellow-500/[0.03] cursor-default">
+              <div className="flex items-center gap-3 mb-1.5">
+                <Film className="w-5 h-5 text-yellow-400" />
+                <span className="text-sm font-medium text-white">AI Video</span>
+              </div>
+              <p className="text-xs text-zinc-500 mb-2">Single-shot video from a text prompt</p>
+              <div className="flex gap-1.5">
+                {['Kling', 'Minimax', 'Luma'].map(m => (
+                  <span key={m} className="px-2 py-0.5 rounded-full text-[10px] bg-zinc-800/80 text-zinc-400 border border-zinc-700/50">{m}</span>
+                ))}
+              </div>
+            </span>
+            <span className="text-left p-4 rounded-[20px] border border-zinc-800/60 bg-zinc-900/50 cursor-default">
+              <div className="flex items-center gap-3 mb-1.5">
+                <Sparkles className="w-5 h-5 text-yellow-400" />
+                <span className="text-sm font-medium text-white">AI Studio</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">Pro</span>
+              </div>
+              <p className="text-xs text-zinc-500">Multi-shot storyboard with automatic assembly</p>
+            </span>
+          </div>
+
+          {/* Settings Row */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.05 }}
+            className="space-y-4"
+          >
+            <div className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 p-4 space-y-4">
+              {/* Style */}
+              <div>
+                <span className="text-xs text-zinc-500 uppercase tracking-wider mb-2.5 block">Style</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {VIDEO_STYLE_PRESETS.map(style => {
+                    const Icon = style.icon;
+                    return (
+                      <span
+                        key={style.id}
+                        onClick={() => setSelectedStyle(style.id)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-default ${
+                          selectedStyle === style.id
+                            ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
+                            : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50'
+                        }`}
+                      >
+                        <Icon className="w-3 h-3" />
+                        {style.label}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Duration */}
+                <div>
+                  <span className="text-xs text-zinc-500 uppercase tracking-wider mb-2.5 block">Duration</span>
+                  <div className="flex gap-1.5">
+                    {VIDEO_DURATIONS.map(dur => (
+                      <span
+                        key={dur.id}
+                        onClick={() => setDuration(dur.id)}
+                        className={`flex-1 py-1.5 rounded-full text-xs font-medium transition-all text-center cursor-default ${
+                          duration === dur.id
+                            ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
+                            : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50'
+                        }`}
+                      >
+                        {dur.seconds}s
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Aspect Ratio */}
+                <div>
+                  <span className="text-xs text-zinc-500 uppercase tracking-wider mb-2.5 block">Aspect Ratio</span>
+                  <div className="flex gap-1.5">
+                    {VIDEO_ASPECT_RATIOS.map(ratio => (
+                      <span
+                        key={ratio.id}
+                        onClick={() => setAspectRatio(ratio.id)}
+                        className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 rounded-xl text-center transition-all cursor-default ${
+                          aspectRatio === ratio.id
+                            ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
+                            : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50'
+                        }`}
+                      >
+                        <span className="text-[10px]">{ratio.sublabel}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Context */}
+                <div>
+                  <span className="text-xs text-zinc-500 uppercase tracking-wider mb-2.5 block">Context</span>
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-800/60 bg-zinc-900/50 text-sm text-zinc-300 cursor-default">
+                      <Package className="w-3.5 h-3.5 text-yellow-400" />
+                      Product
+                      <ChevronDown className="w-3 h-3 opacity-50" />
+                    </span>
+                    <span className="flex items-center gap-1.5 text-xs text-zinc-400 cursor-default">
+                      <Palette className="w-3 h-3" />
+                      Brand
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Generate Button */}
+            <div className="flex flex-col items-center gap-2">
+              <span className="px-8 py-3 rounded-full bg-zinc-800 text-zinc-600 font-semibold text-sm flex items-center gap-2 cursor-default">
+                <Sparkles className="w-4 h-4" />
+                Generate Video
+              </span>
+              <span className="text-xs text-zinc-600">
+                ~10s video &middot; est. 1-3 min
+              </span>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// =====================================================================================
+// 4. DemoCreateLibrary
+// =====================================================================================
+
+export function DemoCreateLibrary({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  const [filterType, setFilterType] = useState('all');
+  const [viewMode, setViewMode] = useState('grid');
+  const [sortBy, setSortBy] = useState('-created_at');
+  const [sortOpen, setSortOpen] = useState(false);
+  const [previewItem, setPreviewItem] = useState(null);
+
+  const filteredContent = filterType === 'all'
+    ? LIBRARY_ITEMS
+    : filterType === 'image'
+    ? LIBRARY_ITEMS.filter(i => i.content_type === 'image')
+    : filterType === 'video'
+    ? LIBRARY_ITEMS.filter(i => i.content_type === 'video')
+    : LIBRARY_ITEMS;
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="min-h-screen bg-[#09090b]">
+        <div className="w-full px-4 lg:px-6 py-4 space-y-4">
+
+          {/* Header Row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1.5 text-sm text-zinc-400 cursor-default">
+                <ArrowLeft className="w-4 h-4" />
+                Create Studio
+              </span>
+              <div className="w-px h-5 bg-zinc-800" />
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+                  <FolderOpen className="w-4 h-4 text-yellow-400" />
+                </div>
+                <h1 className="text-lg font-semibold text-white">Content Library</h1>
+                <span className="px-2 py-0.5 text-xs font-medium text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-full">
+                  {filteredContent.length} items
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* View toggle */}
+              <div className="flex border border-zinc-800/60 rounded-full overflow-hidden">
+                <span
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 transition-colors cursor-default ${viewMode === 'grid' ? 'bg-yellow-500 text-black' : 'bg-zinc-900/50 text-zinc-400'}`}
+                >
+                  <Grid className="w-4 h-4" />
+                </span>
+                <span
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 transition-colors cursor-default ${viewMode === 'list' ? 'bg-yellow-500 text-black' : 'bg-zinc-900/50 text-zinc-400'}`}
+                >
+                  <List className="w-4 h-4" />
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            {/* Search */}
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <input
+                readOnly
+                placeholder="Search by name, prompt, or tags..."
+                className="w-full pl-9 pr-3 py-2 text-sm bg-zinc-900/50 border-zinc-800/60 text-white placeholder:text-zinc-500 border rounded-full focus:outline-none cursor-default"
               />
             </div>
+
+            {/* Filter Chips */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {LIBRARY_FILTER_CHIPS.map(chip => {
+                const isActive = filterType === chip.value;
+                return (
+                  <span
+                    key={chip.value}
+                    onClick={() => setFilterType(chip.value)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-default ${
+                      isActive
+                        ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
+                        : 'bg-zinc-900/50 border-zinc-800/60 text-zinc-400'
+                    }`}
+                  >
+                    {chip.label}
+                  </span>
+                );
+              })}
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="relative ml-auto">
+              <span
+                onClick={() => setSortOpen(!sortOpen)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-zinc-900/50 border-zinc-800/60 text-zinc-400 border cursor-default"
+              >
+                {LIBRARY_SORT_OPTIONS.find(o => o.value === sortBy)?.label}
+                <ChevronDown className="w-3 h-3" />
+              </span>
+              <AnimatePresence>
+                {sortOpen && (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 z-40"
+                      onClick={() => setSortOpen(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      className="absolute right-0 top-full mt-1 z-50 w-36 bg-zinc-900 border-zinc-800 border rounded-xl overflow-hidden shadow-xl"
+                    >
+                      {LIBRARY_SORT_OPTIONS.map(option => (
+                        <span
+                          key={option.value}
+                          onClick={() => { setSortBy(option.value); setSortOpen(false); }}
+                          className={`block w-full text-left px-3 py-2 text-xs transition-colors cursor-default ${
+                            sortBy === option.value
+                              ? 'bg-yellow-500/10 text-yellow-400'
+                              : 'text-zinc-400 hover:bg-zinc-800'
+                          }`}
+                        >
+                          {option.label}
+                        </span>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="flex gap-4">
+            {/* Grid / List */}
+            <div className="flex-1 min-w-0">
+              {viewMode === 'grid' ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5"
+                >
+                  {filteredContent.map((item, index) => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, scale: 0.97 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.25, delay: index * 0.02 }}
+                      className="group relative aspect-square rounded-2xl overflow-hidden border border-zinc-800/40 cursor-default"
+                      onClick={() => setPreviewItem(item)}
+                    >
+                      {/* Favorite heart */}
+                      <span className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Heart className="w-5 h-5 text-white/70 drop-shadow-lg" />
+                      </span>
+
+                      {/* Selection checkbox */}
+                      <span className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Square className="w-5 h-5 text-white/70 drop-shadow-lg" />
+                      </span>
+
+                      {/* Thumbnail placeholder */}
+                      <div className={`w-full h-full bg-gradient-to-br ${item.gradient} flex items-center justify-center`}>
+                        {item.content_type === 'video' ? (
+                          <Play className="w-8 h-8 text-white/20" />
+                        ) : (
+                          <ImageIcon className="w-8 h-8 text-white/20" />
+                        )}
+                      </div>
+
+                      {/* Video play overlay */}
+                      {item.content_type === 'video' && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center opacity-80 group-hover:opacity-0 transition-opacity">
+                            <Play className="w-4 h-4 text-white ml-0.5" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Hover bottom bar */}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-8 pb-2 px-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-center gap-1">
+                          <span className="p-1.5 rounded-lg bg-white/10 cursor-default" title="Preview">
+                            <Eye className="w-3.5 h-3.5 text-white" />
+                          </span>
+                          <span className="p-1.5 rounded-lg bg-white/10 cursor-default" title="Download">
+                            <Download className="w-3.5 h-3.5 text-white" />
+                          </span>
+                          <span className="p-1.5 rounded-lg bg-white/10 cursor-default" title="Delete">
+                            <Trash2 className="w-3.5 h-3.5 text-white" />
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              ) : (
+                /* List View */
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-1.5"
+                >
+                  {filteredContent.map((item, index) => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.2, delay: index * 0.02 }}
+                      onClick={() => setPreviewItem(item)}
+                      className="group flex items-center gap-3 p-2.5 rounded-2xl border border-zinc-800/60 bg-zinc-900/30 cursor-default"
+                    >
+                      <span>
+                        <Square className="w-4 h-4 text-zinc-600" />
+                      </span>
+
+                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-zinc-800 flex-shrink-0 relative">
+                        <div className={`w-full h-full bg-gradient-to-br ${item.gradient} flex items-center justify-center`}>
+                          {item.content_type === 'video' ? (
+                            <Play className="w-3 h-3 text-white/80" />
+                          ) : (
+                            <ImageIcon className="w-3 h-3 text-white/40" />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-medium text-white truncate">{item.name}</h3>
+                        <p className="text-xs text-zinc-500 truncate">{item.prompt}</p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full border ${
+                          item.content_type === 'video'
+                            ? 'border-yellow-500/30 text-yellow-400 bg-yellow-500/10'
+                            : 'border-zinc-700 text-zinc-400 bg-zinc-800/50'
+                        }`}>
+                          {item.content_type}
+                        </span>
+                        {item.duration && (
+                          <span className="text-[10px] text-zinc-500 flex items-center gap-0.5">
+                            <Clock className="w-3 h-3" />{item.duration}s
+                          </span>
+                        )}
+                      </div>
+
+                      <span className="text-[11px] text-zinc-600 hidden md:block whitespace-nowrap">
+                        {formatDate(item.created_at)}
+                      </span>
+
+                      <span className="p-1">
+                        <Heart className="w-4 h-4 text-zinc-700" />
+                      </span>
+
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="p-1 rounded cursor-default">
+                          <Download className="w-3.5 h-3.5 text-zinc-400" />
+                        </span>
+                        <span className="p-1 rounded cursor-default">
+                          <Trash2 className="w-3.5 h-3.5 text-zinc-400" />
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </div>
+
+            {/* Side Panel Preview */}
+            <AnimatePresence>
+              {previewItem && (
+                <motion.div
+                  initial={{ opacity: 0, x: 40 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 40 }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                  className="hidden lg:block w-[400px] flex-shrink-0"
+                >
+                  <div className="sticky top-4 rounded-[20px] bg-zinc-900/50 border-zinc-800/60 border overflow-hidden">
+                    {/* Close */}
+                    <span
+                      onClick={() => setPreviewItem(null)}
+                      className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-black/50 cursor-default"
+                    >
+                      <X className="w-4 h-4 text-white" />
+                    </span>
+
+                    {/* Media */}
+                    <div className="aspect-square bg-zinc-950">
+                      <div className={`w-full h-full bg-gradient-to-br ${previewItem.gradient} flex items-center justify-center`}>
+                        {previewItem.content_type === 'video' ? (
+                          <Play className="w-12 h-12 text-white/20" />
+                        ) : (
+                          <ImageIcon className="w-12 h-12 text-white/20" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Info */}
+                    <div className="p-4 space-y-4">
+                      <div>
+                        <h3 className="text-sm font-semibold text-white">{previewItem.name}</h3>
+                        <p className="text-xs text-zinc-500 mt-0.5">{formatDate(previewItem.created_at)}</p>
+                      </div>
+
+                      {/* Type badge */}
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2.5 py-1 text-xs font-medium rounded-full border ${
+                          previewItem.content_type === 'video'
+                            ? 'border-yellow-500/30 text-yellow-400 bg-yellow-500/10'
+                            : 'border-zinc-700 text-zinc-400 bg-zinc-800/50'
+                        }`}>
+                          {previewItem.content_type === 'video' ? <Video className="w-3 h-3 inline mr-1" /> : <ImageIcon className="w-3 h-3 inline mr-1" />}
+                          {previewItem.content_type}
+                        </span>
+                        {previewItem.duration && (
+                          <span className="text-xs text-zinc-500 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />{previewItem.duration}s
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Metadata */}
+                      <div className="space-y-2">
+                        <div className="p-2.5 bg-zinc-800/40 border-zinc-800/40 rounded-xl border">
+                          <p className="text-[10px] uppercase tracking-wider text-zinc-600 mb-1">Prompt</p>
+                          <p className="text-xs text-zinc-300 leading-relaxed">{previewItem.prompt}</p>
+                        </div>
+                        {previewItem.style && (
+                          <div className="p-2.5 bg-zinc-800/40 border-zinc-800/40 rounded-xl border">
+                            <p className="text-[10px] uppercase tracking-wider text-zinc-600 mb-1">Style</p>
+                            <p className="text-xs text-zinc-300 capitalize">{previewItem.style.replace('_', ' ')}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-col gap-2 pt-1">
+                        <span className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-yellow-500 text-black cursor-default">
+                          <Download className="w-4 h-4" />
+                          Download
+                        </span>
+                        <span className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-full border border-zinc-800/60 text-zinc-300 cursor-default">
+                          <RefreshCw className="w-4 h-4" />
+                          Regenerate
+                        </span>
+                        <span className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-full border border-red-900/30 text-red-400 cursor-default">
+                          <Trash2 className="w-4 h-4" />
+                          Delete
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

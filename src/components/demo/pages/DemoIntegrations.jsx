@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import {
   Plug,
   Link2,
@@ -13,8 +14,8 @@ import {
 // ─── Stats ────────────────────────────────────────────────────────────────────
 const integrationStats = [
   { label: 'Available', value: '30+', icon: Layers, bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
-  { label: 'Connected', value: '8', icon: Link2, bg: 'bg-emerald-500/15', text: 'text-emerald-400' },
-  { label: 'Syncing', value: '6', icon: RefreshCw, bg: 'bg-violet-500/15', text: 'text-violet-400' },
+  { label: 'Connected', value: '8', icon: Link2, bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
+  { label: 'Syncing', value: '6', icon: RefreshCw, bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
 ];
 
 // ─── Category Tabs ────────────────────────────────────────────────────────────
@@ -148,7 +149,7 @@ export default function DemoIntegrations({ companyName = 'Acme Corp', recipientN
     <div className="min-h-screen bg-black p-4 sm:p-6 space-y-6">
 
       {/* ─── Page Header ───────────────────────────────────────────────────── */}
-      <div data-demo="header" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} data-demo="header" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-cyan-500/20 rounded-xl">
             <Plug className="w-6 h-6 text-cyan-400" />
@@ -165,10 +166,10 @@ export default function DemoIntegrations({ companyName = 'Acme Corp', recipientN
           <Search className="w-4 h-4 text-zinc-500 shrink-0" />
           <span className="text-sm text-zinc-500">Search integrations...</span>
         </div>
-      </div>
+      </motion.div>
 
       {/* ─── Stats Row ─────────────────────────────────────────────────────── */}
-      <div data-demo="integration-stats" className="grid grid-cols-3 gap-3">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.05 }} data-demo="integration-stats" className="grid grid-cols-3 gap-3">
         {integrationStats.map((stat) => (
           <div
             key={stat.label}
@@ -183,10 +184,10 @@ export default function DemoIntegrations({ companyName = 'Acme Corp', recipientN
             </div>
           </div>
         ))}
-      </div>
+      </motion.div>
 
       {/* ─── Category Tabs ─────────────────────────────────────────────────── */}
-      <div data-demo="category-tabs" className="flex items-center gap-1.5 overflow-x-auto pb-1">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.1 }} data-demo="category-tabs" className="flex items-center gap-1.5 overflow-x-auto pb-1">
         {categories.map((cat, i) => (
           <button
             key={cat}
@@ -199,10 +200,11 @@ export default function DemoIntegrations({ companyName = 'Acme Corp', recipientN
             {cat}
           </button>
         ))}
-      </div>
+      </motion.div>
 
       {/* ─── Integration Grid ──────────────────────────────────────────────── */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.15 }}
         data-demo="integrations"
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
       >
@@ -241,8 +243,8 @@ export default function DemoIntegrations({ companyName = 'Acme Corp', recipientN
                 <div className="mt-auto space-y-2 pt-2 border-t border-zinc-800/40">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                      <span className="text-[11px] text-emerald-400 font-medium">Connected</span>
+                      <div className="w-2 h-2 rounded-full bg-cyan-500" />
+                      <span className="text-[11px] text-cyan-400 font-medium">Connected</span>
                     </div>
                     <span className="text-[10px] text-zinc-600">
                       {integration.lastSync}
@@ -263,10 +265,11 @@ export default function DemoIntegrations({ companyName = 'Acme Corp', recipientN
             </div>
           );
         })}
-      </div>
+      </motion.div>
 
       {/* ─── Connected Stats (Bottom) ──────────────────────────────────────── */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.2 }}
         data-demo="connected-stats"
         className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-5"
       >
@@ -283,7 +286,7 @@ export default function DemoIntegrations({ companyName = 'Acme Corp', recipientN
             </div>
           ))}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

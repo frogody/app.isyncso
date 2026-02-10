@@ -1,404 +1,1159 @@
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Users,
-  Search,
-  Filter,
-  Sparkles,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  ChevronRight,
-  Download,
-  Plus,
-  Send,
-  Mail,
-  MessageSquare,
-  Smartphone,
-  Linkedin,
-  Eye,
-  MoreHorizontal,
-  Briefcase,
-  Building2,
-  MapPin,
-  Target,
-  FolderKanban,
-  UserPlus,
-  BarChart3,
-  ShoppingCart,
-  Star,
-  Zap,
-  TrendingUp,
-  ArrowUpRight,
-  DollarSign,
-  Handshake,
-  Calendar,
-  FileText,
-  Phone,
-  Ban,
+  Users, Search, Filter, Sparkles, CheckCircle2, Clock, ChevronRight,
+  Download, Plus, Send, Mail, MessageSquare, Smartphone, Eye,
+  MoreHorizontal, Briefcase, Building2, MapPin, Target, FolderKanban,
+  UserPlus, ShoppingCart, Star, Zap, TrendingUp, ArrowUpRight,
+  Handshake, Calendar, FileText, Phone, Ban, Euro, Edit, Trash2,
+  Upload, Grid3X3, List, RefreshCw, Play, Pause, Copy, Archive,
+  ArrowRight, Megaphone, Package, ShoppingBag, ChevronDown, X,
+  MessageCircle, CheckCircle, XCircle, Globe, AlertTriangle,
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
+/*  Animation variants                                                 */
 /* ------------------------------------------------------------------ */
 
-const scoreColor = (score) => {
-  if (score >= 90) return 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30';
-  if (score >= 80) return 'text-cyan-400 bg-cyan-500/15 border-cyan-500/30';
-  if (score >= 70) return 'text-amber-400 bg-amber-500/15 border-amber-500/30';
-  return 'text-zinc-400 bg-zinc-700/50 border-zinc-600';
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.06 } },
 };
 
-const flightRiskStyle = (level) => {
-  if (level === 'Critical') return 'text-red-400 bg-red-500/15';
-  if (level === 'High') return 'text-amber-400 bg-amber-500/15';
-  if (level === 'Medium') return 'text-cyan-400 bg-cyan-500/15';
-  return 'text-zinc-400 bg-zinc-700/50';
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
 };
 
-const statusStyle = (status) => {
-  const map = {
-    Open: 'bg-emerald-500/15 text-emerald-400',
-    Filled: 'bg-zinc-700/50 text-zinc-400',
-    'On Hold': 'bg-amber-500/15 text-amber-400',
-    Active: 'bg-emerald-500/15 text-emerald-400',
-    Paused: 'bg-amber-500/15 text-amber-400',
-    Draft: 'bg-zinc-700/50 text-zinc-400',
-    Completed: 'bg-cyan-500/15 text-cyan-400',
-    Delivered: 'bg-emerald-500/15 text-emerald-400',
-    Read: 'bg-cyan-500/15 text-cyan-400',
-    Replied: 'bg-red-400 bg-red-500/15 text-red-400',
-    Pending: 'bg-amber-500/15 text-amber-400',
-    Bounced: 'bg-red-500/15 text-red-400',
+/* ------------------------------------------------------------------ */
+/*  Shared helpers                                                     */
+/* ------------------------------------------------------------------ */
+
+const StatusBadge = ({ status, styles }) => {
+  const defaultStyles = {
+    active: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Active' },
+    open: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Open' },
+    filled: { bg: 'bg-red-600/20', text: 'text-red-400', label: 'Filled' },
+    on_hold: { bg: 'bg-red-800/30', text: 'text-red-300', label: 'On Hold' },
+    cancelled: { bg: 'bg-zinc-500/20', text: 'text-zinc-400', label: 'Cancelled' },
+    draft: { bg: 'bg-zinc-500/20', text: 'text-zinc-400', label: 'Draft' },
+    paused: { bg: 'bg-red-800/30', text: 'text-red-300', label: 'Paused' },
+    completed: { bg: 'bg-red-600/20', text: 'text-red-400', label: 'Completed' },
+    Inactive: { bg: 'bg-zinc-500/20', text: 'text-zinc-400', label: 'Inactive' },
   };
-  return map[status] || 'bg-zinc-700/50 text-zinc-400';
+  const s = (styles || defaultStyles)[status] || defaultStyles[status] || defaultStyles.draft;
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${s.bg} ${s.text}`}>
+      {s.label || status}
+    </span>
+  );
 };
 
-const channelIcon = (ch) => {
-  if (ch === 'Email') return Mail;
-  if (ch === 'LinkedIn') return Linkedin;
-  if (ch === 'SMS') return Smartphone;
-  return Mail;
+const PriorityBadge = ({ priority }) => {
+  const styles = {
+    urgent: { bg: 'bg-red-500/20', text: 'text-red-400' },
+    high: { bg: 'bg-red-500/20', text: 'text-red-400' },
+    medium: { bg: 'bg-red-400/20', text: 'text-red-300' },
+    low: { bg: 'bg-zinc-500/20', text: 'text-zinc-400' },
+  };
+  const s = styles[priority] || styles.medium;
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${s.bg} ${s.text}`}>
+      {priority?.charAt(0).toUpperCase() + priority?.slice(1)}
+    </span>
+  );
 };
 
-/* ================================================================== */
-/*  1. DemoTalentCandidates                                           */
-/* ================================================================== */
-
-export function DemoTalentCandidates({ companyName = 'Acme Corp', recipientName = 'there' }) {
-  const stats = [
-    { label: 'Total Candidates', value: '1,247', icon: Users },
-    { label: 'Enriched', value: '892', icon: Sparkles },
-    { label: 'Matched', value: '156', icon: Target },
-    { label: 'In Pipeline', value: '42', icon: FolderKanban },
-  ];
-
-  const filters = ['All', 'High Match', 'High Flight Risk', 'Recently Enriched'];
-
-  const candidates = [
-    { name: 'Elena Rodriguez', title: 'VP of Engineering', company: 'Stripe', location: 'San Francisco, CA', score: 95, flightRisk: 'Critical', enriched: true, avatar: 'ER' },
-    { name: 'David Kim', title: 'Head of Product', company: companyName, location: 'New York, NY', score: 88, flightRisk: 'High', enriched: true, avatar: 'DK' },
-    { name: 'Sophia Nguyen', title: 'Senior Data Scientist', company: 'Meta', location: 'London, UK', score: 82, flightRisk: 'Medium', enriched: true, avatar: 'SN' },
-    { name: 'Marcus Johnson', title: 'Director of Sales', company: 'HubSpot', location: 'Boston, MA', score: 76, flightRisk: 'High', enriched: false, avatar: 'MJ' },
-    { name: 'Aisha Patel', title: 'Staff Engineer', company: 'Google', location: 'Austin, TX', score: 71, flightRisk: 'Low', enriched: true, avatar: 'AP' },
-    { name: 'Tom van der Berg', title: 'CTO', company: 'DataBridge', location: 'Amsterdam, NL', score: 65, flightRisk: 'Medium', enriched: true, avatar: 'TB' },
-    { name: 'Laura Chen', title: 'Product Manager', company: 'Shopify', location: 'Toronto, CA', score: 53, flightRisk: 'Low', enriched: false, avatar: 'LC' },
-    { name: 'James Park', title: 'Engineering Manager', company: 'Netflix', location: 'Los Angeles, CA', score: 45, flightRisk: 'Low', enriched: true, avatar: 'JP' },
-  ];
+const ProgressRing = ({ filled, total, size = 40, strokeWidth = 3, showPercent = false }) => {
+  const progress = total > 0 ? Math.round((filled / total) * 100) : 0;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (progress / 100) * circumference;
 
   return (
-    <div className="min-h-screen bg-black p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-red-500/20">
-            <Users className="w-6 h-6 text-red-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-white">Candidate Database</h1>
-            <p className="text-zinc-400 mt-0.5 text-sm">Browse and manage your candidate pipeline.</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2 w-56">
-            <Search className="w-4 h-4 text-zinc-500" />
-            <span className="text-sm text-zinc-500">Search candidates...</span>
-          </div>
-          <button className="p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-400 cursor-default">
-            <Filter className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+    <div className="relative inline-flex items-center justify-center">
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={strokeWidth} />
+        <motion.circle
+          cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#ef4444"
+          strokeWidth={strokeWidth} strokeLinecap="round"
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 1, ease: 'easeOut' }}
+        />
+      </svg>
+      <span className="absolute text-xs font-medium text-white">
+        {showPercent ? `${progress}%` : `${filled}/${total}`}
+      </span>
+    </div>
+  );
+};
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s) => (
-          <div key={s.label} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-red-500/15 text-red-400">
-              <s.icon className="w-5 h-5" />
+const IntelligenceGauge = ({ score, size = 'sm' }) => {
+  const dim = size === 'xs' ? 24 : size === 'sm' ? 32 : 40;
+  const sw = size === 'xs' ? 2 : 3;
+  const r = (dim - sw) / 2;
+  const c = 2 * Math.PI * r;
+  const off = c - (score / 100) * c;
+  const color = score >= 80 ? '#f87171' : score >= 60 ? '#fbbf24' : '#71717a';
+
+  return (
+    <div className="relative inline-flex items-center justify-center" style={{ width: dim, height: dim }}>
+      <svg width={dim} height={dim} className="-rotate-90">
+        <circle cx={dim / 2} cy={dim / 2} r={r} fill="none" stroke="rgba(63,63,70,0.5)" strokeWidth={sw} />
+        <circle cx={dim / 2} cy={dim / 2} r={r} fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off} />
+      </svg>
+      <span className={`absolute font-bold text-white ${size === 'xs' ? 'text-[8px]' : 'text-[10px]'}`}>{score}</span>
+    </div>
+  );
+};
+
+const IntelLevelBadge = ({ level }) => {
+  const s = {
+    Critical: 'bg-red-500/15 text-red-400',
+    High: 'bg-red-500/15 text-red-400',
+    Medium: 'bg-amber-500/15 text-amber-400',
+    Low: 'bg-zinc-700/50 text-zinc-400',
+  };
+  return <span className={`text-[10px] px-1.5 py-0.5 rounded ${s[level] || s.Low}`}>{level}</span>;
+};
+
+const ApproachBadge = ({ approach }) => {
+  const s = {
+    aggressive: 'bg-red-500/15 text-red-400',
+    nurture: 'bg-red-400/15 text-red-300',
+    network: 'bg-zinc-700/50 text-zinc-400',
+  };
+  return <span className={`text-[10px] px-1.5 py-0.5 rounded ${s[approach] || s.nurture}`}>{approach}</span>;
+};
+
+const CandidateAvatar = ({ name, size = 'md' }) => {
+  const sizes = { xs: 'w-6 h-6 text-[9px]', sm: 'w-8 h-8 text-xs', md: 'w-10 h-10 text-sm', lg: 'w-12 h-12 text-base' };
+  const initials = name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?';
+  return (
+    <div className={`${sizes[size]} rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center font-medium text-white ring-2 ring-white/10`}>
+      {initials}
+    </div>
+  );
+};
+
+
+/* ================================================================== */
+/*  1. DemoTalentCandidates                                            */
+/* ================================================================== */
+
+const CANDIDATES = [
+  { id: 1, first_name: 'Elena', last_name: 'Rodriguez', job_title: 'VP of Engineering', company_name: 'Stripe', person_home_location: 'San Francisco, CA', intelligence_score: 95, intelligence_level: 'Critical', recommended_approach: 'aggressive', last_intelligence_update: '2026-01-15T10:00:00Z' },
+  { id: 2, first_name: 'David', last_name: 'Kim', job_title: 'Head of Product', company_name: 'Booking.com', person_home_location: 'Amsterdam, NL', intelligence_score: 88, intelligence_level: 'High', recommended_approach: 'aggressive', last_intelligence_update: '2026-01-14T10:00:00Z' },
+  { id: 3, first_name: 'Sophia', last_name: 'Nguyen', job_title: 'Senior Data Scientist', company_name: 'Meta', person_home_location: 'London, UK', intelligence_score: 82, intelligence_level: 'High', recommended_approach: 'nurture', last_intelligence_update: '2026-01-13T10:00:00Z' },
+  { id: 4, first_name: 'Marcus', last_name: 'Johnson', job_title: 'Director of Sales', company_name: 'HubSpot', person_home_location: 'Boston, MA', intelligence_score: 76, intelligence_level: 'Medium', recommended_approach: 'aggressive', last_intelligence_update: null },
+  { id: 5, first_name: 'Aisha', last_name: 'Patel', job_title: 'Staff Engineer', company_name: 'Google', person_home_location: 'Austin, TX', intelligence_score: 71, intelligence_level: 'Medium', recommended_approach: 'nurture', last_intelligence_update: '2026-01-10T10:00:00Z' },
+  { id: 6, first_name: 'Tom', last_name: 'van der Berg', job_title: 'CTO', company_name: 'DataBridge', person_home_location: 'Amsterdam, NL', intelligence_score: 65, intelligence_level: 'Medium', recommended_approach: 'network', last_intelligence_update: '2026-01-09T10:00:00Z' },
+  { id: 7, first_name: 'Laura', last_name: 'Chen', job_title: 'Product Manager', company_name: 'Shopify', person_home_location: 'Toronto, CA', intelligence_score: 53, intelligence_level: 'Low', recommended_approach: 'nurture', last_intelligence_update: null },
+  { id: 8, first_name: 'James', last_name: 'Park', job_title: 'Engineering Manager', company_name: 'Netflix', person_home_location: 'Los Angeles, CA', intelligence_score: 45, intelligence_level: 'Low', recommended_approach: 'network', last_intelligence_update: '2026-01-05T10:00:00Z' },
+];
+
+export function DemoTalentCandidates({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  const [viewMode, setViewMode] = useState('table');
+  const candidates = CANDIDATES;
+  const readyCandidates = candidates.filter(c => c.last_intelligence_update && c.intelligence_score != null);
+
+  return (
+    <div className="min-h-screen bg-black relative">
+      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+        {/* PageHeader */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-red-500/20">
+              <Users className="w-6 h-6 text-red-400" />
             </div>
             <div>
-              <p className="text-xl font-bold text-white">{s.value}</p>
-              <p className="text-xs text-zinc-500">{s.label}</p>
+              <h1 className="text-xl font-semibold text-white">Candidates</h1>
+              <p className="text-zinc-400 text-sm">{candidates.length} candidates in your talent pool</p>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* Filters + Bulk Actions */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {filters.map((f, i) => (
-            <button
-              key={f}
-              className={`text-xs px-3.5 py-1.5 rounded-full cursor-default transition-colors ${
-                i === 0 ? 'bg-red-500/15 text-red-400 border border-red-500/30' : 'bg-zinc-900 text-zinc-400 border border-zinc-800 hover:bg-zinc-800/50'
-              }`}
-            >
-              {f}
+          <div className="flex items-center gap-2">
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 text-sm cursor-default">
+              <Upload className="w-4 h-4" /> Import CSV
             </button>
-          ))}
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500 text-white text-sm cursor-default">
+              <Plus className="w-4 h-4" /> Add Candidate
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 border border-zinc-800 cursor-default hover:bg-zinc-800/50">
-            <Sparkles className="w-3.5 h-3.5" /> Enrich Selected
-          </button>
-          <button className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 border border-zinc-800 cursor-default hover:bg-zinc-800/50">
-            <Send className="w-3.5 h-3.5" /> Add to Campaign
-          </button>
-          <button className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 border border-zinc-800 cursor-default hover:bg-zinc-800/50">
-            <Download className="w-3.5 h-3.5" /> Export
-          </button>
+
+        {/* Search & Filter Bar */}
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <div className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/40 text-sm">
+                Search by name, title, company, skills...
+              </div>
+            </div>
+            <button className="p-2 rounded-lg bg-white/5 border border-white/10 text-white/40 cursor-default">
+              <Filter className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Candidate Table */}
-      <div data-demo="candidates-table" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-xs text-zinc-500 border-b border-zinc-800 bg-zinc-900/80">
-                <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">Title</th>
-                <th className="px-4 py-3 font-medium">Company</th>
-                <th className="px-4 py-3 font-medium">Location</th>
-                <th className="px-4 py-3 font-medium text-center">Match Score</th>
-                <th className="px-4 py-3 font-medium">Flight Risk</th>
-                <th className="px-4 py-3 font-medium">Enrichment</th>
-                <th className="px-4 py-3 font-medium text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800/50">
-              {candidates.map((c) => {
-                const ringSize = 40;
-                const ringStroke = 4;
-                const ringRadius = (ringSize - ringStroke) / 2;
-                const ringCirc = 2 * Math.PI * ringRadius;
-                const ringOffset = ringCirc - (c.score / 100) * ringCirc;
-                const ringColor = c.score >= 80 ? '#f87171' : c.score >= 60 ? '#fbbf24' : '#71717a';
+        {/* Results summary and view controls */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-zinc-400">Showing {candidates.length} of {candidates.length} candidates</p>
+            <button className="text-zinc-400 hover:text-white text-sm cursor-default">Select Page</button>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-zinc-800 rounded-lg p-1">
+              <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-colors cursor-default ${viewMode === 'grid' ? 'bg-red-500/20 text-red-400' : 'text-zinc-400'}`}>
+                <Grid3X3 className="w-4 h-4" />
+              </button>
+              <button onClick={() => setViewMode('table')} className={`p-2 rounded-lg transition-colors cursor-default ${viewMode === 'table' ? 'bg-red-500/20 text-red-400' : 'text-zinc-400'}`}>
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+            <button className="p-2 rounded-lg text-zinc-400 cursor-default">
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
 
-                return (
-                  <tr key={c.name} className="hover:bg-zinc-800/20 transition-colors">
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-semibold text-zinc-300 shrink-0">
-                          {c.avatar}
-                        </div>
-                        <span className="text-sm font-medium text-white">{c.name}</span>
+        {/* Candidates Display */}
+        {viewMode === 'grid' ? (
+          <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {candidates.map(c => (
+              <motion.div key={c.id} variants={itemVariants}>
+                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4 hover:border-red-500/30 transition-all duration-300">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <CandidateAvatar name={`${c.first_name} ${c.last_name}`} size="lg" />
+                      <div>
+                        <h3 className="font-semibold text-white">{c.first_name} {c.last_name}</h3>
+                        <p className="text-sm text-white/60">{c.job_title}</p>
                       </div>
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-zinc-400">{c.title}</td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1.5 text-sm text-zinc-300">
-                        <Building2 className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                        {c.company}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-                        <MapPin className="w-3 h-3" />
-                        {c.location}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center justify-center">
-                        <div className="relative" style={{ width: ringSize, height: ringSize }}>
-                          <svg width={ringSize} height={ringSize} className="-rotate-90">
-                            <circle cx={ringSize / 2} cy={ringSize / 2} r={ringRadius} fill="none" stroke="rgba(63,63,70,0.5)" strokeWidth={ringStroke} />
-                            <circle cx={ringSize / 2} cy={ringSize / 2} r={ringRadius} fill="none" stroke={ringColor} strokeWidth={ringStroke} strokeLinecap="round" strokeDasharray={ringCirc} strokeDashoffset={ringOffset} />
-                          </svg>
-                          <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">{c.score}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className={`text-xs px-2.5 py-1 rounded-full ${flightRiskStyle(c.flightRisk)}`}>
-                        {c.flightRisk}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      {c.enriched ? (
-                        <span className="flex items-center gap-1.5 text-xs text-red-400 bg-red-500/10 px-2.5 py-1 rounded-full w-fit">
-                          <Sparkles className="w-3 h-3" /> Enriched
-                        </span>
-                      ) : (
-                        <span className="text-xs text-zinc-600">Not enriched</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 cursor-default"><Eye className="w-3.5 h-3.5" /></button>
-                        <button className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 cursor-default"><Send className="w-3.5 h-3.5" /></button>
-                        <button className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 cursor-default"><MoreHorizontal className="w-3.5 h-3.5" /></button>
-                      </div>
-                    </td>
+                    </div>
+                    <IntelligenceGauge score={c.intelligence_score} size="sm" />
+                  </div>
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-white/60">
+                      <Building2 className="w-4 h-4" />
+                      <span className="truncate">{c.company_name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-white/60">
+                      <MapPin className="w-4 h-4" />
+                      <span className="truncate">{c.person_home_location}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-3 border-t border-white/10">
+                    <div className="flex items-center gap-2">
+                      <IntelLevelBadge level={c.intelligence_level} />
+                      <ApproachBadge approach={c.recommended_approach} />
+                    </div>
+                    <button className="p-1.5 rounded-lg text-white/40 cursor-default">
+                      <Edit className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        ) : (
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider w-8">
+                      <div className="w-3.5 h-3.5 rounded border border-zinc-600" />
+                    </th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Candidate</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Position</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Score</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Approach</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Intel</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Location</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider w-12"></th>
                   </tr>
+                </thead>
+                <motion.tbody variants={containerVariants} initial="hidden" animate="visible">
+                  {candidates.map(c => (
+                    <motion.tr key={c.id} variants={itemVariants} className="border-b border-white/5 last:border-0 h-9">
+                      <td className="py-1 px-2">
+                        <div className="w-3.5 h-3.5 rounded border border-zinc-600" />
+                      </td>
+                      <td className="py-1 px-2">
+                        <div className="flex items-center gap-1.5">
+                          <CandidateAvatar name={`${c.first_name} ${c.last_name}`} size="xs" />
+                          <span className="font-medium text-white text-xs truncate max-w-[140px]">{c.first_name} {c.last_name}</span>
+                        </div>
+                      </td>
+                      <td className="py-1 px-2">
+                        <p className="text-white/70 text-xs truncate max-w-[200px]">{c.job_title}</p>
+                        <p className="text-[10px] text-white/40 truncate max-w-[200px]">{c.company_name}</p>
+                      </td>
+                      <td className="py-1 px-2">
+                        <div className="flex items-center gap-1.5">
+                          <IntelligenceGauge score={c.intelligence_score} size="xs" />
+                          <IntelLevelBadge level={c.intelligence_level} />
+                        </div>
+                      </td>
+                      <td className="py-1 px-2">
+                        <ApproachBadge approach={c.recommended_approach} />
+                      </td>
+                      <td className="py-1 px-2">
+                        {c.last_intelligence_update ? (
+                          <span className="text-[10px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">Fresh</span>
+                        ) : (
+                          <span className="text-[10px] text-zinc-500">Stale</span>
+                        )}
+                      </td>
+                      <td className="py-1 px-2 text-white/50 text-[11px] truncate max-w-[150px]">{c.person_home_location}</td>
+                      <td className="py-1 px-2">
+                        <div className="flex items-center">
+                          <button className="p-0.5 rounded text-white/40 cursor-default"><Eye className="w-3 h-3" /></button>
+                          <button className="p-0.5 rounded text-white/40 cursor-default"><Edit className="w-3 h-3" /></button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </motion.tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Flow Continuity CTA */}
+        {readyCandidates.length >= 3 && (
+          <div className="p-4 rounded-xl bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-red-500/20">
+                  <Zap className="w-5 h-5 text-red-400" />
+                </div>
+                <div>
+                  <p className="text-white font-medium">{readyCandidates.length} candidates with Intel Ready</p>
+                  <p className="text-zinc-400 text-sm">Launch a campaign to match these candidates to your open roles</p>
+                </div>
+              </div>
+              <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 text-white text-sm cursor-default">
+                <Megaphone className="w-4 h-4" /> Create Campaign
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+/* ================================================================== */
+/*  2. DemoTalentProjects                                              */
+/* ================================================================== */
+
+const PROJECTS = [
+  { id: 'p1', title: 'Q1 Engineering Hiring', description: 'Hire 3 senior engineers for the platform team', status: 'active', priority: 'high', client_name: 'Internal', deadline: '2026-03-15', roles: [
+    { id: 'r1', title: 'Senior Backend Engineer', status: 'open', location: 'Amsterdam', salary_range: '90k-120k', candidates_matched: 12 },
+    { id: 'r2', title: 'Staff Frontend Engineer', status: 'open', location: 'Remote', salary_range: '100k-130k', candidates_matched: 8 },
+    { id: 'r3', title: 'DevOps Lead', status: 'filled', location: 'Amsterdam', salary_range: '95k-125k', candidates_matched: 15 },
+  ]},
+  { id: 'p2', title: 'Product Team Expansion', description: 'Growing the product team with senior PMs', status: 'active', priority: 'medium', client_name: 'TechVentures', deadline: '2026-04-01', roles: [
+    { id: 'r4', title: 'Senior Product Manager', status: 'open', location: 'London', salary_range: '85k-110k', candidates_matched: 6 },
+    { id: 'r5', title: 'Product Designer', status: 'open', location: 'Remote', salary_range: '75k-95k', candidates_matched: 10 },
+  ]},
+  { id: 'p3', title: 'Data Science Initiative', description: 'Building a data science team from scratch', status: 'on_hold', priority: 'low', client_name: 'Summit Analytics', deadline: '2026-06-01', roles: [
+    { id: 'r6', title: 'Lead Data Scientist', status: 'on_hold', location: 'Berlin', salary_range: '100k-140k', candidates_matched: 4 },
+  ]},
+  { id: 'p4', title: 'Sales Leadership', description: 'Hiring VP Sales for EMEA expansion', status: 'active', priority: 'urgent', client_name: 'Meridian Health', deadline: '2026-02-28', roles: [
+    { id: 'r7', title: 'VP Sales EMEA', status: 'open', location: 'London', salary_range: '130k-180k', candidates_matched: 3 },
+    { id: 'r8', title: 'Enterprise AE', status: 'filled', location: 'Amsterdam', salary_range: '80k-100k', candidates_matched: 9 },
+  ]},
+];
+
+const PROJECT_STATS = [
+  { title: 'Active Projects', value: 3, icon: Briefcase },
+  { title: 'Total Roles', value: 8, icon: Target },
+  { title: 'Active Roles', value: 5, icon: Users },
+  { title: 'Filled Roles', value: 2, icon: CheckCircle2 },
+];
+
+export function DemoTalentProjects({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  return (
+    <div className="min-h-screen bg-black relative">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+        {/* PageHeader */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-red-500/20">
+              <Briefcase className="w-5 h-5 text-red-400" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-white">Recruitment Projects</h1>
+              <p className="text-zinc-400 text-sm">Manage hiring projects and open roles</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-600 text-white text-sm cursor-default">
+              <Zap className="w-4 h-4" /> Quick Add Role
+            </button>
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-700 text-white text-sm cursor-default">
+              <Plus className="w-4 h-4" /> New Project
+            </button>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          {PROJECT_STATS.map(s => (
+            <motion.div key={s.title} variants={itemVariants}>
+              <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4 flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-red-500/20">
+                  <s.icon className="w-4 h-4 text-red-400" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-white">{s.value}</p>
+                  <p className="text-xs text-zinc-500">{s.title}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Main Content */}
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1 min-w-0 space-y-4">
+            {/* Filters */}
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <div className="w-full pl-10 pr-4 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white/40 text-sm">
+                  Search projects, clients, roles...
+                </div>
+              </div>
+              <div className="px-4 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white/70 text-sm cursor-default">
+                All Status
+              </div>
+              <button className="p-2 text-white/60 cursor-default"><RefreshCw className="w-4 h-4" /></button>
+            </div>
+
+            {/* Projects Grid */}
+            <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {PROJECTS.map(project => {
+                const filledRoles = project.roles.filter(r => r.status === 'filled').length;
+                return (
+                  <motion.div key={project.id} variants={itemVariants}>
+                    <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4 hover:border-red-500/30 transition-all duration-300">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <StatusBadge status={project.status} />
+                            <PriorityBadge priority={project.priority} />
+                          </div>
+                          <h3 className="text-base font-semibold text-white">{project.title}</h3>
+                          <p className="text-xs text-white/60 line-clamp-2 mt-0.5">{project.description}</p>
+                        </div>
+                        <button className="p-1 rounded-lg text-white/60 cursor-default">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* Client & Timeline */}
+                      <div className="flex items-center gap-3 text-xs text-white/50 mb-3">
+                        <span className="flex items-center gap-1"><Building2 className="w-4 h-4" />{project.client_name}</span>
+                        {project.deadline && (
+                          <span className="flex items-center gap-1"><Calendar className="w-4 h-4" />{new Date(project.deadline).toLocaleDateString()}</span>
+                        )}
+                      </div>
+
+                      {/* Progress */}
+                      <div className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg mb-3">
+                        <div className="flex items-center gap-2">
+                          <ProgressRing filled={filledRoles} total={project.roles.length} />
+                          <div>
+                            <p className="text-xs font-medium text-white">Roles Progress</p>
+                            <p className="text-[10px] text-white/50">{filledRoles} of {project.roles.length} filled</p>
+                          </div>
+                        </div>
+                        <button className="text-red-400 text-xs flex items-center gap-1 cursor-default">
+                          View Roles <ChevronRight className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      {/* Roles Preview */}
+                      <div className="space-y-1">
+                        {project.roles.slice(0, 3).map(role => (
+                          <div key={role.id} className="flex items-center justify-between p-1.5 bg-zinc-800/30 rounded text-xs">
+                            <span className="text-white/80">{role.title}</span>
+                            <StatusBadge status={role.status} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
                 );
               })}
-            </tbody>
-          </table>
+            </motion.div>
+          </div>
+
+          {/* Right Column - Widgets */}
+          <div className="lg:w-80 flex-shrink-0 space-y-4">
+            <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-white mb-3">Ready for Outreach</h3>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-2 bg-zinc-800/30 rounded-lg">
+                  <span className="text-xs text-white/70">6 candidates with Intel</span>
+                  <button className="text-xs text-red-400 cursor-default">Launch</button>
+                </div>
+              </div>
+            </div>
+            <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-white mb-3">Recent Activity</h3>
+              <div className="space-y-2 text-xs text-zinc-400">
+                <p>Elena Rodriguez matched to Senior Backend role</p>
+                <p>DevOps Lead role filled by Tom van der Berg</p>
+                <p>New project "Sales Leadership" created</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
+
 /* ================================================================== */
-/*  2. DemoTalentProjects                                             */
+/*  3. DemoTalentCampaigns                                             */
 /* ================================================================== */
 
-export function DemoTalentProjects({ companyName = 'Acme Corp', recipientName = 'there' }) {
-  const stats = [
-    { label: 'Open Roles', value: '7', icon: Briefcase },
-    { label: 'Avg Time to Fill', value: '23 days', icon: Clock },
-    { label: 'Offer Acceptance', value: '84%', icon: CheckCircle2 },
-  ];
+const CAMPAIGNS = [
+  { id: 'c1', name: 'Senior Engineers Q1', description: 'Outreach to senior backend engineers across EU', status: 'active', campaign_type: 'recruitment', created_date: '2026-01-10', matched_candidates: [
+    { status: 'sent' }, { status: 'sent' }, { status: 'replied' }, { status: 'pending' }, { status: 'sent' }, { status: 'pending' }, { status: 'replied' }, { status: 'pending' },
+  ]},
+  { id: 'c2', name: 'Product Leadership Outreach', description: 'Targeting VP/Director-level product leaders', status: 'active', campaign_type: 'recruitment', created_date: '2026-01-15', matched_candidates: [
+    { status: 'sent' }, { status: 'replied' }, { status: 'pending' }, { status: 'sent' }, { status: 'pending' },
+  ]},
+  { id: 'c3', name: 'Data Science Expansion', description: 'Building pipeline for data science team', status: 'paused', campaign_type: 'recruitment', created_date: '2026-01-08', matched_candidates: [
+    { status: 'sent' }, { status: 'sent' }, { status: 'sent' }, { status: 'pending' },
+  ]},
+  { id: 'c4', name: 'DevOps Talent Sourcing', description: 'Finding DevOps/SRE talent for infrastructure team', status: 'draft', campaign_type: 'growth', created_date: '2026-01-20', matched_candidates: []},
+  { id: 'c5', name: 'Design Outreach Wave 2', description: 'Second wave of outreach to UX/UI designers', status: 'completed', campaign_type: 'recruitment', created_date: '2025-12-15', matched_candidates: [
+    { status: 'sent' }, { status: 'replied' }, { status: 'replied' }, { status: 'sent' }, { status: 'replied' }, { status: 'sent' },
+  ]},
+];
 
-  const projects = [
-    {
-      title: 'Senior Backend Engineer',
-      department: 'Engineering',
-      status: 'Open',
-      candidates: 84,
-      hiringManager: 'Sarah Mitchell',
-      daysOpen: 12,
-      pipeline: { Sourced: 42, Screened: 22, Interview: 12, Offer: 5, Hired: 3 },
-    },
-    {
-      title: 'VP of Product',
-      department: 'Product',
-      status: 'Open',
-      candidates: 36,
-      hiringManager: 'David Kim',
-      daysOpen: 28,
-      pipeline: { Sourced: 18, Screened: 10, Interview: 5, Offer: 2, Hired: 1 },
-    },
-    {
-      title: 'Lead Data Scientist',
-      department: 'Data',
-      status: 'On Hold',
-      candidates: 52,
-      hiringManager: 'Sophia Nguyen',
-      daysOpen: 45,
-      pipeline: { Sourced: 30, Screened: 14, Interview: 6, Offer: 2, Hired: 0 },
-    },
-    {
-      title: 'Head of Design',
-      department: 'Design',
-      status: 'Filled',
-      candidates: 28,
-      hiringManager: 'Marcus Johnson',
-      daysOpen: 19,
-      pipeline: { Sourced: 12, Screened: 8, Interview: 5, Offer: 2, Hired: 1 },
-    },
-  ];
+const CAMPAIGN_STATS = [
+  { label: 'Total Campaigns', value: 5, icon: Megaphone },
+  { label: 'Total Candidates', value: 23, icon: Users },
+  { label: 'Messages Sent', value: 14, icon: Send },
+  { label: 'Replies Received', value: 5, icon: MessageSquare },
+];
 
-  const pipelineColors = {
-    Sourced: 'bg-red-600/50',
-    Screened: 'bg-red-500/50',
-    Interview: 'bg-red-400/50',
-    Offer: 'bg-red-300/50',
-    Hired: 'bg-emerald-500/50',
-  };
+export function DemoTalentCampaigns({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  return (
+    <div className="min-h-screen bg-black relative">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+        {/* PageHeader */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-red-500/20">
+              <Megaphone className="w-5 h-5 text-red-400" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-white">Campaigns</h1>
+              <p className="text-zinc-400 text-sm">Manage your outreach campaigns</p>
+            </div>
+          </div>
+          <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500 text-white text-sm cursor-default">
+            <Plus className="w-4 h-4" /> New Campaign
+          </button>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          {CAMPAIGN_STATS.map(s => (
+            <div key={s.label} className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-red-500/20">
+                <s.icon className="w-4 h-4 text-red-400" />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-white">{s.value}</p>
+                <p className="text-[10px] text-zinc-500">{s.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters */}
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex-1 min-w-[200px]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <div className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/40 text-sm">
+                  Search campaigns...
+                </div>
+              </div>
+            </div>
+            <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/70 text-sm cursor-default">All Statuses</div>
+            <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/70 text-sm cursor-default">All Types</div>
+            <button className="p-2 rounded-lg bg-white/5 text-white/60 cursor-default"><RefreshCw className="w-4 h-4" /></button>
+          </div>
+        </div>
+
+        {/* Campaign Cards */}
+        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {CAMPAIGNS.map(campaign => {
+            const sentCount = campaign.matched_candidates.filter(c => c.status === 'sent').length;
+            const repliedCount = campaign.matched_candidates.filter(c => c.status === 'replied').length;
+            const progress = campaign.matched_candidates.length > 0 ? Math.round((sentCount / campaign.matched_candidates.length) * 100) : 0;
+
+            return (
+              <motion.div key={campaign.id} variants={itemVariants}>
+                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4 hover:border-red-500/30 transition-all duration-300">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <StatusBadge status={campaign.status} />
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${campaign.campaign_type === 'recruitment' ? 'bg-red-500/20 text-red-400' : 'bg-red-400/20 text-red-300'}`}>
+                          {campaign.campaign_type === 'recruitment' ? 'Recruitment' : 'Growth'}
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-semibold text-white">{campaign.name}</h3>
+                      <p className="text-xs text-white/60 line-clamp-2 mt-0.5">{campaign.description}</p>
+                    </div>
+                    <button className="p-2 rounded-lg text-white/60 cursor-default"><MoreHorizontal className="w-5 h-5" /></button>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-4 gap-3 mb-3">
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-white">{campaign.matched_candidates.length}</p>
+                      <p className="text-[10px] text-white/60">Candidates</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-red-400">{sentCount}</p>
+                      <p className="text-[10px] text-white/60">Sent</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-red-400">{repliedCount}</p>
+                      <p className="text-[10px] text-white/60">Replied</p>
+                    </div>
+                    <div className="flex items-center justify-center">
+                      <ProgressRing filled={progress} total={100} size={32} strokeWidth={2} showPercent />
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="mb-3">
+                    <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-red-500 to-red-600"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 1, ease: 'easeOut' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-3 border-t border-white/10">
+                    <div className="flex items-center gap-1.5 text-xs text-white/40">
+                      <Calendar className="w-3 h-3" />
+                      <span>Created {new Date(campaign.created_date).toLocaleDateString()}</span>
+                    </div>
+                    <button className="flex items-center gap-1 text-xs text-red-400 cursor-default">
+                      View Details <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+
+/* ================================================================== */
+/*  4. DemoTalentClients                                               */
+/* ================================================================== */
+
+const CLIENT_STAGES = [
+  { id: 'lead', label: 'Lead', color: 'bg-zinc-500', textColor: 'text-zinc-400' },
+  { id: 'prospect', label: 'Prospect', color: 'bg-red-400', textColor: 'text-red-300' },
+  { id: 'active', label: 'Active', color: 'bg-red-500', textColor: 'text-red-400' },
+  { id: 'retained', label: 'Retained', color: 'bg-red-600', textColor: 'text-red-400' },
+  { id: 'dormant', label: 'Dormant', color: 'bg-red-800', textColor: 'text-red-500' },
+];
+
+const CLIENTS = [
+  { id: 'cl1', company: 'TechVentures', first_name: 'Sarah', last_name: 'Mitchell', job_title: 'HR Director', email: 'sarah@techventures.com', phone: '+31 6 12345678', location: 'Amsterdam, NL', stage: 'active', recruitment_fee_percentage: 20, exclude_candidates: true, industry: 'Technology' },
+  { id: 'cl2', company: 'Summit Analytics', first_name: 'Priya', last_name: 'Shah', job_title: 'Head of People', email: 'priya@summit.io', phone: '+44 7700 900123', location: 'London, UK', stage: 'active', recruitment_fee_percentage: 22, exclude_candidates: true, industry: 'Analytics' },
+  { id: 'cl3', company: 'Meridian Health', first_name: 'Lisa', last_name: 'Tran', job_title: 'VP Talent', email: 'lisa@meridian.com', phone: '+1 555 234 5678', location: 'Boston, MA', stage: 'retained', recruitment_fee_percentage: 18, exclude_candidates: false, industry: 'Healthcare' },
+  { id: 'cl4', company: 'Catalyst Labs', first_name: 'David', last_name: 'Nguyen', job_title: 'CEO', email: 'david@catalystlabs.io', phone: '+31 6 98765432', location: 'Amsterdam, NL', stage: 'prospect', recruitment_fee_percentage: 20, exclude_candidates: true, industry: 'SaaS' },
+  { id: 'cl5', company: 'DataBridge Corp', first_name: 'Michael', last_name: 'Chen', job_title: 'CTO', email: 'michael@databridge.com', phone: '+49 171 1234567', location: 'Berlin, DE', stage: 'lead', recruitment_fee_percentage: 25, exclude_candidates: false, industry: 'Data' },
+  { id: 'cl6', company: 'Orion Systems', first_name: 'Emma', last_name: 'Wilson', job_title: 'Recruiting Manager', email: 'emma@orion.io', phone: '+1 555 876 5432', location: 'New York, NY', stage: 'active', recruitment_fee_percentage: 20, exclude_candidates: true, industry: 'Software' },
+];
+
+export function DemoTalentClients({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  const [viewMode, setViewMode] = useState('table');
+  const activeClients = CLIENTS.filter(c => c.stage === 'active' || c.stage === 'retained').length;
 
   return (
-    <div className="min-h-screen bg-black p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-xl bg-red-500/20">
-          <FolderKanban className="w-6 h-6 text-red-400" />
+    <div className="min-h-screen bg-black relative">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-red-500/5 rounded-full blur-3xl" />
+      </div>
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+        {/* PageHeader */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-red-500/20">
+              <Building2 className="w-5 h-5 text-red-400" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-white">Recruitment Clients</h1>
+              <p className="text-zinc-400 text-sm">{CLIENTS.length} clients -- {activeClients} active</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 text-sm cursor-default">
+              <Sparkles className="w-4 h-4" /> Quick Add
+            </button>
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm cursor-default">
+              <Plus className="w-4 h-4" /> Add Client
+            </button>
+          </div>
         </div>
+
+        {/* Stats Row */}
+        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <motion.div variants={itemVariants} className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/60">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-zinc-500 text-[10px]">Total Clients</p>
+                <p className="text-lg font-bold text-white">{CLIENTS.length}</p>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                <Building2 className="w-4 h-4 text-red-400/70" />
+              </div>
+            </div>
+          </motion.div>
+          {CLIENT_STAGES.slice(0, 4).map(stage => (
+            <motion.div key={stage.id} variants={itemVariants} className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/60">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-zinc-500 text-[10px]">{stage.label}</p>
+                  <p className="text-lg font-bold text-white">{CLIENTS.filter(c => c.stage === stage.id).length}</p>
+                </div>
+                <div className={`w-8 h-8 rounded-lg ${stage.color}/20 flex items-center justify-center`}>
+                  <div className={`w-2 h-2 rounded-full ${stage.color}`} />
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Filters and View Toggle */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-1">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <div className="w-full pl-10 pr-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-lg text-white/40 text-sm">
+                Search clients...
+              </div>
+            </div>
+            <div className="flex items-center gap-1 px-3 py-2 bg-zinc-900/50 border border-zinc-800 rounded-lg text-white/70 text-sm cursor-default">
+              <Filter className="w-4 h-4 text-zinc-500" /> All Stages
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setViewMode('table')} className={`p-2 rounded-lg cursor-default ${viewMode === 'table' ? 'bg-red-500/20 text-red-400' : 'text-zinc-400'}`}>
+              <List className="w-4 h-4" />
+            </button>
+            <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg cursor-default ${viewMode === 'grid' ? 'bg-red-500/20 text-red-400' : 'text-zinc-400'}`}>
+              <Grid3X3 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        {viewMode === 'table' ? (
+          <div className="rounded-xl bg-zinc-900/50 border border-zinc-800/60 overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-zinc-800/50">
+                  <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400">Company</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400">Contact</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400">Email</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400">Stage</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400">Fee</th>
+                  <th className="text-right py-3 px-4 text-xs font-medium text-zinc-400">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {CLIENTS.map(client => {
+                  const stage = CLIENT_STAGES.find(s => s.id === client.stage) || CLIENT_STAGES[0];
+                  return (
+                    <tr key={client.id} className="border-b border-zinc-800/50 hover:bg-zinc-900/50 transition-colors">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${stage.color}`} />
+                          <div>
+                            <span className="text-sm font-medium text-white">{client.company}</span>
+                            {client.industry && <p className="text-xs text-zinc-500 mt-0.5">{client.industry}</p>}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-zinc-400 text-sm">
+                        <div>
+                          <span>{client.first_name} {client.last_name}</span>
+                          {client.job_title && <p className="text-xs text-zinc-500 mt-0.5">{client.job_title}</p>}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-zinc-400 text-sm">{client.email}</td>
+                      <td className="py-3 px-4">
+                        <span className={`text-[10px] px-2 py-0.5 h-5 rounded ${stage.color}/20 ${stage.textColor}`}>{stage.label}</span>
+                      </td>
+                      <td className="py-3 px-4 text-zinc-400 text-sm">{client.recruitment_fee_percentage}%</td>
+                      <td className="py-3 px-4 text-right">
+                        <button className="p-1 text-zinc-400 cursor-default"><MoreHorizontal className="w-4 h-4" /></button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {CLIENTS.map(client => {
+              const stage = CLIENT_STAGES.find(s => s.id === client.stage) || CLIENT_STAGES[0];
+              return (
+                <motion.div key={client.id} variants={itemVariants}>
+                  <div className="group relative bg-zinc-900/60 rounded-xl border border-zinc-800/60 hover:border-zinc-700/60 transition-all duration-200 overflow-hidden">
+                    <div className={`absolute top-0 left-0 right-0 h-1 ${stage.color} opacity-60`} />
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-white truncate">{client.company}</h4>
+                          <p className="text-zinc-500 text-sm flex items-center gap-1.5 mt-1">
+                            <span className="truncate">{client.first_name} {client.last_name}</span>
+                          </p>
+                        </div>
+                        <button className="p-1 text-zinc-400 cursor-default"><MoreHorizontal className="w-4 h-4" /></button>
+                      </div>
+                      <div className="mt-3 space-y-1">
+                        <div className="flex items-center gap-2 text-xs text-zinc-400"><Mail className="w-3 h-3" /><span className="truncate">{client.email}</span></div>
+                        {client.location && <div className="flex items-center gap-2 text-xs text-zinc-500"><MapPin className="w-3 h-3" /><span>{client.location}</span></div>}
+                      </div>
+                      <div className="mt-3 pt-2 border-t border-zinc-800/50 flex items-center justify-between">
+                        <span className={`text-[10px] px-2 py-0.5 rounded ${stage.color}/20 ${stage.textColor}`}>{stage.label}</span>
+                        <span className="text-xs text-zinc-500">Fee: {client.recruitment_fee_percentage}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+/* ================================================================== */
+/*  5. DemoTalentDeals                                                 */
+/* ================================================================== */
+
+const DEAL_STAGES = [
+  { id: 'lead', label: 'Lead', color: 'from-zinc-500 to-zinc-600', bgAccent: 'bg-zinc-500', probability: 5 },
+  { id: 'briefing', label: 'Briefing', color: 'from-red-600 to-red-700', bgAccent: 'bg-red-500', probability: 15 },
+  { id: 'agreement', label: 'Agreement', color: 'from-red-500 to-red-600', bgAccent: 'bg-red-500', probability: 25 },
+  { id: 'search', label: 'Search', color: 'from-red-400 to-red-500', bgAccent: 'bg-red-500', probability: 35 },
+  { id: 'presented', label: 'Presented', color: 'from-red-300 to-red-400', bgAccent: 'bg-red-400', probability: 50 },
+  { id: 'interviews', label: 'Interviews', color: 'from-red-400 to-red-500', bgAccent: 'bg-red-500', probability: 65 },
+  { id: 'offer', label: 'Offer', color: 'from-red-500 to-red-600', bgAccent: 'bg-red-500', probability: 80 },
+  { id: 'confirmed', label: 'Confirmed', color: 'from-red-700 to-red-800', bgAccent: 'bg-red-700', probability: 100 },
+];
+
+const DEALS = [
+  { id: 'd1', title: 'Senior BE - TechVentures', stage: 'interviews', deal_value: 18000, client: 'TechVentures', candidate: 'Elena Rodriguez', expected_start_date: '2026-03-01', fee_type: 'percentage', fee_percentage: 20 },
+  { id: 'd2', title: 'VP Product - Summit', stage: 'offer', deal_value: 35000, client: 'Summit Analytics', candidate: 'David Kim', expected_start_date: '2026-02-15', fee_type: 'percentage', fee_percentage: 22 },
+  { id: 'd3', title: 'Data Scientist - Meridian', stage: 'search', deal_value: 22000, client: 'Meridian Health', candidate: null, expected_start_date: '2026-04-01', fee_type: 'percentage', fee_percentage: 18 },
+  { id: 'd4', title: 'DevOps Lead - Internal', stage: 'confirmed', deal_value: 24000, client: 'Internal', candidate: 'Tom van der Berg', expected_start_date: '2026-01-15', fee_type: 'flat', fee_percentage: null },
+  { id: 'd5', title: 'Sales Director - Catalyst', stage: 'briefing', deal_value: 28000, client: 'Catalyst Labs', candidate: null, expected_start_date: '2026-05-01', fee_type: 'percentage', fee_percentage: 20 },
+  { id: 'd6', title: 'Staff FE - Orion', stage: 'presented', deal_value: 20000, client: 'Orion Systems', candidate: 'Aisha Patel', expected_start_date: '2026-03-15', fee_type: 'percentage', fee_percentage: 20 },
+  { id: 'd7', title: 'PM Lead - DataBridge', stage: 'lead', deal_value: 15000, client: 'DataBridge Corp', candidate: null, expected_start_date: null, fee_type: 'percentage', fee_percentage: 25 },
+];
+
+export function DemoTalentDeals({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  const activeDeals = DEALS.filter(d => d.stage !== 'confirmed');
+  const totalPipeline = activeDeals.reduce((sum, d) => sum + d.deal_value, 0);
+  const weightedPipeline = activeDeals.reduce((sum, d) => {
+    const stage = DEAL_STAGES.find(s => s.id === d.stage);
+    return sum + (d.deal_value * (stage?.probability || 0) / 100);
+  }, 0);
+  const confirmedValue = DEALS.filter(d => d.stage === 'confirmed').reduce((sum, d) => sum + d.deal_value, 0);
+
+  const dealStats = [
+    { label: 'Pipeline Value', value: `EUR ${totalPipeline.toLocaleString()}`, icon: Euro },
+    { label: 'Weighted Forecast', value: `EUR ${Math.round(weightedPipeline).toLocaleString()}`, icon: TrendingUp },
+    { label: 'Confirmed Revenue', value: `EUR ${confirmedValue.toLocaleString()}`, icon: CheckCircle2 },
+    { label: 'Avg Deal Size', value: `EUR ${Math.round(activeDeals.length > 0 ? totalPipeline / activeDeals.length : 0).toLocaleString()}`, icon: Target },
+  ];
+
+  return (
+    <div className="min-h-screen bg-black relative">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-red-500/5 rounded-full blur-3xl" />
+      </div>
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+        {/* PageHeader */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-red-500/20">
+              <Handshake className="w-5 h-5 text-red-400" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-white">Recruitment Pipeline</h1>
+              <p className="text-zinc-400 text-sm">{activeDeals.length} active deals -- EUR {totalPipeline.toLocaleString()} in pipeline</p>
+            </div>
+          </div>
+          <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm cursor-default">
+            <Plus className="w-4 h-4" /> Add Deal
+          </button>
+        </div>
+
+        {/* Stats */}
+        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {dealStats.map(s => (
+            <motion.div key={s.label} variants={itemVariants} className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-zinc-500 text-xs">{s.label}</p>
+                  <p className="text-lg font-bold text-white mt-0.5">{s.value}</p>
+                </div>
+                <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                  <s.icon className="w-4 h-4 text-red-400/70" />
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Pipeline Board */}
+        <div className="flex gap-4 overflow-x-auto pb-6">
+          {DEAL_STAGES.map(stage => {
+            const stageDeals = DEALS.filter(d => d.stage === stage.id);
+            const stageValue = stageDeals.reduce((sum, d) => sum + d.deal_value, 0);
+
+            return (
+              <div key={stage.id} className="flex-shrink-0 w-72">
+                {/* Column Header */}
+                <div className="bg-zinc-900/70 rounded-xl border border-zinc-800/60 p-4 mb-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-3 h-3 rounded-full bg-gradient-to-br ${stage.color}`} />
+                      <h3 className="text-white font-semibold text-sm">{stage.label}</h3>
+                      <span className="bg-zinc-800 text-zinc-300 text-xs px-1.5 py-0.5 rounded">{stageDeals.length}</span>
+                    </div>
+                    <button className="p-1 text-zinc-500 cursor-default"><Plus className="w-4 h-4" /></button>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-lg font-bold text-red-400/80">EUR {stageValue.toLocaleString()}</span>
+                      <span className="text-xs text-zinc-600">total</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Deal Cards */}
+                <div className="space-y-3 min-h-[200px]">
+                  {stageDeals.map(deal => (
+                    <div key={deal.id} className="bg-zinc-900/60 rounded-xl border border-zinc-800/60 hover:border-zinc-700/60 transition-all">
+                      <div className={`absolute top-0 left-0 right-0 h-1 rounded-t-xl bg-gradient-to-r ${stage.color} opacity-60`} />
+                      <div className="p-4">
+                        <h4 className="font-semibold text-white text-sm truncate">{deal.title}</h4>
+                        {deal.client && (
+                          <p className="text-zinc-500 text-xs flex items-center gap-1.5 mt-1">
+                            <Building2 className="w-3 h-3" />{deal.client}
+                          </p>
+                        )}
+                        <div className="mt-4 flex items-center justify-between">
+                          <span className="text-2xl font-bold text-white">EUR {deal.deal_value.toLocaleString()}</span>
+                          <span className="text-zinc-600 text-sm">{stage.probability}%</span>
+                        </div>
+                        <div className="mt-3 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-red-500 rounded-full" style={{ width: `${stage.probability}%` }} />
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-zinc-800/50 flex items-center justify-between text-xs">
+                          {deal.expected_start_date && (
+                            <span className="flex items-center gap-1 text-zinc-500">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(deal.expected_start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </span>
+                          )}
+                          {deal.fee_type && (
+                            <span className="text-[10px] px-1.5 py-0 border border-zinc-700 text-zinc-500 rounded">
+                              {deal.fee_type === 'percentage' ? `${deal.fee_percentage}%` : 'Flat'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {stageDeals.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-zinc-800 rounded-xl">
+                      <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${stage.color} opacity-20 flex items-center justify-center mb-3`}>
+                        <Plus className="w-5 h-5 text-white" />
+                      </div>
+                      <p className="text-zinc-600 text-sm">Drop deal here</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+/* ================================================================== */
+/*  6. DemoTalentOutreach                                              */
+/* ================================================================== */
+
+const SMS_STATUS_CONFIG = {
+  queued: { label: 'Queued', color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30', icon: Clock },
+  sent: { label: 'Sent', color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: Send },
+  delivered: { label: 'Delivered', color: 'bg-red-600/20 text-red-400 border-red-600/30', icon: CheckCircle },
+  responded: { label: 'Responded', color: 'bg-red-400/20 text-red-300 border-red-400/30', icon: MessageCircle },
+  interested: { label: 'Interested', color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: Sparkles },
+  declined: { label: 'Declined', color: 'bg-red-800/20 text-red-500 border-red-800/30', icon: XCircle },
+  scheduled: { label: 'Scheduled', color: 'bg-red-700/20 text-red-400 border-red-700/30', icon: Calendar },
+  opted_out: { label: 'Opted Out', color: 'bg-zinc-600/20 text-zinc-500 border-zinc-600/30', icon: Ban },
+};
+
+const SMS_CONVERSATIONS = [
+  { id: 's1', candidate: { first_name: 'Elena', last_name: 'Rodriguez', job_title: 'VP of Engineering', company_name: 'Stripe' }, status: 'responded', phone_number: '+1 555-0101', last_message_at: '2026-02-09T14:30:00Z', messages: [{ role: 'assistant', content: 'Hi Elena, I noticed your recent talk at QCon...' }, { role: 'candidate', content: 'Thanks for reaching out! I am open to hearing more.' }] },
+  { id: 's2', candidate: { first_name: 'David', last_name: 'Kim', job_title: 'Head of Product', company_name: 'Booking.com' }, status: 'delivered', phone_number: '+31 6-1234-5678', last_message_at: '2026-02-09T10:00:00Z', messages: [{ role: 'assistant', content: 'David, the M&A news at your company caught my attention...' }] },
+  { id: 's3', candidate: { first_name: 'Sophia', last_name: 'Nguyen', job_title: 'Senior Data Scientist', company_name: 'Meta' }, status: 'interested', phone_number: '+44 7700-900123', last_message_at: '2026-02-08T16:00:00Z', messages: [{ role: 'assistant', content: 'Sophia, your work on recommendation systems is impressive...' }, { role: 'candidate', content: 'I would love to schedule a call. When works for you?' }] },
+  { id: 's4', candidate: { first_name: 'Marcus', last_name: 'Johnson', job_title: 'Director of Sales', company_name: 'HubSpot' }, status: 'sent', phone_number: '+1 555-0204', last_message_at: '2026-02-08T09:00:00Z', messages: [{ role: 'assistant', content: 'Hi Marcus, quick note about an exciting sales leadership opportunity...' }] },
+  { id: 's5', candidate: { first_name: 'Tom', last_name: 'van der Berg', job_title: 'CTO', company_name: 'DataBridge' }, status: 'scheduled', phone_number: '+31 6-9876-5432', last_message_at: '2026-02-07T11:00:00Z', messages: [{ role: 'assistant', content: 'Tom, as a fellow Dutch tech leader...' }, { role: 'candidate', content: 'Let us meet Thursday at 2pm.' }] },
+  { id: 's6', candidate: { first_name: 'Laura', last_name: 'Chen', job_title: 'Product Manager', company_name: 'Shopify' }, status: 'declined', phone_number: '+1 555-0306', last_message_at: '2026-02-06T15:00:00Z', messages: [{ role: 'assistant', content: 'Laura, your product work at Shopify has been...' }, { role: 'candidate', content: 'Thanks but not looking right now.' }] },
+  { id: 's7', candidate: { first_name: 'James', last_name: 'Park', job_title: 'Engineering Manager', company_name: 'Netflix' }, status: 'queued', phone_number: '+1 555-0407', last_message_at: null, messages: [] },
+];
+
+const SMS_STATS = [
+  { label: 'Total', value: 7, icon: MessageSquare, bg: 'bg-zinc-500/20', iconColor: 'text-zinc-400' },
+  { label: 'Queued', value: 1, icon: Clock, bg: 'bg-zinc-500/20', iconColor: 'text-zinc-400' },
+  { label: 'Sent', value: 1, icon: Send, bg: 'bg-red-500/20', iconColor: 'text-red-400' },
+  { label: 'Delivered', value: 1, icon: CheckCircle, bg: 'bg-red-600/20', iconColor: 'text-red-400' },
+  { label: 'Responded', value: 1, icon: MessageCircle, bg: 'bg-red-400/20', iconColor: 'text-red-300' },
+  { label: 'Interested', value: 1, icon: Sparkles, bg: 'bg-red-500/20', iconColor: 'text-red-400' },
+  { label: 'Scheduled', value: 1, icon: Calendar, bg: 'bg-red-700/20', iconColor: 'text-red-400' },
+  { label: 'Declined', value: 1, icon: XCircle, bg: 'bg-red-500/20', iconColor: 'text-red-400' },
+];
+
+export function DemoTalentOutreach({ companyName = 'Acme Corp', recipientName = 'there' }) {
+  return (
+    <div className="min-h-screen bg-black px-6 py-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Recruitment Projects</h1>
-          <p className="text-zinc-400 mt-0.5 text-sm">Track open roles and hiring pipelines at {companyName}.</p>
+          <h1 className="text-lg font-bold text-white">SMS Outreach</h1>
+          <p className="text-xs text-zinc-500">{SMS_CONVERSATIONS.length} conversations</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-400 text-sm cursor-default">
+            <Phone className="w-4 h-4" /> 2 Numbers
+          </button>
+          <button className="p-2 text-zinc-400 cursor-default"><RefreshCw className="w-4 h-4" /></button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        {stats.map((s) => (
-          <div key={s.label} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-red-500/15 text-red-400">
-              <s.icon className="w-5 h-5" />
+      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-2">
+        {SMS_STATS.map(s => (
+          <motion.div key={s.label} variants={itemVariants}>
+            <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-2">
+              <div className="flex items-center gap-2">
+                <div className={`p-1.5 ${s.bg} rounded-lg`}>
+                  <s.icon className={`w-3 h-3 ${s.iconColor}`} />
+                </div>
+                <div>
+                  <p className="text-base font-bold text-white">{s.value}</p>
+                  <p className="text-[9px] text-zinc-500">{s.label}</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-xl font-bold text-white">{s.value}</p>
-              <p className="text-xs text-zinc-500">{s.label}</p>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* Filters */}
+      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex-1 min-w-[200px]">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+              <div className="w-full pl-10 pr-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white/40 text-sm">
+                Search conversations...
+              </div>
             </div>
           </div>
-        ))}
+          <div className="px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white/70 text-sm cursor-default">All Status</div>
+        </div>
       </div>
 
-      {/* Project Cards */}
-      <div data-demo="projects-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {projects.map((project) => {
-          const total = Object.values(project.pipeline).reduce((a, b) => a + b, 0);
+      {/* Conversations List */}
+      <div className="space-y-2">
+        {SMS_CONVERSATIONS.map(conv => {
+          const statusCfg = SMS_STATUS_CONFIG[conv.status] || SMS_STATUS_CONFIG.queued;
+          const StatusIcon = statusCfg.icon;
+          const candidateName = `${conv.candidate.first_name} ${conv.candidate.last_name}`;
+          const lastMessage = conv.messages?.[conv.messages.length - 1];
+
           return (
-            <div key={project.title} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 space-y-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-white font-semibold text-sm">{project.title}</h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">{project.department}</p>
+            <motion.div key={conv.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              className="p-3 rounded-lg bg-zinc-900/40 border border-zinc-800/50 hover:border-red-500/30 cursor-default transition-all"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
+                  {candidateName.split(' ').map(n => n[0]).join('').substring(0, 2)}
                 </div>
-                <span className={`text-xs px-2.5 py-1 rounded-full ${statusStyle(project.status)}`}>
-                  {project.status}
-                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <h4 className="font-medium text-white text-sm truncate">{candidateName}</h4>
+                    <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${statusCfg.color}`}>
+                      <StatusIcon className="w-3 h-3" /> {statusCfg.label}
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-500 truncate mb-1">{conv.candidate.job_title} at {conv.candidate.company_name}</p>
+                  {lastMessage && (
+                    <p className="text-xs text-zinc-400 truncate">
+                      {lastMessage.role === 'assistant' ? 'You: ' : ''}{lastMessage.content}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-3 mt-2 text-[10px] text-zinc-500">
+                    <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{conv.phone_number}</span>
+                    {conv.last_message_at && <span>{new Date(conv.last_message_at).toLocaleDateString()}</span>}
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-zinc-600 shrink-0" />
               </div>
-
-              {/* Mini pipeline bar */}
-              <div>
-                <div className="flex items-center h-3 rounded-full overflow-hidden bg-zinc-800/50">
-                  {Object.entries(project.pipeline).map(([stage, count]) => (
-                    <div
-                      key={stage}
-                      className={`h-full ${pipelineColors[stage]}`}
-                      style={{ width: `${(count / total) * 100}%` }}
-                    />
-                  ))}
-                </div>
-                <div className="flex items-center justify-between mt-2">
-                  {Object.entries(project.pipeline).map(([stage, count]) => (
-                    <div key={stage} className="text-center">
-                      <p className="text-xs font-bold text-white">{count}</p>
-                      <p className="text-[10px] text-zinc-500">{stage}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Meta */}
-              <div className="flex items-center justify-between text-xs text-zinc-500 pt-2 border-t border-zinc-800">
-                <div className="flex items-center gap-1.5">
-                  <Users className="w-3 h-3" />
-                  <span>{project.candidates} candidates</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-3 h-3" />
-                  <span>{project.daysOpen} days open</span>
-                </div>
-              </div>
-              <div className="text-xs text-zinc-400">
-                Hiring Manager: <span className="text-white">{project.hiringManager}</span>
-              </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
@@ -406,644 +1161,89 @@ export function DemoTalentProjects({ companyName = 'Acme Corp', recipientName = 
   );
 }
 
-/* ================================================================== */
-/*  3. DemoTalentCampaigns                                            */
-/* ================================================================== */
-
-export function DemoTalentCampaigns({ companyName = 'Acme Corp', recipientName = 'there' }) {
-  const stats = [
-    { label: 'Active Campaigns', value: '4' },
-    { label: 'Avg Response Rate', value: '24%' },
-    { label: 'Meetings Booked', value: '18' },
-  ];
-
-  const campaigns = [
-    { name: 'Senior Engineers Q1', role: 'Senior Backend Engineer', type: 'Email', status: 'Active', candidates: 84, responseRate: 28, openRate: 62, meetingRate: 12 },
-    { name: 'Product Leadership', role: 'VP of Product', type: 'LinkedIn', status: 'Active', candidates: 36, responseRate: 19, openRate: 54, meetingRate: 8 },
-    { name: 'Data Science Expansion', role: 'Lead Data Scientist', type: 'Email', status: 'Paused', candidates: 52, responseRate: 22, openRate: 58, meetingRate: 10 },
-    { name: 'Design Outreach', role: 'Head of Design', type: 'LinkedIn', status: 'Completed', candidates: 28, responseRate: 31, openRate: 71, meetingRate: 15 },
-    { name: 'Sales Leadership', role: 'Director of Sales', type: 'SMS', status: 'Active', candidates: 42, responseRate: 15, openRate: 45, meetingRate: 6 },
-    { name: 'DevOps Hiring', role: 'DevOps Lead', type: 'Email', status: 'Draft', candidates: 0, responseRate: 0, openRate: 0, meetingRate: 0 },
-  ];
-
-  return (
-    <div className="min-h-screen bg-black p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-red-500/20">
-            <Send className="w-6 h-6 text-red-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-white">Outreach Campaigns</h1>
-            <p className="text-zinc-400 mt-0.5 text-sm">Manage recruitment campaigns for {companyName}.</p>
-          </div>
-        </div>
-        <button className="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors cursor-default">
-          <Plus className="w-4 h-4" /> Create Campaign
-        </button>
-      </div>
-
-      {/* Stats pills */}
-      <div className="flex items-center gap-3">
-        {stats.map((s) => (
-          <div key={s.label} className="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/60 border border-zinc-800">
-            <span className="text-sm font-bold text-white">{s.value}</span>
-            <span className="text-xs text-zinc-500">{s.label}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Campaign Table */}
-      <div data-demo="talent-campaigns" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-xs text-zinc-500 border-b border-zinc-800 bg-zinc-900/80">
-                <th className="px-4 py-3 font-medium">Campaign</th>
-                <th className="px-4 py-3 font-medium">Role</th>
-                <th className="px-4 py-3 font-medium">Type</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium text-center">Candidates</th>
-                <th className="px-4 py-3 font-medium">Performance</th>
-                <th className="px-4 py-3 font-medium text-center">Stage</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800/50">
-              {campaigns.map((c) => {
-                const ChIcon = channelIcon(c.type);
-                return (
-                  <tr key={c.name} className="hover:bg-zinc-800/20 transition-colors">
-                    <td className="px-4 py-3.5">
-                      <span className="text-sm font-medium text-white">{c.name}</span>
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-zinc-400">{c.role}</td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-                        <ChIcon className="w-3.5 h-3.5" /> {c.type}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className={`text-xs px-2.5 py-1 rounded-full ${statusStyle(c.status)}`}>
-                        {c.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-center">
-                      <span className="text-sm font-bold text-white">{c.candidates}</span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-4">
-                        <div className="text-center">
-                          <p className="text-xs font-bold text-white">{c.openRate}%</p>
-                          <p className="text-[10px] text-zinc-500">Open</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs font-bold text-red-400">{c.responseRate}%</p>
-                          <p className="text-[10px] text-zinc-500">Reply</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs font-bold text-white">{c.meetingRate}%</p>
-                          <p className="text-[10px] text-zinc-500">Meeting</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5 text-center">
-                      <button className="text-xs text-red-400 cursor-default hover:underline">View</button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ================================================================== */
-/*  4. DemoTalentNests                                                */
+/*  7. DemoTalentNests                                                 */
 /* ================================================================== */
+
+const NESTS = [
+  { id: 'n1', name: 'Senior Engineers Europe', description: 'Top backend and fullstack engineers across EU markets.', item_count: 1420, price: 299, nest_type: 'candidates', is_active: true },
+  { id: 'n2', name: 'Product Managers NYC', description: 'Experienced PMs in the New York metro area.', item_count: 680, price: 199, nest_type: 'candidates', is_active: true },
+  { id: 'n3', name: 'Data Scientists', description: 'ML and data professionals with production experience.', item_count: 920, price: 349, nest_type: 'candidates', is_active: true },
+  { id: 'n4', name: 'DevOps Specialists', description: 'Cloud infrastructure and platform engineering talent.', item_count: 540, price: 249, nest_type: 'candidates', is_active: true },
+  { id: 'n5', name: 'Sales Leaders EMEA', description: 'Enterprise sales leaders across Europe and Middle East.', item_count: 380, price: 179, nest_type: 'candidates', is_active: true },
+  { id: 'n6', name: 'UX Researchers', description: 'User research and design strategy professionals.', item_count: 290, price: 149, nest_type: 'candidates', is_active: true },
+  { id: 'n7', name: 'AI/ML Engineers', description: 'Specialized AI and machine learning engineers.', item_count: 450, price: 399, nest_type: 'candidates', is_active: true },
+  { id: 'n8', name: 'FinTech Executives', description: 'C-level and VP talent from fintech companies.', item_count: 210, price: 499, nest_type: 'candidates', is_active: true },
+];
 
 export function DemoTalentNests({ companyName = 'Acme Corp', recipientName = 'there' }) {
-  const marketplaceNests = [
-    { name: 'Senior Engineers Europe', description: 'Top backend and fullstack engineers across EU markets.', candidates: 1420, industries: ['SaaS', 'Fintech'], price: '$299', avgScore: 82, topCompanies: ['Stripe', 'Adyen', 'Klarna'], avgExp: '8 yrs' },
-    { name: 'Product Managers NYC', description: 'Experienced PMs in the New York metro area.', candidates: 680, industries: ['E-commerce', 'Media'], price: '$199', avgScore: 76, topCompanies: ['Google', 'Meta', 'Shopify'], avgExp: '6 yrs' },
-    { name: 'Data Scientists', description: 'ML and data professionals with production experience.', candidates: 920, industries: ['AI/ML', 'Analytics'], price: '$349', avgScore: 85, topCompanies: ['OpenAI', 'DeepMind', 'Netflix'], avgExp: '5 yrs' },
-    { name: 'DevOps Specialists', description: 'Cloud infrastructure and platform engineering talent.', candidates: 540, industries: ['Cloud', 'SaaS'], price: '$249', avgScore: 79, topCompanies: ['AWS', 'Datadog', 'HashiCorp'], avgExp: '7 yrs' },
-    { name: 'Sales Leaders EMEA', description: 'Enterprise sales leaders across Europe and Middle East.', candidates: 380, industries: ['Enterprise', 'B2B'], price: '$179', avgScore: 71, topCompanies: ['Salesforce', 'SAP', 'Oracle'], avgExp: '10 yrs' },
-    { name: 'UX Researchers', description: 'User research and design strategy professionals.', candidates: 290, industries: ['Design', 'Product'], price: '$149', avgScore: 74, topCompanies: ['Apple', 'Figma', 'Spotify'], avgExp: '4 yrs' },
-  ];
-
-  const myNests = [
-    { name: 'Senior Engineers Europe', candidates: 1420, purchased: 'Jan 15, 2026', enriched: 892 },
-    { name: 'Data Scientists', candidates: 920, purchased: 'Jan 22, 2026', enriched: 614 },
-  ];
-
   return (
-    <div className="min-h-screen bg-black p-6 space-y-6">
+    <div className="w-full px-4 lg:px-6 py-4 space-y-4">
       {/* Header */}
+      <div>
+        <h1 className="text-lg font-bold text-white mb-1">Talent Nests</h1>
+        <p className="text-zinc-500 text-xs">Pre-built candidate datasets for your recruitment needs</p>
+      </div>
+
+      {/* Search and Filters Bar */}
       <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-xl bg-red-500/20">
-          <ShoppingCart className="w-6 h-6 text-red-400" />
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+          <div className="w-full pl-11 h-9 flex items-center bg-zinc-900/50 border border-zinc-800 rounded-lg text-white/40 text-sm">
+            Search nests...
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-semibold text-white">Candidate Nests</h1>
-          <p className="text-zinc-400 mt-0.5 text-sm">Browse and purchase curated candidate pools.</p>
+        <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-400 text-sm cursor-default">
+          <Filter className="w-4 h-4" /> Filters
+        </button>
+        <div className="px-3 py-1.5 bg-zinc-900/50 border border-zinc-800 rounded-lg text-white/70 text-sm cursor-default">
+          Featured
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-xl p-1 w-fit">
-        <button className="px-4 py-1.5 rounded-lg bg-red-500/15 text-red-400 text-sm font-medium cursor-default">Marketplace</button>
-        <button className="px-4 py-1.5 rounded-lg text-zinc-400 text-sm cursor-default hover:bg-zinc-800/50">My Nests (2)</button>
-      </div>
+      {/* Results count */}
+      <p className="text-xs text-zinc-500">{NESTS.length} nests available</p>
 
-      {/* Marketplace Grid */}
-      <div data-demo="nests-marketplace" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {marketplaceNests.map((nest) => (
-          <div key={nest.name} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 space-y-4">
-            <div className="flex items-start justify-between">
-              <h3 className="text-white font-semibold text-sm">{nest.name}</h3>
-              <span className="text-sm font-bold text-red-400">{nest.price}</span>
-            </div>
-            <p className="text-xs text-zinc-400 leading-relaxed">{nest.description}</p>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <p className="text-lg font-bold text-white">{nest.candidates.toLocaleString()}</p>
-                <p className="text-[10px] text-zinc-500">Candidates</p>
-              </div>
-              <div>
-                <p className="text-lg font-bold text-white">{nest.avgExp}</p>
-                <p className="text-[10px] text-zinc-500">Avg Experience</p>
+      {/* Grid */}
+      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        {NESTS.map(nest => (
+          <motion.div key={nest.id} variants={itemVariants}>
+            <div className="group p-4 rounded-lg bg-zinc-900/40 border border-zinc-800/50 hover:border-zinc-700/50 cursor-default transition-all duration-300">
+              <h3 className="text-base font-medium text-white mb-2">{nest.name}</h3>
+              <p className="text-xs text-zinc-500 mb-4 line-clamp-2">{nest.description}</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-lg font-semibold text-white">EUR {nest.price}</span>
+                  <span className="text-xs text-zinc-500">{nest.item_count.toLocaleString()} profiles</span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-red-400 transition-colors" />
               </div>
             </div>
+          </motion.div>
+        ))}
+      </motion.div>
 
+      {/* Flow Continuity CTA */}
+      <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-red-500/10 to-red-600/5 border border-red-500/20">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-red-500/20">
+              <Megaphone className="w-5 h-5 text-red-400" />
+            </div>
             <div>
-              <p className="text-[10px] text-zinc-500 mb-1.5">Top Companies</p>
-              <div className="flex flex-wrap gap-1">
-                {nest.topCompanies.map((c) => (
-                  <span key={c} className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700/50">{c}</span>
-                ))}
-              </div>
+              <p className="text-white font-medium">Ready to start recruiting?</p>
+              <p className="text-zinc-400 text-sm">Purchase a nest to unlock data, then launch a targeted campaign or enrich</p>
             </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                {nest.industries.map((ind) => (
-                  <span key={ind} className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">{ind}</span>
-                ))}
-              </div>
-              <div className={`flex items-center gap-1 px-2 py-1 rounded-full border text-xs font-bold ${scoreColor(nest.avgScore)}`}>
-                <Star className="w-3 h-3" /> {nest.avgScore}
-              </div>
-            </div>
-
-            <button className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/15 text-red-400 text-xs font-medium border border-red-500/20 cursor-default hover:bg-red-500/25 transition-colors">
-              <ShoppingCart className="w-3.5 h-3.5" /> Purchase Nest
+          </div>
+          <div className="flex gap-2">
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 text-sm cursor-default">
+              <Megaphone className="w-4 h-4" /> My Campaigns
+            </button>
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500 text-white text-sm cursor-default">
+              <ShoppingBag className="w-4 h-4" /> Visit Marketplace
             </button>
           </div>
-        ))}
-      </div>
-
-      {/* My Nests Section */}
-      <div>
-        <h2 className="text-white font-semibold mb-4">My Nests</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {myNests.map((nest) => (
-            <div key={nest.name} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-red-500/15 text-red-400">
-                <Users className="w-5 h-5" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-white">{nest.name}</p>
-                <p className="text-xs text-zinc-500 mt-0.5">{nest.candidates.toLocaleString()} candidates -- {nest.enriched} enriched</p>
-                <p className="text-[10px] text-zinc-600 mt-0.5">Purchased {nest.purchased}</p>
-              </div>
-              <button className="text-xs text-red-400 cursor-default hover:underline flex items-center gap-1">
-                View <ChevronRight className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ================================================================== */
-/*  5. DemoTalentOutreach                                             */
-/* ================================================================== */
-
-export function DemoTalentOutreach({ companyName = 'Acme Corp', recipientName = 'there' }) {
-  const perfStats = [
-    { label: 'Messages Sent', value: '342', icon: Send },
-    { label: 'Open Rate', value: '67%', icon: Eye },
-    { label: 'Reply Rate', value: '24%', icon: MessageSquare },
-    { label: 'Meetings Booked', value: '18', icon: Target },
-  ];
-
-  const templates = [
-    { name: 'Initial Reach', subject: 'Quick question about your career goals', stage: 'Stage 1', performance: '28% reply rate' },
-    { name: 'Follow-up', subject: 'Following up on my previous message', stage: 'Stage 2', performance: '18% reply rate' },
-    { name: 'Meeting Request', subject: 'Would love 15 minutes of your time', stage: 'Stage 3', performance: '12% reply rate' },
-  ];
-
-  const messages = [
-    { candidate: 'Elena Rodriguez', channel: 'Email', preview: 'Hi Elena, I noticed your recent talk at QCon...', sent: '2h ago', status: 'Read', response: 'Interested' },
-    { candidate: 'David Kim', channel: 'LinkedIn', preview: 'David, the M&A news at your company caught my...', sent: '4h ago', status: 'Delivered', response: null },
-    { candidate: 'Sophia Nguyen', channel: 'Email', preview: 'Congratulations on the promotion! I wanted to...', sent: '6h ago', status: 'Replied', response: 'Meeting scheduled' },
-    { candidate: 'Marcus Johnson', channel: 'SMS', preview: 'Hi Marcus, quick note about an exciting sales...', sent: '1d ago', status: 'Delivered', response: null },
-    { candidate: 'Aisha Patel', channel: 'Email', preview: 'Aisha, your expertise in distributed systems...', sent: '1d ago', status: 'Read', response: null },
-    { candidate: 'Tom van der Berg', channel: 'LinkedIn', preview: 'Tom, as a fellow Dutch tech leader, I thought...', sent: '2d ago', status: 'Replied', response: 'Wants more info' },
-    { candidate: 'Laura Chen', channel: 'Email', preview: 'Laura, your product work at Shopify has been...', sent: '3d ago', status: 'Bounced', response: null },
-    { candidate: 'James Park', channel: 'SMS', preview: 'James, quick question about your engineering...', sent: '3d ago', status: 'Delivered', response: null },
-  ];
-
-  return (
-    <div className="min-h-screen bg-black p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-xl bg-red-500/20">
-          <MessageSquare className="w-6 h-6 text-red-400" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold text-white">Outreach Messages</h1>
-          <p className="text-zinc-400 mt-0.5 text-sm">SMS, Email, and LinkedIn outreach for {companyName}.</p>
-        </div>
-      </div>
-
-      {/* Performance Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {perfStats.map((s) => (
-          <div key={s.label} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-red-500/15 text-red-400">
-              <s.icon className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xl font-bold text-white">{s.value}</p>
-              <p className="text-xs text-zinc-500">{s.label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Message Templates */}
-      <div>
-        <h2 className="text-white font-semibold mb-4">Message Templates</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {templates.map((t) => (
-            <div key={t.name} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-white font-semibold text-sm">{t.name}</h3>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-400">{t.stage}</span>
-              </div>
-              <p className="text-xs text-zinc-400">{t.subject}</p>
-              <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
-                <span className="text-[10px] text-zinc-500">{t.performance}</span>
-                <button className="text-xs text-red-400 cursor-default hover:underline">Edit</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Recent Messages */}
-      <div data-demo="outreach-messages" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
-          <h2 className="text-white font-semibold">Recent Messages</h2>
-          <span className="text-xs text-zinc-500">Showing 8 of 342</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-xs text-zinc-500 border-b border-zinc-800 bg-zinc-900/80">
-                <th className="px-4 py-3 font-medium">Candidate</th>
-                <th className="px-4 py-3 font-medium">Channel</th>
-                <th className="px-4 py-3 font-medium">Message Preview</th>
-                <th className="px-4 py-3 font-medium">Sent</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Response</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800/50">
-              {messages.map((m) => {
-                const ChIcon = channelIcon(m.channel);
-                return (
-                  <tr key={m.candidate + m.sent} className="hover:bg-zinc-800/20 transition-colors">
-                    <td className="px-4 py-3.5">
-                      <span className="text-sm font-medium text-white">{m.candidate}</span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-                        <ChIcon className="w-3.5 h-3.5" /> {m.channel}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <p className="text-xs text-zinc-400 truncate max-w-xs">{m.preview}</p>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className="text-xs text-zinc-500">{m.sent}</span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className={`text-xs px-2.5 py-1 rounded-full ${statusStyle(m.status)}`}>
-                        {m.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      {m.response ? (
-                        <span className="text-xs text-red-400">{m.response}</span>
-                      ) : (
-                        <span className="text-xs text-zinc-600">--</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ================================================================== */
-/*  6. DemoTalentClients                                               */
-/* ================================================================== */
-
-export function DemoTalentClients({ companyName = 'Acme Corp', recipientName = 'there' }) {
-  const stats = [
-    { label: 'Total Clients', value: '18', icon: Building2 },
-    { label: 'Open Roles', value: '42', icon: Briefcase },
-    { label: 'Total Contract Value', value: '$1.8M', icon: DollarSign },
-    { label: 'Active Exclusions', value: '6', icon: Ban },
-  ];
-
-  const clients = [
-    { company: 'TechVentures', openRoles: 8, contact: 'Sarah Mitchell', contractValue: '$420K', exclusion: true, status: 'Active' },
-    { company: 'Summit Analytics', openRoles: 5, contact: 'Priya Shah', contractValue: '$280K', exclusion: true, status: 'Active' },
-    { company: 'Meridian Health', openRoles: 12, contact: 'Lisa Tran', contractValue: '$510K', exclusion: false, status: 'Active' },
-    { company: 'Catalyst Labs', openRoles: 3, contact: 'David Nguyen', contractValue: '$150K', exclusion: true, status: 'Active' },
-    { company: 'DataBridge Corp', openRoles: 6, contact: 'Michael Chen', contractValue: '$195K', exclusion: true, status: 'Paused' },
-    { company: 'Orion Systems', openRoles: 4, contact: 'Emma Wilson', contractValue: '$120K', exclusion: false, status: 'Active' },
-    { company: 'Pinnacle Group', openRoles: 2, contact: 'Robert Kim', contractValue: '$85K', exclusion: true, status: 'Active' },
-    { company: 'GreenLeaf Ventures', openRoles: 2, contact: 'Nina Patel', contractValue: '$40K', exclusion: true, status: 'Inactive' },
-  ];
-
-  return (
-    <div className="min-h-screen bg-black p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-red-500/20">
-            <Building2 className="w-6 h-6 text-red-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-white">Clients</h1>
-            <p className="text-zinc-400 mt-0.5 text-sm">Manage recruiting clients for {companyName}.</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2 w-56">
-            <Search className="w-4 h-4 text-zinc-500" />
-            <span className="text-sm text-zinc-500">Search clients...</span>
-          </div>
-          <button className="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors cursor-default">
-            <Plus className="w-4 h-4" /> Add Client
-          </button>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s) => (
-          <div key={s.label} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-red-500/15 text-red-400">
-              <s.icon className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xl font-bold text-white">{s.value}</p>
-              <p className="text-xs text-zinc-500">{s.label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Clients Table */}
-      <div data-demo="talent-clients" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-xs text-zinc-500 border-b border-zinc-800 bg-zinc-900/80">
-                <th className="px-4 py-3 font-medium">Company</th>
-                <th className="px-4 py-3 font-medium text-center">Open Roles</th>
-                <th className="px-4 py-3 font-medium">Contact Person</th>
-                <th className="px-4 py-3 font-medium">Contract Value</th>
-                <th className="px-4 py-3 font-medium text-center">Exclusion</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800/50">
-              {clients.map((c) => (
-                <tr key={c.company} className="hover:bg-zinc-800/20 transition-colors">
-                  <td className="px-4 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-semibold text-zinc-300 shrink-0">
-                        {c.company.charAt(0)}
-                      </div>
-                      <span className="text-sm font-medium text-white">{c.company}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5 text-center">
-                    <span className="text-sm font-bold text-white">{c.openRoles}</span>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <span className="text-sm text-zinc-400">{c.contact}</span>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <span className="text-sm font-semibold text-red-400">{c.contractValue}</span>
-                  </td>
-                  <td className="px-4 py-3.5 text-center">
-                    <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] ${
-                      c.exclusion ? 'bg-red-500/10 text-red-400' : 'bg-zinc-700/50 text-zinc-500'
-                    }`}>
-                      {c.exclusion ? (
-                        <>
-                          <Ban className="w-3 h-3" />
-                          On
-                        </>
-                      ) : (
-                        'Off'
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <span className={`text-xs px-2.5 py-1 rounded-full ${statusStyle(c.status)}`}>
-                      {c.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5 text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <button className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 cursor-default"><Eye className="w-3.5 h-3.5" /></button>
-                      <button className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 cursor-default"><Phone className="w-3.5 h-3.5" /></button>
-                      <button className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 cursor-default"><MoreHorizontal className="w-3.5 h-3.5" /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ================================================================== */
-/*  7. DemoTalentDeals                                                 */
-/* ================================================================== */
-
-export function DemoTalentDeals({ companyName = 'Acme Corp', recipientName = 'there' }) {
-  const pipelineStats = [
-    { label: 'Total Deals', value: '34', icon: Handshake },
-    { label: 'Total Fees', value: '$892K', icon: DollarSign },
-    { label: 'Placement Rate', value: '68%', icon: TrendingUp },
-    { label: 'Avg Days to Close', value: '28', icon: Clock },
-  ];
-
-  const dealStageColors = {
-    Negotiation: 'bg-amber-500/15 text-amber-400',
-    Offer: 'bg-blue-500/15 text-blue-400',
-    Placed: 'bg-emerald-500/15 text-emerald-400',
-    Invoiced: 'bg-red-500/15 text-red-400',
-    Lost: 'bg-zinc-700/50 text-zinc-400',
-  };
-
-  const deals = [
-    { candidate: 'Elena Rodriguez', client: 'TechVentures', role: 'Senior Backend Engineer', fee: '$32,000', stage: 'Placed', expectedClose: 'Jan 30, 2026' },
-    { candidate: 'David Kim', client: 'Summit Analytics', role: 'VP of Product', fee: '$58,000', stage: 'Offer', expectedClose: 'Feb 5, 2026' },
-    { candidate: 'Sophia Nguyen', client: 'Meridian Health', role: 'Lead Data Scientist', fee: '$42,000', stage: 'Negotiation', expectedClose: 'Feb 12, 2026' },
-    { candidate: 'Marcus Johnson', client: 'Catalyst Labs', role: 'Director of Sales', fee: '$48,000', stage: 'Invoiced', expectedClose: 'Jan 18, 2026' },
-    { candidate: 'Aisha Patel', client: 'DataBridge Corp', role: 'Staff Engineer', fee: '$35,000', stage: 'Placed', expectedClose: 'Jan 25, 2026' },
-    { candidate: 'Tom van der Berg', client: 'Orion Systems', role: 'CTO', fee: '$75,000', stage: 'Negotiation', expectedClose: 'Feb 20, 2026' },
-    { candidate: 'Laura Chen', client: 'Pinnacle Group', role: 'Product Manager', fee: '$28,000', stage: 'Lost', expectedClose: 'Jan 15, 2026' },
-    { candidate: 'James Park', client: 'TechVentures', role: 'Engineering Manager', fee: '$38,000', stage: 'Offer', expectedClose: 'Feb 8, 2026' },
-  ];
-
-  const stageCounts = Object.entries(
-    deals.reduce((acc, d) => {
-      acc[d.stage] = (acc[d.stage] || 0) + 1;
-      return acc;
-    }, {})
-  );
-
-  return (
-    <div className="min-h-screen bg-black p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-red-500/20">
-            <Handshake className="w-6 h-6 text-red-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-white">Deals & Placements</h1>
-            <p className="text-zinc-400 mt-0.5 text-sm">Track recruiting deals and placement fees for {companyName}.</p>
-          </div>
-        </div>
-        <button className="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors cursor-default">
-          <Plus className="w-4 h-4" /> New Deal
-        </button>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {pipelineStats.map((s) => (
-          <div key={s.label} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-red-500/15 text-red-400">
-              <s.icon className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xl font-bold text-white">{s.value}</p>
-              <p className="text-xs text-zinc-500">{s.label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Deal Pipeline Summary */}
-      <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
-        <h2 className="text-white font-semibold mb-4">Deal Pipeline</h2>
-        <div className="flex items-center gap-2">
-          {stageCounts.map(([stage, count]) => (
-            <div key={stage} className="flex-1 text-center p-3 rounded-xl bg-zinc-800/30 border border-zinc-700/40">
-              <p className="text-lg font-bold text-white">{count}</p>
-              <p className="text-[10px] text-zinc-500">{stage}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Deals Table */}
-      <div data-demo="talent-deals" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-xs text-zinc-500 border-b border-zinc-800 bg-zinc-900/80">
-                <th className="px-4 py-3 font-medium">Candidate</th>
-                <th className="px-4 py-3 font-medium">Client</th>
-                <th className="px-4 py-3 font-medium">Role</th>
-                <th className="px-4 py-3 font-medium">Fee</th>
-                <th className="px-4 py-3 font-medium">Stage</th>
-                <th className="px-4 py-3 font-medium">Expected Close</th>
-                <th className="px-4 py-3 font-medium text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800/50">
-              {deals.map((d) => (
-                <tr key={d.candidate + d.client} className="hover:bg-zinc-800/20 transition-colors">
-                  <td className="px-4 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-semibold text-zinc-300 shrink-0">
-                        {d.candidate.split(' ').map((w) => w[0]).join('')}
-                      </div>
-                      <span className="text-sm font-medium text-white">{d.candidate}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <div className="flex items-center gap-1.5 text-sm text-zinc-300">
-                      <Building2 className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                      {d.client}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5 text-sm text-zinc-400">{d.role}</td>
-                  <td className="px-4 py-3.5">
-                    <span className="text-sm font-semibold text-red-400">{d.fee}</span>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <span className={`text-xs px-2.5 py-1 rounded-full ${dealStageColors[d.stage]}`}>
-                      {d.stage}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-                      <Calendar className="w-3 h-3" />
-                      {d.expectedClose}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5 text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <button className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 cursor-default"><Eye className="w-3.5 h-3.5" /></button>
-                      <button className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 cursor-default"><FileText className="w-3.5 h-3.5" /></button>
-                      <button className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 cursor-default"><MoreHorizontal className="w-3.5 h-3.5" /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

@@ -37,7 +37,7 @@ import { DemoFinanceInvoices, DemoFinanceProposals, DemoFinanceExpenses, DemoFin
 // Growth sub-pages
 import { DemoGrowthPipeline, DemoGrowthCampaigns, DemoGrowthSignals, DemoGrowthOpportunities, DemoGrowthProspects, DemoGrowthAssistant, DemoGrowthResearch, DemoGrowthTemplates, DemoGrowthNests, DemoGrowthEnrich, DemoGrowthFlows } from '@/components/demo/pages/DemoGrowthSub';
 // CRM sub-pages
-import { DemoCRMLeads, DemoCRMProspects, DemoCRMCustomers, DemoCRMCompanies, DemoCRMSuppliers, DemoCRMPartners, DemoCRMCandidatesCRM, DemoCRMTargets, DemoCRMImport } from '@/components/demo/pages/DemoCRMSub';
+import { DemoCRMLeads, DemoCRMProspects, DemoCRMCustomers, DemoCRMCompanies, DemoCRMSuppliers, DemoCRMPartners, DemoCRMCandidates, DemoCRMTargets, DemoCRMImport } from '@/components/demo/pages/DemoCRMSub';
 // Talent sub-pages
 import { DemoTalentCandidates, DemoTalentProjects, DemoTalentCampaigns, DemoTalentNests, DemoTalentOutreach, DemoTalentClients, DemoTalentDeals } from '@/components/demo/pages/DemoTalentSub';
 // Learn sub-pages
@@ -113,7 +113,7 @@ const PAGE_COMPONENTS = {
   'crm-companies': DemoCRMCompanies,
   'crm-suppliers': DemoCRMSuppliers,
   'crm-partners': DemoCRMPartners,
-  'crm-candidates': DemoCRMCandidatesCRM,
+  'crm-candidates': DemoCRMCandidates,
   'crm-targets': DemoCRMTargets,
   'crm-import': DemoCRMImport,
   // Talent sub-pages

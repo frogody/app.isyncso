@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import {
   FolderKanban,
   CheckCircle2,
@@ -14,8 +15,8 @@ import {
 // ─── Stats ────────────────────────────────────────────────────────────────────
 const projectStats = [
   { label: 'Active Projects', value: '12', icon: FolderKanban, bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
-  { label: 'Completed', value: '47', icon: CheckCircle2, bg: 'bg-emerald-500/15', text: 'text-emerald-400' },
-  { label: 'Team Members', value: '24', icon: Users, bg: 'bg-blue-500/15', text: 'text-blue-400' },
+  { label: 'Completed', value: '47', icon: CheckCircle2, bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
+  { label: 'Team Members', value: '24', icon: Users, bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
   { label: 'On Track', value: '83%', icon: TrendingUp, bg: 'bg-cyan-500/15', text: 'text-cyan-400' },
 ];
 
@@ -23,13 +24,13 @@ const projectStats = [
 const statusBadge = {
   Active: 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/20',
   'On Hold': 'bg-amber-500/15 text-amber-400 border border-amber-500/20',
-  Completed: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20',
+  Completed: 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/20',
 };
 
 const priorityDot = {
   High: 'bg-red-400',
   Medium: 'bg-amber-400',
-  Low: 'bg-emerald-400',
+  Low: 'bg-cyan-400',
 };
 
 // ─── Team Member Avatar Colors ────────────────────────────────────────────────
@@ -116,10 +117,10 @@ const projects = [
 function ProjectCard({ project }) {
   const progressColor =
     project.progress >= 80
-      ? 'bg-emerald-500'
+      ? 'bg-cyan-400'
       : project.progress >= 50
         ? 'bg-cyan-500'
-        : 'bg-amber-500';
+        : 'bg-cyan-600';
 
   return (
     <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 space-y-4 hover:border-zinc-700 transition-colors cursor-default">
@@ -192,7 +193,7 @@ export default function DemoProjects({ companyName = 'Acme Corp', recipientName 
   return (
     <div className="min-h-screen bg-black p-4 sm:p-6 space-y-5">
       {/* ─── Page Header ───────────────────────────────────────────────────── */}
-      <div data-demo="header" className="flex items-center justify-between">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} data-demo="header" className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-cyan-500/20 rounded-xl">
             <FolderKanban className="w-6 h-6 text-cyan-400" />
@@ -222,10 +223,10 @@ export default function DemoProjects({ companyName = 'Acme Corp', recipientName 
             <Plus className="w-3.5 h-3.5" /> New Project
           </button>
         </div>
-      </div>
+      </motion.div>
 
       {/* ─── Stats Row ─────────────────────────────────────────────────────── */}
-      <div data-demo="project-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.05 }} data-demo="project-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {projectStats.map((stat) => (
           <div
             key={stat.label}
@@ -240,14 +241,14 @@ export default function DemoProjects({ companyName = 'Acme Corp', recipientName 
             </div>
           </div>
         ))}
-      </div>
+      </motion.div>
 
       {/* ─── Project Cards Grid ────────────────────────────────────────────── */}
-      <div data-demo="project-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.1 }} data-demo="project-grid" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {projects.map((project) => (
           <ProjectCard key={project.name} project={project} />
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 }
