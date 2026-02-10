@@ -151,37 +151,87 @@ export default function AutomationPanel({ campaign }) {
     }
   };
 
-  // Trigger generate messages
+  // Trigger generate messages for all ungenerated matches
   const handleGenerateMessages = async () => {
     if (!user?.id || !campaign?.id) return;
     setGenerating(true);
 
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/sync`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({
-          message: `Generate outreach messages for all ungenerated matches in campaign ${campaign.id}`,
-          context: {
-            userId: user.id,
-            companyId: user.organization_id,
-          },
-          action: {
-            action: "talent_generate_messages",
-            data: { campaign_id: campaign.id },
-          },
-        }),
-      });
-
-      const result = await res.json();
-      if (result.error) {
-        toast.error(result.error);
-      } else {
-        toast.success("Message generation started");
+      const matched = campaign.matched_candidates || [];
+      if (matched.length === 0) {
+        toast.error("No matched candidates. Run matching first.");
+        setGenerating(false);
+        return;
       }
+
+      // Find which candidates already have outreach tasks
+      const { data: existingTasks } = await supabase
+        .from("outreach_tasks")
+        .select("candidate_id")
+        .eq("campaign_id", campaign.id);
+
+      const existing = new Set((existingTasks || []).map((t) => t.candidate_id));
+      const ungenerated = matched.filter((m) => !existing.has(m.candidate_id));
+
+      if (ungenerated.length === 0) {
+        toast.info("All matched candidates already have outreach messages.");
+        setGenerating(false);
+        return;
+      }
+
+      toast.info(`Generating messages for ${ungenerated.length} candidates...`);
+
+      let generated = 0;
+      let failed = 0;
+
+      for (const match of ungenerated.slice(0, 20)) {
+        try {
+          const res = await fetch(
+            `${SUPABASE_URL}/functions/v1/generateCampaignOutreach`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({
+                campaign_id: campaign.id,
+                candidate_id: match.candidate_id,
+                organization_id: campaign.organization_id,
+                candidate_name: match.candidate_name || match.name,
+                candidate_title: match.current_title || match.candidate_title,
+                candidate_company: match.current_company || match.candidate_company,
+                match_score: match.match_score,
+                match_reasons: match.match_reasons || [],
+                intelligence_score: match.intelligence_score,
+                best_outreach_angle: match.best_outreach_angle,
+                timing_signals: match.timing_signals || [],
+                outreach_hooks: match.outreach_hooks || [],
+                company_pain_points: match.company_pain_points,
+                key_insights: match.key_insights,
+                role_context: campaign.role_context,
+                role_title: campaign.role_context?.role_title || campaign.name,
+                company_name: user.company_name || "Our company",
+                stage: "initial",
+                campaign_type: campaign.campaign_type || "linkedin",
+              }),
+            }
+          );
+
+          if (res.ok) {
+            generated++;
+          } else {
+            failed++;
+          }
+        } catch {
+          failed++;
+        }
+      }
+
+      const remaining = Math.max(0, ungenerated.length - 20);
+      toast.success(
+        `Generated ${generated} messages${failed ? `, ${failed} failed` : ""}${remaining ? `, ${remaining} remaining` : ""}`
+      );
     } catch (err) {
       toast.error("Failed to generate messages: " + err.message);
     } finally {
