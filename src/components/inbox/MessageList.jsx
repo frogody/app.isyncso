@@ -281,42 +281,51 @@ function MessageBubble({
           {message.is_pinned && <Pin className="w-3 h-3 text-zinc-500" />}
         </div>
 
-        <div className={`mt-1 rounded-2xl px-3.5 py-2 ${
-          isOwn
-            ? 'bg-cyan-600/15 border border-cyan-500/20 rounded-tr-sm'
-            : 'bg-zinc-800/60 border border-zinc-700/40 rounded-tl-sm'
-        }`}>
-          {isEditing ? (
-            <div>
-              <textarea
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                className="w-full bg-zinc-800 border border-cyan-500 rounded-lg p-3 text-sm text-white focus:outline-none resize-none"
-                rows={2}
-                autoFocus
-              />
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={handleSaveEdit}
-                  className="px-4 py-1.5 bg-cyan-500 text-white text-xs rounded-lg hover:bg-cyan-400 transition-colors"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="px-4 py-1.5 bg-zinc-700 text-zinc-300 text-xs rounded-lg hover:bg-zinc-600 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
+        {/* Message bubble — only show bg/border/padding when there's text content or editing */}
+        {(() => {
+          const hasText = message.content && message.content.trim().length > 0;
+          const hasAttachment = (message.attachments?.length > 0) || message.file_url;
+          const attachmentOnly = !hasText && hasAttachment && !isEditing;
+
+          return (
+            <div className={`mt-1 ${attachmentOnly ? '' : `rounded-2xl px-3.5 py-2 ${
+              isOwn
+                ? 'bg-cyan-600/15 border border-cyan-500/20 rounded-tr-sm'
+                : 'bg-zinc-800/60 border border-zinc-700/40 rounded-tl-sm'
+            }`}`}>
+              {isEditing ? (
+                <div>
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="w-full bg-zinc-800 border border-cyan-500 rounded-lg p-3 text-sm text-white focus:outline-none resize-none"
+                    rows={2}
+                    autoFocus
+                  />
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={handleSaveEdit}
+                      className="px-4 py-1.5 bg-cyan-500 text-white text-xs rounded-lg hover:bg-cyan-400 transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="px-4 py-1.5 bg-zinc-700 text-zinc-300 text-xs rounded-lg hover:bg-zinc-600 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : hasText ? (
+                <p className={`text-[13px] whitespace-pre-wrap break-words leading-normal ${isOwn ? 'text-zinc-100' : 'text-zinc-200'}`}>
+                  {renderMessageContent(message.content, teamMembers)}
+                </p>
+              ) : null}
+              {renderAttachment()}
             </div>
-          ) : (
-            <p className={`text-[13px] whitespace-pre-wrap break-words leading-normal ${isOwn ? 'text-zinc-100' : 'text-zinc-200'}`}>
-              {renderMessageContent(message.content, teamMembers)}
-            </p>
-          )}
-          {renderAttachment()}
-        </div>
+          );
+        })()}
         {renderReactions()}
 
         {/* Read receipts indicator (only for own messages) */}
