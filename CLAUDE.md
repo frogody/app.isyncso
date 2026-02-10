@@ -2315,3 +2315,29 @@ FROM enrichment_cache_companies;
 - **No cleanup cron** — expired rows ignored; can add periodic cleanup later if table grows
 
 ---
+
+## Blueprint Build Progress (Feb 2026)
+
+**Plan document**: `BLUEPRINT_BUILD_PLAN.md`
+**Detailed build log**: `BUILD_LOG.md`
+
+### Key Architecture Decisions
+- **Tenant scoping**: ALL new Blueprint tables use `company_id` via `get_user_company_id()`. Do NOT use `organization_id` (that's talent domain only).
+- **Sales channels**: Use `product_sales_channels` **junction table** (not a column on products) — one product can be on multiple channels simultaneously.
+- **bol.com tokens**: Persisted in DB (`bolcom_credentials.access_token` + `token_expires_at`), pg_cron pre-refresh every 4 min. Edge Functions have cold starts — never cache tokens in-memory.
+- **Composio triggers**: Gmail = `GMAIL_NEW_GMAIL_MESSAGE` (poll-based, ~60s). Outlook = `OUTLOOK_MESSAGE_TRIGGER` (webhook-based, near-realtime).
+- **Existing columns to reuse**: `shipping_tasks.total_weight` and `shipping_tasks.dimensions` JSONB already exist — just expose in UI.
+
+### Phase Status
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 0 | Database Foundation & Infrastructure | **Complete** |
+| 1 | Purchasing Overhaul | Not Started |
+| 2 | Receiving Enhancements | Not Started |
+| 3 | Pallet Management (3a/3b/3c) | Not Started |
+| 4 | bol.com Retailer API | Not Started |
+| 5 | Returns Workflow | Not Started |
+| EP | Email Pool Auto-Sync | Not Started |
+| SH | Shopify Admin API | Not Started |
+
+---

@@ -115,6 +115,7 @@ export const INTEGRATION_CATALOG = [
     color: '#0078D4',
     category: 'Email & Calendar',
     popularTools: ['OUTLOOK_SEND_EMAIL', 'OUTLOOK_LIST_EMAILS'],
+    triggers: ['OUTLOOK_MESSAGE_TRIGGER', 'OUTLOOK_CALENDAR_EVENT_TRIGGER', 'OUTLOOK_CONTACT_TRIGGER', 'OUTLOOK_MAIL_FOLDER_TRIGGER', 'OUTLOOK_DRAFT_TRIGGER'],
   },
 
   // Project Management
