@@ -694,11 +694,13 @@ function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location, visibl
 
   return (
     <div
-      className="absolute left-[72px] lg:left-[80px] bg-black/95 backdrop-blur-sm border border-white/10 rounded-2xl p-3 shadow-2xl z-50 animate-in fade-in slide-in-from-left-2 duration-200 hidden md:block overflow-hidden"
+      className="absolute left-[72px] lg:left-[80px] bg-black/95 backdrop-blur-sm border border-white/10 rounded-2xl p-3 shadow-2xl z-50 animate-in fade-in slide-in-from-left-2 duration-200 hidden md:block"
       style={{ top: `${navOffset}px` }}
       onMouseEnter={onEnter}
       onMouseLeave={onClose}
     >
+      {/* Invisible bridge to catch mouse moving from sidebar to flyout */}
+      <div className="absolute -left-4 top-0 bottom-0 w-4" />
       {/* Subtle color tint overlay */}
       <div className={`absolute inset-0 ${colors.bg} opacity-30 rounded-2xl pointer-events-none`} />
 
@@ -1341,7 +1343,7 @@ export default function Layout({ children, currentPageName }) {
   const handleSubmenuClose = useCallback(() => {
     closeTimeoutRef.current = setTimeout(() => {
       setOpenSubmenu(null);
-    }, 150); // Small delay for mouse movement
+    }, 400); // Generous delay so users can move mouse to flyout
   }, []);
 
   const handleSubmenuEnter = useCallback(() => {
