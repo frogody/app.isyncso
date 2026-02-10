@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
@@ -25,7 +25,7 @@ import { getFlowById, createFlow, updateFlow } from '@/services/flowService';
 import { generateTalentFlowTemplate, getTalentRequiredIntegrations } from '@/services/talentFlowTemplateGenerator';
 import IntegrationChecklist from '@/components/growth/campaigns/IntegrationChecklist';
 
-export default function TalentFlowTab({ campaign, onFlowSaved }) {
+const TalentFlowTab = forwardRef(function TalentFlowTab({ campaign, onFlowSaved }, ref) {
   const { user } = useUser();
 
   const [nodes, setNodes] = useState([]);
@@ -178,6 +178,16 @@ export default function TalentFlowTab({ campaign, onFlowSaved }) {
 
   const requiredIntegrations = getTalentRequiredIntegrations(nodes);
 
+  // Expose toolbar actions to parent
+  useImperativeHandle(ref, () => ({
+    save: handleSave,
+    regenerate: handleRegenerate,
+    validate: handleValidate,
+    autoLayout: handleAutoLayout,
+    saving,
+    validationResult,
+  }), [handleSave, handleRegenerate, handleValidate, handleAutoLayout, saving, validationResult]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -187,79 +197,16 @@ export default function TalentFlowTab({ campaign, onFlowSaved }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div>
       {/* Integration Requirements */}
       {requiredIntegrations.length > 0 && (
-        <IntegrationChecklist requiredIntegrations={requiredIntegrations} />
+        <div className="mb-3">
+          <IntegrationChecklist requiredIntegrations={requiredIntegrations} />
+        </div>
       )}
 
-      {/* Toolbar */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-red-500 hover:bg-red-600"
-          >
-            {saving ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4 mr-2" />
-            )}
-            Save Flow
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleRegenerate}
-            className="border-zinc-700 text-zinc-300 hover:text-white"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Regenerate
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleValidate}
-            className="border-zinc-700 text-zinc-300 hover:text-white"
-          >
-            <CheckCircle className="w-4 h-4 mr-2" />
-            Validate
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleAutoLayout}
-            className="border-zinc-700 text-zinc-300 hover:text-white"
-          >
-            <LayoutGrid className="w-4 h-4 mr-2" />
-            Auto-layout
-          </Button>
-        </div>
-
-        {validationResult && (
-          <div className="flex items-center gap-2 text-sm">
-            {validationResult.valid ? (
-              <span className="text-green-400 flex items-center gap-1">
-                <CheckCircle className="w-4 h-4" /> Valid
-              </span>
-            ) : (
-              <span className="text-red-400 flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" /> {validationResult.errors.length} error(s)
-              </span>
-            )}
-            {validationResult.warnings.length > 0 && (
-              <span className="text-yellow-400 text-xs">
-                {validationResult.warnings.length} warning(s)
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-
       {/* 3-Panel Layout */}
-      <div className="flex gap-0 rounded-xl border border-zinc-800 overflow-hidden bg-zinc-900/50" style={{ height: 'calc(100vh - 280px)', minHeight: '500px' }}>
+      <div className="flex gap-0 rounded-xl border border-zinc-800 overflow-hidden bg-zinc-900/50" style={{ height: 'calc(100vh - 240px)', minHeight: '500px' }}>
         {/* Left: Node Palette */}
         <div className="w-[220px] border-r border-zinc-800 overflow-y-auto bg-zinc-900/80 flex-shrink-0">
           <NodePalette onAddNode={handleAddNode} />
@@ -290,4 +237,6 @@ export default function TalentFlowTab({ campaign, onFlowSaved }) {
       </div>
     </div>
   );
-}
+});
+
+export default TalentFlowTab;

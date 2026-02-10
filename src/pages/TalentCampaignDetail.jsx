@@ -86,6 +86,7 @@ import {
   RefreshCw,
   SlidersHorizontal,
   GitBranch,
+  LayoutGrid,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
@@ -824,6 +825,7 @@ export default function TalentCampaignDetail() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState(isNew ? "settings" : "overview");
+  const flowTabRef = useRef(null);
   const [projects, setProjects] = useState([]);
   const [roles, setRoles] = useState([]);
 
@@ -1903,60 +1905,108 @@ export default function TalentCampaignDetail() {
       {/* Main Content */}
       <GlassCard className="p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-zinc-800/50 mb-6">
-            {!isNew && (
+          <div className="flex items-center justify-between mb-4 gap-4">
+            <TabsList className="bg-zinc-800/50">
+              {!isNew && (
+                <TabsTrigger
+                  value="overview"
+                  className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Overview
+                </TabsTrigger>
+              )}
+              {!isNew && (
+                <TabsTrigger
+                  value="candidates"
+                  className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Candidates
+                </TabsTrigger>
+              )}
+              {!isNew && (
+                <TabsTrigger
+                  value="outreach"
+                  className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Outreach
+                </TabsTrigger>
+              )}
+              {!isNew && (
+                <TabsTrigger
+                  value="flow"
+                  className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
+                >
+                  <GitBranch className="w-4 h-4 mr-2" />
+                  Flow
+                </TabsTrigger>
+              )}
+              {!isNew && (
+                <TabsTrigger
+                  value="analytics"
+                  className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
+                >
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Analytics
+                </TabsTrigger>
+              )}
               <TabsTrigger
-                value="overview"
+                value="settings"
                 className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
               >
-                <Eye className="w-4 h-4 mr-2" />
-                Overview
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
               </TabsTrigger>
+            </TabsList>
+
+            {/* Flow toolbar - shown inline when Flow tab is active */}
+            {activeTab === 'flow' && !isNew && (
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => flowTabRef.current?.save()}
+                  disabled={flowTabRef.current?.saving}
+                  className="bg-red-500 hover:bg-red-600"
+                >
+                  {flowTabRef.current?.saving ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  Save Flow
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => flowTabRef.current?.regenerate()}
+                  className="border-zinc-700 text-zinc-300 hover:text-white"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Regenerate
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => flowTabRef.current?.validate()}
+                  className="border-zinc-700 text-zinc-300 hover:text-white"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Validate
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => flowTabRef.current?.autoLayout()}
+                  className="border-zinc-700 text-zinc-300 hover:text-white"
+                >
+                  <LayoutGrid className="w-4 h-4 mr-2" />
+                  Auto-layout
+                </Button>
+              </div>
             )}
-            {!isNew && (
-              <TabsTrigger
-                value="candidates"
-                className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Candidates
-              </TabsTrigger>
-            )}
-            {!isNew && (
-              <TabsTrigger
-                value="outreach"
-                className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
-              >
-                <Mail className="w-4 h-4 mr-2" />
-                Outreach
-              </TabsTrigger>
-            )}
-            {!isNew && (
-              <TabsTrigger
-                value="flow"
-                className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
-              >
-                <GitBranch className="w-4 h-4 mr-2" />
-                Flow
-              </TabsTrigger>
-            )}
-            {!isNew && (
-              <TabsTrigger
-                value="analytics"
-                className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
-              >
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Analytics
-              </TabsTrigger>
-            )}
-            <TabsTrigger
-              value="settings"
-              className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </TabsTrigger>
-          </TabsList>
+          </div>
 
           {/* Overview Tab */}
           {!isNew && (
@@ -2074,6 +2124,7 @@ export default function TalentCampaignDetail() {
           {!isNew && (
             <TabsContent value="flow" className="m-0">
               <TalentFlowTab
+                ref={flowTabRef}
                 campaign={campaign}
                 onFlowSaved={(flowId) => handleChange('flow_id', flowId)}
               />
