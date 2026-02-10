@@ -223,6 +223,7 @@ function FlowCanvasInner({
         {/* MiniMap */}
         <MiniMap
           className="!bg-zinc-900 !border-zinc-700 !rounded-lg"
+          style={{ width: 120, height: 90 }}
           nodeColor={(node) => {
             switch (node.type) {
               case 'trigger':
