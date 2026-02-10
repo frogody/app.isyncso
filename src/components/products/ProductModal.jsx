@@ -25,7 +25,7 @@ import { Product, DigitalProduct, PhysicalProduct, ServiceProduct, ProductCatego
 import { useUser } from '@/components/context/UserContext';
 import { toast } from 'sonner';
 import {
-  Loader2, Cloud, Package, Briefcase, Save, Image as ImageIcon, Tags, Euro, Settings,
+  Loader2, Cloud, Package, Briefcase, Save, Image as ImageIcon, Tag, Tags, Euro, Settings,
   FileText, Globe, Truck, BarChart3, ChevronRight, ChevronDown, ChevronUp, Plus, X, Upload, Barcode,
   Users, History, Star, Calendar, Receipt, Trash2, Sparkles
 } from 'lucide-react';
