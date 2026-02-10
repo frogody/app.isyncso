@@ -846,7 +846,7 @@ function MobileSecondaryNav({ config, location }) {
 }
 
 // Reusable Sidebar Content - must be rendered inside PermissionProvider
-function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig, enabledApps, onOpenAppsManager, openSubmenu, setOpenSubmenu, onSubmenuClose, onSubmenuEnter, onEngineItemsChange }) {
+function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig, enabledApps, onOpenAppsManager, openSubmenu, setOpenSubmenu, onSubmenuClose, onSubmenuEnter, onEngineItemsChange, inboxUnreadCount = 0 }) {
     const location = useLocation();
     const navigate = useNavigate();
   const [me, setMe] = React.useState(null);
@@ -3328,6 +3328,7 @@ export default function Layout({ children, currentPageName }) {
               onSubmenuClose={handleSubmenuClose}
               onSubmenuEnter={handleSubmenuEnter}
               onEngineItemsChange={setVisibleEngineIds}
+              inboxUnreadCount={inboxUnreadCount}
             />
             {/* Submenu Flyout - positioned absolutely relative to sidebar */}
             <SubmenuFlyout
@@ -3374,6 +3375,7 @@ export default function Layout({ children, currentPageName }) {
                     secondaryNavConfig={secondaryNavConfig}
                     enabledApps={enabledApps}
                     onOpenAppsManager={() => setAppsManagerOpen(true)}
+                    inboxUnreadCount={inboxUnreadCount}
                   />
                 </SheetContent>
               </Sheet>
