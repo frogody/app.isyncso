@@ -42,6 +42,7 @@ import { createPageUrl } from "@/utils";
 import { AddCandidateModal, EditCandidateModal, CandidateImportModal, CandidateDetailDrawer, BulkActionBar, AddToCampaignModal, SearchFilterBar } from "@/components/talent";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge, IntelStatusBadge } from "@/components/talent/IntelligenceGauge";
 import EnrichmentProgress from "@/components/talent/EnrichmentProgress";
+import EnrichmentProgressBar from "@/components/talent/EnrichmentProgressBar";
 import { useCandidateFilters, extractFilterOptions, countActiveFilters, getDefaultFilters } from "@/hooks/useCandidateFilters";
 import { useShortcut } from "@/contexts/KeyboardShortcutsContext";
 
@@ -984,6 +985,9 @@ export default function TalentCandidates() {
         loading={bulkLoading}
       />
       </div>
+
+      {/* Floating enrichment progress bar — only on this page */}
+      <EnrichmentProgressBar />
     </div>
   );
 }

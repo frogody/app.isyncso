@@ -126,7 +126,7 @@ import SyncFloatingChat from "@/components/sync/SyncFloatingChat";
 import SyncVoiceMode from "@/components/sync/SyncVoiceMode";
 import useSyncVoice from "@/hooks/useSyncVoice";
 import useSyncKnock from "@/hooks/useSyncKnock";
-import EnrichmentProgressBar from "@/components/talent/EnrichmentProgressBar";
+// EnrichmentProgressBar moved to TalentCandidates page only
 
 // Import Keyboard Shortcuts
 import { KeyboardShortcutsProvider } from "@/contexts/KeyboardShortcutsContext";
@@ -3416,8 +3416,7 @@ export default function Layout({ children, currentPageName }) {
           onSwitchToChat={handleSwitchToChat}
         />
 
-        {/* Enrichment Progress Bar - shows during nest candidate processing */}
-        <EnrichmentProgressBar />
+        {/* EnrichmentProgressBar removed from Layout — now rendered only on TalentCandidates page */}
         </div>
           </AchievementProvider>
           </NotificationsProvider>
