@@ -29,6 +29,11 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Key,
+  Globe,
+  Plus,
+  Loader2,
+  Briefcase,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -57,6 +62,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { getRoleColor, getStatusColor, getIconColor } from '@/lib/adminTheme';
@@ -153,23 +159,115 @@ function StatusBadge({ isActive, isPlatformAdmin }) {
   );
 }
 
+// Base apps that are always available to every user (no license needed)
+const BASE_APPS = [
+  { name: 'Dashboard', slug: 'dashboard' },
+  { name: 'CRM', slug: 'crm' },
+  { name: 'Products', slug: 'products' },
+  { name: 'Projects', slug: 'projects' },
+  { name: 'Inbox', slug: 'inbox' },
+];
+
 // User Detail Modal
 function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile');
+  const [licenses, setLicenses] = useState([]);
+  const [isLoadingLicenses, setIsLoadingLicenses] = useState(false);
+  const [apps, setApps] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [showGrantForm, setShowGrantForm] = useState(false);
+  const [grantForm, setGrantForm] = useState({ app_id: '', license_type: 'subscription' });
+  const [isGranting, setIsGranting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editData, setEditData] = useState({});
 
+  const canEdit = adminRole === 'super_admin' || adminRole === 'admin';
+
+  // Reset state when user changes or modal opens
   useEffect(() => {
-    if (user) {
+    if (user && open) {
+      setActiveTab('profile');
+      setShowGrantForm(false);
       setEditData({
         role: user.role || 'user',
         job_title: user.job_title || '',
         credits: user.credits || 0,
         full_name: user.full_name || user.name || '',
+        company_id: user.company_id || '',
       });
     }
-    setIsEditing(false);
-  }, [user]);
+  }, [user, open]);
+
+  // Fetch licenses when licenses tab is selected
+  useEffect(() => {
+    if (activeTab === 'licenses' && user?.company_id) {
+      fetchLicenses();
+    }
+  }, [activeTab, user?.company_id]);
+
+  // Fetch companies for settings tab
+  useEffect(() => {
+    if (activeTab === 'settings' && companies.length === 0) {
+      fetchCompaniesForSelect();
+    }
+  }, [activeTab]);
+
+  const fetchLicenses = async () => {
+    if (!user?.company_id) return;
+    setIsLoadingLicenses(true);
+    try {
+      const data = await adminApi(`/licenses?company=${user.company_id}`);
+      setLicenses(data.licenses || data || []);
+    } catch (error) {
+      console.error('Failed to fetch licenses:', error);
+      setLicenses([]);
+    } finally {
+      setIsLoadingLicenses(false);
+    }
+  };
+
+  const fetchApps = async () => {
+    if (apps.length > 0) return;
+    try {
+      const data = await adminApi('/apps');
+      setApps(data.apps || data || []);
+    } catch (error) {
+      console.error('Failed to fetch apps:', error);
+    }
+  };
+
+  const fetchCompaniesForSelect = async () => {
+    if (companies.length > 0) return;
+    try {
+      const data = await adminApi('/companies');
+      setCompanies(data.companies || data || []);
+    } catch (error) {
+      console.error('Failed to fetch companies:', error);
+    }
+  };
+
+  const handleGrantLicense = async () => {
+    if (!grantForm.app_id || !user?.company_id) return;
+    setIsGranting(true);
+    try {
+      await adminApi('/licenses', {
+        method: 'POST',
+        body: JSON.stringify({
+          app_id: grantForm.app_id,
+          company_id: user.company_id,
+          license_type: grantForm.license_type,
+        }),
+      });
+      toast.success('License granted successfully');
+      setShowGrantForm(false);
+      setGrantForm({ app_id: '', license_type: 'subscription' });
+      fetchLicenses();
+    } catch (error) {
+      toast.error(error.message || 'Failed to grant license');
+    } finally {
+      setIsGranting(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -181,7 +279,6 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
       });
       toast.success('User updated successfully');
       onUpdate?.();
-      setIsEditing(false);
     } catch (error) {
       toast.error(error.message || 'Failed to update user');
     } finally {
@@ -191,11 +288,9 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
 
   if (!user) return null;
 
-  const canEdit = adminRole === 'super_admin' || adminRole === 'admin';
-
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-2xl">
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) { setShowGrantForm(false); onClose(); } }}>
+      <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="w-12 h-12">
@@ -211,58 +306,304 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Status Row */}
-          <div className="flex items-center gap-3">
-            <RoleBadge role={user.role} />
-            <StatusBadge isActive={user.is_active_recently} isPlatformAdmin={user.is_platform_admin} />
-            {user.platform_admin_role && (
-              <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
-                {user.platform_admin_role.replace('_', ' ')}
-              </Badge>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
+          <TabsList className="bg-zinc-800 border-zinc-700">
+            <TabsTrigger value="profile" className="data-[state=active]:bg-zinc-700">
+              Profile
+            </TabsTrigger>
+            <TabsTrigger value="licenses" className="data-[state=active]:bg-zinc-700">
+              Licenses
+            </TabsTrigger>
+            {canEdit && (
+              <TabsTrigger value="settings" className="data-[state=active]:bg-zinc-700">
+                Settings
+              </TabsTrigger>
             )}
-          </div>
+          </TabsList>
 
-          {/* Info Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label className="text-zinc-400 text-xs">Company</Label>
-              <p className="text-white flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-zinc-500" />
-                {user.company_name || 'No company'}
-              </p>
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="space-y-6 mt-4">
+            {/* Status Row */}
+            <div className="flex items-center gap-3">
+              <RoleBadge role={user.role} />
+              <StatusBadge isActive={user.is_active_recently} isPlatformAdmin={user.is_platform_admin} />
+              {user.platform_admin_role && (
+                <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
+                  {user.platform_admin_role.replace('_', ' ')}
+                </Badge>
+              )}
             </div>
-            <div className="space-y-1">
-              <Label className="text-zinc-400 text-xs">Credits</Label>
-              <p className="text-white flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-zinc-500" />
-                {user.credits || 0}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-zinc-400 text-xs">Created</Label>
-              <p className="text-white flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-zinc-500" />
-                {new Date(user.created_at).toLocaleDateString()}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-zinc-400 text-xs">Last Active</Label>
-              <p className="text-white flex items-center gap-2">
-                <Clock className="w-4 h-4 text-zinc-500" />
-                {user.last_active_at
-                  ? new Date(user.last_active_at).toLocaleDateString()
-                  : 'Never'}
-              </p>
-            </div>
-          </div>
 
-          {/* Editable Fields */}
-          {isEditing && canEdit && (
-            <div className="space-y-4 pt-4 border-t border-zinc-800">
+            {/* Info Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="text-zinc-400 text-xs">Company</Label>
+                <p className="text-white flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-zinc-500" />
+                  {user.company_name || 'No company'}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-zinc-400 text-xs">Job Title</Label>
+                <p className="text-white flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-zinc-500" />
+                  {user.job_title || 'Not set'}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-zinc-400 text-xs">Credits</Label>
+                <p className="text-white flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-zinc-500" />
+                  {user.credits || 0}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-zinc-400 text-xs">Created</Label>
+                <p className="text-white flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-zinc-500" />
+                  {new Date(user.created_at).toLocaleDateString()}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-zinc-400 text-xs">Last Active</Label>
+                <p className="text-white flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-zinc-500" />
+                  {user.last_active_at
+                    ? new Date(user.last_active_at).toLocaleDateString()
+                    : 'Never'}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-zinc-400 text-xs">Email</Label>
+                <p className="text-white flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-zinc-500" />
+                  {user.email}
+                </p>
+              </div>
+            </div>
+
+            {/* Team Memberships */}
+            {user.team_memberships?.length > 0 && (
+              <div className="pt-4 border-t border-zinc-800">
+                <Label className="text-zinc-400 text-xs mb-2 block">Team Memberships</Label>
+                <div className="flex flex-wrap gap-2">
+                  {user.team_memberships.map((tm, idx) => (
+                    <Badge key={idx} variant="outline" className="border-zinc-700 text-zinc-300">
+                      {tm.team_name || `Team ${idx + 1}`}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* RBAC Roles */}
+            {user.rbac_roles?.length > 0 && (
+              <div className="pt-4 border-t border-zinc-800">
+                <Label className="text-zinc-400 text-xs mb-2 block">RBAC Roles</Label>
+                <div className="flex flex-wrap gap-2">
+                  {user.rbac_roles.map((role, idx) => (
+                    <Badge key={idx} className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                      {role.role_name || role.role_id}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Licenses Tab */}
+          <TabsContent value="licenses" className="space-y-4 mt-4">
+            {!user.company_id ? (
+              <div className="space-y-4">
+                {/* Base Apps - Always Available */}
+                <div className="space-y-2">
+                  <h4 className="text-xs text-zinc-500 uppercase tracking-wider">Base Access (Always Included)</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {BASE_APPS.map((app) => (
+                      <div
+                        key={app.slug}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-800/30"
+                      >
+                        <CheckCircle className="w-3 h-3 text-green-400" />
+                        <span className="text-white text-xs">{app.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="text-center py-4 border-t border-zinc-800">
+                  <Building2 className="w-6 h-6 text-zinc-600 mx-auto mb-2" />
+                  <p className="text-zinc-400 text-sm">No company assigned</p>
+                  <p className="text-zinc-500 text-xs mt-1">Assign a company in the Settings tab to manage additional licenses.</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-white flex items-center gap-2">
+                    <Key className="w-4 h-4 text-cyan-400" />
+                    App Access for {user.company_name || 'Company'}
+                  </h3>
+                  <Button
+                    size="sm"
+                    onClick={() => { setShowGrantForm(!showGrantForm); fetchApps(); }}
+                    className="bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs"
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    Grant License
+                  </Button>
+                </div>
+
+                {/* Base Apps - Always Available */}
+                <div className="space-y-2">
+                  <h4 className="text-xs text-zinc-500 uppercase tracking-wider">Base Access (Always Included)</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {BASE_APPS.map((app) => (
+                      <div
+                        key={app.slug}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-800/30"
+                      >
+                        <CheckCircle className="w-3 h-3 text-green-400" />
+                        <span className="text-white text-xs">{app.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-zinc-800" />
+
+                {/* Grant License Form */}
+                {showGrantForm && (
+                  <div className="p-4 rounded-lg border border-zinc-800 bg-zinc-800/50 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-zinc-400">App</Label>
+                        <Select
+                          value={grantForm.app_id}
+                          onValueChange={(value) => setGrantForm({ ...grantForm, app_id: value })}
+                        >
+                          <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white h-8 text-xs">
+                            <SelectValue placeholder="Select app..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-zinc-800 border-zinc-700">
+                            {apps.map((app) => (
+                              <SelectItem key={app.id} value={app.id}>
+                                {app.name || app.slug}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-zinc-400">License Type</Label>
+                        <Select
+                          value={grantForm.license_type}
+                          onValueChange={(value) => setGrantForm({ ...grantForm, license_type: value })}
+                        >
+                          <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-zinc-800 border-zinc-700">
+                            <SelectItem value="trial">Trial</SelectItem>
+                            <SelectItem value="subscription">Subscription</SelectItem>
+                            <SelectItem value="perpetual">Perpetual</SelectItem>
+                            <SelectItem value="enterprise">Enterprise</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowGrantForm(false)}
+                        className="border-zinc-700 text-zinc-300 h-7 text-xs"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleGrantLicense}
+                        disabled={isGranting || !grantForm.app_id}
+                        className="bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs"
+                      >
+                        {isGranting ? (
+                          <>
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                            Granting...
+                          </>
+                        ) : (
+                          'Grant'
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Licensed Apps */}
+                <h4 className="text-xs text-zinc-500 uppercase tracking-wider">Licensed Apps</h4>
+                {isLoadingLicenses ? (
+                  <div className="text-center py-6">
+                    <Loader2 className="w-5 h-5 text-zinc-400 animate-spin mx-auto mb-2" />
+                    <p className="text-zinc-500 text-xs">Loading licenses...</p>
+                  </div>
+                ) : licenses.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-zinc-500 text-xs">No additional licensed apps. Grant a license for premium features.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {licenses.map((license) => (
+                      <div
+                        key={license.id}
+                        className="flex items-center justify-between p-3 rounded-lg border border-zinc-800 bg-zinc-800/30"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                            <Globe className="w-4 h-4 text-cyan-400" />
+                          </div>
+                          <div>
+                            <p className="text-white text-sm font-medium">
+                              {license.app_name || license.app?.name || 'Unknown App'}
+                            </p>
+                            <p className="text-zinc-500 text-xs">
+                              {license.license_type || 'subscription'} license
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            className={cn(
+                              'text-[10px] px-1.5 py-px',
+                              license.status === 'active'
+                                ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                                : license.status === 'expired'
+                                ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                                : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
+                            )}
+                          >
+                            {license.status || 'active'}
+                          </Badge>
+                          {license.granted_at && (
+                            <span className="text-zinc-500 text-[10px]">
+                              {new Date(license.granted_at || license.created_at).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </TabsContent>
+
+          {/* Settings Tab */}
+          {canEdit && (
+            <TabsContent value="settings" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit-name">Full Name</Label>
+                  <Label htmlFor="edit-name" className="text-zinc-400 text-xs">Full Name</Label>
                   <Input
                     id="edit-name"
                     value={editData.full_name}
@@ -271,7 +612,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-job">Job Title</Label>
+                  <Label htmlFor="edit-job" className="text-zinc-400 text-xs">Job Title</Label>
                   <Input
                     id="edit-job"
                     value={editData.job_title}
@@ -280,7 +621,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-role">Role</Label>
+                  <Label htmlFor="edit-role" className="text-zinc-400 text-xs">Role</Label>
                   <Select
                     value={editData.role}
                     onValueChange={(value) => setEditData({ ...editData, role: value })}
@@ -299,7 +640,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-credits">Credits</Label>
+                  <Label htmlFor="edit-credits" className="text-zinc-400 text-xs">Credits</Label>
                   <Input
                     id="edit-credits"
                     type="number"
@@ -308,78 +649,45 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
                     className="bg-zinc-800 border-zinc-700 text-white"
                   />
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Team Memberships */}
-          {user.team_memberships?.length > 0 && (
-            <div className="pt-4 border-t border-zinc-800">
-              <Label className="text-zinc-400 text-xs mb-2 block">Team Memberships</Label>
-              <div className="flex flex-wrap gap-2">
-                {user.team_memberships.map((tm, idx) => (
-                  <Badge key={idx} variant="outline" className="border-zinc-700 text-zinc-300">
-                    {tm.team_name || `Team ${idx + 1}`}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* RBAC Roles */}
-          {user.rbac_roles?.length > 0 && (
-            <div className="pt-4 border-t border-zinc-800">
-              <Label className="text-zinc-400 text-xs mb-2 block">RBAC Roles</Label>
-              <div className="flex flex-wrap gap-2">
-                {user.rbac_roles.map((role, idx) => (
-                  <Badge key={idx} className="bg-purple-500/20 text-purple-400 border-purple-500/30">
-                    {role.role_name || role.role_id}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <DialogFooter>
-          {canEdit && (
-            <>
-              {isEditing ? (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsEditing(false)}
-                    className="border-zinc-700 text-zinc-300"
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="edit-company" className="text-zinc-400 text-xs">Company</Label>
+                  <Select
+                    value={editData.company_id || 'none'}
+                    onValueChange={(value) => setEditData({ ...editData, company_id: value === 'none' ? '' : value })}
                   >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="bg-red-500 hover:bg-red-600 text-white"
-                  >
-                    {isSaving ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      'Save Changes'
-                    )}
-                  </Button>
-                </>
-              ) : (
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                      <SelectValue placeholder="Select company..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-800 border-zinc-700 max-h-[200px]">
+                      <SelectItem value="none">No company</SelectItem>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex justify-end pt-2">
                 <Button
-                  onClick={() => setIsEditing(true)}
+                  onClick={handleSave}
+                  disabled={isSaving}
                   className="bg-red-500 hover:bg-red-600 text-white"
                 >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit User
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
                 </Button>
-              )}
-            </>
+              </div>
+            </TabsContent>
           )}
-        </DialogFooter>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
@@ -717,7 +1025,8 @@ export default function AdminUsers() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
                           transition={{ delay: index * 0.02 }}
-                          className="hover:bg-zinc-800/30 transition-colors h-9"
+                          onClick={() => handleViewUser(user)}
+                          className="hover:bg-zinc-800/30 transition-colors h-9 cursor-pointer"
                         >
                           {/* User Info */}
                           <td className="px-2 py-1.5">
@@ -774,7 +1083,7 @@ export default function AdminUsers() {
                           </td>
 
                           {/* Actions */}
-                          <td className="px-2 py-1.5 text-right">
+                          <td className="px-2 py-1.5 text-right" onClick={(e) => e.stopPropagation()}>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button

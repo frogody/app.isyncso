@@ -217,14 +217,14 @@ const navigationItems = [
     title: "CRM",
     url: createPageUrl("CRMContacts") + "?type=lead",
     icon: Contact,
-    permission: "users.view", // Basic permission
+    permission: null, // Always visible - base environment
     matchPatterns: ["/crm", "/contacts-import"], // For active state matching
   },
   {
     title: "Projects",
     url: createPageUrl("Projects"),
     icon: FolderKanban,
-    permission: "projects.view",
+    permission: null, // Always visible - base environment
   },
   {
     title: "Products",
@@ -237,7 +237,7 @@ const navigationItems = [
     title: "Inbox",
     url: createPageUrl("Inbox"),
     icon: Inbox,
-    permission: "inbox.view",
+    permission: null, // Always visible - base environment
   },
 ];
 
