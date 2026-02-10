@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/api/supabaseClient';
-import { Loader2, Zap, CheckCircle2, XCircle, ChevronDown } from 'lucide-react';
+import { Loader2, Zap, CheckCircle2, XCircle, ChevronDown, RotateCcw, PlayCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 export default function EnrichmentProgress({ organizationId, onComplete }) {
-  const [stats, setStats] = useState(null); // { pending, processing, completed, failed, total }
+  const [stats, setStats] = useState(null);
   const [expanded, setExpanded] = useState(false);
   const [isActive, setIsActive] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const prevPendingRef = useRef(null);
   const pollRef = useRef(null);
 
@@ -30,14 +32,12 @@ export default function EnrichmentProgress({ organizationId, onComplete }) {
     const hasActive = counts.pending > 0 || counts.processing > 0;
     setIsActive(hasActive);
 
-    // If just finished (was active, now all done), call onComplete
     if (prevPendingRef.current > 0 && counts.pending === 0 && counts.processing === 0) {
       onComplete?.();
     }
     prevPendingRef.current = counts.pending + counts.processing;
   }, [organizationId, onComplete]);
 
-  // Poll while active
   useEffect(() => {
     fetchStats();
     pollRef.current = setInterval(fetchStats, 5000);
@@ -56,6 +56,40 @@ export default function EnrichmentProgress({ organizationId, onComplete }) {
         body: JSON.stringify({ triggered_by: 'manual_retry' }),
       });
     } catch {}
+  };
+
+  // Re-queue items by resetting status to 'pending', then trigger processor
+  const handleRetry = async (mode) => {
+    setRetrying(true);
+    try {
+      let query = supabase
+        .from('sync_intel_queue')
+        .update({ status: 'pending', error_message: null, current_stage: null })
+        .eq('organization_id', organizationId);
+
+      let count = 0;
+      if (mode === 'failed') {
+        query = query.eq('status', 'failed');
+        count = stats?.failed || 0;
+      } else if (mode === 'all') {
+        query = query.in('status', ['failed', 'completed']);
+        count = (stats?.failed || 0) + (stats?.completed || 0);
+      }
+
+      const { error } = await query;
+      if (error) throw error;
+
+      toast.success(`Re-queued ${count} candidate${count !== 1 ? 's' : ''} for enrichment`);
+
+      // Trigger the processor to start immediately
+      await triggerProcessor();
+      await fetchStats();
+    } catch (err) {
+      console.error('Retry failed:', err);
+      toast.error('Failed to re-queue candidates');
+    } finally {
+      setRetrying(false);
+    }
   };
 
   if (!stats || stats.total === 0) return null;
@@ -143,21 +177,55 @@ export default function EnrichmentProgress({ organizationId, onComplete }) {
               {/* Stages */}
               <div className="flex items-center gap-2 text-[10px] text-zinc-500 pt-1 border-t border-zinc-800">
                 <span>LinkedIn</span>
-                <span>→</span>
+                <span>&rarr;</span>
                 <span>Company</span>
-                <span>→</span>
+                <span>&rarr;</span>
                 <span>Intel</span>
               </div>
 
-              {/* Retry button if stuck */}
-              {stats.pending > 0 && stats.processing === 0 && (
+              {/* Action Buttons */}
+              <div className="space-y-1.5 pt-1 border-t border-zinc-800">
+                {/* Retry failed — only when there are failures */}
+                {stats.failed > 0 && (
+                  <button
+                    onClick={() => handleRetry('failed')}
+                    disabled={retrying}
+                    className="w-full flex items-center gap-2 text-xs text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg py-2 px-3 transition-colors disabled:opacity-50"
+                  >
+                    {retrying ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    )}
+                    Retry failed ({stats.failed})
+                  </button>
+                )}
+
+                {/* Force re-run all */}
                 <button
-                  onClick={triggerProcessor}
-                  className="w-full text-xs text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg py-1.5 transition-colors"
+                  onClick={() => handleRetry('all')}
+                  disabled={retrying || isActive}
+                  className="w-full flex items-center gap-2 text-xs text-zinc-400 hover:text-zinc-200 bg-zinc-800/50 hover:bg-zinc-800 rounded-lg py-2 px-3 transition-colors disabled:opacity-50"
                 >
-                  Restart Processing
+                  {retrying ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <PlayCircle className="w-3.5 h-3.5" />
+                  )}
+                  Force re-run all ({stats.completed + stats.failed})
                 </button>
-              )}
+
+                {/* Restart processing — when stuck with pending but nothing processing */}
+                {stats.pending > 0 && stats.processing === 0 && (
+                  <button
+                    onClick={triggerProcessor}
+                    className="w-full flex items-center gap-2 text-xs text-yellow-400 hover:text-yellow-300 bg-yellow-500/10 hover:bg-yellow-500/20 rounded-lg py-2 px-3 transition-colors"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    Restart processing
+                  </button>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
