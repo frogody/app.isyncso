@@ -334,6 +334,91 @@ async function processGenericEvent(
 }
 
 /**
+ * Process LinkedIn events — reply detection for talent outreach
+ */
+async function processLinkedInEvent(
+  payload: WebhookPayload,
+  supabase: ReturnType<typeof createClient>
+): Promise<ProcessingResult> {
+  const { trigger_slug, data, user_id } = payload;
+
+  switch (trigger_slug) {
+    case "LINKEDIN_NEW_MESSAGE_RECEIVED":
+    case "LINKEDIN_NEW_MESSAGE": {
+      const msg = data as {
+        from_profile_url?: string;
+        from_name?: string;
+        message?: string;
+        text?: string;
+        conversation_id?: string;
+      };
+
+      const senderUrl = msg.from_profile_url || '';
+      const senderName = msg.from_name || '';
+      const messageText = msg.message || msg.text || '';
+
+      console.log(`[composio-webhooks] LinkedIn message from ${senderName || senderUrl}`);
+
+      // Try to match against outreach tasks by LinkedIn profile URL
+      if (senderUrl) {
+        const { data: matchedTasks } = await supabase
+          .from('outreach_tasks')
+          .select('id, candidate_id, campaign_id, status')
+          .eq('status', 'sent')
+          .not('candidate_id', 'is', null);
+
+        if (matchedTasks && matchedTasks.length > 0) {
+          // Get candidates with matching LinkedIn profiles
+          const candidateIds = matchedTasks.map(t => t.candidate_id);
+          const { data: candidates } = await supabase
+            .from('candidates')
+            .select('id, linkedin_profile')
+            .in('id', candidateIds);
+
+          const normalizeUrl = (url: string) => url.toLowerCase().replace(/\/+$/, '').replace(/^https?:\/\/(www\.)?/, '');
+          const normalizedSender = normalizeUrl(senderUrl);
+
+          const matchedCandidate = candidates?.find(c =>
+            c.linkedin_profile && normalizeUrl(c.linkedin_profile) === normalizedSender
+          );
+
+          if (matchedCandidate) {
+            // Mark matching outreach tasks as replied
+            const tasksToUpdate = matchedTasks.filter(t => t.candidate_id === matchedCandidate.id);
+            for (const task of tasksToUpdate) {
+              await supabase
+                .from('outreach_tasks')
+                .update({
+                  status: 'replied',
+                  metadata: {
+                    reply_content: messageText.substring(0, 500),
+                    replied_at: new Date().toISOString(),
+                    reply_source: 'linkedin_webhook',
+                  },
+                })
+                .eq('id', task.id);
+            }
+
+            console.log(`[composio-webhooks] Marked ${tasksToUpdate.length} task(s) as replied for candidate ${matchedCandidate.id}`);
+
+            return {
+              action: "talent_reply_detected",
+              success: true,
+              data: { candidate_id: matchedCandidate.id, tasks_updated: tasksToUpdate.length },
+            };
+          }
+        }
+      }
+
+      return { action: "linkedin_message_received", success: true, data: { from: senderName } };
+    }
+
+    default:
+      return { action: "unknown", success: false, message: `Unknown LinkedIn trigger: ${trigger_slug}` };
+  }
+}
+
+/**
  * Route webhook to appropriate processor
  */
 async function processWebhook(
@@ -344,7 +429,53 @@ async function processWebhook(
 
   // Route based on toolkit prefix
   if (triggerSlug.startsWith("GMAIL_")) {
-    return processGmailEvent(payload, supabase);
+    // Check for talent outreach reply detection FIRST
+    const gmailResult = await processGmailEvent(payload, supabase);
+
+    // After processing Gmail event, also check for talent outreach replies
+    if (triggerSlug === "GMAIL_NEW_MESSAGE_RECEIVED" || triggerSlug === "GMAIL_NEW_GMAIL_MESSAGE") {
+      const emailData = payload.data as { from?: string; sender?: string; subject?: string; message_text?: string };
+      const senderEmail = (emailData.from || emailData.sender || '').match(/<([^>]+)>/)?.[1] || emailData.from || emailData.sender || '';
+
+      if (senderEmail) {
+        // Check if sender matches any candidate in sent outreach tasks
+        const { data: candidates } = await supabase
+          .from('candidates')
+          .select('id, email')
+          .ilike('email', senderEmail.toLowerCase().trim());
+
+        if (candidates && candidates.length > 0) {
+          const candidateIds = candidates.map(c => c.id);
+          const { data: matchedTasks } = await supabase
+            .from('outreach_tasks')
+            .select('id')
+            .in('candidate_id', candidateIds)
+            .eq('status', 'sent')
+            .eq('channel', 'email');
+
+          if (matchedTasks && matchedTasks.length > 0) {
+            for (const task of matchedTasks) {
+              await supabase
+                .from('outreach_tasks')
+                .update({
+                  status: 'replied',
+                  metadata: {
+                    reply_content: (emailData.subject || '') + ': ' + (emailData.message_text || '').substring(0, 300),
+                    replied_at: new Date().toISOString(),
+                    reply_source: 'gmail_webhook',
+                  },
+                })
+                .eq('id', task.id);
+            }
+            console.log(`[composio-webhooks] Detected email reply from ${senderEmail}, updated ${matchedTasks.length} task(s)`);
+          }
+        }
+      }
+    }
+
+    return gmailResult;
+  } else if (triggerSlug.startsWith("LINKEDIN_")) {
+    return processLinkedInEvent(payload, supabase);
   } else if (triggerSlug.startsWith("SLACK_")) {
     return processSlackEvent(payload, supabase);
   } else if (triggerSlug.startsWith("GOOGLECALENDAR_")) {

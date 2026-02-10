@@ -44,6 +44,7 @@ import { executeSentinelAction } from './tools/sentinel.ts';
 import { executeCreateAction } from './tools/create.ts';
 import { executeResearchAction } from './tools/research.ts';
 import { executeComposioAction, COMPOSIO_ACTIONS } from './tools/composio.ts';
+import { executeTalentAction } from './tools/talent.ts';
 import { ActionContext, ActionResult, ChainedAction, ActionChainResult } from './tools/types.ts';
 
 // Import new improvement modules
@@ -263,6 +264,19 @@ const CREATE_ACTIONS = [
 const RESEARCH_ACTIONS = [
   'web_search',
   'lookup_product_info',
+];
+
+const TALENT_ACTIONS = [
+  'talent_list_campaigns',
+  'talent_get_campaign',
+  'talent_list_outreach_tasks',
+  'talent_generate_messages',
+  'talent_approve_tasks',
+  'talent_send_outreach',
+  'talent_get_outreach_stats',
+  'talent_check_rate_limits',
+  'talent_start_automation',
+  'talent_stop_automation',
 ];
 
 // ============================================================================
@@ -636,6 +650,10 @@ async function executeActionCore(
 
   if (COMPOSIO_ACTIONS.includes(actionName)) {
     return executeComposioAction(ctx, actionName, data);
+  }
+
+  if (TALENT_ACTIONS.includes(actionName)) {
+    return executeTalentAction(ctx, actionName, data);
   }
 
   // Unknown action
@@ -3265,6 +3283,7 @@ Examples of BAD voice responses:
           ...LEARN_ACTIONS,
           ...COMPOSIO_ACTIONS,
           ...RESEARCH_ACTIONS,
+          ...TALENT_ACTIONS,
         ];
 
         // Enrich system prompt with entity context

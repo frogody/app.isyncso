@@ -61,3 +61,7 @@ export { default as TalentOnboardingChecklist } from './TalentOnboardingChecklis
 export { default as ReadyForOutreachWidget } from './ReadyForOutreachWidget';
 export { default as TalentActivityFeed } from './TalentActivityFeed';
 export { default as IntelligenceQueueWidget } from './IntelligenceQueueWidget';
+
+// Automation
+export { default as AutomationPanel } from './AutomationPanel';
+export { default as ChannelConnectionStatus } from './ChannelConnectionStatus';

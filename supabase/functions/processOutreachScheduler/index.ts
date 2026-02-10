@@ -173,15 +173,30 @@ serve(async (req) => {
             continue;
           }
 
+          // Check campaign automation_config for auto-approve setting
+          let followUpStatus = "pending";
+          if (task.campaign_id) {
+            const { data: campaignData } = await supabase
+              .from("campaigns")
+              .select("automation_config")
+              .eq("id", task.campaign_id)
+              .single();
+            if (campaignData?.automation_config?.auto_approve_followups) {
+              followUpStatus = "approved_ready";
+            }
+          }
+
           // Create follow-up task
           tasksToCreate.push({
             organization_id: task.organization_id,
             campaign_id: task.campaign_id,
             candidate_id: task.candidate_id,
             task_type: followUp.task_type,
-            status: "pending",
+            status: followUpStatus,
             stage: followUp.stage,
+            channel: task.channel || "linkedin",
             attempt_number: task.attempt_number + 1,
+            auto_generated: true,
             metadata: {
               auto_generated: true,
               previous_task_id: task.id,
@@ -207,6 +222,37 @@ serve(async (req) => {
 
       if (insertError) throw insertError;
       createdTasks = data || [];
+
+      // If any tasks were auto-approved, trigger execution engine
+      const autoApproved = createdTasks.filter((t: any) => t.status === 'approved_ready');
+      if (autoApproved.length > 0) {
+        // Find the user who owns this org to pass as user_id
+        const { data: orgUser } = await supabase
+          .from('users')
+          .select('id')
+          .eq('organization_id', organization_id)
+          .limit(1)
+          .single();
+
+        if (orgUser) {
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/executeTalentOutreach`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({
+                user_id: orgUser.id,
+                campaign_id: campaign_id || undefined,
+              }),
+            });
+            console.log(`[processOutreachScheduler] Triggered auto-send for ${autoApproved.length} tasks`);
+          } catch (triggerErr) {
+            console.error('[processOutreachScheduler] Failed to trigger auto-send:', triggerErr);
+          }
+        }
+      }
 
       // Log the scheduler run (only try if table exists)
       try {

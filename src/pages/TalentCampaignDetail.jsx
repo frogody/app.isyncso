@@ -34,6 +34,7 @@ import CriteriaWeightingStep, { DEFAULT_WEIGHTS } from "@/components/talent/camp
 import SignalMatchingConfig, { INTELLIGENCE_SIGNALS } from "@/components/talent/campaign/SignalMatchingConfig";
 import OutreachCustomizationPanel from "@/components/talent/OutreachCustomizationPanel";
 import LinkedInOutreachWorkflow from "@/components/talent/LinkedInOutreachWorkflow";
+import AutomationPanel from "@/components/talent/AutomationPanel";
 import {
   Megaphone,
   Settings,
@@ -2798,6 +2799,13 @@ export default function TalentCampaignDetail() {
                   <BarChart3 className="w-4 h-4 mr-2" />
                   Analytics
                 </TabsTrigger>
+                <TabsTrigger
+                  value="automation"
+                  className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Automation
+                </TabsTrigger>
               </>
             )}
           </TabsList>
@@ -2911,6 +2919,13 @@ export default function TalentCampaignDetail() {
                 outreachTasks={outreachTasks}
                 matchedCandidates={campaign?.matched_candidates || []}
               />
+            </TabsContent>
+          )}
+
+          {/* Automation Tab */}
+          {!isNew && (
+            <TabsContent value="automation" className="m-0">
+              <AutomationPanel campaign={campaign} />
             </TabsContent>
           )}
         </Tabs>
