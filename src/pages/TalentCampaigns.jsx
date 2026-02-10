@@ -49,9 +49,12 @@ import {
   X,
   ArrowRight,
   Loader2,
+  BarChart3,
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import TalentAnalytics from "@/pages/TalentAnalytics";
 
 // Animation variants
 const containerVariants = {
@@ -440,6 +443,8 @@ export default function TalentCampaigns() {
   const [deletingCampaign, setDeletingCampaign] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [pageTab, setPageTab] = useState("campaigns");
+
   // Nest context from URL params (when coming from nest purchase)
   const [nestContext, setNestContext] = useState(null);
 
@@ -716,6 +721,26 @@ export default function TalentCampaigns() {
           }
         />
 
+      <Tabs value={pageTab} onValueChange={setPageTab}>
+        <TabsList className="bg-zinc-800/50 mb-4">
+          <TabsTrigger
+            value="campaigns"
+            className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
+          >
+            <Megaphone className="w-4 h-4 mr-2" />
+            Campaigns
+          </TabsTrigger>
+          <TabsTrigger
+            value="performance"
+            className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
+          >
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Performance
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="campaigns" className="m-0 space-y-4">
+
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
@@ -829,6 +854,13 @@ export default function TalentCampaigns() {
           </Button>
         </GlassCard>
       )}
+
+        </TabsContent>
+
+        <TabsContent value="performance" className="m-0">
+          <TalentAnalytics embedded />
+        </TabsContent>
+      </Tabs>
 
       {/* Campaign Creation Wizard */}
       <CampaignWizard

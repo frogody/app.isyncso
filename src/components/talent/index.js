@@ -65,3 +65,10 @@ export { default as IntelligenceQueueWidget } from './IntelligenceQueueWidget';
 // Automation
 export { default as AutomationPanel } from './AutomationPanel';
 export { default as ChannelConnectionStatus } from './ChannelConnectionStatus';
+
+// Campaign Detail Components (extracted)
+export { default as TalentFlowTab } from './TalentFlowTab';
+export { default as CandidatesTab } from './CandidatesTab';
+export { default as CandidateMatchResultCard } from './CandidateMatchResultCard';
+export { default as OutreachQueueTab } from './OutreachQueueTab';
+export { default as OutreachPreviewModal } from './OutreachPreviewModal';

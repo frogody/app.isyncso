@@ -441,7 +441,7 @@ const RecentActivity = ({ outreachTasks }) => {
   );
 };
 
-export default function TalentAnalytics() {
+export default function TalentAnalytics({ embedded = false }) {
   const { user } = useUser();
 
   const [candidates, setCandidates] = useState([]);
@@ -590,28 +590,36 @@ export default function TalentAnalytics() {
   }, [candidates, campaigns, outreachTasks, projects, roles]);
 
   if (loading) {
+    const loadingSkeleton = (
+      <>
+        <Skeleton className="h-8 w-48 mb-4" />
+        <div className="grid grid-cols-4 gap-3 mb-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-60" />
+          ))}
+        </div>
+      </>
+    );
+
+    if (embedded) return <div className="space-y-4">{loadingSkeleton}</div>;
+
     return (
       <div className="min-h-screen bg-black relative">
         <div className="relative z-10 w-full px-4 lg:px-6 py-4">
-          <Skeleton className="h-8 w-48 mb-4" />
-          <div className="grid grid-cols-4 gap-3 mb-4">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-24" />
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-60" />
-            ))}
-          </div>
+          {loadingSkeleton}
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-black relative">
-      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+  const analyticsContent = (
+    <div className="space-y-4">
+      {!embedded && (
         <PageHeader
           title="Talent Analytics"
           subtitle="Pipeline metrics and recruitment performance"
@@ -639,103 +647,143 @@ export default function TalentAnalytics() {
             </div>
           }
         />
+      )}
 
-        {/* Key Metrics */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3"
-        >
-          <MetricCard
-            title="Total Candidates"
-            value={metrics.totalCandidates}
-            subtitle={`${metrics.highRiskCandidates} high-risk`}
-            icon={Users}
-            color="red"
-          />
-          <MetricCard
-            title="Active Campaigns"
-            value={metrics.activeCampaigns}
-            subtitle={`${campaigns.length} total`}
-            icon={Megaphone}
-            color="red"
-          />
-          <MetricCard
-            title="Outreach Sent"
-            value={metrics.sentOutreach}
-            subtitle={`${metrics.totalOutreach} total tasks`}
-            icon={Send}
-            color="red"
-          />
-          <MetricCard
-            title="Response Rate"
-            value={`${metrics.responseRate}%`}
-            subtitle={`${metrics.repliedOutreach} replies`}
-            icon={MessageSquare}
-            color="red"
-          />
-        </motion.div>
+      {embedded && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-white">Performance Overview</h3>
+            <p className="text-sm text-zinc-500">Pipeline metrics and recruitment performance</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-32 bg-zinc-800/50 border-zinc-700 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-white/10">
+                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="90d">Last 90 days</SelectItem>
+                <SelectItem value="all">All time</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={fetchData}
+              className="text-white/60 hover:text-white"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
-        {/* Secondary Metrics */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-1 md:grid-cols-3 gap-3"
-        >
-          <MetricCard
-            title="Active Projects"
-            value={metrics.activeProjects}
-            subtitle={`${projects.length} total`}
-            icon={Briefcase}
-            color="red"
-          />
-          <MetricCard
-            title="Open Roles"
-            value={metrics.activeRoles}
-            subtitle={`${roles.length} total roles`}
-            icon={Target}
-            color="red"
-          />
-          <MetricCard
-            title="Roles Filled"
-            value={metrics.filledRoles}
-            subtitle={`${Math.round((metrics.filledRoles / Math.max(roles.length, 1)) * 100)}% success`}
-            icon={CheckCircle2}
-            color="red"
-          />
-        </motion.div>
+      {/* Key Metrics */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3"
+      >
+        <MetricCard
+          title="Total Candidates"
+          value={metrics.totalCandidates}
+          subtitle={`${metrics.highRiskCandidates} high-risk`}
+          icon={Users}
+          color="red"
+        />
+        <MetricCard
+          title="Active Campaigns"
+          value={metrics.activeCampaigns}
+          subtitle={`${campaigns.length} total`}
+          icon={Megaphone}
+          color="red"
+        />
+        <MetricCard
+          title="Outreach Sent"
+          value={metrics.sentOutreach}
+          subtitle={`${metrics.totalOutreach} total tasks`}
+          icon={Send}
+          color="red"
+        />
+        <MetricCard
+          title="Response Rate"
+          value={`${metrics.responseRate}%`}
+          subtitle={`${metrics.repliedOutreach} replies`}
+          icon={MessageSquare}
+          color="red"
+        />
+      </motion.div>
 
-        {/* Charts Row */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-1 lg:grid-cols-2 gap-4"
-        >
-          <motion.div variants={itemVariants}>
-            <PipelineStages candidates={candidates} />
-          </motion.div>
-          <motion.div variants={itemVariants}>
-            <IntelligenceDistribution data={metrics.intelligenceDistribution} />
-          </motion.div>
-        </motion.div>
+      {/* Secondary Metrics */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 md:grid-cols-3 gap-3"
+      >
+        <MetricCard
+          title="Active Projects"
+          value={metrics.activeProjects}
+          subtitle={`${projects.length} total`}
+          icon={Briefcase}
+          color="red"
+        />
+        <MetricCard
+          title="Open Roles"
+          value={metrics.activeRoles}
+          subtitle={`${roles.length} total roles`}
+          icon={Target}
+          color="red"
+        />
+        <MetricCard
+          title="Roles Filled"
+          value={metrics.filledRoles}
+          subtitle={`${Math.round((metrics.filledRoles / Math.max(roles.length, 1)) * 100)}% success`}
+          icon={CheckCircle2}
+          color="red"
+        />
+      </motion.div>
 
-        {/* Campaign Performance & Activity */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-1 lg:grid-cols-3 gap-4"
-        >
-          <motion.div variants={itemVariants} className="lg:col-span-2">
-            <CampaignPerformanceTable campaigns={campaigns} outreachTasks={outreachTasks} />
-          </motion.div>
-          <motion.div variants={itemVariants}>
-            <RecentActivity outreachTasks={outreachTasks} />
-          </motion.div>
+      {/* Charts Row */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+      >
+        <motion.div variants={itemVariants}>
+          <PipelineStages candidates={candidates} />
         </motion.div>
+        <motion.div variants={itemVariants}>
+          <IntelligenceDistribution data={metrics.intelligenceDistribution} />
+        </motion.div>
+      </motion.div>
+
+      {/* Campaign Performance & Activity */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 lg:grid-cols-3 gap-4"
+      >
+        <motion.div variants={itemVariants} className="lg:col-span-2">
+          <CampaignPerformanceTable campaigns={campaigns} outreachTasks={outreachTasks} />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <RecentActivity outreachTasks={outreachTasks} />
+        </motion.div>
+      </motion.div>
+    </div>
+  );
+
+  if (embedded) return analyticsContent;
+
+  return (
+    <div className="min-h-screen bg-black relative">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4">
+        {analyticsContent}
       </div>
     </div>
   );

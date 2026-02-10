@@ -28,17 +28,24 @@ import {
 } from "@/components/ui/dialog";
 import CampaignSequenceEditor from "@/components/campaigns/CampaignSequenceEditor";
 import CampaignMetricsPanel from "@/components/campaigns/CampaignMetricsPanel";
-import { OutreachPipeline, OutreachQueue, AnalyticsTab, CandidateDetailDrawer, BulkActionBar } from "@/components/talent";
-import { MatchReasonCards } from "@/components/talent/campaign";
+import { AnalyticsTab, CandidateDetailDrawer, BulkActionBar } from "@/components/talent";
 import CriteriaWeightingStep, { DEFAULT_WEIGHTS } from "@/components/talent/campaign/CriteriaWeightingStep";
-import SignalMatchingConfig, { INTELLIGENCE_SIGNALS } from "@/components/talent/campaign/SignalMatchingConfig";
+import SignalMatchingConfig from "@/components/talent/campaign/SignalMatchingConfig";
 import OutreachCustomizationPanel from "@/components/talent/OutreachCustomizationPanel";
 import LinkedInOutreachWorkflow from "@/components/talent/LinkedInOutreachWorkflow";
-import AutomationPanel from "@/components/talent/AutomationPanel";
+import CandidatesTab from "@/components/talent/CandidatesTab";
+import TalentFlowTab from "@/components/talent/TalentFlowTab";
+import OutreachQueueTab from "@/components/talent/OutreachQueueTab";
+import OutreachPreviewModal from "@/components/talent/OutreachPreviewModal";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   Megaphone,
   Settings,
-  List,
   Users,
   BarChart3,
   ArrowLeft,
@@ -78,6 +85,7 @@ import {
   PartyPopper,
   RefreshCw,
   SlidersHorizontal,
+  GitBranch,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
@@ -182,482 +190,11 @@ const WeightsDisplayWidget = ({ weights }) => {
   );
 };
 
-// Match Level Badge with colors
-const MatchLevelBadge = ({ level, score }) => {
-  const levelColors = {
-    Excellent: "bg-red-500/30 text-red-300 border-red-500/30",
-    Good: "bg-red-500/20 text-red-400 border-red-500/30",
-    Fair: "bg-red-500/10 text-red-400/70 border-red-500/20",
-    Poor: "bg-red-500/20 text-red-400 border-red-500/30",
-  };
+// MatchLevelBadge, IntelligenceStatus, NestSourceBadge, SignalBadges extracted to CandidateMatchResultCard.jsx
 
-  // Derive level from score if not provided
-  const derivedLevel = level || (
-    score >= 80 ? "Excellent" :
-    score >= 60 ? "Good" :
-    score >= 40 ? "Fair" : "Poor"
-  );
+// CandidateMatchResultCard extracted to @/components/talent/CandidateMatchResultCard.jsx
 
-  return (
-    <Badge className={`border ${levelColors[derivedLevel] || levelColors.Fair}`}>
-      {derivedLevel}
-    </Badge>
-  );
-};
-
-// Intelligence Status Indicator
-const IntelligenceStatus = ({ candidate }) => {
-  // Check for intelligence data - could be in various fields
-  const hasIntelligence = candidate.intelligence_generated ||
-    candidate.intelligence_score > 0 ||
-    candidate.best_outreach_angle ||
-    candidate.timing_signals?.length > 0;
-
-  const isProcessing = candidate.intelligence_status === 'processing';
-
-  if (hasIntelligence) {
-    return (
-      <div className="flex items-center gap-1 text-xs text-red-400" title="Intelligence profile ready">
-        <Brain className="w-3 h-3" />
-        <span>Intel Ready</span>
-      </div>
-    );
-  }
-
-  if (isProcessing) {
-    return (
-      <div className="flex items-center gap-1 text-xs text-red-300 animate-pulse" title="Generating intelligence...">
-        <Loader2 className="w-3 h-3 animate-spin" />
-        <span>Processing</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-1 text-xs text-zinc-500" title="Intelligence pending">
-      <Clock className="w-3 h-3" />
-      <span>Pending</span>
-    </div>
-  );
-};
-
-// Nest Source Badge - Shows which nest a candidate came from
-const NestSourceBadge = ({ nestName }) => {
-  if (!nestName) return null;
-
-  return (
-    <div className="flex items-center gap-1 text-xs text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full" title={`From nest: ${nestName}`}>
-      <Package className="w-3 h-3" />
-      <span className="truncate max-w-[120px]">{nestName}</span>
-    </div>
-  );
-};
-
-// Signal badges for matched signals
-const signalBgMap = {
-  red: "bg-red-500/20", orange: "bg-red-500/20", purple: "bg-red-500/20",
-  emerald: "bg-red-500/20", amber: "bg-red-500/20", blue: "bg-red-500/20",
-  zinc: "bg-zinc-500/20", rose: "bg-red-500/20",
-};
-const signalTextMap = {
-  red: "text-red-400", orange: "text-red-400", purple: "text-red-400",
-  emerald: "text-red-400", amber: "text-red-400", blue: "text-red-400",
-  zinc: "text-zinc-400", rose: "text-red-400",
-};
-const signalBorderMap = {
-  red: "border-red-500/30", orange: "border-red-500/30", purple: "border-red-500/30",
-  emerald: "border-red-500/30", amber: "border-red-500/30", blue: "border-red-500/30",
-  zinc: "border-zinc-500/30", rose: "border-red-500/30",
-};
-
-const SignalBadges = ({ signals }) => {
-  if (!signals || signals.length === 0) return null;
-  return (
-    <div className="flex flex-wrap gap-1.5 mt-2">
-      {signals.map((signal) => {
-        const def = INTELLIGENCE_SIGNALS.find(s => s.id === signal.id);
-        if (!def) return null;
-        return (
-          <div
-            key={signal.id}
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${signalBgMap[def.color]} ${signalTextMap[def.color]} ${signalBorderMap[def.color]}`}
-          >
-            <span>{def.label}</span>
-            {signal.boost !== 0 && (
-              <span className={signal.boost > 0 ? "text-red-400" : "text-red-300"}>
-                {signal.boost > 0 ? "+" : ""}{signal.boost}
-              </span>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
-// CandidateMatchResultCard - Detailed match display with AI reasoning
-const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect, onClick }) => {
-  const [expanded, setExpanded] = useState(false);
-
-  const scoreColor = match.match_score >= 80 ? "text-red-300"
-    : match.match_score >= 60 ? "text-red-400"
-    : match.match_score >= 40 ? "text-red-400/70"
-    : "text-red-500/60";
-
-  const scoreBgColor = match.match_score >= 80 ? "from-red-500 to-red-600"
-    : match.match_score >= 60 ? "from-red-600 to-red-700"
-    : match.match_score >= 40 ? "from-red-700 to-red-800"
-    : "from-red-800 to-red-900";
-
-  // Get current role from various possible fields
-  const currentRole = match.current_role ||
-    (match.current_title && match.current_company ? `${match.current_title} at ${match.current_company}` : null) ||
-    match.ai_analysis?.split('.')[0] ||
-    "Role not specified";
-
-  // Get key strengths - could be from match_reasons or key_strengths
-  const strengths = match.key_strengths || match.match_reasons?.slice(0, 3) || [];
-
-  // Get concerns - from potential_concerns or match_factors
-  const concerns = match.potential_concerns || [];
-
-  // Get reasoning - from reasoning field or ai_analysis
-  const reasoning = match.reasoning || match.ai_analysis || "";
-
-  // Get outreach angle - from outreach_angle or best_outreach_angle
-  const outreachAngle = match.outreach_angle || match.best_outreach_angle || "";
-
-  return (
-    <motion.div
-      layout
-      className={`p-4 rounded-xl border transition-all ${
-        isSelected
-          ? "bg-red-500/10 border-red-500/30"
-          : "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700"
-      }`}
-    >
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          {/* Avatar with score overlay */}
-          <div className="relative">
-            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${scoreBgColor} flex items-center justify-center text-white font-bold text-sm`}>
-              {match.candidate_name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '??'}
-            </div>
-            <div className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${scoreColor} bg-zinc-900 border-2 border-zinc-800`}>
-              {match.match_score || 0}
-            </div>
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <button
-              onClick={onClick}
-              className="font-medium text-white hover:text-red-400 transition-colors block truncate text-left"
-            >
-              {match.candidate_name || "Unknown Candidate"}
-            </button>
-            <p className="text-sm text-zinc-400 truncate">{currentRole}</p>
-            <div className="flex items-center gap-2 flex-wrap mt-1">
-              <IntelligenceStatus candidate={match} />
-              <NestSourceBadge nestName={match.nest_source} />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-          <MatchLevelBadge score={match.match_score} level={match.match_level} />
-          <Button
-            size="sm"
-            variant={isSelected ? "default" : "outline"}
-            onClick={(e) => {
-              e.preventDefault();
-              onToggleSelect(match.candidate_id);
-            }}
-            className={isSelected ? "bg-red-500 hover:bg-red-600" : "border-zinc-700 hover:border-zinc-600"}
-          >
-            {isSelected ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          </Button>
-        </div>
-      </div>
-
-      {/* Why This Match Section */}
-      <div className="mt-4 pt-4 border-t border-zinc-700/50">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-red-400" />
-            Why This Match?
-          </h4>
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
-          >
-            {expanded ? "Hide Details" : "See Full Analysis"}
-            <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? "rotate-180" : ""}`} />
-          </button>
-        </div>
-
-        {/* Always show factor cards */}
-        <MatchReasonCards
-          factors={match.match_factors || {
-            skills_fit: match.match_score || 0,
-            experience_fit: match.match_score || 0,
-            title_fit: match.match_score || 0,
-            timing_score: 50,
-            culture_fit: 50,
-          }}
-          insights={{
-            key_strengths: strengths,
-            concerns: concerns,
-          }}
-          compact={!expanded}
-        />
-
-        {/* Matched Signals */}
-        {match.signals_matched?.length > 0 && (
-          <div className="mt-2">
-            <SignalBadges signals={match.signals_matched} />
-            {match.signal_boost_applied > 0 && (
-              <p className="mt-1 text-xs text-red-400">
-                +{match.signal_boost_applied} from signals
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Expandable detailed analysis */}
-        <AnimatePresence>
-          {expanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
-            >
-              <div className="mt-4 space-y-4">
-                {/* Key Strengths */}
-                {strengths.length > 0 && (
-                  <div className="space-y-2">
-                    <h5 className="text-xs font-medium text-red-400 uppercase tracking-wider">
-                      Key Strengths
-                    </h5>
-                    <ul className="space-y-1">
-                      {strengths.map((s, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
-                          <CheckCircle2 className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                          {s}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Concerns */}
-                {concerns.length > 0 && (
-                  <div className="space-y-2">
-                    <h5 className="text-xs font-medium text-red-300 uppercase tracking-wider">
-                      Considerations
-                    </h5>
-                    <ul className="space-y-1">
-                      {concerns.map((c, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-zinc-400">
-                          <AlertCircle className="w-4 h-4 text-red-300 shrink-0 mt-0.5" />
-                          {c}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* AI Reasoning */}
-                {reasoning && (
-                  <div className="space-y-2">
-                    <h5 className="text-xs font-medium text-red-400 uppercase tracking-wider">
-                      AI Reasoning
-                    </h5>
-                    <p className="text-sm text-zinc-400 leading-relaxed">{reasoning}</p>
-                  </div>
-                )}
-
-                {/* Intelligence Score */}
-                {match.intelligence_score > 0 && (
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
-                    <Sparkles className="w-4 h-4 text-red-400" />
-                    <div>
-                      <p className="text-xs text-red-400">Flight Risk / Timing Score</p>
-                      <p className="text-sm text-white font-medium">
-                        {match.intelligence_score}% - {match.recommended_approach === 'aggressive' ? 'Act Now!' : match.recommended_approach || 'Standard'}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Outreach Angle */}
-                {outreachAngle && (
-                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                    <p className="text-xs text-red-400 mb-1 flex items-center gap-1">
-                      <Lightbulb className="w-3 h-3" />
-                      Suggested Outreach Angle
-                    </p>
-                    <p className="text-sm text-white leading-relaxed">{outreachAngle}</p>
-                  </div>
-                )}
-
-                {/* Timing Signals */}
-                {match.timing_signals?.length > 0 && (
-                  <div>
-                    <p className="text-xs text-zinc-500 mb-1.5 flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-red-400" />
-                      Timing Signals
-                    </p>
-                    <div className="space-y-1">
-                      {match.timing_signals.slice(0, 3).map((signal, i) => (
-                        <div key={i} className={`text-xs px-2 py-1 rounded ${
-                          signal.urgency === 'high' ? 'bg-red-500/20 text-red-300' :
-                          signal.urgency === 'medium' ? 'bg-red-500/15 text-red-300' :
-                          'bg-zinc-700/50 text-zinc-400'
-                        }`}>
-                          {signal.trigger}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </motion.div>
-  );
-};
-
-// Outreach Preview Modal - Shows generated messages before sending
-const OutreachPreviewModal = ({ open, onOpenChange, messages, onApprove, onEdit, campaignType }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  if (!messages || messages.length === 0) return null;
-
-  const currentMessage = messages[currentIndex];
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-white flex items-center gap-2">
-            <Mail className="w-5 h-5 text-red-400" />
-            Outreach Preview ({currentIndex + 1} of {messages.length})
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Candidate Info */}
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/50">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white font-bold text-sm">
-              {currentMessage.candidate_name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '??'}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-white truncate">{currentMessage.candidate_name}</p>
-              <p className="text-sm text-zinc-400 truncate">{currentMessage.current_role || 'Role not specified'}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {currentMessage.match_score && (
-                <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
-                  {currentMessage.match_score}% Match
-                </Badge>
-              )}
-              <Badge className={`${
-                currentMessage.personalization_score >= 70 ? 'bg-red-500/20 text-red-400' :
-                currentMessage.personalization_score >= 40 ? 'bg-red-500/15 text-red-400/80' :
-                'bg-zinc-700/50 text-zinc-400'
-              }`}>
-                {currentMessage.personalization_score || 0}% Personal
-              </Badge>
-            </div>
-          </div>
-
-          {/* Subject Line (for email) */}
-          {campaignType === 'email' && currentMessage.subject && (
-            <div>
-              <Label className="text-xs text-zinc-500 uppercase tracking-wider">Subject Line</Label>
-              <div className="mt-1 p-3 rounded-lg bg-zinc-800 border border-zinc-700">
-                <p className="text-white">{currentMessage.subject}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Message Body */}
-          <div>
-            <Label className="text-xs text-zinc-500 uppercase tracking-wider">Message</Label>
-            <div className="mt-1 p-4 rounded-lg bg-zinc-800 border border-zinc-700 max-h-[250px] overflow-y-auto">
-              <p className="text-white whitespace-pre-wrap leading-relaxed">{currentMessage.content}</p>
-            </div>
-          </div>
-
-          {/* Intelligence Used */}
-          {currentMessage.intelligence_used?.length > 0 && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-              <p className="text-xs text-red-400 mb-2 flex items-center gap-1">
-                <Brain className="w-3 h-3" />
-                AI Personalization Used
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {currentMessage.intelligence_used.map((item, i) => (
-                  <Badge key={i} className="bg-red-500/20 text-red-400 text-xs">
-                    {item.replace(/_/g, ' ')}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Navigation */}
-          <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentIndex(i => Math.max(0, i - 1))}
-                disabled={currentIndex === 0}
-                className="border-zinc-700"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentIndex(i => Math.min(messages.length - 1, i + 1))}
-                disabled={currentIndex === messages.length - 1}
-                className="border-zinc-700"
-              >
-                Next
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => onEdit && onEdit(currentMessage, currentIndex)}
-                className="border-zinc-700"
-              >
-                <Edit2 className="w-4 h-4 mr-2" />
-                Edit
-              </Button>
-              <Button
-                onClick={() => onApprove && onApprove(messages)}
-                className="bg-red-500 hover:bg-red-600"
-              >
-                <Check className="w-4 h-4 mr-2" />
-                Approve All ({messages.length})
-              </Button>
-            </div>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
+// OutreachPreviewModal extracted to @/components/talent/OutreachPreviewModal.jsx
 
 // Outreach Success Dialog - Shows after tasks are created
 const OutreachSuccessDialog = ({ open, onOpenChange, taskCount, onViewQueue }) => (
@@ -713,332 +250,19 @@ const OutreachSuccessDialog = ({ open, onOpenChange, taskCount, onViewQueue }) =
   </Dialog>
 );
 
-// Outreach Queue Tab - Manage outreach tasks
-const OutreachQueueTab = ({ campaign, tasks, onRefresh, onSendTask, onCancelTask }) => {
-  const [filter, setFilter] = useState('all');
-  const [sending, setSending] = useState(null);
+// OutreachQueueTab extracted to @/components/talent/OutreachQueueTab.jsx
 
-  const filteredTasks = tasks.filter(t => {
-    if (filter === 'all') return true;
-    return t.status === filter;
-  });
-
-  const statusColors = {
-    pending: 'bg-zinc-500/20 text-zinc-400',
-    approved_ready: 'bg-red-500/30 text-red-300',
-    sent: 'bg-red-500/20 text-red-400',
-    replied: 'bg-red-500/15 text-red-400/80',
-    completed: 'bg-red-600/20 text-red-300',
-    cancelled: 'bg-red-500/20 text-red-400',
-  };
-
-  const handleSend = async (task) => {
-    setSending(task.id);
-    try {
-      await onSendTask(task.id);
-    } finally {
-      setSending(null);
-    }
-  };
-
-  const taskCounts = {
-    all: tasks.length,
-    approved_ready: tasks.filter(t => t.status === 'approved_ready').length,
-    sent: tasks.filter(t => t.status === 'sent').length,
-    replied: tasks.filter(t => t.status === 'replied').length,
-    completed: tasks.filter(t => t.status === 'completed').length,
-  };
-
-  return (
-    <div className="space-y-4">
-      {/* Filter Tabs */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex gap-2 flex-wrap">
-          {[
-            { key: 'all', label: 'All' },
-            { key: 'approved_ready', label: 'Ready' },
-            { key: 'sent', label: 'Sent' },
-            { key: 'replied', label: 'Replied' },
-          ].map(({ key, label }) => (
-            <Button
-              key={key}
-              size="sm"
-              variant={filter === key ? 'default' : 'ghost'}
-              onClick={() => setFilter(key)}
-              className={filter === key ? 'bg-red-500 hover:bg-red-600' : 'text-zinc-400 hover:text-white'}
-            >
-              {label}
-              <Badge className="ml-2 bg-zinc-700/50 text-zinc-300">
-                {taskCounts[key] || 0}
-              </Badge>
-            </Button>
-          ))}
-        </div>
-        <Button variant="ghost" onClick={onRefresh} className="text-zinc-400 hover:text-white">
-          <RefreshCw className="w-4 h-4" />
-        </Button>
-      </div>
-
-      {/* Task List */}
-      {filteredTasks.length > 0 ? (
-        <div className="space-y-3">
-          {filteredTasks.map(task => (
-            <GlassCard key={task.id} className="p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                    {task.candidate?.first_name?.[0]}{task.candidate?.last_name?.[0]}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-white truncate">
-                      {task.candidate?.first_name} {task.candidate?.last_name}
-                    </p>
-                    <p className="text-sm text-zinc-400 truncate">
-                      {task.candidate?.job_title}
-                      {task.candidate?.company_name && ` at ${task.candidate.company_name}`}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Badge className={statusColors[task.status] || statusColors.pending}>
-                    {task.status?.replace('_', ' ')}
-                  </Badge>
-                  {task.metadata?.match_score && (
-                    <Badge className="bg-red-500/20 text-red-400">
-                      {task.metadata.match_score}% match
-                    </Badge>
-                  )}
-                </div>
-              </div>
-
-              {/* Message Preview */}
-              <div className="mt-3 p-3 rounded-lg bg-zinc-800/50">
-                {task.metadata?.subject && (
-                  <p className="text-xs text-zinc-500 mb-1">
-                    <span className="font-medium">Subject:</span> {task.metadata.subject}
-                  </p>
-                )}
-                <p className="text-sm text-zinc-300 line-clamp-2">{task.message_content}</p>
-              </div>
-
-              {/* Actions */}
-              <div className="mt-3 flex items-center justify-between">
-                <p className="text-xs text-zinc-500">
-                  Created {new Date(task.created_at).toLocaleDateString()}
-                  {task.sent_at && ` • Sent ${new Date(task.sent_at).toLocaleDateString()}`}
-                </p>
-                <div className="flex gap-2">
-                  {task.status === 'approved_ready' && (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onCancelTask(task.id)}
-                        className="border-zinc-700 text-zinc-400 hover:text-white"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleSend(task)}
-                        disabled={sending === task.id}
-                        className="bg-red-500 hover:bg-red-600"
-                      >
-                        {sending === task.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Send className="w-4 h-4 mr-1" />
-                            Send
-                          </>
-                        )}
-                      </Button>
-                    </>
-                  )}
-                  {task.status === 'sent' && (
-                    <Button size="sm" variant="outline" className="border-zinc-700 text-zinc-400">
-                      <MessageSquare className="w-4 h-4 mr-1" />
-                      View Thread
-                    </Button>
-                  )}
-                  {task.status === 'replied' && (
-                    <Button size="sm" className="bg-red-500 hover:bg-red-600">
-                      <MessageSquare className="w-4 h-4 mr-1" />
-                      Respond
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </GlassCard>
-          ))}
-        </div>
-      ) : (
-        <GlassCard className="p-8 text-center">
-          <Send className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
-          <p className="text-zinc-400">No outreach tasks yet</p>
-          <p className="text-sm text-zinc-500 mt-1">
-            Generate and approve outreach messages to see them here
-          </p>
-        </GlassCard>
-      )}
-
-      {/* Summary Stats */}
-      {tasks.length > 0 && (
-        <GlassCard className="p-4">
-          <div className="grid grid-cols-4 gap-4 text-center">
-            <div>
-              <p className="text-2xl font-bold text-white">{taskCounts.all}</p>
-              <p className="text-xs text-zinc-500">Total</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-red-300">{taskCounts.approved_ready}</p>
-              <p className="text-xs text-zinc-500">Ready</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-red-400">{taskCounts.sent}</p>
-              <p className="text-xs text-zinc-500">Sent</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-red-500">{taskCounts.replied}</p>
-              <p className="text-xs text-zinc-500">Replied</p>
-            </div>
-          </div>
-        </GlassCard>
-      )}
-    </div>
-  );
-};
-
-// Overview Tab Component
-const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, linkedNest, nestCandidates, selectedCandidates, onToggleCandidateSelect, onSelectAllExcellent, onSaveSelection, onGenerateOutreach, savingSelection, generatingOutreach, onCandidateClick }) => {
+// Overview Tab Component (slimmed — candidate grid moved to CandidatesTab)
+const OverviewTab = ({ campaign, formData, stats, onCandidateClick }) => {
   const matchedCandidates = campaign?.matched_candidates || [];
-  const [showAllCandidates, setShowAllCandidates] = useState(false);
-  const [matchFilter, setMatchFilter] = useState("All");
-  const [viewMode, setViewMode] = useState("detailed"); // "detailed" or "compact"
-
-  // Sort and derive match levels
-  const sortedCandidates = useMemo(() => {
+  const topCandidates = useMemo(() => {
     return [...matchedCandidates]
-      .map(m => ({
-        ...m,
-        match_level: m.match_level || (
-          m.match_score >= 80 ? "Excellent" :
-          m.match_score >= 60 ? "Good" :
-          m.match_score >= 40 ? "Fair" : "Poor"
-        ),
-      }))
-      .sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
+      .sort((a, b) => (b.match_score || 0) - (a.match_score || 0))
+      .slice(0, 5);
   }, [matchedCandidates]);
-
-  // Filter by match level
-  const filteredMatches = useMemo(() => {
-    if (matchFilter === "All") return sortedCandidates;
-    return sortedCandidates.filter(m => m.match_level === matchFilter);
-  }, [sortedCandidates, matchFilter]);
-
-  // Calculate stats by level
-  const levelCounts = useMemo(() => ({
-    All: sortedCandidates.length,
-    Excellent: sortedCandidates.filter(m => m.match_level === "Excellent").length,
-    Good: sortedCandidates.filter(m => m.match_level === "Good").length,
-    Fair: sortedCandidates.filter(m => m.match_level === "Fair").length,
-    Poor: sortedCandidates.filter(m => m.match_level === "Poor").length,
-  }), [sortedCandidates]);
-
-  // Calculate average score
-  const avgScore = sortedCandidates.length > 0
-    ? Math.round(sortedCandidates.reduce((sum, m) => sum + (m.match_score || 0), 0) / sortedCandidates.length)
-    : 0;
-
-  const displayedCandidates = showAllCandidates ? filteredMatches : filteredMatches.slice(0, 10);
 
   return (
     <div className="space-y-6">
-      {/* Linked Nest Banner */}
-      {linkedNest && (
-        <div className="p-4 rounded-xl bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/20">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-red-500/20 rounded-xl">
-                <Package className="w-6 h-6 text-red-400" />
-              </div>
-              <div>
-                <p className="text-xs text-red-400 uppercase tracking-wider font-medium">Sourcing from Nest</p>
-                <p className="text-lg font-semibold text-white">{linkedNest.name}</p>
-                <div className="flex items-center gap-4 mt-1">
-                  <span className="text-sm text-zinc-400">
-                    {nestCandidates.length} candidates
-                  </span>
-                  {(() => {
-                    const intelReady = nestCandidates.filter(c =>
-                      c.intelligence_generated || c.intelligence_score > 0 || c.best_outreach_angle
-                    ).length;
-                    const processing = nestCandidates.filter(c => c.intelligence_status === 'processing').length;
-                    const pending = nestCandidates.length - intelReady - processing;
-                    return (
-                      <>
-                        {intelReady > 0 && (
-                          <span className="flex items-center gap-1 text-xs text-red-400">
-                            <Brain className="w-3 h-3" />
-                            {intelReady} ready
-                          </span>
-                        )}
-                        {processing > 0 && (
-                          <span className="flex items-center gap-1 text-xs text-red-300">
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                            {processing} processing
-                          </span>
-                        )}
-                        {pending > 0 && (
-                          <span className="flex items-center gap-1 text-xs text-zinc-500">
-                            <Clock className="w-3 h-3" />
-                            {pending} pending
-                          </span>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                to={`${createPageUrl("TalentNestDetail")}?id=${linkedNest.id}`}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors text-sm"
-              >
-                <ExternalLink className="w-4 h-4" />
-                View Nest
-              </Link>
-              <Button
-                onClick={onRunMatching}
-                disabled={isMatching || nestCandidates.length === 0}
-                className="bg-red-500 hover:bg-red-600"
-              >
-                {isMatching ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Matching...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Run AI Matching
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-          {nestCandidates.length > 0 && matchedCandidates.length === 0 && (
-            <div className="mt-3 p-3 rounded-lg bg-zinc-800/30 border border-zinc-700/50">
-              <p className="text-sm text-zinc-400">
-                <Sparkles className="w-4 h-4 inline mr-2 text-red-400" />
-                Click "Run AI Matching" to analyze {nestCandidates.length} candidates against your role context and find the best fits.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Campaign Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Campaign Info */}
@@ -1090,208 +314,50 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
 
           {/* Matching Weights */}
           {campaign?.role_context?.criteria_weights && (
-            <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
-              <h4 className="text-sm font-medium text-zinc-300 mb-3 flex items-center gap-2">
-                <SlidersHorizontal className="w-4 h-4 text-red-400" />
-                Matching Weights
-              </h4>
-              <div className="space-y-2">
-                {[
-                  { key: "skills_fit", label: "Skills", bg: "bg-red-500/60", text: "text-red-400" },
-                  { key: "experience_fit", label: "Experience", bg: "bg-red-500/70", text: "text-red-400" },
-                  { key: "title_fit", label: "Title", bg: "bg-red-500/80", text: "text-red-400" },
-                  { key: "location_fit", label: "Location", bg: "bg-red-500/90", text: "text-red-400" },
-                  { key: "timing_score", label: "Timing", bg: "bg-red-500", text: "text-red-400" },
-                  { key: "culture_fit", label: "Culture", bg: "bg-red-600", text: "text-red-300" },
-                ].map(({ key, label, bg, text }) => (
-                  <div key={key} className="flex items-center gap-2">
-                    <span className="text-xs text-zinc-500 w-20">{label}</span>
-                    <div className="flex-1 h-2 bg-zinc-700 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${bg}`}
-                        style={{ width: `${campaign.role_context.criteria_weights[key] || 0}%` }}
-                      />
-                    </div>
-                    <span className={`text-xs font-medium ${text} w-8 text-right`}>
-                      {campaign.role_context.criteria_weights[key] || 0}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <WeightsDisplayWidget weights={campaign.role_context.criteria_weights} />
           )}
 
-          {/* Matched Candidates - Enhanced with AI Reasoning */}
+          {/* Top 5 Candidates Preview */}
           <GlassCard className="p-6">
-            {/* Header with Stats */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-red-400" />
-                  Match Results
-                </h3>
-                {matchedCandidates.length > 0 && (
-                  <p className="text-sm text-zinc-400 mt-1">
-                    {matchedCandidates.length} candidates analyzed • Avg Score: {avgScore}
-                    {selectedCandidates?.size > 0 && (
-                      <span className="text-red-400 ml-2">• {selectedCandidates.size} selected</span>
-                    )}
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-red-400" />
+              Top Candidates ({matchedCandidates.length} total)
+            </h3>
+            {topCandidates.length > 0 ? (
+              <div className="space-y-2">
+                {topCandidates.map((match, idx) => (
+                  <button
+                    key={match.candidate_id || idx}
+                    onClick={() => onCandidateClick?.(match)}
+                    className="w-full flex items-center gap-3 p-3 bg-zinc-800/30 rounded-lg hover:bg-zinc-800/50 transition-colors text-left"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                      {match.candidate_name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '??'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-white truncate">{match.candidate_name}</p>
+                      <p className="text-xs text-zinc-500 truncate">{match.current_role || match.current_title || 'Unknown role'}</p>
+                    </div>
+                    <Badge className={`shrink-0 ${
+                      match.match_score >= 80 ? 'bg-red-500/20 text-red-400' :
+                      match.match_score >= 60 ? 'bg-red-500/15 text-red-400/80' :
+                      'bg-zinc-700/50 text-zinc-400'
+                    }`}>
+                      {match.match_score}%
+                    </Badge>
+                  </button>
+                ))}
+                {matchedCandidates.length > 5 && (
+                  <p className="text-xs text-zinc-500 text-center pt-2">
+                    +{matchedCandidates.length - 5} more — see Candidates tab
                   </p>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Bulk Add Excellent */}
-                {levelCounts.Excellent > 0 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={onSelectAllExcellent}
-                    className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Excellent ({levelCounts.Excellent})
-                  </Button>
-                )}
-
-                {/* Save Selection */}
-                {selectedCandidates?.size > 0 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={onSaveSelection}
-                    disabled={savingSelection}
-                    className="border-zinc-700 text-zinc-300 hover:text-white"
-                  >
-                    {savingSelection ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4 mr-2" />
-                    )}
-                    Save ({selectedCandidates.size})
-                  </Button>
-                )}
-
-                {/* Generate Outreach */}
-                {selectedCandidates?.size > 0 && (
-                  <Button
-                    size="sm"
-                    onClick={onGenerateOutreach}
-                    disabled={generatingOutreach}
-                    className="bg-red-500 hover:bg-red-600"
-                  >
-                    {generatingOutreach ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Mail className="w-4 h-4 mr-2" />
-                        Generate Outreach
-                      </>
-                    )}
-                  </Button>
-                )}
-
-                {/* Run Matching (when not using nest banner) */}
-                {!linkedNest && (formData.project_id || formData.role_id || campaign?.role_context) && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={onRunMatching}
-                    disabled={isMatching}
-                    className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                  >
-                    {isMatching ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Matching...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        Run Matching
-                      </>
-                    )}
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {matchedCandidates.length > 0 ? (
-              <div className="space-y-4">
-                {/* Filter Tabs */}
-                <div className="flex flex-wrap gap-2">
-                  {["All", "Excellent", "Good", "Fair"].map((level) => {
-                    const count = levelCounts[level] || 0;
-                    const isActive = matchFilter === level;
-                    const levelStyles = {
-                      All: isActive ? "bg-zinc-700 text-white" : "text-zinc-400 hover:text-white",
-                      Excellent: isActive ? "bg-red-500/30 text-red-300" : "text-zinc-400 hover:text-red-400",
-                      Good: isActive ? "bg-red-500/20 text-red-400" : "text-zinc-400 hover:text-red-400",
-                      Fair: isActive ? "bg-red-500/10 text-red-400/70" : "text-zinc-400 hover:text-red-400",
-                    };
-
-                    return (
-                      <button
-                        key={level}
-                        onClick={() => setMatchFilter(level)}
-                        disabled={count === 0 && level !== "All"}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${levelStyles[level]} ${
-                          count === 0 && level !== "All" ? "opacity-50 cursor-not-allowed" : ""
-                        }`}
-                      >
-                        {level} ({count})
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Match Cards Grid */}
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                  {displayedCandidates.map((match, idx) => (
-                    <CandidateMatchResultCard
-                      key={match.candidate_id || idx}
-                      match={match}
-                      isSelected={selectedCandidates?.has(match.candidate_id)}
-                      onToggleSelect={onToggleCandidateSelect}
-                      onClick={() => onCandidateClick?.(match)}
-                    />
-                  ))}
-                </div>
-
-                {/* Show More/Less */}
-                {filteredMatches.length > 10 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAllCandidates(!showAllCandidates)}
-                    className="w-full text-zinc-400 hover:text-white"
-                  >
-                    {showAllCandidates
-                      ? "Show less"
-                      : `Show all ${filteredMatches.length} ${matchFilter !== "All" ? matchFilter.toLowerCase() : ""} matches`}
-                  </Button>
                 )}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <Brain className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
-                <p className="text-zinc-500 mb-2">No matched candidates yet</p>
-                {linkedNest ? (
-                  <p className="text-xs text-zinc-600">
-                    Click "Run AI Matching" above to analyze {nestCandidates.length} candidates from your nest
-                  </p>
-                ) : formData.project_id || formData.role_id || campaign?.role_context ? (
-                  <p className="text-xs text-zinc-600">
-                    Click "Run Matching" to analyze candidates with AI-powered scoring
-                  </p>
-                ) : (
-                  <p className="text-xs text-zinc-600">
-                    Link this campaign to a project or role in Settings to enable matching
-                  </p>
-                )}
+              <div className="text-center py-6">
+                <Brain className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                <p className="text-zinc-500 text-sm">No matched candidates yet</p>
+                <p className="text-xs text-zinc-600 mt-1">Go to the Candidates tab to run matching</p>
               </div>
             )}
           </GlassCard>
@@ -1299,7 +365,7 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
           {/* Sequence Preview */}
           <GlassCard className="p-6">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <List className="w-5 h-5 text-red-400" />
+              <FileText className="w-5 h-5 text-red-400" />
               Sequence Steps ({formData.sequence_steps?.length || 0})
             </h3>
             {formData.sequence_steps?.length > 0 ? (
@@ -1325,7 +391,7 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
               </div>
             ) : (
               <div className="text-center py-6">
-                <List className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                <FileText className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
                 <p className="text-zinc-500">No sequence steps configured yet</p>
               </div>
             )}
@@ -1796,6 +862,7 @@ export default function TalentCampaignDetail() {
   const [createdTaskCount, setCreatedTaskCount] = useState(0);
   const [outreachTasks, setOutreachTasks] = useState([]);
   const [outreachMode, setOutreachMode] = useState("queue");
+  const [showCustomizeDrawer, setShowCustomizeDrawer] = useState(false);
 
   // Drawer state for candidate detail
   const [drawerCandidateId, setDrawerCandidateId] = useState(null);
@@ -2762,6 +1829,42 @@ export default function TalentCampaignDetail() {
                 Overview
               </TabsTrigger>
             )}
+            {!isNew && (
+              <TabsTrigger
+                value="candidates"
+                className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Candidates
+              </TabsTrigger>
+            )}
+            {!isNew && (
+              <TabsTrigger
+                value="outreach"
+                className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Outreach
+              </TabsTrigger>
+            )}
+            {!isNew && (
+              <TabsTrigger
+                value="flow"
+                className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
+              >
+                <GitBranch className="w-4 h-4 mr-2" />
+                Flow
+              </TabsTrigger>
+            )}
+            {!isNew && (
+              <TabsTrigger
+                value="analytics"
+                className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Analytics
+              </TabsTrigger>
+            )}
             <TabsTrigger
               value="settings"
               className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
@@ -2769,45 +1872,6 @@ export default function TalentCampaignDetail() {
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </TabsTrigger>
-            <TabsTrigger
-              value="sequence"
-              className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
-            >
-              <List className="w-4 h-4 mr-2" />
-              Sequence
-            </TabsTrigger>
-            {!isNew && (
-              <>
-                <TabsTrigger
-                  value="outreach"
-                  className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Outreach
-                </TabsTrigger>
-                <TabsTrigger
-                  value="customize"
-                  className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
-                >
-                  <SlidersHorizontal className="w-4 h-4 mr-2" />
-                  Customize
-                </TabsTrigger>
-                <TabsTrigger
-                  value="analytics"
-                  className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
-                >
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Analytics
-                </TabsTrigger>
-                <TabsTrigger
-                  value="automation"
-                  className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
-                >
-                  <Zap className="w-4 h-4 mr-2" />
-                  Automation
-                </TabsTrigger>
-              </>
-            )}
           </TabsList>
 
           {/* Overview Tab */}
@@ -2817,17 +1881,6 @@ export default function TalentCampaignDetail() {
                 campaign={campaign}
                 formData={formData}
                 stats={stats}
-                onRunMatching={() => runAutoMatching(campaign)}
-                isMatching={isMatching}
-                linkedNest={linkedNest}
-                nestCandidates={nestCandidates}
-                selectedCandidates={selectedCandidates}
-                onToggleCandidateSelect={handleToggleCandidateSelect}
-                onSelectAllExcellent={handleSelectAllExcellent}
-                onSaveSelection={handleSaveSelection}
-                onGenerateOutreach={handleGenerateOutreach}
-                savingSelection={savingSelection}
-                generatingOutreach={generatingOutreach}
                 onCandidateClick={(match) => {
                   setDrawerCandidateId(match.candidate_id);
                   setDrawerMatchData(match);
@@ -2836,50 +1889,66 @@ export default function TalentCampaignDetail() {
             </TabsContent>
           )}
 
+          {/* Candidates Tab */}
+          {!isNew && (
+            <TabsContent value="candidates" className="m-0">
+              <CandidatesTab
+                campaign={campaign}
+                matchedCandidates={campaign?.matched_candidates || []}
+                selectedCandidates={selectedCandidates}
+                onToggleCandidateSelect={handleToggleCandidateSelect}
+                onSelectAllExcellent={handleSelectAllExcellent}
+                onSaveSelection={handleSaveSelection}
+                onGenerateOutreach={handleGenerateOutreach}
+                onRunMatching={() => runAutoMatching(campaign)}
+                onCandidateClick={(match) => {
+                  setDrawerCandidateId(match.candidate_id);
+                  setDrawerMatchData(match);
+                }}
+                isMatching={isMatching}
+                savingSelection={savingSelection}
+                generatingOutreach={generatingOutreach}
+                linkedNest={linkedNest}
+                nestCandidates={nestCandidates}
+                formData={formData}
+              />
+            </TabsContent>
+          )}
 
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6 m-0">
-            <SettingsTab
-              formData={formData}
-              handleChange={handleChange}
-              handleStatusChange={handleStatusChange}
-              isNew={isNew}
-              projects={projects}
-              roles={roles}
-              campaign={campaign}
-            />
-          </TabsContent>
-
-          {/* Sequence Tab */}
-          <TabsContent value="sequence" className="m-0">
-            <CampaignSequenceEditor
-              steps={formData.sequence_steps}
-              onChange={(steps) => handleChange("sequence_steps", steps)}
-            />
-          </TabsContent>
 
           {/* Outreach Tab */}
           {!isNew && (
             <TabsContent value="outreach" className="m-0">
-              {/* Mode Toggle */}
-              <div className="flex items-center gap-2 mb-4">
+              {/* Mode Toggle + Customize button */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant={outreachMode === "queue" ? "default" : "ghost"}
+                    onClick={() => setOutreachMode("queue")}
+                    className={outreachMode === "queue" ? "bg-red-500 hover:bg-red-600" : "text-zinc-400 hover:text-white"}
+                  >
+                    <Mail className="w-4 h-4 mr-1" />
+                    Queue View
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={outreachMode === "linkedin" ? "default" : "ghost"}
+                    onClick={() => setOutreachMode("linkedin")}
+                    className={outreachMode === "linkedin" ? "bg-red-500 hover:bg-red-600" : "text-zinc-400 hover:text-white"}
+                  >
+                    <Linkedin className="w-4 h-4 mr-1" />
+                    LinkedIn Workflow
+                  </Button>
+                </div>
                 <Button
                   size="sm"
-                  variant={outreachMode === "queue" ? "default" : "ghost"}
-                  onClick={() => setOutreachMode("queue")}
-                  className={outreachMode === "queue" ? "bg-red-500 hover:bg-red-600" : "text-zinc-400 hover:text-white"}
+                  variant="outline"
+                  onClick={() => setShowCustomizeDrawer(true)}
+                  className="border-zinc-700 text-zinc-300 hover:text-white"
                 >
-                  <Mail className="w-4 h-4 mr-1" />
-                  Queue View
-                </Button>
-                <Button
-                  size="sm"
-                  variant={outreachMode === "linkedin" ? "default" : "ghost"}
-                  onClick={() => setOutreachMode("linkedin")}
-                  className={outreachMode === "linkedin" ? "bg-red-500 hover:bg-red-600" : "text-zinc-400 hover:text-white"}
-                >
-                  <Linkedin className="w-4 h-4 mr-1" />
-                  LinkedIn Workflow
+                  <SlidersHorizontal className="w-4 h-4 mr-2" />
+                  Customize Messages
                 </Button>
               </div>
 
@@ -2898,15 +1967,30 @@ export default function TalentCampaignDetail() {
                   organizationId={campaign?.organization_id}
                 />
               )}
+
+              {/* Customize Messages Sheet Drawer */}
+              <Sheet open={showCustomizeDrawer} onOpenChange={setShowCustomizeDrawer}>
+                <SheetContent className="bg-zinc-900 border-zinc-800 w-[480px] sm:max-w-[480px] overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle className="text-white">Customize Messages</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-4">
+                    <OutreachCustomizationPanel
+                      organizationId={campaign?.organization_id}
+                      campaignId={campaign?.id}
+                    />
+                  </div>
+                </SheetContent>
+              </Sheet>
             </TabsContent>
           )}
 
-          {/* Customize Tab */}
+          {/* Flow Tab */}
           {!isNew && (
-            <TabsContent value="customize" className="m-0">
-              <OutreachCustomizationPanel
-                organizationId={campaign.organization_id}
-                campaignId={campaign.id}
+            <TabsContent value="flow" className="m-0">
+              <TalentFlowTab
+                campaign={campaign}
+                onFlowSaved={(flowId) => handleChange('flow_id', flowId)}
               />
             </TabsContent>
           )}
@@ -2922,12 +2006,32 @@ export default function TalentCampaignDetail() {
             </TabsContent>
           )}
 
-          {/* Automation Tab */}
-          {!isNew && (
-            <TabsContent value="automation" className="m-0">
-              <AutomationPanel campaign={campaign} />
-            </TabsContent>
-          )}
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6 m-0">
+            <SettingsTab
+              formData={formData}
+              handleChange={handleChange}
+              handleStatusChange={handleStatusChange}
+              isNew={isNew}
+              projects={projects}
+              roles={roles}
+              campaign={campaign}
+            />
+
+            {/* Outreach Sequence (merged from Sequence tab) */}
+            {!isNew && (
+              <div className="pt-6 border-t border-zinc-700/50">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-red-400" />
+                  Outreach Sequence
+                </h3>
+                <CampaignSequenceEditor
+                  steps={formData.sequence_steps}
+                  onChange={(steps) => handleChange("sequence_steps", steps)}
+                />
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
       </GlassCard>
 
