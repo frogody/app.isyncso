@@ -1,26 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MOTION_VARIANTS } from '@/tokens/create';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 interface CreatePageTransitionProps {
   children: React.ReactNode;
   className?: string;
 }
 
-const STORAGE_KEY = 'create-theme';
-
 export function CreatePageTransition({ children, className }: CreatePageTransitionProps) {
-  const [theme, setTheme] = useState(() =>
-    (typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY)) || 'dark'
-  );
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const stored = localStorage.getItem(STORAGE_KEY) || 'dark';
-      setTheme(prev => (prev !== stored ? stored : prev));
-    }, 100);
-    return () => clearInterval(interval);
-  }, []);
+  const { theme } = useTheme();
 
   useEffect(() => {
     const html = document.documentElement;

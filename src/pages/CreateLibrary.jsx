@@ -24,6 +24,8 @@ import {
   Sparkles,
   ArrowLeft,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -32,6 +34,8 @@ import { useTheme } from '@/contexts/GlobalThemeContext';
 import { toast } from 'sonner';
 import { createPageUrl } from '@/utils';
 import { useNavigate } from 'react-router-dom';
+
+const PAGE_SIZE = 24;
 
 const SORT_OPTIONS = [
   { value: '-created_at', label: 'Newest' },
@@ -60,17 +64,10 @@ export default function CreateLibrary() {
   const [viewMode, setViewMode] = useState('grid');
   const [selectedItems, setSelectedItems] = useState([]);
   const [previewItem, setPreviewItem] = useState(null);
-  const [favorites, setFavorites] = useState(() => {
-    try {
-      const stored = localStorage.getItem('create_library_favorites');
-      return stored ? new Set(JSON.parse(stored)) : new Set();
-    } catch {
-      return new Set();
-    }
-  });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null); // item id or 'bulk'
   const [sortOpen, setSortOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (user?.company_id) {
@@ -78,11 +75,10 @@ export default function CreateLibrary() {
     }
   }, [user?.company_id, sortBy]);
 
+  // Reset page on filter/search change
   useEffect(() => {
-    try {
-      localStorage.setItem('create_library_favorites', JSON.stringify([...favorites]));
-    } catch {}
-  }, [favorites]);
+    setPage(1);
+  }, [filterType, searchQuery, sortBy]);
 
   const loadContent = async () => {
     setLoading(true);
@@ -107,7 +103,7 @@ export default function CreateLibrary() {
     } else if (filterType === 'video') {
       items = items.filter(item => item.content_type === 'video');
     } else if (filterType === 'favorites') {
-      items = items.filter(item => favorites.has(item.id));
+      items = items.filter(item => item.is_favorite);
     } else if (filterType === 'recent') {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -125,11 +121,17 @@ export default function CreateLibrary() {
     }
 
     return items;
-  }, [content, filterType, searchQuery, favorites]);
+  }, [content, filterType, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredContent.length / PAGE_SIZE));
+  const paginatedContent = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filteredContent.slice(start, start + PAGE_SIZE);
+  }, [filteredContent, page]);
 
   const favoritesCount = useMemo(() => {
-    return content.filter(item => favorites.has(item.id)).length;
-  }, [content, favorites]);
+    return content.filter(item => item.is_favorite).length;
+  }, [content]);
 
   const handleDownload = async (item) => {
     try {
@@ -177,9 +179,11 @@ export default function CreateLibrary() {
   const handleBulkDownload = async () => {
     if (!selectedItems.length) return;
     const items = content.filter(item => selectedItems.includes(item.id));
-    for (const item of items) {
-      await handleDownload(item);
-      await new Promise(resolve => setTimeout(resolve, 500));
+    toast.info(`Downloading ${items.length} items...`);
+    const BATCH_SIZE = 3;
+    for (let i = 0; i < items.length; i += BATCH_SIZE) {
+      const batch = items.slice(i, i + BATCH_SIZE);
+      await Promise.all(batch.map(item => handleDownload(item)));
     }
     toast.success(`Downloaded ${items.length} items`);
   };
@@ -200,16 +204,19 @@ export default function CreateLibrary() {
     }
   };
 
-  const toggleFavorite = (id) => {
-    setFavorites(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+  const toggleFavorite = async (id) => {
+    const item = content.find(c => c.id === id);
+    if (!item) return;
+    const newValue = !item.is_favorite;
+    // Optimistic update
+    setContent(prev => prev.map(c => c.id === id ? { ...c, is_favorite: newValue } : c));
+    try {
+      await GeneratedContent.update(id, { is_favorite: newValue });
+    } catch (error) {
+      // Revert on failure
+      setContent(prev => prev.map(c => c.id === id ? { ...c, is_favorite: !newValue } : c));
+      toast.error('Failed to update favorite');
+    }
   };
 
   const handleUseSettings = (item) => {
@@ -386,7 +393,7 @@ export default function CreateLibrary() {
                   {content.length === 0 && !searchQuery && filterType === 'all' ? (
                     <>
                       <div className={`p-4 rounded-2xl ${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border mb-4`}>
-                        <Sparkles className={`w-10 h-10 ${ct('text-slate-400', 'text-zinc-600')}`} />
+                        <Sparkles className={`w-10 h-10 ${ct('text-slate-400', 'text-zinc-500')}`} />
                       </div>
                       <h3 className={`text-base font-medium ${ct('text-slate-900', 'text-white')} mb-1`}>Your library is empty</h3>
                       <p className={`text-sm ${ct('text-slate-500', 'text-zinc-500')} mb-5`}>Start creating images and videos to build your library</p>
@@ -412,7 +419,7 @@ export default function CreateLibrary() {
                   transition={{ duration: 0.3 }}
                   className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5"
                 >
-                  {filteredContent.map((item, index) => (
+                  {paginatedContent.map((item, index) => (
                     <motion.div
                       key={item.id}
                       initial={{ opacity: 0, scale: 0.97 }}
@@ -443,12 +450,12 @@ export default function CreateLibrary() {
                       <button
                         onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id); }}
                         className={`absolute top-2 right-2 z-10 transition-opacity ${
-                          favorites.has(item.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                          item.is_favorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                         }`}
                       >
                         <Heart
                           className={`w-5 h-5 drop-shadow-lg transition-colors ${
-                            favorites.has(item.id)
+                            item.is_favorite
                               ? 'text-yellow-400 fill-yellow-400'
                               : 'text-white/70'
                           }`}
@@ -516,7 +523,7 @@ export default function CreateLibrary() {
                   animate={{ opacity: 1 }}
                   className="space-y-1.5"
                 >
-                  {filteredContent.map((item, index) => (
+                  {paginatedContent.map((item, index) => (
                     <motion.div
                       key={item.id}
                       initial={{ opacity: 0, x: -10 }}
@@ -587,7 +594,7 @@ export default function CreateLibrary() {
                         className="p-1"
                       >
                         <Heart className={`w-4 h-4 transition-colors ${
-                          favorites.has(item.id) ? 'text-yellow-400 fill-yellow-400' : ct('text-slate-300 hover:text-slate-500', 'text-zinc-700 hover:text-zinc-500')
+                          item.is_favorite ? 'text-yellow-400 fill-yellow-400' : ct('text-slate-300 hover:text-slate-500', 'text-zinc-700 hover:text-zinc-500')
                         }`} />
                       </button>
 
@@ -602,6 +609,30 @@ export default function CreateLibrary() {
                     </motion.div>
                   ))}
                 </motion.div>
+              )}
+              {/* Pagination */}
+              {filteredContent.length > PAGE_SIZE && (
+                <div className="flex items-center justify-center gap-2 pt-4">
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-full border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${ct('bg-white border-slate-200 text-slate-600 hover:bg-slate-50', 'bg-zinc-900/50 border-zinc-800/60 text-zinc-300 hover:bg-zinc-800')}`}
+                  >
+                    <ChevronLeft className="w-3 h-3" />
+                    Previous
+                  </button>
+                  <span className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} px-2`}>
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-full border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${ct('bg-white border-slate-200 text-slate-600 hover:bg-slate-50', 'bg-zinc-900/50 border-zinc-800/60 text-zinc-300 hover:bg-zinc-800')}`}
+                  >
+                    Next
+                    <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
               )}
             </div>
 

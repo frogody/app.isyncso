@@ -41,6 +41,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { CreatePageTransition } from '@/components/create/ui';
+import { CREATE_LIMITS } from '@/tokens/create';
 import { toast } from 'sonner';
 import {
   Popover,
@@ -190,6 +191,7 @@ export default function CreateImages() {
   const [selectedUseCase, setSelectedUseCase] = useState('marketing_creative');
   const [selectedReferenceImage, setSelectedReferenceImage] = useState(null);
   const [showEnhancedPrompt, setShowEnhancedPrompt] = useState(false);
+  const [promptError, setPromptError] = useState('');
 
   const selectedMode = getModeFromUseCase(selectedUseCase);
 
@@ -408,6 +410,7 @@ export default function CreateImages() {
   const handleGenerate = async () => {
     const useCase = USE_CASES[selectedUseCase];
     if (!useCase.requiresReferenceImage && !prompt.trim()) {
+      setPromptError('Please enter a prompt to generate an image');
       toast.error('Please enter a prompt');
       return;
     }
@@ -415,6 +418,7 @@ export default function CreateImages() {
       toast.error('Please select a reference image for this use case');
       return;
     }
+    setPromptError('');
     setIsGenerating(true);
     setIsEnhancing(true);
     setGeneratedImage(null);
@@ -620,15 +624,18 @@ export default function CreateImages() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className={`rounded-[20px] ${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border p-5`}
+            className={`rounded-[20px] ${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border p-5 ${promptError ? 'ring-2 ring-red-500/50 border-red-500/30' : ''}`}
           >
             <Textarea
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={(e) => { setPrompt(e.target.value); if (promptError) setPromptError(''); }}
               placeholder="Describe the image you want to create..."
               className={`min-h-[80px] bg-transparent border-none ${ct('text-slate-900 placeholder:text-slate-400', 'text-white placeholder:text-zinc-600')} text-base focus:ring-0 focus-visible:ring-0 resize-none p-0 shadow-none`}
-              maxLength={1000}
+              maxLength={CREATE_LIMITS.PROMPT_MAX_LENGTH}
             />
+            {promptError && (
+              <p className="text-xs text-red-400 mt-1">{promptError}</p>
+            )}
             <div className={`flex items-center justify-between mt-3 pt-3 border-t ${ct('border-slate-100', 'border-zinc-800/40')}`}>
               <div className="flex flex-wrap gap-1.5">
                 {QUICK_SUGGESTIONS.map(chip => (
@@ -641,7 +648,7 @@ export default function CreateImages() {
                   </button>
                 ))}
               </div>
-              <span className={`text-[10px] ${ct('text-slate-400', 'text-zinc-600')} flex-shrink-0 ml-3`}>{prompt.length}/1000</span>
+              <span className={`text-[10px] ${ct('text-slate-400', 'text-zinc-600')} flex-shrink-0 ml-3`}>{prompt.length}/{CREATE_LIMITS.PROMPT_MAX_LENGTH}</span>
             </div>
           </motion.div>
 
@@ -650,7 +657,7 @@ export default function CreateImages() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.05 }}
-            className="grid grid-cols-3 gap-3"
+            className="grid grid-cols-1 sm:grid-cols-3 gap-3"
           >
             {MODES.map(mode => {
               const IconComp = mode.icon;
@@ -941,7 +948,7 @@ export default function CreateImages() {
                 {/* Action bar */}
                 {generatedImage && (
                   <div className={`p-4 border-t ${ct('border-slate-100', 'border-zinc-800/40')} flex items-center justify-between`}>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => handleDownload(generatedImage.url)}
                         className={`flex items-center gap-1.5 px-4 py-2 rounded-full ${ct('bg-slate-100 text-slate-700 hover:bg-slate-200', 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700')} text-xs font-medium transition-colors`}
@@ -1049,7 +1056,7 @@ export default function CreateImages() {
                 animate={{ x: 0 }}
                 exit={{ x: '100%' }}
                 transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className={`fixed top-0 right-0 bottom-0 w-80 ${ct('bg-white border-l border-slate-200', 'bg-zinc-950 border-l border-zinc-800/60')} z-50 flex flex-col`}
+                className={`fixed top-0 right-0 bottom-0 w-full max-w-md ${ct('bg-white border-l border-slate-200', 'bg-zinc-950 border-l border-zinc-800/60')} z-50 flex flex-col`}
               >
                 <div className={`p-4 border-b ${ct('border-slate-200', 'border-zinc-800/60')} flex items-center justify-between`}>
                   <h3 className={`text-sm font-semibold ${ct('text-slate-900', 'text-white')} flex items-center gap-2`}>
@@ -1123,7 +1130,7 @@ export default function CreateImages() {
 
         {/* Image Preview Dialog */}
         <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
-          <DialogContent className={`max-w-4xl ${ct('bg-white border-slate-200', 'bg-zinc-950 border-zinc-800')}`}>
+          <DialogContent className={`sm:max-w-4xl max-w-[calc(100vw-2rem)] ${ct('bg-white border-slate-200', 'bg-zinc-950 border-zinc-800')}`}>
             <DialogHeader>
               <DialogTitle className={`${ct('text-slate-900', 'text-white')} text-sm`}>
                 {previewImage?.name || 'Generated Image'}

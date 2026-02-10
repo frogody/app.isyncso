@@ -47,6 +47,12 @@ export const CREATE_BADGE_STYLES = {
   },
 } as const;
 
+// ─── Shared Limits ───────────────────────────────────────────
+
+export const CREATE_LIMITS = {
+  PROMPT_MAX_LENGTH: 1000,
+} as const;
+
 // ─── Animation Tokens (Framer Motion) ─────────────────────
 
 export const MOTION_VARIANTS = {

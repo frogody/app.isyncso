@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@/components/context/UserContext';
 import { BrandAssets } from '@/api/entities';
@@ -297,6 +297,25 @@ function ChipInput({ items, onAdd, onRemove, placeholder, variant = 'yellow' }) 
   );
 }
 
+// --- Google Font Loader ---
+function useGoogleFont(fontName) {
+  const loadedRef = useRef(new Set());
+  useEffect(() => {
+    if (!fontName || loadedRef.current.has(fontName)) return;
+    const id = `gfont-${fontName.replace(/\s+/g, '-')}`;
+    if (document.getElementById(id)) {
+      loadedRef.current.add(fontName);
+      return;
+    }
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@400;700&display=swap`;
+    document.head.appendChild(link);
+    loadedRef.current.add(fontName);
+  }, [fontName]);
+}
+
 // =====================
 // MAIN COMPONENT
 // =====================
@@ -310,6 +329,10 @@ export default function CreateBranding() {
   const [hasChanges, setHasChanges] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [savedIndicator, setSavedIndicator] = useState(false);
+
+  // Load Google Fonts for live preview
+  useGoogleFont(brandData.typography.primary_font);
+  useGoogleFont(brandData.typography.secondary_font);
 
   // Load brand assets
   useEffect(() => {
@@ -557,7 +580,7 @@ export default function CreateBranding() {
           {/* ---- Section 1: Logos ---- */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
             <Section icon={ImageIcon} title="Brand Identity (Logos)">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <LogoSlot logo={getLogo('primary')} logoType="primary" label="Primary Logo" description="Main logo for headers and documents" onUpload={handleLogoUpload} onRemove={removeLogo} uploading={uploadingLogo} />
                 <LogoSlot logo={getLogo('secondary')} logoType="secondary" label="Secondary Logo" description="Alternative for dark/light backgrounds" onUpload={handleLogoUpload} onRemove={removeLogo} uploading={uploadingLogo} />
                 <LogoSlot logo={getLogo('icon')} logoType="icon" label="Icon" description="Square icon for favicons and apps" onUpload={handleLogoUpload} onRemove={removeLogo} uploading={uploadingLogo} />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import {
@@ -12,34 +12,56 @@ import { useTheme } from '@/contexts/GlobalThemeContext';
 import { CreatePageTransition } from '@/components/create/ui';
 import { GeneratedContent, BrandAssets, VideoProject } from '@/api/entities';
 import { useUser } from '@/components/context/UserContext';
+import { toast } from 'sonner';
 
 // ── Neon Yellow Palette ──
 // Primary: #FACC15 (yellow-400)  Glow: #EAB308 (yellow-500)  Dim: #CA8A04 (yellow-600)
 
 function AuroraBackground({ dimmed = false }) {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
     <div className={`absolute inset-0 overflow-hidden pointer-events-none ${dimmed ? 'opacity-30' : ''}`}>
-      {/* Primary yellow aurora */}
-      <motion.div
-        animate={{ x: [0, 40, -30, 0], y: [0, -50, 30, 0], scale: [1, 1.15, 0.9, 1] }}
-        transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute -top-[200px] -left-[100px] w-[700px] h-[700px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.08) 0%, transparent 65%)' }}
-      />
-      {/* Secondary warm glow */}
-      <motion.div
-        animate={{ x: [0, -40, 25, 0], y: [0, 35, -25, 0], scale: [1, 0.9, 1.15, 1] }}
-        transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute -bottom-[200px] -right-[150px] w-[600px] h-[600px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(234,179,8,0.06) 0%, transparent 65%)' }}
-      />
-      {/* Accent amber */}
-      <motion.div
-        animate={{ x: [0, 25, -15, 0], y: [0, -30, 40, 0] }}
-        transition={{ duration: 32, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute top-1/2 left-1/3 w-[400px] h-[400px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.04) 0%, transparent 60%)' }}
-      />
+      {prefersReducedMotion ? (
+        <>
+          <div
+            className="absolute -top-[200px] -left-[100px] w-[700px] h-[700px] rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.08) 0%, transparent 65%)' }}
+          />
+          <div
+            className="absolute -bottom-[200px] -right-[150px] w-[600px] h-[600px] rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(234,179,8,0.06) 0%, transparent 65%)' }}
+          />
+          <div
+            className="absolute top-1/2 left-1/3 w-[400px] h-[400px] rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.04) 0%, transparent 60%)' }}
+          />
+        </>
+      ) : (
+        <>
+          {/* Primary yellow aurora */}
+          <motion.div
+            animate={{ x: [0, 40, -30, 0], y: [0, -50, 30, 0], scale: [1, 1.15, 0.9, 1] }}
+            transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute -top-[200px] -left-[100px] w-[700px] h-[700px] rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.08) 0%, transparent 65%)', willChange: 'transform' }}
+          />
+          {/* Secondary warm glow */}
+          <motion.div
+            animate={{ x: [0, -40, 25, 0], y: [0, 35, -25, 0], scale: [1, 0.9, 1.15, 1] }}
+            transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute -bottom-[200px] -right-[150px] w-[600px] h-[600px] rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(234,179,8,0.06) 0%, transparent 65%)', willChange: 'transform' }}
+          />
+          {/* Accent amber */}
+          <motion.div
+            animate={{ x: [0, 25, -15, 0], y: [0, -30, 40, 0] }}
+            transition={{ duration: 32, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute top-1/2 left-1/3 w-[400px] h-[400px] rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.04) 0%, transparent 60%)', willChange: 'transform' }}
+          />
+        </>
+      )}
       {/* Subtle noise texture */}
       <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.5'/%3E%3C/svg%3E")` }} />
     </div>
@@ -142,6 +164,10 @@ export default function Create() {
       if (contentRes.status === 'fulfilled') setContent(contentRes.value || []);
       if (brandsRes.status === 'fulfilled') setBrandAssets(brandsRes.value || []);
       if (videosRes.status === 'fulfilled') setVideoProjects(videosRes.value || []);
+      const hasFailures = [contentRes, brandsRes, videosRes].some(r => r.status === 'rejected');
+      if (hasFailures) {
+        toast.warning("Some content couldn't be loaded");
+      }
     } catch (e) {
       console.error('Failed to load data:', e);
     } finally {

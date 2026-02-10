@@ -49,6 +49,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { CreatePageTransition } from '@/components/create/ui';
+import { CREATE_LIMITS } from '@/tokens/create';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { toast } from 'sonner';
 import {
@@ -337,6 +338,7 @@ export default function CreateVideos() {
   const [isRendering, setIsRendering] = useState(false);
   const [recentRenders, setRecentRenders] = useState([]);
 
+  const [promptError, setPromptError] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState('ProductDemo');
   const playerRef = useRef(null);
   const playerContainerRef = useRef(null);
@@ -415,19 +417,29 @@ export default function CreateVideos() {
 
   useEffect(() => {
     if (!renderJob?.id || renderJob?.status === 'completed' || renderJob?.status === 'failed') return;
-    const interval = setInterval(async () => {
+    let cancelled = false;
+    let delay = 2000;
+    const MAX_DELAY = 10000;
+
+    const poll = async () => {
+      if (cancelled) return;
       try {
         const updated = await RenderJob.get(renderJob.id);
+        if (cancelled) return;
         setRenderJob(updated);
         if (updated.status === 'completed' || updated.status === 'failed') {
-          clearInterval(interval);
           fetchRecentRenders();
+          return;
         }
       } catch (e) {
         console.error('Failed to poll render job:', e);
       }
-    }, 2000);
-    return () => clearInterval(interval);
+      delay = Math.min(delay * 1.5, MAX_DELAY);
+      if (!cancelled) setTimeout(poll, delay);
+    };
+
+    const timer = setTimeout(poll, delay);
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [renderJob?.id, renderJob?.status]);
 
   const loadProducts = async () => {
@@ -485,9 +497,11 @@ export default function CreateVideos() {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
+      setPromptError('Please enter a prompt to generate a video');
       toast.error('Please enter a prompt');
       return;
     }
+    setPromptError('');
     setIsGenerating(true);
     setGeneratedVideo(null);
     try {
@@ -742,15 +756,18 @@ export default function CreateVideos() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35 }}
-              className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} p-5`}
+              className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} p-5 ${promptError ? 'ring-2 ring-red-500/50 border-red-500/30' : ''}`}
             >
               <Textarea
                 value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
+                onChange={(e) => { setPrompt(e.target.value); if (promptError) setPromptError(''); }}
                 placeholder="Describe your video scene..."
                 className={`min-h-[100px] bg-transparent border-0 ${ct('text-slate-900', 'text-white')} text-base ${ct('placeholder:text-slate-400', 'placeholder:text-zinc-600')} focus:ring-0 focus-visible:ring-0 resize-none p-0`}
-                maxLength={1000}
+                maxLength={CREATE_LIMITS.PROMPT_MAX_LENGTH}
               />
+              {promptError && (
+                <p className="text-xs text-red-400 mt-1">{promptError}</p>
+              )}
               <div className={`flex items-center justify-between mt-3 pt-3 border-t ${ct('border-slate-100', 'border-zinc-800/40')}`}>
                 <div className="flex flex-wrap gap-1.5">
                   {QUICK_SUGGESTIONS.map(s => (
@@ -763,7 +780,7 @@ export default function CreateVideos() {
                     </button>
                   ))}
                 </div>
-                <span className={`text-xs ${ct('text-slate-400', 'text-zinc-600')}`}>{prompt.length}/1000</span>
+                <span className={`text-xs ${ct('text-slate-400', 'text-zinc-600')}`}>{prompt.length}/{CREATE_LIMITS.PROMPT_MAX_LENGTH}</span>
               </div>
             </motion.div>
           )}
@@ -1369,7 +1386,7 @@ export default function CreateVideos() {
 
         {/* Video Preview Dialog */}
         <Dialog open={!!previewVideo} onOpenChange={() => setPreviewVideo(null)}>
-          <DialogContent className={`max-w-4xl ${ct('bg-white', 'bg-zinc-900')} ${ct('border-slate-200', 'border-zinc-700')}`}>
+          <DialogContent className={`sm:max-w-4xl max-w-[calc(100vw-2rem)] ${ct('bg-white', 'bg-zinc-900')} ${ct('border-slate-200', 'border-zinc-700')}`}>
             <DialogHeader>
               <DialogTitle className={ct('text-slate-900', 'text-white')}>
                 {previewVideo?.name || 'Generated Video'}
