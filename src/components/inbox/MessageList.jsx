@@ -162,8 +162,19 @@ function MessageBubble({
   };
 
   const renderAttachment = () => {
+    // Support both legacy file_url and new attachments array
+    if (message.attachments?.length > 0) {
+      return message.attachments.map((att, i) => (
+        <FilePreview
+          key={i}
+          type={att.type || message.type}
+          url={att.url}
+          filename={att.name || att.filename}
+          fileSize={att.size}
+        />
+      ));
+    }
     if (!message.file_url) return null;
-
     return (
       <FilePreview
         type={message.type}
