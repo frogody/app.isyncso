@@ -913,24 +913,23 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     });
   }, [hasPermission, permLoading, isAdmin]);
 
-  // Memoize engine items based on team app access AND permissions
-  // Priority: Admin gets all apps, otherwise use team-based effectiveApps, fallback to enabledApps
+  // Memoize engine items based on team app access, licenses, AND permissions
+  // Priority: Admin gets all, otherwise use effectiveApps (teams + licenses), fallback to enabledApps
   const engineItems = useMemo(() => {
-    // Determine which apps to show based on team membership and admin status
+    // Determine which apps to show based on team membership, licenses, and admin status
     let appsToShow;
 
     if (isAdmin) {
       // Admins get all apps regardless of team membership
       appsToShow = Object.keys(ENGINE_ITEMS_CONFIG);
-    } else if (hasTeams && effectiveApps.length > 0) {
-      // Users with teams get apps based on team_app_access
+    } else if (effectiveApps.length > 0) {
+      // Users get apps from team_app_access + company licenses (via get_user_effective_apps)
       appsToShow = effectiveApps;
-    } else if (!hasTeams && !teamLoading) {
-      // Users without team assignments get no engine apps (minimal access)
-      // This encourages admins to assign users to teams
+    } else if (!teamLoading) {
+      // No team apps and no licensed apps — minimal access
       appsToShow = [];
     } else {
-      // Fallback to user's personal config while loading or if no teams
+      // Fallback to user's personal config while loading
       appsToShow = enabledApps;
     }
 
