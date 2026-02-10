@@ -127,6 +127,7 @@ export const RaiseDataRoom = db.entities.RaiseDataRoom;
 export const Product = db.entities.Product;
 export const DigitalProduct = db.entities.DigitalProduct;
 export const PhysicalProduct = db.entities.PhysicalProduct;
+export const ServiceProduct = db.entities.ServiceProduct;
 export const Supplier = db.entities.Supplier;
 export const ProductCategory = db.entities.ProductCategory;
 export const ProductBundle = db.entities.ProductBundle;

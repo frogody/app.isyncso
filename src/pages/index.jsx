@@ -252,6 +252,8 @@ import ProductsDigital from "./ProductsDigital";
 
 import ProductsPhysical from "./ProductsPhysical";
 
+import ProductsServices from "./ProductsServices";
+
 import ProductDetail from "./ProductDetail";
 
 import Create from "./Create";
@@ -589,6 +591,8 @@ const PAGES = {
     ProductsDigital: ProductsDigital,
 
     ProductsPhysical: ProductsPhysical,
+
+    ProductsServices: ProductsServices,
 
     ProductDetail: ProductDetail,
 
@@ -1028,6 +1032,8 @@ function PagesContent() {
                 <Route path="/ProductsDigital" element={<ProductsDigital />} />
 
                 <Route path="/ProductsPhysical" element={<ProductsPhysical />} />
+
+                <Route path="/ProductsServices" element={<ProductsServices />} />
 
                 <Route path="/ProductDetail" element={<ProductDetail />} />
 

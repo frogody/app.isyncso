@@ -44,6 +44,16 @@ export {
   AddOnEditor
 } from './digital';
 
+// Service Product Pricing
+export {
+  ServicePricingManager,
+  HourlyRateEditor,
+  RetainerEditor,
+  ProjectPricingEditor,
+  MilestonePricingEditor,
+  SuccessFeeEditor
+} from './service';
+
 // Product Bundles
 export {
   BundleManager,

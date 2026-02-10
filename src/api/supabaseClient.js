@@ -128,6 +128,7 @@ const tableNameMap = {
   'Product': 'products',
   'DigitalProduct': 'digital_products',
   'PhysicalProduct': 'physical_products',
+  'ServiceProduct': 'service_products',
   'Supplier': 'suppliers',
   'ProductCategory': 'product_categories',
   'ProductBundle': 'product_bundles',
@@ -231,7 +232,7 @@ function createEntityWrapper(entityName) {
     async get(id) {
       try {
         // Tables that use product_id instead of id as primary key
-        const productIdTables = ['digital_products', 'physical_products'];
+        const productIdTables = ['digital_products', 'physical_products', 'service_products'];
         const idColumn = productIdTables.includes(tableName) ? 'product_id' : 'id';
 
         const { data, error } = await supabase
@@ -274,7 +275,7 @@ function createEntityWrapper(entityName) {
     async update(id, updates) {
       try {
         // Tables that use product_id instead of id as primary key
-        const productIdTables = ['digital_products', 'physical_products'];
+        const productIdTables = ['digital_products', 'physical_products', 'service_products'];
         const idColumn = productIdTables.includes(tableName) ? 'product_id' : 'id';
 
         // Log the update attempt for debugging
@@ -322,7 +323,7 @@ function createEntityWrapper(entityName) {
     async delete(id) {
       try {
         // Tables that use product_id instead of id as primary key
-        const productIdTables = ['digital_products', 'physical_products'];
+        const productIdTables = ['digital_products', 'physical_products', 'service_products'];
         const idColumn = productIdTables.includes(tableName) ? 'product_id' : 'id';
 
         const { error } = await supabase
@@ -453,6 +454,7 @@ export const entities = {
   Product: createEntityWrapper('Product'),
   DigitalProduct: createEntityWrapper('DigitalProduct'),
   PhysicalProduct: createEntityWrapper('PhysicalProduct'),
+  ServiceProduct: createEntityWrapper('ServiceProduct'),
   Supplier: createEntityWrapper('Supplier'),
   ProductCategory: createEntityWrapper('ProductCategory'),
   ProductBundle: createEntityWrapper('ProductBundle'),

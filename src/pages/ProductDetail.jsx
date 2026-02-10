@@ -8,7 +8,7 @@ import {
   AlertTriangle, Image as ImageIcon, Video, HelpCircle, Share2, Copy,
   Heart, ShoppingCart, Info, Layers, Ruler, Weight, MapPin, Save,
   LayoutGrid, Settings, History, FolderOpen, TrendingUp, Boxes,
-  ChevronDown, MoreHorizontal, Eye, Percent, Calculator
+  ChevronDown, MoreHorizontal, Eye, Percent, Calculator, Briefcase, ClipboardList, Plus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { useUser } from "@/components/context/UserContext";
-import { Product, DigitalProduct, PhysicalProduct, Supplier, ProductBundle } from "@/api/entities";
+import { Product, DigitalProduct, PhysicalProduct, ServiceProduct, Supplier, ProductBundle } from "@/api/entities";
 import {
   MediaGallery,
   SpecificationsTable,
@@ -35,6 +35,7 @@ import {
   PricingTiers,
   VariantsManager,
   DigitalPricingManager,
+  ServicePricingManager,
   BundleManager,
   BundleEditor
 } from "@/components/products";
@@ -88,6 +89,7 @@ const NAV_ITEMS = [
   { id: 'inventory', label: 'Inventory', icon: Package, physicalOnly: true },
   { id: 'specs', label: 'Specifications', icon: Settings, physicalOnly: true },
   { id: 'bundles', label: 'Bundles', icon: Layers, digitalOnly: true },
+  { id: 'deliverables', label: 'Deliverables', icon: ClipboardList, serviceOnly: true },
   { id: 'documents', label: 'Documents', icon: FolderOpen },
   { id: 'activity', label: 'Activity', icon: History },
 ];
@@ -163,11 +165,15 @@ function StatCard({ icon: Icon, label, value, subtext, trend, color = "cyan" }) 
   );
 }
 
-function SectionNav({ activeSection, onSectionChange, isPhysical }) {
+function SectionNav({ activeSection, onSectionChange, productType }) {
   const { t } = useTheme();
+  const isPhysical = productType === 'physical';
+  const isService = productType === 'service';
+  const isDigital = productType === 'digital';
   const items = NAV_ITEMS.filter(item => {
     if (item.physicalOnly && !isPhysical) return false;
-    if (item.digitalOnly && isPhysical) return false;
+    if (item.digitalOnly && !isDigital) return false;
+    if (item.serviceOnly && !isService) return false;
     return true;
   });
 
@@ -640,6 +646,229 @@ function DigitalPricingSection({ details, onDetailsUpdate, currency }) {
           currency={currency}
           onConfigChange={handlePricingConfigChange}
         />
+      </div>
+    </div>
+  );
+}
+
+// ============= SERVICE PRICING SECTION =============
+
+function ServicePricingSection({ details, onDetailsUpdate, currency }) {
+  const { t } = useTheme();
+  const pricingConfig = details?.pricing_config || {};
+
+  const handlePricingConfigChange = (newConfig) => {
+    onDetailsUpdate({ pricing_config: newConfig });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
+        <ServicePricingManager
+          pricingConfig={pricingConfig}
+          currency={currency}
+          onConfigChange={handlePricingConfigChange}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ============= DELIVERABLES SECTION =============
+
+function DeliverablesSection({ details, onDetailsUpdate }) {
+  const { t } = useTheme();
+  const deliverables = details?.deliverables || [];
+  const sla = details?.sla || {};
+  const scope = details?.scope || {};
+  const tiers = details?.service_tiers || [];
+
+  const addDeliverable = () => {
+    const newItem = {
+      id: `del_${Date.now().toString(36)}`,
+      name: '',
+      description: '',
+      format: '',
+      timeline: ''
+    };
+    onDetailsUpdate({ deliverables: [...deliverables, newItem] });
+  };
+
+  const updateDeliverable = (index, field, value) => {
+    const updated = [...deliverables];
+    updated[index] = { ...updated[index], [field]: value };
+    onDetailsUpdate({ deliverables: updated });
+  };
+
+  const removeDeliverable = (index) => {
+    onDetailsUpdate({ deliverables: deliverables.filter((_, i) => i !== index) });
+  };
+
+  const updateSla = (field, value) => {
+    onDetailsUpdate({ sla: { ...sla, [field]: value } });
+  };
+
+  const updateScope = (field, value) => {
+    onDetailsUpdate({ scope: { ...scope, [field]: value } });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Deliverables */}
+      <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <ClipboardList className="w-5 h-5 text-cyan-400" />
+            <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>Deliverables</span>
+            {deliverables.length > 0 && (
+              <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 ml-2">
+                {deliverables.length}
+              </Badge>
+            )}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={addDeliverable}
+            className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+          >
+            <Plus className="w-4 h-4 mr-1" /> Add
+          </Button>
+        </div>
+
+        {deliverables.length === 0 ? (
+          <div className="text-center py-8">
+            <ClipboardList className={cn("w-10 h-10 mx-auto mb-3", t('text-slate-300', 'text-zinc-600'))} />
+            <p className={cn("text-sm", t('text-slate-500', 'text-zinc-500'))}>No deliverables defined yet</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {deliverables.map((del, index) => (
+              <div key={del.id || index} className={cn("p-3 rounded-lg border", t('bg-slate-50', 'bg-zinc-800/30'), t('border-slate-200', 'border-white/5'))}>
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 grid grid-cols-2 gap-3">
+                    <Input
+                      placeholder="Deliverable name"
+                      value={del.name || ''}
+                      onChange={(e) => updateDeliverable(index, 'name', e.target.value)}
+                      className={cn("text-sm", t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/10'))}
+                    />
+                    <Input
+                      placeholder="Format (e.g. PDF, presentation)"
+                      value={del.format || ''}
+                      onChange={(e) => updateDeliverable(index, 'format', e.target.value)}
+                      className={cn("text-sm", t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/10'))}
+                    />
+                    <Input
+                      placeholder="Description"
+                      value={del.description || ''}
+                      onChange={(e) => updateDeliverable(index, 'description', e.target.value)}
+                      className={cn("text-sm col-span-1", t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/10'))}
+                    />
+                    <Input
+                      placeholder="Timeline (e.g. Week 2)"
+                      value={del.timeline || ''}
+                      onChange={(e) => updateDeliverable(index, 'timeline', e.target.value)}
+                      className={cn("text-sm", t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/10'))}
+                    />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeDeliverable(index)}
+                    className="text-red-400 hover:text-red-300 h-8 w-8 p-0"
+                  >
+                    <XCircle className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* SLA */}
+      <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
+        <div className="flex items-center gap-2 mb-4">
+          <Shield className="w-5 h-5 text-cyan-400" />
+          <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>Service Level Agreement</span>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className={cn("text-xs mb-1.5 block", t('text-slate-500', 'text-zinc-400'))}>Response Time</Label>
+            <Input
+              placeholder="e.g. Within 24 hours"
+              value={sla.response_time || ''}
+              onChange={(e) => updateSla('response_time', e.target.value)}
+              className={cn(t('bg-slate-50 border-slate-200', 'bg-zinc-800/50 border-white/10'))}
+            />
+          </div>
+          <div>
+            <Label className={cn("text-xs mb-1.5 block", t('text-slate-500', 'text-zinc-400'))}>Revision Rounds</Label>
+            <Input
+              type="number"
+              placeholder="e.g. 3"
+              value={sla.revision_rounds || ''}
+              onChange={(e) => updateSla('revision_rounds', parseInt(e.target.value) || '')}
+              className={cn(t('bg-slate-50 border-slate-200', 'bg-zinc-800/50 border-white/10'))}
+            />
+          </div>
+          <div>
+            <Label className={cn("text-xs mb-1.5 block", t('text-slate-500', 'text-zinc-400'))}>Delivery Timeline</Label>
+            <Input
+              placeholder="e.g. 4-6 weeks"
+              value={sla.delivery_timeline || ''}
+              onChange={(e) => updateSla('delivery_timeline', e.target.value)}
+              className={cn(t('bg-slate-50 border-slate-200', 'bg-zinc-800/50 border-white/10'))}
+            />
+          </div>
+          <div>
+            <Label className={cn("text-xs mb-1.5 block", t('text-slate-500', 'text-zinc-400'))}>Availability</Label>
+            <Input
+              placeholder="e.g. Mon-Fri 9-17 CET"
+              value={sla.availability || ''}
+              onChange={(e) => updateSla('availability', e.target.value)}
+              className={cn(t('bg-slate-50 border-slate-200', 'bg-zinc-800/50 border-white/10'))}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Scope */}
+      <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
+        <div className="flex items-center gap-2 mb-4">
+          <FileText className="w-5 h-5 text-cyan-400" />
+          <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>Scope</span>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <Label className={cn("text-xs mb-1.5 block", t('text-slate-500', 'text-zinc-400'))}>Included (comma-separated)</Label>
+            <Input
+              placeholder="e.g. Research, Analysis, Report"
+              value={Array.isArray(scope.included) ? scope.included.join(', ') : scope.included || ''}
+              onChange={(e) => updateScope('included', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+              className={cn(t('bg-slate-50 border-slate-200', 'bg-zinc-800/50 border-white/10'))}
+            />
+          </div>
+          <div>
+            <Label className={cn("text-xs mb-1.5 block", t('text-slate-500', 'text-zinc-400'))}>Excluded (comma-separated)</Label>
+            <Input
+              placeholder="e.g. Travel expenses, Third-party tools"
+              value={Array.isArray(scope.excluded) ? scope.excluded.join(', ') : scope.excluded || ''}
+              onChange={(e) => updateScope('excluded', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+              className={cn(t('bg-slate-50 border-slate-200', 'bg-zinc-800/50 border-white/10'))}
+            />
+          </div>
+          <div>
+            <Label className={cn("text-xs mb-1.5 block", t('text-slate-500', 'text-zinc-400'))}>Prerequisites (comma-separated)</Label>
+            <Input
+              placeholder="e.g. Access to systems, Stakeholder availability"
+              value={Array.isArray(scope.prerequisites) ? scope.prerequisites.join(', ') : scope.prerequisites || ''}
+              onChange={(e) => updateScope('prerequisites', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+              className={cn(t('bg-slate-50 border-slate-200', 'bg-zinc-800/50 border-white/10'))}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1635,7 +1864,8 @@ export default function ProductDetail() {
   const statsGridRef = useRef(null);
 
   const isPhysical = type === 'physical';
-  const currency = details?.pricing?.currency || 'EUR';
+  const isService = type === 'service';
+  const currency = details?.pricing?.currency || details?.pricing_config?.currency || 'EUR';
 
   const loadProduct = async () => {
     if (!slug) {
@@ -1661,6 +1891,11 @@ export default function ProductDetail() {
         const digitalData = await DigitalProduct.filter({ product_id: productData.id }, { limit: 1 });
         if (digitalData && digitalData.length > 0) {
           setDetails(digitalData[0]);
+        }
+      } else if (type === 'service') {
+        const serviceData = await ServiceProduct.filter({ product_id: productData.id }, { limit: 1 });
+        if (serviceData && serviceData.length > 0) {
+          setDetails(serviceData[0]);
         }
       } else {
         const physicalData = await PhysicalProduct.filter({ product_id: productData.id }, { limit: 1 });
@@ -1727,6 +1962,8 @@ export default function ProductDetail() {
 
       if (type === 'digital') {
         await DigitalProduct.update(detailsId, updates);
+      } else if (type === 'service') {
+        await ServiceProduct.update(detailsId, updates);
       } else {
         await PhysicalProduct.update(detailsId, updates);
       }
@@ -1768,7 +2005,7 @@ export default function ProductDetail() {
     setInquiryModalOpen(true);
   };
 
-  const backUrl = isPhysical ? 'ProductsPhysical' : 'ProductsDigital';
+  const backUrl = isPhysical ? 'ProductsPhysical' : isService ? 'ProductsServices' : 'ProductsDigital';
 
   // Loading State
   if (loading) {
@@ -1857,7 +2094,7 @@ export default function ProductDetail() {
         <SectionNav
           activeSection={activeSection}
           onSectionChange={setActiveSection}
-          isPhysical={isPhysical}
+          productType={type}
         />
 
         {/* Section Content */}
@@ -1878,6 +2115,12 @@ export default function ProductDetail() {
             {activeSection === 'pricing' && (
               isPhysical ? (
                 <PricingSection
+                  details={details}
+                  onDetailsUpdate={handleDetailsUpdate}
+                  currency={currency}
+                />
+              ) : isService ? (
+                <ServicePricingSection
                   details={details}
                   onDetailsUpdate={handleDetailsUpdate}
                   currency={currency}
@@ -1907,11 +2150,18 @@ export default function ProductDetail() {
               />
             )}
 
-            {activeSection === 'bundles' && !isPhysical && (
+            {activeSection === 'bundles' && !isPhysical && !isService && (
               <BundlesSection
                 product={product}
                 details={details}
                 currency={currency}
+              />
+            )}
+
+            {activeSection === 'deliverables' && isService && (
+              <DeliverablesSection
+                details={details}
+                onDetailsUpdate={handleDetailsUpdate}
               />
             )}
 

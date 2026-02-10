@@ -21,11 +21,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Product, DigitalProduct, PhysicalProduct, ProductCategory } from '@/api/entities';
+import { Product, DigitalProduct, PhysicalProduct, ServiceProduct, ProductCategory } from '@/api/entities';
 import { useUser } from '@/components/context/UserContext';
 import { toast } from 'sonner';
 import {
-  Loader2, Cloud, Package, Save, Image as ImageIcon, Tags, Euro, Settings,
+  Loader2, Cloud, Package, Briefcase, Save, Image as ImageIcon, Tags, Euro, Settings,
   FileText, Globe, Truck, BarChart3, ChevronRight, ChevronDown, ChevronUp, Plus, X, Upload, Barcode,
   Users, History, Star, Calendar, Receipt, Trash2, Sparkles
 } from 'lucide-react';
@@ -62,6 +62,24 @@ const BILLING_CYCLES = [
   { value: 'quarterly', label: 'Quarterly' },
   { value: 'yearly', label: 'Yearly' },
   { value: 'lifetime', label: 'Lifetime' },
+];
+
+const SERVICE_TYPES = [
+  { value: 'consulting', label: 'Consulting' },
+  { value: 'headhunting', label: 'Headhunting' },
+  { value: 'design', label: 'Design' },
+  { value: 'development', label: 'Development' },
+  { value: 'advisory', label: 'Advisory' },
+  { value: 'custom', label: 'Custom' },
+];
+
+const SERVICE_PRICING_MODELS = [
+  { value: 'hourly', label: 'Hourly Rate' },
+  { value: 'retainer', label: 'Monthly Retainer' },
+  { value: 'project', label: 'Project-based' },
+  { value: 'milestone', label: 'Milestone-based' },
+  { value: 'success_fee', label: 'Success Fee' },
+  { value: 'hybrid', label: 'Hybrid' },
 ];
 
 export default function ProductModal({
@@ -135,6 +153,17 @@ export default function ProductModal({
     country_of_origin: '',
   });
 
+  // Service product specific fields
+  const [serviceData, setServiceData] = useState({
+    service_type: 'consulting',
+    pricing_model: 'hourly',
+    pricing_config: {},
+    deliverables: [],
+    service_tiers: [],
+    sla: { response_time: '', revision_rounds: '', delivery_timeline: '', availability: '' },
+    scope: { included: [], excluded: [], prerequisites: [] },
+  });
+
   const [newTag, setNewTag] = useState('');
   const [newFeature, setNewFeature] = useState('');
 
@@ -176,7 +205,7 @@ export default function ProductModal({
     const loadCategories = async () => {
       try {
         const cats = await ProductCategory.filter(
-          { product_type: productType === 'digital' ? 'digital' : 'physical' },
+          { product_type: productType },
           { limit: 50 }
         );
         setCategories(Array.isArray(cats) ? cats : []);
@@ -230,6 +259,18 @@ export default function ProductModal({
           socialProof: { ...DEFAULT_AI_CONTEXT.socialProof, ...saved.socialProof },
           brandVoice: { ...DEFAULT_AI_CONTEXT.brandVoice, ...saved.brandVoice },
           industry: { ...DEFAULT_AI_CONTEXT.industry, ...saved.industry },
+        });
+      }
+
+      if (productType === 'service' && product.serviceDetails) {
+        setServiceData({
+          service_type: product.serviceDetails.service_type || 'consulting',
+          pricing_model: product.serviceDetails.pricing_model || 'hourly',
+          pricing_config: product.serviceDetails.pricing_config || {},
+          deliverables: product.serviceDetails.deliverables || [],
+          service_tiers: product.serviceDetails.service_tiers || [],
+          sla: product.serviceDetails.sla || { response_time: '', revision_rounds: '', delivery_timeline: '', availability: '' },
+          scope: product.serviceDetails.scope || { included: [], excluded: [], prerequisites: [] },
         });
       }
 
@@ -311,6 +352,15 @@ export default function ProductModal({
           requires_shipping: true,
         },
         country_of_origin: '',
+      });
+      setServiceData({
+        service_type: 'consulting',
+        pricing_model: 'hourly',
+        pricing_config: {},
+        deliverables: [],
+        service_tiers: [],
+        sla: { response_time: '', revision_rounds: '', delivery_timeline: '', availability: '' },
+        scope: { included: [], excluded: [], prerequisites: [] },
       });
       setAiContext(DEFAULT_AI_CONTEXT);
       // Reset supplier state for new products
@@ -537,6 +587,11 @@ export default function ProductModal({
       return;
     }
 
+    if (productType === 'service' && !serviceData.service_type) {
+      toast.error('Service type is required');
+      return;
+    }
+
     if (!isEdit && !user?.company_id) {
       toast.error('Unable to create product: company not found');
       return;
@@ -583,6 +638,17 @@ export default function ProductModal({
         } else {
           await DigitalProduct.create(digitalPayload);
         }
+      } else if (productType === 'service') {
+        const servicePayload = {
+          ...serviceData,
+          product_id: savedProduct.id,
+          company_id: user?.company_id,
+        };
+        if (isEdit) {
+          await ServiceProduct.update(savedProduct.id, servicePayload);
+        } else {
+          await ServiceProduct.create(servicePayload);
+        }
       } else {
         const physicalPayload = {
           ...physicalData,
@@ -625,7 +691,7 @@ export default function ProductModal({
   };
 
   const themeColor = 'cyan';
-  const ThemeIcon = productType === 'digital' ? Cloud : Package;
+  const ThemeIcon = productType === 'digital' ? Cloud : productType === 'service' ? Briefcase : Package;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -640,7 +706,7 @@ export default function ProductModal({
             )}>
               <ThemeIcon className="w-5 h-5 text-white" />
             </div>
-            {isEdit ? 'Edit' : 'New'} {productType === 'digital' ? 'Digital' : 'Physical'} Product
+            {isEdit ? 'Edit' : 'New'} {productType === 'digital' ? 'Digital' : productType === 'service' ? 'Service' : 'Physical'} Product
           </DialogTitle>
           <DialogDescription className={t('text-slate-500', 'text-zinc-400')}>
             {isEdit ? 'Update your product information' : 'Add a new product to your catalog'}
@@ -661,6 +727,11 @@ export default function ProductModal({
             {productType === 'physical' && (
               <TabsTrigger value="inventory" className={cn(`${t('data-[state=active]:bg-white', 'data-[state=active]:bg-zinc-700')} ${t('text-slate-500', 'text-zinc-400')} ${t('data-[state=active]:text-slate-900', 'data-[state=active]:text-white')}`)}>
                 <BarChart3 className="w-4 h-4 mr-2" /> Inventory
+              </TabsTrigger>
+            )}
+            {productType === 'service' && (
+              <TabsTrigger value="service" className={cn(`${t('data-[state=active]:bg-white', 'data-[state=active]:bg-zinc-700')} ${t('text-slate-500', 'text-zinc-400')} ${t('data-[state=active]:text-slate-900', 'data-[state=active]:text-white')}`)}>
+                <Briefcase className="w-4 h-4 mr-2" /> Service
               </TabsTrigger>
             )}
             {productType === 'digital' && (
@@ -895,7 +966,33 @@ export default function ProductModal({
 
             {/* Pricing Tab */}
             <TabsContent value="pricing" className="space-y-4 m-0">
-              {productType === 'digital' ? (
+              {productType === 'service' ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Pricing Model</Label>
+                      <Select
+                        value={serviceData.pricing_model}
+                        onValueChange={(v) => setServiceData(prev => ({ ...prev, pricing_model: v }))}
+                      >
+                        <SelectTrigger className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')}`)}>
+                          <SelectValue placeholder="Select model" />
+                        </SelectTrigger>
+                        <SelectContent className={cn(`${t('bg-white', 'bg-zinc-800')} ${t('border-slate-200', 'border-zinc-700')}`)}>
+                          {SERVICE_PRICING_MODELS.map(m => (
+                            <SelectItem key={m.value} value={m.value} className={t('text-slate-900', 'text-white')}>
+                              {m.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <p className={cn(`text-sm ${t('text-slate-500', 'text-zinc-500')}`)}>
+                    Detailed pricing configuration is available on the product detail page after creation.
+                  </p>
+                </div>
+              ) : productType === 'digital' ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -1460,6 +1557,74 @@ export default function ProductModal({
                     )}
                   </div>
                 )}
+              </TabsContent>
+            )}
+
+            {/* Service Tab (Service only) */}
+            {productType === 'service' && (
+              <TabsContent value="service" className="space-y-4 m-0">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Service Type</Label>
+                    <Select
+                      value={serviceData.service_type}
+                      onValueChange={(v) => setServiceData(prev => ({ ...prev, service_type: v }))}
+                    >
+                      <SelectTrigger className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')}`)}>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent className={cn(`${t('bg-white', 'bg-zinc-800')} ${t('border-slate-200', 'border-zinc-700')}`)}>
+                        {SERVICE_TYPES.map(st => (
+                          <SelectItem key={st.value} value={st.value} className={t('text-slate-900', 'text-white')}>
+                            {st.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className={`p-4 rounded-xl ${t('bg-slate-50', 'bg-zinc-800/30')} border ${t('border-slate-200', 'border-white/5')}`}>
+                  <h4 className={cn(`${t('text-slate-900', 'text-white')} font-medium mb-3`)}>SLA Settings</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Response Time</Label>
+                      <Input
+                        value={serviceData.sla.response_time}
+                        onChange={(e) => setServiceData(prev => ({ ...prev, sla: { ...prev.sla, response_time: e.target.value } }))}
+                        placeholder="e.g. 24 hours"
+                        className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
+                      />
+                    </div>
+                    <div>
+                      <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Delivery Timeline</Label>
+                      <Input
+                        value={serviceData.sla.delivery_timeline}
+                        onChange={(e) => setServiceData(prev => ({ ...prev, sla: { ...prev.sla, delivery_timeline: e.target.value } }))}
+                        placeholder="e.g. 2-4 weeks"
+                        className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
+                      />
+                    </div>
+                    <div>
+                      <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Revision Rounds</Label>
+                      <Input
+                        value={serviceData.sla.revision_rounds}
+                        onChange={(e) => setServiceData(prev => ({ ...prev, sla: { ...prev.sla, revision_rounds: e.target.value } }))}
+                        placeholder="e.g. 3"
+                        className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
+                      />
+                    </div>
+                    <div>
+                      <Label className={cn(`${t('text-slate-700', 'text-zinc-300')} text-sm mb-2 block`)}>Availability</Label>
+                      <Input
+                        value={serviceData.sla.availability}
+                        onChange={(e) => setServiceData(prev => ({ ...prev, sla: { ...prev.sla, availability: e.target.value } }))}
+                        placeholder="e.g. Business hours"
+                        className={cn(`${t('bg-slate-50', 'bg-zinc-800/50')} ${t('border-slate-300', 'border-zinc-700')} ${t('text-slate-900', 'text-white')} focus:border-cyan-500`)}
+                      />
+                    </div>
+                  </div>
+                </div>
               </TabsContent>
             )}
 

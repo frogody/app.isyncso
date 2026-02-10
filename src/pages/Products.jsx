@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
-  Package, Cloud, Box, Plus, ArrowRight,
+  Package, Cloud, Box, Briefcase, Plus, ArrowRight,
   Search, Tag,
   Eye, Edit2,
   Settings, Loader2
@@ -51,6 +51,7 @@ const STATUS_COLORS = {
 const TYPE_ICONS = {
   digital: Cloud,
   physical: Box,
+  service: Briefcase,
 };
 
 function ProductCard({ product }) {
@@ -124,6 +125,7 @@ export default function Products() {
   // Product type settings
   const [digitalEnabled, setDigitalEnabled] = useState(true);
   const [physicalEnabled, setPhysicalEnabled] = useState(true);
+  const [serviceEnabled, setServiceEnabled] = useState(true);
   const [settingsSaving, setSettingsSaving] = useState(false);
 
   // Create product modal
@@ -151,6 +153,7 @@ export default function Products() {
           const parsed = JSON.parse(localSettings);
           setDigitalEnabled(parsed.digitalEnabled ?? true);
           setPhysicalEnabled(parsed.physicalEnabled ?? true);
+          setServiceEnabled(parsed.serviceEnabled ?? true);
         } catch (e) {
           console.error('Failed to parse local settings:', e);
         }
@@ -164,6 +167,7 @@ export default function Products() {
             const settings = configs[0].products_settings;
             setDigitalEnabled(settings.digitalEnabled ?? true);
             setPhysicalEnabled(settings.physicalEnabled ?? true);
+            setServiceEnabled(settings.serviceEnabled ?? true);
             // Sync to localStorage
             localStorage.setItem(PRODUCTS_SETTINGS_KEY, JSON.stringify(settings));
           }
@@ -177,8 +181,8 @@ export default function Products() {
   }, [user?.id]);
 
   // Save settings
-  const saveSettings = async (digital, physical) => {
-    const settings = { digitalEnabled: digital, physicalEnabled: physical };
+  const saveSettings = async (digital, physical, service) => {
+    const settings = { digitalEnabled: digital, physicalEnabled: physical, serviceEnabled: service };
 
     // Save to localStorage immediately
     localStorage.setItem(PRODUCTS_SETTINGS_KEY, JSON.stringify(settings));
@@ -212,23 +216,30 @@ export default function Products() {
   };
 
   const handleDigitalToggle = (checked) => {
-    // Don't allow disabling both
-    if (!checked && !physicalEnabled) {
+    if (!checked && !physicalEnabled && !serviceEnabled) {
       toast.error('At least one product type must be enabled');
       return;
     }
     setDigitalEnabled(checked);
-    saveSettings(checked, physicalEnabled);
+    saveSettings(checked, physicalEnabled, serviceEnabled);
   };
 
   const handlePhysicalToggle = (checked) => {
-    // Don't allow disabling both
-    if (!checked && !digitalEnabled) {
+    if (!checked && !digitalEnabled && !serviceEnabled) {
       toast.error('At least one product type must be enabled');
       return;
     }
     setPhysicalEnabled(checked);
-    saveSettings(digitalEnabled, checked);
+    saveSettings(digitalEnabled, checked, serviceEnabled);
+  };
+
+  const handleServiceToggle = (checked) => {
+    if (!checked && !digitalEnabled && !physicalEnabled) {
+      toast.error('At least one product type must be enabled');
+      return;
+    }
+    setServiceEnabled(checked);
+    saveSettings(digitalEnabled, physicalEnabled, checked);
   };
 
   // Create a new product
@@ -302,6 +313,7 @@ export default function Products() {
   const stats = useMemo(() => {
     const digital = products.filter(p => p.type === 'digital');
     const physical = products.filter(p => p.type === 'physical');
+    const service = products.filter(p => p.type === 'service');
     const published = products.filter(p => p.status === 'published');
     const draft = products.filter(p => p.status === 'draft');
 
@@ -309,6 +321,7 @@ export default function Products() {
       total: products.length,
       digital: digital.length,
       physical: physical.length,
+      service: service.length,
       published: published.length,
       draft: draft.length,
       categories: categories.length,
@@ -320,16 +333,18 @@ export default function Products() {
       .filter(p => {
         if (p.type === 'digital' && !digitalEnabled) return false;
         if (p.type === 'physical' && !physicalEnabled) return false;
+        if (p.type === 'service' && !serviceEnabled) return false;
         return true;
       })
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       .slice(0, 6);
-  }, [products, digitalEnabled, physicalEnabled]);
+  }, [products, digitalEnabled, physicalEnabled, serviceEnabled]);
 
   const filteredProducts = useMemo(() => {
     let filtered = products.filter(p => {
       if (p.type === 'digital' && !digitalEnabled) return false;
       if (p.type === 'physical' && !physicalEnabled) return false;
+      if (p.type === 'service' && !serviceEnabled) return false;
       return true;
     });
 
@@ -341,7 +356,7 @@ export default function Products() {
       p.tagline?.toLowerCase().includes(q) ||
       p.category?.toLowerCase().includes(q)
     ).slice(0, 6);
-  }, [products, digitalEnabled, physicalEnabled, searchQuery]);
+  }, [products, digitalEnabled, physicalEnabled, serviceEnabled, searchQuery]);
 
 
   return (
@@ -405,6 +420,17 @@ export default function Products() {
                     <Switch checked={physicalEnabled} onCheckedChange={handlePhysicalToggle} disabled={settingsSaving} />
                   </div>
 
+                  <div className={cn("flex items-center justify-between p-3 rounded-lg border", t('bg-slate-100 border-slate-200', 'bg-zinc-800/50 border-zinc-700/50'))}>
+                    <div className="flex items-center gap-3">
+                      <Briefcase className="w-4 h-4 text-cyan-400" />
+                      <div>
+                        <div className={cn("text-sm font-medium", t('text-slate-900', 'text-white'))}>Services</div>
+                        <div className={cn("text-xs", t('text-slate-400', 'text-zinc-500'))}>Consulting, design, advisory</div>
+                      </div>
+                    </div>
+                    <Switch checked={serviceEnabled} onCheckedChange={handleServiceToggle} disabled={settingsSaving} />
+                  </div>
+
                   {settingsSaving && (
                     <div className={cn("text-xs text-center", t('text-slate-400', 'text-zinc-500'))}>Saving...</div>
                   )}
@@ -422,11 +448,12 @@ export default function Products() {
         </div>
 
         {/* Stat Cards */}
-        <div className={`grid gap-3 ${digitalEnabled && physicalEnabled ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6' : 'grid-cols-2 md:grid-cols-4'}`}>
+        <div className={`grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-${3 + (digitalEnabled ? 1 : 0) + (physicalEnabled ? 1 : 0) + (serviceEnabled ? 1 : 0)}`}>
           {[
             { icon: Package, label: 'Total Products', value: loading ? '-' : stats.total },
             ...(digitalEnabled ? [{ icon: Cloud, label: 'Digital', value: loading ? '-' : stats.digital }] : []),
             ...(physicalEnabled ? [{ icon: Box, label: 'Physical', value: loading ? '-' : stats.physical }] : []),
+            ...(serviceEnabled ? [{ icon: Briefcase, label: 'Services', value: loading ? '-' : stats.service }] : []),
             { icon: Eye, label: 'Published', value: loading ? '-' : stats.published },
             { icon: Edit2, label: 'Drafts', value: loading ? '-' : stats.draft },
             { icon: Tag, label: 'Categories', value: loading ? '-' : stats.categories },
@@ -445,7 +472,7 @@ export default function Products() {
         </div>
 
         {/* Quick Navigation Cards */}
-        <div className={`grid gap-4 ${digitalEnabled && physicalEnabled ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+        <div className={`grid gap-4 grid-cols-1 ${[digitalEnabled, physicalEnabled, serviceEnabled].filter(Boolean).length >= 2 ? 'md:grid-cols-2' : ''} ${[digitalEnabled, physicalEnabled, serviceEnabled].filter(Boolean).length >= 3 ? 'lg:grid-cols-3' : ''}`}>
           {digitalEnabled && (
             <Link to={createPageUrl('ProductsDigital')}>
               <div className={cn("group p-4 border rounded-xl hover:border-cyan-500/30 transition-all cursor-pointer", t('bg-white shadow-sm', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
@@ -488,6 +515,31 @@ export default function Products() {
                     <div className="flex items-center gap-3 mt-3">
                       <span className="text-lg font-bold text-cyan-400">{stats.physical}</span>
                       <span className={cn("text-xs", t('text-slate-400', 'text-zinc-500'))}>products</span>
+                      <ArrowRight className={cn("w-4 h-4 ml-auto group-hover:text-cyan-400 transition-colors", t('text-slate-400', 'text-zinc-500'))} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          )}
+
+          {serviceEnabled && (
+            <Link to={createPageUrl('ProductsServices')}>
+              <div className={cn("group p-4 border rounded-xl hover:border-cyan-500/30 transition-all cursor-pointer", t('bg-white shadow-sm', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
+                    <Briefcase className="w-5 h-5 text-cyan-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className={cn("text-base font-semibold group-hover:text-cyan-400 transition-colors", t('text-slate-900', 'text-white'))}>
+                      Services
+                    </h3>
+                    <p className={cn("text-xs mt-1", t('text-slate-500', 'text-zinc-400'))}>
+                      Consulting, headhunting, design, and advisory services
+                    </p>
+                    <div className="flex items-center gap-3 mt-3">
+                      <span className="text-lg font-bold text-cyan-400">{stats.service}</span>
+                      <span className={cn("text-xs", t('text-slate-400', 'text-zinc-500'))}>services</span>
                       <ArrowRight className={cn("w-4 h-4 ml-auto group-hover:text-cyan-400 transition-colors", t('text-slate-400', 'text-zinc-500'))} />
                     </div>
                   </div>
@@ -612,6 +664,12 @@ export default function Products() {
                     <div className="flex items-center gap-2">
                       <Box className="w-4 h-4 text-cyan-400" />
                       Physical Product
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="service" className={cn(t('text-slate-900 hover:bg-slate-100', 'text-white hover:bg-zinc-700'))}>
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-cyan-400" />
+                      Service
                     </div>
                   </SelectItem>
                 </SelectContent>

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import {
-  Cloud, Package, MoreHorizontal, Eye, Edit2, Copy, Archive, Trash2,
+  Cloud, Package, Briefcase, MoreHorizontal, Eye, Edit2, Copy, Archive, Trash2,
   Play, Tag, Clock, Check, Truck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,19 @@ const PRICING_MODELS = {
   subscription: { label: 'Subscription', color: 'text-blue-400' },
   usage_based: { label: 'Usage-based', color: 'text-cyan-300' },
   freemium: { label: 'Freemium', color: 'text-blue-300' },
+  // Service pricing models
+  hourly: { label: 'Hourly', color: 'text-cyan-400' },
+  retainer: { label: 'Retainer', color: 'text-blue-400' },
+  project: { label: 'Project', color: 'text-cyan-300' },
+  milestone: { label: 'Milestone', color: 'text-blue-300' },
+  success_fee: { label: 'Success Fee', color: 'text-cyan-400' },
+  hybrid: { label: 'Hybrid', color: 'text-blue-400' },
+};
+
+const TYPE_ICONS = {
+  digital: Cloud,
+  physical: Package,
+  service: Briefcase,
 };
 
 export function ProductGridCard({
@@ -44,13 +57,15 @@ export function ProductGridCard({
   const { t } = useTheme();
   const status = STATUS_COLORS[product.status] || STATUS_COLORS.draft;
   const isDigital = productType === 'digital';
-  const Icon = isDigital ? Cloud : Package;
+  const isService = productType === 'service';
+  const isPhysical = productType === 'physical';
+  const Icon = TYPE_ICONS[productType] || Package;
 
-  const pricingModel = isDigital && details?.pricing_model
+  const pricingModel = (isDigital || isService) && details?.pricing_model
     ? PRICING_MODELS[details.pricing_model] || { label: 'Custom', color: 'text-zinc-400' }
     : null;
 
-  const pricing = !isDigital && details?.pricing;
+  const pricing = isPhysical && details?.pricing;
 
   return (
     <motion.div
@@ -100,7 +115,7 @@ export function ProductGridCard({
               </Badge>
 
               {/* Physical: Stock badge */}
-              {!isDigital && details?.inventory && (
+              {isPhysical && details?.inventory && (
                 details.inventory.quantity > 0 ? (
                   <Badge className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs">
                     <Check className="w-3 h-3 mr-1" /> In Stock
@@ -118,11 +133,18 @@ export function ProductGridCard({
                   {details.trial_days}d Trial
                 </Badge>
               )}
+
+              {/* Service: SLA badge */}
+              {isService && details?.sla?.response_time && (
+                <Badge className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs">
+                  <Clock className="w-3 h-3 mr-1" /> {details.sla.response_time}
+                </Badge>
+              )}
             </div>
 
             <div className={`flex items-center justify-between mt-4 pt-3 border-t ${t('border-slate-200', 'border-white/5')}`}>
               <div className="flex items-center gap-2">
-                {isDigital && pricingModel && (
+                {(isDigital || isService) && pricingModel && (
                   <>
                     <span className={`text-xs ${pricingModel.color}`}>
                       {pricingModel.label}
@@ -135,7 +157,7 @@ export function ProductGridCard({
                     )}
                   </>
                 )}
-                {!isDigital && pricing?.base_price && (
+                {isPhysical && pricing?.base_price && (
                   <>
                     <span className={`text-sm font-medium ${t('text-slate-900', 'text-white')}`}>
                       €{parseFloat(pricing.base_price).toFixed(2)}
@@ -147,8 +169,11 @@ export function ProductGridCard({
                     )}
                   </>
                 )}
-                {!isDigital && product.ean && (
+                {isPhysical && product.ean && (
                   <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>EAN: {product.ean}</span>
+                )}
+                {isService && details?.service_type && (
+                  <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>{details.service_type}</span>
                 )}
               </div>
 
@@ -209,13 +234,15 @@ export function ProductListRow({
   const { t } = useTheme();
   const status = STATUS_COLORS[product.status] || STATUS_COLORS.draft;
   const isDigital = productType === 'digital';
-  const Icon = isDigital ? Cloud : Package;
+  const isService = productType === 'service';
+  const isPhysical = productType === 'physical';
+  const Icon = TYPE_ICONS[productType] || Package;
 
-  const pricingModel = isDigital && details?.pricing_model
+  const pricingModel = (isDigital || isService) && details?.pricing_model
     ? PRICING_MODELS[details.pricing_model] || { label: 'Custom', color: 'text-zinc-400' }
     : null;
 
-  const pricing = !isDigital && details?.pricing;
+  const pricing = isPhysical && details?.pricing;
   const packages = isDigital ? details?.packages || [] : [];
 
   return (
@@ -262,7 +289,7 @@ export function ProductListRow({
               </Badge>
 
               {/* Physical: Stock badge */}
-              {!isDigital && details?.inventory && (
+              {isPhysical && details?.inventory && (
                 details.inventory.quantity > 0 ? (
                   <Badge className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs">
                     <Check className="w-3 h-3 mr-1" /> In Stock
@@ -280,6 +307,13 @@ export function ProductListRow({
                   {details.trial_days}d Trial
                 </Badge>
               )}
+
+              {/* Service: SLA badge */}
+              {isService && details?.sla?.response_time && (
+                <Badge className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs">
+                  <Clock className="w-3 h-3 mr-1" /> {details.sla.response_time}
+                </Badge>
+              )}
             </div>
             <p className={`text-sm ${t('text-slate-500', 'text-zinc-500')} mt-0.5 truncate`}>
               {product.tagline || product.short_description || 'No description'}
@@ -288,17 +322,20 @@ export function ProductListRow({
 
           {/* Pricing / Info */}
           <div className="text-right flex-shrink-0 w-32">
-            {isDigital && pricingModel && (
+            {(isDigital || isService) && pricingModel && (
               <>
                 <span className={`text-sm font-medium ${pricingModel.color}`}>
                   {pricingModel.label}
                 </span>
-                {packages.length > 0 && (
+                {isDigital && packages.length > 0 && (
                   <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>{packages.length} packages</p>
+                )}
+                {isService && details?.service_type && (
+                  <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>{details.service_type}</p>
                 )}
               </>
             )}
-            {!isDigital && pricing?.base_price && (
+            {isPhysical && pricing?.base_price && (
               <>
                 <span className={`text-sm font-medium ${t('text-slate-900', 'text-white')}`}>
                   €{parseFloat(pricing.base_price).toFixed(2)}
@@ -312,12 +349,14 @@ export function ProductListRow({
             )}
           </div>
 
-          {/* Category / EAN */}
+          {/* Category / EAN / Service Type */}
           <div className="text-right flex-shrink-0 w-32 hidden lg:block">
             <span className={`text-sm ${t('text-slate-500', 'text-zinc-400')}`}>
               {isDigital
                 ? product.category || 'Uncategorized'
-                : product.ean || 'No EAN'}
+                : isService
+                  ? product.category || 'Uncategorized'
+                  : product.ean || 'No EAN'}
             </span>
           </div>
 

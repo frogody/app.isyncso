@@ -448,7 +448,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
 
   // PRODUCTS routes
   if (path.startsWith('/products') || path.startsWith('/productdetail') || path.startsWith('/inventory') || path.startsWith('/stockpurchases')) {
-    const { digitalEnabled = true, physicalEnabled = true } = productsSettings;
+    const { digitalEnabled = true, physicalEnabled = true, serviceEnabled = true } = productsSettings;
 
     // Build items list based on settings
     const items = [
@@ -460,6 +460,9 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
     }
     if (physicalEnabled) {
       items.push({ label: 'Physical', path: createPageUrl('ProductsPhysical'), icon: Box });
+    }
+    if (serviceEnabled) {
+      items.push({ label: 'Services', path: createPageUrl('ProductsServices'), icon: Briefcase });
     }
 
     // Inventory management items (only for physical products)
@@ -1301,7 +1304,7 @@ export default function Layout({ children, currentPageName }) {
   const [secondaryNavStats, setSecondaryNavStats] = useState({});
   const [enabledApps, setEnabledApps] = useState(FEATURES.DEFAULT_ENABLED_APPS);
   const [appsManagerOpen, setAppsManagerOpen] = useState(false);
-  const [productsSettings, setProductsSettings] = useState({ digitalEnabled: true, physicalEnabled: true });
+  const [productsSettings, setProductsSettings] = useState({ digitalEnabled: true, physicalEnabled: true, serviceEnabled: true });
 
   // SYNC floating chat and voice mode state
   const [isFloatingChatOpen, setIsFloatingChatOpen] = useState(false);
