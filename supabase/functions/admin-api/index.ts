@@ -21,6 +21,7 @@
  * - GET /organizations - List organizations with pagination, search, filters
  * - GET /organizations/:id - Get organization details
  * - GET /organizations/:id/users - Get organization users
+ * - POST /organizations - Create a new organization
  * - PUT /organizations/:id - Update organization
  * - GET /organization-stats - Get organization statistics
  * - GET /marketplace/stats - Get marketplace statistics
@@ -1121,6 +1122,65 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ organization: data, message: "Organization updated successfully" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /organizations - Create a new organization
+    if (path === "/organizations" && method === "POST") {
+      const body = await req.json();
+
+      // Only super_admin and admin can create organizations
+      if (!["super_admin", "admin"].includes(adminUser?.role || "")) {
+        return new Response(
+          JSON.stringify({ error: "Insufficient permissions to create organizations" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (!body.name || !body.name.trim()) {
+        return new Response(
+          JSON.stringify({ error: "Organization name is required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const allowedFields = ["name", "domain", "industry", "size", "revenue", "description", "website", "linkedin_url", "location"];
+      const insertData: Record<string, unknown> = {};
+
+      for (const field of allowedFields) {
+        if (body[field] !== undefined && body[field] !== "") {
+          insertData[field] = body[field];
+        }
+      }
+
+      insertData.created_date = new Date().toISOString();
+      insertData.updated_date = new Date().toISOString();
+
+      const { data, error } = await supabaseAdmin
+        .from("companies")
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      await createAuditLog(
+        userId!,
+        adminEmail,
+        "create",
+        "organizations",
+        data.id,
+        null,
+        insertData,
+        ipAddress,
+        userAgent
+      );
+
+      return new Response(
+        JSON.stringify({ organization: data, message: "Organization created successfully" }),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

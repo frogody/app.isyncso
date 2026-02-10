@@ -27,6 +27,8 @@ import {
   Briefcase,
   Euro,
   Link as LinkIcon,
+  Plus,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -545,6 +547,193 @@ function EditOrganizationModal({ org, open, onClose, onSave }) {
   );
 }
 
+// Create Organization Modal
+function CreateOrganizationModal({ open, onClose, onCreated }) {
+  const [form, setForm] = useState({
+    name: '',
+    domain: '',
+    industry: '',
+    size: '',
+    revenue: '',
+    description: '',
+    website: '',
+    linkedin_url: '',
+    location: '',
+  });
+  const [isCreating, setIsCreating] = useState(false);
+
+  const handleCreate = async () => {
+    if (!form.name.trim()) {
+      toast.error('Organization name is required');
+      return;
+    }
+    setIsCreating(true);
+    try {
+      await adminApi('/organizations', {
+        method: 'POST',
+        body: JSON.stringify(form),
+      });
+      toast.success('Organization created successfully');
+      setForm({
+        name: '', domain: '', industry: '', size: '',
+        revenue: '', description: '', website: '', linkedin_url: '', location: '',
+      });
+      onCreated?.();
+      onClose();
+    } catch (error) {
+      toast.error(error.message || 'Failed to create organization');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-purple-400" />
+            Create Organization
+          </DialogTitle>
+          <DialogDescription className="text-zinc-400">
+            Add a new organization to the platform. You can assign users and subscriptions after creation.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-2 gap-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="create-name">
+              Name <span className="text-red-400">*</span>
+            </Label>
+            <Input
+              id="create-name"
+              placeholder="Acme Corp"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="bg-zinc-800 border-zinc-700 text-white"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="create-domain">Domain</Label>
+            <Input
+              id="create-domain"
+              placeholder="acme.com"
+              value={form.domain}
+              onChange={(e) => setForm({ ...form, domain: e.target.value })}
+              className="bg-zinc-800 border-zinc-700 text-white"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="create-industry">Industry</Label>
+            <Input
+              id="create-industry"
+              placeholder="Technology"
+              value={form.industry}
+              onChange={(e) => setForm({ ...form, industry: e.target.value })}
+              className="bg-zinc-800 border-zinc-700 text-white"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="create-size">Size</Label>
+            <Select
+              value={form.size}
+              onValueChange={(value) => setForm({ ...form, size: value })}
+            >
+              <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                <SelectValue placeholder="Select size" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700">
+                <SelectItem value="Startup">Startup (1-10)</SelectItem>
+                <SelectItem value="Small">Small (11-50)</SelectItem>
+                <SelectItem value="Medium">Medium (51-200)</SelectItem>
+                <SelectItem value="Large">Large (201-1000)</SelectItem>
+                <SelectItem value="Enterprise">Enterprise (1000+)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="create-website">Website</Label>
+            <Input
+              id="create-website"
+              placeholder="https://acme.com"
+              value={form.website}
+              onChange={(e) => setForm({ ...form, website: e.target.value })}
+              className="bg-zinc-800 border-zinc-700 text-white"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="create-linkedin">LinkedIn</Label>
+            <Input
+              id="create-linkedin"
+              placeholder="https://linkedin.com/company/acme"
+              value={form.linkedin_url}
+              onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })}
+              className="bg-zinc-800 border-zinc-700 text-white"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="create-location">Location</Label>
+            <Input
+              id="create-location"
+              placeholder="Amsterdam, Netherlands"
+              value={form.location}
+              onChange={(e) => setForm({ ...form, location: e.target.value })}
+              className="bg-zinc-800 border-zinc-700 text-white"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="create-revenue">Revenue</Label>
+            <Input
+              id="create-revenue"
+              placeholder="e.g. €1M - €5M"
+              value={form.revenue}
+              onChange={(e) => setForm({ ...form, revenue: e.target.value })}
+              className="bg-zinc-800 border-zinc-700 text-white"
+            />
+          </div>
+          <div className="col-span-2 space-y-2">
+            <Label htmlFor="create-description">Description</Label>
+            <Input
+              id="create-description"
+              placeholder="Brief description of the organization"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              className="bg-zinc-800 border-zinc-700 text-white"
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="border-zinc-700 text-zinc-300"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleCreate}
+            disabled={isCreating || !form.name.trim()}
+            className="bg-red-500 hover:bg-red-600 text-white"
+          >
+            {isCreating ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Organization
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Main Component
 export default function AdminOrganizations() {
   const { adminRole } = useAdmin();
@@ -580,6 +769,9 @@ export default function AdminOrganizations() {
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const canEdit = adminRole === 'super_admin' || adminRole === 'admin';
 
   // Fetch organizations
   const fetchOrganizations = useCallback(async () => {
@@ -692,8 +884,6 @@ export default function AdminOrganizations() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const canEdit = adminRole === 'super_admin' || adminRole === 'admin';
-
   return (
     <div className="min-h-screen bg-black p-4 space-y-4">
       {/* Header */}
@@ -704,15 +894,25 @@ export default function AdminOrganizations() {
             Manage all organizations on the platform
           </p>
         </div>
-        <Button
-          onClick={handleRefresh}
-          variant="outline"
-          size="sm"
-          className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 h-7 text-xs"
-        >
-          <RefreshCw className={cn('w-3 h-3 mr-1.5', isLoading && 'animate-spin')} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            size="sm"
+            className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
+          >
+            <Plus className="w-3 h-3 mr-1.5" />
+            Create Organization
+          </Button>
+          <Button
+            onClick={handleRefresh}
+            variant="outline"
+            size="sm"
+            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 h-7 text-xs"
+          >
+            <RefreshCw className={cn('w-3 h-3 mr-1.5', isLoading && 'animate-spin')} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -1016,6 +1216,13 @@ export default function AdminOrganizations() {
           setSelectedOrg(null);
         }}
         onSave={handleRefresh}
+      />
+
+      {/* Create Organization Modal */}
+      <CreateOrganizationModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreated={handleRefresh}
       />
     </div>
   );
