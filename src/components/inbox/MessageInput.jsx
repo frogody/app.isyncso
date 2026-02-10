@@ -59,27 +59,36 @@ export default function MessageInput({
   });
 
   // Draft auto-save
+  const channelIdRef = useRef(channelId);
   useEffect(() => {
+    channelIdRef.current = channelId;
     if (channelId) {
       const draft = localStorage.getItem(`inbox_draft_${channelId}`);
       if (draft) {
-        // Clean up known pollution patterns from formatting buttons
         const cleanDraft = draft
-          .replace(/\[\]\(url\)/g, '') // Empty link
-          .replace(/\*\*\*\*/g, '')     // Empty bold
-          .replace(/__/g, '')           // Empty italic
-          .replace(/``/g, '')           // Empty code
+          .replace(/\[\]\(url\)/g, '')
+          .replace(/\*\*\*\*/g, '')
+          .replace(/__/g, '')
+          .replace(/``/g, '')
           .trim();
         setMessage(cleanDraft);
+      } else {
+        setMessage('');
       }
+    } else {
+      setMessage('');
     }
   }, [channelId]);
 
   useEffect(() => {
-    if (channelId && message) {
-      localStorage.setItem(`inbox_draft_${channelId}`, message);
+    const id = channelIdRef.current;
+    if (!id) return;
+    if (message) {
+      localStorage.setItem(`inbox_draft_${id}`, message);
+    } else {
+      localStorage.removeItem(`inbox_draft_${id}`);
     }
-  }, [message, channelId]);
+  }, [message]);
 
   // Rate limit countdown timer
   useEffect(() => {
