@@ -53,6 +53,7 @@ import {
   addStockPurchase
 } from '@/lib/db/queries';
 import { supabase } from '@/api/supabaseClient';
+import { calculateDiffs, logProductActivity } from '@/lib/audit';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -1824,9 +1825,37 @@ function DocumentsSectionWrapper({ details, onDetailsUpdate }) {
 
 function ActivitySectionWrapper({ product, details }) {
   const { t } = useTheme();
-  const activities = useMemo(() => {
-    return generateMockActivities(product, details);
-  }, [product, details]);
+  const [activities, setActivities] = useState([]);
+  const [loadingActivity, setLoadingActivity] = useState(true);
+
+  useEffect(() => {
+    if (!product?.id) return;
+    const fetchActivities = async () => {
+      setLoadingActivity(true);
+      const { data, error } = await supabase
+        .from('product_activity_log')
+        .select('*, actor:actor_id(full_name, avatar_url)')
+        .eq('product_id', product.id)
+        .order('performed_at', { ascending: false })
+        .limit(50);
+
+      if (!error && data && data.length > 0) {
+        setActivities(data.map(a => ({
+          id: a.id,
+          type: a.action,
+          title: a.summary,
+          timestamp: a.performed_at,
+          user: a.actor?.full_name || 'Unknown',
+          changes: a.changes,
+        })));
+      } else {
+        // Fallback to mock data if no real activity entries yet
+        setActivities(generateMockActivities(product, details));
+      }
+      setLoadingActivity(false);
+    };
+    fetchActivities();
+  }, [product?.id, product?.updated_at]);
 
   return (
     <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
@@ -1858,6 +1887,8 @@ export default function ProductDetail() {
   const [error, setError] = useState(null);
   const [activeSection, setActiveSection] = useState('overview');
 
+  const [auditInfo, setAuditInfo] = useState(null);
+
   // Modal states
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
 
@@ -1886,6 +1917,22 @@ export default function ProductDetail() {
 
       const productData = products[0];
       setProduct(productData);
+
+      // Fetch audit info (created_by / updated_by user names)
+      const auditUserIds = [productData.created_by, productData.updated_by].filter(Boolean);
+      if (auditUserIds.length > 0) {
+        const { data: auditUsers } = await supabase
+          .from('users')
+          .select('id, full_name, avatar_url')
+          .in('id', [...new Set(auditUserIds)]);
+        if (auditUsers) {
+          const userMap = Object.fromEntries(auditUsers.map(u => [u.id, u]));
+          setAuditInfo({
+            createdBy: userMap[productData.created_by] || null,
+            updatedBy: userMap[productData.updated_by] || null,
+          });
+        }
+      }
 
       if (type === 'digital') {
         const digitalData = await DigitalProduct.filter({ product_id: productData.id }, { limit: 1 });
@@ -1940,7 +1987,16 @@ export default function ProductDetail() {
 
     setSaving(true);
     try {
-      await Product.update(product.id, updates);
+      await Product.update(product.id, { ...updates, updated_by: user?.id });
+      const changes = calculateDiffs(product, updates);
+      if (changes && user?.id) {
+        await logProductActivity({
+          productId: product.id,
+          companyId: user?.company_id,
+          actorId: user.id,
+          changes,
+        });
+      }
       setProduct(prev => ({ ...prev, ...updates }));
       toast.success('Saved');
     } catch (err) {
@@ -1968,6 +2024,19 @@ export default function ProductDetail() {
         await PhysicalProduct.update(detailsId, updates);
       }
       setDetails(prev => ({ ...prev, ...updates }));
+      // Log detail-level changes to the product activity feed
+      if (product?.id && user?.id) {
+        const changes = calculateDiffs(details, updates);
+        if (changes) {
+          await logProductActivity({
+            productId: product.id,
+            companyId: user?.company_id,
+            actorId: user.id,
+            changes,
+            metadata: { detail_type: type },
+          });
+        }
+      }
       toast.success('Saved');
     } catch (err) {
       console.error('Failed to update details:', err);
@@ -2065,6 +2134,19 @@ export default function ProductDetail() {
             <h1 className={cn("text-lg font-semibold truncate max-w-md", t('text-slate-900', 'text-white'))}>
               {product.name}
             </h1>
+            {auditInfo && (
+              <div className={cn("flex items-center gap-2 text-xs ml-1", t('text-slate-400', 'text-zinc-500'))}>
+                {auditInfo.createdBy && (
+                  <span>Created by {auditInfo.createdBy.full_name || 'Unknown'}</span>
+                )}
+                {auditInfo.updatedBy && (
+                  <>
+                    <span className={t('text-slate-300', 'text-zinc-600')}>|</span>
+                    <span>Last edited by {auditInfo.updatedBy.full_name || 'Unknown'}</span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

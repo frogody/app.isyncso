@@ -42,6 +42,7 @@ import {
   addStockPurchase
 } from '@/lib/db/queries';
 import { supabase } from '@/api/supabaseClient';
+import { calculateDiffs, logProductActivity } from '@/lib/audit';
 
 const PRODUCT_STATUSES = [
   { value: 'draft', label: 'Draft', description: 'Not visible to customers' },
@@ -96,6 +97,7 @@ export default function ProductModal({
   const [activeTab, setActiveTab] = useState('basic');
   const [categories, setCategories] = useState([]);
   const [productChannels, setProductChannels] = useState([]);
+  const [auditInfo, setAuditInfo] = useState(null);
 
   // Base product fields
   const [formData, setFormData] = useState({
@@ -416,6 +418,30 @@ export default function ProductModal({
     loadChannels();
   }, [product?.id, open, productType]);
 
+  // Load audit info (created_by / updated_by user names) for edit mode
+  useEffect(() => {
+    if (!isEdit || !product || !open) {
+      setAuditInfo(null);
+      return;
+    }
+    const fetchAuditInfo = async () => {
+      const userIds = [product.created_by, product.updated_by].filter(Boolean);
+      if (userIds.length === 0) return;
+      const { data } = await supabase
+        .from('users')
+        .select('id, full_name, avatar_url')
+        .in('id', [...new Set(userIds)]);
+      if (data) {
+        const userMap = Object.fromEntries(data.map(u => [u.id, u]));
+        setAuditInfo({
+          createdBy: userMap[product.created_by] || null,
+          updatedBy: userMap[product.updated_by] || null,
+        });
+      }
+    };
+    fetchAuditInfo();
+  }, [isEdit, product?.id, product?.created_by, product?.updated_by, open]);
+
   // Load available suppliers for adding
   useEffect(() => {
     const loadAvailableSuppliers = async () => {
@@ -639,6 +665,7 @@ export default function ProductModal({
         seo_meta_title: formData.seo_meta_title || null,
         seo_meta_description: formData.seo_meta_description || null,
         seo_keywords: formData.seo_keywords?.length > 0 ? formData.seo_keywords : null,
+        ...(isEdit ? { updated_by: user?.id } : { created_by: user?.id }),
       };
 
       let savedProduct;
@@ -646,6 +673,27 @@ export default function ProductModal({
         savedProduct = await Product.update(product.id, productPayload);
       } else {
         savedProduct = await Product.create(productPayload);
+      }
+
+      // Log activity
+      if (isEdit) {
+        const changes = calculateDiffs(product, productPayload);
+        if (changes) {
+          await logProductActivity({
+            productId: savedProduct?.id || product.id,
+            companyId: user?.company_id,
+            actorId: user?.id,
+            changes,
+          });
+        }
+      } else {
+        await logProductActivity({
+          productId: savedProduct?.id,
+          companyId: user?.company_id,
+          actorId: user?.id,
+          action: 'created',
+          summary: `Product "${formData.name}" created`,
+        });
       }
 
       // Save type-specific data
@@ -746,6 +794,28 @@ export default function ProductModal({
         if (auditEntries.length > 0) {
           await supabase.from('channel_audit_log').insert(auditEntries);
         }
+
+        // Also log channel changes to unified activity feed
+        if (added.length > 0) {
+          await logProductActivity({
+            productId: savedProduct.id,
+            companyId: user.company_id,
+            actorId: user.id,
+            action: 'channel_added',
+            summary: `Added to channels: ${added.map(c => c.toUpperCase()).join(', ')}`,
+            changes: { channels: { old: oldChannels, new: productChannels } },
+          });
+        }
+        if (removed.length > 0) {
+          await logProductActivity({
+            productId: savedProduct.id,
+            companyId: user.company_id,
+            actorId: user.id,
+            action: 'channel_removed',
+            summary: `Removed from channels: ${removed.map(c => c.toUpperCase()).join(', ')}`,
+            changes: { channels: { old: oldChannels, new: productChannels } },
+          });
+        }
       }
 
       toast.success(isEdit ? 'Product updated successfully!' : 'Product created successfully!');
@@ -780,7 +850,23 @@ export default function ProductModal({
             {isEdit ? 'Edit' : 'New'} {productType === 'digital' ? 'Digital' : productType === 'service' ? 'Service' : 'Physical'} Product
           </DialogTitle>
           <DialogDescription className={t('text-slate-500', 'text-zinc-400')}>
-            {isEdit ? 'Update your product information' : 'Add a new product to your catalog'}
+            {isEdit ? (
+              <span className="flex items-center gap-2 text-xs">
+                {auditInfo?.createdBy ? (
+                  <span>Created by {auditInfo.createdBy.full_name || 'Unknown'}</span>
+                ) : (
+                  <span>Update your product information</span>
+                )}
+                {auditInfo?.updatedBy && (
+                  <>
+                    <span className="text-zinc-600">|</span>
+                    <span>Last edited by {auditInfo.updatedBy.full_name || 'Unknown'}</span>
+                  </>
+                )}
+              </span>
+            ) : (
+              'Add a new product to your catalog'
+            )}
           </DialogDescription>
         </DialogHeader>
 

@@ -2,7 +2,7 @@
 
 ## Active Phase: Phase 1 — Purchasing Overhaul
 ## Last Updated: 2026-02-11T01:00:00Z
-## Next Task: P1-9 (or Phase 2 start)
+## Next Task: Phase 2 start
 
 ---
 
@@ -161,4 +161,32 @@ If you've just started a new session or context was compacted, read these files 
 - **DB schema confirmed**: `products` table has columns: id, company_id, slug (NOT NULL), type (NOT NULL), status (default 'draft'), name (NOT NULL), ean, price, etc. No `created_by` or `product_type` columns.
 - **Files changed**: `src/components/purchases/ManualPurchaseModal.jsx`
 - **Verification**: Build succeeds. ProductsPhysical's status filter defaults to 'all', so draft products will appear.
+
+---
+
+### Audit Trail System — Created By / Updated By + Activity Log
+
+> **Started**: 2026-02-11
+> **Status**: Complete
+
+#### Task: Audit Trail — Database migration, utility, and UI integration
+- **What was done**: Implemented a comprehensive audit trail system so shared company users know who created/edited products and when. Six changes total:
+  1. **Database migration** (`supabase/migrations/20260211100000_audit_trail_system.sql`):
+     - Added `created_by UUID` / `updated_by UUID` to 5 tables (products, stock_purchase_line_items, expected_deliveries, inventory, receiving_log)
+     - Added `updated_by UUID` to 3 tables that already had `created_by` (purchase_groups, shipments, pallets)
+     - Created `product_activity_log` table with field-level JSONB diffs, actor reference, action type (14 action types), human-readable summary, source tracking
+     - Indexes on product_id+performed_at DESC, company_id+performed_at DESC, actor_id
+     - RLS: `FOR ALL TO authenticated USING (company_id = get_user_company_id())`
+     - Auto `set_audit_updated_by()` trigger on all 8 tables — safety net for any code path
+  2. **Audit utility** (`src/lib/audit.js`):
+     - `calculateDiffs(oldData, newData)` — field-level `{ field: { old, new } }` diffs, skips internal fields
+     - `inferAction(changes)` — maps changed fields to action types (status_changed, price_changed, published, archived, etc.)
+     - `generateSummary(action, changes)` — human-readable summary from action + changes
+     - `logProductActivity()` — inserts into product_activity_log with auto-generated action/summary
+  3. **ProductModal.jsx**: Sets `created_by`/`updated_by` on save, logs activity with field-level diffs, logs channel changes. Displays "Created by [Name] | Last edited by [Name]" in dialog header when editing.
+  4. **ManualPurchaseModal.jsx**: Added `created_by: userId` to auto-created product insert (column now exists from migration).
+  5. **ProductDetail.jsx**: Fetches audit user info in `loadProduct()`, displays "Created by [Name] | Last edited by [Name]" below product name in header. `handleProductUpdate` and `handleDetailsUpdate` log activity with diffs. Replaced mock `ActivitySectionWrapper` with real `product_activity_log` queries — falls back to mock data only if no real activity exists yet.
+- **Files changed**: 5 files (migration created, audit.js created, ProductModal.jsx, ManualPurchaseModal.jsx, ProductDetail.jsx modified)
+- **Files NOT changed**: `ActivityTimeline.jsx` — already renders `{ field: { old, new } }` diffs natively, zero changes needed.
+- **Verification**: `npx vite build` succeeds.
 

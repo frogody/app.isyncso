@@ -237,6 +237,7 @@ export default function ManualPurchaseModal({
               price: parseFloat(line.unit_price) || 0,
               type: "physical",
               status: "draft",
+              created_by: userId,
             })
             .select("id")
             .single();
