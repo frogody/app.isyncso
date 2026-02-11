@@ -17,7 +17,8 @@ import {
   Scan, Barcode, Keyboard, Camera, CameraOff,
   Sun, Moon, ChevronDown, ChevronUp, Truck,
   AlertTriangle, Check, X, Search, PackagePlus,
-  ClipboardList, History,
+  ClipboardList, History, Printer, ShieldCheck, RotateCcw,
+  CheckCircle2, Clock,
 } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +38,12 @@ import {
   addPalletToShipment,
   addProductToPallet,
   finalizeShipmentService,
+  verifyScanItem,
 } from "@/lib/services/inventory-service";
+import {
+  generateSinglePalletLabel,
+  generateBatchPalletLabels,
+} from "@/utils/generatePalletLabel";
 
 // =============================================================================
 // BARCODE SCANNER (same pattern as InventoryReceiving)
@@ -213,6 +219,9 @@ export default function PalletBuilder() {
 
   // Loading
   const [loading, setLoading] = useState(false);
+
+  // Verify mode (P3-11)
+  const [verifyMode, setVerifyMode] = useState(false);
 
   // ------------------------------------------------------------------
   // DATA LOADING
@@ -430,6 +439,51 @@ export default function PalletBuilder() {
     setPalletItems(pallet.pallet_items || []);
   };
 
+  // Verify mode scan handler (P3-11)
+  const handleVerifyScan = useCallback(async (ean) => {
+    if (!activePallet) {
+      toast.warning("Select a pallet first");
+      return;
+    }
+    try {
+      const { item, isComplete } = await verifyScanItem(activePallet.id, ean);
+      const name = item.products?.name || ean;
+      if (isComplete) {
+        toast.success(`${name} fully verified (${item.verified_quantity}/${item.quantity})`);
+      } else {
+        toast(`${name}: ${item.verified_quantity}/${item.quantity} verified`);
+      }
+      // Refresh pallet items
+      const freshItems = await db.listPalletItems(activePallet.id);
+      setPalletItems(freshItems);
+    } catch (err) {
+      toast.error(err.message || "Verify scan failed");
+    }
+  }, [activePallet]);
+
+  const handleResetVerification = async () => {
+    if (!activePallet) return;
+    try {
+      await db.resetPalletVerification(activePallet.id);
+      const freshItems = await db.listPalletItems(activePallet.id);
+      setPalletItems(freshItems);
+      toast.success("Verification reset");
+    } catch (err) {
+      toast.error("Failed to reset: " + err.message);
+    }
+  };
+
+  // Print label handlers (P3-10)
+  const handlePrintLabel = (pallet, index) => {
+    if (!activeShipment) return;
+    generateSinglePalletLabel(pallet, activeShipment, index, pallets.length);
+  };
+
+  const handlePrintAllLabels = () => {
+    if (!activeShipment || pallets.length === 0) return;
+    generateBatchPalletLabels(pallets, activeShipment);
+  };
+
   // Helpers
   const getStockForEan = (ean) => {
     const inv = inventory.find(i => i.products?.ean === ean);
@@ -560,7 +614,7 @@ export default function PalletBuilder() {
                     </p>
                   ) : (
                     <div className="space-y-1.5">
-                      {pallets.map((p) => {
+                      {pallets.map((p, i) => {
                         const itemCount = (p.pallet_items || []).reduce((sum, i) => sum + (i.quantity || 0), 0);
                         const eanCount = new Set((p.pallet_items || []).map(i => i.ean).filter(Boolean)).size;
                         return (
@@ -583,6 +637,13 @@ export default function PalletBuilder() {
                             </div>
                             <div className="flex items-center gap-1">
                               {p.status === "packed" && <Lock className="w-3 h-3 text-zinc-500" />}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handlePrintLabel(p, i); }}
+                                className={`p-1 rounded ${t("hover:bg-gray-100", "hover:bg-zinc-700")} text-zinc-500 hover:text-cyan-400`}
+                                title="Print label"
+                              >
+                                <Printer className="w-3 h-3" />
+                              </button>
                               {!isFinalized && (
                                 <button
                                   onClick={(e) => { e.stopPropagation(); handleRemovePallet(p.id); }}
@@ -630,6 +691,17 @@ export default function PalletBuilder() {
                         <div className="mt-2 flex items-center gap-1.5 text-xs text-green-400">
                           <Check className="w-3 h-3" /> Finalized
                         </div>
+                      )}
+
+                      {pallets.length > 0 && (
+                        <Button
+                          onClick={handlePrintAllLabels}
+                          variant="outline"
+                          size="sm"
+                          className={`w-full mt-2 ${t("border-gray-200 text-gray-700", "border-zinc-700 text-zinc-300")}`}
+                        >
+                          <Printer className="w-3 h-3 mr-1" /> Print All Labels
+                        </Button>
                       )}
                     </div>
                   )}
@@ -681,9 +753,60 @@ export default function PalletBuilder() {
                     </div>
                   </div>
 
-                  {/* Scanner */}
-                  {!isFinalized && (
-                    <BarcodeScanner onScan={handleScan} isActive={!!activePallet} />
+                  {/* Verify Mode Toggle (P3-11) — only on finalized shipments */}
+                  {isFinalized && (
+                    <div className={`${t("bg-white/80 border-gray-200", "bg-zinc-900/50 border-zinc-800/60")} border rounded-xl p-3`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className={`w-4 h-4 ${verifyMode ? "text-green-400" : t("text-gray-400", "text-zinc-500")}`} />
+                          <span className={`text-sm font-medium ${t("text-gray-700", "text-white")}`}>Verify Mode</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {verifyMode && (
+                            <Button size="sm" variant="ghost" onClick={handleResetVerification}
+                              className={`text-xs ${t("text-gray-500", "text-zinc-400")}`}>
+                              <RotateCcw className="w-3 h-3 mr-1" /> Reset
+                            </Button>
+                          )}
+                          <button
+                            onClick={() => setVerifyMode(!verifyMode)}
+                            className={`relative w-10 h-5 rounded-full transition-colors ${
+                              verifyMode ? "bg-green-500" : t("bg-gray-300", "bg-zinc-700")
+                            }`}
+                          >
+                            <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                              verifyMode ? "translate-x-5" : "translate-x-0.5"
+                            }`} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Verification progress bar */}
+                      {verifyMode && palletItems.length > 0 && (() => {
+                        const totalQty = palletItems.reduce((s, i) => s + (i.quantity || 0), 0);
+                        const verifiedQty = palletItems.reduce((s, i) => s + (i.verified_quantity || 0), 0);
+                        const pct = totalQty > 0 ? Math.min(100, Math.round((verifiedQty / totalQty) * 100)) : 0;
+                        return (
+                          <div className="mt-2">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className={t("text-gray-500", "text-zinc-400")}>{verifiedQty}/{totalQty} verified</span>
+                              <span className={pct === 100 ? "text-green-400 font-medium" : t("text-gray-500", "text-zinc-400")}>{pct}%</span>
+                            </div>
+                            <div className={`h-1.5 rounded-full ${t("bg-gray-200", "bg-zinc-800")}`}>
+                              <div
+                                className={`h-full rounded-full transition-all ${pct === 100 ? "bg-green-500" : "bg-cyan-500"}`}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  {/* Scanner — shown when packing OR when in verify mode */}
+                  {(!isFinalized || verifyMode) && (
+                    <BarcodeScanner onScan={verifyMode ? handleVerifyScan : handleScan} isActive={!!activePallet} />
                   )}
 
                   {/* Pallet items table */}
@@ -707,12 +830,20 @@ export default function PalletBuilder() {
                               <th className="text-left px-3 py-2 text-xs font-medium">EAN</th>
                               <th className="text-left px-3 py-2 text-xs font-medium">Product</th>
                               <th className="text-center px-3 py-2 text-xs font-medium">Qty</th>
+                              {(isFinalized || verifyMode) && <th className="text-center px-3 py-2 text-xs font-medium">Verified</th>}
                               {!isFinalized && <th className="text-center px-3 py-2 text-xs font-medium w-10"></th>}
                             </tr>
                           </thead>
                           <tbody className={`divide-y ${t("divide-gray-50", "divide-zinc-800/50")}`}>
-                            {palletItems.map((item) => (
-                              <tr key={item.id} className={t("hover:bg-gray-50", "hover:bg-zinc-800/30")}>
+                            {palletItems.map((item) => {
+                              const vq = item.verified_quantity || 0;
+                              const isItemVerified = vq >= item.quantity;
+                              const isPartial = vq > 0 && vq < item.quantity;
+                              const verifyBg = verifyMode
+                                ? isItemVerified ? "bg-green-500/5" : isPartial ? "bg-amber-500/5" : ""
+                                : "";
+                              return (
+                              <tr key={item.id} className={`${verifyBg} ${t("hover:bg-gray-50", "hover:bg-zinc-800/30")}`}>
                                 <td className={`px-3 py-2 font-mono text-xs ${t("text-gray-600", "text-zinc-400")}`}>
                                   {item.ean || "-"}
                                 </td>
@@ -743,6 +874,22 @@ export default function PalletBuilder() {
                                     )}
                                   </div>
                                 </td>
+                                {(isFinalized || verifyMode) && (
+                                  <td className="px-3 py-2 text-center">
+                                    <div className="flex items-center justify-center gap-1">
+                                      {isItemVerified ? (
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+                                      ) : isPartial ? (
+                                        <Clock className="w-3.5 h-3.5 text-amber-400" />
+                                      ) : null}
+                                      <span className={`text-xs tabular-nums ${
+                                        isItemVerified ? "text-green-400 font-medium" : isPartial ? "text-amber-400" : t("text-gray-400", "text-zinc-500")
+                                      }`}>
+                                        {vq}/{item.quantity}
+                                      </span>
+                                    </div>
+                                  </td>
+                                )}
                                 {!isFinalized && (
                                   <td className="px-3 py-2 text-center">
                                     <button
@@ -754,7 +901,8 @@ export default function PalletBuilder() {
                                   </td>
                                 )}
                               </tr>
-                            ))}
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>

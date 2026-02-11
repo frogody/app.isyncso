@@ -267,6 +267,7 @@ import InventoryReceiving from "./InventoryReceiving";
 
 import InventoryShipping from "./InventoryShipping";
 import PalletBuilder from "./PalletBuilder";
+import ShipmentVerification from "./ShipmentVerification";
 
 import InventoryExpenses from "./InventoryExpenses";
 import StockPurchases from "./StockPurchases";
@@ -611,6 +612,7 @@ const PAGES = {
     InventoryShipping: InventoryShipping,
 
     PalletBuilder: PalletBuilder,
+    ShipmentVerification: ShipmentVerification,
 
     InventoryExpenses: InventoryExpenses,
 
@@ -1053,6 +1055,7 @@ function PagesContent() {
                 <Route path="/InventoryShipping" element={<InventoryShipping />} />
 
                 <Route path="/PalletBuilder" element={<PalletBuilder />} />
+                <Route path="/ShipmentVerification" element={<ShipmentVerification />} />
 
                 <Route path="/StockPurchases" element={<StockPurchases />} />
 

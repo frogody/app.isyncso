@@ -2334,7 +2334,7 @@ FROM enrichment_cache_companies;
 | 0 | Database Foundation & Infrastructure | **Complete** |
 | 1 | Purchasing Overhaul | **Complete** (P1-1 through P1-8 all done) |
 | 2 | Receiving Enhancements | **Complete** (P2-1 through P2-7 all done) |
-| 3 | Pallet Management (3a/3b/3c) | **3a Complete** (P3-1 through P3-6 done) |
+| 3 | Pallet Management (3a/3b/3c) | **3a+3b Complete** (P3-1 through P3-11 done) |
 | 4 | bol.com Retailer API | Not Started |
 | 5 | Returns Workflow | Not Started |
 | EP | Email Pool Auto-Sync | Not Started |

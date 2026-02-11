@@ -637,6 +637,61 @@ export async function finalizeShipmentService(
 }
 
 // =============================================================================
+// SHIPMENT VERIFICATION (Phase 3b)
+// =============================================================================
+
+/**
+ * Get verification comparison data for a shipment (purchased vs received vs packed)
+ */
+export async function getVerificationData(
+  companyId: string,
+  shipmentId: string
+): Promise<db.VerificationRow[]> {
+  return db.getShipmentVerificationData(companyId, shipmentId);
+}
+
+/**
+ * Sign off on a shipment verification
+ */
+export async function signOffShipment(
+  shipmentId: string,
+  userId: string,
+  notes: string,
+  hasDiscrepancies: boolean
+): Promise<Shipment> {
+  const status = hasDiscrepancies ? 'discrepancy' : 'verified';
+  return db.verifyShipment(shipmentId, userId, notes, status);
+}
+
+/**
+ * Verify-scan an item on a pallet — finds pallet_item by EAN and increments verified_quantity
+ */
+export async function verifyScanItem(
+  palletId: string,
+  ean: string
+): Promise<{ item: PalletItem; isComplete: boolean }> {
+  // Find the pallet item matching this EAN
+  const { data: items, error } = await (await import('@/api/supabaseClient')).supabase
+    .from('pallet_items')
+    .select(`*, products (id, name, sku, ean)`)
+    .eq('pallet_id', palletId)
+    .eq('ean', ean);
+
+  if (error) throw error;
+  if (!items || items.length === 0) {
+    throw new Error(`No item with EAN ${ean} on this pallet`);
+  }
+
+  const palletItem = items[0];
+  const newVerifiedQty = (palletItem.verified_quantity || 0) + 1;
+  const updated = await db.updatePalletItemVerification(palletItem.id, newVerifiedQty);
+  return {
+    item: updated,
+    isComplete: newVerifiedQty >= palletItem.quantity,
+  };
+}
+
+// =============================================================================
 // DASHBOARD DATA
 // =============================================================================
 

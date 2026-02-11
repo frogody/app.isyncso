@@ -3009,11 +3009,11 @@ CREATE INDEX idx_receiving_log_session ON receiving_log(receiving_session_id) WH
 - [x] `P3-6` Add routes to navigation
 
 **Phase 3b: Shipment Linking + Verification**
-- [ ] `P3-7` ShipmentVerification page - comparison table
-- [ ] `P3-8` ShipmentVerification - discrepancy detection
-- [ ] `P3-9` ShipmentVerification - sign-off flow
-- [ ] `P3-10` Pallet label generation (barcode + print)
-- [ ] `P3-11` Scan-to-verify mode during packing
+- [x] `P3-7` ShipmentVerification page - comparison table
+- [x] `P3-8` ShipmentVerification - discrepancy detection
+- [x] `P3-9` ShipmentVerification - sign-off flow
+- [x] `P3-10` Pallet label generation (barcode + print)
+- [x] `P3-11` Scan-to-verify mode during packing
 
 **Phase 3c: Weight/Dimensions + bol.com LVB**
 - [ ] `P3-12` Expose existing `shipping_tasks.total_weight` and `shipping_tasks.dimensions` JSONB columns in PalletBuilder UI

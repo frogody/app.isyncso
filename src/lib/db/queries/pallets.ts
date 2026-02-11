@@ -337,3 +337,118 @@ export async function getShipmentEanSummary(shipmentId: string): Promise<EanSumm
 
   return Array.from(eanMap.values()).sort((a, b) => a.product_name.localeCompare(b.product_name));
 }
+
+// =============================================================================
+// VERIFICATION (Phase 3b)
+// =============================================================================
+
+export interface VerificationRow {
+  ean: string;
+  product_id: string;
+  product_name: string;
+  qty_purchased: number;
+  qty_received: number;
+  qty_packed: number;
+}
+
+export async function getShipmentVerificationData(
+  companyId: string,
+  shipmentId: string
+): Promise<VerificationRow[]> {
+  // 1. Get packed quantities from existing EAN summary
+  const packedSummary = await getShipmentEanSummary(shipmentId);
+  if (packedSummary.length === 0) return [];
+
+  const eans = packedSummary.map((r) => r.ean).filter(Boolean);
+
+  // 2. Get purchased quantities from stock_purchase_line_items
+  const purchasedMap = new Map<string, number>();
+  if (eans.length > 0) {
+    const { data: lineItems, error: liError } = await supabase
+      .from('stock_purchase_line_items')
+      .select('ean, quantity, stock_purchases!inner(company_id)')
+      .in('ean', eans)
+      .eq('stock_purchases.company_id', companyId);
+
+    if (liError) throw liError;
+    for (const li of (lineItems || [])) {
+      const ean = li.ean || '';
+      purchasedMap.set(ean, (purchasedMap.get(ean) || 0) + (li.quantity || 0));
+    }
+  }
+
+  // 3. Get received quantities from receiving_log
+  const receivedMap = new Map<string, number>();
+  if (eans.length > 0) {
+    const { data: logs, error: rlError } = await supabase
+      .from('receiving_log')
+      .select('ean_scanned, quantity_received')
+      .in('ean_scanned', eans)
+      .eq('company_id', companyId);
+
+    if (rlError) throw rlError;
+    for (const log of (logs || [])) {
+      const ean = log.ean_scanned || '';
+      receivedMap.set(ean, (receivedMap.get(ean) || 0) + (log.quantity_received || 0));
+    }
+  }
+
+  // 4. Merge into verification rows
+  return packedSummary.map((row) => ({
+    ean: row.ean,
+    product_id: row.product_id,
+    product_name: row.product_name,
+    qty_purchased: purchasedMap.get(row.ean) || 0,
+    qty_received: receivedMap.get(row.ean) || 0,
+    qty_packed: row.total_packed,
+  }));
+}
+
+export async function verifyShipment(
+  shipmentId: string,
+  userId: string,
+  notes: string,
+  status: 'verified' | 'discrepancy'
+): Promise<Shipment> {
+  return updateShipment(shipmentId, {
+    verification_status: status,
+    verified_by: userId,
+    verified_at: new Date().toISOString(),
+    verification_notes: notes || undefined,
+  });
+}
+
+export async function updatePalletItemVerification(
+  itemId: string,
+  verifiedQuantity: number
+): Promise<PalletItem> {
+  const { data, error } = await supabase
+    .from('pallet_items')
+    .update({
+      verified_quantity: verifiedQuantity,
+      is_verified: verifiedQuantity > 0,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', itemId)
+    .select(`
+      *,
+      products (id, name, sku, ean)
+    `)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function resetPalletVerification(palletId: string): Promise<void> {
+  const { error } = await supabase
+    .from('pallet_items')
+    .update({
+      verified_quantity: 0,
+      is_verified: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('pallet_id', palletId);
+
+  if (error) throw error;
+}

@@ -84,6 +84,7 @@ import {
   Plus,
   BookText,
   Boxes,
+  ClipboardCheck,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -469,6 +470,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       items.push({ label: 'Receiving', path: createPageUrl('InventoryReceiving'), icon: PackageCheck });
       items.push({ label: 'Shipping', path: createPageUrl('InventoryShipping'), icon: Truck });
       items.push({ label: 'Pallet Builder', path: createPageUrl('PalletBuilder'), icon: Boxes });
+      items.push({ label: 'Verification', path: createPageUrl('ShipmentVerification'), icon: ClipboardCheck });
       items.push({ label: 'Stock Purchases', path: createPageUrl('StockPurchases'), icon: Receipt });
       items.push({ label: 'Import', path: createPageUrl('InventoryImport'), icon: FileSpreadsheet });
     }
