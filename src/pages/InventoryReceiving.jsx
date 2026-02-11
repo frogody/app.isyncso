@@ -121,8 +121,8 @@ function BarcodeScanner({ onScan, isActive }) {
       setIsScanning(false);
       setCameraError(
         err.message.includes("Permission")
-          ? "Camera toegang geweigerd. Sta camera toegang toe in je browser instellingen."
-          : "Kon camera niet starten. Probeer handmatige invoer."
+          ? "Camera access denied. Allow camera access in your browser settings."
+          : "Could not start camera. Try manual entry."
       );
     }
   };
@@ -207,7 +207,7 @@ function BarcodeScanner({ onScan, isActive }) {
             }`}
           >
             <Keyboard className="w-4 h-4" />
-            <span className="text-sm">Handmatig</span>
+            <span className="text-sm">Manual</span>
           </button>
         </div>
       )}
@@ -225,7 +225,7 @@ function BarcodeScanner({ onScan, isActive }) {
                 onClick={() => handleModeSwitch("manual")}
               >
                 <Keyboard className="w-4 h-4 mr-2" />
-                Handmatige invoer
+                Manual entry
               </Button>
             </div>
           ) : (
@@ -253,7 +253,7 @@ function BarcodeScanner({ onScan, isActive }) {
               {/* Instructions */}
               <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
                 <p className="text-white text-sm text-center">
-                  Richt de camera op de barcode
+                  Point the camera at the barcode
                 </p>
               </div>
             </div>
@@ -267,7 +267,7 @@ function BarcodeScanner({ onScan, isActive }) {
               onClick={stopCameraScanner}
             >
               <X className="w-4 h-4 mr-2" />
-              Camera stoppen
+              Stop Camera
             </Button>
           )}
 
@@ -278,7 +278,7 @@ function BarcodeScanner({ onScan, isActive }) {
               onClick={startCameraScanner}
             >
               <Camera className="w-4 h-4 mr-2" />
-              Camera starten
+              Start Camera
             </Button>
           )}
         </div>
@@ -292,8 +292,8 @@ function BarcodeScanner({ onScan, isActive }) {
               <Barcode className="w-12 h-12 mx-auto text-cyan-400 mb-3" />
               <p className={`${t('text-gray-600', 'text-zinc-400')} text-sm`}>
                 {hasCamera
-                  ? "Typ EAN-code handmatig in of gebruik de camera"
-                  : "Typ EAN-code of scan met een barcode scanner"
+                  ? "Type EAN code manually or use the camera"
+                  : "Type EAN code or scan with a barcode scanner"
                 }
               </p>
             </div>
@@ -382,19 +382,19 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
         <div className="mb-3 p-3 rounded-lg bg-green-500/10 border border-green-500/30">
           <div className="flex items-center gap-2 text-green-400">
             <CheckCircle2 className="w-4 h-4" />
-            <span className="text-sm font-medium">Verwachte levering gevonden</span>
+            <span className="text-sm font-medium">Expected delivery found</span>
           </div>
           <div className="mt-2 grid grid-cols-3 gap-3 text-sm">
             <div>
-              <span className={`${t('text-gray-500', 'text-zinc-500')}`}>Verwacht:</span>
+              <span className={`${t('text-gray-500', 'text-zinc-500')}`}>Expected:</span>
               <span className={`ml-2 ${t('text-gray-900', 'text-white')}`}>{expectedQty}</span>
             </div>
             <div>
-              <span className={`${t('text-gray-500', 'text-zinc-500')}`}>Ontvangen:</span>
+              <span className={`${t('text-gray-500', 'text-zinc-500')}`}>Received:</span>
               <span className={`ml-2 ${t('text-gray-900', 'text-white')}`}>{receivedQty}</span>
             </div>
             <div>
-              <span className={`${t('text-gray-500', 'text-zinc-500')}`}>Resterend:</span>
+              <span className={`${t('text-gray-500', 'text-zinc-500')}`}>Remaining:</span>
               <span className={`ml-2 ${t('text-gray-900', 'text-white')} font-medium`}>{remainingQty}</span>
             </div>
           </div>
@@ -403,10 +403,10 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
         <div className="mb-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
           <div className="flex items-center gap-2 text-yellow-400">
             <AlertCircle className="w-4 h-4" />
-            <span className="text-sm font-medium">Geen verwachte levering</span>
+            <span className="text-sm font-medium">No expected delivery</span>
           </div>
           <p className={`mt-1 text-xs ${t('text-gray-500', 'text-zinc-400')}`}>
-            Dit product staat niet op de verwachte leveringen lijst.
+            This product is not on the expected deliveries list.
           </p>
         </div>
       )}
@@ -414,9 +414,9 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
       {/* Current stock */}
       {scanResult.currentStock && (
         <div className={`mb-3 p-3 rounded-lg ${t('bg-gray-100 border-gray-200', 'bg-zinc-800/50 border-white/10')} border`}>
-          <span className={`text-sm ${t('text-gray-600', 'text-zinc-400')}`}>Huidige voorraad:</span>
+          <span className={`text-sm ${t('text-gray-600', 'text-zinc-400')}`}>Current stock:</span>
           <span className={`ml-2 ${t('text-gray-900', 'text-white')} font-medium`}>
-            {scanResult.currentStock.quantity_on_hand} stuks
+            {scanResult.currentStock.quantity_on_hand} items
           </span>
           {scanResult.currentStock.warehouse_location && (
             <span className={`ml-2 text-xs ${t('text-gray-500', 'text-zinc-500')}`}>
@@ -429,7 +429,7 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
       {/* Quantity input */}
       <div className="space-y-3">
         <div>
-          <Label>Aantal ontvangen</Label>
+          <Label>Quantity received</Label>
           <div className="flex items-center gap-2 mt-1">
             <Button
               variant="outline"
@@ -467,21 +467,21 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label>Conditie</Label>
+            <Label>Condition</Label>
             <Select value={condition} onValueChange={setCondition}>
               <SelectTrigger className={`mt-1 ${t('bg-white border-gray-200', 'bg-zinc-900/50 border-white/10')}`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="good">Goed</SelectItem>
-                <SelectItem value="damaged">Beschadigd</SelectItem>
-                <SelectItem value="defective">Defect</SelectItem>
+                <SelectItem value="good">Good</SelectItem>
+                <SelectItem value="damaged">Damaged</SelectItem>
+                <SelectItem value="defective">Defective</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label>Locatie (optioneel)</Label>
+            <Label>Location (optional)</Label>
             <Input
               placeholder="A1-B2..."
               value={location}
@@ -493,9 +493,9 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
 
         {condition !== "good" && (
           <div>
-            <Label>Opmerkingen beschadiging</Label>
+            <Label>Damage notes</Label>
             <Textarea
-              placeholder="Beschrijf de schade..."
+              placeholder="Describe the damage..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className={`mt-1 ${t('bg-white border-gray-200', 'bg-zinc-900/50 border-white/10')}`}
@@ -506,10 +506,10 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
         <div className="flex gap-2 pt-1">
           <Button onClick={handleSubmit} className="flex-1 bg-cyan-600 hover:bg-cyan-700">
             <Check className="w-4 h-4 mr-2" />
-            Ontvangen ({quantity})
+            Receive ({quantity})
           </Button>
           <Button variant="outline" onClick={onCancel}>
-            Annuleren
+            Cancel
           </Button>
         </div>
       </div>
@@ -528,20 +528,20 @@ function NotFoundCard({ ean, onClose }) {
           <AlertTriangle className="w-5 h-5 text-red-400" />
         </div>
         <div>
-          <h3 className={`text-sm font-bold ${t('text-gray-900', 'text-white')}`}>Product niet gevonden</h3>
+          <h3 className={`text-sm font-bold ${t('text-gray-900', 'text-white')}`}>Product not found</h3>
           <p className={`text-sm ${t('text-gray-600', 'text-zinc-400')}`}>EAN: {ean}</p>
         </div>
       </div>
       <p className={`text-sm ${t('text-gray-600', 'text-zinc-400')} mb-3`}>
-        Dit product staat niet in het systeem. Voeg het eerst toe aan de producten.
+        This product is not in the system. Add it to products first.
       </p>
       <div className="flex gap-2">
         <Button variant="outline" onClick={onClose}>
-          Sluiten
+          Close
         </Button>
         <Button className="bg-cyan-600 hover:bg-cyan-700">
           <Plus className="w-4 h-4 mr-2" />
-          Product toevoegen
+          Add Product
         </Button>
       </div>
     </div>
@@ -556,7 +556,7 @@ function RecentReceivingList({ items }) {
     return (
       <div className={`text-center py-8 ${t('text-gray-500', 'text-zinc-500')}`}>
         <Boxes className="w-12 h-12 mx-auto mb-2 opacity-50" />
-        <p>Nog geen ontvangsten vandaag</p>
+        <p>No receipts yet today</p>
       </div>
     );
   }
@@ -583,7 +583,7 @@ function RecentReceivingList({ items }) {
             <div>
               <p className={`text-sm ${t('text-gray-900', 'text-white')}`}>{item.products?.name || 'Unknown product'}</p>
               <p className={`text-xs ${t('text-gray-500', 'text-zinc-500')}`}>
-                {item.quantity_received}x • {new Date(item.received_at).toLocaleTimeString('nl-NL')}
+                {item.quantity_received}x • {new Date(item.received_at).toLocaleTimeString('en-GB')}
               </p>
             </div>
           </div>
@@ -616,14 +616,14 @@ function ReceiveSuccessCard({ productName, quantity, isPartial, remainingQty, on
           <CheckCircle2 className="w-7 h-7 text-green-400" />
         </div>
         <h3 className={`text-sm font-bold ${t('text-gray-900', 'text-white')} mb-2`}>
-          Ontvangst bevestigd!
+          Receipt confirmed!
         </h3>
         <p className={`${t('text-gray-600', 'text-zinc-400')} mb-2`}>
           <span className={`${t('text-gray-900', 'text-white')} font-medium`}>{quantity}x</span> {productName}
         </p>
         {isPartial && (
           <p className="text-yellow-400 text-sm">
-            Nog {remainingQty} stuks verwacht
+            Still {remainingQty} items expected
           </p>
         )}
         <Button
@@ -632,7 +632,7 @@ function ReceiveSuccessCard({ productName, quantity, isPartial, remainingQty, on
           onClick={onClose}
           className={`mt-4 ${t('text-gray-500', 'text-zinc-400')}`}
         >
-          Volgende scan
+          Next scan
         </Button>
       </div>
     </div>
@@ -687,7 +687,7 @@ export default function InventoryReceiving() {
         setDataLoaded(true);
       } catch (error) {
         console.error('Failed to load receiving data:', error);
-        toast.error('Kon gegevens niet laden');
+        toast.error('Could not load data');
         setDataLoaded(true);
       }
     };
@@ -698,7 +698,7 @@ export default function InventoryReceiving() {
   // Handle barcode scan
   const handleScan = async (ean) => {
     if (!companyId) {
-      toast.error('Geen bedrijf geselecteerd');
+      toast.error('No company selected');
       return;
     }
 
@@ -711,14 +711,14 @@ export default function InventoryReceiving() {
 
       if (result.found) {
         setScanResult(result);
-        toast.success(`Product gevonden: ${result.product.name}`);
+        toast.success(`Product found: ${result.product.name}`);
       } else {
         setNotFoundEan(ean);
-        toast.error('Product niet gevonden');
+        toast.error('Product not found');
       }
     } catch (error) {
       console.error('Scan error:', error);
-      toast.error('Scanfout: ' + (error.message || 'Onbekende fout'));
+      toast.error('Scan error: ' + (error.message || 'Unknown error'));
     } finally {
       setIsLoading(false);
     }
@@ -767,7 +767,7 @@ export default function InventoryReceiving() {
       }));
     } catch (error) {
       console.error('Receive error:', error);
-      toast.error('Fout bij ontvangen: ' + (error.message || 'Onbekende fout'));
+      toast.error('Error receiving: ' + (error.message || 'Unknown error'));
     } finally {
       setIsLoading(false);
     }
@@ -801,21 +801,21 @@ export default function InventoryReceiving() {
             <div className={`${t('bg-white/80 border-gray-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
               <div className="flex items-center gap-2 mb-1">
                 <Boxes className="w-4 h-4 text-cyan-400" />
-                <span className={`text-xs ${t('text-gray-500', 'text-zinc-500')}`}>Verwachte leveringen</span>
+                <span className={`text-xs ${t('text-gray-500', 'text-zinc-500')}`}>Expected Deliveries</span>
               </div>
               <p className={`text-lg font-bold ${t('text-gray-900', 'text-white')}`}>{stats.pendingDeliveries}</p>
             </div>
             <div className={`${t('bg-white/80 border-gray-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
               <div className="flex items-center gap-2 mb-1">
                 <Check className="w-4 h-4 text-green-400" />
-                <span className={`text-xs ${t('text-gray-500', 'text-zinc-500')}`}>Ontvangen vandaag</span>
+                <span className={`text-xs ${t('text-gray-500', 'text-zinc-500')}`}>Received Today</span>
               </div>
-              <p className={`text-lg font-bold ${t('text-gray-900', 'text-white')}`}>{stats.receivedToday} <span className={`text-xs font-normal ${t('text-gray-500', 'text-zinc-500')}`}>stuks</span></p>
+              <p className={`text-lg font-bold ${t('text-gray-900', 'text-white')}`}>{stats.receivedToday} <span className={`text-xs font-normal ${t('text-gray-500', 'text-zinc-500')}`}>items</span></p>
             </div>
             <div className={`${t('bg-white/80 border-gray-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
               <div className="flex items-center gap-2 mb-1">
                 <AlertTriangle className="w-4 h-4 text-yellow-400" />
-                <span className={`text-xs ${t('text-gray-500', 'text-zinc-500')}`}>Gedeeltelijke leveringen</span>
+                <span className={`text-xs ${t('text-gray-500', 'text-zinc-500')}`}>Partial Deliveries</span>
               </div>
               <p className={`text-lg font-bold ${t('text-gray-900', 'text-white')}`}>{stats.partialDeliveries}</p>
             </div>
@@ -868,7 +868,7 @@ export default function InventoryReceiving() {
             <div className={`${t('bg-white/80 border-gray-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
               <h2 className={`text-sm font-bold ${t('text-gray-900', 'text-white')} mb-2 flex items-center gap-2`}>
                 <Warehouse className="w-5 h-5 text-cyan-400" />
-                Recente ontvangsten
+                Recent Receipts
               </h2>
               <RecentReceivingList items={recentReceiving} />
             </div>
@@ -878,13 +878,13 @@ export default function InventoryReceiving() {
           <div className={`${t('bg-white/80 border-gray-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
             <h2 className={`text-sm font-bold ${t('text-gray-900', 'text-white')} mb-2 flex items-center gap-2`}>
               <Package className="w-5 h-5 text-cyan-400" />
-              Verwachte leveringen ({expectedDeliveries.length})
+              Expected Deliveries ({expectedDeliveries.length})
             </h2>
 
             {expectedDeliveries.length === 0 ? (
               <div className={`text-center py-8 ${t('text-gray-500', 'text-zinc-500')}`}>
                 <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>Geen verwachte leveringen</p>
+                <p>No expected deliveries</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -892,10 +892,10 @@ export default function InventoryReceiving() {
                   <thead>
                     <tr className={`text-left text-sm ${t('text-gray-500 border-gray-200', 'text-zinc-500 border-white/10')} border-b`}>
                       <th className="pb-3 font-medium">Product</th>
-                      <th className="pb-3 font-medium">Leverancier</th>
-                      <th className="pb-3 font-medium">Verwacht</th>
+                      <th className="pb-3 font-medium">Supplier</th>
+                      <th className="pb-3 font-medium">Expected</th>
                       <th className="pb-3 font-medium">Status</th>
-                      <th className="pb-3 font-medium">Datum</th>
+                      <th className="pb-3 font-medium">Date</th>
                     </tr>
                   </thead>
                   <tbody className={`${t('divide-gray-100', 'divide-white/5')} divide-y`}>
@@ -928,7 +928,7 @@ export default function InventoryReceiving() {
                         </td>
                         <td className={`py-3 ${t('text-gray-600', 'text-zinc-400')}`}>
                           {delivery.expected_date
-                            ? new Date(delivery.expected_date).toLocaleDateString('nl-NL')
+                            ? new Date(delivery.expected_date).toLocaleDateString('en-GB')
                             : '-'}
                         </td>
                       </tr>

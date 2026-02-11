@@ -1326,7 +1326,7 @@ export default function ProductModal({
                 {/* Sales Channels */}
                 <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20">
                   <h4 className={cn(`${t('text-slate-900', 'text-white')} font-medium mb-3 flex items-center gap-2`)}>
-                    <Tag className="w-4 h-4 text-blue-400" /> Verkoopkanalen
+                    <Tag className="w-4 h-4 text-blue-400" /> Sales Channels
                   </h4>
                   <div className="flex items-center gap-4">
                     {[

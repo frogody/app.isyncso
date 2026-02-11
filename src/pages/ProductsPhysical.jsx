@@ -405,10 +405,10 @@ export default function ProductsPhysical() {
             {/* Channel Filter */}
             <Select value={channelFilter} onValueChange={setChannelFilter}>
               <SelectTrigger className={`w-[140px] ${t('bg-slate-50 border-slate-200 text-slate-900', 'bg-zinc-900/50 border-zinc-800/60 text-white')}`}>
-                <SelectValue placeholder="Kanaal" />
+                <SelectValue placeholder="Channel" />
               </SelectTrigger>
               <SelectContent className={t('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800/60')}>
-                <SelectItem value="all">Alle Kanalen</SelectItem>
+                <SelectItem value="all">All Channels</SelectItem>
                 <SelectItem value="b2b">B2B</SelectItem>
                 <SelectItem value="b2c">B2C</SelectItem>
               </SelectContent>

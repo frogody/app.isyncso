@@ -27,13 +27,13 @@ import { supabase } from "@/api/supabaseClient";
 import { toast } from "sonner";
 
 const COUNTRIES = [
-  { value: "NL", label: "Nederland" },
-  { value: "DE", label: "Duitsland" },
-  { value: "BE", label: "België" },
-  { value: "UK", label: "Verenigd Koninkrijk" },
-  { value: "US", label: "Verenigde Staten" },
+  { value: "NL", label: "Netherlands" },
+  { value: "DE", label: "Germany" },
+  { value: "BE", label: "Belgium" },
+  { value: "UK", label: "United Kingdom" },
+  { value: "US", label: "United States" },
   { value: "CN", label: "China" },
-  { value: "Other", label: "Anders" },
+  { value: "Other", label: "Other" },
 ];
 
 const EMPTY_LINE_ITEM = {
@@ -174,14 +174,14 @@ export default function ManualPurchaseModal({
   const handleSubmit = async () => {
     // Validation
     if (!supplierId && !newSupplierName.trim()) {
-      toast.error("Selecteer of vul een leverancier in");
+      toast.error("Select or enter a supplier");
       return;
     }
     const validLines = lineItems.filter(
       (li) => li.ean.trim() && (parseFloat(li.quantity) || 0) > 0
     );
     if (validLines.length === 0) {
-      toast.error("Voeg minimaal 1 product toe met EAN en aantal");
+      toast.error("Add at least 1 product with EAN and quantity");
       return;
     }
 
@@ -296,13 +296,13 @@ export default function ManualPurchaseModal({
       if (lineErr) throw lineErr;
 
       toast.success(
-        `Inkoop aangemaakt met ${validLines.length} product${validLines.length > 1 ? "en" : ""}`
+        `Purchase created with ${validLines.length} product${validLines.length > 1 ? "s" : ""}`
       );
       onPurchaseCreated?.();
       onClose();
     } catch (error) {
       console.error("Failed to create manual purchase:", error);
-      toast.error(`Fout bij aanmaken: ${error.message}`);
+      toast.error(`Error creating purchase: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -314,11 +314,10 @@ export default function ManualPurchaseModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShoppingCart className="w-5 h-5 text-cyan-400" />
-            Handmatige Inkoop
+            Manual Purchase
           </DialogTitle>
           <DialogDescription>
-            Voeg een nieuwe inkoop handmatig toe met producten, hoeveelheden en
-            prijzen.
+            Add a new purchase manually with products, quantities and prices.
           </DialogDescription>
         </DialogHeader>
 
@@ -326,14 +325,14 @@ export default function ManualPurchaseModal({
           {/* Supplier */}
           <div className="space-y-2">
             <Label className="text-zinc-400 flex items-center gap-1.5">
-              <Building className="w-3.5 h-3.5" /> Leverancier
+              <Building className="w-3.5 h-3.5" /> Supplier
             </Label>
             {isNewSupplier ? (
               <div className="flex gap-2">
                 <Input
                   value={newSupplierName}
                   onChange={(e) => setNewSupplierName(e.target.value)}
-                  placeholder="Naam nieuwe leverancier"
+                  placeholder="New supplier name"
                   className="bg-zinc-900/50 border-white/10"
                 />
                 <Button
@@ -345,14 +344,14 @@ export default function ManualPurchaseModal({
                   }}
                   className="text-zinc-400 shrink-0"
                 >
-                  Bestaande
+                  Existing
                 </Button>
               </div>
             ) : (
               <div className="flex gap-2">
                 <Select value={supplierId} onValueChange={setSupplierId}>
                   <SelectTrigger className="bg-zinc-900/50 border-white/10">
-                    <SelectValue placeholder="Selecteer leverancier..." />
+                    <SelectValue placeholder="Select supplier..." />
                   </SelectTrigger>
                   <SelectContent>
                     {suppliers.map((s) => (
@@ -371,7 +370,7 @@ export default function ManualPurchaseModal({
                   }}
                   className="text-cyan-400 shrink-0"
                 >
-                  + Nieuw
+                  + New
                 </Button>
               </div>
             )}
@@ -381,7 +380,7 @@ export default function ManualPurchaseModal({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label className="text-zinc-400 flex items-center gap-1.5">
-                <Package className="w-3.5 h-3.5" /> Groepsnaam (optioneel)
+                <Package className="w-3.5 h-3.5" /> Group Name (optional)
               </Label>
               <Input
                 value={groupName}
@@ -392,7 +391,7 @@ export default function ManualPurchaseModal({
             </div>
             <div className="space-y-2">
               <Label className="text-zinc-400 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5" /> Datum
+                <Calendar className="w-3.5 h-3.5" /> Date
               </Label>
               <Input
                 type="date"
@@ -405,12 +404,12 @@ export default function ManualPurchaseModal({
 
           {/* Sales Channel */}
           <div className="space-y-2">
-            <Label className="text-zinc-400">Verkoopkanaal</Label>
+            <Label className="text-zinc-400">Sales Channel</Label>
             <div className="flex gap-2">
               {[
                 { value: "b2b", label: "B2B", color: "blue" },
                 { value: "b2c", label: "B2C", color: "green" },
-                { value: "undecided", label: "Onbepaald", color: "zinc" },
+                { value: "undecided", label: "Undecided", color: "zinc" },
               ].map((ch) => (
                 <button
                   key={ch.value}
@@ -436,7 +435,7 @@ export default function ManualPurchaseModal({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-zinc-400 flex items-center gap-1.5">
-                <Euro className="w-3.5 h-3.5" /> Producten
+                <Euro className="w-3.5 h-3.5" /> Products
               </Label>
               <Button
                 variant="ghost"
@@ -444,7 +443,7 @@ export default function ManualPurchaseModal({
                 onClick={addLineItem}
                 className="text-cyan-400 h-7"
               >
-                <Plus className="w-3.5 h-3.5 mr-1" /> Regel toevoegen
+                <Plus className="w-3.5 h-3.5 mr-1" /> Add line
               </Button>
             </div>
 
@@ -456,7 +455,7 @@ export default function ManualPurchaseModal({
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-zinc-500 font-medium">
-                      Regel {idx + 1}
+                      Line {idx + 1}
                     </span>
                     {lineItems.length > 1 && (
                       <Button
@@ -494,7 +493,7 @@ export default function ManualPurchaseModal({
                     </div>
                     <div className="col-span-3 space-y-1">
                       <Label className="text-xs text-zinc-500">
-                        Productnaam
+                        Product name
                       </Label>
                       <Input
                         value={item.product_name}
@@ -504,20 +503,20 @@ export default function ManualPurchaseModal({
                         placeholder={
                           item._eanSearchResult
                             ? item._eanSearchResult.name
-                            : "Productnaam"
+                            : "Product name"
                         }
                         className="bg-zinc-950/50 border-white/10 text-sm"
                       />
                       {item._eanSearchResult && (
                         <p className="text-[10px] text-green-500/70">
-                          Gevonden: {item._eanSearchResult.name}
+                          Found: {item._eanSearchResult.name}
                         </p>
                       )}
                       {item.ean.length >= 8 &&
                         !item._eanSearchResult &&
                         !eanSearching[idx] && (
                           <p className="text-[10px] text-yellow-500/70">
-                            Nieuw product — wordt automatisch aangemaakt
+                            New product — will be created automatically
                           </p>
                         )}
                     </div>
@@ -526,7 +525,7 @@ export default function ManualPurchaseModal({
                   {/* Qty + Price + Country */}
                   <div className="grid grid-cols-4 gap-2">
                     <div className="space-y-1">
-                      <Label className="text-xs text-zinc-500">Aantal</Label>
+                      <Label className="text-xs text-zinc-500">Quantity</Label>
                       <Input
                         type="number"
                         min="1"
@@ -539,7 +538,7 @@ export default function ManualPurchaseModal({
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-zinc-500">
-                        Prijs (ex BTW)
+                        Price (excl. VAT)
                       </Label>
                       <Input
                         type="number"
@@ -553,7 +552,7 @@ export default function ManualPurchaseModal({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-zinc-500">Land</Label>
+                      <Label className="text-xs text-zinc-500">Country</Label>
                       <Select
                         value={item.country_of_purchase}
                         onValueChange={(v) =>
@@ -573,7 +572,7 @@ export default function ManualPurchaseModal({
                       </Select>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-zinc-500">Subtotaal</Label>
+                      <Label className="text-xs text-zinc-500">Subtotal</Label>
                       <div className="h-9 flex items-center px-3 bg-zinc-950/30 border border-white/5 rounded-md text-sm text-zinc-300">
                         €{lineTotal(item).toFixed(2)}
                       </div>
@@ -584,7 +583,7 @@ export default function ManualPurchaseModal({
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <Label className="text-xs text-zinc-500 flex items-center gap-1">
-                        <Link className="w-3 h-3" /> Bestel-URL
+                        <Link className="w-3 h-3" /> Order URL
                       </Label>
                       <Input
                         value={item.order_url}
@@ -597,14 +596,14 @@ export default function ManualPurchaseModal({
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-zinc-500 flex items-center gap-1">
-                        <MessageSquare className="w-3 h-3" /> Opmerking
+                        <MessageSquare className="w-3 h-3" /> Remark
                       </Label>
                       <Input
                         value={item.remarks}
                         onChange={(e) =>
                           updateLineItem(idx, "remarks", e.target.value)
                         }
-                        placeholder="Notities..."
+                        placeholder="Notes..."
                         className="bg-zinc-950/50 border-white/10 text-sm"
                       />
                     </div>
@@ -621,11 +620,11 @@ export default function ManualPurchaseModal({
                 <p className="text-xs text-zinc-500">
                   {lineItems.filter((li) => li.ean.trim()).length} product
                   {lineItems.filter((li) => li.ean.trim()).length !== 1
-                    ? "en"
+                    ? "s"
                     : ""}
                 </p>
                 <p className="text-xs text-zinc-500">
-                  Totale hoeveelheid:{" "}
+                  Total quantity:{" "}
                   {lineItems.reduce(
                     (sum, li) => sum + (parseFloat(li.quantity) || 0),
                     0
@@ -633,12 +632,12 @@ export default function ManualPurchaseModal({
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-zinc-500">Subtotaal (ex BTW)</p>
+                <p className="text-xs text-zinc-500">Subtotal (excl. VAT)</p>
                 <p className="text-lg font-bold text-white">
                   €{grandTotal.toFixed(2)}
                 </p>
                 <p className="text-xs text-zinc-500">
-                  incl. 21% BTW: €{(grandTotal * 1.21).toFixed(2)}
+                  incl. 21% VAT: €{(grandTotal * 1.21).toFixed(2)}
                 </p>
               </div>
             </div>
@@ -647,7 +646,7 @@ export default function ManualPurchaseModal({
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-            Annuleren
+            Cancel
           </Button>
           <Button
             className="bg-cyan-600 hover:bg-cyan-700"
@@ -657,12 +656,12 @@ export default function ManualPurchaseModal({
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Aanmaken...
+                Creating...
               </>
             ) : (
               <>
                 <ShoppingCart className="w-4 h-4 mr-2" />
-                Inkoop Aanmaken
+                Create Purchase
               </>
             )}
           </Button>

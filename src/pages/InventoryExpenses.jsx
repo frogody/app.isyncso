@@ -180,7 +180,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, ft }) {
       onClose();
       toast.success("Invoice approved");
     } catch (error) {
-      toast.error("Fout bij goedkeuren: " + error.message);
+      toast.error("Error approving: " + error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -197,7 +197,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, ft }) {
       onClose();
       toast.success("Invoice rejected");
     } catch (error) {
-      toast.error("Fout bij afwijzen: " + error.message);
+      toast.error("Error rejecting: " + error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -222,7 +222,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, ft }) {
           <div className={`flex items-center justify-between p-3 rounded-lg ${ft('bg-slate-100', 'bg-zinc-900/50')} border ${ft('border-slate-200', 'border-white/10')}`}>
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>AI Betrouwbaarheid</span>
+              <span className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>AI Confidence</span>
             </div>
             <ConfidenceIndicator confidence={expense.ai_confidence || 0} />
           </div>
@@ -230,7 +230,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, ft }) {
           {/* Original document */}
           {expense.original_file_url && (
             <div>
-              <Label className={`${ft('text-slate-500', 'text-zinc-400')} text-xs`}>Origineel document</Label>
+              <Label className={`${ft('text-slate-500', 'text-zinc-400')} text-xs`}>Original document</Label>
               <div className={`mt-2 rounded-lg border ${ft('border-slate-200', 'border-white/10')} overflow-hidden`}>
                 <img
                   src={expense.original_file_url}
@@ -245,7 +245,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, ft }) {
                 onClick={() => window.open(expense.original_file_url, "_blank")}
               >
                 <ExternalLink className="w-3 h-3 mr-1" />
-                Open in nieuw tabblad
+                Open in new tab
               </Button>
             </div>
           )}
@@ -253,7 +253,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, ft }) {
           {/* Extracted data */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className={`${ft('text-slate-500', 'text-zinc-400')} text-xs`}>Leverancier</Label>
+              <Label className={`${ft('text-slate-500', 'text-zinc-400')} text-xs`}>Supplier</Label>
               <p className={`${ft('text-slate-900', 'text-white')} font-medium text-sm`}>
                 {extractedData.supplier_name || expense.suppliers?.name || "-"}
               </p>
@@ -268,7 +268,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, ft }) {
               <Label className={`${ft('text-slate-500', 'text-zinc-400')} text-xs`}>Invoice Date</Label>
               <p className={`${ft('text-slate-900', 'text-white')} font-medium text-sm`}>
                 {expense.invoice_date
-                  ? new Date(expense.invoice_date).toLocaleDateString("nl-NL")
+                  ? new Date(expense.invoice_date).toLocaleDateString("en-GB")
                   : "-"}
               </p>
             </div>
@@ -288,8 +288,8 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, ft }) {
                 <table className="w-full text-xs">
                   <thead className={ft('bg-slate-100', 'bg-zinc-900/50')}>
                     <tr className={`text-left ${ft('text-slate-400', 'text-zinc-500')} text-[10px]`}>
-                      <th className="px-2 py-1">Omschrijving</th>
-                      <th className="px-2 py-1 text-right">Aantal</th>
+                      <th className="px-2 py-1">Description</th>
+                      <th className="px-2 py-1 text-right">Quantity</th>
                       <th className="px-2 py-1 text-right">Price</th>
                       <th className="px-2 py-1 text-right">Total</th>
                     </tr>
@@ -320,7 +320,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, ft }) {
                   <tfoot className={ft('bg-slate-50', 'bg-zinc-900/30')}>
                     <tr>
                       <td colSpan={3} className={`px-2 py-1 text-right ${ft('text-slate-500', 'text-zinc-400')}`}>
-                        Subtotaal
+                        Subtotal
                       </td>
                       <td className={`px-2 py-1 text-right ${ft('text-slate-900', 'text-white')}`}>
                         &euro; {expense.subtotal?.toFixed(2)}
@@ -328,7 +328,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, ft }) {
                     </tr>
                     <tr>
                       <td colSpan={3} className={`px-2 py-1 text-right ${ft('text-slate-500', 'text-zinc-400')}`}>
-                        BTW ({expense.tax_percent || 21}%)
+                        VAT ({expense.tax_percent || 21}%)
                       </td>
                       <td className={`px-2 py-1 text-right ${ft('text-slate-900', 'text-white')}`}>
                         &euro; {expense.tax_amount?.toFixed(2)}
@@ -350,9 +350,9 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, ft }) {
 
           {/* Review notes */}
           <div>
-            <Label className="text-xs">Opmerkingen</Label>
+            <Label className="text-xs">Remarks</Label>
             <Textarea
-              placeholder="Eventuele opmerkingen bij de beoordeling..."
+              placeholder="Any remarks about the review..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className={`mt-1 ${ft('bg-slate-100', 'bg-zinc-900/50')} ${ft('border-slate-200', 'border-white/10')}`}
@@ -461,7 +461,7 @@ function ExpenseCard({ expense, onReview, onRetry, ft }) {
           {expense.invoice_date && (
             <span className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />
-              {new Date(expense.invoice_date).toLocaleDateString("nl-NL")}
+              {new Date(expense.invoice_date).toLocaleDateString("en-GB")}
             </span>
           )}
           {expense.expense_line_items && (
@@ -572,12 +572,12 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
     if (!file) return;
 
     if (!acceptedTypes.includes(file.type)) {
-      toast.error("Ongeldig bestandstype. Upload een afbeelding (JPG, PNG, WebP) of PDF.");
+      toast.error("Invalid file type. Upload an image (JPG, PNG, WebP) or PDF.");
       return;
     }
 
     if (file.size > 50 * 1024 * 1024) {
-      toast.error("Bestand is te groot. Maximum is 50MB.");
+      toast.error("File is too large. Maximum is 50MB.");
       return;
     }
 
@@ -727,7 +727,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
 
       if (!processResult) {
         console.error("No result from edge function");
-        toast.error("Geen respons van de server");
+        toast.error("No response from server");
         return;
       }
 
@@ -832,7 +832,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
                     }}
                   >
                     <X className="w-4 h-4 mr-1" />
-                    Verwijderen
+                    Remove
                   </Button>
                 </div>
               </div>
@@ -842,7 +842,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
                   <FileUp className="w-6 h-6 text-cyan-400" />
                 </div>
                 <p className={`${ft('text-slate-900', 'text-white')} font-medium text-sm`}>
-                  Sleep een bestand hierheen of klik om te selecteren
+                  Drag a file here or click to select
                 </p>
                 <p className={`text-xs ${ft('text-slate-500', 'text-zinc-400')} mt-1`}>
                   JPG, PNG, WebP of PDF (max 50MB)
@@ -856,7 +856,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs">
                 <span className={ft('text-slate-500', 'text-zinc-400')}>
-                  {uploadProgress < 90 ? "Uploaden..." : "Verwerken..."}
+                  {uploadProgress < 90 ? "Uploading..." : "Processing..."}
                 </span>
                 <span className="text-cyan-400">{uploadProgress}%</span>
               </div>
@@ -869,12 +869,12 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
             <div className="flex items-start gap-2">
               <Sparkles className="w-3 h-3 text-cyan-400 mt-0.5 flex-shrink-0" />
               <div className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>
-                <p>AI zal automatisch extracten:</p>
+                <p>AI will automatically extract:</p>
                 <ul className={`mt-1 space-y-0 ${ft('text-slate-400', 'text-zinc-500')} text-[10px]`}>
-                  <li>- Leveranciersgegevens</li>
-                  <li>- Invoice Number en datum</li>
+                  <li>- Supplier details</li>
+                  <li>- Invoice number and date</li>
                   <li>- Amounts and VAT</li>
-                  <li>- Line Items indien beschikbaar</li>
+                  <li>- Line items if available</li>
                 </ul>
               </div>
             </div>
@@ -893,12 +893,12 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
             {isUploading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Verwerken...
+                Processing...
               </>
             ) : (
               <>
                 <Upload className="w-4 h-4 mr-2" />
-                Uploaden & Verwerken
+                Upload & Process
               </>
             )}
           </Button>
@@ -1116,7 +1116,7 @@ export default function InventoryExpenses() {
             <div className={`${ft('bg-white', 'bg-zinc-900/50')} border ${ft('border-slate-200', 'border-zinc-800/60')} rounded-xl p-3`}>
               <div className="flex items-center gap-2 mb-1">
                 <Receipt className="w-4 h-4 text-cyan-400" />
-                <span className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>Total facturen</span>
+                <span className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>Total invoices</span>
               </div>
               <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>{stats.total}</p>
             </div>
@@ -1137,7 +1137,7 @@ export default function InventoryExpenses() {
             <div className={`${ft('bg-white', 'bg-zinc-900/50')} border ${ft('border-slate-200', 'border-zinc-800/60')} rounded-xl p-3`}>
               <div className="flex items-center gap-2 mb-1">
                 <Euro className="w-4 h-4 text-purple-400" />
-                <span className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>Total bedrag</span>
+                <span className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>Total amount</span>
               </div>
               <p className={`text-lg font-bold ${ft('text-slate-900', 'text-white')}`}>&euro; {stats.totalAmount.toFixed(0)}</p>
             </div>
@@ -1157,7 +1157,7 @@ export default function InventoryExpenses() {
               </div>
               <Tabs value={filter} onValueChange={setFilter}>
                 <TabsList className={ft('bg-slate-100', 'bg-zinc-900/50')}>
-                  <TabsTrigger value="all">Alles</TabsTrigger>
+                  <TabsTrigger value="all">All</TabsTrigger>
                   <TabsTrigger value="review">To Review</TabsTrigger>
                   <TabsTrigger value="approved">Approved</TabsTrigger>
                 </TabsList>
@@ -1176,11 +1176,11 @@ export default function InventoryExpenses() {
             <div className={`${ft('bg-white', 'bg-zinc-900/50')} border ${ft('border-slate-200', 'border-zinc-800/60')} rounded-xl p-8 text-center`}>
               <Receipt className={`w-12 h-12 mx-auto ${ft('text-slate-300', 'text-zinc-600')} mb-3`} />
               <h3 className={`text-base font-medium ${ft('text-slate-900', 'text-white')} mb-2`}>
-                Geen facturen gevonden
+                No invoices found
               </h3>
               <p className={`text-sm ${ft('text-slate-400', 'text-zinc-500')}`}>
                 {search
-                  ? "Probeer een andere zoekopdracht"
+                  ? "Try a different search"
                   : "Upload an invoice to get started"}
               </p>
             </div>

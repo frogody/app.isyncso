@@ -471,21 +471,21 @@ export function DemoProductsReceiving({ companyName = 'Acme Corp', recipientName
           <motion.div variants={fadeUp} className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <Boxes className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs text-zinc-500">Verwachte leveringen</span>
+              <span className="text-xs text-zinc-500">Expected Deliveries</span>
             </div>
             <p className="text-lg font-bold text-white">{RECEIVING_STATS.pendingDeliveries}</p>
           </motion.div>
           <motion.div variants={fadeUp} className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <Check className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs text-zinc-500">Ontvangen vandaag</span>
+              <span className="text-xs text-zinc-500">Received Today</span>
             </div>
-            <p className="text-lg font-bold text-white">{RECEIVING_STATS.receivedToday} <span className="text-xs font-normal text-zinc-500">stuks</span></p>
+            <p className="text-lg font-bold text-white">{RECEIVING_STATS.receivedToday} <span className="text-xs font-normal text-zinc-500">items</span></p>
           </motion.div>
           <motion.div variants={fadeUp} className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <AlertTriangle className="w-4 h-4 text-yellow-400" />
-              <span className="text-xs text-zinc-500">Gedeeltelijke leveringen</span>
+              <span className="text-xs text-zinc-500">Partial Deliveries</span>
             </div>
             <p className="text-lg font-bold text-white">{RECEIVING_STATS.partialDeliveries}</p>
           </motion.div>
@@ -548,15 +548,15 @@ export function DemoProductsReceiving({ companyName = 'Acme Corp', recipientName
         <motion.div {...fadeUp} className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
           <h2 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
             <Package className="w-5 h-5 text-cyan-400" />
-            Verwachte leveringen ({EXPECTED_DELIVERIES.length})
+            Expected Deliveries ({EXPECTED_DELIVERIES.length})
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="text-left text-sm text-zinc-500 border-b border-zinc-800/60">
                   <th className="pb-3 font-medium">Product</th>
-                  <th className="pb-3 font-medium">Leverancier</th>
-                  <th className="pb-3 font-medium">Verwacht</th>
+                  <th className="pb-3 font-medium">Supplier</th>
+                  <th className="pb-3 font-medium">Expected</th>
                   <th className="pb-3 font-medium">Status</th>
                   <th className="pb-3 font-medium">Datum</th>
                 </tr>
@@ -640,10 +640,10 @@ export function DemoProductsShipping({ companyName = 'Acme Corp', recipientName 
   };
 
   const filterTabs = [
-    { value: 'all', label: 'Alles' },
-    { value: 'pending', label: 'Te verzenden' },
-    { value: 'shipped', label: 'Onderweg' },
-    { value: 'delivered', label: 'Afgeleverd' },
+    { value: 'all', label: 'All' },
+    { value: 'pending', label: 'To Ship' },
+    { value: 'shipped', label: 'In Transit' },
+    { value: 'delivered', label: 'Delivered' },
   ];
 
   return (
@@ -678,28 +678,28 @@ export function DemoProductsShipping({ companyName = 'Acme Corp', recipientName 
           <motion.div variants={fadeUp} className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <Clock className="w-4 h-4 text-yellow-400" />
-              <span className="text-xs text-zinc-500">Te verzenden</span>
+              <span className="text-xs text-zinc-500">To Ship</span>
             </div>
             <p className="text-lg font-bold text-white">{stats.pending}</p>
           </motion.div>
           <motion.div variants={fadeUp} className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <Truck className="w-4 h-4 text-blue-400" />
-              <span className="text-xs text-zinc-500">Onderweg</span>
+              <span className="text-xs text-zinc-500">In Transit</span>
             </div>
             <p className="text-lg font-bold text-white">{stats.shipped}</p>
           </motion.div>
           <motion.div variants={fadeUp} className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <Check className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs text-zinc-500">Afgeleverd</span>
+              <span className="text-xs text-zinc-500">Delivered</span>
             </div>
             <p className="text-lg font-bold text-white">{stats.delivered}</p>
           </motion.div>
           <motion.div variants={fadeUp} className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <AlertTriangle className="w-4 h-4 text-red-400" />
-              <span className="text-xs text-zinc-500">Te laat</span>
+              <span className="text-xs text-zinc-500">Overdue</span>
             </div>
             <p className="text-lg font-bold text-white">{stats.overdue}</p>
           </motion.div>
@@ -735,8 +735,8 @@ export function DemoProductsShipping({ companyName = 'Acme Corp', recipientName 
         {filteredTasks.length === 0 ? (
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-8 text-center">
             <Package className="w-12 h-12 mx-auto text-zinc-600 mb-3" />
-            <h3 className="text-base font-medium text-white mb-1">Geen verzendtaken gevonden</h3>
-            <p className="text-xs text-zinc-500">{search ? 'Probeer een andere zoekopdracht' : 'Er zijn momenteel geen verzendtaken'}</p>
+            <h3 className="text-base font-medium text-white mb-1">No shipping tasks found</h3>
+            <p className="text-xs text-zinc-500">{search ? 'Try a different search' : 'There are currently no shipping tasks'}</p>
           </div>
         ) : (
           <motion.div variants={staggerChildren} initial="initial" animate="animate" className="space-y-3">
@@ -789,7 +789,7 @@ export function DemoProductsShipping({ companyName = 'Acme Corp', recipientName 
                     </div>
                     {task.carrier && (
                       <div>
-                        <span className="text-zinc-500">Vervoerder</span>
+                        <span className="text-zinc-500">Carrier</span>
                         <span className="ml-2 text-white">{task.carrier}</span>
                       </div>
                     )}
@@ -860,7 +860,7 @@ export function DemoProductsStockPurchases({ companyName = 'Acme Corp', recipien
   };
 
   const filterTabs = [
-    { value: 'all', label: 'Alles' },
+    { value: 'all', label: 'All' },
     { value: 'review', label: 'To Review' },
     { value: 'approved', label: 'Approved' },
   ];
@@ -904,7 +904,7 @@ export function DemoProductsStockPurchases({ companyName = 'Acme Corp', recipien
           <motion.div variants={fadeUp} className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <Receipt className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs text-zinc-500">Total facturen</span>
+              <span className="text-xs text-zinc-500">Total invoices</span>
             </div>
             <p className="text-lg font-bold text-white">{stats.total}</p>
           </motion.div>
@@ -961,8 +961,8 @@ export function DemoProductsStockPurchases({ companyName = 'Acme Corp', recipien
         {filteredExpenses.length === 0 ? (
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-12 text-center">
             <Receipt className="w-16 h-16 mx-auto text-zinc-600 mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">Geen facturen gevonden</h3>
-            <p className="text-zinc-500">{search ? 'Probeer een andere zoekopdracht' : 'Upload an invoice to get started'}</p>
+            <h3 className="text-lg font-medium text-white mb-2">No invoices found</h3>
+            <p className="text-zinc-500">{search ? 'Try a different search' : 'Upload an invoice to get started'}</p>
           </div>
         ) : (
           <motion.div variants={staggerChildren} initial="initial" animate="animate" className="space-y-3">

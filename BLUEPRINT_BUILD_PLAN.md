@@ -84,7 +84,7 @@ An e-commerce reselling operation that purchases products from multiple supplier
 - **Diederik's first verification**: Compare pallet Excel against inkoop quantities + received quantities from warehouse
 - **B2C second verification**: Compare internal LVB format against bol.com backoffice received quantities
 - **B2B verification**: Not possible - discrepancies only surface through customer complaints
-- **No automatic link between**: Inkoop → Ontvangst → Pallets → Voorraad (Stock)
+- **No automatic link between**: Purchase → Receiving → Pallets → Stock
 
 #### 1.5 RETOUREN (Returns)
 
@@ -318,12 +318,12 @@ CREATE POLICY "sales_order_items_company_access" ON sales_order_items
 **File**: `src/pages/StockPurchases.jsx` (modify existing)
 
 **Changes:**
-- Add "Handmatige Inkoop" button next to existing "Upload Factuur" button
+- Add "Manual Purchase" button next to existing "Upload Invoice" button
 - New modal `ManualPurchaseModal` with fields:
   - **Supplier** (dropdown from suppliers table, or free-text for new)
   - **Purchase group name** (optional, e.g., "Amazon deal 10 feb")
   - **Date** (defaults to today)
-  - **Sales channel** (radio: B2B / B2C / Onbepaald)
+  - **Sales channel** (radio: B2B / B2C / Undecided)
   - **Line items** (repeatable):
     - Product (search by name/EAN, or create new)
     - EAN (auto-filled from product, or manual)
@@ -412,11 +412,11 @@ CREATE TRIGGER trigger_create_expected_deliveries_on_insert
 **File**: `src/pages/InventoryReceiving.jsx` (modify existing)
 
 **Changes:**
-- "Start Ontvangst Sessie" button at top of page
-- Session captures: session name (e.g., "Pallet levering DHL"), started_by, started_at
+- "Start Receiving Session" button at top of page
+- Session captures: session name (e.g., "Pallet delivery DHL"), started_by, started_at
 - All scans within a session are linked via `receiving_session_id`
 - Session summary: total EANs scanned, total items, linked expected deliveries
-- "Sluit Sessie" button with session summary report
+- "Close Session" button with session summary report
 - Session history view with ability to re-open past sessions
 
 **Acceptance criteria:**
@@ -446,7 +446,7 @@ CREATE TRIGGER trigger_create_expected_deliveries_on_insert
 **File**: `src/pages/InventoryReceiving.jsx` (modify existing)
 
 **Changes:**
-- "Exporteer" button on session detail and receiving history
+- "Export" button on session detail and receiving history
 - Export formats: CSV and PDF
 - CSV contains: EAN, product name, qty received, condition, location, received_by, timestamp
 - PDF is a formatted receiving report
@@ -480,7 +480,7 @@ CREATE TRIGGER trigger_create_expected_deliveries_on_insert
   - Shipment type: B2B or B2C (LVB)
   - Destination / customer (B2B) or "bol.com LVB" (B2C)
   - List of pallets in this shipment with expand/collapse
-  - "Nieuw Pallet" button
+  - "New Pallet" button
   - Shipment totals per EAN across all pallets
 - **Right panel**: Active pallet detail
   - Pallet code (auto-generated or manual)
@@ -498,7 +498,7 @@ CREATE TRIGGER trigger_create_expected_deliveries_on_insert
 4. System shows running totals per EAN across all pallets
 5. System shows available stock per EAN (from inventory)
 6. System flags if packed qty > received qty or > purchased qty
-7. "Afronden" (finalize) button locks the shipment
+7. "Finalize" button locks the shipment
 
 **Acceptance criteria:**
 - [ ] Create shipments with type (B2B/B2C)
@@ -553,7 +553,7 @@ CREATE TRIGGER trigger_create_expected_deliveries_on_insert
 **File**: Within `src/pages/PalletBuilder.jsx`
 
 **Changes:**
-- Optional "Verificatie Mode" toggle
+- Optional "Verification Mode" toggle
 - When enabled: scan each product going onto the pallet
 - System counts scans and compares to entered quantities
 - Alerts if scan count differs from expected quantity
@@ -2638,7 +2638,7 @@ CREATE TABLE purchase_groups (
 CREATE TABLE receiving_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID NOT NULL REFERENCES companies(id),
-    name TEXT NOT NULL,                           -- e.g., "Pallet levering DHL 10 feb"
+    name TEXT NOT NULL,                           -- e.g., "Pallet delivery DHL 10 feb"
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'closed')),
     started_by UUID REFERENCES auth.users(id),
     closed_by UUID REFERENCES auth.users(id),

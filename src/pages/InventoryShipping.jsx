@@ -87,7 +87,7 @@ const CARRIERS = [
   { value: "UPS", label: "UPS" },
   { value: "FedEx", label: "FedEx" },
   { value: "GLS", label: "GLS" },
-  { value: "other", label: "Anders" },
+  { value: "other", label: "Other" },
 ];
 
 // Ship modal with REQUIRED track & trace
@@ -100,7 +100,7 @@ function ShipModal({ task, isOpen, onClose, onShip, t }) {
   const handleSubmit = async () => {
     // CRITICAL: Track & trace is REQUIRED
     if (!trackTraceCode.trim()) {
-      setError("Track & trace code is verplicht om te kunnen verzenden");
+      setError("Track & trace code is required to ship");
       return;
     }
 
@@ -110,9 +110,9 @@ function ShipModal({ task, isOpen, onClose, onShip, t }) {
     try {
       await onShip(task.id, trackTraceCode.trim(), carrier || undefined);
       onClose();
-      toast.success("Verzending voltooid!");
+      toast.success("Shipment completed!");
     } catch (err) {
-      setError(err.message || "Verzending mislukt");
+      setError(err.message || "Shipment failed");
     } finally {
       setIsSubmitting(false);
     }
@@ -124,10 +124,10 @@ function ShipModal({ task, isOpen, onClose, onShip, t }) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Send className="w-5 h-5 text-cyan-400" />
-            Verzending voltooien
+            Complete Shipment
           </DialogTitle>
           <DialogDescription>
-            Voer de track & trace code in om de verzending te voltooien.
+            Enter the track & trace code to complete the shipment.
           </DialogDescription>
         </DialogHeader>
 
@@ -142,7 +142,7 @@ function ShipModal({ task, isOpen, onClose, onShip, t }) {
             </div>
             {task?.sales_orders?.customers?.name && (
               <div className="text-sm mt-1">
-                <span className={`${t ? t('text-slate-500', 'text-zinc-400') : 'text-zinc-400'}`}>Klant:</span>
+                <span className={`${t ? t('text-slate-500', 'text-zinc-400') : 'text-zinc-400'}`}>Customer:</span>
                 <span className={`ml-2 ${t ? t('text-slate-900', 'text-white') : 'text-white'}`}>
                   {task.sales_orders.customers.name}
                 </span>
@@ -158,7 +158,7 @@ function ShipModal({ task, isOpen, onClose, onShip, t }) {
               <span className="text-red-400">*</span>
             </Label>
             <Input
-              placeholder="Bijv. 3SJVB123456789"
+              placeholder="E.g. 3SJVB123456789"
               value={trackTraceCode}
               onChange={(e) => {
                 setTrackTraceCode(e.target.value);
@@ -168,16 +168,16 @@ function ShipModal({ task, isOpen, onClose, onShip, t }) {
               autoFocus
             />
             <p className={`text-xs ${t ? t('text-slate-500', 'text-zinc-500') : 'text-zinc-500'} mt-1`}>
-              Deze code is verplicht voor het voltooien van de verzending
+              This code is required to complete the shipment
             </p>
           </div>
 
           {/* Carrier select */}
           <div>
-            <Label>Vervoerder (optioneel)</Label>
+            <Label>Carrier (optional)</Label>
             <Select value={carrier} onValueChange={setCarrier}>
               <SelectTrigger className={`mt-1 ${t ? t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/10') : 'bg-zinc-900/50 border-white/10'}`}>
-                <SelectValue placeholder="Selecteer vervoerder..." />
+                <SelectValue placeholder="Select carrier..." />
               </SelectTrigger>
               <SelectContent>
                 {CARRIERS.map((c) => (
@@ -188,7 +188,7 @@ function ShipModal({ task, isOpen, onClose, onShip, t }) {
               </SelectContent>
             </Select>
             <p className={`text-xs ${t ? t('text-slate-500', 'text-zinc-500') : 'text-zinc-500'} mt-1`}>
-              Wordt automatisch gedetecteerd als niet opgegeven
+              Auto-detected if not specified
             </p>
           </div>
 
@@ -205,7 +205,7 @@ function ShipModal({ task, isOpen, onClose, onShip, t }) {
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-            Annuleren
+            Cancel
           </Button>
           <Button
             onClick={handleSubmit}
@@ -217,7 +217,7 @@ function ShipModal({ task, isOpen, onClose, onShip, t }) {
             ) : (
               <Send className="w-4 h-4 mr-2" />
             )}
-            Verzenden
+            Ship
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -279,7 +279,7 @@ function ShippingTaskCard({ task, onShip, t }) {
               )}
             </div>
             <p className={`text-sm ${t('text-slate-500', 'text-zinc-400')} mt-1`}>
-              {task.sales_orders?.customers?.name || "Onbekende klant"}
+              {task.sales_orders?.customers?.name || "Unknown customer"}
             </p>
           </div>
         </div>
@@ -291,7 +291,7 @@ function ShippingTaskCard({ task, onShip, t }) {
             size="sm"
           >
             <Send className="w-4 h-4 mr-2" />
-            Verzenden
+            Ship
           </Button>
         )}
 
@@ -306,7 +306,7 @@ function ShippingTaskCard({ task, onShip, t }) {
                 className="h-6 w-6"
                 onClick={() => {
                   navigator.clipboard.writeText(task.track_trace_code);
-                  toast.success("Gekopieerd!");
+                  toast.success("Copied!");
                 }}
               >
                 <Copy className="w-3 h-3" />
@@ -329,28 +329,28 @@ function ShippingTaskCard({ task, onShip, t }) {
       {/* Shipping details */}
       <div className={`mt-2 pt-2 border-t ${t('border-slate-200', 'border-white/5')} grid grid-cols-2 md:grid-cols-4 gap-2 text-xs`}>
         <div>
-          <span className={`${t('text-slate-500', 'text-zinc-500')}`}>Pakjes</span>
+          <span className={`${t('text-slate-500', 'text-zinc-500')}`}>Packages</span>
           <span className={`ml-2 ${t('text-slate-900', 'text-white')}`}>{task.package_count}</span>
         </div>
         {task.carrier && (
           <div>
-            <span className={`${t('text-slate-500', 'text-zinc-500')}`}>Vervoerder</span>
+            <span className={`${t('text-slate-500', 'text-zinc-500')}`}>Carrier</span>
             <span className={`ml-2 ${t('text-slate-900', 'text-white')}`}>{task.carrier}</span>
           </div>
         )}
         {task.ship_by_date && (
           <div>
-            <span className={`${t('text-slate-500', 'text-zinc-500')}`}>Verzenden voor</span>
+            <span className={`${t('text-slate-500', 'text-zinc-500')}`}>Ship by</span>
             <span className={`ml-2 ${t('text-slate-900', 'text-white')}`}>
-              {new Date(task.ship_by_date).toLocaleDateString("nl-NL")}
+              {new Date(task.ship_by_date).toLocaleDateString("en-GB")}
             </span>
           </div>
         )}
         {task.shipped_at && (
           <div>
-            <span className={`${t('text-slate-500', 'text-zinc-500')}`}>Verzonden</span>
+            <span className={`${t('text-slate-500', 'text-zinc-500')}`}>Shipped</span>
             <span className={`ml-2 ${t('text-slate-900', 'text-white')}`}>
-              {new Date(task.shipped_at).toLocaleDateString("nl-NL")}
+              {new Date(task.shipped_at).toLocaleDateString("en-GB")}
             </span>
           </div>
         )}
@@ -373,10 +373,10 @@ function OverdueAlert({ count, onClick }) {
           <AlertTriangle className="w-5 h-5 text-red-400" />
           <div>
             <h3 className="font-medium text-red-400 text-sm">
-              {count} levering{count > 1 ? "en" : ""} te laat
+              {count} shipment{count > 1 ? "s" : ""} overdue
             </h3>
             <p className="text-xs text-red-400/70">
-              Controleer de tracking status en neem actie
+              Check tracking status and take action
             </p>
           </div>
         </div>
@@ -414,7 +414,7 @@ export default function InventoryShipping() {
         setOverdueJobs(trackingData);
       } catch (error) {
         console.error("Failed to load shipping tasks:", error);
-        toast.error("Kon verzendtaken niet laden");
+        toast.error("Could not load shipping tasks");
       } finally {
         setIsLoading(false);
       }
@@ -499,28 +499,28 @@ export default function InventoryShipping() {
             <div className={`${t('bg-white/80 border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="w-4 h-4 text-yellow-400" />
-                <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>Te verzenden</span>
+                <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>To Ship</span>
               </div>
               <p className={`text-lg font-bold ${t('text-slate-900', 'text-white')}`}>{stats.pending}</p>
             </div>
             <div className={`${t('bg-white/80 border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
               <div className="flex items-center gap-2 mb-1">
                 <Truck className="w-4 h-4 text-blue-400" />
-                <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>Onderweg</span>
+                <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>In Transit</span>
               </div>
               <p className={`text-lg font-bold ${t('text-slate-900', 'text-white')}`}>{stats.shipped}</p>
             </div>
             <div className={`${t('bg-white/80 border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
               <div className="flex items-center gap-2 mb-1">
                 <Check className="w-4 h-4 text-green-400" />
-                <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>Afgeleverd</span>
+                <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>Delivered</span>
               </div>
               <p className={`text-lg font-bold ${t('text-slate-900', 'text-white')}`}>{stats.delivered}</p>
             </div>
             <div className={`${t('bg-white/80 border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
               <div className="flex items-center gap-2 mb-1">
                 <AlertTriangle className="w-4 h-4 text-red-400" />
-                <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>Te laat</span>
+                <span className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>Overdue</span>
               </div>
               <p className={`text-lg font-bold ${t('text-slate-900', 'text-white')}`}>{stats.overdue}</p>
             </div>
@@ -532,7 +532,7 @@ export default function InventoryShipping() {
               <div className="relative flex-1">
                 <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${t('text-slate-400', 'text-zinc-500')}`} />
                 <Input
-                  placeholder="Zoek op order, klant of T&T code..."
+                  placeholder="Search by order, customer or T&T code..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className={`pl-9 ${t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/10')}`}
@@ -540,10 +540,10 @@ export default function InventoryShipping() {
               </div>
               <Tabs value={filter} onValueChange={setFilter}>
                 <TabsList className={`${t('bg-slate-100', 'bg-zinc-900/50')}`}>
-                  <TabsTrigger value="all">Alles</TabsTrigger>
-                  <TabsTrigger value="pending">Te verzenden</TabsTrigger>
-                  <TabsTrigger value="shipped">Onderweg</TabsTrigger>
-                  <TabsTrigger value="delivered">Afgeleverd</TabsTrigger>
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="pending">To Ship</TabsTrigger>
+                  <TabsTrigger value="shipped">In Transit</TabsTrigger>
+                  <TabsTrigger value="delivered">Delivered</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
@@ -560,12 +560,12 @@ export default function InventoryShipping() {
             <div className={`${t('bg-white/80 border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-8 text-center`}>
               <Package className={`w-12 h-12 mx-auto ${t('text-slate-300', 'text-zinc-600')} mb-3`} />
               <h3 className={`text-base font-medium ${t('text-slate-900', 'text-white')} mb-1`}>
-                Geen verzendtaken gevonden
+                No shipping tasks found
               </h3>
               <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')}`}>
                 {search
-                  ? "Probeer een andere zoekopdracht"
-                  : "Er zijn momenteel geen verzendtaken"}
+                  ? "Try a different search"
+                  : "There are currently no shipping tasks"}
               </p>
             </div>
           ) : (
