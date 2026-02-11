@@ -117,8 +117,7 @@ export async function listExpectedDeliveries(companyId: string, status?: string 
     .select(`
       *,
       products (id, name, sku, ean),
-      suppliers (id, name),
-      expenses (id, expense_number, external_reference)
+      suppliers (id, name)
     `)
     .eq('company_id', companyId);
 

@@ -846,6 +846,8 @@ export default function InventoryReceiving() {
   // Start a receiving session
   const handleStartSession = async () => {
     if (!companyId || !sessionName.trim()) return;
+    if (!user?.id) { toast.error('User session expired'); return; }
+    if (sessionName.trim().length > 100) { toast.error('Session name too long (max 100 characters)'); return; }
 
     try {
       const session = await startReceivingSession(companyId, sessionName.trim(), user?.id);
@@ -907,10 +909,11 @@ export default function InventoryReceiving() {
       const logs = expandedSession === session.id
         ? expandedSessionLogs
         : await getSessionReceivingLogs(session.id);
+      if (!logs || logs.length === 0) { toast.warning('No items to export'); return; }
       exportSessionCSV(session, logs);
       toast.success('CSV exported');
     } catch (error) {
-      toast.error('Export failed');
+      toast.error('Export failed: ' + (error?.message || 'Unknown error'));
     }
   };
 
@@ -919,10 +922,11 @@ export default function InventoryReceiving() {
       const logs = expandedSession === session.id
         ? expandedSessionLogs
         : await getSessionReceivingLogs(session.id);
+      if (!logs || logs.length === 0) { toast.warning('No items to export'); return; }
       exportSessionPDF(session, logs);
       toast.success('PDF exported');
     } catch (error) {
-      toast.error('Export failed');
+      toast.error('Export failed: ' + (error?.message || 'Unknown error'));
     }
   };
 

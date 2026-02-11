@@ -321,7 +321,7 @@ export async function createReceivingSessionNotification(
     type: 'receiving_session_closed',
     severity: 'low',
     title: `Receiving session closed: ${sessionName}`,
-    message: `${closedByName} completed a receiving session. ${totalItems} items received across ${totalEans} products.`,
+    message: `${closedByName} completed a receiving session. ${totalItems} ${totalItems === 1 ? 'item' : 'items'} received across ${totalEans} ${totalEans === 1 ? 'product' : 'products'}.`,
     action_url: `/inventoryreceiving?session=${sessionId}`,
     context_data: { session_id: sessionId, total_items: totalItems, total_eans: totalEans },
     status: 'unread',
