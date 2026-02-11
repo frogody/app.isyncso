@@ -582,7 +582,7 @@ export async function addPalletToShipment(
   shipmentId: string,
   userId?: string
 ): Promise<Pallet> {
-  const seq = await db.getNextPalletSequence(shipmentId);
+  const seq = await db.getNextPalletSequence(companyId);
   const palletCode = db.generatePalletCode(seq);
 
   return db.addPallet({

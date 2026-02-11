@@ -197,11 +197,14 @@ export async function listPalletsByShipment(shipmentId: string): Promise<(Pallet
   return (data || []) as any;
 }
 
-export async function getNextPalletSequence(shipmentId: string): Promise<number> {
+export async function getNextPalletSequence(companyId: string): Promise<number> {
+  const todayPrefix = `PLT-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}`;
+
   const { data, error } = await supabase
     .from('pallets')
     .select('sequence_number')
-    .eq('shipment_id', shipmentId)
+    .eq('company_id', companyId)
+    .like('pallet_code', `${todayPrefix}%`)
     .order('sequence_number', { ascending: false })
     .limit(1);
 
