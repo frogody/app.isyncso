@@ -89,7 +89,7 @@ export default function ProductsPhysical() {
 
   const handleProductSaved = async (savedProduct) => {
     toast.success('Product saved successfully!');
-    // Reload data
+    // Reload data including channels
     setLoading(true);
     try {
       const productsData = await Product.filter({ type: 'physical' }, { limit: 100 });
@@ -100,6 +100,18 @@ export default function ProductsPhysical() {
         physicalMap[pp.product_id] = pp;
       });
       setPhysicalProducts(physicalMap);
+
+      // Reload channel data so badges and filter reflect changes
+      const { data: channelsData, error: chErr } = await supabase
+        .from('product_sales_channels')
+        .select('product_id, channel');
+      if (chErr) console.error('Failed to reload channels:', chErr);
+      const chMap = {};
+      (channelsData || []).forEach(ch => {
+        if (!chMap[ch.product_id]) chMap[ch.product_id] = [];
+        chMap[ch.product_id].push(ch.channel);
+      });
+      setChannelsMap(chMap);
     } catch (e) {
       console.error('Failed to reload products:', e);
     } finally {
@@ -203,9 +215,10 @@ export default function ProductsPhysical() {
 
         let channelsData = [];
         try {
-          const { data } = await supabase
+          const { data, error: chErr } = await supabase
             .from('product_sales_channels')
             .select('product_id, channel');
+          if (chErr) console.error('Failed to load sales channels:', chErr);
           channelsData = data || [];
         } catch (e) {
           console.warn('Failed to load sales channels:', e);

@@ -232,7 +232,7 @@ export default function ManualPurchaseModal({
               name: line.product_name.trim() || `Product ${line.ean}`,
               ean: line.ean.trim(),
               price: parseFloat(line.unit_price) || 0,
-              product_type: "physical",
+              type: "physical",
               created_by: userId,
             })
             .select("id")

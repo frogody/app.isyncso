@@ -2987,7 +2987,7 @@ CREATE INDEX idx_receiving_log_session ON receiving_log(receiving_session_id) WH
 - [x] `P1-5` Add channel badges to ProductsPhysical (from `product_sales_channels` junction table, multi-select edit)
 - [x] `P1-6` Channel audit logging
 - [x] `P1-7` Fix orphaned trigger: wire `create_expected_deliveries_on_insert()` to `stock_purchases` INSERT or consolidate with approval trigger
-- [ ] `P1-8` Test: create manual purchase with groups and channel
+- [x] `P1-8` Test: create manual purchase with groups and channel
 
 ### Phase 2: Receiving Enhancements
 - [ ] `P2-1` Receiving session start/close flow

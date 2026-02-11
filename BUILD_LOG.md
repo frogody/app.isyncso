@@ -2,7 +2,7 @@
 
 ## Active Phase: Phase 1 — Purchasing Overhaul
 ## Last Updated: 2026-02-11T01:00:00Z
-## Next Task: P1-8 — Test: create manual purchase with groups and channel
+## Next Task: P1-9 (or Phase 2 start)
 
 ---
 
@@ -133,4 +133,17 @@ If you've just started a new session or context was compacted, read these files 
   - **StockPurchases.jsx**: Added `purchaseGroups` and `expandedGroups` state, loads groups alongside purchases, organizes expenses into `groupedExpenses` (keyed by group_id) and `ungroupedExpenses`. Added group filter Select dropdown (Alle Groepen / Ongegroepeerd / per group). Created `PurchaseGroupHeader` component with expand/collapse showing group name, channel badge, invoice count, supplier, date, total items, total value. Groups render first with their purchases indented under a left border, then ungrouped purchases below. Updated approve/reject handlers to use `loadStockPurchases()` for full refresh including groups.
 - **Key decisions**: Groups show at top of list for visibility. Expand/collapse with left-border indentation for visual hierarchy. Channel badge on group header matches B2B/B2C/Onbepaald styling.
 - **Files changed**: `src/pages/StockPurchases.jsx` (added Select imports, Layers + ChevronDown icons, PurchaseGroupHeader component, grouped list rendering, group filter)
+
+#### Task: P1-8 — Bug fixes from browser testing
+- **What was done**: Fixed 3 bugs found during manual browser testing of P1-1 through P1-7:
+  - **BUG 1 (Critical): Channel filter returns 0 results** — Root cause: `handleProductSaved` in ProductsPhysical.jsx reloaded products and physical data but did NOT reload `channelsMap`. After saving channels in ProductModal, the page still had stale (empty) channel data. Fix: added channel reload (`product_sales_channels` query + channelsMap rebuild) to `handleProductSaved`.
+  - **BUG 2 (Medium): No channel badges on product cards** — Same root cause as BUG 1. The `salesChannels` prop passed to ProductGridCard/ProductListRow comes from `channelsMap`, which was stale after save. Fixed by the same channel reload in `handleProductSaved`.
+  - **BUG 3 (Low): Auto-created products from manual purchase not visible** — Root cause: ManualPurchaseModal.jsx inserted `product_type: "physical"` but the products table column is `type` (confirmed via migration `002_products_tables.sql`). ProductsPhysical filters by `Product.filter({ type: 'physical' })`, so auto-created products with wrong column name had `type` unset and were excluded. Fix: changed `product_type: "physical"` to `type: "physical"`.
+- **Additional improvements**: Added error logging (`console.error`) to all `product_sales_channels` operations (insert, read, delete) in both ProductModal and ProductsPhysical — previously errors were silently swallowed.
+- **Key decisions**: Channel reload uses same query pattern as initial `loadData` for consistency. Error logging added without toast notifications (channel ops are secondary to product save).
+- **Files changed**:
+  - `src/components/purchases/ManualPurchaseModal.jsx` — `product_type` → `type`
+  - `src/pages/ProductsPhysical.jsx` — added channel reload in `handleProductSaved`, added error logging on initial channel load
+  - `src/components/products/ProductModal.jsx` — added error logging on channel read and insert
+- **Verification**: Build succeeds. All 3 bug fixes address the reported symptoms.
 

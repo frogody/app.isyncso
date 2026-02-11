@@ -699,10 +699,11 @@ export default function ProductModal({
         }
 
         // Sync sales channels
-        const { data: existingChannels } = await supabase
+        const { data: existingChannels, error: readChErr } = await supabase
           .from('product_sales_channels')
           .select('channel')
           .eq('product_id', savedProduct.id);
+        if (readChErr) console.error('Failed to read existing channels:', readChErr);
         const oldChannels = (existingChannels || []).map(r => r.channel);
         const added = productChannels.filter(ch => !oldChannels.includes(ch));
         const removed = oldChannels.filter(ch => !productChannels.includes(ch));
@@ -715,13 +716,14 @@ export default function ProductModal({
             .in('channel', removed);
         }
         if (added.length > 0) {
-          await supabase
+          const { error: insertErr } = await supabase
             .from('product_sales_channels')
             .insert(added.map(ch => ({
               product_id: savedProduct.id,
               channel: ch,
               company_id: user.company_id,
             })));
+          if (insertErr) console.error('Failed to insert sales channels:', insertErr);
         }
 
         // Audit log for channel changes
