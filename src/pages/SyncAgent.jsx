@@ -1607,38 +1607,66 @@ function Bubble({ role, text, ts, index, document, highlightBorders }) {
 
     anime({
       targets: bubbleRef.current,
-      translateY: [20, 0],
+      translateY: [16, 0],
       opacity: [0, 1],
-      duration: 300,
+      duration: 350,
       delay: 50,
-      easing: 'easeOutQuad',
+      easing: 'easeOutCubic',
     });
   }, []);
 
   return (
-    <div ref={bubbleRef} className={cn('flex', isUser ? 'justify-end' : 'justify-start')} style={{ opacity: 0 }}>
+    <div ref={bubbleRef} className={cn('flex items-end gap-2.5', isUser ? 'justify-end' : 'justify-start')} style={{ opacity: 0 }}>
+      {/* Assistant avatar */}
+      {!isUser && (
+        <div className={cn(
+          'shrink-0 w-7 h-7 rounded-lg flex items-center justify-center',
+          syt('bg-purple-100', 'bg-purple-500/15 ring-1 ring-purple-500/20')
+        )}>
+          <Bot className={cn('h-3.5 w-3.5', syt('text-purple-600', 'text-purple-400'))} />
+        </div>
+      )}
+
       <div
         className={cn(
-          'max-w-[78%] rounded-xl border px-4 py-3 text-sm leading-relaxed shadow-sm transition-all duration-300',
+          'max-w-[75%] text-sm leading-relaxed transition-all duration-300',
           isUser
-            ? `border-cyan-500/20 bg-cyan-600/20 ${syt('text-slate-900', 'text-white')}`
-            : `${syt('border-slate-200 bg-white/80', 'border-white/10 bg-black/40')} ${syt('text-slate-800', 'text-white/90')}`,
-          highlightBorders && "border-cyan-400/70 shadow-[0_0_20px_rgba(34,211,238,0.4)]"
+            ? cn(
+                'rounded-2xl rounded-br-sm px-4 py-2.5',
+                syt(
+                  'bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-md shadow-cyan-500/15',
+                  'bg-gradient-to-br from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-600/15'
+                )
+              )
+            : cn(
+                'rounded-2xl rounded-bl-sm px-4 py-2.5',
+                syt(
+                  'bg-white ring-1 ring-slate-200/80 text-slate-800 shadow-sm',
+                  'bg-zinc-900/80 ring-1 ring-white/[0.06] text-zinc-100 backdrop-blur-sm'
+                )
+              ),
+          highlightBorders && 'ring-2 ring-cyan-400/60 shadow-[0_0_24px_rgba(34,211,238,0.25)]'
         )}
       >
-        <div className={`mb-1.5 flex items-center gap-2 text-[11px] ${syt('text-slate-400', 'text-zinc-500')}`}>
-          <span className="inline-flex items-center gap-1.5">
-            {isUser ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
-            <span className="capitalize">{isUser ? 'You' : 'SYNC'}</span>
-          </span>
-          <span>·</span>
+        <div className={cn(
+          'mb-1 flex items-center gap-1.5 text-[10px] font-medium tracking-wide uppercase',
+          isUser ? 'text-white/50' : syt('text-slate-400', 'text-zinc-500')
+        )}>
+          <span>{isUser ? 'You' : 'SYNC'}</span>
+          <span className={isUser ? 'text-white/30' : syt('text-slate-300', 'text-zinc-700')}>·</span>
           <span>{formatTime(ts)}</span>
         </div>
         {isUser ? (
           <div className="whitespace-pre-wrap">{text}</div>
         ) : (
           <>
-            <div className="prose prose-invert prose-sm max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-li:my-1 prose-code:text-cyan-400 prose-code:bg-cyan-950/30 prose-code:px-1 prose-code:rounded">
+            <div className={cn(
+              'prose prose-sm max-w-none prose-p:my-1.5 prose-headings:my-2.5 prose-ul:my-1.5 prose-li:my-0.5',
+              syt(
+                'prose-slate prose-code:text-cyan-700 prose-code:bg-cyan-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs',
+                'prose-invert prose-code:text-cyan-400 prose-code:bg-cyan-950/40 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-xs'
+              )
+            )}>
               {contentParts.map((part, i) => (
                 part.type === 'image' ? (
                   <ImageCard key={`img-${i}`} url={part.url} />
@@ -1649,11 +1677,20 @@ function Bubble({ role, text, ts, index, document, highlightBorders }) {
                 )
               ))}
             </div>
-            {/* Render document card if present */}
             {document && <DocumentCard url={document.url} title={document.title} />}
           </>
         )}
       </div>
+
+      {/* User avatar */}
+      {isUser && (
+        <div className={cn(
+          'shrink-0 w-7 h-7 rounded-lg flex items-center justify-center',
+          syt('bg-cyan-100', 'bg-cyan-500/15 ring-1 ring-cyan-500/20')
+        )}>
+          <User className={cn('h-3.5 w-3.5', syt('text-cyan-700', 'text-cyan-400'))} />
+        </div>
+      )}
     </div>
   );
 }
@@ -1972,45 +2009,55 @@ export default function SyncAgent() {
   return (
     <SyncPageTransition>
     <div ref={pageRef} className={`h-screen flex flex-col ${syt('bg-slate-50', 'bg-black')} ${syt('text-slate-900', 'text-white')} overflow-hidden`}>
-      {/* Top bar - compact */}
+      {/* Top bar */}
       <div className="shrink-0 z-20">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-end gap-2 px-6 py-2">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-end gap-1.5 px-4 lg:px-6 py-2">
           <button
-            className="group relative inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium overflow-hidden transition-all duration-300 shadow-lg shadow-purple-500/20"
+            className="group relative inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium overflow-hidden transition-all duration-300 shadow-md shadow-purple-500/15 hover:shadow-lg hover:shadow-purple-500/25"
             onClick={() => setVoiceModeOpen(true)}
             title="Start voice conversation"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-500 opacity-90 group-hover:opacity-100 transition-opacity" />
-            <Mic className="relative h-4 w-4 text-white" />
-            <span className="relative text-white hidden sm:inline">Voice</span>
+            <Mic className="relative h-3.5 w-3.5 text-white" />
+            <span className="relative text-white">Voice</span>
           </button>
           <button
-            className="group relative inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium overflow-hidden transition-all duration-300"
+            className="group relative inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium overflow-hidden transition-all duration-300"
             onClick={handleNewChat}
             title="Start new conversation"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-cyan-500 opacity-90 group-hover:opacity-100 transition-opacity" />
-            <Plus className="relative h-4 w-4 text-white" />
-            <span className="relative text-white hidden sm:inline">New</span>
+            <Plus className="relative h-3.5 w-3.5 text-white" />
+            <span className="relative text-white">New</span>
           </button>
+          <div className={cn('w-px h-5 mx-1', syt('bg-slate-200', 'bg-zinc-800'))} />
           <button
-            className={`inline-flex items-center justify-center rounded-xl border p-2 transition-all duration-200 ${syt('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700/60 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-white hover:border-zinc-600')}`}
+            className={cn(
+              'inline-flex items-center justify-center rounded-lg p-1.5 transition-all duration-200',
+              syt('text-slate-500 hover:text-slate-700 hover:bg-slate-100', 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06]')
+            )}
             onClick={() => setSeed((s) => s + 1)}
-            title="Refresh inner visual"
+            title="Refresh visual"
           >
             <RotateCcw className="h-4 w-4" />
           </button>
           <button
             onClick={toggleTheme}
-            className={`inline-flex items-center justify-center rounded-xl border p-2 transition-all duration-200 ${syt('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700/60 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-white hover:border-zinc-600')}`}
+            className={cn(
+              'inline-flex items-center justify-center rounded-lg p-1.5 transition-all duration-200',
+              syt('text-slate-500 hover:text-slate-700 hover:bg-slate-100', 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06]')
+            )}
             title="Toggle theme"
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
           <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
             <SheetTrigger asChild>
-              <button className={cn('p-2 rounded-xl transition-all', syt('bg-slate-100 hover:bg-slate-200 text-slate-600', 'bg-white/[0.06] hover:bg-white/10 text-zinc-400'))}>
-                <Bot className="w-5 h-5" />
+              <button className={cn(
+                'inline-flex items-center justify-center rounded-lg p-1.5 transition-all duration-200',
+                syt('text-slate-500 hover:text-slate-700 hover:bg-slate-100', 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06]')
+              )}>
+                <Bot className="w-4 h-4" />
               </button>
             </SheetTrigger>
             <SheetContent side="right" className={cn('w-[400px] sm:w-[440px] border-l', syt('bg-white border-slate-200', 'bg-zinc-950 border-white/10'))}>
@@ -2055,59 +2102,95 @@ export default function SyncAgent() {
 
       {/* Layout - fills remaining height, minimal top padding to align with buttons */}
       <div className="flex-1 min-h-0 mx-auto w-full max-w-[1600px] grid grid-cols-1 gap-3 px-4 lg:px-6 pb-4 lg:grid-cols-[400px_1fr]">
-        {/* Left: Container with Avatar + Agent Messages */}
+        {/* Left: Avatar + Agent Channel */}
         <div
           data-animate
           className={cn(
-            `flex flex-col rounded-xl border ${syt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/30')} overflow-hidden transition-all duration-300`,
-            highlightBorders
-              ? "border-cyan-400/70 shadow-[0_0_30px_rgba(34,211,238,0.5)]"
-              : syt('border-slate-200', 'border-zinc-700/50')
+            'flex flex-col rounded-2xl overflow-hidden transition-all duration-500 relative',
+            syt(
+              'bg-gradient-to-b from-white to-slate-50/80 ring-1 ring-slate-200 shadow-sm',
+              'bg-gradient-to-b from-zinc-900/90 to-zinc-950/90 ring-1 ring-white/[0.06] backdrop-blur-sm'
+            ),
+            highlightBorders && 'ring-2 ring-cyan-400/60 shadow-[0_0_40px_rgba(34,211,238,0.25)]'
           )}
           style={{ opacity: 0 }}
         >
-          {/* Avatar - centered with room for status chip below */}
-          <div className="shrink-0 grid place-items-center pt-6 pb-12">
+          {/* Ambient glow behind avatar — color shifts with mood */}
+          <div className={cn(
+            'absolute top-[30%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 rounded-full blur-[80px] pointer-events-none transition-all duration-1000',
+            mood === 'speaking'
+              ? syt('bg-purple-300/30', 'bg-purple-500/20')
+              : mood === 'thinking'
+                ? syt('bg-amber-300/25', 'bg-amber-500/15')
+                : syt('bg-cyan-200/20', 'bg-cyan-500/10')
+          )} />
+
+          {/* Avatar */}
+          <div className="shrink-0 grid place-items-center pt-6 pb-10 relative z-10">
             <AgentAvatar size={240} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
           </div>
 
-          {/* Agent orchestration messages - below avatar, fills remaining space */}
-          <div className="flex-1 min-h-0 overflow-hidden pb-3">
+          {/* Separator */}
+          <div className={cn('mx-6', syt('border-t border-slate-200/60', 'border-t border-white/[0.04]'))} />
+
+          {/* Agent orchestration channel */}
+          <div className="flex-1 min-h-0 overflow-hidden py-3 relative z-10">
             <AgentChannel messages={agentMessages} isActive={isSending} highlightBorders={highlightBorders} />
           </div>
         </div>
 
-        {/* Right: Chat Panel - Clean, No Border */}
+        {/* Right: Chat Panel */}
         <div
           data-animate
-          className="flex flex-col min-h-0"
+          className={cn(
+            'flex flex-col min-h-0 rounded-2xl',
+            syt(
+              'bg-gradient-to-b from-white/60 to-slate-50/40 ring-1 ring-slate-200/60',
+              'bg-gradient-to-b from-zinc-900/40 to-zinc-950/40 ring-1 ring-white/[0.04]'
+            )
+          )}
           style={{ opacity: 0 }}
         >
-          {/* Messages Area - directly on background, with top spacing */}
-          <div ref={scrollerRef} className="flex-1 min-h-0 space-y-4 overflow-y-auto px-2 pt-4 pb-4">
+          {/* Messages */}
+          <div ref={scrollerRef} className="flex-1 min-h-0 space-y-3 overflow-y-auto px-4 pt-5 pb-3">
               {messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center px-4">
-                  <div className="relative mb-6">
-                    <div className="absolute inset-0 bg-cyan-500/20 rounded-xl blur-2xl scale-150" />
-                    <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/30 flex items-center justify-center shadow-lg shadow-cyan-500/10">
-                      <Sparkles className="w-10 h-10 text-cyan-400" />
+                <div className="h-full flex flex-col items-center justify-center text-center px-6">
+                  <div className="relative mb-8">
+                    <div className={cn('absolute inset-0 rounded-full blur-3xl scale-[3]', syt('bg-purple-200/20', 'bg-purple-500/10'))} />
+                    <div className={cn(
+                      'relative w-16 h-16 rounded-2xl flex items-center justify-center',
+                      syt(
+                        'bg-gradient-to-br from-purple-100 to-cyan-100 shadow-lg shadow-purple-200/30',
+                        'bg-gradient-to-br from-purple-500/20 to-cyan-500/10 ring-1 ring-white/10 shadow-lg shadow-purple-500/10'
+                      )
+                    )}>
+                      <Sparkles className={cn('w-8 h-8', syt('text-purple-600', 'text-purple-400'))} />
                     </div>
                   </div>
-                  <h4 className={`text-lg font-semibold bg-gradient-to-r ${syt('from-slate-900 to-slate-600', 'from-white to-zinc-300')} bg-clip-text text-transparent mb-2`}>How can I help you?</h4>
-                  <p className={`text-sm ${syt('text-slate-400', 'text-zinc-500')} mb-8 max-w-sm`}>
-                    I can help with invoices, prospects, compliance, learning, and more.
+                  <h4 className={cn(
+                    'text-xl font-semibold mb-2 bg-gradient-to-r bg-clip-text text-transparent',
+                    syt('from-slate-900 to-slate-600', 'from-white to-zinc-400')
+                  )}>What can I help with?</h4>
+                  <p className={cn('text-sm mb-10 max-w-xs', syt('text-slate-400', 'text-zinc-500'))}>
+                    Invoices, prospects, compliance, learning, and more.
                   </p>
-                  <div className="flex flex-wrap gap-2 justify-center max-w-lg">
+                  <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
                     {suggestions.map((suggestion, idx) => (
                       <button
                         key={idx}
-                        onClick={() => {
-                          setInput(suggestion.action);
-                          setTimeout(() => send(), 100);
-                        }}
-                        className={`group px-4 py-2.5 text-sm rounded-xl border ${syt('border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900', 'border-zinc-700/60 bg-zinc-800/40 text-zinc-300 hover:bg-zinc-800 hover:text-white')} hover:border-cyan-500/30 transition-all duration-200 hover:shadow-lg hover:shadow-cyan-500/5`}
+                        onClick={() => { setInput(suggestion.action); setTimeout(() => send(), 100); }}
+                        className={cn(
+                          'group px-4 py-3 text-sm rounded-xl text-left transition-all duration-200',
+                          syt(
+                            'bg-white ring-1 ring-slate-200/80 text-slate-600 hover:ring-cyan-300 hover:bg-cyan-50/50 hover:text-cyan-700 shadow-sm hover:shadow-md hover:shadow-cyan-500/5',
+                            'bg-white/[0.03] ring-1 ring-white/[0.06] text-zinc-400 hover:ring-cyan-500/30 hover:bg-cyan-500/5 hover:text-cyan-400'
+                          )
+                        )}
                       >
-                        {suggestion.label}
+                        <span className="flex items-center gap-2">
+                          {suggestion.isOrchestration && <Sparkles className="w-3.5 h-3.5 opacity-40" />}
+                          {suggestion.label}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -2119,37 +2202,52 @@ export default function SyncAgent() {
                   ))}
 
                   {isSending && (
-                    <div className="flex justify-start">
+                    <div className="flex items-end gap-2.5">
                       <div className={cn(
-                        `rounded-xl ${syt('bg-white shadow-sm', 'bg-gradient-to-br from-zinc-800/60 to-zinc-900/60')} border px-4 py-3 text-sm backdrop-blur-sm transition-all duration-300`,
-                        highlightBorders
-                          ? "border-cyan-400/70 shadow-[0_0_20px_rgba(34,211,238,0.4)]"
-                          : syt('border-slate-200', 'border-zinc-700/50')
+                        'shrink-0 w-7 h-7 rounded-lg flex items-center justify-center',
+                        syt('bg-purple-100', 'bg-purple-500/15 ring-1 ring-purple-500/20')
+                      )}>
+                        <Bot className={cn('h-3.5 w-3.5', syt('text-purple-600', 'text-purple-400'))} />
+                      </div>
+                      <div className={cn(
+                        'rounded-2xl rounded-bl-sm px-4 py-3',
+                        syt(
+                          'bg-white ring-1 ring-slate-200/80 shadow-sm',
+                          'bg-zinc-900/80 ring-1 ring-white/[0.06] backdrop-blur-sm'
+                        )
                       )}>
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1.5">
-                            <span className="inline-flex h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '0ms', animationDuration: '600ms' }} />
-                            <span className="inline-flex h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '150ms', animationDuration: '600ms' }} />
-                            <span className="inline-flex h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '300ms', animationDuration: '600ms' }} />
+                          <div className="flex items-center gap-1">
+                            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '0ms', animationDuration: '600ms' }} />
+                            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '150ms', animationDuration: '600ms' }} />
+                            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '300ms', animationDuration: '600ms' }} />
                           </div>
-                          <span className={syt('text-slate-500', 'text-zinc-400')}>SYNC is {mood === 'thinking' ? 'thinking' : 'responding'}…</span>
+                          <span className={cn('text-xs', syt('text-slate-400', 'text-zinc-500'))}>
+                            {mood === 'thinking' ? 'Thinking...' : 'Responding...'}
+                          </span>
                         </div>
                       </div>
                     </div>
                   )}
 
                   {error && (
-                    <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30 backdrop-blur-sm">
+                    <div className={cn(
+                      'flex items-start gap-3 p-4 rounded-2xl',
+                      syt(
+                        'bg-red-50 ring-1 ring-red-200/80',
+                        'bg-red-500/10 ring-1 ring-red-500/20 backdrop-blur-sm'
+                      )
+                    )}>
                       <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                       <div className="flex-1">
-                        <p className="text-sm text-red-400 font-medium">Something went wrong</p>
-                        <p className="text-xs text-red-400/70 mt-1">{error}</p>
+                        <p className={cn('text-sm font-medium', syt('text-red-600', 'text-red-400'))}>Something went wrong</p>
+                        <p className={cn('text-xs mt-1', syt('text-red-400', 'text-red-400/70'))}>{error}</p>
                       </div>
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={handleRetry}
-                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        className={cn('text-red-400 hover:text-red-300', syt('hover:bg-red-100', 'hover:bg-red-500/10'))}
                       >
                         <RefreshCw className="w-4 h-4 mr-1" />
                         Retry
@@ -2160,62 +2258,101 @@ export default function SyncAgent() {
               )}
             </div>
 
-          {/* Input Area - clean, no container border */}
-          <div className="shrink-0 px-2 py-3">
-            <div className="flex items-end gap-3">
-              <div className={`flex-1 rounded-xl ${syt('bg-white shadow-sm', 'bg-zinc-900/60')} border ${syt('border-slate-200 hover:border-slate-300', 'border-zinc-700/50 hover:border-zinc-600/60')} focus-within:border-cyan-500/40 focus-within:shadow-lg focus-within:shadow-cyan-500/5 transition-all duration-200`}>
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      send();
-                    }
-                  }}
-                  placeholder="Message SYNC…"
-                  rows={2}
-                  disabled={isSending}
-                  className={`w-full resize-none bg-transparent text-sm ${syt('text-slate-900', 'text-white/90')} outline-none ${syt('placeholder:text-slate-400', 'placeholder:text-zinc-500')} disabled:opacity-50 px-4 py-3`}
-                />
-                <div className={`px-4 pb-3 flex items-center justify-between text-[11px] ${syt('text-slate-400', 'text-zinc-600')}`}>
-                  <span>Enter to send · Shift+Enter for newline</span>
-                  <span className="tabular-nums">{input.length}</span>
-                </div>
+          {/* Suggestion chips — shown when few messages */}
+          {messages.length > 0 && messages.length <= 4 && !isSending && (
+            <div className="shrink-0 px-4 pb-2">
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+                {suggestions.map((s, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => { setInput(s.action); setTimeout(() => send(), 100); }}
+                    className={cn(
+                      'shrink-0 px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition-all duration-200',
+                      syt(
+                        'bg-slate-100 text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 ring-1 ring-slate-200/80',
+                        'bg-white/[0.04] text-zinc-400 hover:bg-cyan-500/10 hover:text-cyan-400 ring-1 ring-white/[0.06]'
+                      )
+                    )}
+                  >
+                    {s.isOrchestration && <Sparkles className="inline w-3 h-3 mr-1 opacity-50" />}
+                    {s.label}
+                  </button>
+                ))}
               </div>
+            </div>
+          )}
 
+          {/* Input Area */}
+          <div className="shrink-0 px-3 pb-3 pt-1">
+            <div className={cn(
+              'flex items-end gap-2 rounded-2xl p-1.5 transition-all duration-300',
+              syt(
+                'bg-white ring-1 ring-slate-200/80 shadow-sm focus-within:ring-cyan-400/50 focus-within:shadow-md focus-within:shadow-cyan-500/5',
+                'bg-zinc-900/80 ring-1 ring-white/[0.06] backdrop-blur-sm focus-within:ring-cyan-500/30 focus-within:shadow-lg focus-within:shadow-cyan-500/5'
+              )
+            )}>
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    send();
+                  }
+                }}
+                placeholder="Message SYNC..."
+                rows={1}
+                disabled={isSending}
+                className={cn(
+                  'flex-1 resize-none bg-transparent text-sm outline-none disabled:opacity-50 px-3 py-2.5 min-h-[40px] max-h-[120px]',
+                  syt('text-slate-900 placeholder:text-slate-400', 'text-white/90 placeholder:text-zinc-500')
+                )}
+              />
               <button
                 onClick={send}
                 disabled={isSending || !input.trim()}
                 className={cn(
-                  'group relative inline-flex h-14 w-14 items-center justify-center rounded-xl transition-all duration-300 overflow-hidden',
+                  'shrink-0 h-9 w-9 rounded-xl flex items-center justify-center transition-all duration-300',
                   isSending || !input.trim()
-                    ? `cursor-not-allowed ${syt('bg-slate-100 border border-slate-200 text-slate-400', 'bg-zinc-800/60 border border-zinc-700/50 text-zinc-600')}`
-                    : 'shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30'
+                    ? syt('bg-slate-100 text-slate-400', 'bg-zinc-800/60 text-zinc-600')
+                    : 'bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-md shadow-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/30 hover:scale-105 active:scale-95'
                 )}
                 title="Send (Enter)"
               >
-                {input.trim() && !isSending && (
-                  <>
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-cyan-600" />
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </>
-                )}
-                <Send className={cn(
-                  "relative h-5 w-5 transition-all duration-300",
-                  input.trim() && !isSending ? "text-white" : syt('text-slate-400', 'text-zinc-600')
-                )} />
+                <Send className="h-4 w-4" />
               </button>
+            </div>
+            <div className={cn('px-3 pt-1.5 flex items-center justify-between text-[10px]', syt('text-slate-400', 'text-zinc-600'))}>
+              <span>Enter to send · Shift+Enter for newline</span>
+              <span className="tabular-nums">{input.length}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Background effects */}
-      <div className="pointer-events-none fixed inset-0 -z-10 opacity-60">
-        <div className="absolute left-[-20%] top-[-30%] h-[520px] w-[520px] rounded-full bg-cyan-900/5 blur-3xl" />
-        <div className="absolute right-[-25%] top-[10%] h-[620px] w-[620px] rounded-full bg-cyan-900/5 blur-3xl" />
-        <div className="absolute bottom-[-35%] left-[10%] h-[640px] w-[640px] rounded-full bg-cyan-900/5 blur-3xl" />
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className={cn(
+          'absolute left-[-15%] top-[-20%] h-[500px] w-[500px] rounded-full blur-[120px] transition-all duration-[2000ms]',
+          mood === 'speaking'
+            ? syt('bg-purple-200/20', 'bg-purple-900/15')
+            : mood === 'thinking'
+              ? syt('bg-amber-200/15', 'bg-amber-900/10')
+              : syt('bg-cyan-200/15', 'bg-cyan-900/8')
+        )} />
+        <div className={cn(
+          'absolute right-[-10%] top-[20%] h-[400px] w-[400px] rounded-full blur-[100px] transition-all duration-[2000ms]',
+          syt('bg-purple-200/10', 'bg-purple-900/8')
+        )} />
+        <div className={cn(
+          'absolute bottom-[-20%] left-[20%] h-[500px] w-[500px] rounded-full blur-[120px]',
+          syt('bg-slate-200/20', 'bg-zinc-800/20')
+        )} />
+        {/* Subtle dot pattern overlay */}
+        <div className={cn(
+          'absolute inset-0 opacity-[0.015]',
+          syt('bg-[radial-gradient(circle,_#000_1px,_transparent_1px)]', 'bg-[radial-gradient(circle,_#fff_1px,_transparent_1px)]')
+        )} style={{ backgroundSize: '24px 24px' }} />
       </div>
 
       {/* Voice Mode Overlay */}
