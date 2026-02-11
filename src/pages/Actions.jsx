@@ -233,8 +233,8 @@ export default function Actions() {
     <div className="bg-black relative">
       {/* Animated Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-blue-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-blue-900/10 rounded-full blur-3xl" />
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-cyan-900/10 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full px-4 lg:px-6 py-3 space-y-3">
@@ -243,12 +243,12 @@ export default function Actions() {
           <div className="relative z-10 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center">
-                <Zap className="w-4 h-4 text-blue-400/80" />
+                <Zap className="w-4 h-4 text-cyan-400/80" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-base font-bold text-white">Actions Hub</h1>
-                  <Badge className="bg-blue-950/40 text-blue-300/80 border-blue-800/30 text-[10px]">
+                  <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-[10px]">
                     {activeCount} Connected
                   </Badge>
                 </div>
@@ -261,7 +261,7 @@ export default function Actions() {
                 <Plug className="w-3 h-3 mr-1.5" />
                 Connect
               </Button>
-              <Button onClick={() => setCreateActionModalOpen(true)} className="bg-blue-600/80 hover:bg-blue-600 text-white font-medium text-xs px-3 py-1.5 h-auto">
+              <Button onClick={() => setCreateActionModalOpen(true)} className="bg-cyan-600/80 hover:bg-cyan-600 text-white font-medium text-xs px-3 py-1.5 h-auto">
                 <Plus className="w-3 h-3 mr-1.5" />
                 New Action
               </Button>
@@ -273,7 +273,7 @@ export default function Actions() {
         <div className="grid grid-cols-4 gap-2">
           <div className="px-3 py-2 rounded-xl bg-zinc-900/50 border border-zinc-800/60 flex items-center gap-3">
             <div className="w-7 h-7 rounded-lg bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center shrink-0">
-              <Clock className="w-3.5 h-3.5 text-blue-400/70" />
+              <Clock className="w-3.5 h-3.5 text-cyan-400/70" />
             </div>
             <div>
               <div className="text-sm font-bold text-zinc-100">{queuedActions.length}</div>
@@ -282,7 +282,7 @@ export default function Actions() {
           </div>
           <div className="px-3 py-2 rounded-xl bg-zinc-900/50 border border-zinc-800/60 flex items-center gap-3">
             <div className="w-7 h-7 rounded-lg bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center shrink-0">
-              <Loader2 className={`w-3.5 h-3.5 text-blue-300/70 ${inProgressActions.length > 0 ? 'animate-spin' : ''}`} />
+              <Loader2 className={`w-3.5 h-3.5 text-cyan-300/70 ${inProgressActions.length > 0 ? 'animate-spin' : ''}`} />
             </div>
             <div>
               <div className="text-sm font-bold text-zinc-100">{inProgressActions.length}</div>
@@ -291,7 +291,7 @@ export default function Actions() {
           </div>
           <div className="px-3 py-2 rounded-xl bg-zinc-900/50 border border-zinc-800/60 flex items-center gap-3">
             <div className="w-7 h-7 rounded-lg bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center shrink-0">
-              <CheckCircle className="w-3.5 h-3.5 text-blue-400/70" />
+              <CheckCircle className="w-3.5 h-3.5 text-cyan-400/70" />
             </div>
             <div>
               <div className="text-sm font-bold text-zinc-100">{successfulActions}</div>
@@ -312,18 +312,18 @@ export default function Actions() {
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v !== 'rides') setSelectedRide(null); }}>
           <TabsList className="bg-zinc-900/60 border border-zinc-800/60 p-1 gap-1">
-            <TabsTrigger value="queue" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-blue-300/90 text-zinc-500 px-3 text-sm">
+            <TabsTrigger value="queue" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300/90 text-zinc-500 px-3 text-sm">
               <ListTodo className="w-4 h-4 mr-1" />Queue
-              {queuedActions.length > 0 && <Badge className="ml-1 bg-blue-950/40 text-blue-300/80 border-blue-800/30 text-[10px] px-1">{queuedActions.length}</Badge>}
+              {queuedActions.length > 0 && <Badge className="ml-1 bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-[10px] px-1">{queuedActions.length}</Badge>}
             </TabsTrigger>
-            <TabsTrigger value="rides" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-blue-300/90 text-zinc-500 px-3 text-sm">
+            <TabsTrigger value="rides" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300/90 text-zinc-500 px-3 text-sm">
               <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/1850cd012_claude-color.png" alt="Claude" className="w-4 h-4 mr-1" />Claude Rides
-              <Badge className="ml-1 bg-blue-950/40 text-blue-300/80 border-blue-800/30 text-[10px] px-1">New</Badge>
+              <Badge className="ml-1 bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-[10px] px-1">New</Badge>
             </TabsTrigger>
-            <TabsTrigger value="history" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-blue-300/90 text-zinc-500 px-3 text-sm">
+            <TabsTrigger value="history" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300/90 text-zinc-500 px-3 text-sm">
               <History className="w-4 h-4 mr-1" />History
             </TabsTrigger>
-            <TabsTrigger value="integrations" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-blue-300/90 text-zinc-500 px-3 text-sm">
+            <TabsTrigger value="integrations" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300/90 text-zinc-500 px-3 text-sm">
               <Plug className="w-4 h-4 mr-1" />Integrations
             </TabsTrigger>
           </TabsList>
@@ -358,7 +358,7 @@ export default function Actions() {
               <div className="lg:col-span-2 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-blue-400/70" />
+                    <Clock className="w-4 h-4 text-cyan-400/70" />
                     Pending Actions
                   </h3>
                   <Button size="sm" onClick={loadActionLogs} className="border border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-white text-xs px-2 py-1 h-auto">
@@ -378,7 +378,7 @@ export default function Actions() {
                       </div>
                       <h4 className="text-sm font-semibold text-white mb-1">No Pending Actions</h4>
                       <p className="text-zinc-500 text-xs mb-4">Create an action to get started</p>
-                      <Button onClick={() => setCreateActionModalOpen(true)} className="bg-blue-600/80 hover:bg-blue-600 text-white text-xs px-3 py-1.5 h-auto">
+                      <Button onClick={() => setCreateActionModalOpen(true)} className="bg-cyan-600/80 hover:bg-cyan-600 text-white text-xs px-3 py-1.5 h-auto">
                         <Plus className="w-3 h-3 mr-1" />Create Action
                       </Button>
                     </div>
@@ -403,7 +403,7 @@ export default function Actions() {
               {/* Recent Completed */}
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-blue-400/70" />
+                  <CheckCircle className="w-4 h-4 text-cyan-400/70" />
                   Recently Completed
                 </h3>
 
@@ -426,13 +426,13 @@ export default function Actions() {
               <div className="p-8 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
                 <div className="text-center max-w-lg mx-auto">
                   <div className="w-14 h-14 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center mx-auto mb-4">
-                    <Plug className="w-7 h-7 text-blue-400/70" />
+                    <Plug className="w-7 h-7 text-cyan-400/70" />
                   </div>
                   <h3 className="text-lg font-bold text-zinc-100 mb-2">Connect Your First Integration</h3>
                   <p className="text-zinc-500 text-sm mb-4">
                     Connect your favorite tools like HubSpot, Jira, Salesforce, and more to execute actions directly from ISYNCSO.
                   </p>
-                  <Button onClick={() => setConnectModalOpen(true)} className="bg-blue-600/80 hover:bg-blue-600 text-white font-medium text-xs px-4 py-2 h-auto">
+                  <Button onClick={() => setConnectModalOpen(true)} className="bg-cyan-600/80 hover:bg-cyan-600 text-white font-medium text-xs px-4 py-2 h-auto">
                     <Plus className="w-4 h-4 mr-1" />
                     Connect Integration
                   </Button>
@@ -464,10 +464,10 @@ export default function Actions() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: integrations.length * 0.1 }}
                     onClick={() => setConnectModalOpen(true)}
-                    className="p-4 rounded-xl border border-dashed border-zinc-700/60 hover:border-blue-800/40 bg-zinc-900/30 transition-all flex flex-col items-center justify-center min-h-[140px] group"
+                    className="p-4 rounded-xl border border-dashed border-zinc-700/60 hover:border-cyan-800/40 bg-zinc-900/30 transition-all flex flex-col items-center justify-center min-h-[140px] group"
                   >
                     <div className="w-10 h-10 rounded-xl bg-zinc-800/80 group-hover:bg-zinc-800 flex items-center justify-center mb-2 transition-colors">
-                      <Plus className="w-5 h-5 text-zinc-600 group-hover:text-blue-400/70 transition-colors" />
+                      <Plus className="w-5 h-5 text-zinc-600 group-hover:text-cyan-400/70 transition-colors" />
                     </div>
                     <span className="text-xs text-zinc-500 group-hover:text-zinc-300 font-medium transition-colors">Add Integration</span>
                   </motion.button>
@@ -482,7 +482,7 @@ export default function Actions() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
-                    <History className="w-4 h-4 text-blue-400/70" />
+                    <History className="w-4 h-4 text-cyan-400/70" />
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-zinc-200">Action History</h3>
