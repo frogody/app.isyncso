@@ -217,56 +217,51 @@ export default function Actions() {
 
   if (userLoading || loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-32 w-full bg-zinc-800 rounded-2xl" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 bg-zinc-800 rounded-xl" />)}
+      <div className="bg-black p-4">
+        <div className="max-w-7xl mx-auto space-y-3">
+          <Skeleton className="h-20 w-full bg-zinc-800 rounded-xl" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20 bg-zinc-800 rounded-xl" />)}
           </div>
-          <Skeleton className="h-96 w-full bg-zinc-800 rounded-2xl" />
+          <Skeleton className="h-64 w-full bg-zinc-800 rounded-xl" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <div className="bg-black relative">
       {/* Animated Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 left-1/4 w-96 h-96 bg-orange-900/10 rounded-full blur-3xl" />
         <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-amber-900/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-3 space-y-3">
         {/* Premium Header */}
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-xl bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/60 p-4">
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-10 bg-orange-600" />
-            <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full blur-2xl opacity-10 bg-amber-700" />
-          </div>
-
-          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-xl bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/60 px-4 py-3">
+          <div className="relative z-10 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center">
-                <Zap className="w-4 h-4 text-orange-400/80" />
+                <Zap className="w-4 h-4 text-cyan-400/80" />
               </div>
               <div>
-                <div className="flex items-center gap-3">
-                  <h1 className="text-lg font-bold text-white">Actions Hub</h1>
-                  <Badge className="bg-orange-950/40 text-orange-300/80 border-orange-800/30">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-base font-bold text-white">Actions Hub</h1>
+                  <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-[10px]">
                     {activeCount} Connected
                   </Badge>
                 </div>
-                <p className="text-zinc-500 mt-1">Execute actions across your connected integrations</p>
+                <p className="text-zinc-500 text-xs">Execute actions across your connected integrations</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <Button onClick={() => setConnectModalOpen(true)} className="border border-zinc-700/60 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 text-xs px-3 py-1.5 h-auto">
                 <Plug className="w-3 h-3 mr-1.5" />
-                Connect App
+                Connect
               </Button>
-              <Button onClick={() => setCreateActionModalOpen(true)} className="bg-orange-600/80 hover:bg-orange-600 text-white font-medium text-xs px-3 py-1.5 h-auto">
+              <Button onClick={() => setCreateActionModalOpen(true)} className="bg-cyan-600/80 hover:bg-cyan-600 text-white font-medium text-xs px-3 py-1.5 h-auto">
                 <Plus className="w-3 h-3 mr-1.5" />
                 New Action
               </Button>
@@ -275,74 +270,60 @@ export default function Actions() {
         </motion.div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
-            <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
-              <div className="flex items-center justify-between mb-2">
-                <div className="w-8 h-8 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
-                  <Clock className="w-4 h-4 text-orange-400/70" />
-                </div>
-                {queuedActions.length > 0 && <Badge className="bg-orange-950/40 text-orange-300/80 border-orange-800/30 text-[10px]">Pending</Badge>}
-              </div>
-              <div className="text-lg font-bold text-zinc-100">{queuedActions.length}</div>
-              <div className="text-xs text-zinc-500">Queued Actions</div>
+        <div className="grid grid-cols-4 gap-2">
+          <div className="px-3 py-2 rounded-xl bg-zinc-900/50 border border-zinc-800/60 flex items-center gap-3">
+            <div className="w-7 h-7 rounded-lg bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center shrink-0">
+              <Clock className="w-3.5 h-3.5 text-cyan-400/70" />
             </div>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
-              <div className="flex items-center justify-between mb-2">
-                <div className="w-8 h-8 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
-                  <Loader2 className={`w-4 h-4 text-orange-300/70 ${inProgressActions.length > 0 ? 'animate-spin' : ''}`} />
-                </div>
-                {inProgressActions.length > 0 && <Badge className="bg-orange-950/40 text-orange-300/80 border-orange-800/30 text-[10px]">Running</Badge>}
-              </div>
-              <div className="text-lg font-bold text-zinc-100">{inProgressActions.length}</div>
-              <div className="text-xs text-zinc-500">In Progress</div>
+            <div>
+              <div className="text-sm font-bold text-zinc-100">{queuedActions.length}</div>
+              <div className="text-[10px] text-zinc-500">Queued</div>
             </div>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
-              <div className="flex items-center justify-between mb-2">
-                <div className="w-8 h-8 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
-                  <CheckCircle className="w-4 h-4 text-orange-400/70" />
-                </div>
-                <Badge className="bg-orange-950/40 text-orange-300/80 border-orange-800/30 text-[10px]">{successRate}%</Badge>
-              </div>
-              <div className="text-lg font-bold text-zinc-100">{successfulActions}</div>
-              <div className="text-xs text-zinc-500">Completed</div>
+          </div>
+          <div className="px-3 py-2 rounded-xl bg-zinc-900/50 border border-zinc-800/60 flex items-center gap-3">
+            <div className="w-7 h-7 rounded-lg bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center shrink-0">
+              <Loader2 className={`w-3.5 h-3.5 text-cyan-300/70 ${inProgressActions.length > 0 ? 'animate-spin' : ''}`} />
             </div>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
-              <div className="flex items-center justify-between mb-2">
-                <div className="w-8 h-8 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
-                  <XCircle className="w-4 h-4 text-orange-500/60" />
-                </div>
-              </div>
-              <div className="text-lg font-bold text-zinc-100">{failedActions}</div>
-              <div className="text-xs text-zinc-500">Failed</div>
+            <div>
+              <div className="text-sm font-bold text-zinc-100">{inProgressActions.length}</div>
+              <div className="text-[10px] text-zinc-500">Running</div>
             </div>
-          </motion.div>
+          </div>
+          <div className="px-3 py-2 rounded-xl bg-zinc-900/50 border border-zinc-800/60 flex items-center gap-3">
+            <div className="w-7 h-7 rounded-lg bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center shrink-0">
+              <CheckCircle className="w-3.5 h-3.5 text-cyan-400/70" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-zinc-100">{successfulActions}</div>
+              <div className="text-[10px] text-zinc-500">Done</div>
+            </div>
+          </div>
+          <div className="px-3 py-2 rounded-xl bg-zinc-900/50 border border-zinc-800/60 flex items-center gap-3">
+            <div className="w-7 h-7 rounded-lg bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center shrink-0">
+              <XCircle className="w-3.5 h-3.5 text-red-400/60" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-zinc-100">{failedActions}</div>
+              <div className="text-[10px] text-zinc-500">Failed</div>
+            </div>
+          </div>
         </div>
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v !== 'rides') setSelectedRide(null); }}>
           <TabsList className="bg-zinc-900/60 border border-zinc-800/60 p-1 gap-1">
-            <TabsTrigger value="queue" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-orange-300/90 text-zinc-500 px-3 text-sm">
+            <TabsTrigger value="queue" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300/90 text-zinc-500 px-3 text-sm">
               <ListTodo className="w-4 h-4 mr-1" />Queue
-              {queuedActions.length > 0 && <Badge className="ml-1 bg-orange-950/40 text-orange-300/80 border-orange-800/30 text-[10px] px-1">{queuedActions.length}</Badge>}
+              {queuedActions.length > 0 && <Badge className="ml-1 bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-[10px] px-1">{queuedActions.length}</Badge>}
             </TabsTrigger>
-            <TabsTrigger value="rides" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-orange-300/90 text-zinc-500 px-3 text-sm">
+            <TabsTrigger value="rides" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300/90 text-zinc-500 px-3 text-sm">
               <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/1850cd012_claude-color.png" alt="Claude" className="w-4 h-4 mr-1" />Claude Rides
-              <Badge className="ml-1 bg-orange-950/40 text-orange-300/80 border-orange-800/30 text-[10px] px-1">New</Badge>
+              <Badge className="ml-1 bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-[10px] px-1">New</Badge>
             </TabsTrigger>
-            <TabsTrigger value="history" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-orange-300/90 text-zinc-500 px-3 text-sm">
+            <TabsTrigger value="history" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300/90 text-zinc-500 px-3 text-sm">
               <History className="w-4 h-4 mr-1" />History
             </TabsTrigger>
-            <TabsTrigger value="integrations" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-orange-300/90 text-zinc-500 px-3 text-sm">
+            <TabsTrigger value="integrations" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300/90 text-zinc-500 px-3 text-sm">
               <Plug className="w-4 h-4 mr-1" />Integrations
             </TabsTrigger>
           </TabsList>

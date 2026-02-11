@@ -517,6 +517,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       path.startsWith('/activity') || path.startsWith('/desktop') || path.startsWith('/dailyjournal')) {
     const activityItems = [
       { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
+      { label: 'Actions', path: createPageUrl('Actions'), icon: Zap },
       { label: 'Activity', path: createPageUrl('DesktopActivity') + '?tab=overview', icon: BarChart3, matchPath: '/desktopactivity' },
       { label: 'Daily Journals', path: createPageUrl('DailyJournal'), icon: BookOpen },
     ];
