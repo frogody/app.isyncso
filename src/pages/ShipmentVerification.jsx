@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import {
   ClipboardCheck, Package, AlertTriangle, CheckCircle2,
   XCircle, Info, RefreshCw, ChevronDown, ChevronUp,
-  Sun, Moon, ShieldCheck, FileWarning, Boxes,
+  Sun, Moon, ShieldCheck, FileWarning, Boxes, Truck, Download,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -323,6 +323,44 @@ export default function ShipmentVerification() {
               isText
               color={isVerified ? "green" : "zinc"}
             />
+          </div>
+        )}
+
+        {/* bol.com Status Bar */}
+        {selectedShipment?.shipment_type === "b2c_lvb" && selectedShipment?.bol_replenishment_id && (
+          <div className={`flex items-center gap-4 p-3 rounded-xl mb-4 ${t("bg-blue-50 border border-blue-200", "bg-blue-500/10 border border-blue-500/20")}`}>
+            <Truck className="w-5 h-5 text-blue-400 shrink-0" />
+            <div className="flex-1 text-sm">
+              <span className={t("text-blue-700", "text-blue-300")}>bol.com Replenishment</span>
+              <span className={`ml-2 font-mono text-xs ${t("text-blue-500", "text-blue-400")}`}>
+                {selectedShipment.bol_replenishment_id}
+              </span>
+              {selectedShipment.bol_replenishment_state && (
+                <span className={`ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                  selectedShipment.bol_replenishment_state === "CREATED"
+                    ? "bg-cyan-500/20 text-cyan-400"
+                    : selectedShipment.bol_replenishment_state === "ANNOUNCED"
+                      ? "bg-blue-500/20 text-blue-400"
+                      : selectedShipment.bol_replenishment_state === "IN_TRANSIT"
+                        ? "bg-amber-500/20 text-amber-400"
+                        : selectedShipment.bol_replenishment_state === "ARRIVED"
+                          ? "bg-green-500/20 text-green-400"
+                          : "bg-zinc-500/20 text-zinc-400"
+                }`}>
+                  {selectedShipment.bol_replenishment_state}
+                </span>
+              )}
+            </div>
+            {selectedShipment.bol_labels_url && (
+              <a
+                href={selectedShipment.bol_labels_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-cyan-400 hover:underline shrink-0"
+              >
+                <Download className="w-3 h-3" /> Labels
+              </a>
+            )}
           </div>
         )}
 

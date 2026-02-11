@@ -2335,7 +2335,7 @@ FROM enrichment_cache_companies;
 | 1 | Purchasing Overhaul | **Complete** (P1-1 through P1-8 all done) |
 | 2 | Receiving Enhancements | **Complete** (P2-1 through P2-7 all done) |
 | 3 | Pallet Management (3a/3b/3c) | **Complete** (P3-1 through P3-14 all done) |
-| 4 | bol.com Retailer API | Not Started |
+| 4 | bol.com Retailer API | **In Progress** (P4-1 through P4-17 done, P4-18–P4-21 tests remaining) |
 | 5 | Returns Workflow | Not Started |
 | EP | Email Pool Auto-Sync | Not Started |
 | SH | Shopify Admin API | Not Started |

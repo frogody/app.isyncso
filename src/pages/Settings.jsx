@@ -20,7 +20,7 @@ import {
   CheckCircle, Globe, Linkedin, Clock, Target, Shield, Loader2,
   ChevronRight, Award, Zap, LogOut, MapPin, Calendar, Cpu,
   Euro, Phone, Twitter, Facebook, TrendingUp, BarChart3, Plug,
-  UserCog, ExternalLink
+  UserCog, ExternalLink, ShoppingBag
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,6 +38,7 @@ import { Link } from "react-router-dom";
 import { LayoutGrid, Sun, Moon } from "lucide-react";
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { SettingsPageTransition } from '@/components/settings/ui';
+import BolcomSettings from "@/components/settings/BolcomSettings";
 
 export default function Settings() {
   const { user, company, settings: userSettings, updateUser, updateCompany, updateSettings, isLoading: userLoading } = useUser();
@@ -625,6 +626,7 @@ export default function Settings() {
     { id: 'portal', label: 'Client Portal', icon: ExternalLink, color: 'green' },
     { id: 'teams', label: 'Teams & Rights', icon: Shield, color: 'cyan' },
     { id: 'integrations', label: 'Integrations', icon: Plug, color: 'cyan' },
+    { id: 'bolcom', label: 'bol.com', icon: ShoppingBag, color: 'cyan' },
     { id: 'workspace', label: 'Workspace', icon: LayoutGrid, color: 'cyan' },
     { id: 'privacy', label: 'Privacy', icon: Lock, color: 'red' },
     ...(isSuperAdmin ? [{ id: 'admin', label: 'Admin', icon: Brain, color: 'purple' }] : [])
@@ -1467,6 +1469,18 @@ export default function Settings() {
                   exit={{ opacity: 0, y: -20 }}
                 >
                   <Integrations embedded />
+                </motion.div>
+              )}
+
+              {/* BOL.COM TAB */}
+              {activeTab === 'bolcom' && (
+                <motion.div
+                  key="bolcom"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                >
+                  <BolcomSettings />
                 </motion.div>
               )}
 

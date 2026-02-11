@@ -36,3 +36,6 @@ export * from './receivingSessions';
 
 // Pallets & Shipments
 export * from './pallets';
+
+// bol.com Integration
+export * from './bolcom';

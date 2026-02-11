@@ -18,7 +18,7 @@ import {
   Sun, Moon, ChevronDown, ChevronUp, Truck,
   AlertTriangle, Check, X, Search, PackagePlus,
   ClipboardList, History, Printer, ShieldCheck, RotateCcw,
-  CheckCircle2, Clock, Scale,
+  CheckCircle2, Clock, Scale, Loader2, Download,
 } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +45,8 @@ import {
   generateSinglePalletLabel,
   generateBatchPalletLabels,
 } from "@/utils/generatePalletLabel";
+import { prepareBolcomReplenishmentData } from "@/lib/services/inventory-service";
+import BolcomReplenishmentDialog from "@/components/inventory/BolcomReplenishmentDialog";
 
 // =============================================================================
 // BARCODE SCANNER (same pattern as InventoryReceiving)
@@ -223,6 +225,11 @@ export default function PalletBuilder() {
 
   // Verify mode (P3-11)
   const [verifyMode, setVerifyMode] = useState(false);
+
+  // bol.com Replenishment (P4)
+  const [showBolcomDialog, setShowBolcomDialog] = useState(false);
+  const [bolcomRepData, setBolcomRepData] = useState(null);
+  const [bolcomLoading, setBolcomLoading] = useState(false);
 
   // Weight/Dimensions (P3-12)
   const [editingWeight, setEditingWeight] = useState(false);
@@ -536,6 +543,21 @@ export default function PalletBuilder() {
     }
   };
 
+  // bol.com replenishment handler (P4)
+  const handlePushToBolcom = async () => {
+    if (!activeShipment || !companyId) return;
+    setBolcomLoading(true);
+    try {
+      const data = await prepareBolcomReplenishmentData(companyId, activeShipment.id);
+      setBolcomRepData(data);
+      setShowBolcomDialog(true);
+    } catch (err) {
+      toast.error("Failed to prepare bol.com data: " + err.message);
+    } finally {
+      setBolcomLoading(false);
+    }
+  };
+
   // Helpers
   const getStockForEan = (ean) => {
     const inv = inventory.find(i => i.products?.ean === ean);
@@ -751,6 +773,45 @@ export default function PalletBuilder() {
                       {isFinalized && (
                         <div className="mt-2 flex items-center gap-1.5 text-xs text-green-400">
                           <Check className="w-3 h-3" /> Finalized
+                        </div>
+                      )}
+
+                      {/* Push to bol.com — only for finalized b2c_lvb without existing replenishment */}
+                      {isFinalized &&
+                        activeShipment?.shipment_type === "b2c_lvb" &&
+                        !activeShipment?.bol_replenishment_id && (
+                        <Button
+                          onClick={handlePushToBolcom}
+                          disabled={bolcomLoading}
+                          size="sm"
+                          className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white gap-1"
+                        >
+                          {bolcomLoading ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Truck className="w-3 h-3" />
+                          )}
+                          Push to bol.com
+                        </Button>
+                      )}
+
+                      {/* bol.com status badge */}
+                      {activeShipment?.bol_replenishment_id && (
+                        <div className="mt-2 space-y-1">
+                          <div className="flex items-center gap-1.5 text-xs text-blue-400">
+                            <Truck className="w-3 h-3" />
+                            bol.com: {activeShipment.bol_replenishment_state || "CREATED"}
+                          </div>
+                          {activeShipment.bol_labels_url && (
+                            <a
+                              href={activeShipment.bol_labels_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-xs text-cyan-400 hover:underline"
+                            >
+                              <Printer className="w-3 h-3" /> Download bol.com Labels
+                            </a>
+                          )}
                         </div>
                       )}
 
@@ -1285,6 +1346,19 @@ export default function PalletBuilder() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {/* bol.com Replenishment Dialog (P4) */}
+          <BolcomReplenishmentDialog
+            open={showBolcomDialog}
+            onOpenChange={setShowBolcomDialog}
+            shipment={activeShipment}
+            replenishmentData={bolcomRepData}
+            companyId={companyId}
+            onSuccess={() => {
+              loadShipments();
+              if (activeShipment?.id) loadPallets(activeShipment.id);
+            }}
+          />
 
         </div>
       </div>

@@ -410,6 +410,11 @@ export interface Shipment {
   // bol.com (Phase 3c/4)
   bol_shipment_id?: string;
   bol_received_at?: string;
+  // bol.com Replenishment (Phase 4)
+  bol_replenishment_id?: string;
+  bol_replenishment_state?: string;
+  bol_labels_url?: string;
+  bol_received_quantities?: Record<string, number>;
   // Shipping
   carrier?: string;
   tracking_code?: string;
@@ -474,6 +479,61 @@ export interface PalletItem {
 
 export type PalletItemInsert = Omit<PalletItem, 'id' | 'created_at' | 'updated_at' | 'products'>;
 export type PalletItemUpdate = Partial<Omit<PalletItemInsert, 'pallet_id'>>;
+
+// =============================================================================
+// BOL.COM INTEGRATION (Phase 4)
+// =============================================================================
+
+export interface BolcomCredentials {
+  id: string;
+  company_id: string;
+  client_id_encrypted: string;
+  client_secret_encrypted: string;
+  access_token?: string;
+  token_expires_at?: string;
+  is_active: boolean;
+  environment: 'production' | 'test';
+  last_token_error?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type BolcomCredentialsInsert = Omit<BolcomCredentials, 'id' | 'created_at' | 'updated_at'>;
+export type BolcomCredentialsUpdate = Partial<Omit<BolcomCredentialsInsert, 'company_id'>>;
+
+export interface BolcomOfferMapping {
+  id: string;
+  company_id: string;
+  product_id: string;
+  ean: string;
+  bolcom_offer_id?: string;
+  is_active: boolean;
+  last_synced_at?: string;
+  bolcom_stock_amount?: number;
+  bolcom_stock_managed_by_retailer: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type BolcomOfferMappingInsert = Omit<BolcomOfferMapping, 'id' | 'created_at' | 'updated_at'>;
+export type BolcomOfferMappingUpdate = Partial<Omit<BolcomOfferMappingInsert, 'company_id'>>;
+
+export interface BolcomPendingProcessStatus {
+  id: string;
+  company_id: string;
+  process_status_id: string;
+  entity_type: 'replenishment' | 'offer' | 'stock_update' | 'other';
+  entity_id?: string;
+  status: 'pending' | 'success' | 'failure' | 'timeout';
+  result_data?: unknown;
+  error_message?: string;
+  poll_count: number;
+  max_polls: number;
+  created_at: string;
+  resolved_at?: string;
+}
+
+export type BolcomPendingProcessStatusInsert = Omit<BolcomPendingProcessStatus, 'id' | 'created_at'>;
 
 // =============================================================================
 // TRACKING JOBS

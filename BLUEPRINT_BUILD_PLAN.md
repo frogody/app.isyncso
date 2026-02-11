@@ -3021,23 +3021,23 @@ CREATE INDEX idx_receiving_log_session ON receiving_log(receiving_session_id) WH
 - [x] `P3-14` Test: full pallet build → verify → ship flow
 
 ### Phase 4: bol.com Retailer API Integration
-- [ ] `P4-1` Create `bolcom_credentials` table (with token caching columns: `access_token`, `token_expires_at`) + RLS
-- [ ] `P4-2` Create `bolcom_offer_mappings` table (product_id → bol.com offer_id + EAN) + RLS
-- [ ] `P4-3` Create `bolcom_pending_process_statuses` table (for async ProcessStatus polling) + RLS
-- [ ] `P4-4` Build `bolcom-api/index.ts` edge function (unified API client with all 22 actions)
-- [ ] `P4-5` Implement Client Credentials auth + DB-persisted token caching (cold-start safe) + pg_cron pre-refresh every 4 min
-- [ ] `P4-6` Implement ProcessStatus polling helper with `bolcom_pending_process_statuses` queue + pg_cron poll
-- [ ] `P4-7` Build FBB replenishment flow: product destinations → timeslots → create → labels
-- [ ] `P4-8` Add bol.com columns to `shipments` table (replenishment_id, state, labels, received quantities)
-- [ ] `P4-9` Wire PalletBuilder "Push to bol.com" button to replenishment creation
-- [ ] `P4-10` Implement replenishment status polling → update ShipmentVerification with received quantities
-- [ ] `P4-11` Build stock sync: pull FBB inventory, compare with our B2C stock, push stock updates to offers
-- [ ] `P4-12` Build offer management: create/update offers via `bolcom_offer_mappings` with economic operator ID
-- [ ] `P4-13` Create `bolcom-webhooks/index.ts` edge function for bol.com's own webhook notifications
-- [ ] `P4-14` Implement webhook signature verification (RSA-SHA256)
-- [ ] `P4-15` Build return sync: poll unhandled returns, create return records, handle via API
-- [ ] `P4-16` Build bol.com Settings UI: credentials, connection test, inventory comparison, replenishment history
-- [ ] `P4-17` Implement rate limit tracking + `Retry-After` respect
+- [x] `P4-1` Create `bolcom_credentials` table (with token caching columns: `access_token`, `token_expires_at`) + RLS
+- [x] `P4-2` Create `bolcom_offer_mappings` table (product_id → bol.com offer_id + EAN) + RLS
+- [x] `P4-3` Create `bolcom_pending_process_statuses` table (for async ProcessStatus polling) + RLS
+- [x] `P4-4` Build `bolcom-api/index.ts` edge function (unified API client with all 22 actions)
+- [x] `P4-5` Implement Client Credentials auth + DB-persisted token caching (cold-start safe) + pg_cron pre-refresh every 4 min
+- [x] `P4-6` Implement ProcessStatus polling helper with `bolcom_pending_process_statuses` queue + pg_cron poll
+- [x] `P4-7` Build FBB replenishment flow: product destinations → timeslots → create → labels
+- [x] `P4-8` Add bol.com columns to `shipments` table (replenishment_id, state, labels, received quantities)
+- [x] `P4-9` Wire PalletBuilder "Push to bol.com" button to replenishment creation
+- [x] `P4-10` Implement replenishment status polling → update ShipmentVerification with received quantities
+- [x] `P4-11` Build stock sync: pull FBB inventory, compare with our B2C stock, push stock updates to offers
+- [x] `P4-12` Build offer management: create/update offers via `bolcom_offer_mappings` with economic operator ID
+- [x] `P4-13` Create `bolcom-webhooks/index.ts` edge function for bol.com's own webhook notifications
+- [x] `P4-14` Implement webhook signature verification (RSA-SHA256)
+- [x] `P4-15` Build return sync: poll unhandled returns, create return records, handle via API
+- [x] `P4-16` Build bol.com Settings UI: credentials, connection test, inventory comparison, replenishment history
+- [x] `P4-17` Implement rate limit tracking + `Retry-After` respect
 - [ ] `P4-18` Test: store credentials → test connection → verify token caching works across cold starts
 - [ ] `P4-19` Test: create replenishment → poll ProcessStatus → verify labels
 - [ ] `P4-20` Test: stock sync → push stock update → verify on bol.com

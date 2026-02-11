@@ -690,6 +690,161 @@ export async function prepareBolcomReplenishmentData(
 }
 
 // =============================================================================
+// BOL.COM REPLENISHMENT (Phase 4)
+// =============================================================================
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+/**
+ * Call the bolcom-api edge function with a given action
+ */
+async function callBolcomApi(action: string, params: Record<string, unknown>): Promise<{
+  success: boolean;
+  data?: unknown;
+  error?: string;
+}> {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/bolcom-api`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({ action, ...params }),
+  });
+
+  return response.json();
+}
+
+/**
+ * Push a finalized LVB shipment to bol.com as a replenishment
+ */
+export async function pushShipmentToBolcom(
+  companyId: string,
+  shipmentId: string,
+  deliveryInfo: { deliveryDate: string; timeslotId?: string },
+  options: { labellingByBol?: boolean } = {}
+): Promise<{ processStatusId: string }> {
+  const repData = await prepareBolcomReplenishmentData(companyId, shipmentId);
+
+  const result = await callBolcomApi('createReplenishment', {
+    companyId,
+    shipmentId,
+    reference: repData.reference,
+    numberOfLoadCarriers: repData.numberOfLoadCarriers,
+    lines: repData.lines,
+    deliveryInfo,
+    labellingByBol: options.labellingByBol ?? true,
+  });
+
+  if (!result.success) throw new Error(result.error || 'Failed to create replenishment');
+  return result.data as { processStatusId: string };
+}
+
+/**
+ * Get product destinations for replenishment EANs
+ */
+export async function getBolcomProductDestinations(
+  companyId: string,
+  products: Array<{ ean: string; quantity: number }>
+): Promise<unknown> {
+  const result = await callBolcomApi('getReplenishmentProductDestinations', {
+    companyId,
+    products,
+  });
+  if (!result.success) throw new Error(result.error || 'Failed to get product destinations');
+  return result.data;
+}
+
+/**
+ * Get available delivery timeslots for replenishment
+ */
+export async function getBolcomTimeslots(
+  companyId: string,
+  deliveryInfo: Record<string, unknown>
+): Promise<unknown> {
+  const result = await callBolcomApi('getReplenishmentTimeslots', {
+    companyId,
+    deliveryInfo,
+  });
+  if (!result.success) throw new Error(result.error || 'Failed to get timeslots');
+  return result.data;
+}
+
+/**
+ * Get replenishment details from bol.com
+ */
+export async function getBolcomReplenishment(
+  companyId: string,
+  replenishmentId: string,
+  shipmentId?: string
+): Promise<unknown> {
+  const result = await callBolcomApi('getReplenishment', {
+    companyId,
+    replenishmentId,
+    shipmentId,
+  });
+  if (!result.success) throw new Error(result.error || 'Failed to get replenishment');
+  return result.data;
+}
+
+/**
+ * Download replenishment labels and store in Supabase
+ */
+export async function getBolcomReplenishmentLabels(
+  companyId: string,
+  replenishmentId: string,
+  shipmentId?: string
+): Promise<{ labelsUrl: string }> {
+  const result = await callBolcomApi('getReplenishmentLabels', {
+    companyId,
+    replenishmentId,
+    shipmentId,
+  });
+  if (!result.success) throw new Error(result.error || 'Failed to get labels');
+  return result.data as { labelsUrl: string };
+}
+
+/**
+ * Test bol.com connection for a company
+ */
+export async function testBolcomConnection(companyId: string): Promise<{ connected: boolean }> {
+  const result = await callBolcomApi('testConnection', { companyId });
+  if (!result.success) throw new Error(result.error || 'Connection test failed');
+  return result.data as { connected: boolean };
+}
+
+/**
+ * Save bol.com credentials (encrypted server-side)
+ */
+export async function saveBolcomCredentials(
+  companyId: string,
+  clientId: string,
+  clientSecret: string,
+  environment: 'production' | 'test' = 'production'
+): Promise<unknown> {
+  const result = await callBolcomApi('saveCredentials', {
+    companyId,
+    clientId,
+    clientSecret,
+    environment,
+  });
+  if (!result.success) throw new Error(result.error || 'Failed to save credentials');
+  return result.data;
+}
+
+/**
+ * Poll pending process statuses for a company
+ */
+export async function pollBolcomProcessStatuses(
+  companyId: string
+): Promise<{ resolved: number; stillPending: number; errors: number }> {
+  const result = await callBolcomApi('pollProcessStatuses', { companyId });
+  if (!result.success) throw new Error(result.error || 'Failed to poll statuses');
+  return result.data as { resolved: number; stillPending: number; errors: number };
+}
+
+// =============================================================================
 // SHIPMENT VERIFICATION (Phase 3b)
 // =============================================================================
 

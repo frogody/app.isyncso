@@ -156,3 +156,9 @@ verify_jwt = false
 
 [functions.executeTalentOutreach]
 verify_jwt = false
+
+[functions.bolcom-api]
+verify_jwt = false
+
+[functions.bolcom-webhooks]
+verify_jwt = false
