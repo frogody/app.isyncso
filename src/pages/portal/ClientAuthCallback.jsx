@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
 
 export default function ClientAuthCallback() {
   const navigate = useNavigate();
+  const { org: orgSlugFromPath } = useParams();
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -53,7 +54,12 @@ export default function ClientAuthCallback() {
               .eq('id', clientData.id);
           }
 
-          const orgSlug = clientData?.organization?.slug;
+          // Determine org slug: DB lookup > URL path param > user metadata
+          const orgSlug =
+            clientData?.organization?.slug ||
+            orgSlugFromPath ||
+            session.user.user_metadata?.organization_slug;
+
           if (orgSlug) {
             navigate(`/portal/${orgSlug}`, { replace: true });
           } else {
@@ -76,15 +82,18 @@ export default function ClientAuthCallback() {
     }, 10000);
 
     return () => clearTimeout(timeout);
-  }, [navigate]);
+  }, [navigate, orgSlugFromPath]);
 
   if (error) {
+    // If we know which org portal to go back to, send them there
+    const backUrl = orgSlugFromPath ? `/portal/${orgSlugFromPath}/login` : '/portal';
+
     return (
       <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center px-4">
         <div className="text-center max-w-md">
           <p className="text-red-400 mb-4">{error}</p>
           <button
-            onClick={() => navigate('/portal')}
+            onClick={() => navigate(backUrl)}
             className="text-cyan-400 hover:text-cyan-300 text-sm"
           >
             Back to portal

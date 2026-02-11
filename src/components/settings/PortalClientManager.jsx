@@ -37,6 +37,7 @@ export default function PortalClientManager() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [orgSlug, setOrgSlug] = useState(null);
 
   // Sheet state
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -46,8 +47,22 @@ export default function PortalClientManager() {
     if (user?.organization_id) {
       fetchClients();
       fetchProjects();
+      fetchOrgSlug();
     }
   }, [user?.organization_id]);
+
+  const fetchOrgSlug = async () => {
+    try {
+      const { data } = await supabase
+        .from('organizations')
+        .select('slug')
+        .eq('id', user.organization_id)
+        .single();
+      if (data?.slug) setOrgSlug(data.slug);
+    } catch (err) {
+      console.error('Error fetching org slug:', err);
+    }
+  };
 
   const fetchClients = async () => {
     try {
@@ -92,13 +107,19 @@ export default function PortalClientManager() {
 
   const handleSendInvite = async (client) => {
     try {
+      // Build org-scoped redirect so the magic link lands on the correct portal
+      const callbackUrl = orgSlug
+        ? `${window.location.origin}/portal/${orgSlug}/auth/callback`
+        : `${window.location.origin}/portal/auth/callback`;
+
       const { error } = await supabase.auth.signInWithOtp({
         email: client.email,
         options: {
-          emailRedirectTo: `${window.location.origin}/portal/auth/callback`,
+          emailRedirectTo: callbackUrl,
           data: {
             portal_client_id: client.id,
             organization_id: user.organization_id,
+            organization_slug: orgSlug,
           },
         },
       });
@@ -344,6 +365,7 @@ export default function PortalClientManager() {
         onClose={() => setSheetOpen(false)}
         companyName={selectedCompany}
         organizationId={user?.organization_id}
+        orgSlug={orgSlug}
         userId={user?.id}
         clients={selectedCompany ? (groupedClients[selectedCompany] || []) : []}
         projects={projects}
@@ -361,6 +383,7 @@ function ClientSheet({
   onClose,
   companyName,
   organizationId,
+  orgSlug,
   userId,
   clients,
   projects,
@@ -484,15 +507,20 @@ function ClientSheet({
       await onRefresh();
 
       // Send invites to all new clients
+      const callbackUrl = orgSlug
+        ? `${window.location.origin}/portal/${orgSlug}/auth/callback`
+        : `${window.location.origin}/portal/auth/callback`;
+
       for (const client of newClients) {
         try {
           await supabase.auth.signInWithOtp({
             email: client.email,
             options: {
-              emailRedirectTo: `${window.location.origin}/portal/auth/callback`,
+              emailRedirectTo: callbackUrl,
               data: {
                 portal_client_id: client.id,
                 organization_id: organizationId,
+                organization_slug: orgSlug,
               },
             },
           });

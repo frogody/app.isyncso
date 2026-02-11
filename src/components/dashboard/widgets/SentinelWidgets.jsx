@@ -1,6 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { StatCard, GlassCard, ProgressRing } from '@/components/ui/GlassCard';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import {
   Shield, Cpu, AlertTriangle, FileText, Clock,
   Layers
@@ -15,49 +19,44 @@ export const SENTINEL_WIDGETS = [
   { id: 'sentinel_docs', name: 'Documentation', description: 'Generated documents', size: 'small' }
 ];
 
-const Card = ({ children, className = '' }) => (
-  <div className={`bg-zinc-900/60 border border-zinc-800/80 rounded-xl hover:border-zinc-700/80 transition-colors ${className}`}>
-    {children}
-  </div>
-);
-
 export function SentinelComplianceWidget({ complianceProgress = 0, systemsCount = 0, highRiskCount = 0 }) {
+  let titleClass = 'text-white';
+  let subtitleClass = 'text-zinc-400';
+  let statBg = 'bg-zinc-800/40';
+
+  try {
+    const { t } = useTheme();
+    titleClass = t('text-zinc-900', 'text-white');
+    subtitleClass = t('text-zinc-500', 'text-zinc-400');
+    statBg = t('bg-zinc-100', 'bg-zinc-800/40');
+  } catch {}
+
   return (
-    <Card className="p-5 h-full">
+    <GlassCard glow="sage" className="p-5 h-full">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-semibold text-white flex items-center gap-2">
+        <h2 className={cn('text-base font-semibold flex items-center gap-2', titleClass)}>
           <Shield className="w-5 h-5 text-[#86EFAC]" />
           Compliance
         </h2>
-        <Link to={createPageUrl("SentinelDashboard")} className="text-[#86EFAC] text-sm hover:opacity-80">View all</Link>
+        <Link to={createPageUrl("SentinelDashboard")} className="text-[#86EFAC] text-sm hover:opacity-80">
+          View all
+        </Link>
       </div>
 
       <div className="flex items-center justify-center mb-4">
-        <div className="relative w-24 h-24">
-          <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
-            <circle cx="60" cy="60" r="50" fill="none" stroke="rgb(39 39 42)" strokeWidth="8" />
-            <circle
-              cx="60" cy="60" r="50" fill="none"
-              stroke="#86EFAC"
-              strokeWidth="8"
-              strokeLinecap="round"
-              strokeDasharray={`${(complianceProgress / 100) * 314} 314`}
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-xl font-bold text-white">{complianceProgress}%</span>
-          </div>
-        </div>
+        <ProgressRing value={complianceProgress} size={100} strokeWidth={8} color="sage">
+          <span className={cn('text-xl font-bold', titleClass)}>{complianceProgress}%</span>
+        </ProgressRing>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="text-center p-2.5 rounded-lg bg-zinc-800/40">
-          <div className="text-lg font-bold text-white">{systemsCount}</div>
-          <div className="text-xs text-zinc-400">AI Systems</div>
+        <div className={cn('text-center p-2.5 rounded-lg', statBg)}>
+          <div className={cn('text-lg font-bold', titleClass)}>{systemsCount}</div>
+          <div className={cn('text-xs', subtitleClass)}>AI Systems</div>
         </div>
-        <div className="text-center p-2.5 rounded-lg bg-zinc-800/40">
-          <div className="text-lg font-bold text-white">{highRiskCount}</div>
-          <div className="text-xs text-zinc-400">High Risk</div>
+        <div className={cn('text-center p-2.5 rounded-lg', statBg)}>
+          <div className={cn('text-lg font-bold', titleClass)}>{highRiskCount}</div>
+          <div className={cn('text-xs', subtitleClass)}>High Risk</div>
         </div>
       </div>
 
@@ -69,61 +68,74 @@ export function SentinelComplianceWidget({ complianceProgress = 0, systemsCount 
           </div>
         </div>
       )}
-    </Card>
+    </GlassCard>
   );
 }
 
 export function SentinelSystemsWidget({ systemsCount = 0, highRiskCount = 0 }) {
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#86EFAC]/10">
-            <Cpu className="w-4 h-4 text-[#86EFAC]" />
-          </div>
-          <span className="text-xs text-zinc-400 font-medium">AI Systems</span>
-        </div>
-        {highRiskCount > 0 && (
-          <span className="text-xs text-amber-400 font-medium">{highRiskCount} high-risk</span>
-        )}
-      </div>
-      <div className="text-2xl font-bold text-white">{systemsCount}</div>
-    </Card>
+    <StatCard
+      icon={Cpu}
+      color="sage"
+      value={systemsCount}
+      label="AI Systems"
+      change={highRiskCount > 0 ? `${highRiskCount} high-risk` : null}
+      trend={highRiskCount > 0 ? 'down' : undefined}
+    />
   );
 }
 
 export function SentinelRiskWidget({ riskBreakdown = {} }) {
   const risks = [
-    { key: 'prohibited', label: 'Prohibited', color: 'bg-red-500', textColor: 'text-red-400' },
-    { key: 'high-risk', label: 'High Risk', color: 'bg-amber-500', textColor: 'text-amber-400' },
-    { key: 'gpai', label: 'GPAI', color: 'bg-purple-500', textColor: 'text-purple-400' },
-    { key: 'limited-risk', label: 'Limited', color: 'bg-yellow-500', textColor: 'text-yellow-400' },
-    { key: 'minimal-risk', label: 'Minimal', color: 'bg-green-500', textColor: 'text-green-400' },
+    { key: 'prohibited', label: 'Prohibited', color: 'bg-red-500', textColor: 'text-red-400', dotColor: 'bg-red-500' },
+    { key: 'high-risk', label: 'High Risk', color: 'bg-amber-500', textColor: 'text-amber-400', dotColor: 'bg-amber-500' },
+    { key: 'gpai', label: 'GPAI', color: 'bg-purple-500', textColor: 'text-purple-400', dotColor: 'bg-purple-500' },
+    { key: 'limited-risk', label: 'Limited', color: 'bg-yellow-500', textColor: 'text-yellow-400', dotColor: 'bg-yellow-500' },
+    { key: 'minimal-risk', label: 'Minimal', color: 'bg-green-500', textColor: 'text-green-400', dotColor: 'bg-green-500' },
   ];
 
   const total = Object.values(riskBreakdown).reduce((sum, val) => sum + val, 0);
 
+  let titleClass = 'text-white';
+  let subtitleClass = 'text-zinc-400';
+  let emptyTextClass = 'text-zinc-500';
+
+  try {
+    const { t } = useTheme();
+    titleClass = t('text-zinc-900', 'text-white');
+    subtitleClass = t('text-zinc-500', 'text-zinc-400');
+    emptyTextClass = t('text-zinc-400', 'text-zinc-500');
+  } catch {}
+
   return (
-    <Card className="p-5 h-full">
+    <GlassCard glow="sage" className="p-5 h-full">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-semibold text-white flex items-center gap-2">
+        <h2 className={cn('text-base font-semibold flex items-center gap-2', titleClass)}>
           <Layers className="w-5 h-5 text-[#86EFAC]" />
           Risk Overview
         </h2>
-        <Link to={createPageUrl("AISystemInventory")} className="text-[#86EFAC] text-sm hover:opacity-80">View all</Link>
+        <Link to={createPageUrl("AISystemInventory")} className="text-[#86EFAC] text-sm hover:opacity-80">
+          View all
+        </Link>
       </div>
 
       {total > 0 ? (
         <>
           <div className="flex h-3 rounded-full overflow-hidden mb-4">
-            {risks.map(risk => {
+            {risks.map((risk, i) => {
               const count = riskBreakdown[risk.key] || 0;
               const percent = total > 0 ? (count / total) * 100 : 0;
               return percent > 0 ? (
-                <div
+                <motion.div
                   key={risk.key}
-                  className={`${risk.color}`}
-                  style={{ width: `${percent}%` }}
+                  className={risk.color}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${percent}%` }}
+                  transition={{
+                    duration: 0.6,
+                    delay: i * 0.15,
+                    ease: [0.25, 0.46, 0.45, 0.94]
+                  }}
                   title={`${risk.label}: ${count}`}
                 />
               ) : null;
@@ -134,68 +146,46 @@ export function SentinelRiskWidget({ riskBreakdown = {} }) {
             {risks.filter(r => (riskBreakdown[r.key] || 0) > 0).map(risk => (
               <div key={risk.key} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className={`w-2.5 h-2.5 rounded-full ${risk.color}`} />
-                  <span className="text-sm text-zinc-400">{risk.label}</span>
+                  <div className={cn('w-2.5 h-2.5 rounded-full', risk.dotColor)} />
+                  <span className={cn('text-sm', subtitleClass)}>{risk.label}</span>
                 </div>
-                <span className={`text-sm font-medium ${risk.textColor}`}>{riskBreakdown[risk.key] || 0}</span>
+                <span className={cn('text-sm font-medium', risk.textColor)}>
+                  {riskBreakdown[risk.key] || 0}
+                </span>
               </div>
             ))}
           </div>
         </>
       ) : (
-        <div className="text-center py-6 text-zinc-500 text-sm">
+        <div className={cn('text-center py-6 text-sm', emptyTextClass)}>
           <Layers className="w-8 h-8 mx-auto mb-2 opacity-40" />
           No systems registered
         </div>
       )}
-    </Card>
+    </GlassCard>
   );
 }
 
 export function SentinelTasksWidget({ pendingTasks = 0, urgentTasks = 0 }) {
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/10">
-            <Clock className="w-4 h-4 text-amber-400" />
-          </div>
-          <span className="text-xs text-zinc-400 font-medium">Pending Tasks</span>
-        </div>
-        {urgentTasks > 0 && (
-          <span className="text-xs text-red-400 font-medium">{urgentTasks} urgent</span>
-        )}
-      </div>
-      <div className="text-2xl font-bold text-white">{pendingTasks}</div>
-      {pendingTasks > 0 && (
-        <Link to={createPageUrl("ComplianceRoadmap")} className="text-xs text-[#86EFAC] hover:opacity-80 mt-1 block">
-          View roadmap →
-        </Link>
-      )}
-    </Card>
+    <StatCard
+      icon={Clock}
+      color="amber"
+      value={pendingTasks}
+      label="Pending Tasks"
+      change={urgentTasks > 0 ? `${urgentTasks} urgent` : null}
+      trend={urgentTasks > 0 ? 'down' : undefined}
+    />
   );
 }
 
 export function SentinelDocsWidget({ docCount = 0, recentDoc = null }) {
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#86EFAC]/10">
-            <FileText className="w-4 h-4 text-[#86EFAC]" />
-          </div>
-          <span className="text-xs text-zinc-400 font-medium">Documents</span>
-        </div>
-        {docCount > 0 && (
-          <Link to={createPageUrl("DocumentGenerator")} className="text-xs text-[#86EFAC] hover:opacity-80">
-            View →
-          </Link>
-        )}
-      </div>
-      <div className="text-2xl font-bold text-white">{docCount}</div>
-      {recentDoc && (
-        <p className="text-xs text-zinc-500 mt-1 truncate">Last: {recentDoc}</p>
-      )}
-    </Card>
+    <StatCard
+      icon={FileText}
+      color="sage"
+      value={docCount}
+      label="Documents"
+    />
   );
 }

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { AnimatedNumber } from './AnimatedNumber';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export function GlassCard({
   children,
@@ -36,8 +37,19 @@ export function GlassCard({
 
   const glowConfig = glow ? glowColors[glow] : null;
 
+  let themeClasses;
+  try {
+    const { t } = useTheme();
+    themeClasses = t(
+      'bg-white/90 border border-zinc-200/80 shadow-sm',
+      'bg-zinc-900/60 backdrop-blur-xl border border-white/10'
+    );
+  } catch {
+    themeClasses = 'bg-zinc-900/60 backdrop-blur-xl border border-white/10';
+  }
+
   const baseClasses = cn(
-    'bg-zinc-900/60 backdrop-blur-xl border border-white/10',
+    themeClasses,
     'transition-colors duration-300',
     sizeClasses[size] || sizeClasses.md,
     hover && 'cursor-pointer',
@@ -129,6 +141,14 @@ export function StatCard({
 
   const s = sizeConfig[size] || sizeConfig.md;
 
+  let valueTextClass = 'text-white';
+  let labelTextClass = 'text-zinc-400';
+  try {
+    const { t } = useTheme();
+    valueTextClass = t('text-zinc-900', 'text-white');
+    labelTextClass = t('text-zinc-500', 'text-zinc-400');
+  } catch {}
+
   return (
     <GlassCard glow={color} delay={delay} className={s.card} size={size}>
       <div className={cn('flex items-center justify-between', s.mb)}>
@@ -145,19 +165,19 @@ export function StatCard({
           </span>
         )}
       </div>
-      <div className={cn(s.value, 'font-bold text-white mb-0.5')}>
+      <div className={cn(s.value, 'font-bold mb-0.5', valueTextClass)}>
         {typeof value === 'number' ? (
           <AnimatedNumber value={value} delay={delay} duration={1.2} formatOptions={{ useLocale: true }} />
         ) : (
           value
         )}
       </div>
-      <div className={cn(s.label, 'text-zinc-400')}>{label}</div>
+      <div className={cn(s.label, labelTextClass)}>{label}</div>
     </GlassCard>
   );
 }
 
-export function ProgressRing({ value, size = 120, strokeWidth = 8, color = 'cyan' }) {
+export function ProgressRing({ value, size = 120, strokeWidth = 8, color = 'cyan', children }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (value / 100) * circumference;
@@ -174,13 +194,22 @@ export function ProgressRing({ value, size = 120, strokeWidth = 8, color = 'cyan
     green: 'stroke-green-500',
     amber: 'stroke-amber-500',
     purple: 'stroke-purple-500',
+    emerald: 'stroke-emerald-500',
   };
+
+  let trackClass = 'stroke-zinc-800';
+  let valueTextClass = 'text-white';
+  try {
+    const { t } = useTheme();
+    trackClass = t('stroke-zinc-200', 'stroke-zinc-800');
+    valueTextClass = t('text-zinc-900', 'text-white');
+  } catch {}
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg className="transform -rotate-90" width={size} height={size}>
         <circle
-          className="stroke-zinc-800"
+          className={trackClass}
           strokeWidth={strokeWidth}
           fill="none"
           r={radius}
@@ -204,7 +233,7 @@ export function ProgressRing({ value, size = 120, strokeWidth = 8, color = 'cyan
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-2xl font-bold text-white">{value}%</span>
+        {children || <span className={cn('text-2xl font-bold', valueTextClass)}>{value}%</span>}
       </div>
     </div>
   );

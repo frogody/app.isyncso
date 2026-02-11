@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, cloneElement } from "react";
 import { db } from "@/api/supabaseClient";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -894,9 +894,9 @@ export default function Dashboard() {
                 smallWidgets.length === 3 ? 'grid-cols-2 lg:grid-cols-3' :
                 'grid-cols-2 lg:grid-cols-4'
               }`}>
-                {smallWidgets.map((widget) => (
+                {smallWidgets.map((widget, idx) => (
                   <div key={widget.id}>
-                    {widget.component}
+                    {cloneElement(widget.component, { delay: idx * 0.05 })}
                   </div>
                 ))}
               </div>
@@ -905,12 +905,12 @@ export default function Dashboard() {
             {/* Large & Medium Widgets Grid - Mobile optimized with tablet breakpoint */}
             {gridItems.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {gridItems.map((widget) => (
+                {gridItems.map((widget, idx) => (
                   <div
                     key={widget.id}
                     className={widget.span === 2 ? "md:col-span-2" : ""}
                   >
-                    {widget.component}
+                    {cloneElement(widget.component, { delay: smallWidgets.length * 0.05 + idx * 0.08 })}
                   </div>
                 ))}
               </div>

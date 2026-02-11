@@ -693,7 +693,8 @@ function PagesContent() {
         return (
             <ClientProvider>
                 <Routes>
-                    {/* Auth callback - org-agnostic */}
+                    {/* Auth callback - org-scoped (preferred) and org-agnostic (fallback) */}
+                    <Route path="/portal/:org/auth/callback" element={<ClientAuthCallback />} />
                     <Route path="/portal/auth/callback" element={<ClientAuthCallback />} />
 
                     {/* Organization-scoped routes */}

@@ -206,14 +206,20 @@ export function usePortalClient() {
         throw new Error('No account found with this email. Please contact your agency.');
       }
 
+      // Build org-scoped redirect so the magic link lands on the correct portal
+      const callbackUrl = organizationSlug
+        ? `${window.location.origin}/portal/${organizationSlug}/auth/callback`
+        : `${window.location.origin}/portal/auth/callback`;
+
       // Send magic link
       const { error: authError } = await supabase.auth.signInWithOtp({
         email: email.toLowerCase(),
         options: {
-          emailRedirectTo: `${window.location.origin}/portal/auth/callback`,
+          emailRedirectTo: callbackUrl,
           data: {
             portal_client_id: clientData.id,
             organization_id: clientData.organization_id,
+            organization_slug: organizationSlug,
           },
         },
       });
