@@ -11,31 +11,53 @@ export function usePortalClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch client data based on auth user
+  // Extract org slug from current URL path (e.g. /portal/blinq-recruitment/...)
+  const getOrgSlugFromUrl = () => {
+    const match = window.location.pathname.match(/^\/portal\/([^/]+)/);
+    if (match && match[1] !== 'auth' && match[1] !== 'login') {
+      return match[1];
+    }
+    return null;
+  };
+
+  // Fetch client data based on auth user, scoped to the current org when possible
   const fetchClientData = useCallback(async (authUserId, authEmail) => {
     try {
-      // Try finding by auth_user_id first
-      let { data, error: fetchError } = await supabase
+      const orgSlug = getOrgSlugFromUrl();
+      let orgId = null;
+
+      // If we know which org portal we're on, scope all lookups to it
+      if (orgSlug) {
+        const { data: orgData } = await supabase
+          .from('organizations')
+          .select('id')
+          .eq('slug', orgSlug)
+          .single();
+        if (orgData) orgId = orgData.id;
+      }
+
+      const selectFields = `*, organization:organizations(id, name, slug, logo_url)`;
+
+      // Build query — scoped to org if known
+      let query = supabase
         .from('portal_clients')
-        .select(`
-          *,
-          organization:organizations(id, name, slug, logo_url)
-        `)
+        .select(selectFields)
         .eq('auth_user_id', authUserId)
-        .in('status', ['active', 'invited'])
-        .single();
+        .in('status', ['active', 'invited']);
+      if (orgId) query = query.eq('organization_id', orgId);
+
+      let { data, error: fetchError } = await query.single();
 
       // If not found by auth_user_id, try by email and link the account
       if (fetchError?.code === 'PGRST116' && authEmail) {
-        const { data: emailMatch, error: emailError } = await supabase
+        let emailQuery = supabase
           .from('portal_clients')
-          .select(`
-            *,
-            organization:organizations(id, name, slug, logo_url)
-          `)
+          .select(selectFields)
           .eq('email', authEmail.toLowerCase())
-          .in('status', ['active', 'invited'])
-          .single();
+          .in('status', ['active', 'invited']);
+        if (orgId) emailQuery = emailQuery.eq('organization_id', orgId);
+
+        const { data: emailMatch, error: emailError } = await emailQuery.single();
 
         if (emailMatch && !emailError) {
           // Link auth user to portal client
