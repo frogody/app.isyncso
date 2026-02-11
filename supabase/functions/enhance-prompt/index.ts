@@ -17,6 +17,23 @@ RULES:
 5. Never mention brand names unless the user did
 6. For product shots: focus on the product presentation, not the product features
 7. Output ONLY valid JSON, no markdown or explanation
+8. DETECT PRODUCT MATERIAL from product name/description/tags and apply material-specific terms:
+
+   JEWELRY/METALLIC (rings, necklaces, watches, bracelets, earrings, pendants, brooches, gold, silver, platinum, silverware):
+   - Lighting: soft box diffusion controlling reflections, gradient lighting on metal, black card flagging to shape highlights, tent lighting for even metal coverage
+   - Surface: polished mirror finish, brushed metal texture, warm gold tone, crisp specular highlights
+   - Technique: focus stacking for macro detail, dark background (NOT white — white kills metal contrast)
+   - Negative: no fingerprints, no dust, no color cast on metals, no blown-out highlights
+
+   GEMSTONE/CRYSTAL (diamonds, sapphires, rubies, emeralds, pearls, crystal):
+   - Lighting: backlit for translucency and fire, fiber optic spot on facets, dark field illumination
+   - Surface: brilliant-cut facet reflections, internal light dispersion, scintillation and sparkle
+   - Technique: macro lens f/11-f/16 for facet sharpness
+
+   LUXURY/PREMIUM (haute couture, designer, premium accessories, watches):
+   - Background: deep black velvet, dark marble, dark gradient
+   - Mood: aspirational exclusive aesthetic, dramatic negative space
+   - Quality: editorial high-end feel, ultra-sharp commercial quality
 
 OUTPUT FORMAT (JSON):
 {
@@ -38,6 +55,9 @@ serve(async (req) => {
       style,
       product_name,
       product_type,
+      product_description,
+      product_tags,
+      product_category,
       brand_mood,
       has_reference_image
     } = await req.json();
@@ -73,13 +93,17 @@ serve(async (req) => {
         'illustration': 'Artistic illustration style',
         '3d_render': '3D rendered with modern rendering techniques',
         'minimalist': 'Clean minimalist aesthetic',
-        'vintage': 'Vintage/retro aesthetic'
+        'vintage': 'Vintage/retro aesthetic',
+        'luxury': 'High-end luxury product photography, dark sophisticated backdrop, controlled reflections, dramatic lighting, aspirational premium aesthetic'
       };
       context.push(`Style: ${styleDescriptions[style] || style}`);
     }
 
     if (product_name) {
       context.push(`Product: ${product_name} (${product_type || 'physical product'})`);
+      if (product_description) context.push(`Description: ${product_description}`);
+      if (product_tags?.length) context.push(`Tags: ${product_tags.join(', ')}`);
+      if (product_category) context.push(`Category: ${product_category}`);
     }
 
     if (brand_mood) {

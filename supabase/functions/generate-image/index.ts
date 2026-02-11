@@ -99,6 +99,18 @@ async function uploadToStorage(
   return { publicUrl };
 }
 
+function detectProductCategory(productContext: any, prompt: string): 'jewelry' | 'luxury' | 'glass' | 'standard' {
+  const signals = [
+    productContext?.name, productContext?.description, productContext?.short_description,
+    productContext?.tags?.join(' '), productContext?.category, prompt
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  if (/\b(ring|necklace|bracelet|earring|pendant|brooch|diamond|gold|silver|platinum|gemstone|sapphire|ruby|emerald|pearl|18k|14k|925|sterling|carat|karat|jewel)\b/.test(signals)) return 'jewelry';
+  if (/\b(watch|timepiece|luxury|premium|haute|couture|designer|handcrafted|crystal|swarovski)\b/.test(signals)) return 'luxury';
+  if (/\b(glass|crystal|bottle|perfume|fragrance|vase|transparent|translucent)\b/.test(signals)) return 'glass';
+  return 'standard';
+}
+
 function buildEnhancedPrompt(
   userPrompt: string,
   brandContext: any,
@@ -125,6 +137,16 @@ function buildEnhancedPrompt(
       enhanced += ` ${productContext.description}`;
     }
   }
+
+  // Apply category-specific photography suffixes
+  const category = detectProductCategory(productContext, userPrompt);
+  const suffixes: Record<string, string> = {
+    jewelry: ' Jewelry product photography, controlled reflections on metal, macro detail, gradient lighting shaping specular highlights, dark background, focus stacking, no color cast on metals.',
+    luxury: ' Premium luxury presentation, aspirational aesthetic, dramatic controlled lighting, rich shadows, elegant negative space.',
+    glass: ' Transparent product photography, rim lighting defining edges, gradient background, backlit material clarity.',
+    standard: ''
+  };
+  enhanced += suffixes[category];
 
   return enhanced;
 }
