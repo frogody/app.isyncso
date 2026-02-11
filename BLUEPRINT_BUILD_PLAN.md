@@ -3038,10 +3038,10 @@ CREATE INDEX idx_receiving_log_session ON receiving_log(receiving_session_id) WH
 - [x] `P4-15` Build return sync: poll unhandled returns, create return records, handle via API
 - [x] `P4-16` Build bol.com Settings UI: credentials, connection test, inventory comparison, replenishment history
 - [x] `P4-17` Implement rate limit tracking + `Retry-After` respect
-- [ ] `P4-18` Test: store credentials → test connection → verify token caching works across cold starts
-- [ ] `P4-19` Test: create replenishment → poll ProcessStatus → verify labels
-- [ ] `P4-20` Test: stock sync → push stock update → verify on bol.com
-- [ ] `P4-21` Test: return polling → create return record → handle return via API
+- [x] `P4-18` Test: store credentials → test connection → verify token caching works across cold starts
+- [x] `P4-19` Test: create replenishment → poll ProcessStatus → verify labels
+- [x] `P4-20` Test: stock sync → push stock update → verify on bol.com
+- [x] `P4-21` Test: return polling → create return record → handle return via API
 
 ### Phase 5: Returns Workflow
 - [ ] `P5-1` Returns page with list and filters
