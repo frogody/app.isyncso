@@ -268,6 +268,9 @@ serve(async (req) => {
         }
       } else {
         // Light treatment: sharpness + reflections only, respect user's chosen style/background
+        // UNDO dark backgrounds that the LLM forced (rule 8 tells it dark bg for jewelry, but user chose a different style)
+        finalPrompt = finalPrompt.replace(/\b(dark|black|deep black|velvet)\s+(background|backdrop|surface)\b/gi, 'clean studio background');
+        finalPrompt = finalPrompt.replace(/dark,?\s*gradient\s+background/gi, 'clean studio background');
         const mat = MATERIAL_LIGHT[material];
         finalPrompt += mat.suffix;
         if (mat.negative) {
