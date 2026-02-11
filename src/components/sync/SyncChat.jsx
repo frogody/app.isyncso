@@ -45,13 +45,13 @@ const AGENT_ICONS = {
 
 // Agent color mapping
 const AGENT_COLORS = {
-  sync: { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500/30' },
-  learn: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/30' },
-  growth: { bg: 'bg-indigo-500/20', text: 'text-indigo-400', border: 'border-indigo-500/30' },
-  sentinel: { bg: 'bg-[#86EFAC]/20', text: 'text-[#86EFAC]', border: 'border-[#86EFAC]/30' },
-  finance: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/30' },
-  raise: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30' },
-  create: { bg: 'bg-rose-500/20', text: 'text-rose-400', border: 'border-rose-500/30' },
+  sync: { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500/30', dot: 'bg-purple-500' },
+  learn: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/30', dot: 'bg-cyan-500' },
+  growth: { bg: 'bg-indigo-500/20', text: 'text-indigo-400', border: 'border-indigo-500/30', dot: 'bg-indigo-500' },
+  sentinel: { bg: 'bg-[#86EFAC]/20', text: 'text-[#86EFAC]', border: 'border-[#86EFAC]/30', dot: 'bg-[#86EFAC]' },
+  finance: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/30', dot: 'bg-amber-500' },
+  raise: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30', dot: 'bg-orange-500' },
+  create: { bg: 'bg-rose-500/20', text: 'text-rose-400', border: 'border-rose-500/30', dot: 'bg-rose-500' },
 };
 
 // Parse [ACTIONS] blocks from message content
@@ -247,9 +247,9 @@ function TypingIndicator({ agentId }) {
       </div>
       <div className={cn('rounded-2xl px-4 py-3 border', syt('bg-white border-slate-200 shadow-sm', 'bg-zinc-800/80 border-white/5'))}>
         <div className="flex items-center gap-1.5">
-          <div className={cn('w-2 h-2 rounded-full animate-bounce', colors.bg.replace('/20', ''))} style={{ animationDelay: '0ms' }} />
-          <div className={cn('w-2 h-2 rounded-full animate-bounce', colors.bg.replace('/20', ''))} style={{ animationDelay: '150ms' }} />
-          <div className={cn('w-2 h-2 rounded-full animate-bounce', colors.bg.replace('/20', ''))} style={{ animationDelay: '300ms' }} />
+          <div className={cn('w-2 h-2 rounded-full animate-bounce', colors.dot)} style={{ animationDelay: '0ms' }} />
+          <div className={cn('w-2 h-2 rounded-full animate-bounce', colors.dot)} style={{ animationDelay: '150ms' }} />
+          <div className={cn('w-2 h-2 rounded-full animate-bounce', colors.dot)} style={{ animationDelay: '300ms' }} />
         </div>
       </div>
     </motion.div>

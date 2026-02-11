@@ -205,7 +205,7 @@ export default function SyncFloatingChat({ isOpen, onClose, onExpandToFullPage, 
                   className={cn(
                     "max-w-[85%] px-3 py-2 rounded-xl text-sm",
                     msg.role === 'user'
-                      ? "bg-cyan-500/20 text-cyan-100 rounded-br-sm"
+                      ? cn("bg-cyan-500/20 rounded-br-sm", syt('text-cyan-800', 'text-cyan-100'))
                       : msg.isError
                         ? "bg-red-500/10 text-red-300 border border-red-500/20"
                         : cn(syt('bg-slate-100/80 text-slate-700', 'bg-zinc-800/80 text-zinc-200'), "rounded-bl-sm")

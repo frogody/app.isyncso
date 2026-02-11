@@ -197,7 +197,7 @@ export default function MasterPromptTemplates({ sessionId }) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  onClick={() => setSelectedTemplate(template)}
+                  onClick={() => { setSelectedTemplate(template); setVariables({}); }}
                   className={`p-4 rounded-xl border ${syt('border-slate-200', 'border-zinc-700/50')} ${syt('bg-slate-50', 'bg-zinc-800/30')} ${syt('hover:bg-slate-100', 'hover:bg-zinc-800/50')} hover:border-purple-500/30 transition-all text-left group`}
                 >
                   <div className="flex items-start gap-3">
@@ -262,8 +262,12 @@ export default function MasterPromptTemplates({ sessionId }) {
             <div className={`${syt('bg-slate-50', 'bg-zinc-900/50')} rounded-xl p-4 border ${syt('border-slate-200', 'border-zinc-700/50')}`}>
               <div className={`text-xs font-medium ${syt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider mb-2`}>Preview</div>
               <pre className={`text-sm ${syt('text-slate-600', 'text-zinc-300')} whitespace-pre-wrap font-mono leading-relaxed`}>
-                {selectedTemplate.prompt.replace(/{{(\w+)}}/g, (match, key) => 
-                  variables[key] ? `<span class="text-purple-400">${variables[key]}</span>` : `[${key}]`
+                {selectedTemplate.prompt.split(/{{(\w+)}}/).map((part, i) =>
+                  i % 2 === 0 ? part : (
+                    <span key={i} className="text-purple-400 font-semibold">
+                      {variables[part] || `[${part}]`}
+                    </span>
+                  )
                 )}
               </pre>
             </div>

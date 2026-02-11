@@ -1972,38 +1972,38 @@ export default function SyncAgent() {
   return (
     <SyncPageTransition>
     <div ref={pageRef} className={`h-screen flex flex-col ${syt('bg-slate-50', 'bg-black')} ${syt('text-slate-900', 'text-white')} overflow-hidden`}>
-      {/* Top bar - just buttons */}
+      {/* Top bar - compact */}
       <div className="shrink-0 z-20">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-end gap-3 px-6 py-3">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-end gap-2 px-6 py-2">
           <button
-            className="group relative inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium overflow-hidden transition-all duration-300 shadow-lg shadow-purple-500/20"
+            className="group relative inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium overflow-hidden transition-all duration-300 shadow-lg shadow-purple-500/20"
             onClick={() => setVoiceModeOpen(true)}
             title="Start voice conversation"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-500 opacity-90 group-hover:opacity-100 transition-opacity" />
             <Mic className="relative h-4 w-4 text-white" />
-            <span className="relative text-white">Voice</span>
+            <span className="relative text-white hidden sm:inline">Voice</span>
           </button>
           <button
-            className="group relative inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium overflow-hidden transition-all duration-300"
+            className="group relative inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium overflow-hidden transition-all duration-300"
             onClick={handleNewChat}
             title="Start new conversation"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-cyan-500 opacity-90 group-hover:opacity-100 transition-opacity" />
             <Plus className="relative h-4 w-4 text-white" />
-            <span className="relative text-white">New Chat</span>
+            <span className="relative text-white hidden sm:inline">New</span>
           </button>
           <button
-            className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm transition-all duration-200 ${syt('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700/60 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-white hover:border-zinc-600')}`}
+            className={`inline-flex items-center justify-center rounded-xl border p-2 transition-all duration-200 ${syt('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700/60 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-white hover:border-zinc-600')}`}
             onClick={() => setSeed((s) => s + 1)}
             title="Refresh inner visual"
           >
             <RotateCcw className="h-4 w-4" />
-            Refresh
           </button>
           <button
             onClick={toggleTheme}
-            className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm transition-all duration-200 ${syt('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700/60 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-white hover:border-zinc-600')}`}
+            className={`inline-flex items-center justify-center rounded-xl border p-2 transition-all duration-200 ${syt('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700/60 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-white hover:border-zinc-600')}`}
+            title="Toggle theme"
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
@@ -2054,7 +2054,7 @@ export default function SyncAgent() {
       </div>
 
       {/* Layout - fills remaining height, minimal top padding to align with buttons */}
-      <div className="flex-1 min-h-0 mx-auto w-full max-w-[1600px] grid grid-cols-1 gap-3 px-4 lg:px-6 pb-4 lg:grid-cols-[480px_1fr]">
+      <div className="flex-1 min-h-0 mx-auto w-full max-w-[1600px] grid grid-cols-1 gap-3 px-4 lg:px-6 pb-4 lg:grid-cols-[400px_1fr]">
         {/* Left: Container with Avatar + Agent Messages */}
         <div
           data-animate
@@ -2067,8 +2067,8 @@ export default function SyncAgent() {
           style={{ opacity: 0 }}
         >
           {/* Avatar - centered with room for status chip below */}
-          <div className="shrink-0 grid place-items-center pt-10 pb-16">
-            <AgentAvatar size={260} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
+          <div className="shrink-0 grid place-items-center pt-6 pb-12">
+            <AgentAvatar size={240} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
           </div>
 
           {/* Agent orchestration messages - below avatar, fills remaining space */}
@@ -2084,7 +2084,7 @@ export default function SyncAgent() {
           style={{ opacity: 0 }}
         >
           {/* Messages Area - directly on background, with top spacing */}
-          <div ref={scrollerRef} className="flex-1 min-h-0 space-y-4 overflow-y-auto px-2 pt-16 pb-4">
+          <div ref={scrollerRef} className="flex-1 min-h-0 space-y-4 overflow-y-auto px-2 pt-4 pb-4">
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center px-4">
                   <div className="relative mb-6">
@@ -2161,8 +2161,8 @@ export default function SyncAgent() {
             </div>
 
           {/* Input Area - clean, no container border */}
-          <div className="shrink-0 px-2 py-4">
-            <div className="flex items-end gap-4">
+          <div className="shrink-0 px-2 py-3">
+            <div className="flex items-end gap-3">
               <div className={`flex-1 rounded-xl ${syt('bg-white shadow-sm', 'bg-zinc-900/60')} border ${syt('border-slate-200 hover:border-slate-300', 'border-zinc-700/50 hover:border-zinc-600/60')} focus-within:border-cyan-500/40 focus-within:shadow-lg focus-within:shadow-cyan-500/5 transition-all duration-200`}>
                 <textarea
                   value={input}
