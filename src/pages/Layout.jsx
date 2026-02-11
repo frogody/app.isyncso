@@ -518,7 +518,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
     const activityItems = [
       { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
       { label: 'Activity', path: createPageUrl('DesktopActivity') + '?tab=overview', icon: BarChart3, matchPath: '/desktopactivity' },
-      { label: 'Daily Journals', path: createPageUrl('DesktopActivity') + '?tab=journals', icon: BookOpen },
+      { label: 'Daily Journals', path: createPageUrl('DailyJournal'), icon: BookOpen },
     ];
     return {
       title: 'SYNC',
