@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Cloud, Plus, Search, Filter, Grid3X3, List, Table2, Tag, Eye, Edit2,
   Play, ExternalLink, FileText, Euro, Zap, Users, Star,
   ChevronDown, MoreHorizontal, Archive, Trash2, Copy,
-  Sun, Moon
+  Sun, Moon, Pencil, Save, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
 import { Product, DigitalProduct, ProductCategory } from "@/api/entities";
+import { supabase } from '@/api/supabaseClient';
 import { ProductModal, ProductGridCard, ProductListRow, ProductTableView } from "@/components/products";
 import { toast } from "sonner";
 import {
@@ -61,6 +62,11 @@ export default function ProductsDigital() {
 
   // Table selection state
   const [selectedIds, setSelectedIds] = useState(new Set());
+
+  // Edit mode
+  const [editMode, setEditMode] = useState(false);
+  const [pendingEdits, setPendingEdits] = useState({});
+  const [saving, setSaving] = useState(false);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -127,6 +133,73 @@ export default function ProductsDigital() {
     } catch (e) {
       console.error('Failed to delete product:', e);
       toast.error('Failed to delete product');
+    }
+  };
+
+  const handleFieldChange = useCallback((productId, field, value) => {
+    setPendingEdits(prev => {
+      const productEdits = { ...prev[productId] };
+      const product = products.find(p => p.id === productId);
+
+      let original;
+      if (field === 'name') original = product?.name ?? '';
+
+      if (String(value) === String(original)) {
+        delete productEdits[field];
+      } else {
+        productEdits[field] = value;
+      }
+
+      const next = { ...prev };
+      if (Object.keys(productEdits).length === 0) {
+        delete next[productId];
+      } else {
+        next[productId] = productEdits;
+      }
+      return next;
+    });
+  }, [products]);
+
+  const editCount = Object.keys(pendingEdits).length;
+
+  const handleDiscardEdits = () => {
+    setPendingEdits({});
+    setEditMode(false);
+  };
+
+  const handleSaveEdits = async () => {
+    if (editCount === 0) return;
+    setSaving(true);
+    try {
+      const entries = Object.entries(pendingEdits);
+      let savedCount = 0;
+
+      for (const [productId, edits] of entries) {
+        const productUpdate = {};
+        if ('name' in edits) productUpdate.name = edits.name;
+
+        if (Object.keys(productUpdate).length > 0) {
+          await supabase.from('products').update(productUpdate).eq('id', productId);
+        }
+        savedCount++;
+      }
+
+      toast.success(`Updated ${savedCount} product${savedCount !== 1 ? 's' : ''}`);
+      setPendingEdits({});
+      setEditMode(false);
+      // Reload
+      setLoading(true);
+      try {
+        const result = await Product.filter({ type: 'digital' }, { limit: 5000 });
+        setProducts(Array.isArray(result) ? result : []);
+      } finally {
+        setLoading(false);
+      }
+    } catch (e) {
+      console.error('Failed to save edits:', e);
+      toast.error('Failed to save some changes');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -352,6 +425,25 @@ export default function ProductsDigital() {
                 <Table2 className="w-4 h-4" />
               </Button>
             </div>
+
+            {/* Edit Mode Toggle (table view only) */}
+            {viewMode === 'table' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (editMode) {
+                    handleDiscardEdits();
+                  } else {
+                    setEditMode(true);
+                  }
+                }}
+                className={`h-8 px-3 ${editMode ? 'bg-cyan-500/20 text-cyan-400' : t('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')}`}
+              >
+                <Pencil className="w-4 h-4 mr-1.5" />
+                {editMode ? 'Editing' : 'Edit'}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -404,6 +496,9 @@ export default function ProductsDigital() {
               onEdit={handleEditProduct}
               onArchive={handleArchiveProduct}
               onDelete={handleDeleteProduct}
+              editMode={editMode}
+              pendingEdits={pendingEdits}
+              onFieldChange={handleFieldChange}
             />
           ) : (
             <div className="space-y-3">
@@ -436,6 +531,39 @@ export default function ProductsDigital() {
             <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
               <Plus className="w-4 h-4 mr-2" /> Add Digital Product
             </Button>
+          </div>
+        )}
+
+        {/* Bulk Edit Save Bar */}
+        {editMode && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+            <div className={`flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl border ${t('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}`}>
+              <span className={`text-sm ${t('text-slate-600', 'text-zinc-400')}`}>
+                {editCount > 0 ? (
+                  <><span className="font-semibold text-cyan-400">{editCount}</span> product{editCount !== 1 ? 's' : ''} modified</>
+                ) : (
+                  'Edit mode — click cells to edit'
+                )}
+              </span>
+              <div className={`w-px h-6 ${t('bg-slate-200', 'bg-zinc-700')}`} />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDiscardEdits}
+                disabled={saving}
+                className={t('text-slate-600 hover:text-slate-900', 'text-zinc-400 hover:text-white')}
+              >
+                <X className="w-4 h-4 mr-1" /> Discard
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveEdits}
+                disabled={editCount === 0 || saving}
+                className="bg-cyan-500 hover:bg-cyan-600 text-white disabled:opacity-50"
+              >
+                <Save className="w-4 h-4 mr-1" /> {saving ? 'Saving...' : 'Save All'}
+              </Button>
+            </div>
           </div>
         )}
 

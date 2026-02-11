@@ -5,7 +5,7 @@ import {
   Box, Plus, Search, Filter, Grid3X3, List, Table2, Tag, Eye, Edit2,
   Barcode, Package, Truck, Building2, Euro, AlertTriangle,
   ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal, Archive, Trash2, Copy, CheckCircle, XCircle,
-  Sun, Moon
+  Sun, Moon, Pencil, Save, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +75,11 @@ export default function ProductsPhysical() {
   const [channelsMap, setChannelsMap] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState(new Set());
+
+  // Edit mode
+  const [editMode, setEditMode] = useState(false);
+  const [pendingEdits, setPendingEdits] = useState({});
+  const [saving, setSaving] = useState(false);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -148,6 +153,95 @@ export default function ProductsPhysical() {
     } catch (e) {
       console.error('Failed to delete product:', e);
       toast.error('Failed to delete product: ' + (e.message || 'Unknown error'));
+    }
+  };
+
+  const handleFieldChange = useCallback((productId, field, value) => {
+    setPendingEdits(prev => {
+      const productEdits = { ...prev[productId] };
+      const product = products.find(p => p.id === productId);
+      const details = physicalProducts[productId];
+
+      // Determine original value
+      let original;
+      if (field === 'name') original = product?.name ?? '';
+      else if (field === 'sku') original = details?.sku ?? '';
+      else if (field === 'price') original = details?.pricing?.base_price ?? '';
+      else if (field === 'stock') original = details?.inventory?.quantity ?? '';
+      else if (field === 'status') original = product?.status ?? 'draft';
+
+      // Only store if different from original
+      if (String(value) === String(original)) {
+        delete productEdits[field];
+      } else {
+        productEdits[field] = value;
+      }
+
+      const next = { ...prev };
+      if (Object.keys(productEdits).length === 0) {
+        delete next[productId];
+      } else {
+        next[productId] = productEdits;
+      }
+      return next;
+    });
+  }, [products, physicalProducts]);
+
+  const editCount = Object.keys(pendingEdits).length;
+
+  const handleDiscardEdits = () => {
+    setPendingEdits({});
+    setEditMode(false);
+  };
+
+  const handleSaveEdits = async () => {
+    if (editCount === 0) return;
+    setSaving(true);
+    try {
+      const entries = Object.entries(pendingEdits);
+      let savedCount = 0;
+
+      for (const [productId, edits] of entries) {
+        // Product table updates (name, status)
+        const productUpdate = {};
+        if ('name' in edits) productUpdate.name = edits.name;
+        if ('status' in edits) productUpdate.status = edits.status;
+
+        if (Object.keys(productUpdate).length > 0) {
+          await supabase.from('products').update(productUpdate).eq('id', productId);
+        }
+
+        // Physical product table updates (sku, pricing, inventory)
+        const details = physicalProducts[productId];
+        if (details && ('sku' in edits || 'price' in edits || 'stock' in edits)) {
+          const ppUpdate = {};
+          if ('sku' in edits) ppUpdate.sku = edits.sku;
+          if ('price' in edits) {
+            ppUpdate.pricing = {
+              ...(details.pricing || {}),
+              base_price: edits.price === '' ? null : parseFloat(edits.price),
+            };
+          }
+          if ('stock' in edits) {
+            ppUpdate.inventory = {
+              ...(details.inventory || {}),
+              quantity: edits.stock === '' ? 0 : parseInt(edits.stock, 10),
+            };
+          }
+          await supabase.from('physical_products').update(ppUpdate).eq('product_id', productId);
+        }
+        savedCount++;
+      }
+
+      toast.success(`Updated ${savedCount} product${savedCount !== 1 ? 's' : ''}`);
+      setPendingEdits({});
+      setEditMode(false);
+      loadProducts();
+    } catch (e) {
+      console.error('Failed to save edits:', e);
+      toast.error('Failed to save some changes');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -436,6 +530,25 @@ export default function ProductsPhysical() {
                 <Table2 className="w-4 h-4" />
               </Button>
             </div>
+
+            {/* Edit Mode Toggle (table view only) */}
+            {viewMode === 'table' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (editMode) {
+                    handleDiscardEdits();
+                  } else {
+                    setEditMode(true);
+                  }
+                }}
+                className={`h-8 px-3 ${editMode ? 'bg-cyan-500/20 text-cyan-400' : t('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')}`}
+              >
+                <Pencil className="w-4 h-4 mr-1.5" />
+                {editMode ? 'Editing' : 'Edit'}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -490,6 +603,9 @@ export default function ProductsPhysical() {
                 onEdit={handleEditProduct}
                 onArchive={handleArchiveProduct}
                 onDelete={handleDeleteProduct}
+                editMode={editMode}
+                pendingEdits={pendingEdits}
+                onFieldChange={handleFieldChange}
               />
             ) : (
               <div className="space-y-3">
@@ -578,6 +694,39 @@ export default function ProductsPhysical() {
             <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
               <Plus className="w-4 h-4 mr-2" /> Add Physical Product
             </Button>
+          </div>
+        )}
+
+        {/* Bulk Edit Save Bar */}
+        {editMode && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+            <div className={`flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl border ${t('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}`}>
+              <span className={`text-sm ${t('text-slate-600', 'text-zinc-400')}`}>
+                {editCount > 0 ? (
+                  <><span className="font-semibold text-cyan-400">{editCount}</span> product{editCount !== 1 ? 's' : ''} modified</>
+                ) : (
+                  'Edit mode — click cells to edit'
+                )}
+              </span>
+              <div className={`w-px h-6 ${t('bg-slate-200', 'bg-zinc-700')}`} />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDiscardEdits}
+                disabled={saving}
+                className={t('text-slate-600 hover:text-slate-900', 'text-zinc-400 hover:text-white')}
+              >
+                <X className="w-4 h-4 mr-1" /> Discard
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveEdits}
+                disabled={editCount === 0 || saving}
+                className="bg-cyan-500 hover:bg-cyan-600 text-white disabled:opacity-50"
+              >
+                <Save className="w-4 h-4 mr-1" /> {saving ? 'Saving...' : 'Save All'}
+              </Button>
+            </div>
           </div>
         )}
 

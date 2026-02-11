@@ -448,6 +448,24 @@ export function ProductListRow({
   );
 }
 
+function EditCell({ value, onChange, type = 'text', placeholder, className: extraClass }) {
+  return (
+    <input
+      type={type}
+      value={value ?? ''}
+      onChange={(e) => onChange(type === 'number' ? e.target.value : e.target.value)}
+      placeholder={placeholder}
+      className={cn(
+        "w-full bg-zinc-800/80 border border-zinc-700 rounded px-2 py-1 text-[13px] text-white",
+        "focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30",
+        "placeholder:text-zinc-600",
+        extraClass
+      )}
+      onClick={(e) => e.stopPropagation()}
+    />
+  );
+}
+
 export function ProductTableView({
   products,
   productType = 'digital',
@@ -459,10 +477,19 @@ export function ProductTableView({
   onDuplicate,
   onArchive,
   onDelete,
+  editMode = false,
+  pendingEdits = {},
+  onFieldChange,
 }) {
   const isDigital = productType === 'digital';
   const Icon = isDigital ? Cloud : Package;
   const allSelected = selectedIds && products.length > 0 && products.every(p => selectedIds.has(p.id));
+
+  const getEditValue = (productId, field, fallback) => {
+    const edits = pendingEdits[productId];
+    if (edits && field in edits) return edits[field];
+    return fallback;
+  };
 
   return (
     <div className="rounded-xl border border-white/[0.06] overflow-hidden">
@@ -512,13 +539,15 @@ export function ProductTableView({
             const inventory = !isDigital ? details?.inventory : null;
             const qty = inventory?.quantity ?? null;
             const low = inventory?.low_stock_threshold || 10;
+            const hasEdits = !!pendingEdits[product.id];
 
             return (
               <TableRow
                 key={product.id}
                 className={cn(
                   "border-white/[0.06] hover:bg-white/[0.02] group",
-                  isSelected && "bg-cyan-500/[0.04]"
+                  isSelected && "bg-cyan-500/[0.04]",
+                  hasEdits && "bg-cyan-500/[0.06]"
                 )}
               >
                 {/* Checkbox */}
@@ -548,16 +577,24 @@ export function ProductTableView({
 
                 {/* Name + variant/subtitle */}
                 <TableCell className="py-2 pl-0">
-                  <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)} className="block">
-                    <span className="text-[13px] font-semibold text-white leading-tight">
-                      {product.name}
-                    </span>
-                    {(product.tagline || product.short_description) && (
-                      <p className="text-[11px] text-zinc-500 leading-tight mt-0.5 truncate max-w-[260px]">
-                        {product.tagline || product.short_description}
-                      </p>
-                    )}
-                  </Link>
+                  {editMode ? (
+                    <EditCell
+                      value={getEditValue(product.id, 'name', product.name)}
+                      onChange={(v) => onFieldChange?.(product.id, 'name', v)}
+                      placeholder="Product name"
+                    />
+                  ) : (
+                    <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)} className="block">
+                      <span className="text-[13px] font-semibold text-white leading-tight">
+                        {product.name}
+                      </span>
+                      {(product.tagline || product.short_description) && (
+                        <p className="text-[11px] text-zinc-500 leading-tight mt-0.5 truncate max-w-[260px]">
+                          {product.tagline || product.short_description}
+                        </p>
+                      )}
+                    </Link>
+                  )}
                 </TableCell>
 
                 {isDigital ? (
@@ -591,11 +628,27 @@ export function ProductTableView({
                   <>
                     {/* SKU */}
                     <TableCell className="py-2">
-                      <span className="text-[13px] text-zinc-400">{details?.sku || '—'}</span>
+                      {editMode ? (
+                        <EditCell
+                          value={getEditValue(product.id, 'sku', details?.sku || '')}
+                          onChange={(v) => onFieldChange?.(product.id, 'sku', v)}
+                          placeholder="SKU"
+                        />
+                      ) : (
+                        <span className="text-[13px] text-zinc-400">{details?.sku || '—'}</span>
+                      )}
                     </TableCell>
                     {/* Price */}
                     <TableCell className="py-2 text-center">
-                      {pricing?.base_price ? (
+                      {editMode ? (
+                        <EditCell
+                          value={getEditValue(product.id, 'price', pricing?.base_price || '')}
+                          onChange={(v) => onFieldChange?.(product.id, 'price', v)}
+                          type="number"
+                          placeholder="0.00"
+                          className="text-center"
+                        />
+                      ) : pricing?.base_price ? (
                         <span className="text-[13px] text-zinc-300">
                           €{parseFloat(pricing.base_price).toFixed(2)}
                         </span>
@@ -605,7 +658,15 @@ export function ProductTableView({
                     </TableCell>
                     {/* Stock qty */}
                     <TableCell className="py-2 text-center">
-                      {qty != null ? (
+                      {editMode ? (
+                        <EditCell
+                          value={getEditValue(product.id, 'stock', qty ?? '')}
+                          onChange={(v) => onFieldChange?.(product.id, 'stock', v)}
+                          type="number"
+                          placeholder="0"
+                          className="text-center"
+                        />
+                      ) : qty != null ? (
                         <span className={cn(
                           "text-[13px] font-medium tabular-nums",
                           qty <= 0 ? "text-red-400" :
@@ -620,9 +681,22 @@ export function ProductTableView({
                     </TableCell>
                     {/* Status */}
                     <TableCell className="py-2 text-center hidden lg:table-cell">
-                      <span className={`text-[11px] ${status.text}`}>
-                        {status.label}
-                      </span>
+                      {editMode ? (
+                        <select
+                          value={getEditValue(product.id, 'status', product.status)}
+                          onChange={(e) => onFieldChange?.(product.id, 'status', e.target.value)}
+                          className="bg-zinc-800/80 border border-zinc-700 rounded px-1.5 py-1 text-[12px] text-white focus:outline-none focus:border-cyan-500"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <option value="published">Published</option>
+                          <option value="draft">Draft</option>
+                          <option value="archived">Archived</option>
+                        </select>
+                      ) : (
+                        <span className={`text-[11px] ${status.text}`}>
+                          {status.label}
+                        </span>
+                      )}
                     </TableCell>
                     {/* Category */}
                     <TableCell className="py-2 hidden xl:table-cell">
@@ -633,32 +707,34 @@ export function ProductTableView({
 
                 {/* Actions */}
                 <TableCell className="py-2 pr-4">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-zinc-600 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                        <MoreHorizontal className="w-3.5 h-3.5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10">
-                      <DropdownMenuItem asChild className="text-zinc-300 hover:text-white">
-                        <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)}>
-                          <Eye className="w-4 h-4 mr-2" /> View
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-zinc-300 hover:text-white" onClick={() => onEdit?.(product)}>
-                        <Edit2 className="w-4 h-4 mr-2" /> Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-zinc-300 hover:text-white" onClick={() => onDuplicate?.(product)}>
-                        <Copy className="w-4 h-4 mr-2" /> Duplicate
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-amber-400 hover:text-amber-300" onClick={() => onArchive?.(product)}>
-                        <Archive className="w-4 h-4 mr-2" /> Archive
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-400 hover:text-red-300" onClick={() => onDelete?.(product)}>
-                        <Trash2 className="w-4 h-4 mr-2" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {!editMode && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-zinc-600 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                          <MoreHorizontal className="w-3.5 h-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10">
+                        <DropdownMenuItem asChild className="text-zinc-300 hover:text-white">
+                          <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)}>
+                            <Eye className="w-4 h-4 mr-2" /> View
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-zinc-300 hover:text-white" onClick={() => onEdit?.(product)}>
+                          <Edit2 className="w-4 h-4 mr-2" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-zinc-300 hover:text-white" onClick={() => onDuplicate?.(product)}>
+                          <Copy className="w-4 h-4 mr-2" /> Duplicate
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-amber-400 hover:text-amber-300" onClick={() => onArchive?.(product)}>
+                          <Archive className="w-4 h-4 mr-2" /> Archive
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-400 hover:text-red-300" onClick={() => onDelete?.(product)}>
+                          <Trash2 className="w-4 h-4 mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </TableCell>
               </TableRow>
             );
