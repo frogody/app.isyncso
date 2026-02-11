@@ -59,6 +59,9 @@ export default function ProductsDigital() {
   const [pricingFilter, setPricingFilter] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
 
+  // Table selection state
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -387,6 +390,17 @@ export default function ProductsDigital() {
               products={filteredProducts}
               productType="digital"
               detailsMap={digitalProducts}
+              selectedIds={selectedIds}
+              onToggleSelect={(id) => setSelectedIds(prev => {
+                const next = new Set(prev);
+                next.has(id) ? next.delete(id) : next.add(id);
+                return next;
+              })}
+              onToggleAll={() => setSelectedIds(prev =>
+                prev.size === filteredProducts.length
+                  ? new Set()
+                  : new Set(filteredProducts.map(p => p.id))
+              )}
               onEdit={handleEditProduct}
               onArchive={handleArchiveProduct}
               onDelete={handleDeleteProduct}

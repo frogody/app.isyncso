@@ -448,38 +448,13 @@ export function ProductListRow({
   );
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' });
-}
-
-function StockCell({ inventory }) {
-  if (!inventory || inventory.quantity == null) return <span className="text-xs text-zinc-500">—</span>;
-  const qty = inventory.quantity ?? 0;
-  const low = inventory.low_stock_threshold || 10;
-  const isOut = qty <= 0;
-  const isLow = qty > 0 && qty <= low;
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className={cn(
-        "inline-block w-1.5 h-1.5 rounded-full flex-shrink-0",
-        isOut ? "bg-red-400" : isLow ? "bg-amber-400" : "bg-green-400"
-      )} />
-      <span className={cn(
-        "text-xs font-medium",
-        isOut ? "text-red-400" : isLow ? "text-amber-400" : "text-white"
-      )}>
-        {qty}
-      </span>
-    </div>
-  );
-}
-
 export function ProductTableView({
   products,
   productType = 'digital',
   detailsMap = {},
+  selectedIds,
+  onToggleSelect,
+  onToggleAll,
   onEdit,
   onDuplicate,
   onArchive,
@@ -487,33 +462,41 @@ export function ProductTableView({
 }) {
   const isDigital = productType === 'digital';
   const Icon = isDigital ? Cloud : Package;
+  const allSelected = selectedIds && products.length > 0 && products.every(p => selectedIds.has(p.id));
 
   return (
-    <div className="rounded-xl border border-white/5 bg-zinc-900/50 overflow-hidden">
+    <div className="rounded-xl border border-white/[0.06] overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow className="border-white/5 hover:bg-transparent">
-            <TableHead className="text-zinc-500 text-xs font-medium pl-3 w-[40px]" />
-            <TableHead className="text-zinc-500 text-xs font-medium">Product</TableHead>
-            <TableHead className="text-zinc-500 text-xs font-medium w-[80px]">Status</TableHead>
+          <TableRow className="border-white/[0.06] bg-zinc-900/80 hover:bg-zinc-900/80">
+            <TableHead className="w-[40px] pl-4 pr-0">
+              {onToggleAll ? (
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={onToggleAll}
+                  className="w-3.5 h-3.5 rounded border-zinc-600 bg-transparent accent-cyan-500 cursor-pointer"
+                />
+              ) : <div className="w-3.5" />}
+            </TableHead>
+            <TableHead className="text-zinc-500 text-xs font-medium pl-0" colSpan={2}>Product</TableHead>
             {isDigital ? (
               <>
-                <TableHead className="text-zinc-500 text-xs font-medium w-[90px]">Pricing</TableHead>
-                <TableHead className="text-zinc-500 text-xs font-medium w-[60px] text-center">Trial</TableHead>
-                <TableHead className="text-zinc-500 text-xs font-medium w-[100px] hidden lg:table-cell">Category</TableHead>
-                <TableHead className="text-zinc-500 text-xs font-medium w-[60px] hidden xl:table-cell text-center">Pkgs</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[120px]">Pricing</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[100px] text-center">Trial</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[130px] hidden lg:table-cell">Category</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[80px] text-center hidden xl:table-cell">Packages</TableHead>
               </>
             ) : (
               <>
-                <TableHead className="text-zinc-500 text-xs font-medium w-[80px] hidden md:table-cell">SKU</TableHead>
-                <TableHead className="text-zinc-500 text-xs font-medium w-[90px] text-right">Price</TableHead>
-                <TableHead className="text-zinc-500 text-xs font-medium w-[70px]">Stock</TableHead>
-                <TableHead className="text-zinc-500 text-xs font-medium w-[100px] hidden lg:table-cell">Category</TableHead>
-                <TableHead className="text-zinc-500 text-xs font-medium w-[110px] hidden xl:table-cell">EAN</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[120px]">SKU</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[100px] text-center">Price</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[100px] text-center">Stock</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[100px] text-center hidden lg:table-cell">Status</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[130px] hidden xl:table-cell">Category</TableHead>
               </>
             )}
-            <TableHead className="text-zinc-500 text-xs font-medium w-[75px] hidden md:table-cell">Created</TableHead>
-            <TableHead className="text-zinc-500 text-xs font-medium w-[36px] pr-3" />
+            <TableHead className="w-[40px] pr-4" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -525,107 +508,134 @@ export function ProductTableView({
               : null;
             const pricing = !isDigital && details?.pricing;
             const packages = isDigital ? (details?.packages || []) : [];
+            const isSelected = selectedIds?.has(product.id);
+            const inventory = !isDigital ? details?.inventory : null;
+            const qty = inventory?.quantity ?? null;
+            const low = inventory?.low_stock_threshold || 10;
 
             return (
               <TableRow
                 key={product.id}
-                className="border-white/5 hover:bg-white/[0.02]"
+                className={cn(
+                  "border-white/[0.06] hover:bg-white/[0.02] group",
+                  isSelected && "bg-cyan-500/[0.04]"
+                )}
               >
-                <TableCell className="py-1.5 pl-3">
+                {/* Checkbox */}
+                <TableCell className="py-2 pl-4 pr-0">
+                  {onToggleSelect ? (
+                    <input
+                      type="checkbox"
+                      checked={isSelected || false}
+                      onChange={() => onToggleSelect(product.id)}
+                      className="w-3.5 h-3.5 rounded border-zinc-600 bg-transparent accent-cyan-500 cursor-pointer"
+                    />
+                  ) : <div className="w-3.5" />}
+                </TableCell>
+
+                {/* Image */}
+                <TableCell className="py-2 pr-3 w-[44px]">
                   <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)}>
-                    <div className={cn(
-                      "w-8 h-8 rounded flex items-center justify-center flex-shrink-0 overflow-hidden",
-                      isDigital
-                        ? "bg-cyan-500/10 border border-cyan-500/20"
-                        : "bg-amber-500/10 border border-amber-500/20"
-                    )}>
+                    <div className="w-9 h-9 rounded bg-zinc-800 border border-white/[0.06] flex items-center justify-center overflow-hidden">
                       {product.featured_image?.url ? (
                         <img src={product.featured_image.url} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <Icon className={cn("w-4 h-4", isDigital ? "text-cyan-400" : "text-amber-400")} />
+                        <Icon className={cn("w-4 h-4", isDigital ? "text-cyan-500/40" : "text-amber-500/40")} />
                       )}
                     </div>
                   </Link>
                 </TableCell>
-                <TableCell className="py-1.5">
+
+                {/* Name + variant/subtitle */}
+                <TableCell className="py-2 pl-0">
                   <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)} className="block">
-                    <span className={cn(
-                      "text-sm font-medium text-white hover:underline",
-                      isDigital ? "hover:text-cyan-400" : "hover:text-amber-400"
-                    )}>
+                    <span className="text-[13px] font-semibold text-white leading-tight">
                       {product.name}
                     </span>
+                    {(product.tagline || product.short_description) && (
+                      <p className="text-[11px] text-zinc-500 leading-tight mt-0.5 truncate max-w-[260px]">
+                        {product.tagline || product.short_description}
+                      </p>
+                    )}
                   </Link>
-                </TableCell>
-                <TableCell className="py-1.5">
-                  <Badge className={`${status.bg} ${status.text} ${status.border} text-[10px] px-1.5 py-0`}>
-                    {status.label}
-                  </Badge>
                 </TableCell>
 
                 {isDigital ? (
                   <>
-                    <TableCell className="py-1.5">
+                    {/* Pricing */}
+                    <TableCell className="py-2">
                       {pricingModel ? (
-                        <span className={`text-xs ${pricingModel.color}`}>{pricingModel.label}</span>
+                        <span className={`text-[13px] ${pricingModel.color}`}>{pricingModel.label}</span>
                       ) : (
-                        <span className="text-xs text-zinc-500">—</span>
+                        <span className="text-[13px] text-zinc-600">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="py-1.5 text-center">
+                    {/* Trial */}
+                    <TableCell className="py-2 text-center">
                       {details?.trial_available ? (
-                        <span className="text-xs text-green-400">{details.trial_days}d</span>
+                        <span className="text-[13px] text-zinc-300">{details.trial_days}d</span>
                       ) : (
-                        <span className="text-xs text-zinc-600">—</span>
+                        <span className="text-[13px] text-zinc-600">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="py-1.5 hidden lg:table-cell">
-                      <span className="text-xs text-zinc-400">{product.category || '—'}</span>
+                    {/* Category */}
+                    <TableCell className="py-2 hidden lg:table-cell">
+                      <span className="text-[13px] text-zinc-400">{product.category || '—'}</span>
                     </TableCell>
-                    <TableCell className="py-1.5 hidden xl:table-cell text-center">
-                      <span className="text-xs text-zinc-400">{packages.length || '—'}</span>
+                    {/* Packages */}
+                    <TableCell className="py-2 text-center hidden xl:table-cell">
+                      <span className="text-[13px] text-zinc-400">{packages.length || '0'}</span>
                     </TableCell>
                   </>
                 ) : (
                   <>
-                    <TableCell className="py-1.5 hidden md:table-cell">
-                      <span className="text-xs text-zinc-400 font-mono">{details?.sku || '—'}</span>
+                    {/* SKU */}
+                    <TableCell className="py-2">
+                      <span className="text-[13px] text-zinc-400">{details?.sku || '—'}</span>
                     </TableCell>
-                    <TableCell className="py-1.5 text-right">
+                    {/* Price */}
+                    <TableCell className="py-2 text-center">
                       {pricing?.base_price ? (
-                        <div>
-                          <span className="text-xs font-medium text-white">
-                            €{parseFloat(pricing.base_price).toFixed(2)}
-                          </span>
-                          {pricing.compare_at_price && (
-                            <span className="text-[10px] text-zinc-500 line-through ml-1">
-                              €{parseFloat(pricing.compare_at_price).toFixed(2)}
-                            </span>
-                          )}
-                        </div>
+                        <span className="text-[13px] text-zinc-300">
+                          €{parseFloat(pricing.base_price).toFixed(2)}
+                        </span>
                       ) : (
-                        <span className="text-xs text-zinc-500">—</span>
+                        <span className="text-[13px] text-zinc-600">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="py-1.5">
-                      <StockCell inventory={details?.inventory} />
+                    {/* Stock qty */}
+                    <TableCell className="py-2 text-center">
+                      {qty != null ? (
+                        <span className={cn(
+                          "text-[13px] font-medium tabular-nums",
+                          qty <= 0 ? "text-red-400" :
+                          qty <= low ? "text-amber-400" :
+                          "text-zinc-300"
+                        )}>
+                          {qty}
+                        </span>
+                      ) : (
+                        <span className="text-[13px] text-zinc-600">—</span>
+                      )}
                     </TableCell>
-                    <TableCell className="py-1.5 hidden lg:table-cell">
-                      <span className="text-xs text-zinc-400">{product.category || '—'}</span>
+                    {/* Status */}
+                    <TableCell className="py-2 text-center hidden lg:table-cell">
+                      <span className={`text-[11px] ${status.text}`}>
+                        {status.label}
+                      </span>
                     </TableCell>
-                    <TableCell className="py-1.5 hidden xl:table-cell">
-                      <span className="text-xs text-zinc-500 font-mono">{product.ean || details?.barcode || '—'}</span>
+                    {/* Category */}
+                    <TableCell className="py-2 hidden xl:table-cell">
+                      <span className="text-[13px] text-zinc-400">{product.category || '—'}</span>
                     </TableCell>
                   </>
                 )}
 
-                <TableCell className="py-1.5 hidden md:table-cell">
-                  <span className="text-[10px] text-zinc-500">{formatDate(product.created_at)}</span>
-                </TableCell>
-                <TableCell className="py-1.5 pr-3">
+                {/* Actions */}
+                <TableCell className="py-2 pr-4">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-zinc-500 hover:text-white">
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-zinc-600 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
                         <MoreHorizontal className="w-3.5 h-3.5" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -635,28 +645,16 @@ export function ProductTableView({
                           <Eye className="w-4 h-4 mr-2" /> View
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-zinc-300 hover:text-white"
-                        onClick={() => onEdit?.(product)}
-                      >
+                      <DropdownMenuItem className="text-zinc-300 hover:text-white" onClick={() => onEdit?.(product)}>
                         <Edit2 className="w-4 h-4 mr-2" /> Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-zinc-300 hover:text-white"
-                        onClick={() => onDuplicate?.(product)}
-                      >
+                      <DropdownMenuItem className="text-zinc-300 hover:text-white" onClick={() => onDuplicate?.(product)}>
                         <Copy className="w-4 h-4 mr-2" /> Duplicate
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-amber-400 hover:text-amber-300"
-                        onClick={() => onArchive?.(product)}
-                      >
+                      <DropdownMenuItem className="text-amber-400 hover:text-amber-300" onClick={() => onArchive?.(product)}>
                         <Archive className="w-4 h-4 mr-2" /> Archive
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-red-400 hover:text-red-300"
-                        onClick={() => onDelete?.(product)}
-                      >
+                      <DropdownMenuItem className="text-red-400 hover:text-red-300" onClick={() => onDelete?.(product)}>
                         <Trash2 className="w-4 h-4 mr-2" /> Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
