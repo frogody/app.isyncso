@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
-  Cloud, Plus, Search, Filter, Grid3X3, List, Tag, Eye, Edit2,
+  Cloud, Plus, Search, Filter, Grid3X3, List, Table2, Tag, Eye, Edit2,
   Play, ExternalLink, FileText, Euro, Zap, Users, Star,
   ChevronDown, MoreHorizontal, Archive, Trash2, Copy,
   Sun, Moon
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
 import { Product, DigitalProduct, ProductCategory } from "@/api/entities";
-import { ProductModal, ProductGridCard, ProductListRow } from "@/components/products";
+import { ProductModal, ProductGridCard, ProductListRow, ProductTableView } from "@/components/products";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -340,11 +340,19 @@ export default function ProductsDigital() {
               >
                 <List className="w-4 h-4" />
               </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`h-8 px-3 ${viewMode === 'table' ? 'bg-cyan-500/20 text-cyan-400' : 'text-zinc-400 hover:text-white'}`}
+                onClick={() => setViewMode('table')}
+              >
+                <Table2 className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Products Grid/List */}
+        {/* Products Grid/List/Table */}
         {loading ? (
           <div className={viewMode === 'grid'
             ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4'
@@ -353,7 +361,7 @@ export default function ProductsDigital() {
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <Skeleton
                 key={i}
-                className={viewMode === 'grid' ? `h-64 ${t('bg-slate-200', 'bg-zinc-800/50')}` : `h-20 ${t('bg-slate-200', 'bg-zinc-800/50')}`}
+                className={viewMode === 'grid' ? `h-64 ${t('bg-slate-200', 'bg-zinc-800/50')}` : `h-14 ${t('bg-slate-200', 'bg-zinc-800/50')}`}
               />
             ))}
           </div>
@@ -374,6 +382,15 @@ export default function ProductsDigital() {
                 </div>
               ))}
             </div>
+          ) : viewMode === 'table' ? (
+            <ProductTableView
+              products={filteredProducts}
+              productType="digital"
+              detailsMap={digitalProducts}
+              onEdit={handleEditProduct}
+              onArchive={handleArchiveProduct}
+              onDelete={handleDeleteProduct}
+            />
           ) : (
             <div className="space-y-3">
               {filteredProducts.map((product, index) => (

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
-  Box, Plus, Search, Filter, Grid3X3, List, Tag, Eye, Edit2,
+  Box, Plus, Search, Filter, Grid3X3, List, Table2, Tag, Eye, Edit2,
   Barcode, Package, Truck, Building2, Euro, AlertTriangle,
   ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal, Archive, Trash2, Copy, CheckCircle, XCircle,
   Sun, Moon
@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
 import { Product, PhysicalProduct, ProductCategory, Supplier } from "@/api/entities";
 import { supabase } from '@/api/supabaseClient';
-import { ProductModal, ProductGridCard, ProductListRow } from "@/components/products";
+import { ProductModal, ProductGridCard, ProductListRow, ProductTableView } from "@/components/products";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -74,6 +74,7 @@ export default function ProductsPhysical() {
   const [viewMode, setViewMode] = useState('grid');
   const [channelsMap, setChannelsMap] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState(new Set());
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -426,11 +427,19 @@ export default function ProductsPhysical() {
               >
                 <List className="w-4 h-4" />
               </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`h-8 px-3 ${viewMode === 'table' ? 'bg-cyan-500/20 text-cyan-400' : 'text-zinc-400 hover:text-white'}`}
+                onClick={() => setViewMode('table')}
+              >
+                <Table2 className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Products Grid/List */}
+        {/* Products Grid/List/Table */}
         {loading ? (
           <div className={viewMode === 'grid'
             ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4'
@@ -439,7 +448,7 @@ export default function ProductsPhysical() {
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <Skeleton
                 key={i}
-                className={viewMode === 'grid' ? `h-72 ${t('bg-slate-200', 'bg-zinc-800/50')}` : `h-20 ${t('bg-slate-200', 'bg-zinc-800/50')}`}
+                className={viewMode === 'grid' ? `h-72 ${t('bg-slate-200', 'bg-zinc-800/50')}` : `h-14 ${t('bg-slate-200', 'bg-zinc-800/50')}`}
               />
             ))}
           </div>
@@ -462,6 +471,26 @@ export default function ProductsPhysical() {
                   </div>
                 ))}
               </div>
+            ) : viewMode === 'table' ? (
+              <ProductTableView
+                products={products}
+                productType="physical"
+                detailsMap={physicalProducts}
+                selectedIds={selectedIds}
+                onToggleSelect={(id) => setSelectedIds(prev => {
+                  const next = new Set(prev);
+                  next.has(id) ? next.delete(id) : next.add(id);
+                  return next;
+                })}
+                onToggleAll={() => setSelectedIds(prev =>
+                  prev.size === products.length
+                    ? new Set()
+                    : new Set(products.map(p => p.id))
+                )}
+                onEdit={handleEditProduct}
+                onArchive={handleArchiveProduct}
+                onDelete={handleDeleteProduct}
+              />
             ) : (
               <div className="space-y-3">
                 {products.map((product, index) => (

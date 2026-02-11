@@ -1,6 +1,6 @@
 // Products Components
 export { default as ProductModal } from './ProductModal';
-export { ProductGridCard, ProductListRow } from './ProductCard';
+export { ProductGridCard, ProductListRow, ProductTableView } from './ProductCard';
 export { default as ProductHero } from './ProductHero';
 export { default as PricingTable } from './PricingTable';
 export { default as MediaGallery } from './MediaGallery';

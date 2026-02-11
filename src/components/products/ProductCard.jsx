@@ -9,6 +9,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -440,4 +448,179 @@ export function ProductListRow({
   );
 }
 
-export default { ProductGridCard, ProductListRow };
+export function ProductTableView({
+  products,
+  productType = 'digital',
+  detailsMap = {},
+  onEdit,
+  onDuplicate,
+  onArchive,
+  onDelete,
+}) {
+  const isDigital = productType === 'digital';
+  const Icon = isDigital ? Cloud : Package;
+
+  return (
+    <div className="rounded-xl border border-white/5 bg-zinc-900/50 overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow className="border-white/5 hover:bg-transparent">
+            <TableHead className="text-zinc-400 w-[50px]" />
+            <TableHead className="text-zinc-400">Name</TableHead>
+            <TableHead className="text-zinc-400 w-[100px]">Status</TableHead>
+            {isDigital ? (
+              <TableHead className="text-zinc-400 w-[120px]">Pricing</TableHead>
+            ) : (
+              <TableHead className="text-zinc-400 w-[100px] text-right">Price</TableHead>
+            )}
+            {!isDigital && (
+              <TableHead className="text-zinc-400 w-[100px] text-right">Stock</TableHead>
+            )}
+            <TableHead className="text-zinc-400 w-[140px] hidden lg:table-cell">
+              {isDigital ? 'Category' : 'EAN'}
+            </TableHead>
+            <TableHead className="text-zinc-400 w-[50px]" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {products.map((product) => {
+            const details = detailsMap[product.id];
+            const status = STATUS_COLORS[product.status] || STATUS_COLORS.draft;
+            const pricingModel = isDigital && details?.pricing_model
+              ? PRICING_MODELS[details.pricing_model] || { label: 'Custom', color: 'text-zinc-400' }
+              : null;
+            const pricing = !isDigital && details?.pricing;
+
+            return (
+              <TableRow
+                key={product.id}
+                className="border-white/5 hover:bg-white/[0.02] cursor-pointer"
+              >
+                <TableCell className="py-2">
+                  <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)}>
+                    <div className={cn(
+                      "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden",
+                      isDigital
+                        ? "bg-cyan-500/10 border border-cyan-500/20"
+                        : "bg-amber-500/10 border border-amber-500/20"
+                    )}>
+                      {product.featured_image?.url ? (
+                        <img src={product.featured_image.url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <Icon className={cn("w-5 h-5", isDigital ? "text-cyan-400" : "text-amber-400")} />
+                      )}
+                    </div>
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)} className="block">
+                    <span className={cn(
+                      "font-medium text-white hover:underline",
+                      isDigital ? "hover:text-cyan-400" : "hover:text-amber-400"
+                    )}>
+                      {product.name}
+                    </span>
+                    {(product.tagline || product.short_description) && (
+                      <p className="text-xs text-zinc-500 truncate max-w-[300px]">
+                        {product.tagline || product.short_description}
+                      </p>
+                    )}
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Badge className={`${status.bg} ${status.text} ${status.border} text-xs`}>
+                    {status.label}
+                  </Badge>
+                </TableCell>
+                {isDigital ? (
+                  <TableCell>
+                    {pricingModel ? (
+                      <span className={`text-sm ${pricingModel.color}`}>{pricingModel.label}</span>
+                    ) : (
+                      <span className="text-sm text-zinc-500">—</span>
+                    )}
+                  </TableCell>
+                ) : (
+                  <TableCell className="text-right">
+                    {pricing?.base_price ? (
+                      <span className="text-sm font-medium text-white">
+                        €{parseFloat(pricing.base_price).toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-zinc-500">—</span>
+                    )}
+                  </TableCell>
+                )}
+                {!isDigital && (
+                  <TableCell className="text-right">
+                    {details?.inventory?.quantity != null ? (
+                      <span className={cn(
+                        "text-sm font-medium",
+                        details.inventory.quantity <= 0 ? "text-red-400" :
+                        details.inventory.quantity <= (details.inventory.low_stock_threshold || 10) ? "text-amber-400" :
+                        "text-green-400"
+                      )}>
+                        {details.inventory.quantity}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-zinc-500">—</span>
+                    )}
+                  </TableCell>
+                )}
+                <TableCell className="hidden lg:table-cell">
+                  <span className="text-sm text-zinc-400">
+                    {isDigital
+                      ? product.category || '—'
+                      : product.ean || '—'}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-zinc-500 hover:text-white">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10">
+                      <DropdownMenuItem asChild className="text-zinc-300 hover:text-white">
+                        <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)}>
+                          <Eye className="w-4 h-4 mr-2" /> View
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-zinc-300 hover:text-white"
+                        onClick={() => onEdit?.(product)}
+                      >
+                        <Edit2 className="w-4 h-4 mr-2" /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-zinc-300 hover:text-white"
+                        onClick={() => onDuplicate?.(product)}
+                      >
+                        <Copy className="w-4 h-4 mr-2" /> Duplicate
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-amber-400 hover:text-amber-300"
+                        onClick={() => onArchive?.(product)}
+                      >
+                        <Archive className="w-4 h-4 mr-2" /> Archive
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-red-400 hover:text-red-300"
+                        onClick={() => onDelete?.(product)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+export default { ProductGridCard, ProductListRow, ProductTableView };
