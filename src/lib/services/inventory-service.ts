@@ -22,6 +22,9 @@ import type {
   Inventory,
   ExpectedDelivery,
   ReceivingSession,
+  Shipment,
+  Pallet,
+  PalletItem,
 } from '@/lib/db/schema';
 
 // =============================================================================
@@ -538,6 +541,99 @@ export async function completeShipping(
     shippingTask,
     trackingJob,
   };
+}
+
+// =============================================================================
+// PALLET MANAGEMENT
+// =============================================================================
+
+/**
+ * Create a new shipment
+ */
+export async function createNewShipment(
+  companyId: string,
+  shipmentType: 'b2b' | 'b2c_lvb',
+  userId: string,
+  options?: {
+    destination?: string;
+    destinationReference?: string;
+    notes?: string;
+  }
+): Promise<Shipment> {
+  return db.createShipment({
+    company_id: companyId,
+    shipment_type: shipmentType,
+    status: 'draft',
+    destination: options?.destination,
+    destination_reference: options?.destinationReference,
+    notes: options?.notes,
+    total_pallets: 0,
+    total_items: 0,
+    total_unique_eans: 0,
+    created_by: userId,
+  });
+}
+
+/**
+ * Add a pallet to a shipment with auto-generated code
+ */
+export async function addPalletToShipment(
+  companyId: string,
+  shipmentId: string,
+  userId?: string
+): Promise<Pallet> {
+  const seq = await db.getNextPalletSequence(shipmentId);
+  const palletCode = db.generatePalletCode(seq);
+
+  return db.addPallet({
+    company_id: companyId,
+    shipment_id: shipmentId,
+    pallet_code: palletCode,
+    sequence_number: seq,
+    status: 'open',
+    total_items: 0,
+    total_unique_eans: 0,
+    created_by: userId,
+  });
+}
+
+/**
+ * Add a product to a pallet — inserts new row or increments existing quantity
+ */
+export async function addProductToPallet(
+  palletId: string,
+  productId: string,
+  ean: string,
+  quantity: number,
+  userId?: string
+): Promise<PalletItem> {
+  // Check if product already on this pallet
+  const existing = await db.findPalletItemByProduct(palletId, productId);
+
+  if (existing) {
+    // Increment quantity
+    return db.updatePalletItemQty(existing.id, existing.quantity + quantity);
+  }
+
+  // Add new item
+  return db.addPalletItem({
+    pallet_id: palletId,
+    product_id: productId,
+    ean,
+    quantity,
+    added_by: userId,
+  });
+}
+
+/**
+ * Finalize a shipment — locks it and calculates totals
+ */
+export async function finalizeShipmentService(
+  shipmentId: string,
+  userId: string,
+  notes?: string
+): Promise<Shipment> {
+  return db.finalizeShipment(shipmentId, userId, notes);
 }
 
 // =============================================================================

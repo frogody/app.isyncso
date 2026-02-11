@@ -266,6 +266,7 @@ import CreateLibrary from "./CreateLibrary";
 import InventoryReceiving from "./InventoryReceiving";
 
 import InventoryShipping from "./InventoryShipping";
+import PalletBuilder from "./PalletBuilder";
 
 import InventoryExpenses from "./InventoryExpenses";
 import StockPurchases from "./StockPurchases";
@@ -608,6 +609,8 @@ const PAGES = {
     InventoryReceiving: InventoryReceiving,
 
     InventoryShipping: InventoryShipping,
+
+    PalletBuilder: PalletBuilder,
 
     InventoryExpenses: InventoryExpenses,
 
@@ -1048,6 +1051,8 @@ function PagesContent() {
                 <Route path="/InventoryReceiving" element={<InventoryReceiving />} />
 
                 <Route path="/InventoryShipping" element={<InventoryShipping />} />
+
+                <Route path="/PalletBuilder" element={<PalletBuilder />} />
 
                 <Route path="/StockPurchases" element={<StockPurchases />} />
 

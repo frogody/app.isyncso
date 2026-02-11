@@ -3001,12 +3001,12 @@ CREATE INDEX idx_receiving_log_session ON receiving_log(receiving_session_id) WH
 ### Phase 3: Pallet Management (sub-phased: 3a → 3b → 3c)
 
 **Phase 3a: Core Pallet CRUD**
-- [ ] `P3-1` PalletBuilder page - shipment creation
-- [ ] `P3-2` PalletBuilder - pallet creation within shipment
-- [ ] `P3-3` PalletBuilder - add products to pallets (scan + manual)
-- [ ] `P3-4` PalletBuilder - running totals and stock checks
-- [ ] `P3-5` PalletBuilder - finalize shipment
-- [ ] `P3-6` Add routes to navigation
+- [x] `P3-1` PalletBuilder page - shipment creation
+- [x] `P3-2` PalletBuilder - pallet creation within shipment
+- [x] `P3-3` PalletBuilder - add products to pallets (scan + manual)
+- [x] `P3-4` PalletBuilder - running totals and stock checks
+- [x] `P3-5` PalletBuilder - finalize shipment
+- [x] `P3-6` Add routes to navigation
 
 **Phase 3b: Shipment Linking + Verification**
 - [ ] `P3-7` ShipmentVerification page - comparison table

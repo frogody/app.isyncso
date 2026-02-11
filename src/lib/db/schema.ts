@@ -390,6 +390,89 @@ export type ShippingTaskInsert = Omit<ShippingTask, 'id' | 'task_number' | 'crea
 export type ShippingTaskUpdate = Partial<ShippingTaskInsert>;
 
 // =============================================================================
+// SHIPMENTS & PALLETS
+// =============================================================================
+
+export interface Shipment {
+  id: string;
+  company_id: string;
+  shipment_code?: string;
+  shipment_type: 'b2b' | 'b2c_lvb';
+  status: 'draft' | 'packing' | 'packed' | 'finalized' | 'shipped' | 'delivered' | 'verified' | 'cancelled';
+  destination?: string;
+  destination_reference?: string;
+  customer_id?: string;
+  // Verification (Phase 3b)
+  verification_status?: 'pending' | 'verified' | 'discrepancy';
+  verified_by?: string;
+  verified_at?: string;
+  verification_notes?: string;
+  // bol.com (Phase 3c/4)
+  bol_shipment_id?: string;
+  bol_received_at?: string;
+  // Shipping
+  carrier?: string;
+  tracking_code?: string;
+  shipping_task_id?: string;
+  // Totals
+  total_pallets: number;
+  total_items: number;
+  total_unique_eans: number;
+  // Lifecycle
+  shipped_at?: string;
+  shipped_by?: string;
+  finalized_by?: string;
+  finalized_at?: string;
+  notes?: string;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  updated_by?: string;
+}
+
+export type ShipmentInsert = Omit<Shipment, 'id' | 'shipment_code' | 'created_at' | 'updated_at'>;
+export type ShipmentUpdate = Partial<Omit<ShipmentInsert, 'company_id'>>;
+
+export interface Pallet {
+  id: string;
+  company_id: string;
+  shipment_id: string;
+  pallet_code: string;
+  sequence_number: number;
+  status: 'open' | 'closed';
+  total_items: number;
+  total_unique_eans: number;
+  notes?: string;
+  created_by?: string;
+  created_at: string;
+  updated_at?: string;
+  updated_by?: string;
+  // Joined
+  pallet_items?: PalletItem[];
+}
+
+export type PalletInsert = Omit<Pallet, 'id' | 'created_at' | 'updated_at' | 'pallet_items'>;
+export type PalletUpdate = Partial<Omit<PalletInsert, 'company_id' | 'shipment_id'>>;
+
+export interface PalletItem {
+  id: string;
+  pallet_id: string;
+  product_id: string;
+  ean?: string;
+  quantity: number;
+  verified_quantity?: number;
+  is_verified?: boolean;
+  added_by?: string;
+  created_at: string;
+  updated_at?: string;
+  // Joined
+  products?: { id: string; name: string; sku?: string; ean: string };
+}
+
+export type PalletItemInsert = Omit<PalletItem, 'id' | 'created_at' | 'updated_at' | 'products'>;
+export type PalletItemUpdate = Partial<Omit<PalletItemInsert, 'pallet_id'>>;
+
+// =============================================================================
 // TRACKING JOBS
 // =============================================================================
 

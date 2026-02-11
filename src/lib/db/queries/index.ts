@@ -33,3 +33,6 @@ export * from './stockPurchases';
 
 // Receiving Sessions
 export * from './receivingSessions';
+
+// Pallets & Shipments
+export * from './pallets';
