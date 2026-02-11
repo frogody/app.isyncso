@@ -293,7 +293,7 @@ const isAtLeastManager = hierarchyLevel >= 60;
 | Service Role Key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjYwNjQ2MiwiZXhwIjoyMDgyMTgyNDYyfQ.8SeBs34zEK3WVAgGVHmS9h9PStGCJAjPqiynMzx1xsU` |
 | Publishable Key | `sb_publishable_CFe3Zkw-Fji8LNc3aR2EFQ_El0Xwq8k` |
 | Secret Key | `sb_secret_Ove4Djf-0eV9L7gnVDgizQ_fiXjMO4I` |
-| Personal Access Token (PAT) | `sbp_b998952de7493074e84b50702e83f1db14be1479` |
+| Personal Access Token (PAT) | `sbp_507885a1c40ed37da205a6919d1f9ff596050695` |
 
 ### Database Connection
 
@@ -313,7 +313,7 @@ mcp__supabase__execute_sql("<SQL here>")
 
 **Fallback - Supabase CLI:**
 ```bash
-SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" npx supabase db push
+SUPABASE_ACCESS_TOKEN="sbp_507885a1c40ed37da205a6919d1f9ff596050695" npx supabase db push
 ```
 
 ### MCP Configuration
@@ -326,7 +326,7 @@ The Supabase MCP is configured in `.claude.json`:
       "type": "http",
       "url": "https://mcp.supabase.com/mcp?project_ref=sfxpmzicgpaxfntqleig&features=database,storage",
       "headers": {
-        "Authorization": "Bearer sbp_b998952de7493074e84b50702e83f1db14be1479"
+        "Authorization": "Bearer sbp_507885a1c40ed37da205a6919d1f9ff596050695"
       }
     }
   }
@@ -371,7 +371,7 @@ Supabase is connected to GitHub for automatic database migrations.
 When CLI/MCP isn't working, use the Management API directly:
 ```bash
 curl -s -X POST "https://api.supabase.com/v1/projects/sfxpmzicgpaxfntqleig/database/query" \
-  -H "Authorization: Bearer sbp_b998952de7493074e84b50702e83f1db14be1479" \
+  -H "Authorization: Bearer sbp_507885a1c40ed37da205a6919d1f9ff596050695" \
   -H "Content-Type: application/json" \
   -d '{"query": "YOUR SQL HERE"}'
 ```
@@ -436,17 +436,17 @@ verify_jwt = false
 ### Deploying Edge Functions
 
 ```bash
-SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" npx supabase functions deploy <function-name> --project-ref sfxpmzicgpaxfntqleig --no-verify-jwt
+SUPABASE_ACCESS_TOKEN="sbp_507885a1c40ed37da205a6919d1f9ff596050695" npx supabase functions deploy <function-name> --project-ref sfxpmzicgpaxfntqleig --no-verify-jwt
 ```
 
 ### Edge Function Secrets
 
 ```bash
 # List secrets
-SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" npx supabase secrets list --project-ref sfxpmzicgpaxfntqleig
+SUPABASE_ACCESS_TOKEN="sbp_507885a1c40ed37da205a6919d1f9ff596050695" npx supabase secrets list --project-ref sfxpmzicgpaxfntqleig
 
 # Set secret
-SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" npx supabase secrets set KEY="value" --project-ref sfxpmzicgpaxfntqleig
+SUPABASE_ACCESS_TOKEN="sbp_507885a1c40ed37da205a6919d1f9ff596050695" npx supabase secrets set KEY="value" --project-ref sfxpmzicgpaxfntqleig
 ```
 
 ---
@@ -686,7 +686,7 @@ if (NEW_MODULE_ACTIONS.includes(action.action)) {
 
 ```bash
 # Deploy after any changes to sync function
-SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" \
+SUPABASE_ACCESS_TOKEN="sbp_507885a1c40ed37da205a6919d1f9ff596050695" \
 npx supabase functions deploy sync --project-ref sfxpmzicgpaxfntqleig --no-verify-jwt
 
 # System prompt changes take effect immediately after deploy
@@ -994,7 +994,7 @@ def run_query(sql):
     cmd = [
         'curl', '-s', '-X', 'POST',
         'https://api.supabase.com/v1/projects/sfxpmzicgpaxfntqleig/database/query',
-        '-H', 'Authorization: Bearer sbp_b998952de7493074e84b50702e83f1db14be1479',
+        '-H', 'Authorization: Bearer sbp_507885a1c40ed37da205a6919d1f9ff596050695',
         '-H', 'Content-Type: application/json',
         '-d', json.dumps({"query": sql})
     ]
@@ -1385,16 +1385,16 @@ sync_intel_queue (
 
 ```bash
 # Deploy smart matching
-SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" \
+SUPABASE_ACCESS_TOKEN="sbp_507885a1c40ed37da205a6919d1f9ff596050695" \
 npx supabase functions deploy analyzeCampaignProject --project-ref sfxpmzicgpaxfntqleig --no-verify-jwt
 
 # Deploy message generation
-SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" \
+SUPABASE_ACCESS_TOKEN="sbp_507885a1c40ed37da205a6919d1f9ff596050695" \
 npx supabase functions deploy generateCampaignOutreach --project-ref sfxpmzicgpaxfntqleig --no-verify-jwt
 
 # Apply SQL via Management API
 curl -s -X POST 'https://api.supabase.com/v1/projects/sfxpmzicgpaxfntqleig/database/query' \
-  -H 'Authorization: Bearer sbp_b998952de7493074e84b50702e83f1db14be1479' \
+  -H 'Authorization: Bearer sbp_507885a1c40ed37da205a6919d1f9ff596050695' \
   -H 'Content-Type: application/json' \
   -d '{"query": "YOUR SQL"}'
 ```
@@ -1908,7 +1908,7 @@ Uses static Tailwind color maps (`signalBgMap`, `signalTextMap`, `signalBorderMa
 
 ```bash
 # Edge function
-SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" \
+SUPABASE_ACCESS_TOKEN="sbp_507885a1c40ed37da205a6919d1f9ff596050695" \
 npx supabase functions deploy analyzeCampaignProject --project-ref sfxpmzicgpaxfntqleig --no-verify-jwt
 
 # Frontend auto-deploys via Vercel on push to main

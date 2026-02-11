@@ -55,12 +55,12 @@ CREATE INDEX IF NOT EXISTS idx_bolcom_credentials_active ON bolcom_credentials(c
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION encrypt_bolcom_credential(plaintext TEXT, encryption_key TEXT)
-RETURNS TEXT LANGUAGE sql IMMUTABLE SECURITY DEFINER SET search_path = public AS $$
+RETURNS TEXT LANGUAGE sql IMMUTABLE SECURITY DEFINER SET search_path = public, extensions AS $$
     SELECT encode(pgp_sym_encrypt(plaintext, encryption_key)::bytea, 'base64');
 $$;
 
 CREATE OR REPLACE FUNCTION decrypt_bolcom_credential(ciphertext TEXT, encryption_key TEXT)
-RETURNS TEXT LANGUAGE sql IMMUTABLE SECURITY DEFINER SET search_path = public AS $$
+RETURNS TEXT LANGUAGE sql IMMUTABLE SECURITY DEFINER SET search_path = public, extensions AS $$
     SELECT pgp_sym_decrypt(decode(ciphertext, 'base64')::bytea, encryption_key);
 $$;
 
