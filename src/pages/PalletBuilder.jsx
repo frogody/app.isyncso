@@ -577,7 +577,7 @@ export default function PalletBuilder() {
                               </span>
                             </div>
                             <div className="flex items-center gap-1">
-                              {p.status === "closed" && <Lock className="w-3 h-3 text-zinc-500" />}
+                              {p.status === "packed" && <Lock className="w-3 h-3 text-zinc-500" />}
                               {!isFinalized && (
                                 <button
                                   onClick={(e) => { e.stopPropagation(); handleRemovePallet(p.id); }}
@@ -665,7 +665,7 @@ export default function PalletBuilder() {
                           {activePallet.pallet_code}
                         </h2>
                         <Badge variant="outline" className={`text-[10px] ${
-                          activePallet.status === "open" ? "border-green-500/40 text-green-400" : "border-zinc-500/40 text-zinc-400"
+                          activePallet.status === "packing" ? "border-green-500/40 text-green-400" : "border-zinc-500/40 text-zinc-400"
                         }`}>
                           {activePallet.status}
                         </Badge>

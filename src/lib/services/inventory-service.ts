@@ -590,7 +590,7 @@ export async function addPalletToShipment(
     shipment_id: shipmentId,
     pallet_code: palletCode,
     sequence_number: seq,
-    status: 'open',
+    status: 'packing',
     total_items: 0,
     total_unique_eans: 0,
     created_by: userId,

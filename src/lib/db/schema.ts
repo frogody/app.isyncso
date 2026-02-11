@@ -439,7 +439,7 @@ export interface Pallet {
   shipment_id: string;
   pallet_code: string;
   sequence_number: number;
-  status: 'open' | 'closed';
+  status: 'packing' | 'packed' | 'shipped';
   total_items: number;
   total_unique_eans: number;
   notes?: string;
