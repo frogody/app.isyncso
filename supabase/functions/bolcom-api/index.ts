@@ -73,6 +73,7 @@ type BolcomAction =
   | "syncStock"
   | "updateStock"
   | "listOffers"
+  | "getOfferExport"
   | "getOffer"
   | "createOffer"
   | "updateOffer"
@@ -493,12 +494,18 @@ serve(async (req) => {
         }
 
         try {
-          // Use a lightweight endpoint to verify the token works
-          const commissions = await bolFetch(tokenResult.token, "/commission", "GET");
-          result = { success: true, data: { connected: true, commissions } };
+          // Use /inventory endpoint to verify the token works (standard FBB endpoint)
+          const inventory = await bolFetch(tokenResult.token, "/inventory?page=1&quantity=0-10000", "GET");
+          result = { success: true, data: { connected: true, inventory } };
         } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : "Connection test failed";
-          result = { success: false, error: msg };
+          // If inventory fails, try /offers as fallback
+          try {
+            const offers = await bolFetch(tokenResult.token, "/offers?page=1", "GET");
+            result = { success: true, data: { connected: true, offers } };
+          } catch (err2: unknown) {
+            const msg = err instanceof Error ? err.message : "Connection test failed";
+            result = { success: false, error: msg };
+          }
         }
         break;
       }
@@ -815,9 +822,29 @@ serve(async (req) => {
         const tokenResult = await getBolToken(supabase, companyId);
         if ("error" in tokenResult) { result = { success: false, error: tokenResult.error }; break; }
 
-        const offerPage = (body.page as number) || 1;
-        const offersData = await bolFetch(tokenResult.token, `/offers?page=${offerPage}`, "GET");
-        result = { success: true, data: offersData };
+        // bol.com uses async export for listing offers: POST /offers/export → reportId → GET /offers/export/{id}
+        const exportFormat = (body.format as string) || "CSV";
+        const exportResult = await bolFetch<{ processStatusId: string }>(
+          tokenResult.token, "/offers/export", "POST", { format: exportFormat }
+        );
+
+        if (exportResult.processStatusId) {
+          await queueProcessStatus(supabase, companyId, exportResult.processStatusId, "offer", "export");
+        }
+
+        result = { success: true, data: { exportRequested: true, processStatusId: exportResult.processStatusId, message: "Offer export queued. Poll process status to get download URL when ready." } };
+        break;
+      }
+
+      case "getOfferExport": {
+        const tokenResult = await getBolToken(supabase, companyId);
+        if ("error" in tokenResult) { result = { success: false, error: tokenResult.error }; break; }
+
+        const reportId = body.reportId as string;
+        if (!reportId) { result = { success: false, error: "Missing reportId" }; break; }
+
+        const exportData = await bolFetch(tokenResult.token, `/offers/export/${reportId}`, "GET");
+        result = { success: true, data: exportData };
         break;
       }
 
