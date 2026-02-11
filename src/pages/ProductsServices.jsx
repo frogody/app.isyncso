@@ -82,9 +82,9 @@ export default function ProductsServices() {
     // Reload data
     setLoading(true);
     try {
-      const productsData = await Product.filter({ type: 'service' }, { limit: 100 });
+      const productsData = await Product.filter({ type: 'service' }, { limit: 5000 });
       setProducts(Array.isArray(productsData) ? productsData : []);
-      const serviceData = await ServiceProduct.list({ limit: 100 });
+      const serviceData = await ServiceProduct.list({ limit: 5000 });
       const serviceMap = {};
       (serviceData || []).forEach(sp => {
         serviceMap[sp.product_id] = sp;
@@ -150,14 +150,14 @@ export default function ProductsServices() {
         let categoriesData = [];
 
         try {
-          const result = await Product.filter({ type: 'service' }, { limit: 100 });
+          const result = await Product.filter({ type: 'service' }, { limit: 5000 });
           productsData = Array.isArray(result) ? result : [];
         } catch (e) {
           console.warn('Failed to load products:', e);
         }
 
         try {
-          const result = await ServiceProduct.list({ limit: 100 });
+          const result = await ServiceProduct.list({ limit: 5000 });
           serviceData = Array.isArray(result) ? result : [];
         } catch (e) {
           console.warn('Failed to load service products:', e);

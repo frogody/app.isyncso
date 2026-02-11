@@ -292,8 +292,8 @@ export default function Products() {
 
       try {
         const [productsData, categoriesData] = await Promise.all([
-          Product.list({ limit: 50 }).catch(() => []),
-          ProductCategory.list({ limit: 50 }).catch(() => []),
+          Product.list({ limit: 5000 }).catch(() => []),
+          ProductCategory.list({ limit: 5000 }).catch(() => []),
         ]);
 
         if (!isMounted) return;

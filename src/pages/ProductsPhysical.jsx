@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Box, Plus, Search, Filter, Grid3X3, List, Tag, Eye, Edit2,
   Barcode, Package, Truck, Building2, Euro, AlertTriangle,
-  ChevronDown, MoreHorizontal, Archive, Trash2, Copy, CheckCircle, XCircle,
+  ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal, Archive, Trash2, Copy, CheckCircle, XCircle,
   Sun, Moon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,8 @@ const STOCK_STATUS = {
   out_of_stock: { label: 'Out of Stock', color: 'text-red-400', icon: XCircle },
 };
 
+const PAGE_SIZE = 50;
+
 function getStockStatus(inventory) {
   if (!inventory) return 'out_of_stock';
   const qty = inventory.quantity || 0;
@@ -57,22 +59,36 @@ export default function ProductsPhysical() {
   const { user } = useUser();
   const { theme, toggleTheme, t } = useTheme();
   const [products, setProducts] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [physicalProducts, setPhysicalProducts] = useState({});
   const [categories, setCategories] = useState([]);
   const [suppliers, setSuppliers] = useState({});
   const [loading, setLoading] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
   const [channelFilter, setChannelFilter] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [channelsMap, setChannelsMap] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+
+  // Debounce search input (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, statusFilter, categoryFilter, channelFilter]);
 
   const handleAddProduct = () => {
     setEditingProduct(null);
@@ -87,36 +103,9 @@ export default function ProductsPhysical() {
     setModalOpen(true);
   };
 
-  const handleProductSaved = async (savedProduct) => {
+  const handleProductSaved = async () => {
     toast.success('Product saved successfully!');
-    // Reload data including channels
-    setLoading(true);
-    try {
-      const productsData = await Product.filter({ type: 'physical' }, { limit: 100 });
-      setProducts(Array.isArray(productsData) ? productsData : []);
-      const physicalData = await PhysicalProduct.list({ limit: 100 });
-      const physicalMap = {};
-      (physicalData || []).forEach(pp => {
-        physicalMap[pp.product_id] = pp;
-      });
-      setPhysicalProducts(physicalMap);
-
-      // Reload channel data so badges and filter reflect changes
-      const { data: channelsData, error: chErr } = await supabase
-        .from('product_sales_channels')
-        .select('product_id, channel');
-      if (chErr) console.error('Failed to reload channels:', chErr);
-      const chMap = {};
-      (channelsData || []).forEach(ch => {
-        if (!chMap[ch.product_id]) chMap[ch.product_id] = [];
-        chMap[ch.product_id].push(ch.channel);
-      });
-      setChannelsMap(chMap);
-    } catch (e) {
-      console.error('Failed to reload products:', e);
-    } finally {
-      setLoading(false);
-    }
+    loadProducts();
   };
 
   const handleArchiveProduct = async (product) => {
@@ -154,7 +143,7 @@ export default function ProductsPhysical() {
 
       await Product.delete(product.id);
       toast.success('Product deleted');
-      setProducts(prev => prev.filter(p => p.id !== product.id));
+      loadProducts();
     } catch (e) {
       console.error('Failed to delete product:', e);
       toast.error('Failed to delete product: ' + (e.message || 'Unknown error'));
@@ -167,126 +156,131 @@ export default function ProductsPhysical() {
     return () => { document.title = 'iSyncSO'; };
   }, []);
 
-  useEffect(() => {
-    let isMounted = true;
+  // Server-side paginated product fetch
+  const loadProducts = useCallback(async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
 
-    const loadData = async () => {
-      if (!user?.id) {
-        if (isMounted) setLoading(false);
-        return;
+    setLoading(true);
+    try {
+      // Build server-side query with filters
+      let query = supabase
+        .from('products')
+        .select('*', { count: 'exact' })
+        .eq('type', 'physical')
+        .order('created_at', { ascending: false });
+
+      // Server-side search
+      if (debouncedSearch.trim()) {
+        query = query.or(`name.ilike.%${debouncedSearch.trim()}%,ean.ilike.%${debouncedSearch.trim()}%,sku.ilike.%${debouncedSearch.trim()}%,tagline.ilike.%${debouncedSearch.trim()}%`);
       }
 
-      try {
-        let productsData = [];
-        let physicalData = [];
-        let categoriesData = [];
-        let suppliersData = [];
+      // Server-side status filter
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
 
-        try {
-          const result = await Product.filter({ type: 'physical' }, { limit: 100 });
-          productsData = Array.isArray(result) ? result : [];
-        } catch (e) {
-          console.warn('Failed to load products:', e);
+      // Server-side category filter
+      if (categoryFilter !== 'all') {
+        query = query.eq('category_id', categoryFilter);
+      }
+
+      // Channel filter — need to get product IDs from junction table first
+      if (channelFilter !== 'all') {
+        const { data: channelProducts } = await supabase
+          .from('product_sales_channels')
+          .select('product_id')
+          .eq('channel', channelFilter);
+        const channelProductIds = (channelProducts || []).map(c => c.product_id);
+        if (channelProductIds.length > 0) {
+          query = query.in('id', channelProductIds);
+        } else {
+          // No products match this channel filter
+          setProducts([]);
+          setTotalCount(0);
+          setLoading(false);
+          return;
         }
+      }
 
-        try {
-          const result = await PhysicalProduct.list({ limit: 100 });
-          physicalData = Array.isArray(result) ? result : [];
-        } catch (e) {
-          console.warn('Failed to load physical products:', e);
-        }
+      // Pagination
+      const from = (currentPage - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      query = query.range(from, to);
 
-        try {
-          let result = await ProductCategory.filter({ product_type: 'physical' }, { limit: 50 });
-          if (!Array.isArray(result)) {
-            result = await ProductCategory.list({ limit: 50 });
-          }
-          categoriesData = Array.isArray(result) ? result : [];
-        } catch (e) {
-          console.warn('Failed to load categories:', e);
-        }
+      const { data: productsData, count, error } = await query;
+      if (error) throw error;
 
-        try {
-          const result = await Supplier.list({ limit: 50 });
-          suppliersData = Array.isArray(result) ? result : [];
-        } catch (e) {
-          console.warn('Failed to load suppliers:', e);
-        }
+      setProducts(productsData || []);
+      setTotalCount(count || 0);
 
-        let channelsData = [];
-        try {
-          const { data, error: chErr } = await supabase
-            .from('product_sales_channels')
-            .select('product_id, channel');
-          if (chErr) console.error('Failed to load sales channels:', chErr);
-          channelsData = data || [];
-        } catch (e) {
-          console.warn('Failed to load sales channels:', e);
-        }
-
-        if (!isMounted) return;
-
-        setProducts(productsData);
-        setCategories(categoriesData);
-
+      // Fetch physical product details for this page's products
+      const productIds = (productsData || []).map(p => p.id);
+      if (productIds.length > 0) {
+        const { data: physicalData } = await supabase
+          .from('physical_products')
+          .select('*')
+          .in('product_id', productIds);
         const physicalMap = {};
         (physicalData || []).forEach(pp => {
           physicalMap[pp.product_id] = pp;
         });
         setPhysicalProducts(physicalMap);
 
-        const suppliersMap = {};
-        (suppliersData || []).forEach(s => {
-          suppliersMap[s.id] = s;
-        });
-        setSuppliers(suppliersMap);
-
+        // Fetch channels for this page's products
+        const { data: channelsData } = await supabase
+          .from('product_sales_channels')
+          .select('product_id, channel')
+          .in('product_id', productIds);
         const chMap = {};
         (channelsData || []).forEach(ch => {
           if (!chMap[ch.product_id]) chMap[ch.product_id] = [];
           chMap[ch.product_id].push(ch.channel);
         });
         setChannelsMap(chMap);
-      } catch (error) {
-        console.error('Failed to load physical products:', error);
-      } finally {
-        if (isMounted) setLoading(false);
+      } else {
+        setPhysicalProducts({});
+        setChannelsMap({});
       }
-    };
+    } catch (error) {
+      console.error('Failed to load physical products:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, currentPage, debouncedSearch, statusFilter, categoryFilter, channelFilter]);
 
-    loadData();
-    return () => { isMounted = false; };
+  // Load categories and suppliers once
+  useEffect(() => {
+    if (!user?.id) return;
+    (async () => {
+      try {
+        let catResult = await ProductCategory.filter({ product_type: 'physical' }, { limit: 200 });
+        if (!Array.isArray(catResult)) catResult = await ProductCategory.list({ limit: 200 });
+        setCategories(Array.isArray(catResult) ? catResult : []);
+      } catch (e) {
+        console.warn('Failed to load categories:', e);
+      }
+      try {
+        const suppResult = await Supplier.list({ limit: 200 });
+        const suppliersMap = {};
+        (suppResult || []).forEach(s => { suppliersMap[s.id] = s; });
+        setSuppliers(suppliersMap);
+      } catch (e) {
+        console.warn('Failed to load suppliers:', e);
+      }
+    })();
   }, [user]);
 
-  const filteredProducts = useMemo(() => {
-    return products.filter(p => {
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matches = p.name?.toLowerCase().includes(q) ||
-          p.tagline?.toLowerCase().includes(q) ||
-          p.category?.toLowerCase().includes(q) ||
-          p.ean?.toLowerCase().includes(q);
-        if (!matches) return false;
-      }
+  // Load products when page/filters change
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
-      if (statusFilter !== 'all' && p.status !== statusFilter) return false;
-      if (categoryFilter !== 'all' && p.category_id !== categoryFilter) return false;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-      if (stockFilter !== 'all') {
-        const pp = physicalProducts[p.id];
-        const stockStatus = getStockStatus(pp?.inventory);
-        if (stockStatus !== stockFilter) return false;
-      }
-
-      if (channelFilter !== 'all') {
-        const channels = channelsMap[p.id] || [];
-        if (!channels.includes(channelFilter)) return false;
-      }
-
-      return true;
-    });
-  }, [products, physicalProducts, channelsMap, searchQuery, statusFilter, categoryFilter, stockFilter, channelFilter]);
-
+  // Stats — based on total count and current page data (lightweight)
   const stats = useMemo(() => {
     const stockCounts = { in_stock: 0, low_stock: 0, out_of_stock: 0 };
     products.forEach(p => {
@@ -296,11 +290,11 @@ export default function ProductsPhysical() {
     });
 
     return {
-      total: products.length,
+      total: totalCount,
       published: products.filter(p => p.status === 'published').length,
       ...stockCounts,
     };
-  }, [products, physicalProducts]);
+  }, [products, physicalProducts, totalCount]);
 
   return (
     <ProductsPageTransition>
@@ -356,7 +350,7 @@ export default function ProductsPhysical() {
             <div className="relative flex-1 min-w-[200px]">
               <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${t('text-slate-400', 'text-zinc-500')}`} />
               <Input
-                placeholder="Search by name, EAN..."
+                placeholder="Search by name, EAN, SKU..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={`pl-9 ${t('bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400', 'bg-zinc-900/50 border-zinc-800/60 text-white placeholder:text-zinc-500')}`}
@@ -449,42 +443,98 @@ export default function ProductsPhysical() {
               />
             ))}
           </div>
-        ) : filteredProducts.length > 0 ? (
-          viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-              {filteredProducts.map((product, index) => (
-                <div key={product.id}>
-                  <ProductGridCard
-                    product={product}
-                    productType="physical"
-                    details={physicalProducts[product.id]}
-                    salesChannels={channelsMap[product.id]}
-                    index={index}
-                    onEdit={handleEditProduct}
-                    onArchive={handleArchiveProduct}
-                    onDelete={handleDeleteProduct}
-                  />
+        ) : products.length > 0 ? (
+          <>
+            {viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                {products.map((product, index) => (
+                  <div key={product.id}>
+                    <ProductGridCard
+                      product={product}
+                      productType="physical"
+                      details={physicalProducts[product.id]}
+                      salesChannels={channelsMap[product.id]}
+                      index={index}
+                      onEdit={handleEditProduct}
+                      onArchive={handleArchiveProduct}
+                      onDelete={handleDeleteProduct}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {products.map((product, index) => (
+                  <div key={product.id}>
+                    <ProductListRow
+                      product={product}
+                      productType="physical"
+                      details={physicalProducts[product.id]}
+                      salesChannels={channelsMap[product.id]}
+                      index={index}
+                      onEdit={handleEditProduct}
+                      onArchive={handleArchiveProduct}
+                      onDelete={handleDeleteProduct}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className={`flex items-center justify-between p-3 rounded-xl ${t('bg-white shadow-sm border border-slate-200', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
+                <span className={`text-sm ${t('text-slate-500', 'text-zinc-500')}`}>
+                  Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, totalCount)} of {totalCount.toLocaleString()} products
+                </span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage(p => p - 1)}
+                    className={t('text-slate-600 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800')}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
+                    .reduce((acc, p, i, arr) => {
+                      if (i > 0 && p - arr[i - 1] > 1) acc.push('...');
+                      acc.push(p);
+                      return acc;
+                    }, [])
+                    .map((p, i) =>
+                      p === '...' ? (
+                        <span key={`dots-${i}`} className={`px-1 ${t('text-slate-400', 'text-zinc-600')}`}>...</span>
+                      ) : (
+                        <Button
+                          key={p}
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setCurrentPage(p)}
+                          className={`h-8 w-8 p-0 ${currentPage === p
+                            ? 'bg-cyan-500/20 text-cyan-400'
+                            : t('text-slate-600 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800')
+                          }`}
+                        >
+                          {p}
+                        </Button>
+                      )
+                    )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage(p => p + 1)}
+                    className={t('text-slate-600 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800')}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredProducts.map((product, index) => (
-                <div key={product.id}>
-                  <ProductListRow
-                    product={product}
-                    productType="physical"
-                    details={physicalProducts[product.id]}
-                    salesChannels={channelsMap[product.id]}
-                    index={index}
-                    onEdit={handleEditProduct}
-                    onArchive={handleArchiveProduct}
-                    onDelete={handleDeleteProduct}
-                  />
-                </div>
-              ))}
-            </div>
-          )
+              </div>
+            )}
+          </>
         ) : (
           <div className={`rounded-xl p-12 text-center ${t('bg-white shadow-sm border border-slate-200', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
             <div className="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto mb-4">

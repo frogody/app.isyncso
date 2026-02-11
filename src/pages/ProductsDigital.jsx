@@ -81,9 +81,9 @@ export default function ProductsDigital() {
     // Reload data
     setLoading(true);
     try {
-      const productsData = await Product.filter({ type: 'digital' }, { limit: 100 });
+      const productsData = await Product.filter({ type: 'digital' }, { limit: 5000 });
       setProducts(Array.isArray(productsData) ? productsData : []);
-      const digitalData = await DigitalProduct.list({ limit: 100 });
+      const digitalData = await DigitalProduct.list({ limit: 5000 });
       const digitalMap = {};
       (digitalData || []).forEach(dp => {
         digitalMap[dp.product_id] = dp;
@@ -149,14 +149,14 @@ export default function ProductsDigital() {
         let categoriesData = [];
 
         try {
-          const result = await Product.filter({ type: 'digital' }, { limit: 100 });
+          const result = await Product.filter({ type: 'digital' }, { limit: 5000 });
           productsData = Array.isArray(result) ? result : [];
         } catch (e) {
           console.warn('Failed to load products:', e);
         }
 
         try {
-          const result = await DigitalProduct.list({ limit: 100 });
+          const result = await DigitalProduct.list({ limit: 5000 });
           digitalData = Array.isArray(result) ? result : [];
         } catch (e) {
           console.warn('Failed to load digital products:', e);
