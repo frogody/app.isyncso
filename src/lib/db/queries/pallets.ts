@@ -125,6 +125,14 @@ export async function finalizeShipment(
     }
   }
 
+  // Update all pallets to 'packed'
+  const { error: palletUpdateError } = await supabase
+    .from('pallets')
+    .update({ status: 'packed', updated_at: new Date().toISOString() })
+    .eq('shipment_id', id);
+
+  if (palletUpdateError) throw palletUpdateError;
+
   return updateShipment(id, {
     status: 'finalized',
     finalized_by: userId,

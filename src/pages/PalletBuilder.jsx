@@ -372,6 +372,7 @@ export default function PalletBuilder() {
       await db.updatePalletItemQty(itemId, newQty);
       const freshItems = await db.listPalletItems(activePallet.id);
       setPalletItems(freshItems);
+      loadPallets(activeShipment.id);
       loadEanSummary(activeShipment.id);
     } catch (err) {
       toast.error("Failed to update quantity");
@@ -383,6 +384,7 @@ export default function PalletBuilder() {
       await db.removePalletItem(itemId);
       const freshItems = await db.listPalletItems(activePallet.id);
       setPalletItems(freshItems);
+      loadPallets(activeShipment.id);
       loadEanSummary(activeShipment.id);
       toast.success("Item removed");
     } catch (err) {
@@ -525,7 +527,9 @@ export default function PalletBuilder() {
                           <p className={`text-xs mt-0.5 ${t("text-gray-500", "text-zinc-500")}`}>{s.destination}</p>
                         )}
                         <div className={`text-[10px] mt-1 ${t("text-gray-400", "text-zinc-600")}`}>
-                          {s.status} · {s.total_pallets || 0} pallets · {s.total_items || 0} items
+                          {s.status} · {activeShipment?.id === s.id
+                            ? `${pallets.length} pallets · ${pallets.reduce((sum, p) => sum + (p.pallet_items || []).reduce((s2, i) => s2 + (i.quantity || 0), 0), 0)} items`
+                            : `${s.total_pallets || 0} pallets · ${s.total_items || 0} items`}
                         </div>
                       </button>
                     ))}
