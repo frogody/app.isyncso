@@ -43,6 +43,40 @@ OUTPUT FORMAT (JSON):
   "composition_notes": "brief notes on composition"
 }`;
 
+// Deterministic material detection — doesn't rely on LLM
+function detectMaterial(name?: string, description?: string, tags?: string[], category?: string): 'jewelry' | 'gemstone' | 'luxury' | 'glass' | 'standard' {
+  const signals = [name, description, tags?.join(' '), category].filter(Boolean).join(' ').toLowerCase();
+  if (/\b(ring|necklace|bracelet|earring|pendant|brooch|bangle|anklet|tiara|cufflink|gold|silver|platinum|18k|14k|925|sterling|karat|carat|jewel)/i.test(signals)) return 'jewelry';
+  if (/\b(diamond|sapphire|ruby|emerald|pearl|opal|topaz|amethyst|gemstone|gem\b|brilliant.cut|facet)/i.test(signals)) return 'gemstone';
+  if (/\b(watch|timepiece|luxury|premium|haute|couture|designer|handcrafted|swarovski)/i.test(signals)) return 'luxury';
+  if (/\b(glass|crystal|bottle|perfume|fragrance|vase|transparent|translucent)/i.test(signals)) return 'glass';
+  return 'standard';
+}
+
+const MATERIAL_PROMPTS: Record<string, { suffix: string; negative: string; background: string }> = {
+  jewelry: {
+    suffix: ', soft box diffusion controlling reflections, gradient lighting on polished metal, black card flagging shaping crisp specular highlights, tent lighting for even metal coverage, focus stacking for razor-sharp macro detail, polished mirror finish',
+    negative: 'fingerprints, dust, color cast on metals, blown-out highlights, white background, flat lighting',
+    background: 'deep black velvet background'
+  },
+  gemstone: {
+    suffix: ', backlit for translucency and fire, fiber optic spot on facets, dark field illumination, brilliant-cut facet reflections with internal light dispersion, scintillation and sparkle, macro lens f/11-f/16 for facet sharpness, focus stacking',
+    negative: 'fingerprints, dust, color cast, blown-out highlights, white background, flat lighting',
+    background: 'deep black background'
+  },
+  luxury: {
+    suffix: ', controlled reflections on metal surfaces, dramatic lighting with rich shadows, elegant negative space, ultra-sharp commercial quality, editorial high-end feel',
+    negative: 'cheap appearance, flat lighting, cluttered background, white background',
+    background: 'dark sophisticated backdrop'
+  },
+  glass: {
+    suffix: ', rim lighting defining transparent edges, gradient background, backlit material clarity, caustic light patterns',
+    negative: 'fingerprints, smudges, flat lighting',
+    background: 'gradient background'
+  },
+  standard: { suffix: '', negative: '', background: '' }
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -114,6 +148,16 @@ serve(async (req) => {
       context.push('NOTE: A reference image will be provided. Focus the prompt on the desired SCENE/ENVIRONMENT, not the product itself.');
     }
 
+    // Detect material early and add explicit instruction to LLM
+    const detectedMaterial = detectMaterial(product_name, product_description, product_tags, product_category);
+    if (detectedMaterial === 'jewelry' || detectedMaterial === 'gemstone') {
+      context.push('CRITICAL: This is a JEWELRY/PRECIOUS product. You MUST use dark/black background, macro detail, controlled specular highlights, focus stacking, gradient lighting on metal. NEVER use white or neutral backgrounds for jewelry.');
+    } else if (detectedMaterial === 'luxury') {
+      context.push('IMPORTANT: This is a LUXURY product. Use dark sophisticated backdrop, dramatic lighting, controlled reflections, aspirational aesthetic.');
+    } else if (detectedMaterial === 'glass') {
+      context.push('IMPORTANT: This is a TRANSPARENT/GLASS product. Use rim lighting, backlit edges, gradient background.');
+    }
+
     if (context.length > 0) {
       userMessage += `\n\nContext:\n${context.map(c => `- ${c}`).join('\n')}`;
     }
@@ -176,13 +220,31 @@ serve(async (req) => {
       }
     }
 
+    // Deterministic material injection — override LLM's generic output
+    const material = detectMaterial(product_name, product_description, product_tags, product_category);
+    let finalPrompt = enhanced.enhanced_prompt || prompt;
+    let finalNegative = enhanced.negative_prompt || '';
+
+    if (material !== 'standard') {
+      const mat = MATERIAL_PROMPTS[material];
+      // Force dark background if LLM used white/neutral/light
+      finalPrompt = finalPrompt.replace(/\b(white|neutral|light|bright|clean)\s+(background|backdrop|surface)\b/gi, mat.background);
+      // Append material-specific photography terms
+      finalPrompt += mat.suffix;
+      // Merge negative prompts
+      if (mat.negative) {
+        finalNegative = finalNegative ? `${finalNegative}, ${mat.negative}` : mat.negative;
+      }
+    }
+
     return new Response(
       JSON.stringify({
-        enhanced_prompt: enhanced.enhanced_prompt || prompt,
+        enhanced_prompt: finalPrompt,
         style_tags: enhanced.style_tags || [],
-        negative_prompt: enhanced.negative_prompt || '',
+        negative_prompt: finalNegative,
         composition_notes: enhanced.composition_notes || '',
-        original_prompt: prompt
+        original_prompt: prompt,
+        detected_material: material
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
