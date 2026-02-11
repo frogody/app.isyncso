@@ -448,6 +448,34 @@ export function ProductListRow({
   );
 }
 
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' });
+}
+
+function StockCell({ inventory }) {
+  if (!inventory || inventory.quantity == null) return <span className="text-xs text-zinc-500">—</span>;
+  const qty = inventory.quantity ?? 0;
+  const low = inventory.low_stock_threshold || 10;
+  const isOut = qty <= 0;
+  const isLow = qty > 0 && qty <= low;
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className={cn(
+        "inline-block w-1.5 h-1.5 rounded-full flex-shrink-0",
+        isOut ? "bg-red-400" : isLow ? "bg-amber-400" : "bg-green-400"
+      )} />
+      <span className={cn(
+        "text-xs font-medium",
+        isOut ? "text-red-400" : isLow ? "text-amber-400" : "text-white"
+      )}>
+        {qty}
+      </span>
+    </div>
+  );
+}
+
 export function ProductTableView({
   products,
   productType = 'digital',
@@ -465,21 +493,27 @@ export function ProductTableView({
       <Table>
         <TableHeader>
           <TableRow className="border-white/5 hover:bg-transparent">
-            <TableHead className="text-zinc-400 w-[50px]" />
-            <TableHead className="text-zinc-400">Name</TableHead>
-            <TableHead className="text-zinc-400 w-[100px]">Status</TableHead>
+            <TableHead className="text-zinc-500 text-xs font-medium pl-3 w-[40px]" />
+            <TableHead className="text-zinc-500 text-xs font-medium">Product</TableHead>
+            <TableHead className="text-zinc-500 text-xs font-medium w-[80px]">Status</TableHead>
             {isDigital ? (
-              <TableHead className="text-zinc-400 w-[120px]">Pricing</TableHead>
+              <>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[90px]">Pricing</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[60px] text-center">Trial</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[100px] hidden lg:table-cell">Category</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[60px] hidden xl:table-cell text-center">Pkgs</TableHead>
+              </>
             ) : (
-              <TableHead className="text-zinc-400 w-[100px] text-right">Price</TableHead>
+              <>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[80px] hidden md:table-cell">SKU</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[90px] text-right">Price</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[70px]">Stock</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[100px] hidden lg:table-cell">Category</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[110px] hidden xl:table-cell">EAN</TableHead>
+              </>
             )}
-            {!isDigital && (
-              <TableHead className="text-zinc-400 w-[100px] text-right">Stock</TableHead>
-            )}
-            <TableHead className="text-zinc-400 w-[140px] hidden lg:table-cell">
-              {isDigital ? 'Category' : 'EAN'}
-            </TableHead>
-            <TableHead className="text-zinc-400 w-[50px]" />
+            <TableHead className="text-zinc-500 text-xs font-medium w-[75px] hidden md:table-cell">Created</TableHead>
+            <TableHead className="text-zinc-500 text-xs font-medium w-[36px] pr-3" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -490,16 +524,17 @@ export function ProductTableView({
               ? PRICING_MODELS[details.pricing_model] || { label: 'Custom', color: 'text-zinc-400' }
               : null;
             const pricing = !isDigital && details?.pricing;
+            const packages = isDigital ? (details?.packages || []) : [];
 
             return (
               <TableRow
                 key={product.id}
-                className="border-white/5 hover:bg-white/[0.02] cursor-pointer"
+                className="border-white/5 hover:bg-white/[0.02]"
               >
-                <TableCell className="py-2">
+                <TableCell className="py-1.5 pl-3">
                   <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)}>
                     <div className={cn(
-                      "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden",
+                      "w-8 h-8 rounded flex items-center justify-center flex-shrink-0 overflow-hidden",
                       isDigital
                         ? "bg-cyan-500/10 border border-cyan-500/20"
                         : "bg-amber-500/10 border border-amber-500/20"
@@ -507,78 +542,91 @@ export function ProductTableView({
                       {product.featured_image?.url ? (
                         <img src={product.featured_image.url} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <Icon className={cn("w-5 h-5", isDigital ? "text-cyan-400" : "text-amber-400")} />
+                        <Icon className={cn("w-4 h-4", isDigital ? "text-cyan-400" : "text-amber-400")} />
                       )}
                     </div>
                   </Link>
                 </TableCell>
-                <TableCell>
+                <TableCell className="py-1.5">
                   <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)} className="block">
                     <span className={cn(
-                      "font-medium text-white hover:underline",
+                      "text-sm font-medium text-white hover:underline",
                       isDigital ? "hover:text-cyan-400" : "hover:text-amber-400"
                     )}>
                       {product.name}
                     </span>
-                    {(product.tagline || product.short_description) && (
-                      <p className="text-xs text-zinc-500 truncate max-w-[300px]">
-                        {product.tagline || product.short_description}
-                      </p>
-                    )}
                   </Link>
                 </TableCell>
-                <TableCell>
-                  <Badge className={`${status.bg} ${status.text} ${status.border} text-xs`}>
+                <TableCell className="py-1.5">
+                  <Badge className={`${status.bg} ${status.text} ${status.border} text-[10px] px-1.5 py-0`}>
                     {status.label}
                   </Badge>
                 </TableCell>
+
                 {isDigital ? (
-                  <TableCell>
-                    {pricingModel ? (
-                      <span className={`text-sm ${pricingModel.color}`}>{pricingModel.label}</span>
-                    ) : (
-                      <span className="text-sm text-zinc-500">—</span>
-                    )}
-                  </TableCell>
+                  <>
+                    <TableCell className="py-1.5">
+                      {pricingModel ? (
+                        <span className={`text-xs ${pricingModel.color}`}>{pricingModel.label}</span>
+                      ) : (
+                        <span className="text-xs text-zinc-500">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-1.5 text-center">
+                      {details?.trial_available ? (
+                        <span className="text-xs text-green-400">{details.trial_days}d</span>
+                      ) : (
+                        <span className="text-xs text-zinc-600">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-1.5 hidden lg:table-cell">
+                      <span className="text-xs text-zinc-400">{product.category || '—'}</span>
+                    </TableCell>
+                    <TableCell className="py-1.5 hidden xl:table-cell text-center">
+                      <span className="text-xs text-zinc-400">{packages.length || '—'}</span>
+                    </TableCell>
+                  </>
                 ) : (
-                  <TableCell className="text-right">
-                    {pricing?.base_price ? (
-                      <span className="text-sm font-medium text-white">
-                        €{parseFloat(pricing.base_price).toFixed(2)}
-                      </span>
-                    ) : (
-                      <span className="text-sm text-zinc-500">—</span>
-                    )}
-                  </TableCell>
+                  <>
+                    <TableCell className="py-1.5 hidden md:table-cell">
+                      <span className="text-xs text-zinc-400 font-mono">{details?.sku || '—'}</span>
+                    </TableCell>
+                    <TableCell className="py-1.5 text-right">
+                      {pricing?.base_price ? (
+                        <div>
+                          <span className="text-xs font-medium text-white">
+                            €{parseFloat(pricing.base_price).toFixed(2)}
+                          </span>
+                          {pricing.compare_at_price && (
+                            <span className="text-[10px] text-zinc-500 line-through ml-1">
+                              €{parseFloat(pricing.compare_at_price).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-zinc-500">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-1.5">
+                      <StockCell inventory={details?.inventory} />
+                    </TableCell>
+                    <TableCell className="py-1.5 hidden lg:table-cell">
+                      <span className="text-xs text-zinc-400">{product.category || '—'}</span>
+                    </TableCell>
+                    <TableCell className="py-1.5 hidden xl:table-cell">
+                      <span className="text-xs text-zinc-500 font-mono">{product.ean || details?.barcode || '—'}</span>
+                    </TableCell>
+                  </>
                 )}
-                {!isDigital && (
-                  <TableCell className="text-right">
-                    {details?.inventory?.quantity != null ? (
-                      <span className={cn(
-                        "text-sm font-medium",
-                        details.inventory.quantity <= 0 ? "text-red-400" :
-                        details.inventory.quantity <= (details.inventory.low_stock_threshold || 10) ? "text-amber-400" :
-                        "text-green-400"
-                      )}>
-                        {details.inventory.quantity}
-                      </span>
-                    ) : (
-                      <span className="text-sm text-zinc-500">—</span>
-                    )}
-                  </TableCell>
-                )}
-                <TableCell className="hidden lg:table-cell">
-                  <span className="text-sm text-zinc-400">
-                    {isDigital
-                      ? product.category || '—'
-                      : product.ean || '—'}
-                  </span>
+
+                <TableCell className="py-1.5 hidden md:table-cell">
+                  <span className="text-[10px] text-zinc-500">{formatDate(product.created_at)}</span>
                 </TableCell>
-                <TableCell>
+                <TableCell className="py-1.5 pr-3">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-zinc-500 hover:text-white">
-                        <MoreHorizontal className="w-4 h-4" />
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-zinc-500 hover:text-white">
+                        <MoreHorizontal className="w-3.5 h-3.5" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10">
