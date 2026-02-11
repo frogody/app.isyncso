@@ -414,6 +414,7 @@ export default function PalletBuilder() {
       const finalized = await finalizeShipmentService(activeShipment.id, user.id, finalizeNotes.trim() || undefined);
       toast.success(`Shipment ${finalized.shipment_code || ''} finalized`);
       setActiveShipment(finalized);
+      await loadPallets(activeShipment.id);
       setShowFinalizeDialog(false);
       setFinalizeNotes("");
       loadShipments();
