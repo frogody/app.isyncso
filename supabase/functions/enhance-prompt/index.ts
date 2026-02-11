@@ -53,20 +53,21 @@ function detectMaterial(name?: string, description?: string, tags?: string[], ca
   return 'standard';
 }
 
-const MATERIAL_PROMPTS: Record<string, { suffix: string; negative: string; background: string }> = {
+// Full treatment: dark backgrounds + all jewelry terms (for Luxury style)
+const MATERIAL_FULL: Record<string, { suffix: string; negative: string; background: string }> = {
   jewelry: {
     suffix: ', soft box diffusion controlling reflections, gradient lighting on polished metal, black card flagging shaping crisp specular highlights, tent lighting for even metal coverage, focus stacking for razor-sharp macro detail, polished mirror finish',
-    negative: 'fingerprints, dust, color cast on metals, blown-out highlights, white background, flat lighting',
+    negative: 'fingerprints, dust, color cast on metals, blown-out highlights, flat lighting',
     background: 'deep black velvet background'
   },
   gemstone: {
     suffix: ', backlit for translucency and fire, fiber optic spot on facets, dark field illumination, brilliant-cut facet reflections with internal light dispersion, scintillation and sparkle, macro lens f/11-f/16 for facet sharpness, focus stacking',
-    negative: 'fingerprints, dust, color cast, blown-out highlights, white background, flat lighting',
+    negative: 'fingerprints, dust, color cast, blown-out highlights, flat lighting',
     background: 'deep black background'
   },
   luxury: {
     suffix: ', controlled reflections on metal surfaces, dramatic lighting with rich shadows, elegant negative space, ultra-sharp commercial quality, editorial high-end feel',
-    negative: 'cheap appearance, flat lighting, cluttered background, white background',
+    negative: 'cheap appearance, flat lighting, cluttered background',
     background: 'dark sophisticated backdrop'
   },
   glass: {
@@ -75,6 +76,27 @@ const MATERIAL_PROMPTS: Record<string, { suffix: string; negative: string; backg
     background: 'gradient background'
   },
   standard: { suffix: '', negative: '', background: '' }
+};
+
+// Light treatment: sharpness + reflection quality only, NO background override (for non-Luxury styles)
+const MATERIAL_LIGHT: Record<string, { suffix: string; negative: string }> = {
+  jewelry: {
+    suffix: ', crisp specular highlights on metal, focus stacking for sharp detail, controlled reflections',
+    negative: 'fingerprints, dust, color cast on metals'
+  },
+  gemstone: {
+    suffix: ', facet reflections with light dispersion, sharp gemstone detail',
+    negative: 'fingerprints, dust, color cast'
+  },
+  luxury: {
+    suffix: ', controlled reflections, ultra-sharp commercial quality',
+    negative: 'cheap appearance, flat lighting'
+  },
+  glass: {
+    suffix: ', rim lighting on transparent edges, backlit clarity',
+    negative: 'fingerprints, smudges'
+  },
+  standard: { suffix: '', negative: '' }
 };
 
 serve(async (req) => {
@@ -148,12 +170,21 @@ serve(async (req) => {
       context.push('NOTE: A reference image will be provided. Focus the prompt on the desired SCENE/ENVIRONMENT, not the product itself.');
     }
 
-    // Detect material early and add explicit instruction to LLM
+    // Detect material early and add explicit instruction to LLM — but respect style choice
     const detectedMaterial = detectMaterial(product_name, product_description, product_tags, product_category);
+    const isLuxuryStyle = style === 'luxury';
     if (detectedMaterial === 'jewelry' || detectedMaterial === 'gemstone') {
-      context.push('CRITICAL: This is a JEWELRY/PRECIOUS product. You MUST use dark/black background, macro detail, controlled specular highlights, focus stacking, gradient lighting on metal. NEVER use white or neutral backgrounds for jewelry.');
+      if (isLuxuryStyle) {
+        context.push('CRITICAL: This is a JEWELRY/PRECIOUS product with Luxury style. You MUST use dark/black background, macro detail, controlled specular highlights, focus stacking, gradient lighting on metal. NEVER use white or neutral backgrounds.');
+      } else {
+        context.push('NOTE: This is a jewelry product. Add controlled reflections and sharp detail, but follow the selected style for background and mood.');
+      }
     } else if (detectedMaterial === 'luxury') {
-      context.push('IMPORTANT: This is a LUXURY product. Use dark sophisticated backdrop, dramatic lighting, controlled reflections, aspirational aesthetic.');
+      if (isLuxuryStyle) {
+        context.push('IMPORTANT: This is a LUXURY product. Use dark sophisticated backdrop, dramatic lighting, controlled reflections, aspirational aesthetic.');
+      } else {
+        context.push('NOTE: This is a premium product. Add controlled reflections and sharp quality, but follow the selected style.');
+      }
     } else if (detectedMaterial === 'glass') {
       context.push('IMPORTANT: This is a TRANSPARENT/GLASS product. Use rim lighting, backlit edges, gradient background.');
     }
@@ -220,20 +251,28 @@ serve(async (req) => {
       }
     }
 
-    // Deterministic material injection — override LLM's generic output
+    // Deterministic material injection — style-aware
     const material = detectMaterial(product_name, product_description, product_tags, product_category);
     let finalPrompt = enhanced.enhanced_prompt || prompt;
     let finalNegative = enhanced.negative_prompt || '';
 
     if (material !== 'standard') {
-      const mat = MATERIAL_PROMPTS[material];
-      // Force dark background if LLM used white/neutral/light
-      finalPrompt = finalPrompt.replace(/\b(white|neutral|light|bright|clean)\s+(background|backdrop|surface)\b/gi, mat.background);
-      // Append material-specific photography terms
-      finalPrompt += mat.suffix;
-      // Merge negative prompts
-      if (mat.negative) {
-        finalNegative = finalNegative ? `${finalNegative}, ${mat.negative}` : mat.negative;
+      if (style === 'luxury' || !style) {
+        // Full treatment: dark backgrounds + all jewelry photography terms
+        const mat = MATERIAL_FULL[material];
+        // Force dark background if LLM used white/neutral/light
+        finalPrompt = finalPrompt.replace(/\b(white|neutral|light|bright|clean)\s+(background|backdrop|surface)\b/gi, mat.background);
+        finalPrompt += mat.suffix;
+        if (mat.negative) {
+          finalNegative = finalNegative ? `${finalNegative}, ${mat.negative}` : mat.negative;
+        }
+      } else {
+        // Light treatment: sharpness + reflections only, respect user's chosen style/background
+        const mat = MATERIAL_LIGHT[material];
+        finalPrompt += mat.suffix;
+        if (mat.negative) {
+          finalNegative = finalNegative ? `${finalNegative}, ${mat.negative}` : mat.negative;
+        }
       }
     }
 

@@ -114,7 +114,8 @@ function detectProductCategory(productContext: any, prompt: string): 'jewelry' |
 function buildEnhancedPrompt(
   userPrompt: string,
   brandContext: any,
-  productContext: any
+  productContext: any,
+  style?: string
 ): string {
   let enhanced = userPrompt || '';
 
@@ -138,15 +139,22 @@ function buildEnhancedPrompt(
     }
   }
 
-  // Apply category-specific photography suffixes
+  // Apply category-specific photography suffixes — respect style choice
   const category = detectProductCategory(productContext, userPrompt);
-  const suffixes: Record<string, string> = {
+  const isLuxuryStyle = style === 'luxury' || !style;
+  const fullSuffixes: Record<string, string> = {
     jewelry: ' Jewelry product photography, controlled reflections on metal, macro detail, gradient lighting shaping specular highlights, dark background, focus stacking, no color cast on metals.',
     luxury: ' Premium luxury presentation, aspirational aesthetic, dramatic controlled lighting, rich shadows, elegant negative space.',
     glass: ' Transparent product photography, rim lighting defining edges, gradient background, backlit material clarity.',
     standard: ''
   };
-  enhanced += suffixes[category];
+  const lightSuffixes: Record<string, string> = {
+    jewelry: ' Controlled reflections on metal, sharp macro detail, no color cast on metals.',
+    luxury: ' Controlled reflections, ultra-sharp commercial quality.',
+    glass: ' Rim lighting on edges, backlit clarity.',
+    standard: ''
+  };
+  enhanced += isLuxuryStyle ? fullSuffixes[category] : lightSuffixes[category];
 
   return enhanced;
 }
@@ -327,7 +335,7 @@ serve(async (req) => {
 
     let enhancedPrompt = prompt;
     if (!modelConfig.requiresImage) {
-      enhancedPrompt = buildEnhancedPrompt(prompt, brand_context, product_context);
+      enhancedPrompt = buildEnhancedPrompt(prompt, brand_context, product_context, style);
       if (style && style !== 'photorealistic') {
         enhancedPrompt += ` Style: ${style}.`;
       }
