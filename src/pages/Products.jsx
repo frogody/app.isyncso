@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
 import { Product, ProductCategory } from "@/api/entities";
-import { db } from "@/api/supabaseClient";
+import { db, supabase } from "@/api/supabaseClient";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -119,6 +119,7 @@ export default function Products() {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [serverStats, setServerStats] = useState({ total: 0, physical: 0, digital: 0, service: 0, published: 0, draft: 0, categories: 0 });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -291,14 +292,39 @@ export default function Products() {
       }
 
       try {
-        const [productsData, categoriesData] = await Promise.all([
-          Product.list({ limit: 5000 }).catch(() => []),
-          ProductCategory.list({ limit: 5000 }).catch(() => []),
+        // Use server-side counts for accurate stats (no row limit)
+        const [
+          { count: totalCount },
+          { count: physicalCount },
+          { count: digitalCount },
+          { count: serviceCount },
+          { count: publishedCount },
+          { count: draftCount },
+          categoriesData,
+          recentData,
+        ] = await Promise.all([
+          supabase.from('products').select('*', { count: 'exact', head: true }),
+          supabase.from('products').select('*', { count: 'exact', head: true }).eq('type', 'physical'),
+          supabase.from('products').select('*', { count: 'exact', head: true }).eq('type', 'digital'),
+          supabase.from('products').select('*', { count: 'exact', head: true }).eq('type', 'service'),
+          supabase.from('products').select('*', { count: 'exact', head: true }).eq('status', 'published'),
+          supabase.from('products').select('*', { count: 'exact', head: true }).eq('status', 'draft'),
+          ProductCategory.list({ limit: 200 }).catch(() => []),
+          supabase.from('products').select('*').order('created_at', { ascending: false }).limit(20),
         ]);
 
         if (!isMounted) return;
-        setProducts(productsData || []);
+        setProducts(recentData.data || []);
         setCategories(categoriesData || []);
+        setServerStats({
+          total: totalCount || 0,
+          physical: physicalCount || 0,
+          digital: digitalCount || 0,
+          service: serviceCount || 0,
+          published: publishedCount || 0,
+          draft: draftCount || 0,
+          categories: (categoriesData || []).length,
+        });
       } catch (error) {
         console.error('Failed to load products:', error);
       } finally {
@@ -310,23 +336,7 @@ export default function Products() {
     return () => { isMounted = false; };
   }, [user]);
 
-  const stats = useMemo(() => {
-    const digital = products.filter(p => p.type === 'digital');
-    const physical = products.filter(p => p.type === 'physical');
-    const service = products.filter(p => p.type === 'service');
-    const published = products.filter(p => p.status === 'published');
-    const draft = products.filter(p => p.status === 'draft');
-
-    return {
-      total: products.length,
-      digital: digital.length,
-      physical: physical.length,
-      service: service.length,
-      published: published.length,
-      draft: draft.length,
-      categories: categories.length,
-    };
-  }, [products, categories]);
+  const stats = serverStats;
 
   const recentProducts = useMemo(() => {
     return [...products]
