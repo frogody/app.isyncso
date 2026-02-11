@@ -225,15 +225,18 @@ export default function ManualPurchaseModal({
       // Auto-create products for unknown EANs
       for (const line of validLines) {
         if (!line.product_id && line.ean.trim()) {
+          const productName = line.product_name.trim() || `Product ${line.ean}`;
+          const slug = productName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + line.ean.trim();
           const { data: newProduct, error: prodErr } = await supabase
             .from("products")
             .insert({
               company_id: companyId,
-              name: line.product_name.trim() || `Product ${line.ean}`,
+              name: productName,
+              slug: slug,
               ean: line.ean.trim(),
               price: parseFloat(line.unit_price) || 0,
               type: "physical",
-              created_by: userId,
+              status: "draft",
             })
             .select("id")
             .single();

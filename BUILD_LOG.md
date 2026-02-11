@@ -147,3 +147,18 @@ If you've just started a new session or context was compacted, read these files 
   - `src/components/products/ProductModal.jsx` — added error logging on channel read and insert
 - **Verification**: Build succeeds. All 3 bug fixes address the reported symptoms.
 
+#### Task: P1-8b — BUG 3 continued: auto-created products insert silently failing
+- **What was done**: Investigated why auto-created products from ManualPurchaseModal still don't appear after the `product_type → type` fix. Queried the database directly — the products DON'T EXIST (empty result). The insert was silently failing due to two schema violations:
+  1. **Missing `slug`**: The `products.slug` column is `VARCHAR NOT NULL` — ManualPurchaseModal did not provide a slug, causing a NOT NULL constraint violation.
+  2. **Invalid column `created_by`**: ManualPurchaseModal inserted `created_by: userId` but the products table has no `created_by` column — Postgres rejects the unknown column.
+  Both errors were caught by `prodErr` and logged to console, but the purchase creation continued without a linked product.
+- **Root cause**: The original `product_type → type` fix was necessary but insufficient. The insert had two additional problems that were always present but never visible (console.error only, no toast).
+- **Fix applied**:
+  - Added `slug` generation: `name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + ean` (same pattern as ProductModal's auto-slug)
+  - Removed `created_by: userId` (column doesn't exist)
+  - Added explicit `status: "draft"` (matches the column default, but explicit is clearer)
+  - Extracted `productName` variable for reuse
+- **DB schema confirmed**: `products` table has columns: id, company_id, slug (NOT NULL), type (NOT NULL), status (default 'draft'), name (NOT NULL), ean, price, etc. No `created_by` or `product_type` columns.
+- **Files changed**: `src/components/purchases/ManualPurchaseModal.jsx`
+- **Verification**: Build succeeds. ProductsPhysical's status filter defaults to 'all', so draft products will appear.
+
