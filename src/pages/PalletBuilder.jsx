@@ -18,7 +18,7 @@ import {
   Sun, Moon, ChevronDown, ChevronUp, Truck,
   AlertTriangle, Check, X, Search, PackagePlus,
   ClipboardList, History, Printer, ShieldCheck, RotateCcw,
-  CheckCircle2, Clock,
+  CheckCircle2, Clock, Scale,
 } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,7 @@ import {
   addProductToPallet,
   finalizeShipmentService,
   verifyScanItem,
+  updatePalletPhysicalProperties,
 } from "@/lib/services/inventory-service";
 import {
   generateSinglePalletLabel,
@@ -222,6 +223,14 @@ export default function PalletBuilder() {
 
   // Verify mode (P3-11)
   const [verifyMode, setVerifyMode] = useState(false);
+
+  // Weight/Dimensions (P3-12)
+  const [editingWeight, setEditingWeight] = useState(false);
+  const [palletWeight, setPalletWeight] = useState("");
+  const [palletLength, setPalletLength] = useState("");
+  const [palletWidth, setPalletWidth] = useState("");
+  const [palletHeight, setPalletHeight] = useState("");
+  const [dimensionUnit, setDimensionUnit] = useState("cm");
 
   // ------------------------------------------------------------------
   // DATA LOADING
@@ -437,6 +446,7 @@ export default function PalletBuilder() {
   const handleSelectPallet = (pallet) => {
     setActivePallet(pallet);
     setPalletItems(pallet.pallet_items || []);
+    setEditingWeight(false);
   };
 
   // Verify mode scan handler (P3-11)
@@ -491,6 +501,38 @@ export default function PalletBuilder() {
       toast.success(`${pallets.length} label(s) generated`);
     } catch (err) {
       toast.error("Failed to generate labels: " + err.message);
+    }
+  };
+
+  // Weight/Dimensions handlers (P3-12)
+  const handleStartEditPhysical = (pallet) => {
+    setEditingWeight(true);
+    setPalletWeight(pallet.weight != null ? String(pallet.weight) : "");
+    setPalletLength(pallet.dimensions?.length != null ? String(pallet.dimensions.length) : "");
+    setPalletWidth(pallet.dimensions?.width != null ? String(pallet.dimensions.width) : "");
+    setPalletHeight(pallet.dimensions?.height != null ? String(pallet.dimensions.height) : "");
+    setDimensionUnit(pallet.dimensions?.unit || "cm");
+  };
+
+  const handleSavePalletPhysical = async () => {
+    if (!activePallet || !activeShipment) return;
+    try {
+      const weight = palletWeight ? parseFloat(palletWeight) : null;
+      const dims = (palletLength && palletWidth && palletHeight)
+        ? {
+            length: parseFloat(palletLength),
+            width: parseFloat(palletWidth),
+            height: parseFloat(palletHeight),
+            unit: dimensionUnit,
+          }
+        : null;
+
+      await updatePalletPhysicalProperties(activePallet.id, weight, dims);
+      toast.success("Weight/dimensions saved");
+      await loadPallets(activeShipment.id);
+      setEditingWeight(false);
+    } catch (err) {
+      toast.error("Failed to save: " + err.message);
     }
   };
 
@@ -642,7 +684,7 @@ export default function PalletBuilder() {
                                 {p.pallet_code}
                               </span>
                               <span className={`text-xs ml-2 ${t("text-gray-400", "text-zinc-500")}`}>
-                                {itemCount} items · {eanCount} EANs
+                                {itemCount} items · {eanCount} EANs{p.weight ? ` · ${p.weight}kg` : ""}
                               </span>
                             </div>
                             <div className="flex items-center gap-1">
@@ -685,6 +727,15 @@ export default function PalletBuilder() {
                       <div className="flex justify-between text-xs mt-1">
                         <span className={t("text-gray-500", "text-zinc-500")}>Unique EANs</span>
                         <span className={t("text-gray-900", "text-white")}>{eanSummary.length}</span>
+                      </div>
+                      <div className="flex justify-between text-xs mt-1">
+                        <span className={t("text-gray-500", "text-zinc-500")}>Total weight</span>
+                        <span className={t("text-gray-900", "text-white")}>
+                          {(() => {
+                            const tw = pallets.reduce((sum, p) => sum + (parseFloat(p.weight) || 0), 0);
+                            return tw > 0 ? `${tw.toFixed(1)} kg` : "—";
+                          })()}
+                        </span>
                       </div>
 
                       {!isFinalized && (
@@ -761,6 +812,82 @@ export default function PalletBuilder() {
                         {totalPalletItems} items · {new Set(palletItems.map(i => i.ean).filter(Boolean)).size} EANs
                       </div>
                     </div>
+                  </div>
+
+                  {/* Weight & Dimensions (P3-12) */}
+                  <div className={`${t("bg-white/80 border-gray-200", "bg-zinc-900/50 border-zinc-800/60")} border rounded-xl p-3`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className={`text-sm font-semibold ${t("text-gray-700", "text-zinc-300")} flex items-center gap-2`}>
+                        <Scale className="w-4 h-4 text-cyan-400" />
+                        Weight & Dimensions
+                      </h3>
+                      {!isFinalized && !editingWeight && (
+                        <Button size="sm" variant="ghost" onClick={() => handleStartEditPhysical(activePallet)}
+                          className={`text-xs ${t("text-gray-500", "text-zinc-400")}`}>
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+
+                    {editingWeight ? (
+                      <div className="space-y-2">
+                        <div className="flex gap-2 items-center">
+                          <label className={`text-xs w-16 shrink-0 ${t("text-gray-500", "text-zinc-400")}`}>Weight</label>
+                          <Input
+                            type="number" step="0.1" min="0" placeholder="0.0"
+                            value={palletWeight} onChange={(e) => setPalletWeight(e.target.value)}
+                            className={`flex-1 ${t("bg-white border-gray-200", "bg-zinc-900/50 border-white/10")}`}
+                          />
+                          <span className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>kg</span>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <label className={`text-xs w-16 shrink-0 ${t("text-gray-500", "text-zinc-400")}`}>L × W × H</label>
+                          <Input type="number" step="1" min="0" placeholder="L"
+                            value={palletLength} onChange={(e) => setPalletLength(e.target.value)}
+                            className={`w-16 ${t("bg-white border-gray-200", "bg-zinc-900/50 border-white/10")}`} />
+                          <span className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>×</span>
+                          <Input type="number" step="1" min="0" placeholder="W"
+                            value={palletWidth} onChange={(e) => setPalletWidth(e.target.value)}
+                            className={`w-16 ${t("bg-white border-gray-200", "bg-zinc-900/50 border-white/10")}`} />
+                          <span className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>×</span>
+                          <Input type="number" step="1" min="0" placeholder="H"
+                            value={palletHeight} onChange={(e) => setPalletHeight(e.target.value)}
+                            className={`w-16 ${t("bg-white border-gray-200", "bg-zinc-900/50 border-white/10")}`} />
+                          <Select value={dimensionUnit} onValueChange={setDimensionUnit}>
+                            <SelectTrigger className={`w-16 ${t("bg-white border-gray-200", "bg-zinc-900/50 border-white/10")}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="cm">cm</SelectItem>
+                              <SelectItem value="m">m</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex justify-end gap-2 mt-1">
+                          <Button size="sm" variant="ghost" onClick={() => setEditingWeight(false)}
+                            className={`text-xs ${t("text-gray-500", "text-zinc-400")}`}>Cancel</Button>
+                          <Button size="sm" onClick={handleSavePalletPhysical}
+                            className="text-xs bg-cyan-600 hover:bg-cyan-700 text-white">Save</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-6 text-xs">
+                        <div>
+                          <span className={t("text-gray-400", "text-zinc-500")}>Weight: </span>
+                          <span className={`font-medium ${t("text-gray-900", "text-white")}`}>
+                            {activePallet.weight != null ? `${activePallet.weight} kg` : "—"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className={t("text-gray-400", "text-zinc-500")}>Dimensions: </span>
+                          <span className={`font-medium ${t("text-gray-900", "text-white")}`}>
+                            {activePallet.dimensions
+                              ? `${activePallet.dimensions.length} × ${activePallet.dimensions.width} × ${activePallet.dimensions.height} ${activePallet.dimensions.unit}`
+                              : "—"}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Verify Mode Toggle (P3-11) — only on finalized shipments */}
@@ -1085,7 +1212,7 @@ export default function PalletBuilder() {
               </DialogHeader>
               <div className="space-y-4 py-2">
                 <div className={`rounded-xl border p-3 ${t("bg-gray-50 border-gray-200", "bg-zinc-800/50 border-zinc-700")}`}>
-                  <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="grid grid-cols-4 gap-3 text-center">
                     <div>
                       <p className={`text-xs ${t("text-gray-500", "text-zinc-500")}`}>Pallets</p>
                       <p className={`text-lg font-bold ${t("text-gray-900", "text-white")}`}>{pallets.length}</p>
@@ -1100,8 +1227,27 @@ export default function PalletBuilder() {
                       <p className={`text-xs ${t("text-gray-500", "text-zinc-500")}`}>EANs</p>
                       <p className={`text-lg font-bold ${t("text-gray-900", "text-white")}`}>{eanSummary.length}</p>
                     </div>
+                    <div>
+                      <p className={`text-xs ${t("text-gray-500", "text-zinc-500")}`}>Weight</p>
+                      <p className={`text-lg font-bold ${t("text-gray-900", "text-white")}`}>
+                        {(() => {
+                          const tw = pallets.reduce((sum, p) => sum + (parseFloat(p.weight) || 0), 0);
+                          return tw > 0 ? `${tw.toFixed(1)}kg` : "—";
+                        })()}
+                      </p>
+                    </div>
                   </div>
                 </div>
+
+                {/* LVB missing weight warning */}
+                {activeShipment?.shipment_type === "b2c_lvb" && pallets.some(p => !p.weight) && (
+                  <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                    <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                    <p className="text-xs text-amber-300">
+                      Some pallets are missing weight — recommended for bol.com LVB shipments.
+                    </p>
+                  </div>
+                )}
 
                 {/* Warnings */}
                 {eanSummary.some(r => {

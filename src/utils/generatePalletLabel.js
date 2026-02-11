@@ -117,6 +117,25 @@ function addLabelPage(doc, pallet, shipment, palletIndex, totalPallets) {
   doc.text(String(itemCount), margin + 30, y + 3);
   y += 8;
 
+  // Weight
+  if (pallet.weight) {
+    doc.setFont('helvetica', 'bold');
+    doc.text('Weight', margin, y + 3);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${pallet.weight} kg`, margin + 30, y + 3);
+    y += 8;
+  }
+
+  // Dimensions
+  if (pallet.dimensions) {
+    doc.setFont('helvetica', 'bold');
+    doc.text('Size', margin, y + 3);
+    doc.setFont('helvetica', 'normal');
+    const d = pallet.dimensions;
+    doc.text(`${d.length}\u00D7${d.width}\u00D7${d.height} ${d.unit || 'cm'}`, margin + 30, y + 3);
+    y += 8;
+  }
+
   // Date
   doc.setFont('helvetica', 'bold');
   doc.text('Date', margin, y + 3);

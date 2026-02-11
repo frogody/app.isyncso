@@ -105,6 +105,7 @@ export async function finalizeShipment(
     .from('pallets')
     .select(`
       id,
+      weight,
       pallet_items (
         product_id,
         ean,
@@ -133,6 +134,11 @@ export async function finalizeShipment(
 
   if (palletUpdateError) throw palletUpdateError;
 
+  // Aggregate total weight from pallets
+  const totalWeight = (pallets || []).reduce(
+    (sum, p) => sum + (parseFloat(p.weight as any) || 0), 0
+  );
+
   return updateShipment(id, {
     status: 'finalized',
     finalized_by: userId,
@@ -140,6 +146,7 @@ export async function finalizeShipment(
     total_pallets: (pallets || []).length,
     total_items: totalItems,
     total_unique_eans: uniqueEans.size,
+    total_weight: totalWeight > 0 ? totalWeight : undefined,
     notes: notes || undefined,
   });
 }
@@ -451,4 +458,64 @@ export async function resetPalletVerification(palletId: string): Promise<void> {
     .eq('pallet_id', palletId);
 
   if (error) throw error;
+}
+
+// =============================================================================
+// WEIGHT & DIMENSIONS (Phase 3c)
+// =============================================================================
+
+export async function updatePalletWeightDimensions(
+  id: string,
+  weight: number | null,
+  dimensions: { length: number; width: number; height: number; unit: string } | null
+): Promise<Pallet> {
+  const { data, error } = await supabase
+    .from('pallets')
+    .update({
+      weight,
+      dimensions,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export interface ShipmentWeightSummary {
+  total_weight: number;
+  pallets: Array<{
+    pallet_code: string;
+    weight: number | null;
+    dimensions: { length: number; width: number; height: number; unit: string } | null;
+    item_count: number;
+  }>;
+}
+
+export async function getShipmentWeightSummary(shipmentId: string): Promise<ShipmentWeightSummary> {
+  const { data: pallets, error } = await supabase
+    .from('pallets')
+    .select('pallet_code, weight, dimensions, pallet_items(quantity)')
+    .eq('shipment_id', shipmentId)
+    .order('sequence_number');
+
+  if (error) throw error;
+
+  const result: ShipmentWeightSummary = {
+    total_weight: 0,
+    pallets: (pallets || []).map((p: any) => {
+      const itemCount = (p.pallet_items || []).reduce((s: number, i: any) => s + (i.quantity || 0), 0);
+      return {
+        pallet_code: p.pallet_code,
+        weight: p.weight ? parseFloat(p.weight) : null,
+        dimensions: p.dimensions,
+        item_count: itemCount,
+      };
+    }),
+  };
+
+  result.total_weight = result.pallets.reduce((sum, p) => sum + (p.weight || 0), 0);
+  return result;
 }

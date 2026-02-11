@@ -637,6 +637,59 @@ export async function finalizeShipmentService(
 }
 
 // =============================================================================
+// PALLET WEIGHT & DIMENSIONS (Phase 3c)
+// =============================================================================
+
+/**
+ * Update a pallet's weight and dimensions
+ */
+export async function updatePalletPhysicalProperties(
+  palletId: string,
+  weight: number | null,
+  dimensions: { length: number; width: number; height: number; unit: string } | null
+): Promise<Pallet> {
+  return db.updatePalletWeightDimensions(palletId, weight, dimensions);
+}
+
+/**
+ * Prepare data needed for bol.com LVB replenishment creation (P3-13 bridge).
+ * Phase 4 will use this to build the POST /retailer/replenishments payload.
+ */
+export async function prepareBolcomReplenishmentData(
+  companyId: string,
+  shipmentId: string
+): Promise<{
+  reference: string;
+  numberOfLoadCarriers: number;
+  lines: Array<{ ean: string; quantity: number }>;
+  totalWeight: number;
+  palletDetails: Array<{
+    palletCode: string;
+    weight: number | null;
+    dimensions: { length: number; width: number; height: number; unit: string } | null;
+  }>;
+}> {
+  const shipment = await db.getShipment(shipmentId);
+  if (!shipment) throw new Error('Shipment not found');
+  if (shipment.shipment_type !== 'b2c_lvb') throw new Error('Not an LVB shipment');
+
+  const eanSummary = await db.getShipmentEanSummary(shipmentId);
+  const weightSummary = await db.getShipmentWeightSummary(shipmentId);
+
+  return {
+    reference: shipment.shipment_code || shipmentId,
+    numberOfLoadCarriers: weightSummary.pallets.length,
+    lines: eanSummary.map((row) => ({ ean: row.ean, quantity: row.total_packed })),
+    totalWeight: weightSummary.total_weight,
+    palletDetails: weightSummary.pallets.map((p) => ({
+      palletCode: p.pallet_code,
+      weight: p.weight,
+      dimensions: p.dimensions,
+    })),
+  };
+}
+
+// =============================================================================
 // SHIPMENT VERIFICATION (Phase 3b)
 // =============================================================================
 

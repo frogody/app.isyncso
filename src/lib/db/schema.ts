@@ -418,6 +418,7 @@ export interface Shipment {
   total_pallets: number;
   total_items: number;
   total_unique_eans: number;
+  total_weight?: number;
   // Lifecycle
   shipped_at?: string;
   shipped_by?: string;
@@ -442,6 +443,8 @@ export interface Pallet {
   status: 'packing' | 'packed' | 'shipped';
   total_items: number;
   total_unique_eans: number;
+  weight?: number;
+  dimensions?: { length: number; width: number; height: number; unit: string };
   notes?: string;
   created_by?: string;
   created_at: string;

@@ -3016,9 +3016,9 @@ CREATE INDEX idx_receiving_log_session ON receiving_log(receiving_session_id) WH
 - [x] `P3-11` Scan-to-verify mode during packing
 
 **Phase 3c: Weight/Dimensions + bol.com LVB**
-- [ ] `P3-12` Expose existing `shipping_tasks.total_weight` and `shipping_tasks.dimensions` JSONB columns in PalletBuilder UI
-- [ ] `P3-13` Wire weight/dimensions to bol.com LVB replenishment creation (Phase 4 dependency)
-- [ ] `P3-14` Test: full pallet build → verify → ship flow
+- [x] `P3-12` Expose weight/dimensions per pallet in PalletBuilder UI (with aggregated shipment totals)
+- [x] `P3-13` Wire weight/dimensions to bol.com LVB replenishment creation (prepareBolcomReplenishmentData bridge)
+- [x] `P3-14` Test: full pallet build → verify → ship flow
 
 ### Phase 4: bol.com Retailer API Integration
 - [ ] `P4-1` Create `bolcom_credentials` table (with token caching columns: `access_token`, `token_expires_at`) + RLS
