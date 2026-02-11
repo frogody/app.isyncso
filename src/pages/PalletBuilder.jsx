@@ -476,12 +476,22 @@ export default function PalletBuilder() {
   // Print label handlers (P3-10)
   const handlePrintLabel = (pallet, index) => {
     if (!activeShipment) return;
-    generateSinglePalletLabel(pallet, activeShipment, index, pallets.length);
+    try {
+      generateSinglePalletLabel(pallet, activeShipment, index, pallets.length);
+      toast.success(`Label generated for ${pallet.pallet_code}`);
+    } catch (err) {
+      toast.error("Failed to generate label: " + err.message);
+    }
   };
 
   const handlePrintAllLabels = () => {
     if (!activeShipment || pallets.length === 0) return;
-    generateBatchPalletLabels(pallets, activeShipment);
+    try {
+      generateBatchPalletLabels(pallets, activeShipment);
+      toast.success(`${pallets.length} label(s) generated`);
+    } catch (err) {
+      toast.error("Failed to generate labels: " + err.message);
+    }
   };
 
   // Helpers

@@ -231,11 +231,11 @@ export default function ShipmentVerification() {
 
   return (
     <PermissionGuard permission="inventory.manage" showMessage>
-      <div className={`min-h-screen ${t("bg-zinc-950", "bg-gray-50")} ${t("text-white", "text-gray-900")} p-6`}>
+      <div className={`min-h-screen ${t("bg-gray-50", "bg-zinc-950")} ${t("text-gray-900", "text-white")} p-6`}>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <ClipboardCheck className={`w-7 h-7 ${t("text-cyan-400", "text-cyan-600")}`} />
+            <ClipboardCheck className={`w-7 h-7 ${t("text-cyan-600", "text-cyan-400")}`} />
             <h1 className="text-2xl font-bold">Shipment Verification</h1>
           </div>
           <Button variant="ghost" size="icon" onClick={toggleTheme}>
@@ -244,13 +244,13 @@ export default function ShipmentVerification() {
         </div>
 
         {/* Shipment Selector */}
-        <div className={`${t("bg-zinc-900/60", "bg-white")} ${t("border-zinc-800", "border-gray-200")} border rounded-xl p-4 mb-6`}>
-          <label className={`text-sm font-medium ${t("text-zinc-400", "text-gray-500")} mb-2 block`}>
+        <div className={`${t("bg-white", "bg-zinc-900/60")} ${t("border-gray-200", "border-zinc-800")} border rounded-xl p-4 mb-6`}>
+          <label className={`text-sm font-medium ${t("text-gray-500", "text-zinc-400")} mb-2 block`}>
             Select Shipment
           </label>
           <div className="flex items-center gap-3">
             <Select value={selectedShipmentId} onValueChange={setSelectedShipmentId}>
-              <SelectTrigger className={`w-full max-w-md ${t("bg-zinc-800 border-zinc-700", "bg-gray-100 border-gray-300")}`}>
+              <SelectTrigger className={`w-full max-w-md ${t("bg-gray-100 border-gray-300", "bg-zinc-800 border-zinc-700")}`}>
                 <SelectValue placeholder="Choose a shipment to verify..." />
               </SelectTrigger>
               <SelectContent>
@@ -283,7 +283,7 @@ export default function ShipmentVerification() {
               <p className={`font-medium ${selectedShipment.verification_status === "verified" ? "text-green-400" : "text-amber-400"}`}>
                 {selectedShipment.verification_status === "verified" ? "Verified" : "Verified with Discrepancies"}
               </p>
-              <p className={`text-sm ${t("text-zinc-400", "text-gray-500")}`}>
+              <p className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>
                 on {new Date(selectedShipment.verified_at).toLocaleString()}
                 {selectedShipment.verification_notes && ` — "${selectedShipment.verification_notes}"`}
               </p>
@@ -328,7 +328,7 @@ export default function ShipmentVerification() {
 
         {/* Comparison Table */}
         {selectedShipmentId && (
-          <div className={`${t("bg-zinc-900/60", "bg-white")} ${t("border-zinc-800", "border-gray-200")} border rounded-xl overflow-hidden mb-6`}>
+          <div className={`${t("bg-white", "bg-zinc-900/60")} ${t("border-gray-200", "border-zinc-800")} border rounded-xl overflow-hidden mb-6`}>
             <div className="p-4 border-b border-inherit">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Package className="w-5 h-5" />
@@ -338,13 +338,13 @@ export default function ShipmentVerification() {
 
             {loading ? (
               <div className="p-12 text-center">
-                <RefreshCw className={`w-6 h-6 animate-spin mx-auto mb-2 ${t("text-zinc-500", "text-gray-400")}`} />
-                <p className={t("text-zinc-500", "text-gray-400")}>Loading verification data...</p>
+                <RefreshCw className={`w-6 h-6 animate-spin mx-auto mb-2 ${t("text-gray-400", "text-zinc-500")}`} />
+                <p className={t("text-gray-400", "text-zinc-500")}>Loading verification data...</p>
               </div>
             ) : verificationRows.length === 0 ? (
               <div className="p-12 text-center">
-                <FileWarning className={`w-8 h-8 mx-auto mb-2 ${t("text-zinc-600", "text-gray-400")}`} />
-                <p className={t("text-zinc-500", "text-gray-500")}>
+                <FileWarning className={`w-8 h-8 mx-auto mb-2 ${t("text-gray-400", "text-zinc-600")}`} />
+                <p className={t("text-gray-500", "text-zinc-500")}>
                   {selectedShipmentId ? "No items found in this shipment" : "Select a shipment to view verification data"}
                 </p>
               </div>
@@ -352,7 +352,7 @@ export default function ShipmentVerification() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className={`${t("bg-zinc-800/50", "bg-gray-50")} text-left text-sm`}>
+                    <tr className={`${t("bg-gray-50", "bg-zinc-800/50")} ${t("text-gray-500", "text-zinc-400")} text-left text-sm`}>
                       <th className="px-4 py-3 font-medium">EAN</th>
                       <th className="px-4 py-3 font-medium">Product</th>
                       <th className="px-4 py-3 font-medium text-right">Purchased</th>
@@ -368,12 +368,12 @@ export default function ShipmentVerification() {
                       return (
                         <tr
                           key={row.ean}
-                          className={`border-t ${t("border-zinc-800", "border-gray-200")} ${styles.bg} transition-colors`}
+                          className={`border-t ${t("border-gray-200", "border-zinc-800")} ${styles.bg} transition-colors`}
                         >
-                          <td className="px-4 py-3 font-mono text-sm">{row.ean || "—"}</td>
-                          <td className="px-4 py-3 text-sm">{row.product_name}</td>
-                          <td className="px-4 py-3 text-sm text-right tabular-nums">{row.qty_purchased}</td>
-                          <td className={`px-4 py-3 text-sm text-right tabular-nums ${row.qty_received !== row.qty_purchased && row.qty_purchased > 0 ? "font-semibold" : ""}`}>
+                          <td className={`px-4 py-3 font-mono text-sm ${t("text-gray-700", "text-zinc-200")}`}>{row.ean || "—"}</td>
+                          <td className={`px-4 py-3 text-sm ${t("text-gray-900", "text-white")}`}>{row.product_name}</td>
+                          <td className={`px-4 py-3 text-sm text-right tabular-nums ${t("text-gray-700", "text-zinc-200")}`}>{row.qty_purchased}</td>
+                          <td className={`px-4 py-3 text-sm text-right tabular-nums ${t("text-gray-700", "text-zinc-200")} ${row.qty_received !== row.qty_purchased && row.qty_purchased > 0 ? "font-semibold" : ""}`}>
                             {row.qty_received}
                             {row.qty_received !== row.qty_purchased && row.qty_purchased > 0 && (
                               <span className={`ml-1 text-xs ${row.qty_received < row.qty_purchased ? "text-amber-400" : "text-blue-400"}`}>
@@ -381,7 +381,7 @@ export default function ShipmentVerification() {
                               </span>
                             )}
                           </td>
-                          <td className={`px-4 py-3 text-sm text-right tabular-nums ${row.qty_packed !== row.qty_received && row.qty_received > 0 ? "font-semibold" : ""}`}>
+                          <td className={`px-4 py-3 text-sm text-right tabular-nums ${t("text-gray-700", "text-zinc-200")} ${row.qty_packed !== row.qty_received && row.qty_received > 0 ? "font-semibold" : ""}`}>
                             {row.qty_packed}
                             {row.qty_packed !== row.qty_received && row.qty_received > 0 && (
                               <span className={`ml-1 text-xs ${row.qty_packed > row.qty_received ? "text-red-400" : "text-blue-400"}`}>
@@ -407,11 +407,11 @@ export default function ShipmentVerification() {
 
         {/* Sign-off Section */}
         {selectedShipment && !isVerified && verificationRows.length > 0 && (
-          <div className={`${t("bg-zinc-900/60", "bg-white")} ${t("border-zinc-800", "border-gray-200")} border rounded-xl p-4`}>
+          <div className={`${t("bg-white", "bg-zinc-900/60")} ${t("border-gray-200", "border-zinc-800")} border rounded-xl p-4`}>
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold">Verification Sign-off</h3>
-                <p className={`text-sm ${t("text-zinc-400", "text-gray-500")}`}>
+                <p className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>
                   {hasDiscrepancies
                     ? `${stats.discrepancies} discrepancy(ies) found — notes required before sign-off`
                     : "All quantities match — ready for sign-off"}
@@ -433,13 +433,13 @@ export default function ShipmentVerification() {
 
         {/* Sign-off Dialog */}
         <Dialog open={showSignOffDialog} onOpenChange={setShowSignOffDialog}>
-          <DialogContent className={t("bg-zinc-900 border-zinc-800", "bg-white border-gray-200")}>
+          <DialogContent className={t("bg-white border-gray-200", "bg-zinc-900 border-zinc-800")}>
             <DialogHeader>
               <DialogTitle>Verify Shipment</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               {/* Summary */}
-              <div className={`${t("bg-zinc-800/50", "bg-gray-50")} rounded-lg p-3 text-sm space-y-1`}>
+              <div className={`${t("bg-gray-50", "bg-zinc-800/50")} rounded-lg p-3 text-sm space-y-1`}>
                 <p>Shipment: <strong>{selectedShipment?.shipment_code}</strong></p>
                 <p>Total EANs: <strong>{stats.total}</strong></p>
                 <p className="text-green-400">Matched: <strong>{stats.matched}</strong></p>
@@ -450,7 +450,7 @@ export default function ShipmentVerification() {
 
               {/* Notes */}
               <div>
-                <label className={`text-sm font-medium ${t("text-zinc-400", "text-gray-500")} mb-1 block`}>
+                <label className={`text-sm font-medium ${t("text-gray-500", "text-zinc-400")} mb-1 block`}>
                   Verification Notes {hasDiscrepancies && <span className="text-red-400">*</span>}
                 </label>
                 <Textarea
@@ -460,8 +460,11 @@ export default function ShipmentVerification() {
                   value={signOffNotes}
                   onChange={(e) => setSignOffNotes(e.target.value)}
                   rows={3}
-                  className={t("bg-zinc-800 border-zinc-700", "bg-gray-100 border-gray-300")}
+                  className={`${t("bg-gray-100 border-gray-300", "bg-zinc-800 border-zinc-700")} ${hasDiscrepancies && !signOffNotes.trim() ? "border-red-500/50" : ""}`}
                 />
+                {hasDiscrepancies && !signOffNotes.trim() && (
+                  <p className="text-red-400 text-xs mt-1">Verification notes are required when signing off with discrepancies</p>
+                )}
               </div>
             </div>
             <DialogFooter className="gap-2">
@@ -503,14 +506,14 @@ function SummaryCard({ t, icon, label, value, color, isText }) {
     green: "border-green-500/30",
     red: "border-red-500/30",
     amber: "border-amber-500/30",
-    zinc: t("border-zinc-700", "border-gray-300"),
+    zinc: t("border-gray-300", "border-zinc-700"),
   };
 
   return (
-    <div className={`${t("bg-zinc-900/60", "bg-white")} border ${colorMap[color] || colorMap.zinc} rounded-xl p-4`}>
+    <div className={`${t("bg-white", "bg-zinc-900/60")} border ${colorMap[color] || colorMap.zinc} rounded-xl p-4`}>
       <div className="flex items-center gap-2 mb-2">
         {icon}
-        <span className={`text-sm ${t("text-zinc-400", "text-gray-500")}`}>{label}</span>
+        <span className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>{label}</span>
       </div>
       <p className={`text-2xl font-bold ${isText ? "text-base capitalize" : ""}`}>
         {value}
