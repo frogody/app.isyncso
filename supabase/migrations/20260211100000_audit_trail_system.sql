@@ -39,8 +39,8 @@ CREATE TABLE IF NOT EXISTS product_activity_log (
     company_id UUID NOT NULL REFERENCES companies(id),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
 
-    -- Who and when
-    actor_id UUID NOT NULL REFERENCES auth.users(id),
+    -- Who and when (references public.users so PostgREST can resolve joins)
+    actor_id UUID NOT NULL REFERENCES public.users(id),
     performed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     -- What happened
