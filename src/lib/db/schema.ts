@@ -215,6 +215,8 @@ export interface ReceivingLog {
   damage_notes?: string;
   // Type
   receipt_type: 'purchase' | 'return' | 'transfer' | 'adjustment';
+  // Session
+  receiving_session_id?: string;
   // Who received
   received_by?: string;
   received_at: string;
@@ -223,6 +225,28 @@ export interface ReceivingLog {
 }
 
 export type ReceivingLogInsert = Omit<ReceivingLog, 'id'>;
+
+// =============================================================================
+// RECEIVING SESSIONS
+// =============================================================================
+
+export interface ReceivingSession {
+  id: string;
+  company_id: string;
+  name: string;
+  status: 'active' | 'closed';
+  started_by?: string;
+  closed_by?: string;
+  started_at: string;
+  closed_at?: string;
+  total_items_received: number;
+  total_eans_scanned: number;
+  notes?: string;
+  created_at: string;
+}
+
+export type ReceivingSessionInsert = Omit<ReceivingSession, 'id' | 'created_at'>;
+export type ReceivingSessionUpdate = Partial<Omit<ReceivingSessionInsert, 'company_id'>>;
 
 // =============================================================================
 // SALES ORDERS
@@ -432,7 +456,8 @@ export type NotificationType =
   | 'delivery_overdue'
   | 'partial_delivery'
   | 'stock_alert'
-  | 'payment_overdue';
+  | 'payment_overdue'
+  | 'receiving_session_closed';
 
 export type NotificationSeverity = 'low' | 'medium' | 'high' | 'critical';
 

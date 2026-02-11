@@ -179,9 +179,9 @@ export async function createLowConfidenceNotification(
     type: 'low_confidence',
     severity: confidence < 0.7 ? 'high' : 'medium',
     expense_id: expenseId,
-    title: 'Factuur heeft lage betrouwbaarheid',
-    message: `De AI-extractie van ${supplierName || 'een factuur'} heeft een betrouwbaarheid van ${Math.round(confidence * 100)}%. Handmatige controle vereist.`,
-    action_required: 'Review en goedkeuren van geextraheerde gegevens',
+    title: 'Invoice has low confidence',
+    message: `AI extraction of ${supplierName || 'an invoice'} has a confidence of ${Math.round(confidence * 100)}%. Manual review required.`,
+    action_required: 'Review and approve extracted data',
     action_url: `/expenses/${expenseId}`,
     context_data: { confidence, supplier_name: supplierName },
     status: 'unread',
@@ -205,9 +205,9 @@ export async function createDeliveryOverdueNotification(
     severity: daysSinceShipped > 21 ? 'critical' : 'high',
     tracking_job_id: trackingJobId,
     shipping_task_id: shippingTaskId,
-    title: `Levering ${daysSinceShipped} dagen onderweg`,
-    message: `Order ${orderNumber} voor ${customerName} is al ${daysSinceShipped} dagen onderweg zonder bevestigde levering.`,
-    action_required: 'Controleer tracking status en neem contact op met klant indien nodig',
+    title: `Delivery in transit for ${daysSinceShipped} days`,
+    message: `Order ${orderNumber} for ${customerName} has been in transit for ${daysSinceShipped} days without confirmed delivery.`,
+    action_required: 'Check tracking status and contact customer if needed',
     action_url: `/shipping/${shippingTaskId}`,
     context_data: { days_since_shipped: daysSinceShipped, order_number: orderNumber, customer_name: customerName },
     status: 'unread',
@@ -229,9 +229,9 @@ export async function createPartialDeliveryNotification(
     type: 'partial_delivery',
     severity: 'medium',
     product_id: undefined, // Can be added if needed
-    title: 'Gedeeltelijke levering ontvangen',
-    message: `${productName}: ${receivedQty} van ${expectedQty} stuks ontvangen.`,
-    action_required: 'Controleer of resterende items nog worden geleverd',
+    title: 'Partial delivery received',
+    message: `${productName}: ${receivedQty} of ${expectedQty} items received.`,
+    action_required: 'Check if remaining items are still being delivered',
     action_url: `/receiving?delivery=${expectedDeliveryId}`,
     context_data: { expected_qty: expectedQty, received_qty: receivedQty, product_name: productName },
     status: 'unread',
@@ -255,11 +255,11 @@ export async function createStockAlertNotification(
     type: 'stock_alert',
     severity: isCritical ? 'critical' : 'high',
     product_id: productId,
-    title: isCritical ? 'Product op voorraad' : 'Lage voorraad melding',
+    title: isCritical ? 'Product out of stock' : 'Low stock alert',
     message: isCritical
-      ? `${productName} is uitverkocht! Directe actie vereist.`
-      : `${productName} heeft nog ${currentStock} stuks op voorraad (onder herbestelpunt van ${reorderPoint}).`,
-    action_required: 'Bestel nieuwe voorraad bij leverancier',
+      ? `${productName} is sold out! Immediate action required.`
+      : `${productName} has ${currentStock} items in stock (below reorder point of ${reorderPoint}).`,
+    action_required: 'Order new stock from supplier',
     action_url: `/inventory?product=${productId}`,
     context_data: { current_stock: currentStock, reorder_point: reorderPoint, product_name: productName },
     status: 'unread',
@@ -289,9 +289,9 @@ export async function createPaymentOverdueNotification(
     severity: daysOverdue > 30 ? 'critical' : daysOverdue > 14 ? 'high' : 'medium',
     sales_order_id: salesOrderId,
     customer_id: customerId,
-    title: `Betaling ${daysOverdue} dagen te laat`,
-    message: `Order ${orderNumber} van ${customerName}: ${currency} ${amount.toFixed(2)} is ${daysOverdue} dagen over de betaaldatum.`,
-    action_required: 'Stuur herinnering naar klant',
+    title: `Payment ${daysOverdue} days overdue`,
+    message: `Order ${orderNumber} from ${customerName}: ${currency} ${amount.toFixed(2)} is ${daysOverdue} days past due date.`,
+    action_required: 'Send reminder to customer',
     action_url: `/orders/${salesOrderId}`,
     context_data: {
       days_overdue: daysOverdue,
@@ -301,6 +301,29 @@ export async function createPaymentOverdueNotification(
       order_number: orderNumber,
       customer_name: customerName
     },
+    status: 'unread',
+  });
+}
+
+/**
+ * Create a receiving session closed notification
+ */
+export async function createReceivingSessionNotification(
+  companyId: string,
+  sessionId: string,
+  sessionName: string,
+  closedByName: string,
+  totalItems: number,
+  totalEans: number
+): Promise<Notification> {
+  return createNotification({
+    company_id: companyId,
+    type: 'receiving_session_closed',
+    severity: 'low',
+    title: `Receiving session closed: ${sessionName}`,
+    message: `${closedByName} completed a receiving session. ${totalItems} items received across ${totalEans} products.`,
+    action_url: `/inventoryreceiving?session=${sessionId}`,
+    context_data: { session_id: sessionId, total_items: totalItems, total_eans: totalEans },
     status: 'unread',
   });
 }

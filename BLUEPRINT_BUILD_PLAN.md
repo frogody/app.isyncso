@@ -2990,13 +2990,13 @@ CREATE INDEX idx_receiving_log_session ON receiving_log(receiving_session_id) WH
 - [x] `P1-8` Test: create manual purchase with groups and channel
 
 ### Phase 2: Receiving Enhancements
-- [ ] `P2-1` Receiving session start/close flow
-- [ ] `P2-2` Link scans to active session
-- [ ] `P2-3` Session summary view
-- [ ] `P2-4` In-app notification on session close
-- [ ] `P2-5` CSV/PDF export of session data
-- [ ] `P2-6` Session history view
-- [ ] `P2-7` Test: full receiving session with notifications
+- [x] `P2-1` Receiving session start/close flow
+- [x] `P2-2` Link scans to active session
+- [x] `P2-3` Session summary view
+- [x] `P2-4` In-app notification on session close
+- [x] `P2-5` CSV/PDF export of session data
+- [x] `P2-6` Session history view
+- [x] `P2-7` Test: full receiving session with notifications
 
 ### Phase 3: Pallet Management (sub-phased: 3a → 3b → 3c)
 

@@ -2333,7 +2333,7 @@ FROM enrichment_cache_companies;
 |-------|-------------|--------|
 | 0 | Database Foundation & Infrastructure | **Complete** |
 | 1 | Purchasing Overhaul | **Complete** (P1-1 through P1-8 all done) |
-| 2 | Receiving Enhancements | Not Started |
+| 2 | Receiving Enhancements | **Complete** (P2-1 through P2-7 all done) |
 | 3 | Pallet Management (3a/3b/3c) | Not Started |
 | 4 | bol.com Retailer API | Not Started |
 | 5 | Returns Workflow | Not Started |

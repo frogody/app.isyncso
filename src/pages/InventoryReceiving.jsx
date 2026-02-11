@@ -3,7 +3,8 @@ import {
   Package, Scan, Check, AlertTriangle, Plus, Minus,
   Camera, Barcode, Boxes, ArrowRight, X, RefreshCw,
   Warehouse, MapPin, CheckCircle2, AlertCircle, Keyboard,
-  CameraOff, SwitchCamera, Sun, Moon
+  CameraOff, SwitchCamera, Sun, Moon, PlayCircle, StopCircle,
+  Clock, History, Download, FileText, ChevronDown, ChevronUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,8 +31,20 @@ import { PermissionGuard } from "@/components/guards";
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { ProductsPageTransition } from '@/components/products/ui';
 import { toast } from "sonner";
-import { scanForReceiving, receiveStock, getDashboardData } from "@/lib/services/inventory-service";
-import { listExpectedDeliveries, getReceivingHistory } from "@/lib/db/queries";
+import {
+  scanForReceiving,
+  receiveStock,
+  getDashboardData,
+  startReceivingSession,
+  closeReceivingSession,
+} from "@/lib/services/inventory-service";
+import {
+  listExpectedDeliveries,
+  getReceivingHistory,
+  listReceivingSessions,
+  getSessionReceivingLogs,
+} from "@/lib/db/queries";
+import { exportSessionCSV, exportSessionPDF } from "@/components/receiving/SessionExport";
 import { Html5Qrcode } from "html5-qrcode";
 
 // Barcode scanner component with camera support for mobile devices
@@ -639,6 +652,31 @@ function ReceiveSuccessCard({ productName, quantity, isPartial, remainingQty, on
   );
 }
 
+// Session duration timer
+function SessionTimer({ startedAt }) {
+  const [elapsed, setElapsed] = useState('');
+
+  useEffect(() => {
+    const update = () => {
+      const start = new Date(startedAt).getTime();
+      const diff = Date.now() - start;
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      setElapsed(
+        hours > 0
+          ? `${hours}h ${minutes}m ${seconds}s`
+          : `${minutes}m ${seconds}s`
+      );
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [startedAt]);
+
+  return <span>{elapsed}</span>;
+}
+
 export default function InventoryReceiving() {
   const { user } = useUser();
   const { theme, toggleTheme, t } = useTheme();
@@ -654,6 +692,18 @@ export default function InventoryReceiving() {
     partialDeliveries: 0,
   });
 
+  // Session state
+  const [activeSession, setActiveSession] = useState(null);
+  const [showStartDialog, setShowStartDialog] = useState(false);
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [showSessionHistory, setShowSessionHistory] = useState(false);
+  const [sessionName, setSessionName] = useState('');
+  const [sessionNotes, setSessionNotes] = useState('');
+  const [sessionHistory, setSessionHistory] = useState([]);
+  const [sessionItemCount, setSessionItemCount] = useState(0);
+  const [expandedSession, setExpandedSession] = useState(null);
+  const [expandedSessionLogs, setExpandedSessionLogs] = useState([]);
+
   const companyId = user?.company_id;
   const [dataLoaded, setDataLoaded] = useState(false);
 
@@ -663,13 +713,26 @@ export default function InventoryReceiving() {
 
     const loadData = async () => {
       try {
-        const [deliveries, history] = await Promise.all([
+        const [deliveries, history, sessions] = await Promise.all([
           listExpectedDeliveries(companyId, 'pending'),
           getReceivingHistory(companyId, 20),
+          listReceivingSessions(companyId),
         ]);
 
         setExpectedDeliveries(deliveries);
         setRecentReceiving(history);
+
+        // Check for active session and auto-resume
+        const active = sessions.find((s) => s.status === 'active');
+        if (active) {
+          setActiveSession(active);
+          // Load session-specific logs for count
+          const sessionLogs = await getSessionReceivingLogs(active.id);
+          setSessionItemCount(sessionLogs.reduce((sum, l) => sum + l.quantity_received, 0));
+        }
+
+        // Session history (closed sessions, last 20)
+        setSessionHistory(sessions.filter((s) => s.status === 'closed').slice(0, 20));
 
         // Calculate stats
         const todayStart = new Date();
@@ -734,10 +797,12 @@ export default function InventoryReceiving() {
     try {
       const result = await receiveStock(companyId, data.productId, data.quantity, {
         expectedDeliveryId: data.expectedDeliveryId,
+        eanScanned: scanResult?.product?.ean,
         warehouseLocation: data.location,
         condition: data.condition,
         damageNotes: data.notes,
         receivedBy: user?.id,
+        receivingSessionId: activeSession?.id,
       });
 
       // Refresh data
@@ -748,6 +813,11 @@ export default function InventoryReceiving() {
 
       setExpectedDeliveries(deliveries);
       setRecentReceiving(history);
+
+      // Update session item count
+      if (activeSession) {
+        setSessionItemCount((prev) => prev + data.quantity);
+      }
 
       // Show success card instead of just clearing
       setScanResult(null);
@@ -773,6 +843,89 @@ export default function InventoryReceiving() {
     }
   };
 
+  // Start a receiving session
+  const handleStartSession = async () => {
+    if (!companyId || !sessionName.trim()) return;
+
+    try {
+      const session = await startReceivingSession(companyId, sessionName.trim(), user?.id);
+      setActiveSession(session);
+      setSessionItemCount(0);
+      setShowStartDialog(false);
+      setSessionName('');
+      toast.success(`Session started: ${session.name}`);
+    } catch (error) {
+      console.error('Start session error:', error);
+      toast.error('Could not start session');
+    }
+  };
+
+  // Close a receiving session
+  const handleCloseSession = async () => {
+    if (!activeSession || !companyId) return;
+
+    try {
+      const userName = user?.full_name || user?.email || 'Unknown';
+      const closed = await closeReceivingSession(
+        activeSession.id,
+        user?.id,
+        userName,
+        companyId,
+        sessionNotes.trim() || undefined
+      );
+      setSessionHistory((prev) => [closed, ...prev]);
+      setActiveSession(null);
+      setSessionItemCount(0);
+      setShowCloseDialog(false);
+      setSessionNotes('');
+      toast.success(`Session closed: ${closed.name} — ${closed.total_items_received} items received`);
+    } catch (error) {
+      console.error('Close session error:', error);
+      toast.error('Could not close session');
+    }
+  };
+
+  // Toggle expanded session in history
+  const handleToggleSession = async (sessionId) => {
+    if (expandedSession === sessionId) {
+      setExpandedSession(null);
+      setExpandedSessionLogs([]);
+      return;
+    }
+    try {
+      const logs = await getSessionReceivingLogs(sessionId);
+      setExpandedSessionLogs(logs);
+      setExpandedSession(sessionId);
+    } catch (error) {
+      toast.error('Could not load session details');
+    }
+  };
+
+  // Export handlers
+  const handleExportCSV = async (session) => {
+    try {
+      const logs = expandedSession === session.id
+        ? expandedSessionLogs
+        : await getSessionReceivingLogs(session.id);
+      exportSessionCSV(session, logs);
+      toast.success('CSV exported');
+    } catch (error) {
+      toast.error('Export failed');
+    }
+  };
+
+  const handleExportPDF = async (session) => {
+    try {
+      const logs = expandedSession === session.id
+        ? expandedSessionLogs
+        : await getSessionReceivingLogs(session.id);
+      exportSessionPDF(session, logs);
+      toast.success('PDF exported');
+    } catch (error) {
+      toast.error('Export failed');
+    }
+  };
+
   return (
     <PermissionGuard permission="inventory.manage" showMessage>
       <ProductsPageTransition>
@@ -783,6 +936,24 @@ export default function InventoryReceiving() {
               <p className={`text-xs ${t('text-gray-600', 'text-zinc-400')}`}>Scan and receive incoming inventory</p>
             </div>
             <div className="flex items-center gap-2">
+              {!activeSession && (
+                <Button
+                  onClick={() => setShowStartDialog(true)}
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                  size="sm"
+                >
+                  <PlayCircle className="w-4 h-4 mr-2" />
+                  Start Session
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSessionHistory(!showSessionHistory)}
+              >
+                <History className="w-4 h-4 mr-2" />
+                History
+              </Button>
               <button
                 onClick={toggleTheme}
                 className={`p-2 rounded-lg transition-colors ${t(
@@ -795,6 +966,58 @@ export default function InventoryReceiving() {
               </button>
             </div>
           </div>
+
+          {/* Active Session Banner */}
+          {activeSession && (
+            <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="p-2 rounded-full bg-cyan-500/20">
+                  <PlayCircle className="w-5 h-5 text-cyan-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className={`text-sm font-bold ${t('text-gray-900', 'text-white')} truncate`}>
+                    {activeSession.name}
+                  </p>
+                  <div className={`flex items-center gap-3 text-xs ${t('text-gray-500', 'text-zinc-400')}`}>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <SessionTimer startedAt={activeSession.started_at} />
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Package className="w-3 h-3" />
+                      {sessionItemCount} items
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleExportCSV(activeSession)}
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  CSV
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleExportPDF(activeSession)}
+                >
+                  <FileText className="w-3 h-3 mr-1" />
+                  PDF
+                </Button>
+                <Button
+                  onClick={() => setShowCloseDialog(true)}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  size="sm"
+                >
+                  <StopCircle className="w-4 h-4 mr-2" />
+                  Close Session
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -868,9 +1091,15 @@ export default function InventoryReceiving() {
             <div className={`${t('bg-white/80 border-gray-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
               <h2 className={`text-sm font-bold ${t('text-gray-900', 'text-white')} mb-2 flex items-center gap-2`}>
                 <Warehouse className="w-5 h-5 text-cyan-400" />
-                Recent Receipts
+                {activeSession ? `Session Receipts` : 'Recent Receipts'}
               </h2>
-              <RecentReceivingList items={recentReceiving} />
+              <RecentReceivingList
+                items={
+                  activeSession
+                    ? recentReceiving.filter((r) => r.receiving_session_id === activeSession.id)
+                    : recentReceiving
+                }
+              />
             </div>
           </div>
 
@@ -938,7 +1167,199 @@ export default function InventoryReceiving() {
               </div>
             )}
           </div>
+
+          {/* Session History */}
+          {showSessionHistory && (
+            <div className={`${t('bg-white/80 border-gray-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-3`}>
+              <h2 className={`text-sm font-bold ${t('text-gray-900', 'text-white')} mb-2 flex items-center gap-2`}>
+                <History className="w-5 h-5 text-cyan-400" />
+                Session History ({sessionHistory.length})
+              </h2>
+
+              {sessionHistory.length === 0 ? (
+                <div className={`text-center py-8 ${t('text-gray-500', 'text-zinc-500')}`}>
+                  <History className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>No past sessions</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {sessionHistory.map((session) => (
+                    <div key={session.id}>
+                      <div
+                        className={`flex items-center justify-between p-3 rounded-lg cursor-pointer ${t('bg-white/80 border-gray-100 hover:bg-gray-50', 'bg-zinc-900/50 border-white/5 hover:bg-zinc-800/60')} border`}
+                        onClick={() => handleToggleSession(session.id)}
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="p-1.5 rounded-full bg-cyan-500/10 text-cyan-400">
+                            <CheckCircle2 className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className={`text-sm font-medium ${t('text-gray-900', 'text-white')} truncate`}>
+                              {session.name}
+                            </p>
+                            <p className={`text-xs ${t('text-gray-500', 'text-zinc-500')}`}>
+                              {new Date(session.started_at).toLocaleDateString('en-GB')} — {session.total_items_received} items, {session.total_eans_scanned} products
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => { e.stopPropagation(); handleExportCSV(session); }}
+                          >
+                            <Download className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => { e.stopPropagation(); handleExportPDF(session); }}
+                          >
+                            <FileText className="w-3 h-3" />
+                          </Button>
+                          {expandedSession === session.id ? (
+                            <ChevronUp className={`w-4 h-4 ${t('text-gray-400', 'text-zinc-500')}`} />
+                          ) : (
+                            <ChevronDown className={`w-4 h-4 ${t('text-gray-400', 'text-zinc-500')}`} />
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Expanded session logs */}
+                      {expandedSession === session.id && (
+                        <div className={`ml-4 mt-1 p-3 rounded-lg ${t('bg-gray-50 border-gray-100', 'bg-zinc-800/30 border-white/5')} border`}>
+                          {session.notes && (
+                            <p className={`text-xs ${t('text-gray-600', 'text-zinc-400')} mb-2 italic`}>
+                              Notes: {session.notes}
+                            </p>
+                          )}
+                          {expandedSessionLogs.length === 0 ? (
+                            <p className={`text-xs ${t('text-gray-500', 'text-zinc-500')}`}>No items in this session</p>
+                          ) : (
+                            <div className="space-y-1">
+                              {expandedSessionLogs.map((log) => (
+                                <div key={log.id} className={`flex items-center justify-between text-xs py-1`}>
+                                  <span className={t('text-gray-900', 'text-white')}>
+                                    {log.products?.name || log.ean_scanned || 'Unknown'}
+                                  </span>
+                                  <div className="flex items-center gap-3">
+                                    <span className={t('text-gray-600', 'text-zinc-400')}>
+                                      {log.quantity_received}x
+                                    </span>
+                                    <Badge variant="outline" className="text-xs">
+                                      {log.condition}
+                                    </Badge>
+                                    {log.warehouse_location && (
+                                      <span className={t('text-gray-500', 'text-zinc-500')}>
+                                        {log.warehouse_location}
+                                      </span>
+                                    )}
+                                    <span className={t('text-gray-500', 'text-zinc-500')}>
+                                      {new Date(log.received_at).toLocaleTimeString('en-GB')}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
+
+        {/* Start Session Dialog */}
+        <Dialog open={showStartDialog} onOpenChange={setShowStartDialog}>
+          <DialogContent className={t('bg-white', 'bg-zinc-900 border-zinc-800')}>
+            <DialogHeader>
+              <DialogTitle className={t('text-gray-900', 'text-white')}>
+                Start Receiving Session
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div>
+                <Label>Session Name</Label>
+                <Input
+                  placeholder="e.g. Pallet delivery DHL 10 feb"
+                  value={sessionName}
+                  onChange={(e) => setSessionName(e.target.value)}
+                  className={`mt-1 ${t('bg-white border-gray-200', 'bg-zinc-800 border-zinc-700')}`}
+                  autoFocus
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowStartDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleStartSession}
+                disabled={!sessionName.trim()}
+                className="bg-cyan-600 hover:bg-cyan-700 text-white"
+              >
+                <PlayCircle className="w-4 h-4 mr-2" />
+                Start Session
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Close Session Dialog */}
+        <Dialog open={showCloseDialog} onOpenChange={setShowCloseDialog}>
+          <DialogContent className={t('bg-white', 'bg-zinc-900 border-zinc-800')}>
+            <DialogHeader>
+              <DialogTitle className={t('text-gray-900', 'text-white')}>
+                Close Receiving Session
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              {activeSession && (
+                <div className={`p-3 rounded-lg ${t('bg-gray-50 border-gray-200', 'bg-zinc-800/50 border-zinc-700')} border`}>
+                  <p className={`text-sm font-medium ${t('text-gray-900', 'text-white')} mb-2`}>
+                    {activeSession.name}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className={t('text-gray-500', 'text-zinc-500')}>Duration: </span>
+                      <span className={t('text-gray-900', 'text-white')}>
+                        <SessionTimer startedAt={activeSession.started_at} />
+                      </span>
+                    </div>
+                    <div>
+                      <span className={t('text-gray-500', 'text-zinc-500')}>Items: </span>
+                      <span className={t('text-gray-900', 'text-white')}>{sessionItemCount}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div>
+                <Label>Notes (optional)</Label>
+                <Textarea
+                  placeholder="Any notes about this session..."
+                  value={sessionNotes}
+                  onChange={(e) => setSessionNotes(e.target.value)}
+                  className={`mt-1 ${t('bg-white border-gray-200', 'bg-zinc-800 border-zinc-700')}`}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCloseDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCloseSession}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <StopCircle className="w-4 h-4 mr-2" />
+                Close Session
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </ProductsPageTransition>
     </PermissionGuard>
   );

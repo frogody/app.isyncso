@@ -21,6 +21,7 @@ import type {
   TrackingJobInsert,
   Inventory,
   ExpectedDelivery,
+  ReceivingSession,
 } from '@/lib/db/schema';
 
 // =============================================================================
@@ -201,6 +202,7 @@ export async function receiveStock(
     condition?: 'good' | 'damaged' | 'defective';
     damageNotes?: string;
     receivedBy?: string;
+    receivingSessionId?: string;
   }
 ): Promise<{
   success: boolean;
@@ -221,6 +223,7 @@ export async function receiveStock(
     damage_notes: options?.damageNotes,
     receipt_type: 'purchase',
     received_by: options?.receivedBy,
+    receiving_session_id: options?.receivingSessionId,
     received_at: new Date().toISOString(),
     metadata: {},
   });
@@ -277,6 +280,54 @@ export async function receiveStock(
     isPartial,
     remainingQuantity,
   };
+}
+
+// =============================================================================
+// RECEIVING SESSIONS
+// =============================================================================
+
+/**
+ * Start a new receiving session
+ */
+export async function startReceivingSession(
+  companyId: string,
+  name: string,
+  userId: string
+): Promise<ReceivingSession> {
+  return db.createReceivingSession({
+    company_id: companyId,
+    name,
+    status: 'active',
+    started_by: userId,
+    started_at: new Date().toISOString(),
+    total_items_received: 0,
+    total_eans_scanned: 0,
+  });
+}
+
+/**
+ * Close a receiving session and create a notification
+ */
+export async function closeReceivingSession(
+  sessionId: string,
+  userId: string,
+  userName: string,
+  companyId: string,
+  notes?: string
+): Promise<ReceivingSession> {
+  const session = await db.closeReceivingSession(sessionId, userId, notes);
+
+  // Create notification
+  await db.createReceivingSessionNotification(
+    companyId,
+    session.id,
+    session.name,
+    userName,
+    session.total_items_received,
+    session.total_eans_scanned
+  );
+
+  return session;
 }
 
 // =============================================================================
