@@ -86,6 +86,9 @@ import {
   Boxes,
   ClipboardCheck,
   RotateCcw,
+  Camera,
+  Images,
+  History,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -547,6 +550,22 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Images', path: createPageUrl('CreateImages'), icon: Image },
         { label: 'Videos', path: createPageUrl('CreateVideos'), icon: Video },
         { label: 'Library', path: createPageUrl('CreateLibrary'), icon: FolderOpen },
+      ]
+    };
+  }
+
+  // SYNC STUDIO routes
+  if (path.startsWith('/syncstudio')) {
+    return {
+      title: 'SYNC STUDIO',
+      color: 'cyan',
+      items: [
+        { label: 'Studio', path: createPageUrl('SyncStudioHome'), icon: Camera },
+        { label: 'Import', path: createPageUrl('SyncStudioImport'), icon: Package },
+        { label: 'Dashboard', path: createPageUrl('SyncStudioDashboard'), icon: LayoutDashboard },
+        { label: 'Photoshoot', path: createPageUrl('SyncStudioPhotoshoot'), icon: Sparkles },
+        { label: 'Results', path: createPageUrl('SyncStudioResults'), icon: Images },
+        { label: 'History', path: createPageUrl('SyncStudioReturn'), icon: History },
       ]
     };
   }
