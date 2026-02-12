@@ -27,7 +27,7 @@ import {
   Columns3, CalendarDays, Link2, FileCode, Users,
   CheckSquare, XCircle, Gauge, Tag, GitBranch,
   Download, AlertTriangle, History, X, GripVertical,
-  Route, Star, Lock, Zap, Trophy, Flag, TreePine,
+  Route, Star, Lock, Zap, Trophy, Flag, TreePine, Activity, Heart,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,9 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import TreeRoadmap from '@/components/admin/TreeRoadmap';
+import AdminCommander from '@/pages/admin/AdminCommander';
+import AdminAgentDashboard from '@/pages/admin/AdminAgentDashboard';
+import AdminHealthDashboard from '@/pages/admin/AdminHealthDashboard';
 
 // ─── Config ─────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -910,6 +913,7 @@ export default function AdminRoadmap() {
   const [filterCategory, setFilterCategory] = useState('all');
   const [sortBy, setSortBy] = useState('priority');
   const [viewMode, setViewMode] = useState('journey'); // default to journey
+  const [activeTab, setActiveTab] = useState('roadmap'); // roadmap | commander | agents | health
   const [expandedId, setExpandedId] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null); // for journey drawer
   const [modalOpen, setModalOpen] = useState(false);
@@ -1103,22 +1107,64 @@ export default function AdminRoadmap() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {stats.queued > 0 && <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 animate-pulse"><Bot className="w-3 h-3 mr-1" />{stats.queued} queued for auto-build</Badge>}
-          {stats.unread > 0 && <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 animate-pulse"><Bot className="w-3 h-3 mr-1" />{stats.unread} awaiting reply</Badge>}
-          <div className="flex bg-zinc-800/50 rounded-lg p-0.5 border border-zinc-700">
-            <Button variant="ghost" size="sm" onClick={() => setViewMode('journey')} className={cn('h-7 px-2', viewMode === 'journey' ? 'bg-zinc-700 text-white' : 'text-zinc-400')}><Route className="w-3.5 h-3.5" /></Button>
-            <Button variant="ghost" size="sm" onClick={() => setViewMode('list')} className={cn('h-7 px-2', viewMode === 'list' ? 'bg-zinc-700 text-white' : 'text-zinc-400')}><LayoutList className="w-3.5 h-3.5" /></Button>
-            <Button variant="ghost" size="sm" onClick={() => setViewMode('kanban')} className={cn('h-7 px-2', viewMode === 'kanban' ? 'bg-zinc-700 text-white' : 'text-zinc-400')}><Columns3 className="w-3.5 h-3.5" /></Button>
-            <Button variant="ghost" size="sm" onClick={() => setViewMode('tree')} className={cn('h-7 px-2', viewMode === 'tree' ? 'bg-zinc-700 text-white' : 'text-zinc-400')}><TreePine className="w-3.5 h-3.5" /></Button>
-          </div>
-          <Select value="" onValueChange={(v) => { if (v === 'csv') exportCSV(filtered); if (v === 'json') exportJSON(filtered); }}>
-            <SelectTrigger className="h-8 w-8 p-0 bg-zinc-800/50 border-zinc-700 text-zinc-400 [&>svg:last-child]:hidden"><Download className="w-3.5 h-3.5" /></SelectTrigger>
-            <SelectContent><SelectItem value="csv">Export CSV</SelectItem><SelectItem value="json">Export JSON</SelectItem></SelectContent>
-          </Select>
-          <Button variant="ghost" size="sm" onClick={fetchItems} className="text-zinc-400 hover:text-white"><RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} /></Button>
-          <Button onClick={() => { setEditItem(null); setPreselectedCategory(null); setModalOpen(true); }} className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"><Plus className="w-4 h-4 mr-2" />New Feature</Button>
+          {activeTab === 'roadmap' && stats.queued > 0 && <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 animate-pulse"><Bot className="w-3 h-3 mr-1" />{stats.queued} queued for auto-build</Badge>}
+          {activeTab === 'roadmap' && stats.unread > 0 && <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 animate-pulse"><Bot className="w-3 h-3 mr-1" />{stats.unread} awaiting reply</Badge>}
+          {activeTab === 'roadmap' && (
+            <>
+              <div className="flex bg-zinc-800/50 rounded-lg p-0.5 border border-zinc-700">
+                <Button variant="ghost" size="sm" onClick={() => setViewMode('journey')} className={cn('h-7 px-2', viewMode === 'journey' ? 'bg-zinc-700 text-white' : 'text-zinc-400')}><Route className="w-3.5 h-3.5" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => setViewMode('list')} className={cn('h-7 px-2', viewMode === 'list' ? 'bg-zinc-700 text-white' : 'text-zinc-400')}><LayoutList className="w-3.5 h-3.5" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => setViewMode('kanban')} className={cn('h-7 px-2', viewMode === 'kanban' ? 'bg-zinc-700 text-white' : 'text-zinc-400')}><Columns3 className="w-3.5 h-3.5" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => setViewMode('tree')} className={cn('h-7 px-2', viewMode === 'tree' ? 'bg-zinc-700 text-white' : 'text-zinc-400')}><TreePine className="w-3.5 h-3.5" /></Button>
+              </div>
+              <Select value="" onValueChange={(v) => { if (v === 'csv') exportCSV(filtered); if (v === 'json') exportJSON(filtered); }}>
+                <SelectTrigger className="h-8 w-8 p-0 bg-zinc-800/50 border-zinc-700 text-zinc-400 [&>svg:last-child]:hidden"><Download className="w-3.5 h-3.5" /></SelectTrigger>
+                <SelectContent><SelectItem value="csv">Export CSV</SelectItem><SelectItem value="json">Export JSON</SelectItem></SelectContent>
+              </Select>
+              <Button variant="ghost" size="sm" onClick={fetchItems} className="text-zinc-400 hover:text-white"><RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} /></Button>
+              <Button onClick={() => { setEditItem(null); setPreselectedCategory(null); setModalOpen(true); }} className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"><Plus className="w-4 h-4 mr-2" />New Feature</Button>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Tab Bar */}
+      <div className="flex items-center gap-1 border-b border-zinc-800 pb-0">
+        {[
+          { id: 'roadmap', label: 'Roadmap', icon: Map },
+          { id: 'commander', label: 'Commander', icon: MessageSquare },
+          { id: 'agents', label: 'Agents', icon: Bot },
+          { id: 'health', label: 'Health', icon: Heart },
+        ].map(tab => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px',
+                isActive
+                  ? 'text-red-400 border-red-500'
+                  : 'text-zinc-500 border-transparent hover:text-zinc-300 hover:border-zinc-700'
+              )}
+            >
+              <Icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'commander' ? (
+        <AdminCommander embedded />
+      ) : activeTab === 'agents' ? (
+        <AdminAgentDashboard embedded />
+      ) : activeTab === 'health' ? (
+        <AdminHealthDashboard embedded />
+      ) : (
+      <>
 
       {/* Stats */}
       <div className="grid grid-cols-7 gap-3">
@@ -1259,6 +1305,9 @@ export default function AdminRoadmap() {
           </div>
           <DragOverlay>{draggedItem ? (<Card className="bg-zinc-900 border-zinc-600 shadow-2xl w-[220px]"><CardContent className="p-3"><h4 className="text-xs font-medium text-white line-clamp-2">{draggedItem.title}</h4></CardContent></Card>) : null}</DragOverlay>
         </DndContext>
+      )}
+
+      </>
       )}
 
       {/* Journey Detail Drawer */}

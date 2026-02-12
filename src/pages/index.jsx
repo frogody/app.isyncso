@@ -341,9 +341,6 @@ import PlatformAdminGrowthNests from "./admin/AdminGrowthNests";
 import PlatformAdminDemos from "./admin/AdminDemos";
 import PlatformAdminRoadmap from "./admin/AdminRoadmap";
 import PlatformAdminStructuralTests from "./admin/AdminStructuralTests";
-import PlatformAdminCommander from "./admin/AdminCommander";
-import PlatformAdminAgents from "./admin/AdminAgentDashboard";
-import PlatformAdminHealth from "./admin/AdminHealthDashboard";
 
 import DemoExperience from "./DemoExperience";
 import RequestDemo from "./RequestDemo";
@@ -785,9 +782,6 @@ function PagesContent() {
                             <Route path="growth-nests" element={<PlatformAdminGrowthNests />} />
                             <Route path="demos" element={<PlatformAdminDemos />} />
                             <Route path="roadmap" element={<PlatformAdminRoadmap />} />
-                            <Route path="commander" element={<PlatformAdminCommander />} />
-                            <Route path="agents" element={<PlatformAdminAgents />} />
-                            <Route path="health" element={<PlatformAdminHealth />} />
                             <Route path="structural-tests" element={<PlatformAdminStructuralTests />} />
                         </Route>
                     </Routes>

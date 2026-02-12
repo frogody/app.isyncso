@@ -358,7 +358,7 @@ function ActivityItem({ activity, agentName }) {
 // MAIN COMPONENT
 // =============================================================================
 
-export default function AdminAgentDashboard() {
+export default function AdminAgentDashboard({ embedded = false }) {
   const { adminToken } = useAdmin();
 
   // State
@@ -522,10 +522,10 @@ export default function AdminAgentDashboard() {
   // Loading skeleton
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-zinc-950 p-6">
-        <div className="max-w-7xl mx-auto">
+      <div className={embedded ? "space-y-6" : "min-h-screen bg-zinc-950 p-6"}>
+        <div className={embedded ? "" : "max-w-7xl mx-auto"}>
           <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-zinc-800 rounded w-48" />
+            {!embedded && <div className="h-8 bg-zinc-800 rounded w-48" />}
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="h-48 bg-zinc-900/50 rounded-xl border border-zinc-800" />
@@ -544,11 +544,12 @@ export default function AdminAgentDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className={embedded ? "space-y-6" : "min-h-screen bg-zinc-950 p-6"}>
+      <div className={embedded ? "space-y-6" : "max-w-7xl mx-auto space-y-6"}>
         {/* ============================================================== */}
         {/* HEADER                                                         */}
         {/* ============================================================== */}
+        {!embedded && (
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-white flex items-center gap-2.5">
@@ -570,6 +571,7 @@ export default function AdminAgentDashboard() {
             Refresh
           </Button>
         </div>
+        )}
 
         {/* ============================================================== */}
         {/* AGENT GRID                                                     */}

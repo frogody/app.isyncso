@@ -100,7 +100,7 @@ function MessageBubble({ message, isLast }) {
   );
 }
 
-export default function AdminCommander() {
+export default function AdminCommander({ embedded = false }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -294,8 +294,9 @@ export default function AdminCommander() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col">
+    <div className={embedded ? "flex flex-col h-[calc(100vh-280px)] min-h-[500px]" : "min-h-screen bg-zinc-950 flex flex-col"}>
       {/* Header */}
+      {!embedded && (
       <div className="border-b border-zinc-800 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -320,6 +321,7 @@ export default function AdminCommander() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto py-4 space-y-1">

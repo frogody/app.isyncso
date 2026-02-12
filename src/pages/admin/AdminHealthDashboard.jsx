@@ -338,7 +338,7 @@ function RecentRunsTable({ runs }) {
 /*  Main Page Component                                                        */
 /* -------------------------------------------------------------------------- */
 
-export default function AdminHealthDashboard() {
+export default function AdminHealthDashboard({ embedded = false }) {
   // -- State ----------------------------------------------------------------
   const [latestScore, setLatestScore] = useState(null);
   const [recentRuns, setRecentRuns] = useState([]);
@@ -440,9 +440,10 @@ export default function AdminHealthDashboard() {
 
   // -- Render ---------------------------------------------------------------
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className={embedded ? "text-white" : "min-h-screen bg-zinc-950 text-white"}>
+      <div className={embedded ? "space-y-6" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
         {/* Header */}
+        {!embedded ? (
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30">
@@ -474,6 +475,17 @@ export default function AdminHealthDashboard() {
             )}
           </button>
         </div>
+        ) : (
+        <div className="flex justify-end">
+          <button
+            onClick={handleRunHealthCheck}
+            disabled={runningCheck}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-xs transition-colors"
+          >
+            {runningCheck ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Running...</> : <><Play className="w-3.5 h-3.5" />Run Health Check</>}
+          </button>
+        </div>
+        )}
 
         {/* Error banner */}
         <AnimatePresence>
