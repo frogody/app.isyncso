@@ -42,3 +42,6 @@ export * from './bolcom';
 
 // Returns
 export * from './returns';
+
+// Email Pool
+export * from './emailPool';

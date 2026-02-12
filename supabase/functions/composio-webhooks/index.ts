@@ -659,6 +659,175 @@ serve(async (req) => {
 
     console.log(`[composio-webhooks] v3 | trigger=${payload.trigger_slug} user=${payload.user_id} keys=${Object.keys(payload.data || {}).slice(0, 5).join(',')}`);
 
+    // ============================================
+    // EMAIL POOL CHECK — before user-level processing
+    // ============================================
+    if (
+      payload.trigger_slug === 'GMAIL_NEW_GMAIL_MESSAGE' ||
+      payload.trigger_slug === 'GMAIL_NEW_MESSAGE_RECEIVED' ||
+      payload.trigger_slug === 'OUTLOOK_MESSAGE_TRIGGER'
+    ) {
+      // Try to match by connected_account_id first, then by recipient email
+      let poolAccount: Record<string, unknown> | null = null;
+
+      if (payload.connected_account_id) {
+        const { data: pa } = await supabase
+          .from('email_pool_accounts')
+          .select('*')
+          .eq('composio_connected_account_id', payload.connected_account_id)
+          .eq('is_active', true)
+          .maybeSingle();
+        if (pa) poolAccount = pa;
+      }
+
+      if (!poolAccount) {
+        // Try matching by recipient email address
+        const emailTo = (payload.data.to as string) || '';
+        const toMatch = emailTo.match(/<([^>]+)>/) || [null, emailTo];
+        const recipientAddr = (toMatch[1] || '').toLowerCase().trim();
+        if (recipientAddr) {
+          const { data: pa } = await supabase
+            .from('email_pool_accounts')
+            .select('*')
+            .eq('email_address', recipientAddr)
+            .eq('is_active', true)
+            .maybeSingle();
+          if (pa) poolAccount = pa;
+        }
+      }
+
+      if (poolAccount) {
+        console.log(`[composio-webhooks] EMAIL POOL match: ${poolAccount.email_address} (${poolAccount.id})`);
+
+        // Normalize email fields
+        const emailData = payload.data as Record<string, string | undefined>;
+        const emailFrom = emailData.from || emailData.sender || '';
+        const emailSubject = emailData.subject || '';
+        const emailSnippet = emailData.snippet || emailData.message_text || '';
+        const emailBody = emailData.body || emailData.message_text || emailSnippet;
+        const emailDate = emailData.date || emailData.message_timestamp || new Date().toISOString();
+        const emailSourceId = emailData.id || emailData.message_id || '';
+        const emailThreadId = emailData.thread_id || '';
+
+        // Quick pattern match against supplier_email_patterns
+        let matchedSupplier: Record<string, unknown> | null = null;
+        const { data: patterns } = await supabase
+          .from('supplier_email_patterns')
+          .select('*')
+          .eq('company_id', poolAccount.company_id)
+          .eq('is_active', true);
+
+        if (patterns) {
+          const senderLower = emailFrom.toLowerCase();
+          const subjectLower = emailSubject.toLowerCase();
+          for (const pattern of patterns) {
+            const senderMatch = (pattern.sender_patterns as string[])?.some(
+              (p: string) => senderLower.includes(p.toLowerCase().replace('@', ''))
+            );
+            const subjectMatch = (pattern.subject_patterns as string[])?.some(
+              (p: string) => {
+                try { return new RegExp(p, 'i').test(subjectLower); }
+                catch { return subjectLower.includes(p.toLowerCase()); }
+              }
+            );
+            if (senderMatch || subjectMatch) {
+              matchedSupplier = pattern;
+              break;
+            }
+          }
+        }
+
+        // Check for duplicate by email_source_id
+        let isDuplicate = false;
+        if (emailSourceId) {
+          const { data: existingLog } = await supabase
+            .from('email_pool_sync_log')
+            .select('id')
+            .eq('email_source_id', emailSourceId)
+            .limit(1)
+            .maybeSingle();
+          if (existingLog) isDuplicate = true;
+        }
+
+        // Create sync log entry
+        const { data: syncLog } = await supabase
+          .from('email_pool_sync_log')
+          .insert({
+            company_id: poolAccount.company_id,
+            email_pool_account_id: poolAccount.id,
+            email_from: emailFrom,
+            email_to: emailData.to || (poolAccount.email_address as string),
+            email_subject: emailSubject,
+            email_snippet: emailSnippet.substring(0, 500),
+            email_body: (emailBody || '').substring(0, 10000),
+            email_date: emailDate,
+            email_source_id: emailSourceId,
+            email_thread_id: emailThreadId,
+            status: isDuplicate ? 'duplicate' : 'pending',
+            is_duplicate: isDuplicate,
+          })
+          .select('id')
+          .single();
+
+        if (isDuplicate || !syncLog) {
+          console.log(`[composio-webhooks] Pool email ${isDuplicate ? 'duplicate' : 'log failed'}, skipping`);
+          return new Response(
+            JSON.stringify({ success: true, processed: 'email_pool_duplicate' }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // If pattern matched or subject looks like an order, call process-order-email
+        const looksLikeOrder = matchedSupplier ||
+          /order|bestelling|bevestig|confirm|shipped|verzonden|tracking/i.test(emailSubject);
+
+        if (looksLikeOrder) {
+          console.log(`[composio-webhooks] Pool email → process-order-email (supplier: ${matchedSupplier?.supplier_name || 'unknown'})`);
+          const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+          const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+          // Fire-and-forget call to process-order-email
+          fetch(`${supabaseUrl}/functions/v1/process-order-email`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({
+              company_id: poolAccount.company_id,
+              email_pool_account_id: poolAccount.id,
+              sync_log_id: syncLog.id,
+              email_subject: emailSubject,
+              email_body: emailBody,
+              email_from: emailFrom,
+              email_date: emailDate,
+              matched_supplier: matchedSupplier ? {
+                supplier_id: matchedSupplier.supplier_id,
+                supplier_name: matchedSupplier.supplier_name,
+                country: matchedSupplier.country,
+                custom_extraction_hints: matchedSupplier.custom_extraction_hints,
+              } : null,
+              auto_approve_orders: poolAccount.auto_approve_orders,
+              auto_approve_threshold: poolAccount.auto_approve_threshold,
+              default_sales_channel: poolAccount.default_sales_channel,
+            }),
+          }).catch(err => console.error('[composio-webhooks] process-order-email call failed:', err));
+        } else {
+          // Not order-related, mark as skipped
+          await supabase
+            .from('email_pool_sync_log')
+            .update({ status: 'skipped', classification: 'other', classification_method: 'skipped' })
+            .eq('id', syncLog.id);
+        }
+
+        // Return early — pool emails don't go through user inbox flow
+        return new Response(
+          JSON.stringify({ success: true, processed: 'email_pool', sync_log_id: syncLog.id }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Store raw event for audit trail
     const { data: eventRecord, error: storeError } = await supabase
       .from("composio_webhook_events")

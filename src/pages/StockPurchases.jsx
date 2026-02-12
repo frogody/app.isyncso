@@ -556,6 +556,16 @@ function ExpenseCard({ expense, onReview, onRetry }) {
               Via email
             </Badge>
           )}
+          {expense.source_type === "email_pool" && (
+            <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+              Email Pool
+            </Badge>
+          )}
+          {expense.source_type === "invoice" && (
+            <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/30">
+              Invoice
+            </Badge>
+          )}
         </div>
 
         {isFailed ? (
@@ -1063,6 +1073,7 @@ export default function StockPurchases() {
   const [purchaseGroups, setPurchaseGroups] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [selectedExpense, setSelectedExpense] = useState(null);
@@ -1110,6 +1121,11 @@ export default function StockPurchases() {
     if (filter === "review" && !expense.needs_review) return false;
     if (filter === "approved" && expense.status !== "approved") return false;
     if (filter === "pending" && expense.status !== "pending_review") return false;
+
+    // Source filter
+    if (sourceFilter !== "all") {
+      if ((expense.source_type || "manual") !== sourceFilter) return false;
+    }
 
     // Group filter
     if (groupFilter !== "all") {
@@ -1391,6 +1407,18 @@ export default function StockPurchases() {
                 className="pl-9 bg-zinc-900/50 border-white/10"
               />
             </div>
+            {/* Source filter */}
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-[140px] bg-zinc-900/50 border-white/10 text-white">
+                <SelectValue placeholder="Source" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800/60">
+                <SelectItem value="all">All Sources</SelectItem>
+                <SelectItem value="manual">Manual</SelectItem>
+                <SelectItem value="invoice">Invoice</SelectItem>
+                <SelectItem value="email_pool">Email Pool</SelectItem>
+              </SelectContent>
+            </Select>
             {/* Group filter */}
             {purchaseGroups.length > 0 && (
               <Select value={groupFilter} onValueChange={setGroupFilter}>

@@ -1833,19 +1833,19 @@ Pre-configured patterns for common Dutch e-commerce platforms:
 
 ### 5.12 BUILD TASKS
 
-- [ ] `EP-1` Create `email_pool_accounts` table + RLS policies
-- [ ] `EP-2` Create `email_pool_sync_log` table + RLS policies
-- [ ] `EP-3` Create `supplier_email_patterns` table + seed data + RLS policies
-- [ ] `EP-4` Add columns to `stock_purchases` (source_type, email_pool refs, order_url, order_number, country)
-- [ ] `EP-5` Modify `composio-webhooks/index.ts`: add pool account detection + routing before user-level processing
-- [ ] `EP-6` Create `process-order-email/index.ts` edge function: classification + extraction + record creation
-- [ ] `EP-7` Create `EmailPoolSettings.jsx` page: account list, add, connect, settings, sync log
-- [ ] `EP-8` Add OAuth flow for pool accounts (extend composio-connect or use `useComposio` hook with pool entity IDs)
-- [ ] `EP-9` Add trigger subscription management for pool accounts
-- [ ] `EP-10` Modify `StockPurchases.jsx`: show email-pool sourced purchases with source badge
+- [x] `EP-1` Create `email_pool_accounts` table + RLS policies
+- [x] `EP-2` Create `email_pool_sync_log` table + RLS policies
+- [x] `EP-3` Create `supplier_email_patterns` table + seed data + RLS policies
+- [x] `EP-4` Add columns to `stock_purchases` (source_type, email_pool refs, order_url, order_number, country)
+- [x] `EP-5` Modify `composio-webhooks/index.ts`: add pool account detection + routing before user-level processing
+- [x] `EP-6` Create `process-order-email/index.ts` edge function: classification + extraction + record creation
+- [x] `EP-7` Create `EmailPoolSettings.jsx` page: account list, add, connect, settings, sync log
+- [x] `EP-8` Add OAuth flow for pool accounts (extend composio-connect or use `useComposio` hook with pool entity IDs)
+- [x] `EP-9` Add trigger subscription management for pool accounts
+- [x] `EP-10` Modify `StockPurchases.jsx`: show email-pool sourced purchases with source badge
 - [ ] `EP-11` Add notification on auto-synced order (in-app notification to designated users)
-- [ ] `EP-12` Add route + navigation for EmailPoolSettings
-- [ ] `EP-13` Add RBAC permission `email_pool.manage`
+- [x] `EP-12` Add route + navigation for EmailPoolSettings
+- [x] `EP-13` Add RBAC permission `email_pool.manage`
 - [ ] `EP-14` Test: connect test Gmail → send mock order confirmation → verify purchase created
 - [ ] `EP-15` Test: duplicate detection → same email doesn't create two purchases
 - [ ] `EP-16` Test: shipping update email → updates expected_delivery tracking info
@@ -3051,19 +3051,19 @@ CREATE INDEX idx_receiving_log_session ON receiving_log(receiving_session_id) WH
 - [x] `P5-5` Test: manual return + restock flow
 
 ### Email Pool Auto-Sync System
-- [ ] `EP-1` Create `email_pool_accounts` table + RLS policies
-- [ ] `EP-2` Create `email_pool_sync_log` table + RLS policies
-- [ ] `EP-3` Create `supplier_email_patterns` table + seed data + RLS policies
-- [ ] `EP-4` Add columns to `stock_purchases` (source_type, email_pool refs, order_url, order_number, country)
-- [ ] `EP-5` Modify `composio-webhooks/index.ts`: pool account detection + routing
-- [ ] `EP-6` Create `process-order-email/index.ts` edge function
-- [ ] `EP-7` Create `EmailPoolSettings.jsx` page with full UI
-- [ ] `EP-8` OAuth flow for pool accounts (Composio multi-account)
-- [ ] `EP-9` Trigger subscription management for pool accounts (Gmail: `GMAIL_NEW_GMAIL_MESSAGE`, Outlook: `OUTLOOK_MESSAGE_TRIGGER`)
-- [ ] `EP-10` Modify `StockPurchases.jsx`: email-pool source badge + filter
+- [x] `EP-1` Create `email_pool_accounts` table + RLS policies
+- [x] `EP-2` Create `email_pool_sync_log` table + RLS policies
+- [x] `EP-3` Create `supplier_email_patterns` table + seed data + RLS policies
+- [x] `EP-4` Add columns to `stock_purchases` (source_type, email_pool refs, order_url, order_number, country)
+- [x] `EP-5` Modify `composio-webhooks/index.ts`: pool account detection + routing
+- [x] `EP-6` Create `process-order-email/index.ts` edge function
+- [x] `EP-7` Create `EmailPoolSettings.jsx` page with full UI
+- [x] `EP-8` OAuth flow for pool accounts (Composio multi-account)
+- [x] `EP-9` Trigger subscription management for pool accounts (Gmail: `GMAIL_NEW_GMAIL_MESSAGE`, Outlook: `OUTLOOK_MESSAGE_TRIGGER`)
+- [x] `EP-10` Modify `StockPurchases.jsx`: email-pool source badge + filter
 - [ ] `EP-11` Optional: notification ONLY to the pool admin (connected_by user) on errors/failed extractions
-- [ ] `EP-12` Add route + navigation for EmailPoolSettings
-- [ ] `EP-13` Add RBAC permission `email_pool.manage`
+- [x] `EP-12` Add route + navigation for EmailPoolSettings
+- [x] `EP-13` Add RBAC permission `email_pool.manage`
 - [ ] `EP-14` Test: connect Gmail → mock order confirmation → verify purchase created
 - [ ] `EP-15` Test: duplicate detection (same email doesn't create two purchases)
 - [ ] `EP-16` Test: shipping update email → updates expected_delivery tracking

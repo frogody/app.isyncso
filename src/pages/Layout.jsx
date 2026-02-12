@@ -232,7 +232,7 @@ const navigationItems = [
     url: createPageUrl("Products"),
     icon: Package,
     permission: null, // Always visible - core feature
-    matchPatterns: ["/product", "/inventory", "/stockpurchases"], // Matches /products, /productdetail, /inventory*, etc.
+    matchPatterns: ["/product", "/inventory", "/stockpurchases", "/emailpoolsettings"], // Matches /products, /productdetail, /inventory*, /emailpool*, etc.
   },
   {
     title: "Inbox",
@@ -448,7 +448,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   }
 
   // PRODUCTS routes
-  if (path.startsWith('/products') || path.startsWith('/productdetail') || path.startsWith('/inventory') || path.startsWith('/stockpurchases')) {
+  if (path.startsWith('/products') || path.startsWith('/productdetail') || path.startsWith('/inventory') || path.startsWith('/stockpurchases') || path.startsWith('/emailpoolsettings')) {
     const { digitalEnabled = true, physicalEnabled = true, serviceEnabled = true } = productsSettings;
 
     // Build items list based on settings
@@ -474,6 +474,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       items.push({ label: 'Verification', path: createPageUrl('ShipmentVerification'), icon: ClipboardCheck });
       items.push({ label: 'Returns', path: createPageUrl('InventoryReturns'), icon: RotateCcw });
       items.push({ label: 'Stock Purchases', path: createPageUrl('StockPurchases'), icon: Receipt });
+      items.push({ label: 'Email Pool', path: createPageUrl('EmailPoolSettings'), icon: Mail });
       items.push({ label: 'Import', path: createPageUrl('InventoryImport'), icon: FileSpreadsheet });
     }
 

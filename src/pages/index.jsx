@@ -272,6 +272,7 @@ import ShipmentVerification from "./ShipmentVerification";
 import InventoryExpenses from "./InventoryExpenses";
 import InventoryReturns from "./InventoryReturns";
 import StockPurchases from "./StockPurchases";
+import EmailPoolSettings from "./EmailPoolSettings";
 
 import SyncAgent from "./SyncAgent";
 
@@ -620,6 +621,8 @@ const PAGES = {
     InventoryReturns: InventoryReturns,
 
     StockPurchases: StockPurchases,
+
+    EmailPoolSettings: EmailPoolSettings,
 
     SyncAgent: SyncAgent,
 
@@ -1061,6 +1064,8 @@ function PagesContent() {
                 <Route path="/ShipmentVerification" element={<ShipmentVerification />} />
 
                 <Route path="/StockPurchases" element={<StockPurchases />} />
+
+                <Route path="/EmailPoolSettings" element={<EmailPoolSettings />} />
 
                 <Route path="/SyncAgent" element={<SyncAgent />} />
 

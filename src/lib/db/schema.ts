@@ -773,6 +773,89 @@ export type ReturnItemInsert = Omit<ReturnItem, 'id' | 'created_at' | 'products'
 export type ReturnItemUpdate = Partial<Omit<ReturnItemInsert, 'return_id'>>;
 
 // =============================================================================
+// EMAIL POOL
+// =============================================================================
+
+export interface EmailPoolAccount {
+  id: string;
+  company_id: string;
+  email_address: string;
+  display_name?: string;
+  label?: string;
+  provider: 'gmail' | 'outlook';
+  composio_connected_account_id?: string;
+  composio_trigger_subscription_id?: string;
+  toolkit_slug?: string;
+  connection_status: 'disconnected' | 'connecting' | 'connected' | 'error' | 'expired';
+  connection_error?: string;
+  is_active: boolean;
+  auto_approve_orders: boolean;
+  auto_approve_threshold: number;
+  sync_to_finance: boolean;
+  default_sales_channel: 'b2b' | 'b2c' | 'undecided';
+  total_emails_received: number;
+  total_orders_synced: number;
+  total_errors: number;
+  last_email_at?: string;
+  last_order_synced_at?: string;
+  last_error_at?: string;
+  connected_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type EmailPoolAccountInsert = Omit<EmailPoolAccount, 'id' | 'toolkit_slug' | 'created_at' | 'updated_at' | 'total_emails_received' | 'total_orders_synced' | 'total_errors'>;
+export type EmailPoolAccountUpdate = Partial<Omit<EmailPoolAccountInsert, 'company_id' | 'email_address'>>;
+
+export interface EmailPoolSyncLog {
+  id: string;
+  company_id: string;
+  email_pool_account_id: string;
+  email_from?: string;
+  email_to?: string;
+  email_subject?: string;
+  email_snippet?: string;
+  email_body?: string;
+  email_date?: string;
+  email_source_id?: string;
+  email_thread_id?: string;
+  classification?: 'order_confirmation' | 'shipping_update' | 'return_notification' | 'other' | 'skipped' | 'error';
+  classification_confidence?: number;
+  classification_method?: 'pattern_match' | 'ai' | 'skipped';
+  extracted_data?: Record<string, unknown>;
+  extraction_confidence?: number;
+  stock_purchase_id?: string;
+  expense_id?: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'skipped' | 'duplicate';
+  error_message?: string;
+  processing_time_ms?: number;
+  is_duplicate: boolean;
+  duplicate_of_id?: string;
+  created_at: string;
+}
+
+export type EmailPoolSyncLogInsert = Omit<EmailPoolSyncLog, 'id' | 'created_at'>;
+export type EmailPoolSyncLogUpdate = Partial<Omit<EmailPoolSyncLogInsert, 'company_id' | 'email_pool_account_id'>>;
+
+export interface SupplierEmailPattern {
+  id: string;
+  company_id: string;
+  supplier_id?: string;
+  supplier_name: string;
+  sender_patterns: string[];
+  subject_patterns: string[];
+  country: string;
+  default_sales_channel: 'b2b' | 'b2c' | 'undecided';
+  custom_extraction_hints?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type SupplierEmailPatternInsert = Omit<SupplierEmailPattern, 'id' | 'created_at' | 'updated_at'>;
+export type SupplierEmailPatternUpdate = Partial<Omit<SupplierEmailPatternInsert, 'company_id'>>;
+
+// =============================================================================
 // BUSINESS CONSTANTS
 // =============================================================================
 
