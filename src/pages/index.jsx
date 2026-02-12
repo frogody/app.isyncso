@@ -269,6 +269,8 @@ import SyncStudioImport from "./SyncStudioImport";
 
 import SyncStudioDashboard from "./SyncStudioDashboard";
 
+import SyncStudioPhotoshoot from "./SyncStudioPhotoshoot";
+
 import InventoryReceiving from "./InventoryReceiving";
 
 import InventoryShipping from "./InventoryShipping";
@@ -618,6 +620,7 @@ const PAGES = {
     SyncStudioImport: SyncStudioImport,
 
     SyncStudioDashboard: SyncStudioDashboard,
+    SyncStudioPhotoshoot: SyncStudioPhotoshoot,
 
     InventoryReceiving: InventoryReceiving,
 
@@ -1066,6 +1069,7 @@ function PagesContent() {
                 <Route path="/SyncStudio" element={<SyncStudioHome />} />
                 <Route path="/SyncStudioImport" element={<SyncStudioImport />} />
                 <Route path="/SyncStudioDashboard" element={<SyncStudioDashboard />} />
+                <Route path="/SyncStudioPhotoshoot" element={<SyncStudioPhotoshoot />} />
 
                 <Route path="/InventoryReceiving" element={<InventoryReceiving />} />
 
