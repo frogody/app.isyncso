@@ -263,6 +263,18 @@ import CreateVideos from "./CreateVideos";
 
 import CreateLibrary from "./CreateLibrary";
 
+import SyncStudioHome from "./SyncStudioHome";
+
+import SyncStudioImport from "./SyncStudioImport";
+
+import SyncStudioDashboard from "./SyncStudioDashboard";
+
+import SyncStudioPhotoshoot from "./SyncStudioPhotoshoot";
+
+import SyncStudioResults from "./SyncStudioResults";
+
+import SyncStudioReturn from "./SyncStudioReturn";
+
 import InventoryReceiving from "./InventoryReceiving";
 
 import InventoryShipping from "./InventoryShipping";
@@ -608,6 +620,15 @@ const PAGES = {
     CreateVideos: CreateVideos,
 
     CreateLibrary: CreateLibrary,
+
+    SyncStudioHome: SyncStudioHome,
+
+    SyncStudioImport: SyncStudioImport,
+
+    SyncStudioDashboard: SyncStudioDashboard,
+    SyncStudioPhotoshoot: SyncStudioPhotoshoot,
+    SyncStudioResults: SyncStudioResults,
+    SyncStudioReturn: SyncStudioReturn,
 
     InventoryReceiving: InventoryReceiving,
 
@@ -1055,6 +1076,14 @@ function PagesContent() {
                 <Route path="/CreateVideos" element={<CreateVideos />} />
 
                 <Route path="/CreateLibrary" element={<CreateLibrary />} />
+
+                <Route path="/SyncStudioHome" element={<SyncStudioHome />} />
+                <Route path="/SyncStudio" element={<SyncStudioHome />} />
+                <Route path="/SyncStudioImport" element={<SyncStudioImport />} />
+                <Route path="/SyncStudioDashboard" element={<SyncStudioDashboard />} />
+                <Route path="/SyncStudioPhotoshoot" element={<SyncStudioPhotoshoot />} />
+                <Route path="/SyncStudioResults" element={<SyncStudioResults />} />
+                <Route path="/SyncStudioReturn" element={<SyncStudioReturn />} />
 
                 <Route path="/InventoryReceiving" element={<InventoryReceiving />} />
 
