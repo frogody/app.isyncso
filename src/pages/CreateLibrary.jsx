@@ -108,9 +108,42 @@ export default function CreateLibrary() {
         }));
         setContent(transformed);
       } else {
+        // Query generated_content table
         const filters = { company_id: user.company_id };
-        const data = await GeneratedContent.filter(filters, sortBy, 100);
-        setContent(data || []);
+        const generatedData = await GeneratedContent.filter(filters, sortBy, 100);
+
+        // Also query sync_studio_generated_images and merge for 'all', 'image', and 'recent' filters
+        if (filterType === 'all' || filterType === 'image' || filterType === 'recent') {
+          try {
+            const { data: studioImages } = await supabase
+              .from('sync_studio_generated_images')
+              .select('*, sync_studio_jobs!inner(user_id, vibe)')
+              .eq('sync_studio_jobs.user_id', user.id)
+              .eq('status', 'completed')
+              .order('created_at', { ascending: false });
+
+            const transformedStudio = (studioImages || []).map(img => ({
+              id: img.image_id,
+              url: img.image_url,
+              name: `Shot ${img.shot_number} - ${img.product_ean}`,
+              content_type: 'image',
+              created_at: img.created_at,
+              tags: ['photo', 'sync_studio'],
+              is_favorite: false,
+              metadata: { source: 'sync_studio', product_ean: img.product_ean, shot_number: img.shot_number },
+            }));
+
+            // Merge and sort by created_at descending
+            const merged = [...(generatedData || []), ...transformedStudio];
+            merged.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            setContent(merged);
+          } catch (err) {
+            console.error('Error loading studio images:', err);
+            setContent(generatedData || []);
+          }
+        } else {
+          setContent(generatedData || []);
+        }
       }
     } catch (error) {
       console.error('Error loading content:', error);

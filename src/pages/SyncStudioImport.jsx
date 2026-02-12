@@ -14,6 +14,7 @@ import {
   Palette,
   Clock,
   ArrowLeft,
+  Square,
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
@@ -219,6 +220,9 @@ export default function SyncStudioImport() {
 
   // Error
   const [error, setError] = useState(null);
+
+  // Cancel
+  const [cancelling, setCancelling] = useState(false);
 
   // Timing
   const [startTime] = useState(() => Date.now());
@@ -493,22 +497,12 @@ export default function SyncStudioImport() {
           return;
         }
 
-        // 2) No active import — start one
-        const startData = await callEdgeFunction({
-          action: 'start',
-          userId: user.id,
-          companyId: user.company_id,
-        });
-
-        if (!mountedRef.current) return;
-        updateStats(startData);
-        setStage('importing');
-
-        if (!startData.hasMore || startData.status === 'planning' || startData.status === 'complete') {
-          handleComplete(startData.importJobId);
-        } else {
-          startPolling(startData.importJobId, startData.nextPage || 2);
+        // 2) No active import — redirect to home instead of auto-starting
+        //    (auto-starting costs credits and can happen accidentally)
+        if (mountedRef.current) {
+          navigate('/SyncStudioHome', { replace: true });
         }
+        return;
       } catch (err) {
         if (mountedRef.current) {
           console.error('[SyncStudioImport] init error:', err);
@@ -526,6 +520,22 @@ export default function SyncStudioImport() {
       if (planPollingRef.current) { clearInterval(planPollingRef.current); planPollingRef.current = null; }
     };
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // -- Cancel handler --
+  const handleCancel = useCallback(() => {
+    if (cancelling) return;
+    const confirmed = window.confirm(
+      'Are you sure you want to cancel? You can resume later from the dashboard.',
+    );
+    if (!confirmed) return;
+
+    setCancelling(true);
+    // Stop all polling
+    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+    if (planPollingRef.current) { clearInterval(planPollingRef.current); planPollingRef.current = null; }
+    mountedRef.current = false;
+    navigate('/SyncStudioDashboard');
+  }, [cancelling, navigate]);
 
   // -- Retry handler --
   const handleRetry = () => {
@@ -646,6 +656,18 @@ export default function SyncStudioImport() {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Cancel button */}
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/50 text-zinc-400 hover:text-zinc-300 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+              >
+                {cancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />}
+                {cancelling ? 'Cancelling...' : 'Cancel Import'}
+              </button>
+            </div>
           </motion.div>
         )}
 
@@ -694,6 +716,18 @@ export default function SyncStudioImport() {
             <div className="flex items-center gap-2 text-xs text-zinc-600">
               <Loader2 className="w-3 h-3 animate-spin shrink-0 text-yellow-400" />
               <span>Analyzing categories, prices & existing images...</span>
+            </div>
+
+            {/* Cancel button */}
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/50 text-zinc-400 hover:text-zinc-300 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+              >
+                {cancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />}
+                {cancelling ? 'Cancelling...' : 'Cancel Planning'}
+              </button>
             </div>
           </motion.div>
         )}

@@ -132,6 +132,29 @@ const corsHeaders = {
 // Prompt Builder
 // ============================================
 
+/**
+ * Simplify a product title by taking only the brand + product type,
+ * stripping specs like dimensions, materials codes, EAN, prices.
+ */
+function simplifyProductTitle(title: string | undefined): string | null {
+  if (!title) return null;
+  // Remove common spec patterns: dimensions (1.4mm, 24cm, 16m-16mm),
+  // parenthetical specs, numeric codes, price patterns
+  let clean = title
+    .replace(/\([^)]*\)/g, " ")                   // remove parenthetical specs
+    .replace(/\d+(\.\d+)?\s*(mm|cm|m|g|kg|ct|ml)\b/gi, " ")  // dimensions
+    .replace(/\d{4,}/g, " ")                       // long numbers (EAN, codes)
+    .replace(/€\s*\d+/g, " ")                      // prices
+    .replace(/\b\d+[x×]\d+/g, " ")                // dimensions like 10x20
+    .replace(/\s{2,}/g, " ")                       // collapse whitespace
+    .trim();
+  // Take first ~60 chars to keep it concise
+  if (clean.length > 60) {
+    clean = clean.substring(0, 60).replace(/\s\S*$/, "");
+  }
+  return clean || null;
+}
+
 function buildPrompt(
   shot: { description?: string; background?: string; mood?: string; focus?: string },
   product: { title?: string },
@@ -161,16 +184,26 @@ function buildPrompt(
   // Variety suffix
   const variety = settings?.variety_mode ? VARIETY_SUFFIXES[settings.variety_mode] : null;
 
+  // Simplify product title to avoid FLUX rendering specs as text
+  const cleanTitle = simplifyProductTitle(product.title);
+
+  // Also simplify shot.description — strip specs that leaked in from product title
+  let cleanDescription = shot.description || "";
+  if (product.title && cleanDescription.includes(product.title)) {
+    cleanDescription = cleanDescription.replace(product.title, cleanTitle || "the product");
+  }
+
   return (
     [
-      shot.description,
+      cleanDescription,
       background ? `Background: ${background}` : null,
       mood ? `Mood: ${mood}` : null,
       lighting ? `Lighting: ${lighting}` : null,
       composition ? `Composition: ${composition}` : null,
       shot.focus ? `Focus: ${shot.focus}` : null,
-      product.title ? `Product: ${product.title}` : null,
+      cleanTitle ? `Product: ${cleanTitle}` : null,
       variety || null,
+      "Do not include any text, words, numbers, labels, or watermarks in the image.",
     ]
       .filter(Boolean)
       .join(". ") + "."
