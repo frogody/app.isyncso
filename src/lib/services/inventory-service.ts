@@ -1010,7 +1010,7 @@ export async function processReturnItem(
   action: 'restock' | 'dispose' | 'inspect',
   userId?: string
 ): Promise<ReturnItem> {
-  const item = (await db.listReturnItems('')).find((i) => i.id === itemId);
+  const item = await db.getReturnItem(itemId);
   if (!item) throw new Error('Return item not found');
 
   if (action === 'restock') {
