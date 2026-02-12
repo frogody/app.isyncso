@@ -93,6 +93,14 @@ const CATEGORY_COLORS = {
   other: '#71717a',
 };
 
+const MODULE_LABELS = {
+  platform: 'Platform Core', crm: 'CRM', finance: 'Finance', products: 'Products',
+  'sync-agent': 'SYNC Agent', talent: 'Talent', growth: 'Growth & Create',
+  marketplace: 'Marketplace', admin: 'Admin Panel', sentinel: 'Sentinel',
+  integrations: 'Integrations', infrastructure: 'Infrastructure', learn: 'Learn',
+  create: 'Create', other: 'Other',
+};
+
 const AGENTS = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'unassigned'];
 
 const SUGGESTED_TAGS = [
@@ -273,18 +281,21 @@ function DependencyPicker({ selected, onChange, allItems, currentId }) {
   );
 }
 
-// ─── Add/Edit Modal ─────────────────────────────────────────────────
-function RoadmapItemModal({ open, onClose, onSave, editItem, allItems }) {
-  const [form, setForm] = useState({ title: '', description: '', priority: 'medium', category: 'other', status: 'requested', assignee: 'unassigned', effort: '', target_date: '', files_affected: '', depends_on: [], orchestra_task_id: '', tags: [] });
+// ─── Add/Edit Modal — Module-first creation flow ────────────────────
+function RoadmapItemModal({ open, onClose, onSave, editItem, allItems, preselectedCategory }) {
+  const [step, setStep] = useState(editItem ? 'form' : 'module'); // 'module' | 'priority' | 'form'
+  const [form, setForm] = useState({ title: '', description: '', priority: 'medium', category: 'other', status: 'requested', assignee: 'unassigned', effort: '', target_date: '', files_affected: '', depends_on: [], orchestra_task_id: '', tags: [], auto_queued: false });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (editItem) {
-      setForm({ title: editItem.title || '', description: editItem.description || '', priority: editItem.priority || 'medium', category: editItem.category || 'other', status: editItem.status || 'requested', assignee: editItem.assignee || 'unassigned', effort: editItem.effort || '', target_date: editItem.target_date || '', files_affected: (editItem.files_affected || []).join('\n'), depends_on: editItem.depends_on || [], orchestra_task_id: editItem.orchestra_task_id || '', tags: editItem.tags || [] });
+      setStep('form');
+      setForm({ title: editItem.title || '', description: editItem.description || '', priority: editItem.priority || 'medium', category: editItem.category || 'other', status: editItem.status || 'requested', assignee: editItem.assignee || 'unassigned', effort: editItem.effort || '', target_date: editItem.target_date || '', files_affected: (editItem.files_affected || []).join('\n'), depends_on: editItem.depends_on || [], orchestra_task_id: editItem.orchestra_task_id || '', tags: editItem.tags || [], auto_queued: editItem.auto_queued || false });
     } else {
-      setForm({ title: '', description: '', priority: 'medium', category: 'other', status: 'requested', assignee: 'unassigned', effort: '', target_date: '', files_affected: '', depends_on: [], orchestra_task_id: '', tags: [] });
+      setStep(preselectedCategory ? 'priority' : 'module');
+      setForm({ title: '', description: '', priority: 'medium', category: preselectedCategory || 'other', status: 'requested', assignee: 'unassigned', effort: '', target_date: '', files_affected: '', depends_on: [], orchestra_task_id: '', tags: [], auto_queued: false });
     }
-  }, [editItem, open]);
+  }, [editItem, open, preselectedCategory]);
 
   const handleSave = async () => {
     if (!form.title.trim()) { toast.error('Title is required'); return; }
@@ -294,41 +305,135 @@ function RoadmapItemModal({ open, onClose, onSave, editItem, allItems }) {
     setSaving(false); onClose();
   };
 
+  const catCounts = useMemo(() => {
+    const counts = {};
+    allItems.forEach(i => { counts[i.category] = (counts[i.category] || 0) + 1; });
+    return counts;
+  }, [allItems]);
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle className="text-white">{editItem ? 'Edit Feature Request' : 'New Feature Request'}</DialogTitle></DialogHeader>
-        <div className="space-y-4">
-          <div><Label className="text-zinc-400 text-xs">Title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g., Add bulk SMS outreach" className="bg-zinc-800/50 border-zinc-700 text-white mt-1" /></div>
-          <div><Label className="text-zinc-400 text-xs">Description (supports markdown)</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describe the feature..." className="bg-zinc-800/50 border-zinc-700 text-white mt-1 min-h-[100px]" /></div>
-          <div className="grid grid-cols-3 gap-3">
-            <div><Label className="text-zinc-400 text-xs">Priority</Label><Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}><SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white mt-1"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(PRIORITY_CONFIG).map(([k, v]) => (<SelectItem key={k} value={k}>{v.label}</SelectItem>))}</SelectContent></Select></div>
-            <div><Label className="text-zinc-400 text-xs">Category</Label><Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}><SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white mt-1"><SelectValue /></SelectTrigger><SelectContent>{CATEGORIES.map(c => (<SelectItem key={c} value={c} className="capitalize">{c}</SelectItem>))}</SelectContent></Select></div>
-            <div><Label className="text-zinc-400 text-xs">Status</Label><Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}><SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white mt-1"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(STATUS_CONFIG).map(([k, v]) => (<SelectItem key={k} value={k}>{v.label}</SelectItem>))}</SelectContent></Select></div>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div><Label className="text-zinc-400 text-xs">Assignee</Label><Select value={form.assignee} onValueChange={(v) => setForm({ ...form, assignee: v })}><SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white mt-1"><SelectValue /></SelectTrigger><SelectContent>{AGENTS.map(a => (<SelectItem key={a} value={a}>{a}</SelectItem>))}</SelectContent></Select></div>
-            <div><Label className="text-zinc-400 text-xs">Effort</Label><Select value={form.effort || 'none'} onValueChange={(v) => setForm({ ...form, effort: v === 'none' ? '' : v })}><SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white mt-1"><SelectValue placeholder="–" /></SelectTrigger><SelectContent><SelectItem value="none">–</SelectItem>{Object.entries(EFFORT_CONFIG).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}</SelectContent></Select></div>
-            <div><Label className="text-zinc-400 text-xs">Target Date</Label><Input type="date" value={form.target_date} onChange={(e) => setForm({ ...form, target_date: e.target.value })} className="bg-zinc-800/50 border-zinc-700 text-white mt-1" /></div>
-          </div>
-          <div><Label className="text-zinc-400 text-xs">Tags</Label><div className="mt-1"><TagInput tags={form.tags} onChange={(tags) => setForm({ ...form, tags })} /></div></div>
-          <div><Label className="text-zinc-400 text-xs">Dependencies</Label><div className="mt-1"><DependencyPicker selected={form.depends_on} onChange={(deps) => setForm({ ...form, depends_on: deps })} allItems={allItems} currentId={editItem?.id} /></div></div>
-          <div><Label className="text-zinc-400 text-xs">Orchestra Task ID</Label><Input value={form.orchestra_task_id} onChange={(e) => setForm({ ...form, orchestra_task_id: e.target.value })} placeholder="e.g., T015" className="bg-zinc-800/50 border-zinc-700 text-white mt-1" /></div>
-          <div><Label className="text-zinc-400 text-xs">Files Affected (one per line)</Label><Textarea value={form.files_affected} onChange={(e) => setForm({ ...form, files_affected: e.target.value })} placeholder="src/components/foo.jsx" className="bg-zinc-800/50 border-zinc-700 text-white mt-1 font-mono text-xs min-h-[60px]" /></div>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose} className="text-zinc-400">Cancel</Button>
-          <Button onClick={handleSave} disabled={saving} className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}{editItem ? 'Update' : 'Create'}
-          </Button>
-        </DialogFooter>
+      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* Step 1: Pick Module */}
+        {step === 'module' && (
+          <>
+            <DialogHeader><DialogTitle className="text-white">Add Feature — Pick Module</DialogTitle></DialogHeader>
+            <p className="text-xs text-zinc-500 -mt-2">Which part of iSyncSO does this belong to?</p>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {CATEGORIES.map(cat => {
+                const color = CATEGORY_COLORS[cat] || '#71717a';
+                const label = MODULE_LABELS[cat] || cat;
+                return (
+                  <button key={cat} onClick={() => { setForm(f => ({ ...f, category: cat })); setStep('priority'); }}
+                    className="flex items-center gap-2.5 p-3 rounded-xl border border-zinc-800 hover:border-zinc-600 transition-all text-left group hover:bg-white/[0.02]">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: color + '20', border: `1px solid ${color}30` }}>
+                      <span className="text-xs font-black" style={{ color }}>{(catCounts[cat] || 0)}</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-zinc-300 group-hover:text-white">{label}</p>
+                      <p className="text-[9px] text-zinc-600">{catCounts[cat] || 0} features</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Step 2: Pick Priority */}
+        {step === 'priority' && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="text-white flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[form.category] }} />
+                {MODULE_LABELS[form.category] || form.category} — Set Priority
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-xs text-zinc-500 -mt-2">How urgent is this?</p>
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              {[
+                { key: 'critical', label: 'Critical', desc: 'Blocking everything, do now', emoji: '🔴', border: 'border-red-500/40 hover:border-red-500' },
+                { key: 'high', label: 'High', desc: 'Important, do this week', emoji: '🟠', border: 'border-orange-500/40 hover:border-orange-500' },
+                { key: 'medium', label: 'Medium', desc: 'Normal priority', emoji: '🔵', border: 'border-blue-500/40 hover:border-blue-500' },
+                { key: 'low', label: 'Low', desc: 'Nice to have, whenever', emoji: '⚪', border: 'border-zinc-600/40 hover:border-zinc-500' },
+              ].map(p => (
+                <button key={p.key} onClick={() => { setForm(f => ({ ...f, priority: p.key })); setStep('form'); }}
+                  className={cn('flex items-center gap-3 p-4 rounded-xl border transition-all text-left hover:bg-white/[0.02]', p.border,
+                    form.priority === p.key && 'ring-1 ring-white/20')}>
+                  <span className="text-2xl">{p.emoji}</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{p.label}</p>
+                    <p className="text-[10px] text-zinc-500">{p.desc}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-start mt-1">
+              <Button variant="ghost" size="sm" onClick={() => setStep('module')} className="text-zinc-500 text-xs">← Back to modules</Button>
+            </div>
+          </>
+        )}
+
+        {/* Step 3: Details Form */}
+        {step === 'form' && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="text-white flex items-center gap-2">
+                {!editItem && <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[form.category] }} />}
+                {editItem ? 'Edit Feature' : `New ${MODULE_LABELS[form.category] || form.category} Feature`}
+                {!editItem && <Badge className={cn('text-[9px] px-1.5 py-0 ml-1', PRIORITY_CONFIG[form.priority]?.color)}>{form.priority}</Badge>}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div><Label className="text-zinc-400 text-xs">Title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g., Add bulk SMS outreach" className="bg-zinc-800/50 border-zinc-700 text-white mt-1" autoFocus /></div>
+              <div><Label className="text-zinc-400 text-xs">Description (markdown)</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What should be built? Be specific..." className="bg-zinc-800/50 border-zinc-700 text-white mt-1 min-h-[80px]" /></div>
+              {editItem && (
+                <div className="grid grid-cols-3 gap-3">
+                  <div><Label className="text-zinc-400 text-xs">Priority</Label><Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}><SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white mt-1"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(PRIORITY_CONFIG).map(([k, v]) => (<SelectItem key={k} value={k}>{v.label}</SelectItem>))}</SelectContent></Select></div>
+                  <div><Label className="text-zinc-400 text-xs">Category</Label><Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}><SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white mt-1"><SelectValue /></SelectTrigger><SelectContent>{CATEGORIES.map(c => (<SelectItem key={c} value={c} className="capitalize">{c}</SelectItem>))}</SelectContent></Select></div>
+                  <div><Label className="text-zinc-400 text-xs">Status</Label><Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}><SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white mt-1"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(STATUS_CONFIG).map(([k, v]) => (<SelectItem key={k} value={k}>{v.label}</SelectItem>))}</SelectContent></Select></div>
+                </div>
+              )}
+              <div className="grid grid-cols-3 gap-3">
+                <div><Label className="text-zinc-400 text-xs">Effort</Label><Select value={form.effort || 'none'} onValueChange={(v) => setForm({ ...form, effort: v === 'none' ? '' : v })}><SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white mt-1"><SelectValue placeholder="–" /></SelectTrigger><SelectContent><SelectItem value="none">–</SelectItem>{Object.entries(EFFORT_CONFIG).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}</SelectContent></Select></div>
+                <div><Label className="text-zinc-400 text-xs">Assignee</Label><Select value={form.assignee} onValueChange={(v) => setForm({ ...form, assignee: v })}><SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white mt-1"><SelectValue /></SelectTrigger><SelectContent>{AGENTS.map(a => (<SelectItem key={a} value={a}>{a}</SelectItem>))}</SelectContent></Select></div>
+                <div><Label className="text-zinc-400 text-xs">Target Date</Label><Input type="date" value={form.target_date} onChange={(e) => setForm({ ...form, target_date: e.target.value })} className="bg-zinc-800/50 border-zinc-700 text-white mt-1" /></div>
+              </div>
+              <div><Label className="text-zinc-400 text-xs">Tags</Label><div className="mt-1"><TagInput tags={form.tags} onChange={(tags) => setForm({ ...form, tags })} /></div></div>
+              <div><Label className="text-zinc-400 text-xs">Files Affected (one per line)</Label><Textarea value={form.files_affected} onChange={(e) => setForm({ ...form, files_affected: e.target.value })} placeholder="src/components/foo.jsx" className="bg-zinc-800/50 border-zinc-700 text-white mt-1 font-mono text-xs min-h-[50px]" /></div>
+
+              {/* Auto-build toggle */}
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-zinc-800 bg-zinc-900/50">
+                <button onClick={() => setForm(f => ({ ...f, auto_queued: !f.auto_queued }))}
+                  className={cn('w-10 h-5 rounded-full transition-all relative', form.auto_queued ? 'bg-cyan-500' : 'bg-zinc-700')}>
+                  <div className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow', form.auto_queued ? 'left-[22px]' : 'left-0.5')} />
+                </button>
+                <div>
+                  <p className="text-xs font-medium text-white">Queue for Auto-Build</p>
+                  <p className="text-[9px] text-zinc-500">Claude Code picks this up automatically and builds it</p>
+                </div>
+                {form.auto_queued && <Bot className="w-4 h-4 text-cyan-400 ml-auto" />}
+              </div>
+            </div>
+            <DialogFooter className="flex justify-between items-center">
+              <div>{!editItem && <Button variant="ghost" size="sm" onClick={() => setStep('priority')} className="text-zinc-500 text-xs">← Back</Button>}</div>
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={onClose} className="text-zinc-400">Cancel</Button>
+                <Button onClick={handleSave} disabled={saving} className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                  {form.auto_queued ? 'Create & Queue' : (editItem ? 'Update' : 'Create')}
+                </Button>
+              </div>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
 }
 
 // ─── Journey Detail Drawer ──────────────────────────────────────────
-function JourneyDetailDrawer({ item, onClose, allItems, onAddComment, onToggleSubtask, onAddSubtask, onRemoveSubtask, onEdit, onStatusChange }) {
+function JourneyDetailDrawer({ item, onClose, allItems, onAddComment, onToggleSubtask, onAddSubtask, onRemoveSubtask, onEdit, onStatusChange, onToggleAutoQueue }) {
   if (!item) return null;
   const status = STATUS_CONFIG[item.status] || STATUS_CONFIG.requested;
   const priority = PRIORITY_CONFIG[item.priority] || PRIORITY_CONFIG.medium;
@@ -364,13 +469,25 @@ function JourneyDetailDrawer({ item, onClose, allItems, onAddComment, onToggleSu
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Status changer */}
-        <div className="flex items-center gap-2">
+        {/* Status + Auto-queue */}
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-zinc-500">Status:</span>
           <Select value={item.status} onValueChange={(v) => onStatusChange(item.id, v)}>
             <SelectTrigger className="h-7 w-32 text-[10px] bg-zinc-800/50 border-zinc-700"><SelectValue /></SelectTrigger>
             <SelectContent>{Object.entries(STATUS_CONFIG).map(([key, cfg]) => (<SelectItem key={key} value={key} className="text-xs">{cfg.label}</SelectItem>))}</SelectContent>
           </Select>
+          <Button
+            size="sm"
+            onClick={() => onToggleAutoQueue(item.id, !item.auto_queued)}
+            className={cn('h-7 text-[10px] gap-1.5 ml-auto',
+              item.auto_queued
+                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/30'
+                : 'bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700 hover:text-white'
+            )}
+          >
+            <Bot className="w-3 h-3" />
+            {item.auto_queued ? 'Queued for Claude' : 'Queue for Claude'}
+          </Button>
         </div>
 
         {/* Description */}
@@ -418,14 +535,6 @@ function JourneyDetailDrawer({ item, onClose, allItems, onAddComment, onToggleSu
 // JOURNEY ROAD — Module-based winding path
 // Big nodes = app modules (expandable), sub-features branch off.
 // ============================================================
-
-const MODULE_LABELS = {
-  platform: 'Platform Core', crm: 'CRM', finance: 'Finance', products: 'Products',
-  'sync-agent': 'SYNC Agent', talent: 'Talent', growth: 'Growth & Create',
-  marketplace: 'Marketplace', admin: 'Admin Panel', sentinel: 'Sentinel',
-  integrations: 'Integrations', infrastructure: 'Infrastructure', learn: 'Learn',
-  other: 'Other',
-};
 
 const ACHIEVEMENTS = [
   { at: 10, label: '10 Features!', icon: '🔥' },
@@ -806,6 +915,7 @@ export default function AdminRoadmap() {
   const [editItem, setEditItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [activeId, setActiveId] = useState(null);
+  const [preselectedCategory, setPreselectedCategory] = useState(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor));
 
@@ -846,7 +956,7 @@ export default function AdminRoadmap() {
 
   // ─── CRUD ─────────────────────────────────────────────────────
   const handleSave = async (form) => {
-    const payload = { title: form.title, description: form.description, priority: form.priority, category: form.category, status: form.status, assignee: form.assignee === 'unassigned' ? null : form.assignee, effort: form.effort, target_date: form.target_date, files_affected: form.files_affected, depends_on: form.depends_on, orchestra_task_id: form.orchestra_task_id, tags: form.tags };
+    const payload = { title: form.title, description: form.description, priority: form.priority, category: form.category, status: form.status, assignee: form.assignee === 'unassigned' ? null : form.assignee, effort: form.effort, target_date: form.target_date, files_affected: form.files_affected, depends_on: form.depends_on, orchestra_task_id: form.orchestra_task_id, tags: form.tags, auto_queued: form.auto_queued || false };
     if (form.id) {
       const oldItem = items.find(i => i.id === form.id);
       const { error } = await supabase.from('roadmap_items').update(payload).eq('id', form.id);
@@ -871,6 +981,15 @@ export default function AdminRoadmap() {
     setItems(prev => prev.map(i => i.id === id ? { ...i, status: newStatus } : i));
     if (selectedItem?.id === id) setSelectedItem(prev => ({ ...prev, status: newStatus }));
     await addHistory(id, `Status: ${oldItem?.status} → ${newStatus}`);
+  };
+
+  const handleToggleAutoQueue = async (id, queued) => {
+    const { error } = await supabase.from('roadmap_items').update({ auto_queued: queued }).eq('id', id);
+    if (error) { toast.error('Failed to update queue'); return; }
+    setItems(prev => prev.map(i => i.id === id ? { ...i, auto_queued: queued } : i));
+    if (selectedItem?.id === id) setSelectedItem(prev => ({ ...prev, auto_queued: queued }));
+    await addHistory(id, queued ? 'Queued for auto-build' : 'Removed from auto-build queue');
+    toast.success(queued ? 'Queued for Claude auto-build' : 'Removed from queue');
   };
 
   const handleDelete = async () => {
@@ -958,6 +1077,7 @@ export default function AdminRoadmap() {
     done: items.filter(i => i.status === 'done').length,
     unread: items.filter(i => (i.comments || []).length > 0 && i.comments[i.comments.length - 1]?.author === 'claude').length,
     stale: items.filter(isStale).length,
+    queued: items.filter(i => i.auto_queued).length,
   };
 
   // ─── Kanban groups ────────────────────────────────────────
@@ -982,6 +1102,7 @@ export default function AdminRoadmap() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {stats.queued > 0 && <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 animate-pulse"><Bot className="w-3 h-3 mr-1" />{stats.queued} queued for auto-build</Badge>}
           {stats.unread > 0 && <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 animate-pulse"><Bot className="w-3 h-3 mr-1" />{stats.unread} awaiting reply</Badge>}
           <div className="flex bg-zinc-800/50 rounded-lg p-0.5 border border-zinc-700">
             <Button variant="ghost" size="sm" onClick={() => setViewMode('journey')} className={cn('h-7 px-2', viewMode === 'journey' ? 'bg-zinc-700 text-white' : 'text-zinc-400')}><Route className="w-3.5 h-3.5" /></Button>
@@ -993,18 +1114,19 @@ export default function AdminRoadmap() {
             <SelectContent><SelectItem value="csv">Export CSV</SelectItem><SelectItem value="json">Export JSON</SelectItem></SelectContent>
           </Select>
           <Button variant="ghost" size="sm" onClick={fetchItems} className="text-zinc-400 hover:text-white"><RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} /></Button>
-          <Button onClick={() => { setEditItem(null); setModalOpen(true); }} className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"><Plus className="w-4 h-4 mr-2" />New Request</Button>
+          <Button onClick={() => { setEditItem(null); setPreselectedCategory(null); setModalOpen(true); }} className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"><Plus className="w-4 h-4 mr-2" />New Feature</Button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-6 gap-3">
+      <div className="grid grid-cols-7 gap-3">
         {[
           { label: 'Total', value: stats.total, color: 'text-white' },
           { label: 'Requested', value: stats.requested, color: 'text-zinc-400' },
           { label: 'In Progress', value: stats.in_progress, color: 'text-yellow-400' },
           { label: 'Done', value: stats.done, color: 'text-green-400' },
           { label: 'Awaiting Reply', value: stats.unread, color: 'text-purple-400' },
+          { label: 'Queued', value: stats.queued, color: 'text-cyan-400' },
           { label: 'Stale', value: stats.stale, color: 'text-orange-400' },
         ].map(s => (
           <Card key={s.label} className="bg-zinc-900/50 border-zinc-800"><CardContent className="p-3 text-center"><p className="text-[10px] text-zinc-500">{s.label}</p><p className={cn('text-xl font-bold', s.color)}>{s.value}</p></CardContent></Card>
@@ -1143,12 +1265,13 @@ export default function AdminRoadmap() {
             onRemoveSubtask={handleRemoveSubtask}
             onEdit={(i) => { setEditItem(i); setModalOpen(true); }}
             onStatusChange={handleStatusChange}
+            onToggleAutoQueue={handleToggleAutoQueue}
           />
         )}
       </AnimatePresence>
 
       {/* Modal + Delete Dialog */}
-      <RoadmapItemModal open={modalOpen} onClose={() => { setModalOpen(false); setEditItem(null); }} onSave={handleSave} editItem={editItem} allItems={items} />
+      <RoadmapItemModal open={modalOpen} onClose={() => { setModalOpen(false); setEditItem(null); setPreselectedCategory(null); }} onSave={handleSave} editItem={editItem} allItems={items} preselectedCategory={preselectedCategory} />
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent className="bg-zinc-900 border-zinc-800">
           <AlertDialogHeader><AlertDialogTitle className="text-white">Delete Feature Request</AlertDialogTitle><AlertDialogDescription className="text-zinc-400">Delete "{deleteTarget?.title}"? This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
