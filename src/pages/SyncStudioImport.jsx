@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   ArrowRight,
   AlertTriangle,
+  Palette,
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
@@ -19,6 +20,7 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxf
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
 
 const EDGE_FUNCTION = 'sync-studio-import-catalog';
+const PLAN_EDGE_FUNCTION = 'sync-studio-generate-plans';
 const POLL_INTERVAL_MS = 2000;
 const COMPLETE_REDIRECT_DELAY_MS = 2000;
 
@@ -113,12 +115,12 @@ export default function SyncStudioImport() {
   const { user } = useUser();
 
   // Import state
-  const [stage, setStage] = useState('loading'); // loading | importing | complete | error
+  const [stage, setStage] = useState('loading'); // loading | importing | planning | complete | error
   const [importJobId, setImportJobId] = useState(null);
   const [nextPage, setNextPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  // Stats
+  // Import stats
   const [totalProducts, setTotalProducts] = useState(0);
   const [estimatedTotal, setEstimatedTotal] = useState(0);
   const [categories, setCategories] = useState(0);
@@ -126,22 +128,29 @@ export default function SyncStudioImport() {
   const [images, setImages] = useState(0);
   const [currentProduct, setCurrentProduct] = useState('');
 
+  // Planning stats
+  const [plannedProducts, setPlannedProducts] = useState(0);
+  const [totalShotsPlanned, setTotalShotsPlanned] = useState(0);
+  const [planningPage, setPlanningPage] = useState(null);
+
   // Error
   const [error, setError] = useState(null);
 
   // Refs for cleanup
   const pollingRef = useRef(null);
+  const planPollingRef = useRef(null);
   const mountedRef = useRef(true);
   const continueInFlightRef = useRef(false);
+  const planInFlightRef = useRef(false);
 
   // -- Edge function caller --
-  const callEdgeFunction = useCallback(async (body) => {
+  const callEdgeFunction = useCallback(async (body, fnName = EDGE_FUNCTION) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
       throw new Error('Not authenticated. Please log in again.');
     }
 
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/${EDGE_FUNCTION}`, {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/${fnName}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -179,20 +188,107 @@ export default function SyncStudioImport() {
     if (data.hasMore != null) setHasMore(data.hasMore);
   }, []);
 
-  // -- Handle import completion --
-  const handleComplete = useCallback(() => {
+  // -- Handle full completion (after planning) --
+  const handleAllDone = useCallback(() => {
     if (!mountedRef.current) return;
     setStage('complete');
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current);
-      pollingRef.current = null;
-    }
+    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+    if (planPollingRef.current) { clearInterval(planPollingRef.current); planPollingRef.current = null; }
     setTimeout(() => {
-      if (mountedRef.current) {
-        navigate('/SyncStudioDashboard');
-      }
+      if (mountedRef.current) navigate('/SyncStudioDashboard');
     }, COMPLETE_REDIRECT_DELAY_MS);
   }, [navigate]);
+
+  // -- Planning: continue next chunk --
+  const continuePlanning = useCallback(async (jobId, page) => {
+    if (!mountedRef.current || planInFlightRef.current) return;
+    planInFlightRef.current = true;
+    try {
+      const data = await callEdgeFunction({
+        action: 'continue',
+        userId: user?.id,
+        companyId: user?.company_id,
+        importJobId: jobId,
+        page,
+      }, PLAN_EDGE_FUNCTION);
+      if (!mountedRef.current) return;
+      if (data.totalPlanned != null) setPlannedProducts(data.totalPlanned);
+      if (data.totalShots != null) setTotalShotsPlanned(data.totalShots);
+      if (data.nextPage != null) setPlanningPage(data.nextPage);
+      if (data.status === 'completed' || !data.hasMore) {
+        handleAllDone();
+      }
+    } catch (err) {
+      if (mountedRef.current) { setError(err.message); setStage('error'); }
+    } finally {
+      planInFlightRef.current = false;
+    }
+  }, [callEdgeFunction, user, handleAllDone]);
+
+  // -- Planning: poll + continue loop --
+  const startPlanPolling = useCallback((jobId, initialPage) => {
+    if (planPollingRef.current) clearInterval(planPollingRef.current);
+    let currentPage = initialPage;
+    planPollingRef.current = setInterval(async () => {
+      if (!mountedRef.current) { clearInterval(planPollingRef.current); return; }
+      if (planInFlightRef.current) return;
+      try {
+        const statusData = await callEdgeFunction({
+          action: 'status',
+          userId: user?.id,
+          companyId: user?.company_id,
+          importJobId: jobId,
+        }, PLAN_EDGE_FUNCTION);
+        if (!mountedRef.current) return;
+        if (statusData.planned_products != null) setPlannedProducts(statusData.planned_products);
+        if (statusData.total_shots_planned != null) setTotalShotsPlanned(statusData.total_shots_planned);
+        if (statusData.status === 'completed') { handleAllDone(); return; }
+        // Continue next chunk
+        if (currentPage) {
+          await continuePlanning(jobId, currentPage);
+          currentPage = null; // will be set by continuePlanning via setPlanningPage
+        }
+      } catch (err) {
+        // Transient errors ok, don't crash
+      }
+    }, POLL_INTERVAL_MS);
+  }, [callEdgeFunction, user, handleAllDone, continuePlanning]);
+
+  // -- Start planning phase --
+  const startPlanning = useCallback(async (jobId) => {
+    if (!mountedRef.current) return;
+    setStage('planning');
+    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+    try {
+      const data = await callEdgeFunction({
+        action: 'start',
+        userId: user?.id,
+        companyId: user?.company_id,
+        importJobId: jobId,
+      }, PLAN_EDGE_FUNCTION);
+      if (!mountedRef.current) return;
+      if (data.totalPlanned != null) setPlannedProducts(data.totalPlanned);
+      if (data.totalShots != null) setTotalShotsPlanned(data.totalShots);
+      if (data.status === 'completed' || !data.hasMore) {
+        handleAllDone();
+      } else {
+        startPlanPolling(jobId, data.nextPage);
+      }
+    } catch (err) {
+      if (mountedRef.current) { setError(err.message); setStage('error'); }
+    }
+  }, [callEdgeFunction, user, handleAllDone, startPlanPolling]);
+
+  // -- Handle import completion (transitions to planning) --
+  const handleComplete = useCallback((jobId) => {
+    if (!mountedRef.current) return;
+    const jid = jobId || importJobId;
+    if (jid) {
+      startPlanning(jid);
+    } else {
+      handleAllDone();
+    }
+  }, [importJobId, startPlanning, handleAllDone]);
 
   // -- Continue import (fetch next page) --
   const continueImport = useCallback(async (jobId, page) => {
@@ -212,7 +308,7 @@ export default function SyncStudioImport() {
       updateStats(data);
 
       if (!data.hasMore || data.status === 'planning' || data.status === 'complete') {
-        handleComplete();
+        handleComplete(data.importJobId || jobId);
       }
     } catch (err) {
       if (mountedRef.current) {
@@ -252,9 +348,9 @@ export default function SyncStudioImport() {
         if (!mountedRef.current) return;
         updateStats(statusData);
 
-        // Import is done
+        // Import is done — transition to planning
         if (statusData.status === 'planning' || statusData.status === 'complete' || !statusData.hasMore) {
-          handleComplete();
+          handleComplete(statusData.importJobId || currentJobId);
           return;
         }
 
@@ -291,20 +387,26 @@ export default function SyncStudioImport() {
         if (!mountedRef.current) return;
         updateStats(statusData);
 
-        // Already complete
-        if (statusData.status === 'planning' || statusData.status === 'complete') {
-          handleComplete();
+        // Already fully completed — go to dashboard
+        if (statusData.status === 'completed' || statusData.status === 'complete') {
+          handleAllDone();
           return;
         }
 
-        // Active import found -- resume
+        // In planning phase — resume planning
+        if (statusData.status === 'planning' && statusData.importJobId) {
+          handleComplete(statusData.importJobId);
+          return;
+        }
+
+        // Active import found — resume
         if (statusData.status === 'importing' && statusData.importJobId) {
           setStage('importing');
           startPolling(statusData.importJobId, statusData.nextPage || 1);
           return;
         }
 
-        // 2) No active import -- start one
+        // 2) No active import — start one
         const startData = await callEdgeFunction({
           action: 'start',
           userId: user.id,
@@ -316,7 +418,7 @@ export default function SyncStudioImport() {
         setStage('importing');
 
         if (!startData.hasMore || startData.status === 'planning' || startData.status === 'complete') {
-          handleComplete();
+          handleComplete(startData.importJobId);
         } else {
           startPolling(startData.importJobId, startData.nextPage || 2);
         }
@@ -333,10 +435,8 @@ export default function SyncStudioImport() {
 
     return () => {
       mountedRef.current = false;
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
+      if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+      if (planPollingRef.current) { clearInterval(planPollingRef.current); planPollingRef.current = null; }
     };
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -435,6 +535,54 @@ export default function SyncStudioImport() {
           </motion.div>
         )}
 
+        {/* ----- PLANNING ----- */}
+        {stage === 'planning' && (
+          <motion.div
+            key="planning"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.4 }}
+            className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8 max-w-lg w-full"
+          >
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                <Palette className="w-5 h-5 text-cyan-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-white">Creating shoot plans...</h2>
+                <p className="text-sm text-zinc-500">Preparing photoshoot briefs for each product</p>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mb-6">
+              <ImportProgressBar
+                current={plannedProducts}
+                total={totalProducts || plannedProducts + 10}
+              />
+            </div>
+
+            {/* Planning Stats */}
+            <div className="mb-5">
+              <p className="text-xs text-zinc-600 uppercase tracking-wider font-medium mb-3">
+                Plans generated
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <StatPill icon={Package} label="products" value={plannedProducts} />
+                <StatPill icon={Camera} label="total shots" value={totalShotsPlanned} />
+              </div>
+            </div>
+
+            {/* Spinner */}
+            <div className="flex items-center gap-2 text-xs text-zinc-600">
+              <Loader2 className="w-3 h-3 animate-spin shrink-0 text-cyan-400" />
+              <span>Analyzing categories, prices & existing images...</span>
+            </div>
+          </motion.div>
+        )}
+
         {/* ----- COMPLETE ----- */}
         {stage === 'complete' && (
           <motion.div
@@ -454,35 +602,18 @@ export default function SyncStudioImport() {
               <CheckCircle2 className="w-7 h-7 text-cyan-400" />
             </motion.div>
 
-            <h2 className="text-xl font-semibold text-white mb-2">Products imported!</h2>
+            <h2 className="text-xl font-semibold text-white mb-2">Studio ready!</h2>
 
             <p className="text-sm text-zinc-400 mb-6">
               <span className="text-white font-medium tabular-nums">
                 <AnimatedCounter value={totalProducts} />
               </span>
               {' products'}
-              {categories > 0 && (
-                <>
-                  {' '}
-                  <span className="text-zinc-600 mx-1">&middot;</span>
-                  {' '}
-                  <span className="text-white font-medium tabular-nums">
-                    <AnimatedCounter value={categories} />
-                  </span>
-                  {' categories'}
-                </>
-              )}
-              {images > 0 && (
-                <>
-                  {' '}
-                  <span className="text-zinc-600 mx-1">&middot;</span>
-                  {' '}
-                  <span className="text-white font-medium tabular-nums">
-                    <AnimatedCounter value={images} />
-                  </span>
-                  {'+ images'}
-                </>
-              )}
+              <span className="text-zinc-600 mx-1">&middot;</span>
+              <span className="text-white font-medium tabular-nums">
+                <AnimatedCounter value={totalShotsPlanned} />
+              </span>
+              {' shots planned'}
             </p>
 
             <div className="flex items-center justify-center gap-2 text-sm text-zinc-500">
