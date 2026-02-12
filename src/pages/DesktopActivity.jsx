@@ -84,7 +84,7 @@ export default function DesktopActivity() {
   const [searchParams] = useSearchParams();
   const urlTab = searchParams.get('tab') || 'overview';
   const [activeTab, setActiveTab] = useState(urlTab);
-  const [dateRange, setDateRange] = useState('7d');
+  const [dateRange, setDateRange] = useState('90d');
 
   useEffect(() => {
     setActiveTab(urlTab);
@@ -147,8 +147,11 @@ export default function DesktopActivity() {
       case '90d':
         startDate.setDate(endDate.getDate() - 90);
         break;
+      case 'all':
+        startDate = new Date('2025-01-01');
+        break;
       default:
-        startDate.setDate(endDate.getDate() - 7);
+        startDate.setDate(endDate.getDate() - 90);
     }
 
     return { startDate, endDate };
@@ -414,6 +417,7 @@ export default function DesktopActivity() {
                   <SelectItem value="7d">Last 7 days</SelectItem>
                   <SelectItem value="30d">Last 30 days</SelectItem>
                   <SelectItem value="90d">Last 90 days</SelectItem>
+                  <SelectItem value="all">All time</SelectItem>
                 </SelectContent>
               </Select>
 
