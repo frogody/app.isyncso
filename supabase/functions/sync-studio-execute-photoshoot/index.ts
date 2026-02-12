@@ -18,6 +18,110 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const CHUNK_SIZE = 5; // Images per invocation (avoid timeout)
 
+// ============================================
+// Shoot Settings Types & Constants
+// ============================================
+
+interface ShootSettings {
+  vibe?: string | null;
+  background?: string;
+  lighting?: string;
+  aspect_ratio?: string;
+  width?: number;
+  height?: number;
+  batch_size?: number;
+  variety_mode?: string;
+}
+
+const VIBES: Record<string, {
+  name: string;
+  background_hint: string;
+  mood_hint: string;
+  lighting_hint: string;
+  composition_hint: string;
+}> = {
+  clean_studio: {
+    name: "Clean Studio",
+    background_hint: "Pure white seamless studio background",
+    mood_hint: "Clean, precise, commercial",
+    lighting_hint: "Bright even studio lighting, minimal shadows",
+    composition_hint: "Centered product, generous white space",
+  },
+  lifestyle: {
+    name: "Lifestyle",
+    background_hint: "Natural home or lifestyle environment",
+    mood_hint: "Warm, inviting, relatable",
+    lighting_hint: "Soft natural window light",
+    composition_hint: "Product in context with complementary items",
+  },
+  luxury: {
+    name: "Luxury",
+    background_hint: "Premium surfaces: marble, dark wood, velvet",
+    mood_hint: "Aspirational, premium, elegant",
+    lighting_hint: "Dramatic directional lighting with rich shadows",
+    composition_hint: "Generous negative space, editorial framing",
+  },
+  minimalist: {
+    name: "Minimalist",
+    background_hint: "Monochrome surface, subtle texture",
+    mood_hint: "Minimal, serene, refined",
+    lighting_hint: "Soft diffused light, minimal contrast",
+    composition_hint: "Rule of thirds, maximum simplicity",
+  },
+  bold_vibrant: {
+    name: "Bold & Vibrant",
+    background_hint: "Bold colored gradient or textured background",
+    mood_hint: "Energetic, playful, attention-grabbing",
+    lighting_hint: "Bright, saturated, high-key lighting",
+    composition_hint: "Dynamic angles, bold crop",
+  },
+  natural: {
+    name: "Natural",
+    background_hint: "Natural materials: linen, wood, stone, plants",
+    mood_hint: "Organic, authentic, earthy",
+    lighting_hint: "Golden hour or soft outdoor light",
+    composition_hint: "Organic arrangement with natural props",
+  },
+  editorial: {
+    name: "Editorial",
+    background_hint: "Architectural or styled editorial set",
+    mood_hint: "Artistic, curated, fashion-forward",
+    lighting_hint: "Dramatic studio lighting with intentional shadows",
+    composition_hint: "Off-center, cropped, magazine-style framing",
+  },
+  dark_moody: {
+    name: "Dark & Moody",
+    background_hint: "Dark, deep-toned background with subtle texture",
+    mood_hint: "Moody, cinematic, mysterious",
+    lighting_hint: "Low-key lighting, dramatic rim light, deep shadows",
+    composition_hint: "Chiaroscuro, product emerging from darkness",
+  },
+};
+
+const LIGHTING_PROMPTS: Record<string, string> = {
+  natural: "Natural daylight, soft shadows",
+  studio: "Professional studio lighting, even illumination",
+  dramatic: "Dramatic directional lighting with deep shadows",
+  soft: "Soft diffused lighting, minimal contrast",
+  golden_hour: "Warm golden hour sunlight",
+  neon: "Neon-lit environment with colorful reflections",
+};
+
+const BG_PROMPTS: Record<string, string> = {
+  white: "Pure white seamless background",
+  gradient: "Smooth gradient background",
+  textured: "Textured surface background",
+  environment: "Real-world environment setting",
+  abstract: "Abstract artistic background",
+  transparent: "Clean isolated subject on transparent background",
+};
+
+const VARIETY_SUFFIXES: Record<string, string> = {
+  conservative: "",
+  moderate: "Vary the angle and arrangement slightly from other shots.",
+  creative: "Use a unique creative angle, unexpected crop, or artistic composition that stands out.",
+};
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -31,14 +135,42 @@ const corsHeaders = {
 function buildPrompt(
   shot: { description?: string; background?: string; mood?: string; focus?: string },
   product: { title?: string },
+  settings?: ShootSettings | null,
 ): string {
+  const vibe = settings?.vibe ? VIBES[settings.vibe] : null;
+
+  // Background priority: explicit setting > vibe hint > shot background
+  const background =
+    (settings?.background && settings.background !== "auto" ? BG_PROMPTS[settings.background] : null) ||
+    vibe?.background_hint ||
+    shot.background ||
+    null;
+
+  // Mood priority: vibe hint > shot mood
+  const mood = vibe?.mood_hint || shot.mood || null;
+
+  // Lighting priority: explicit setting > vibe hint > nothing
+  const lighting =
+    (settings?.lighting && settings.lighting !== "auto" ? LIGHTING_PROMPTS[settings.lighting] : null) ||
+    vibe?.lighting_hint ||
+    null;
+
+  // Composition: vibe hint (additive)
+  const composition = vibe?.composition_hint || null;
+
+  // Variety suffix
+  const variety = settings?.variety_mode ? VARIETY_SUFFIXES[settings.variety_mode] : null;
+
   return (
     [
       shot.description,
-      shot.background ? `Background: ${shot.background}` : null,
-      shot.mood ? `Mood: ${shot.mood}` : null,
+      background ? `Background: ${background}` : null,
+      mood ? `Mood: ${mood}` : null,
+      lighting ? `Lighting: ${lighting}` : null,
+      composition ? `Composition: ${composition}` : null,
       shot.focus ? `Focus: ${shot.focus}` : null,
       product.title ? `Product: ${product.title}` : null,
+      variety || null,
     ]
       .filter(Boolean)
       .join(". ") + "."
@@ -70,6 +202,7 @@ async function processImage(
   },
   userId: string,
   companyId: string,
+  settings?: ShootSettings | null,
 ): Promise<"completed" | "failed"> {
   const { image_id, plan_id, product_ean, shot_number } = image;
 
@@ -124,7 +257,7 @@ async function processImage(
     }
 
     // Call the existing generate-image edge function
-    const prompt = buildPrompt(shot, product);
+    const prompt = buildPrompt(shot, product, settings);
 
     const genResponse = await fetch(
       `${SUPABASE_URL}/functions/v1/generate-image`,
@@ -142,6 +275,8 @@ async function processImage(
           style: "photorealistic",
           user_id: userId,
           company_id: companyId,
+          width: settings?.width || 1024,
+          height: settings?.height || 1024,
         }),
       },
     );
@@ -196,6 +331,7 @@ async function processChunk(
   jobId: string,
   userId: string,
   companyId: string,
+  settings?: ShootSettings | null,
 ): Promise<{ completed: number; failed: number; processed: number }> {
   // Fetch the next CHUNK_SIZE pending images
   const { data: pendingImages, error: fetchErr } = await supabase
@@ -218,7 +354,7 @@ async function processChunk(
   let failed = 0;
 
   for (const image of pendingImages) {
-    const result = await processImage(supabase, image, userId, companyId);
+    const result = await processImage(supabase, image, userId, companyId, settings);
     if (result === "completed") {
       completed++;
     } else {
@@ -241,7 +377,7 @@ serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   try {
-    const { action, userId, companyId, jobId } = await req.json();
+    const { action, userId, companyId, jobId, shootSettings } = await req.json();
 
     if (!userId) {
       return json({ error: "Missing userId" }, 400);
@@ -289,6 +425,8 @@ serve(async (req) => {
             total_images: totalImages,
             images_completed: 0,
             images_failed: 0,
+            vibe: shootSettings?.vibe || null,
+            shoot_settings: shootSettings || null,
           })
           .select("job_id")
           .single();
@@ -360,6 +498,7 @@ serve(async (req) => {
           newJobId,
           userId,
           effectiveCompanyId,
+          shootSettings as ShootSettings | null,
         );
 
         // Update job counters
@@ -432,11 +571,13 @@ serve(async (req) => {
 
         // 2-3. Process next chunk
         const effectiveCompanyId = companyId || userId;
+        const jobSettings = job.shoot_settings as ShootSettings | null;
         const chunkResult = await processChunk(
           supabase,
           jobId,
           userId,
           effectiveCompanyId,
+          jobSettings,
         );
 
         // 4. Update job counters (cumulative)

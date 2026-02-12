@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
-import { SyncStudioNav } from '@/components/sync-studio';
+import { SyncStudioNav, ShootConfigurator } from '@/components/sync-studio';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxfntqleig.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
@@ -882,6 +882,18 @@ export default function SyncStudioDashboard() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
 
+  // Shoot settings
+  const [shootSettings, setShootSettings] = useState({
+    vibe: null,
+    background: 'auto',
+    lighting: 'auto',
+    aspect_ratio: '1:1',
+    width: 1024,
+    height: 1024,
+    batch_size: 3,
+    variety_mode: 'balanced',
+  });
+
   // -- Edge function caller --
   const callEdgeFunction = useCallback(async (body, fnName = APPROVE_EDGE_FUNCTION) => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -1211,6 +1223,7 @@ export default function SyncStudioDashboard() {
           action: 'start',
           userId: user?.id,
           companyId: user?.company_id || user?.id,
+          shootSettings,
         },
         EXECUTE_EDGE_FUNCTION
       );
@@ -1225,7 +1238,7 @@ export default function SyncStudioDashboard() {
       console.error('[SyncStudioDashboard] start photoshoot error:', err);
       setIsStarting(false);
     }
-  }, [callEdgeFunction, user, navigate]);
+  }, [callEdgeFunction, user, navigate, shootSettings]);
 
   // -- Loading state --
   if (loading) {
@@ -1289,7 +1302,22 @@ export default function SyncStudioDashboard() {
           <div className="mb-3">
             <SyncStudioNav />
           </div>
+        </div>
+      </div>
 
+      {/* Shoot Style Configurator */}
+      <div className="max-w-4xl mx-auto px-4 pt-3 pb-1">
+        <ShootConfigurator
+          settings={shootSettings}
+          onSettingsChange={setShootSettings}
+          sampleShot={plans[0]?.shots?.[0] || null}
+          sampleProduct={productMap[plans[0]?.product_ean] || null}
+        />
+      </div>
+
+      {/* Stats bar */}
+      <div className="bg-zinc-900/40 border-b border-zinc-800/40">
+        <div className="max-w-4xl mx-auto px-4 py-3">
           {/* Stats row */}
           <div className="flex items-center justify-between gap-3 mb-2.5 flex-wrap">
             <div className="flex items-center gap-3 text-sm flex-wrap">

@@ -265,6 +265,8 @@ import CreateVideos from "./CreateVideos";
 
 import CreateLibrary from "./CreateLibrary";
 
+import ContentCalendar from "./ContentCalendar";
+
 import SyncStudioHome from "./SyncStudioHome";
 
 import SyncStudioImport from "./SyncStudioImport";
@@ -626,6 +628,8 @@ const PAGES = {
     CreateVideos: CreateVideos,
 
     CreateLibrary: CreateLibrary,
+
+    ContentCalendar: ContentCalendar,
 
     SyncStudioHome: SyncStudioHome,
 
@@ -1086,6 +1090,8 @@ function PagesContent() {
                 <Route path="/CreateVideos" element={<CreateVideos />} />
 
                 <Route path="/CreateLibrary" element={<CreateLibrary />} />
+
+                <Route path="/ContentCalendar" element={<ContentCalendar />} />
 
                 <Route path="/SyncStudioHome" element={<SyncStudioHome />} />
                 <Route path="/SyncStudio" element={<SyncStudioHome />} />

@@ -6,7 +6,7 @@ import {
   Palette, Image, Video, FolderOpen, Plus, ArrowRight, ArrowUpRight,
   Sparkles, Clock, FileImage, Film, Layers, Wand2, Zap, Play,
   Camera, Clapperboard, Brush, Download, Eye, ChevronRight, Star,
-  Sun, Moon,
+  Sun, Moon, CalendarDays,
 } from 'lucide-react';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { CreatePageTransition } from '@/components/create/ui';
@@ -140,6 +140,16 @@ const TOOLS = [
     route: 'CreateBranding',
     gradient: 'from-yellow-500 to-yellow-300',
     features: ['Logo Design', 'Color Systems', 'Brand Kit'],
+  },
+  {
+    key: 'calendar',
+    title: 'Content Calendar',
+    subtitle: 'Plan & Schedule',
+    description: 'Plan, schedule, and auto-publish social media posts. AI writes from your daily journal.',
+    icon: CalendarDays,
+    route: 'ContentCalendar',
+    gradient: 'from-blue-500 to-cyan-400',
+    features: ['Schedule Posts', 'Journal AI', 'Multi-Platform'],
   },
 ];
 

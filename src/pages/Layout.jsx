@@ -538,14 +538,15 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
     };
   }
 
-  // CREATE routes (includes Sync Studio)
-  if (path.startsWith('/create') || path.startsWith('/syncstudio')) {
+  // CREATE routes (includes Sync Studio, Content Calendar)
+  if (path.startsWith('/create') || path.startsWith('/syncstudio') || path.startsWith('/contentcalendar')) {
     return {
       title: 'CREATE',
       color: 'yellow',
       agent: 'create',
       items: [
         { label: 'Dashboard', path: createPageUrl('Create'), icon: LayoutDashboard },
+        { label: 'Calendar', path: createPageUrl('ContentCalendar'), icon: Calendar },
         { label: 'Branding', path: createPageUrl('CreateBranding'), icon: Palette },
         { label: 'Images', path: createPageUrl('CreateImages'), icon: Image },
         { label: 'Videos', path: createPageUrl('CreateVideos'), icon: Video },

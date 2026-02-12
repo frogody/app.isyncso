@@ -556,6 +556,32 @@ export const ToolHelpers = {
   },
 
   /**
+   * LinkedIn: Social posting
+   */
+  linkedin: {
+    createPost: (text, mediaUrl = null) => ({
+      toolSlug: 'LINKEDIN_CREATE_POST',
+      arguments: {
+        text,
+        ...(mediaUrl && { media_url: mediaUrl }),
+      },
+    }),
+  },
+
+  /**
+   * Twitter/X: Social posting
+   */
+  twitter: {
+    postTweet: (text, mediaUrl = null) => ({
+      toolSlug: 'TWITTER_POST_TWEET',
+      arguments: {
+        text,
+        ...(mediaUrl && { media_url: mediaUrl }),
+      },
+    }),
+  },
+
+  /**
    * Google Sheets: Spreadsheet operations
    */
   googleSheets: {
