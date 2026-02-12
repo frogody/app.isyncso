@@ -20,7 +20,7 @@ import {
   CheckCircle, Globe, Linkedin, Clock, Target, Shield, Loader2,
   ChevronRight, Award, Zap, LogOut, MapPin, Calendar, Cpu,
   Euro, Phone, Twitter, Facebook, TrendingUp, BarChart3, Plug,
-  UserCog, ExternalLink, ShoppingBag, Store
+  UserCog, ExternalLink, ShoppingBag, Store, Radio
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,6 +46,7 @@ export default function Settings() {
   const { theme, toggleTheme, st } = useTheme();
   const { isAdmin, isSuperAdmin } = usePermissions();
   const [saving, setSaving] = useState(false);
+  const [activeChannel, setActiveChannel] = useState('bolcom');
   const [refreshingCompany, setRefreshingCompany] = useState(false);
   const [settings, setSettings] = useState(null);
   const [activeTab, setActiveTab] = useState("profile");
@@ -627,8 +628,7 @@ export default function Settings() {
     { id: 'portal', label: 'Client Portal', icon: ExternalLink, color: 'green' },
     { id: 'teams', label: 'Teams & Rights', icon: Shield, color: 'cyan' },
     { id: 'integrations', label: 'Integrations', icon: Plug, color: 'cyan' },
-    { id: 'bolcom', label: 'bol.com', icon: ShoppingBag, color: 'cyan' },
-    { id: 'shopify', label: 'Shopify', icon: Store, color: 'cyan' },
+    { id: 'channels', label: 'Channels', icon: Radio, color: 'cyan' },
     { id: 'workspace', label: 'Workspace', icon: LayoutGrid, color: 'cyan' },
     { id: 'privacy', label: 'Privacy', icon: Lock, color: 'red' },
     ...(isSuperAdmin ? [{ id: 'admin', label: 'Admin', icon: Brain, color: 'purple' }] : [])
@@ -1474,27 +1474,36 @@ export default function Settings() {
                 </motion.div>
               )}
 
-              {/* BOL.COM TAB */}
-              {activeTab === 'bolcom' && (
+              {/* CHANNELS TAB */}
+              {activeTab === 'channels' && (
                 <motion.div
-                  key="bolcom"
+                  key="channels"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                 >
-                  <BolcomSettings />
-                </motion.div>
-              )}
-
-              {/* SHOPIFY TAB */}
-              {activeTab === 'shopify' && (
-                <motion.div
-                  key="shopify"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                >
-                  <ShopifySettings />
+                  <div className="flex items-center gap-2 mb-6">
+                    {[
+                      { id: 'bolcom', label: 'bol.com', icon: ShoppingBag },
+                      { id: 'shopify', label: 'Shopify', icon: Store },
+                    ].map(ch => (
+                      <button
+                        key={ch.id}
+                        onClick={() => setActiveChannel(ch.id)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                          activeChannel === ch.id
+                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
+                            : st('bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200',
+                                 'bg-zinc-800/60 text-zinc-400 border border-zinc-700/40 hover:bg-zinc-700/60')
+                        }`}
+                      >
+                        <ch.icon className="w-4 h-4" />
+                        {ch.label}
+                      </button>
+                    ))}
+                  </div>
+                  {activeChannel === 'bolcom' && <BolcomSettings />}
+                  {activeChannel === 'shopify' && <ShopifySettings />}
                 </motion.div>
               )}
 
