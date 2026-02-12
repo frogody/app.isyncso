@@ -91,6 +91,8 @@ export default function DesktopActivity() {
   }, [urlTab]);
   const [activityLogs, setActivityLogs] = useState([]);
   const [journals, setJournals] = useState([]);
+  const [hasAnyData, setHasAnyData] = useState(false);
+  const [lastActivityDate, setLastActivityDate] = useState(null);
   const [stats, setStats] = useState({
     totalMinutes: 0,
     avgFocusScore: 0,
@@ -169,6 +171,25 @@ export default function DesktopActivity() {
 
       if (logsError) throw logsError;
       setActivityLogs(logs || []);
+
+      // Check if any activity data exists at all (regardless of date range)
+      if (!logs || logs.length === 0) {
+        const { data: anyLogs } = await db.from('desktop_activity_logs')
+          .select('hour_start')
+          .eq('user_id', userData.id)
+          .order('hour_start', { ascending: false })
+          .limit(1);
+        if (anyLogs && anyLogs.length > 0) {
+          setHasAnyData(true);
+          setLastActivityDate(new Date(anyLogs[0].hour_start));
+        } else {
+          setHasAnyData(false);
+          setLastActivityDate(null);
+        }
+      } else {
+        setHasAnyData(true);
+        setLastActivityDate(null);
+      }
 
       // Fetch journals
       const { data: journalData, error: journalError } = await db.from('daily_journals')
@@ -423,8 +444,36 @@ export default function DesktopActivity() {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="mt-5 space-y-5">
+            {/* No data in current range — suggest widening */}
+            {activityLogs.length === 0 && hasAnyData && lastActivityDate && (
+              <GlassCard hover={false} animated={true} className="p-5" glow="cyan">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-800/60 flex-shrink-0">
+                    <Calendar className="w-6 h-6 text-cyan-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-base font-semibold text-white mb-1">No activity in this period</h3>
+                    <p className="text-sm text-zinc-400">
+                      Your last tracked activity was on{' '}
+                      <span className="text-cyan-400 font-medium">
+                        {lastActivityDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      </span>.
+                      Try selecting a wider date range to see your data.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setDateRange('90d')}
+                    variant="outline"
+                    className="border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 flex-shrink-0"
+                  >
+                    Show Last 90 Days
+                  </Button>
+                </div>
+              </GlassCard>
+            )}
+
             {/* Download SYNC Desktop Banner */}
-            {activityLogs.length === 0 && (
+            {activityLogs.length === 0 && !hasAnyData && (
               <GlassCard hover={false} animated={true} className="p-5" glow="cyan">
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
                   <div className="flex items-start gap-5">
