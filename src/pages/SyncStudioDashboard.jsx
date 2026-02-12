@@ -12,12 +12,17 @@ import {
   Filter,
   Loader2,
   Package,
+  Pencil,
   Play,
+  Plus,
   Rocket,
+  RotateCcw,
   Search,
+  Save,
   SortAsc,
   Sparkles,
   Timer,
+  Trash2,
   Zap,
   Image as ImageIcon,
   ArrowLeft,
@@ -32,6 +37,7 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJ
 const APPROVE_EDGE_FUNCTION = 'sync-studio-approve-plan';
 const EXECUTE_EDGE_FUNCTION = 'sync-studio-execute-photoshoot';
 const PROGRESS_EDGE_FUNCTION = 'sync-studio-job-progress';
+const UPDATE_PLAN_EDGE_FUNCTION = 'sync-studio-update-plan';
 
 // --- Shot type styling map ---
 const SHOT_TYPE_STYLES = {
@@ -44,6 +50,118 @@ const SHOT_TYPE_STYLES = {
 
 function getShotStyle(type) {
   return SHOT_TYPE_STYLES[type] || { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/20' };
+}
+
+// --- Shot type options ---
+const SHOT_TYPE_OPTIONS = ['hero', 'lifestyle', 'detail', 'alternate', 'contextual'];
+
+// --- Editable input field ---
+function EditableField({ label, value, onChange, placeholder, multiline = false }) {
+  const baseClasses =
+    'w-full bg-zinc-800/60 border border-zinc-700/40 rounded-lg px-3 py-1.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-cyan-500/40 transition-colors';
+
+  return (
+    <div className="space-y-1">
+      <label className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">{label}</label>
+      {multiline ? (
+        <textarea
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          rows={2}
+          className={`${baseClasses} resize-none`}
+        />
+      ) : (
+        <input
+          type="text"
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={baseClasses}
+        />
+      )}
+    </div>
+  );
+}
+
+// --- Shot editor card ---
+function ShotEditor({ shot, index, onUpdate, onRemove, isRemoving }) {
+  const type = shot.type || shot.shot_type || 'photo';
+  const style = getShotStyle(type);
+
+  const handleFieldChange = (field, value) => {
+    onUpdate({ ...shot, [field]: value });
+  };
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8, scale: 0.95 }}
+      transition={{ duration: 0.2 }}
+      className="bg-zinc-800/40 border border-zinc-700/30 rounded-xl p-4 space-y-3"
+    >
+      {/* Shot header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-zinc-500 tabular-nums">#{index + 1}</span>
+          <select
+            value={shot.shot_type || shot.type || 'hero'}
+            onChange={(e) => {
+              handleFieldChange('shot_type', e.target.value);
+              handleFieldChange('type', e.target.value);
+            }}
+            className="appearance-none bg-zinc-800/60 border border-zinc-700/40 rounded-lg px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-zinc-300 focus:outline-none focus:border-cyan-500/40 transition-colors cursor-pointer"
+          >
+            {SHOT_TYPE_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button
+          onClick={onRemove}
+          disabled={isRemoving}
+          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-colors disabled:opacity-50"
+        >
+          {isRemoving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+          Remove
+        </button>
+      </div>
+
+      {/* Editable fields */}
+      <EditableField
+        label="Description"
+        value={shot.description}
+        onChange={(val) => handleFieldChange('description', val)}
+        placeholder="Describe this shot..."
+        multiline
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <EditableField
+          label="Background"
+          value={shot.background}
+          onChange={(val) => handleFieldChange('background', val)}
+          placeholder="e.g. white studio"
+        />
+        <EditableField
+          label="Mood"
+          value={shot.mood}
+          onChange={(val) => handleFieldChange('mood', val)}
+          placeholder="e.g. warm, minimal"
+        />
+        <EditableField
+          label="Focus"
+          value={shot.focus}
+          onChange={(val) => handleFieldChange('focus', val)}
+          placeholder="e.g. product detail"
+        />
+      </div>
+    </motion.div>
+  );
 }
 
 // --- Status badge ---
@@ -79,15 +197,146 @@ function getCategoryLabel(categoryPath) {
   return segments[segments.length - 1]?.trim() || null;
 }
 
+// --- Remove shot confirmation dialog ---
+function RemoveShotConfirm({ open, onClose, onConfirm, isRemoving }) {
+  if (!open) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className="absolute inset-0 z-10 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-xl"
+    >
+      <div className="bg-zinc-900 border border-zinc-700/60 rounded-xl p-4 max-w-xs w-full mx-4 shadow-xl">
+        <p className="text-sm text-zinc-200 mb-1 font-medium">Remove this shot?</p>
+        <p className="text-xs text-zinc-500 mb-4">This action cannot be undone.</p>
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={onClose}
+            disabled={isRemoving}
+            className="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-300 transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isRemoving}
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 transition-colors disabled:opacity-50"
+          >
+            {isRemoving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+            Remove
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 // --- Product Card ---
-function ProductCard({ plan, product, onApprove, isApproving }) {
+function ProductCard({
+  plan,
+  product,
+  onApprove,
+  isApproving,
+  isEditing,
+  onStartEdit,
+  onCancelEdit,
+  onSaveShot,
+  onAddShot,
+  onRemoveShot,
+  onResetPlan,
+  isSaving,
+}) {
   const [expanded, setExpanded] = useState(false);
+  const [editedShots, setEditedShots] = useState([]);
+  const [confirmRemoveIndex, setConfirmRemoveIndex] = useState(null);
+  const [removingIndex, setRemovingIndex] = useState(null);
+  const [savingIndex, setSavingIndex] = useState(null);
+  const [isAddingShot, setIsAddingShot] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const shots = Array.isArray(plan.shots) ? plan.shots : [];
+  const displayShots = isEditing ? editedShots : shots;
   const shotTypes = shots.map((s) => s.type || s.shot_type || 'photo').join(', ');
   const isApproved = plan.plan_status === 'approved';
   const thumbnail = product?.existing_image_urls?.[0] || null;
   const categoryLabel = getCategoryLabel(product?.category_path);
+
+  // Sync editedShots when entering edit mode or when plan.shots changes during editing
+  // (e.g. after a save/add/remove returns updated data from the edge function)
+  const shotsJson = JSON.stringify(plan.shots);
+  useEffect(() => {
+    if (isEditing) {
+      const latestShots = Array.isArray(plan.shots) ? plan.shots : [];
+      setEditedShots(latestShots.map((s) => ({ ...s })));
+      setExpanded(true);
+    }
+  }, [isEditing, shotsJson]);
+
+  const handleEditShotLocally = (index, updatedShot) => {
+    setEditedShots((prev) => prev.map((s, i) => (i === index ? updatedShot : s)));
+  };
+
+  const handleSaveShot = async (index) => {
+    const shot = editedShots[index];
+    if (!shot) return;
+    setSavingIndex(index);
+    try {
+      await onSaveShot(plan.plan_id, shot.shot_number, {
+        description: shot.description,
+        background: shot.background,
+        mood: shot.mood,
+        focus: shot.focus,
+        shot_type: shot.shot_type || shot.type,
+      });
+    } finally {
+      setSavingIndex(null);
+    }
+  };
+
+  const handleSaveAllShots = async () => {
+    for (let i = 0; i < editedShots.length; i++) {
+      await handleSaveShot(i);
+    }
+  };
+
+  const handleAddShot = async () => {
+    setIsAddingShot(true);
+    try {
+      await onAddShot(plan.plan_id, {
+        description: '',
+        background: '',
+        mood: '',
+        focus: '',
+        shot_type: 'hero',
+        type: 'hero',
+      });
+    } finally {
+      setIsAddingShot(false);
+    }
+  };
+
+  const handleConfirmRemove = async () => {
+    if (confirmRemoveIndex === null) return;
+    const shot = editedShots[confirmRemoveIndex];
+    if (!shot) return;
+    setRemovingIndex(confirmRemoveIndex);
+    try {
+      await onRemoveShot(plan.plan_id, shot.shot_number);
+      setConfirmRemoveIndex(null);
+    } finally {
+      setRemovingIndex(null);
+    }
+  };
+
+  const handleReset = async () => {
+    setIsResetting(true);
+    try {
+      await onResetPlan(plan.plan_id);
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   return (
     <motion.div
@@ -96,12 +345,16 @@ function ProductCard({ plan, product, onApprove, isApproving }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12 }}
       transition={{ duration: 0.25 }}
-      className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl overflow-hidden transition-colors hover:border-zinc-700/60"
+      className={`bg-zinc-900/50 border rounded-2xl overflow-hidden transition-colors ${
+        isEditing ? 'border-cyan-500/30' : 'border-zinc-800/60 hover:border-zinc-700/60'
+      }`}
     >
       {/* Collapsed row */}
       <div
         className="flex items-center gap-3 p-4 cursor-pointer select-none"
-        onClick={() => setExpanded((prev) => !prev)}
+        onClick={() => {
+          if (!isEditing) setExpanded((prev) => !prev);
+        }}
       >
         {/* Thumbnail */}
         <div className="w-12 h-12 rounded-xl bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center shrink-0 overflow-hidden">
@@ -145,11 +398,39 @@ function ProductCard({ plan, product, onApprove, isApproving }) {
           )}
         </div>
 
-        {/* Status + Approve + Chevron */}
+        {/* Status + Edit + Approve + Chevron */}
         <div className="flex items-center gap-2 shrink-0">
           <StatusBadge status={plan.plan_status} />
 
-          {!isApproved && (
+          {/* Edit button */}
+          {!isEditing && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onStartEdit(plan.plan_id);
+              }}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/50 text-zinc-300 transition-colors"
+            >
+              <Pencil className="w-3 h-3" />
+              Edit
+            </button>
+          )}
+
+          {/* Cancel edit button */}
+          {isEditing && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onCancelEdit();
+              }}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/50 text-zinc-400 transition-colors"
+            >
+              <X className="w-3 h-3" />
+              Cancel
+            </button>
+          )}
+
+          {!isApproved && !isEditing && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -167,17 +448,19 @@ function ProductCard({ plan, product, onApprove, isApproving }) {
             </button>
           )}
 
-          <ChevronDown
-            className={`w-4 h-4 text-zinc-500 transition-transform duration-200 ${
-              expanded ? 'rotate-180' : ''
-            }`}
-          />
+          {!isEditing && (
+            <ChevronDown
+              className={`w-4 h-4 text-zinc-500 transition-transform duration-200 ${
+                expanded ? 'rotate-180' : ''
+              }`}
+            />
+          )}
         </div>
       </div>
 
       {/* Expanded detail */}
       <AnimatePresence initial={false}>
-        {expanded && (
+        {(expanded || isEditing) && (
           <motion.div
             key="expanded"
             initial={{ height: 0, opacity: 0 }}
@@ -219,8 +502,100 @@ function ProductCard({ plan, product, onApprove, isApproving }) {
                 </div>
               )}
 
-              {/* Planned shots */}
-              {shots.length > 0 && (
+              {/* ============================================================ */}
+              {/* EDIT MODE: Shot editors                                       */}
+              {/* ============================================================ */}
+              {isEditing && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-medium text-zinc-400">
+                      Edit Shots ({editedShots.length})
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleReset}
+                        disabled={isResetting || isSaving}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/50 text-zinc-400 transition-colors disabled:opacity-50"
+                      >
+                        {isResetting ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <RotateCcw className="w-3 h-3" />
+                        )}
+                        Reset Plan
+                      </button>
+                      <button
+                        onClick={handleAddShot}
+                        disabled={isAddingShot || isSaving}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 transition-colors disabled:opacity-50"
+                      >
+                        {isAddingShot ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Plus className="w-3 h-3" />
+                        )}
+                        Add Shot
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 relative">
+                    <AnimatePresence mode="popLayout">
+                      {editedShots.map((shot, i) => (
+                        <div key={shot.shot_number || i} className="relative">
+                          <ShotEditor
+                            shot={shot}
+                            index={i}
+                            onUpdate={(updated) => handleEditShotLocally(i, updated)}
+                            onRemove={() => setConfirmRemoveIndex(i)}
+                            isRemoving={removingIndex === i}
+                          />
+                          <AnimatePresence>
+                            {confirmRemoveIndex === i && (
+                              <RemoveShotConfirm
+                                open
+                                onClose={() => setConfirmRemoveIndex(null)}
+                                onConfirm={handleConfirmRemove}
+                                isRemoving={removingIndex === i}
+                              />
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      ))}
+                    </AnimatePresence>
+
+                    {editedShots.length === 0 && (
+                      <div className="text-center py-6">
+                        <Camera className="w-6 h-6 text-zinc-700 mx-auto mb-2" />
+                        <p className="text-xs text-zinc-600">No shots. Click "Add Shot" to begin.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Save all button */}
+                  {editedShots.length > 0 && (
+                    <div className="pt-3 flex items-center justify-end gap-2">
+                      <button
+                        onClick={handleSaveAllShots}
+                        disabled={isSaving}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 transition-colors disabled:opacity-50"
+                      >
+                        {isSaving ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Save className="w-3.5 h-3.5" />
+                        )}
+                        Save All Changes
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ============================================================ */}
+              {/* VIEW MODE: Read-only planned shots                            */}
+              {/* ============================================================ */}
+              {!isEditing && shots.length > 0 && (
                 <div>
                   <p className="text-xs font-medium text-zinc-400 mb-2">Planned Shots</p>
                   <div className="space-y-2">
@@ -266,8 +641,8 @@ function ProductCard({ plan, product, onApprove, isApproving }) {
                 </div>
               )}
 
-              {/* Approve at bottom */}
-              {!isApproved && (
+              {/* Approve at bottom (view mode only) */}
+              {!isEditing && !isApproved && (
                 <div className="pt-1">
                   <button
                     onClick={() => onApprove(plan.plan_id)}
@@ -458,6 +833,10 @@ export default function SyncStudioDashboard() {
   // Approve state
   const [approvingIds, setApprovingIds] = useState(new Set());
   const [approveAllLoading, setApproveAllLoading] = useState(false);
+
+  // Editing state
+  const [editingPlanId, setEditingPlanId] = useState(null);
+  const [editSaving, setEditSaving] = useState(false);
 
   // Confirmation modal state
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -660,6 +1039,128 @@ export default function SyncStudioDashboard() {
       setApproveAllLoading(false);
     }
   }, [plans, callEdgeFunction, user]);
+
+  // -- Refresh a single plan from the edge function response --
+  const refreshPlanFromResponse = useCallback((updatedPlan) => {
+    if (!updatedPlan?.plan_id) return;
+    setPlans((prev) =>
+      prev.map((p) => (p.plan_id === updatedPlan.plan_id ? updatedPlan : p))
+    );
+  }, []);
+
+  // -- Refetch single plan from DB --
+  const refetchPlan = useCallback(async (planId) => {
+    const { data } = await supabase
+      .from('sync_studio_shoot_plans')
+      .select('*')
+      .eq('plan_id', planId)
+      .single();
+    if (data) {
+      setPlans((prev) => prev.map((p) => (p.plan_id === planId ? data : p)));
+    }
+  }, []);
+
+  // -- Update shot --
+  const handleSaveShot = useCallback(
+    async (planId, shotNumber, updates) => {
+      setEditSaving(true);
+      try {
+        const result = await callEdgeFunction(
+          {
+            action: 'update_shot',
+            userId: user?.id,
+            planId,
+            shotNumber,
+            updates,
+          },
+          UPDATE_PLAN_EDGE_FUNCTION
+        );
+        refreshPlanFromResponse(result);
+      } catch (err) {
+        console.error('[SyncStudioDashboard] update_shot error:', err);
+        // Refetch to stay in sync
+        await refetchPlan(planId);
+      } finally {
+        setEditSaving(false);
+      }
+    },
+    [callEdgeFunction, user, refreshPlanFromResponse, refetchPlan]
+  );
+
+  // -- Add shot --
+  const handleAddShot = useCallback(
+    async (planId, shot) => {
+      setEditSaving(true);
+      try {
+        const result = await callEdgeFunction(
+          {
+            action: 'add_shot',
+            userId: user?.id,
+            planId,
+            shot,
+          },
+          UPDATE_PLAN_EDGE_FUNCTION
+        );
+        refreshPlanFromResponse(result);
+      } catch (err) {
+        console.error('[SyncStudioDashboard] add_shot error:', err);
+        await refetchPlan(planId);
+      } finally {
+        setEditSaving(false);
+      }
+    },
+    [callEdgeFunction, user, refreshPlanFromResponse, refetchPlan]
+  );
+
+  // -- Remove shot --
+  const handleRemoveShot = useCallback(
+    async (planId, shotNumber) => {
+      setEditSaving(true);
+      try {
+        const result = await callEdgeFunction(
+          {
+            action: 'remove_shot',
+            userId: user?.id,
+            planId,
+            shotNumber,
+          },
+          UPDATE_PLAN_EDGE_FUNCTION
+        );
+        refreshPlanFromResponse(result);
+      } catch (err) {
+        console.error('[SyncStudioDashboard] remove_shot error:', err);
+        await refetchPlan(planId);
+      } finally {
+        setEditSaving(false);
+      }
+    },
+    [callEdgeFunction, user, refreshPlanFromResponse, refetchPlan]
+  );
+
+  // -- Reset plan --
+  const handleResetPlan = useCallback(
+    async (planId) => {
+      setEditSaving(true);
+      try {
+        const result = await callEdgeFunction(
+          {
+            action: 'reset_plan',
+            userId: user?.id,
+            planId,
+          },
+          UPDATE_PLAN_EDGE_FUNCTION
+        );
+        refreshPlanFromResponse(result);
+        setEditingPlanId(null);
+      } catch (err) {
+        console.error('[SyncStudioDashboard] reset_plan error:', err);
+        await refetchPlan(planId);
+      } finally {
+        setEditSaving(false);
+      }
+    },
+    [callEdgeFunction, user, refreshPlanFromResponse, refetchPlan]
+  );
 
   // -- Start photoshoot --
   const handleStartPhotoshoot = useCallback(async () => {
@@ -885,6 +1386,14 @@ export default function SyncStudioDashboard() {
               product={productMap[plan.product_ean]}
               onApprove={handleApprove}
               isApproving={approvingIds.has(plan.plan_id)}
+              isEditing={editingPlanId === plan.plan_id}
+              onStartEdit={(planId) => setEditingPlanId(planId)}
+              onCancelEdit={() => setEditingPlanId(null)}
+              onSaveShot={handleSaveShot}
+              onAddShot={handleAddShot}
+              onRemoveShot={handleRemoveShot}
+              onResetPlan={handleResetPlan}
+              isSaving={editSaving}
             />
           ))}
         </AnimatePresence>
