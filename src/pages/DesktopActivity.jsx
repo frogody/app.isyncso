@@ -105,9 +105,9 @@ export default function DesktopActivity() {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [copiedCommand, setCopiedCommand] = useState(false);
 
-  const DOWNLOAD_URL_ARM64 = "https://github.com/frogody/sync.desktop/releases/download/v2.0.0/SYNC.Desktop-2.0.0-arm64.dmg";
-  const DOWNLOAD_URL_INTEL = "https://github.com/frogody/sync.desktop/releases/download/v2.0.0/SYNC.Desktop-2.0.0-x64.dmg";
-  const INSTALL_SCRIPT_URL = "https://github.com/frogody/sync.desktop/releases/download/v2.0.0/install-macos.command";
+  const DOWNLOAD_URL_ARM64 = "https://github.com/frogody/sync.desktop/releases/download/v2.0.2/SYNC.Desktop-2.0.2-arm64.dmg";
+  const DOWNLOAD_URL_INTEL = "https://github.com/frogody/sync.desktop/releases/download/v2.0.2/SYNC.Desktop-2.0.2-x64.dmg";
+  const INSTALL_SCRIPT_URL = "https://github.com/frogody/sync.desktop/releases/download/v2.0.2/install-macos.command";
   const INSTALL_COMMAND = `curl -fsSL ${INSTALL_SCRIPT_URL} | bash`;
 
   const handleDownload = () => {
@@ -485,7 +485,7 @@ export default function DesktopActivity() {
                       <Download className="w-7 h-7 text-cyan-400" />
                     </div>
                     <div>
-                      <h2 className="text-lg font-bold text-white mb-1">Download SYNC Desktop v2.0</h2>
+                      <h2 className="text-lg font-bold text-white mb-1">Download SYNC Desktop v2.0.2</h2>
                       <p className="text-zinc-400 mb-4 max-w-xl text-sm">
                         Your AI productivity companion. Reads what you're working on, detects commitments you make,
                         and gives SYNC real context to help you — all encrypted locally.
