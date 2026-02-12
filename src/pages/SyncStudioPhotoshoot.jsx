@@ -330,7 +330,7 @@ export default function SyncStudioPhotoshoot() {
           </p>
           <button
             onClick={() => navigate('/SyncStudioDashboard')}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-sm font-medium rounded-xl transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 text-sm font-medium rounded-xl transition-colors"
           >
             Go to Dashboard
           </button>
@@ -357,9 +357,9 @@ export default function SyncStudioPhotoshoot() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
-            className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto mb-6"
+            className="w-16 h-16 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mx-auto mb-6"
           >
-            <PartyPopper className="w-8 h-8 text-cyan-400" />
+            <PartyPopper className="w-8 h-8 text-yellow-400" />
           </motion.div>
 
           <motion.h2
@@ -403,7 +403,7 @@ export default function SyncStudioPhotoshoot() {
           >
             <button
               onClick={() => navigate(`/SyncStudioResults?jobId=${jobId}`)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-black font-semibold rounded-xl transition-all shadow-lg shadow-cyan-500/20"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-xl transition-all shadow-lg shadow-yellow-500/20"
             >
               <ImageIcon className="w-4 h-4" />
               View Results
@@ -455,7 +455,7 @@ export default function SyncStudioPhotoshoot() {
             {completedImages > 0 && (
               <button
                 onClick={() => navigate(`/SyncStudioResults?jobId=${jobId}`)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-sm font-medium rounded-xl transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 text-sm font-medium rounded-xl transition-colors"
               >
                 <ImageIcon className="w-4 h-4" />
                 View Partial Results
@@ -499,7 +499,7 @@ export default function SyncStudioPhotoshoot() {
             {completedImages > 0 && (
               <button
                 onClick={() => navigate(`/SyncStudioResults?jobId=${jobId}`)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-sm font-medium rounded-xl transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 text-sm font-medium rounded-xl transition-colors"
               >
                 <ImageIcon className="w-4 h-4" />
                 View Partial Results
@@ -532,14 +532,14 @@ export default function SyncStudioPhotoshoot() {
         >
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-              <Camera className="w-6 h-6 text-cyan-400" />
+            <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+              <Camera className="w-6 h-6 text-yellow-400" />
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-lg font-semibold text-white">Photoshoot in progress...</h1>
               <p className="text-sm text-zinc-500">Generating images for your products</p>
             </div>
-            <Loader2 className="w-5 h-5 text-cyan-400 animate-spin shrink-0" />
+            <Loader2 className="w-5 h-5 text-yellow-400 animate-spin shrink-0" />
           </div>
 
           {/* Progress bar */}
@@ -549,7 +549,7 @@ export default function SyncStudioPhotoshoot() {
               value={percentage}
             >
               <Progress.Indicator
-                className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 transition-all duration-700 ease-out"
+                className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 transition-all duration-700 ease-out"
                 style={{ width: `${percentage}%` }}
               />
             </Progress.Root>
@@ -572,7 +572,7 @@ export default function SyncStudioPhotoshoot() {
                   </>
                 )}
               </span>
-              <span className="text-xs tabular-nums text-cyan-400/80 font-medium">
+              <span className="text-xs tabular-nums text-yellow-400/80 font-medium">
                 {percentage}%
               </span>
             </div>
@@ -582,7 +582,7 @@ export default function SyncStudioPhotoshoot() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             {/* Speed */}
             <div className="flex items-center gap-2 bg-zinc-800/50 border border-zinc-700/30 rounded-xl px-3 py-2.5">
-              <Zap className="w-4 h-4 text-cyan-400 shrink-0" />
+              <Zap className="w-4 h-4 text-yellow-400 shrink-0" />
               <div className="min-w-0">
                 <p className="text-xs text-zinc-500">Speed</p>
                 <p className="text-sm font-semibold text-white tabular-nums">{imagesPerMinute}/min</p>
@@ -591,7 +591,7 @@ export default function SyncStudioPhotoshoot() {
 
             {/* Completed */}
             <div className="flex items-center gap-2 bg-zinc-800/50 border border-zinc-700/30 rounded-xl px-3 py-2.5">
-              <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-yellow-400 shrink-0" />
               <div className="min-w-0">
                 <p className="text-xs text-zinc-500">Done</p>
                 <p className="text-sm font-semibold text-white tabular-nums">
@@ -613,7 +613,7 @@ export default function SyncStudioPhotoshoot() {
 
             {/* Products */}
             <div className="flex items-center gap-2 bg-zinc-800/50 border border-zinc-700/30 rounded-xl px-3 py-2.5">
-              <Package className="w-4 h-4 text-cyan-400 shrink-0" />
+              <Package className="w-4 h-4 text-yellow-400 shrink-0" />
               <div className="min-w-0">
                 <p className="text-xs text-zinc-500">Products</p>
                 <p className="text-sm font-semibold text-white tabular-nums">
@@ -633,7 +633,7 @@ export default function SyncStudioPhotoshoot() {
           {recentImages.length > 0 && (
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
                 <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
                   Live Feed
                 </p>
