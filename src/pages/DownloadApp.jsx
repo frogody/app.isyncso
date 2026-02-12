@@ -238,29 +238,29 @@ export default function DownloadApp() {
             </div>
           </Card>
 
-          <Card className="glass-card border-0 p-5">
+          <Card className="glass-card border-0 p-5 border-l-2 border-l-amber-500/40">
             <div className="flex gap-4">
               <div className="flex-shrink-0">
-                <div className="w-10 h-10 rounded-full bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
-                  <span className="text-sm font-bold text-cyan-400">3</span>
+                <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+                  <span className="text-sm font-bold text-amber-400">3</span>
                 </div>
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white mb-2">Launch and Allow Permissions</h3>
-                <ul className="space-y-1.5 text-gray-300 text-sm">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
-                    <span>Open SYNC Desktop from Applications</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
-                    <span>If macOS shows a security warning: go to <strong>System Settings → Privacy & Security</strong> and click <strong>"Open Anyway"</strong></span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
-                    <span>Grant <strong>Accessibility</strong> access when prompted (required for activity tracking)</span>
-                  </li>
-                </ul>
+                <h3 className="text-lg font-semibold text-white mb-1">Allow the App to Open</h3>
+                <p className="text-sm text-amber-300/80 mb-3">macOS will block the first launch because the app isn't from the App Store. Choose one of these methods:</p>
+                <div className="space-y-3">
+                  <div className="bg-amber-500/5 border border-amber-500/15 rounded-lg p-3">
+                    <p className="text-sm text-gray-300">
+                      <strong className="text-amber-300">Option A — Recommended:</strong> Open <strong>System Settings → Privacy & Security</strong>, scroll down and click <strong>"Open Anyway"</strong> next to the SYNC Desktop message.
+                    </p>
+                  </div>
+                  <div className="bg-amber-500/5 border border-amber-500/15 rounded-lg p-3">
+                    <p className="text-sm text-gray-300">
+                      <strong className="text-amber-300">Option B — Right-click:</strong> In Finder, <strong>right-click</strong> (or Control-click) SYNC Desktop in Applications → click <strong>"Open"</strong> → confirm <strong>"Open"</strong> again in the dialog.
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">You only need to do this once. After that the app opens normally.</p>
               </div>
             </div>
           </Card>
@@ -273,19 +273,19 @@ export default function DownloadApp() {
                 </div>
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white mb-2">Connect Your Account</h3>
+                <h3 className="text-lg font-semibold text-white mb-2">Grant Permissions & Sign In</h3>
                 <ul className="space-y-1.5 text-gray-300 text-sm">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                    <span>Grant <strong>Accessibility</strong> access when prompted (required for activity tracking)</span>
+                  </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
                     <span>Click <strong>"Sign in with iSyncSO"</strong> in the app</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
-                    <span>Your browser opens — log in with your iSyncSO account</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
-                    <span>The app connects automatically — you're all set</span>
+                    <span>Your browser opens — log in with your iSyncSO account and you're all set</span>
                   </li>
                 </ul>
               </div>

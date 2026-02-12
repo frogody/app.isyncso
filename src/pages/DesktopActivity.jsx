@@ -105,7 +105,8 @@ export default function DesktopActivity() {
 
   const DOWNLOAD_URL_ARM64 = "https://github.com/frogody/sync.desktop/releases/download/v2.0.0/SYNC.Desktop-2.0.0-arm64.dmg";
   const DOWNLOAD_URL_INTEL = "https://github.com/frogody/sync.desktop/releases/download/v2.0.0/SYNC.Desktop-2.0.0.dmg";
-  const BYPASS_COMMAND = "xattr -cr ~/Downloads/SYNC.Desktop*.dmg && open ~/Downloads/SYNC.Desktop*.dmg";
+  const INSTALL_SCRIPT_URL = "https://github.com/frogody/sync.desktop/releases/download/v2.0.0/install-macos.command";
+  const INSTALL_COMMAND = `curl -fsSL ${INSTALL_SCRIPT_URL} | bash`;
 
   const handleDownload = () => {
     // Auto-detect architecture and download the right DMG
@@ -117,7 +118,7 @@ export default function DesktopActivity() {
   };
 
   const copyCommand = () => {
-    navigator.clipboard.writeText(BYPASS_COMMAND);
+    navigator.clipboard.writeText(INSTALL_COMMAND);
     setCopiedCommand(true);
     toast.success('Command copied to clipboard');
     setTimeout(() => setCopiedCommand(false), 2000);
@@ -431,47 +432,59 @@ export default function DesktopActivity() {
                       <Download className="w-7 h-7 text-cyan-400" />
                     </div>
                     <div>
-                      <h2 className="text-lg font-bold text-white mb-2">Download SYNC Desktop</h2>
+                      <h2 className="text-lg font-bold text-white mb-1">Download SYNC Desktop v2.0</h2>
                       <p className="text-zinc-400 mb-4 max-w-xl text-sm">
-                        Unlock powerful productivity tracking with the SYNC Desktop companion app.
-                        Get detailed insights into your work patterns and let SYNC understand your context.
+                        Your AI productivity companion. Reads what you're working on, detects commitments you make,
+                        and gives SYNC real context to help you — all encrypted locally.
                       </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                        <div className="flex items-center gap-2 text-zinc-300">
-                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                            <Activity className="w-3 h-3 text-cyan-400" />
-                          </div>
-                          <span>Automatic activity tracking</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-zinc-300">
-                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                            <Target className="w-3 h-3 text-cyan-400" />
-                          </div>
-                          <span>Focus score calculation</span>
-                        </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm">
                         <div className="flex items-center gap-2 text-zinc-300">
                           <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
                             <Brain className="w-3 h-3 text-cyan-400" />
                           </div>
-                          <span>AI-generated daily journals</span>
+                          <span>Deep context awareness</span>
                         </div>
                         <div className="flex items-center gap-2 text-zinc-300">
                           <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
                             <MessageSquare className="w-3 h-3 text-cyan-400" />
                           </div>
-                          <span>Context-aware SYNC chat</span>
+                          <span>Commitment detection</span>
                         </div>
                         <div className="flex items-center gap-2 text-zinc-300">
                           <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                            <Clock className="w-3 h-3 text-cyan-400" />
+                            <Activity className="w-3 h-3 text-cyan-400" />
                           </div>
-                          <span>Hourly productivity summaries</span>
+                          <span>Smart activity classification</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-300">
+                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                            <Zap className="w-3 h-3 text-cyan-400" />
+                          </div>
+                          <span>Context switch detection</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-300">
+                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                            <Target className="w-3 h-3 text-cyan-400" />
+                          </div>
+                          <span>Skill signal tracking</span>
                         </div>
                         <div className="flex items-center gap-2 text-zinc-300">
                           <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
                             <Sparkles className="w-3 h-3 text-cyan-400" />
                           </div>
-                          <span>Floating avatar widget</span>
+                          <span>Daily journals & focus scores</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-300">
+                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                            <Code className="w-3 h-3 text-cyan-400" />
+                          </div>
+                          <span>File & document monitoring</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-300">
+                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                            <Laptop className="w-3 h-3 text-cyan-400" />
+                          </div>
+                          <span>AES-256 encrypted, privacy-first</span>
                         </div>
                       </div>
                     </div>
@@ -1141,8 +1154,10 @@ export default function DesktopActivity() {
               <div>
                 <h4 className="font-medium text-zinc-200 mb-1">Download Started</h4>
                 <p className="text-sm text-zinc-400">
-                  The download should begin automatically. If not,
-                  <a href={DOWNLOAD_URL_ARM64} className="text-cyan-400 hover:underline ml-1">click here</a>.
+                  Your DMG is downloading. If it didn't start,{' '}
+                  <a href={DOWNLOAD_URL_ARM64} className="text-cyan-400 hover:underline">Apple Silicon</a>
+                  {' · '}
+                  <a href={DOWNLOAD_URL_INTEL} className="text-cyan-400 hover:underline">Intel Mac</a>
                 </p>
               </div>
             </div>
@@ -1152,58 +1167,74 @@ export default function DesktopActivity() {
               <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
                 <span className="text-cyan-400 font-bold text-sm">2</span>
               </div>
-              <div className="flex-1">
-                <h4 className="font-medium text-zinc-200 mb-1">Open Terminal & Run This Command</h4>
-                <p className="text-sm text-zinc-400 mb-3">
-                  macOS blocks apps from unidentified developers. Run this command to bypass:
-                </p>
-                <div className="relative">
-                  <pre className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 pr-12 text-sm text-cyan-300 overflow-x-auto">
-                    {BYPASS_COMMAND}
-                  </pre>
-                  <Button
-                    onClick={copyCommand}
-                    size="sm"
-                    variant="ghost"
-                    className="absolute right-2 top-2 h-8 w-8 p-0 hover:bg-zinc-700"
-                  >
-                    {copiedCommand ? (
-                      <Check className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <Copy className="w-4 h-4 text-zinc-400" />
-                    )}
-                  </Button>
-                </div>
-                <p className="text-xs text-zinc-500 mt-2">
-                  Press <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400">Cmd + Space</kbd>, type "Terminal", press Enter, then paste the command.
+              <div>
+                <h4 className="font-medium text-zinc-200 mb-1">Open DMG & Drag to Applications</h4>
+                <p className="text-sm text-zinc-400">
+                  Double-click the downloaded <code className="text-cyan-300 bg-zinc-800 px-1 rounded">.dmg</code> file, then drag SYNC Desktop into the Applications folder.
                 </p>
               </div>
             </div>
 
-            {/* Step 3 */}
+            {/* Step 3 — Gatekeeper */}
             <div className="flex gap-4">
-              <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
-                <span className="text-cyan-400 font-bold text-sm">3</span>
+              <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
+                <span className="text-amber-400 font-bold text-sm">3</span>
               </div>
               <div>
-                <h4 className="font-medium text-zinc-200 mb-1">Drag to Applications</h4>
-                <p className="text-sm text-zinc-400">
-                  When the disk image opens, drag SYNC Desktop to Applications.
+                <h4 className="font-medium text-zinc-200 mb-1">Allow the App to Open</h4>
+                <p className="text-sm text-zinc-400 mb-2">
+                  macOS will block the first launch because the app isn't from the App Store. To allow it:
+                </p>
+                <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3 space-y-2">
+                  <p className="text-sm text-zinc-300">
+                    <strong className="text-amber-300">Option A:</strong> Open <strong>System Settings → Privacy & Security</strong>, scroll down and click <strong>"Open Anyway"</strong> next to the SYNC Desktop message.
+                  </p>
+                  <p className="text-sm text-zinc-300">
+                    <strong className="text-amber-300">Option B:</strong> In Finder, <strong>right-click</strong> SYNC Desktop in Applications → click <strong>"Open"</strong> → confirm <strong>"Open"</strong> again.
+                  </p>
+                </div>
+                <p className="text-xs text-zinc-500 mt-2">
+                  You only need to do this once. After that the app opens normally.
                 </p>
               </div>
             </div>
 
-            {/* Step 4 */}
+            {/* Step 4 — Sign In */}
             <div className="flex gap-4">
               <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
                 <span className="text-cyan-400 font-bold text-sm">4</span>
               </div>
               <div>
-                <h4 className="font-medium text-zinc-200 mb-1">Launch & Connect</h4>
+                <h4 className="font-medium text-zinc-200 mb-1">Grant Permissions & Sign In</h4>
                 <p className="text-sm text-zinc-400">
-                  Open SYNC Desktop from Applications and sign in with your iSyncSO account.
+                  Grant Accessibility permission when prompted, then click "Sign in with iSyncSO" to connect your account.
                 </p>
               </div>
+            </div>
+
+            {/* Terminal alternative */}
+            <div className="pt-3 border-t border-zinc-800">
+              <h4 className="text-sm font-medium text-zinc-300 mb-2">Or install via Terminal</h4>
+              <div className="relative">
+                <pre className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 pr-12 text-sm text-cyan-300 overflow-x-auto whitespace-pre-wrap break-all">
+                  {INSTALL_COMMAND}
+                </pre>
+                <Button
+                  onClick={copyCommand}
+                  size="sm"
+                  variant="ghost"
+                  className="absolute right-2 top-2 h-8 w-8 p-0 hover:bg-zinc-700"
+                >
+                  {copiedCommand ? (
+                    <Check className="w-4 h-4 text-green-400" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-zinc-400" />
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-zinc-500 mt-2">
+                Downloads, installs, and launches automatically — no DMG required.
+              </p>
             </div>
 
             {/* Help link */}
