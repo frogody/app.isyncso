@@ -285,27 +285,59 @@ export default function SyncStudioResults() {
     []
   );
 
+  const [exporting, setExporting] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+
   const handleExportZip = useCallback(async () => {
-    if (!user?.id || !jobId) return;
+    if (!user?.id || !jobId || exporting) return;
+    setExporting(true);
     try {
-      showToast('Export ZIP coming soon...', 'info');
-      // Placeholder - will call edge function in Phase 7
-      // await callEdgeFunction({ action: 'export', userId: user.id, jobId }, 'sync-studio-export-zip');
+      showToast('Preparing ZIP download...', 'info');
+      const result = await callEdgeFunction(
+        { action: 'export', userId: user.id, jobId },
+        'sync-studio-export-zip'
+      );
+      if (result?.downloadUrl) {
+        const a = document.createElement('a');
+        a.href = result.downloadUrl;
+        a.download = `sync-studio-${jobId.slice(0, 8)}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('ZIP download started', 'success');
+      } else {
+        showToast('ZIP ready but no download URL returned', 'info');
+      }
     } catch (err) {
       showToast(`Export failed: ${err.message}`, 'error');
+    } finally {
+      setExporting(false);
     }
-  }, [user, jobId]);
+  }, [user, jobId, exporting, callEdgeFunction]);
 
   const handlePublish = useCallback(async () => {
-    if (!user?.id || !jobId) return;
+    if (!user?.id || !jobId || publishing) return;
+    if (!confirm('Publish all generated images to your Bol.com store? This will update your product listings.')) return;
+    setPublishing(true);
     try {
-      showToast('Publish to Bol.com coming soon...', 'info');
-      // Placeholder - will call edge function in Phase 8
-      // await callEdgeFunction({ action: 'publish', userId: user.id, jobId }, 'sync-studio-publish-bol');
+      showToast('Publishing to Bol.com...', 'info');
+      const result = await callEdgeFunction(
+        { action: 'publish', userId: user.id, companyId: user.company_id || user.id, jobId },
+        'sync-studio-publish-bol'
+      );
+      const published = result?.published || 0;
+      const failed = result?.failed || 0;
+      if (failed > 0) {
+        showToast(`Published ${published} images, ${failed} failed`, 'error');
+      } else {
+        showToast(`Successfully published ${published} images to Bol.com`, 'success');
+      }
     } catch (err) {
       showToast(`Publish failed: ${err.message}`, 'error');
+    } finally {
+      setPublishing(false);
     }
-  }, [user, jobId]);
+  }, [user, jobId, publishing, callEdgeFunction]);
 
   // -------------------------------------------------------------------------
   // Render: No jobId guard
@@ -515,17 +547,19 @@ export default function SyncStudioResults() {
             <div className="flex items-center gap-3">
               <button
                 onClick={handleExportZip}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700/60 text-zinc-300 text-sm font-medium hover:bg-zinc-700/60 hover:border-zinc-600 transition-colors"
+                disabled={exporting}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700/60 text-zinc-300 text-sm font-medium hover:bg-zinc-700/60 hover:border-zinc-600 transition-colors disabled:opacity-50"
               >
-                <Download className="w-4 h-4" />
-                Download All (ZIP)
+                {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {exporting ? 'Exporting...' : 'Download All (ZIP)'}
               </button>
               <button
                 onClick={handlePublish}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm font-medium hover:bg-yellow-500/20 transition-colors"
+                disabled={publishing}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm font-medium hover:bg-yellow-500/20 transition-colors disabled:opacity-50"
               >
-                <Send className="w-4 h-4" />
-                Publish to Bol.com
+                {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {publishing ? 'Publishing...' : 'Publish to Bol.com'}
               </button>
             </div>
           </div>

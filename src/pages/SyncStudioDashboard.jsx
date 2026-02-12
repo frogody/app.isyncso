@@ -7,6 +7,7 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
   Clock,
   Edit3,
   Filter,
@@ -27,6 +28,7 @@ import {
   Image as ImageIcon,
   ArrowLeft,
   X,
+  Home,
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
@@ -812,6 +814,43 @@ function ConfirmationModal({ open, onClose, stats, plans, onConfirm, isStarting 
   );
 }
 
+// --- Breadcrumb Navigation ---
+function StudioBreadcrumb({ current = 'dashboard' }) {
+  const navigate = useNavigate();
+  const crumbs = [
+    { key: 'home', label: 'Studio', path: '/SyncStudioHome', icon: Home },
+    { key: 'dashboard', label: 'Dashboard', path: '/SyncStudioDashboard', icon: Camera },
+  ];
+
+  return (
+    <div className="flex items-center gap-1 text-xs mb-1">
+      {crumbs.map((crumb, i) => {
+        const Icon = crumb.icon;
+        const isLast = i === crumbs.length - 1;
+        const isActive = crumb.key === current;
+
+        return (
+          <React.Fragment key={crumb.key}>
+            {i > 0 && <ChevronRight className="w-3 h-3 text-zinc-600" />}
+            <button
+              onClick={() => !isActive && navigate(crumb.path)}
+              disabled={isActive}
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md transition-colors ${
+                isActive
+                  ? 'text-yellow-400 cursor-default'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              <Icon className="w-3 h-3" />
+              {crumb.label}
+            </button>
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
 // ========================================================================
 // Main Dashboard
 // ========================================================================
@@ -1245,6 +1284,9 @@ export default function SyncStudioDashboard() {
       {/* ============================================================ */}
       <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
         <div className="max-w-4xl mx-auto px-4 py-3">
+          {/* Breadcrumb */}
+          <StudioBreadcrumb current="dashboard" />
+
           {/* Stats row */}
           <div className="flex items-center justify-between gap-3 mb-2.5 flex-wrap">
             <div className="flex items-center gap-3 text-sm flex-wrap">
@@ -1255,7 +1297,7 @@ export default function SyncStudioDashboard() {
               </span>
               <span className="text-zinc-700">|</span>
               <span className="text-zinc-400">
-                <span className="text-emerald-400 font-semibold tabular-nums">{stats.approved}</span> approved
+                <span className="text-yellow-400 font-semibold tabular-nums">{stats.approved}</span> approved
                 <span className="text-zinc-600 mx-1.5">&middot;</span>
                 <span className="text-amber-400 font-semibold tabular-nums">{stats.pending}</span> pending
               </span>
@@ -1284,7 +1326,7 @@ export default function SyncStudioDashboard() {
                 disabled={!allApproved}
                 className={`inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg transition-all ${
                   allApproved
-                    ? 'bg-yellow-500 hover:bg-yellow-600 text-black shadow-lg shadow-yellow-500/20 animate-pulse'
+                    ? 'bg-yellow-500 hover:bg-yellow-600 text-black shadow-lg shadow-yellow-500/25'
                     : 'bg-zinc-800/60 text-zinc-600 border border-zinc-700/40 cursor-not-allowed'
                 }`}
               >
