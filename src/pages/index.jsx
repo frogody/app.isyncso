@@ -279,6 +279,14 @@ import SyncStudioResults from "./SyncStudioResults";
 
 import SyncStudioReturn from "./SyncStudioReturn";
 
+import Studio from "./Studio";
+import StudioImage from "./StudioImage";
+import StudioVideo from "./StudioVideo";
+import StudioPhotoshoot from "./StudioPhotoshoot";
+import StudioClipshoot from "./StudioClipshoot";
+import StudioTemplates from "./StudioTemplates";
+import StudioLibrary from "./StudioLibrary";
+
 import InventoryReceiving from "./InventoryReceiving";
 
 import InventoryShipping from "./InventoryShipping";
@@ -639,6 +647,14 @@ const PAGES = {
     SyncStudioPhotoshoot: SyncStudioPhotoshoot,
     SyncStudioResults: SyncStudioResults,
     SyncStudioReturn: SyncStudioReturn,
+
+    Studio: Studio,
+    StudioImage: StudioImage,
+    StudioVideo: StudioVideo,
+    StudioPhotoshoot: StudioPhotoshoot,
+    StudioClipshoot: StudioClipshoot,
+    StudioTemplates: StudioTemplates,
+    StudioLibrary: StudioLibrary,
 
     InventoryReceiving: InventoryReceiving,
 
@@ -1100,6 +1116,15 @@ function PagesContent() {
                 <Route path="/SyncStudioPhotoshoot" element={<SyncStudioPhotoshoot />} />
                 <Route path="/SyncStudioResults" element={<SyncStudioResults />} />
                 <Route path="/SyncStudioReturn" element={<SyncStudioReturn />} />
+
+                {/* Unified Studio routes */}
+                <Route path="/Studio" element={<Studio />} />
+                <Route path="/StudioImage" element={<StudioImage />} />
+                <Route path="/StudioVideo" element={<StudioVideo />} />
+                <Route path="/StudioPhotoshoot" element={<StudioPhotoshoot />} />
+                <Route path="/StudioClipshoot" element={<StudioClipshoot />} />
+                <Route path="/StudioTemplates" element={<StudioTemplates />} />
+                <Route path="/StudioLibrary" element={<StudioLibrary />} />
 
                 <Route path="/InventoryReceiving" element={<InventoryReceiving />} />
 

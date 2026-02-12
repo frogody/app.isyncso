@@ -311,7 +311,7 @@ function ProductSelector({ selectedProduct, setSelectedProduct, products, produc
   );
 }
 
-export default function CreateVideos() {
+export default function CreateVideos({ embedded = false }) {
   const { user } = useUser();
   const { theme, toggleTheme, ct } = useTheme();
   const [mode, setMode] = useState('ai');
@@ -698,12 +698,15 @@ export default function CreateVideos() {
 
   const durationConfig = DURATIONS.find(d => d.id === duration);
 
+  const Wrapper = embedded ? React.Fragment : CreatePageTransition;
+
   return (
-    <CreatePageTransition>
-      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-[#09090b]')}`}>
+    <Wrapper>
+      <div className={embedded ? '' : `min-h-screen ${ct('bg-slate-50', 'bg-[#09090b]')}`}>
         <div className="w-full px-4 lg:px-6 py-5 space-y-5">
 
           {/* ───── 1. Back Nav + Page Header ───── */}
+          {!embedded && (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <a
@@ -749,6 +752,7 @@ export default function CreateVideos() {
               </button>
             </div>
           </div>
+          )}
 
           {/* ───── 6. Output Area (moved above prompt) ───── */}
           {mode === 'ai' && (
@@ -1442,6 +1446,6 @@ export default function CreateVideos() {
           </DialogContent>
         </Dialog>
       </div>
-    </CreatePageTransition>
+    </Wrapper>
   );
 }

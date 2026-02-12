@@ -182,7 +182,7 @@ function getModeFromUseCase(useCaseId) {
   return MODES.find(m => m.useCases.includes(useCaseId)) || MODES[1];
 }
 
-export default function CreateImages() {
+export default function CreateImages({ embedded = false }) {
   const { user } = useUser();
   const { theme, toggleTheme, ct } = useTheme();
   const [prompt, setPrompt] = useState('');
@@ -639,12 +639,15 @@ export default function CreateImages() {
   const currentUseCase = USE_CASES[selectedUseCase];
   const isProductMode = selectedMode.id === 'product';
 
+  const Wrapper = embedded ? React.Fragment : CreatePageTransition;
+
   return (
-    <CreatePageTransition>
-      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-[#09090b]')}`}>
+    <Wrapper>
+      <div className={embedded ? '' : `min-h-screen ${ct('bg-slate-50', 'bg-[#09090b]')}`}>
         <div className="w-full px-4 lg:px-6 py-6 space-y-5">
 
           {/* 1. Back nav + Header row */}
+          {!embedded && (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <a
@@ -684,6 +687,7 @@ export default function CreateImages() {
               </button>
             </div>
           </div>
+          )}
 
           {/* 6. Output Area */}
           <AnimatePresence>
@@ -1400,6 +1404,6 @@ export default function CreateImages() {
           </DialogContent>
         </Dialog>
       </div>
-    </CreatePageTransition>
+    </Wrapper>
   );
 }

@@ -112,24 +112,14 @@ function GalleryItem({ item, index, ct }) {
 
 const TOOLS = [
   {
-    key: 'images',
-    title: 'AI Image Generation',
-    subtitle: 'FLUX Pro & Kontext',
-    description: 'State-of-the-art product photography, marketing visuals, and creative imagery — generated in seconds.',
+    key: 'studio',
+    title: 'Studio',
+    subtitle: 'Create & Generate',
+    description: 'AI image generation, video creation, bulk photoshoots, and multi-shot clipshoot assembly — all in one place.',
     icon: Camera,
-    route: 'CreateImages',
+    route: 'Studio',
     gradient: 'from-yellow-400 to-amber-500',
-    features: ['Product Scenes', 'Marketing', 'Social Content'],
-  },
-  {
-    key: 'videos',
-    title: 'Cinematic Video Studio',
-    subtitle: 'Kling v2.1 & Minimax',
-    description: 'AI storyboarding, multi-shot generation with real people, and automatic video assembly with transitions.',
-    icon: Clapperboard,
-    route: 'CreateVideos',
-    gradient: 'from-amber-500 to-orange-500',
-    features: ['Storyboard AI', 'Multi-Shot', 'Auto-Assembly'],
+    features: ['Image Gen', 'Video Gen', 'Photoshoot', 'Clipshoot'],
   },
   {
     key: 'branding',

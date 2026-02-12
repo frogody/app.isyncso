@@ -538,8 +538,8 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
     };
   }
 
-  // CREATE routes (includes Sync Studio, Content Calendar)
-  if (path.startsWith('/create') || path.startsWith('/syncstudio') || path.startsWith('/contentcalendar')) {
+  // CREATE routes (includes Sync Studio, Studio, Content Calendar)
+  if (path.startsWith('/create') || path.startsWith('/syncstudio') || path.startsWith('/studio') || path.startsWith('/contentcalendar')) {
     return {
       title: 'CREATE',
       color: 'yellow',
@@ -548,10 +548,8 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Dashboard', path: createPageUrl('Create'), icon: LayoutDashboard },
         { label: 'Calendar', path: createPageUrl('ContentCalendar'), icon: Calendar },
         { label: 'Branding', path: createPageUrl('CreateBranding'), icon: Palette },
-        { label: 'Images', path: createPageUrl('CreateImages'), icon: Image },
-        { label: 'Videos', path: createPageUrl('CreateVideos'), icon: Video },
-        { label: 'Sync Studio', path: createPageUrl('SyncStudioHome'), icon: Camera },
-        { label: 'Library', path: createPageUrl('CreateLibrary'), icon: FolderOpen },
+        { label: 'Studio', path: createPageUrl('Studio'), icon: Camera },
+        { label: 'Library', path: createPageUrl('StudioLibrary'), icon: FolderOpen },
       ]
     };
   }
