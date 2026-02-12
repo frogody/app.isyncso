@@ -90,7 +90,7 @@ function ImportProgressBar({ current, total }) {
         value={percentage}
       >
         <Progress.Indicator
-          className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 transition-all duration-500 ease-out"
+          className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 transition-all duration-300 ease-out"
           style={{ width: `${percentage}%` }}
         />
       </Progress.Root>
@@ -632,7 +632,7 @@ export default function SyncStudioImport() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.3 }}
-            className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8 max-w-lg w-full text-center"
+            className="bg-zinc-900/50 bg-gradient-to-b from-red-950/10 to-transparent border border-zinc-800/60 rounded-2xl p-8 max-w-lg w-full text-center"
           >
             <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-5">
               <AlertTriangle className="w-7 h-7 text-red-400" />

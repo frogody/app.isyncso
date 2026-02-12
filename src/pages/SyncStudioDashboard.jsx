@@ -345,8 +345,8 @@ function ProductCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12 }}
       transition={{ duration: 0.25 }}
-      className={`bg-zinc-900/50 border rounded-2xl overflow-hidden transition-colors ${
-        isEditing ? 'border-yellow-500/30' : 'border-zinc-800/60 hover:border-zinc-700/60'
+      className={`border rounded-2xl overflow-hidden transition-colors ${
+        isEditing ? 'bg-zinc-900/70 border-yellow-500/30 ring-1 ring-yellow-500/10' : 'bg-zinc-900/50 border-zinc-800/60 hover:border-zinc-700/60'
       }`}
     >
       {/* Collapsed row */}
@@ -1348,7 +1348,7 @@ export default function SyncStudioDashboard() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by title or EAN..."
-              className="w-full bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-9 pr-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-yellow-500/40 transition-colors"
+              className="w-full bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-9 pr-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-yellow-500/40 focus:ring-1 focus:ring-yellow-500/20 transition-colors"
             />
           </div>
 
@@ -1377,9 +1377,9 @@ export default function SyncStudioDashboard() {
       {/* ============================================================ */}
       {/* PRODUCT CARDS LIST                                            */}
       {/* ============================================================ */}
-      <div className="max-w-4xl mx-auto px-4 pb-8 space-y-2">
+      <div className="max-w-4xl mx-auto px-4 pb-8 space-y-3">
         <AnimatePresence mode="popLayout">
-          {filteredPlans.map((plan) => (
+          {filteredPlans.map((plan, idx) => (
             <ProductCard
               key={plan.plan_id}
               plan={plan}

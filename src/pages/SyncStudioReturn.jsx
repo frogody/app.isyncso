@@ -146,7 +146,7 @@ export default function SyncStudioReturn() {
           // Product count
           supabase
             .from('sync_studio_products')
-            .select('id', { count: 'exact', head: true })
+            .select('ean', { count: 'exact', head: true })
             .eq('user_id', user.id),
 
           // Last synced time (max updated_at)
@@ -406,8 +406,8 @@ export default function SyncStudioReturn() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-700/50">
+              <table className="w-full text-sm min-w-[600px]">
                 <thead>
                   <tr className="border-t border-zinc-800/60">
                     <th className="text-left text-[11px] font-medium text-zinc-500 uppercase tracking-wider px-6 py-3">
@@ -434,15 +434,15 @@ export default function SyncStudioReturn() {
                   {jobs.map((job, idx) => (
                     <tr
                       key={job.job_id || job.id || idx}
-                      className="border-t border-zinc-800/40 hover:bg-zinc-800/20 transition-colors"
+                      className={`border-t border-zinc-800/40 hover:bg-zinc-800/30 transition-colors ${idx % 2 === 1 ? 'bg-zinc-800/10' : ''}`}
                     >
                       <td className="px-6 py-3 text-zinc-300 whitespace-nowrap">
                         {formatDate(job.created_at)}
                       </td>
-                      <td className="px-3 py-3 text-zinc-400 tabular-nums whitespace-nowrap">
+                      <td className="px-3 py-3 text-zinc-300 font-medium tabular-nums whitespace-nowrap">
                         {job.total_products != null ? job.total_products.toLocaleString() : '-'}
                       </td>
-                      <td className="px-3 py-3 text-zinc-400 tabular-nums whitespace-nowrap">
+                      <td className="px-3 py-3 text-zinc-300 font-medium tabular-nums whitespace-nowrap">
                         {job.total_images != null ? job.total_images.toLocaleString() : '-'}
                       </td>
                       <td className="px-3 py-3 text-zinc-400 whitespace-nowrap">

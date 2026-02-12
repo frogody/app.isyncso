@@ -579,7 +579,7 @@ export default function SyncStudioPhotoshoot() {
           </div>
 
           {/* Stats row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             {/* Speed */}
             <div className="flex items-center gap-2 bg-zinc-800/50 border border-zinc-700/30 rounded-xl px-3 py-2.5">
               <Zap className="w-4 h-4 text-yellow-400 shrink-0" />
@@ -638,7 +638,7 @@ export default function SyncStudioPhotoshoot() {
                   Live Feed
                 </p>
               </div>
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                 <AnimatePresence mode="popLayout">
                   {recentImages.slice(0, 10).map((img) => (
                     <motion.div
@@ -687,7 +687,7 @@ export default function SyncStudioPhotoshoot() {
                   Live Feed
                 </p>
               </div>
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="flex flex-col gap-1">
                     <div className="w-full aspect-square rounded-xl bg-zinc-800/40 border border-zinc-700/20 animate-pulse" />

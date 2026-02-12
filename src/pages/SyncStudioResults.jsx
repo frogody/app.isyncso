@@ -359,7 +359,7 @@ export default function SyncStudioResults() {
           {[1, 2].map((i) => (
             <div key={i} className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6 animate-pulse">
               <div className="h-5 bg-zinc-800 rounded w-64 mb-6" />
-              <div className="grid grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                 {[1, 2, 3, 4, 5].map((j) => (
                   <div key={j} className="aspect-square bg-zinc-800/60 rounded-xl" />
                 ))}
@@ -570,7 +570,7 @@ export default function SyncStudioResults() {
                         {group.existingImages.map((url, i) => (
                           <div
                             key={i}
-                            className="w-24 h-24 rounded-xl bg-zinc-800/60 border border-zinc-700/40 overflow-hidden flex-shrink-0"
+                            className="w-24 h-24 rounded-xl bg-zinc-800/60 border border-zinc-700/40 hover:border-zinc-600/60 overflow-hidden flex-shrink-0 transition-colors"
                           >
                             <img
                               src={url}
@@ -597,7 +597,7 @@ export default function SyncStudioResults() {
                         return (
                           <div key={img.image_id} className="flex flex-col items-center gap-2">
                             {/* Thumbnail */}
-                            <div className="relative w-24 h-24 rounded-xl bg-zinc-800/60 border border-zinc-700/40 overflow-hidden flex-shrink-0 group">
+                            <div className="relative w-24 h-24 rounded-xl bg-zinc-800/60 border border-zinc-700/40 hover:border-yellow-500/30 overflow-hidden flex-shrink-0 group transition-colors">
                               <img
                                 src={img.image_url}
                                 alt={`Shot ${img.shot_number}`}
@@ -627,7 +627,7 @@ export default function SyncStudioResults() {
                               <button
                                 onClick={() => handleDownloadImage(img.image_url)}
                                 disabled={isRegenerating || isDeleting}
-                                className="p-1.5 rounded-lg text-zinc-500 hover:text-yellow-400 hover:bg-yellow-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="p-2 rounded-lg text-zinc-500 hover:text-yellow-400 hover:bg-yellow-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                 title="Download"
                               >
                                 <ArrowDownToLine className="w-3.5 h-3.5" />
@@ -635,7 +635,7 @@ export default function SyncStudioResults() {
                               <button
                                 onClick={() => handleRegenerate(img)}
                                 disabled={isRegenerating || isDeleting}
-                                className="p-1.5 rounded-lg text-zinc-500 hover:text-yellow-400 hover:bg-yellow-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="p-2 rounded-lg text-zinc-500 hover:text-yellow-400 hover:bg-yellow-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                 title="Regenerate"
                               >
                                 <RefreshCw className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
@@ -643,7 +643,7 @@ export default function SyncStudioResults() {
                               <button
                                 onClick={() => handleDelete(img)}
                                 disabled={isRegenerating || isDeleting}
-                                className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="p-2 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                 title="Delete"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />

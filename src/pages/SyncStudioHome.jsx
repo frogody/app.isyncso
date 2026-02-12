@@ -221,7 +221,7 @@ export default function SyncStudioHome() {
 
         {/* Feature cards */}
         <motion.div
-          className="mt-20 grid gap-4 sm:grid-cols-3"
+          className="mt-20 grid gap-6 sm:grid-cols-3"
           initial="hidden"
           animate="visible"
           variants={{ visible: { transition: { staggerChildren: 0.1, delayChildren: 0.5 } } }}
