@@ -1085,6 +1085,9 @@ export default function AdminRoadmap() {
     queued: items.filter(i => i.auto_queued).length,
   };
 
+  // ─── Human tasks ─────────────────────────────────────────
+  const humanTasks = useMemo(() => items.filter(i => i.requires_human && i.status !== 'done' && i.status !== 'cancelled'), [items]);
+
   // ─── Kanban groups ────────────────────────────────────────
   const kanbanStatuses = ['requested', 'planned', 'in_progress', 'review', 'done'];
   const kanbanGroups = useMemo(() => {
@@ -1180,6 +1183,43 @@ export default function AdminRoadmap() {
           <Card key={s.label} className="bg-zinc-900/50 border-zinc-800"><CardContent className="p-3 text-center"><p className="text-[10px] text-zinc-500">{s.label}</p><p className={cn('text-xl font-bold', s.color)}>{s.value}</p></CardContent></Card>
         ))}
       </div>
+
+      {/* Human Tasks */}
+      {humanTasks.length > 0 && (
+        <Card className="bg-amber-500/5 border-amber-500/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-4 h-4 text-amber-400" />
+              <h3 className="text-sm font-semibold text-amber-400">Human Tasks</h3>
+              <Badge className="text-[10px] px-1.5 py-px bg-amber-500/20 text-amber-400 border-amber-500/30">{humanTasks.length}</Badge>
+            </div>
+            <div className="space-y-2">
+              {humanTasks.map(task => {
+                const priority = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.medium;
+                const status = STATUS_CONFIG[task.status] || STATUS_CONFIG.requested;
+                return (
+                  <div key={task.id} className="flex items-center justify-between gap-3 bg-zinc-900/50 rounded-lg px-3 py-2.5 border border-zinc-800">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-white font-medium truncate">{task.title}</p>
+                        {task.description && <p className="text-xs text-zinc-500 line-clamp-1 mt-0.5">{task.description}</p>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge className={cn('text-[10px] px-1.5 py-px', priority.color)}>{priority.label}</Badge>
+                      <Select value={task.status} onValueChange={(v) => handleStatusChange(task.id, v)}>
+                        <SelectTrigger className="h-7 w-24 text-[10px] bg-zinc-800/50 border-zinc-700"><SelectValue /></SelectTrigger>
+                        <SelectContent>{Object.entries(STATUS_CONFIG).map(([key, cfg]) => (<SelectItem key={key} value={key} className="text-xs">{cfg.label}</SelectItem>))}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters (hidden in journey view for cleaner look, shown for list/kanban) */}
       {viewMode !== 'journey' && viewMode !== 'tree' && (
