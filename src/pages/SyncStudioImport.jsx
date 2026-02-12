@@ -142,6 +142,8 @@ export default function SyncStudioImport() {
   const mountedRef = useRef(true);
   const continueInFlightRef = useRef(false);
   const planInFlightRef = useRef(false);
+  const errorCountRef = useRef(0);
+  const MAX_CONSECUTIVE_ERRORS = 5;
 
   // -- Edge function caller --
   const callEdgeFunction = useCallback(async (body, fnName = EDGE_FUNCTION) => {
@@ -326,6 +328,7 @@ export default function SyncStudioImport() {
         });
 
         if (!mountedRef.current) return;
+        errorCountRef.current = 0; // Reset on success
         updateStats(data);
 
         // Import chunk done — check if more pages
@@ -337,7 +340,13 @@ export default function SyncStudioImport() {
         }
       } catch (err) {
         if (mountedRef.current) {
-          console.error('[SyncStudioImport] continue error:', err);
+          errorCountRef.current += 1;
+          console.error(`[SyncStudioImport] continue error (${errorCountRef.current}/${MAX_CONSECUTIVE_ERRORS}):`, err);
+          if (errorCountRef.current >= MAX_CONSECUTIVE_ERRORS) {
+            if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+            setError(`Import failed after ${MAX_CONSECUTIVE_ERRORS} retries: ${err.message}`);
+            setStage('error');
+          }
         }
       } finally {
         continueInFlightRef.current = false;

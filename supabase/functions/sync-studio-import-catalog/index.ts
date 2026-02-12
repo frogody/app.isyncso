@@ -34,7 +34,7 @@ const corsHeaders = {
 // Bol.com Auth
 // ============================================
 
-async function getBolToken(supabase: any, companyId: string): Promise<string> {
+async function getBolToken(supabase: any, companyId: string, forceRefresh = false): Promise<string> {
   const { data: creds, error } = await supabase
     .from("bolcom_credentials")
     .select("*")
@@ -44,8 +44,8 @@ async function getBolToken(supabase: any, companyId: string): Promise<string> {
 
   if (error || !creds) throw new Error("No bol.com credentials configured");
 
-  // Check cached token
-  if (creds.access_token && creds.token_expires_at) {
+  // Check cached token (skip if force refresh requested)
+  if (!forceRefresh && creds.access_token && creds.token_expires_at) {
     const expiresAt = new Date(creds.token_expires_at);
     if (expiresAt > new Date(Date.now() + 60_000)) {
       return creds.access_token;
@@ -147,6 +147,35 @@ async function bolFetchText(token: string, endpoint: string) {
   return resp.text();
 }
 
+// Retry-aware bol.com fetch: on 403, force-refresh token and retry once
+async function bolFetchRetry(supabase: any, companyId: string, endpoint: string, method = "GET", body?: unknown) {
+  let token = await getBolToken(supabase, companyId);
+  try {
+    return await bolFetch(token, endpoint, method, body);
+  } catch (err: any) {
+    if (err.message?.includes("403")) {
+      console.log("[sync-studio] 403 on", endpoint, "— forcing token refresh and retrying");
+      token = await getBolToken(supabase, companyId, true);
+      return await bolFetch(token, endpoint, method, body);
+    }
+    throw err;
+  }
+}
+
+async function bolFetchTextRetry(supabase: any, companyId: string, endpoint: string) {
+  let token = await getBolToken(supabase, companyId);
+  try {
+    return await bolFetchText(token, endpoint);
+  } catch (err: any) {
+    if (err.message?.includes("403")) {
+      console.log("[sync-studio] 403 on", endpoint, "— forcing token refresh and retrying");
+      token = await getBolToken(supabase, companyId, true);
+      return await bolFetchText(token, endpoint);
+    }
+    throw err;
+  }
+}
+
 // Fetch product catalog info by EAN
 async function fetchProductByEan(token: string, ean: string) {
   try {
@@ -239,11 +268,9 @@ serve(async (req) => {
           });
         }
 
-        // Get token and request offer export
-        const token = await getBolToken(supabase, companyId);
-
+        // Request offer export (with 403 retry)
         console.log("[sync-studio] Requesting offer export from bol.com...");
-        const exportResp = await bolFetch(token, "/offers/export", "POST", { format: "CSV" });
+        const exportResp = await bolFetchRetry(supabase, companyId, "/offers/export", "POST", { format: "CSV" });
         const processStatusId = exportResp.processStatusId;
 
         if (!processStatusId) {
@@ -298,7 +325,6 @@ serve(async (req) => {
           return json({ importJobId, status: job.status, hasMore: false });
         }
 
-        const token = await getBolToken(supabase, companyId);
         const metadata = job.metadata || {};
 
         // ----- Phase: EXPORTING (waiting for CSV) -----
@@ -306,7 +332,7 @@ serve(async (req) => {
           const psId = metadata.processStatusId;
           if (!psId) throw new Error("No processStatusId in job metadata");
 
-          const statusResp = await bolFetch(token, `/process-status/${psId}`);
+          const statusResp = await bolFetchRetry(supabase, companyId, `/process-status/${psId}`);
           console.log("[sync-studio] Export status:", statusResp.status, statusResp.entityId || "");
 
           if (statusResp.status === "PENDING") {
@@ -326,7 +352,7 @@ serve(async (req) => {
 
             // Download CSV
             console.log("[sync-studio] Downloading offer export CSV, reportId:", reportId);
-            const csvText = await bolFetchText(token, `/offers/export/${reportId}`);
+            const csvText = await bolFetchTextRetry(supabase, companyId, `/offers/export/${reportId}`);
             const offers = parseOfferExportCsv(csvText);
 
             console.log(`[sync-studio] Parsed ${offers.length} unique EANs from offer export`);
@@ -421,6 +447,7 @@ serve(async (req) => {
             });
           }
 
+          const token = await getBolToken(supabase, companyId);
           const categories = new Set<string>();
           const brands = new Set<string>();
           let imageCount = 0;
