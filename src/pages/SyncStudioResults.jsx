@@ -53,7 +53,7 @@ function showToast(message, type = 'info') {
     type === 'error'
       ? 'bg-red-500/90 text-white'
       : type === 'success'
-      ? 'bg-cyan-500/90 text-white'
+      ? 'bg-yellow-500/90 text-white'
       : 'bg-zinc-800 text-zinc-200 border border-zinc-700'
   }`;
   el.textContent = message;
@@ -328,7 +328,7 @@ export default function SyncStudioResults() {
           </p>
           <button
             onClick={() => navigate('/SyncStudioDashboard')}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-black font-semibold rounded-xl transition-all"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-xl transition-all"
           >
             Go to Dashboard
           </button>
@@ -389,7 +389,7 @@ export default function SyncStudioResults() {
           <div className="flex gap-3 justify-center">
             <button
               onClick={loadData}
-              className="px-4 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-sm font-medium hover:bg-cyan-500/20 transition-colors"
+              className="px-4 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm font-medium hover:bg-yellow-500/20 transition-colors"
             >
               Retry
             </button>
@@ -426,7 +426,7 @@ export default function SyncStudioResults() {
           </p>
           <button
             onClick={() => navigate('/SyncStudioDashboard')}
-            className="px-4 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-sm font-medium hover:bg-cyan-500/20 transition-colors"
+            className="px-4 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm font-medium hover:bg-yellow-500/20 transition-colors"
           >
             Back to Dashboard
           </button>
@@ -464,8 +464,8 @@ export default function SyncStudioResults() {
             <div className="flex flex-wrap gap-6">
               {/* Total */}
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-                  <Images className="w-5 h-5 text-cyan-400" />
+                <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+                  <Images className="w-5 h-5 text-yellow-400" />
                 </div>
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wider">Total</p>
@@ -475,8 +475,8 @@ export default function SyncStudioResults() {
 
               {/* Completed */}
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-cyan-400" />
+                <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-yellow-400" />
                 </div>
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wider">Completed</p>
@@ -522,7 +522,7 @@ export default function SyncStudioResults() {
               </button>
               <button
                 onClick={handlePublish}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-sm font-medium hover:bg-cyan-500/20 transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm font-medium hover:bg-yellow-500/20 transition-colors"
               >
                 <Send className="w-4 h-4" />
                 Publish to Bol.com
@@ -548,8 +548,8 @@ export default function SyncStudioResults() {
                 {/* Product header */}
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-                      <Package className="w-4 h-4 text-cyan-400" />
+                    <div className="w-8 h-8 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+                      <Package className="w-4 h-4 text-yellow-400" />
                     </div>
                     <div>
                       <h3 className="text-white font-semibold text-sm">{group.title}</h3>
@@ -607,7 +607,7 @@ export default function SyncStudioResults() {
                               {/* Regenerating overlay */}
                               {isRegenerating && (
                                 <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
-                                  <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
+                                  <Loader2 className="w-6 h-6 text-yellow-400 animate-spin" />
                                 </div>
                               )}
                               {/* Deleting overlay */}
@@ -627,7 +627,7 @@ export default function SyncStudioResults() {
                               <button
                                 onClick={() => handleDownloadImage(img.image_url)}
                                 disabled={isRegenerating || isDeleting}
-                                className="p-1.5 rounded-lg text-zinc-500 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="p-1.5 rounded-lg text-zinc-500 hover:text-yellow-400 hover:bg-yellow-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                 title="Download"
                               >
                                 <ArrowDownToLine className="w-3.5 h-3.5" />
@@ -635,7 +635,7 @@ export default function SyncStudioResults() {
                               <button
                                 onClick={() => handleRegenerate(img)}
                                 disabled={isRegenerating || isDeleting}
-                                className="p-1.5 rounded-lg text-zinc-500 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="p-1.5 rounded-lg text-zinc-500 hover:text-yellow-400 hover:bg-yellow-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                 title="Regenerate"
                               >
                                 <RefreshCw className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />

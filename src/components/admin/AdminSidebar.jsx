@@ -29,6 +29,7 @@ import {
   Package,
   Coins,
   Presentation,
+  Map,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -52,6 +53,7 @@ const adminNavItems = [
   { title: 'Integrations', href: '/admin/integrations', icon: Plug2 },
   { title: 'System', href: '/admin/system', icon: Server },
   { divider: true },
+  { title: 'Roadmap', href: '/admin/roadmap', icon: Map, badge: 'NEW' },
   { title: 'Feature Flags', href: '/admin/feature-flags', icon: Flag },
   { title: 'Settings', href: '/admin/settings', icon: Settings },
   { title: 'Audit Logs', href: '/admin/audit-logs', icon: ScrollText },

@@ -115,10 +115,10 @@ export default function SyncStudioHome() {
           className="flex flex-col items-center gap-4"
         >
           <div className="relative">
-            <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-              <Camera className="w-8 h-8 text-cyan-400" />
+            <div className="w-16 h-16 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+              <Camera className="w-8 h-8 text-yellow-400" />
             </div>
-            <Loader2 className="w-5 h-5 text-cyan-400 animate-spin absolute -bottom-1 -right-1" />
+            <Loader2 className="w-5 h-5 text-yellow-400 animate-spin absolute -bottom-1 -right-1" />
           </div>
           <p className="text-zinc-400 text-sm">Checking your studio setup...</p>
         </motion.div>
@@ -132,9 +132,9 @@ export default function SyncStudioHome() {
     <div className="min-h-screen bg-black relative overflow-hidden">
       {/* Background gradient effects */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-cyan-500/[0.04] rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[400px] bg-cyan-600/[0.03] rounded-full blur-[100px]" />
-        <div className="absolute top-1/3 left-0 w-[300px] h-[300px] bg-blue-500/[0.02] rounded-full blur-[80px]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-yellow-500/[0.04] rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[400px] bg-yellow-600/[0.03] rounded-full blur-[100px]" />
+        <div className="absolute top-1/3 left-0 w-[300px] h-[300px] bg-yellow-500/[0.02] rounded-full blur-[80px]" />
       </div>
 
       {/* Content */}
@@ -148,8 +148,8 @@ export default function SyncStudioHome() {
         >
           {/* Icon */}
           <motion.div variants={fadeUp} custom={0} className="mb-8">
-            <div className="w-20 h-20 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-              <Camera className="w-10 h-10 text-cyan-400" />
+            <div className="w-20 h-20 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+              <Camera className="w-10 h-10 text-yellow-400" />
             </div>
           </motion.div>
 
@@ -169,7 +169,7 @@ export default function SyncStudioHome() {
             className="mt-4 text-lg sm:text-xl text-zinc-300 max-w-xl leading-relaxed"
           >
             Turn your entire product catalog into studio-quality photography.{' '}
-            <span className="text-cyan-400">Automatically.</span>
+            <span className="text-yellow-400">Automatically.</span>
           </motion.p>
 
           {/* Description */}
@@ -187,10 +187,10 @@ export default function SyncStudioHome() {
             <motion.div
               variants={fadeUp}
               custom={3.5}
-              className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20"
+              className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-500/10 border border-yellow-500/20"
             >
-              <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-              <span className="text-sm text-cyan-300 font-medium">
+              <CheckCircle2 className="w-4 h-4 text-yellow-400" />
+              <span className="text-sm text-yellow-300 font-medium">
                 Your Bol.com account is linked
               </span>
             </motion.div>
@@ -201,7 +201,7 @@ export default function SyncStudioHome() {
             {bolConnected ? (
               <button
                 onClick={() => navigate('/SyncStudioImport')}
-                className="group inline-flex items-center gap-2.5 bg-cyan-500 hover:bg-cyan-600 text-black font-medium rounded-xl px-8 py-3.5 text-base transition-all duration-200 hover:shadow-lg hover:shadow-cyan-500/20"
+                className="group inline-flex items-center gap-2.5 bg-yellow-500 hover:bg-yellow-600 text-black font-medium rounded-xl px-8 py-3.5 text-base transition-all duration-200 hover:shadow-lg hover:shadow-yellow-500/20"
               >
                 Sync My Catalog
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
@@ -209,7 +209,7 @@ export default function SyncStudioHome() {
             ) : (
               <button
                 onClick={() => navigate('/Integrations')}
-                className="group inline-flex items-center gap-2.5 bg-cyan-500 hover:bg-cyan-600 text-black font-medium rounded-xl px-8 py-3.5 text-base transition-all duration-200 hover:shadow-lg hover:shadow-cyan-500/20"
+                className="group inline-flex items-center gap-2.5 bg-yellow-500 hover:bg-yellow-600 text-black font-medium rounded-xl px-8 py-3.5 text-base transition-all duration-200 hover:shadow-lg hover:shadow-yellow-500/20"
               >
                 <Link className="w-4 h-4" />
                 Connect Bol.com Store
@@ -233,8 +233,8 @@ export default function SyncStudioHome() {
               custom={i}
               className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6 transition-colors hover:border-zinc-700/60"
             >
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-4">
-                <span className="text-cyan-400 text-sm font-bold">{i + 1}</span>
+              <div className="w-8 h-8 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mb-4">
+                <span className="text-yellow-400 text-sm font-bold">{i + 1}</span>
               </div>
               <h3 className="text-white font-semibold text-base mb-1.5">{feature.title}</h3>
               <p className="text-zinc-400 text-sm leading-relaxed">{feature.description}</p>

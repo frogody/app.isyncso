@@ -41,8 +41,8 @@ const UPDATE_PLAN_EDGE_FUNCTION = 'sync-studio-update-plan';
 
 // --- Shot type styling map ---
 const SHOT_TYPE_STYLES = {
-  hero: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/20' },
-  lifestyle: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' },
+  hero: { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/20' },
+  lifestyle: { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/20' },
   detail: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
   alternate: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/20' },
   contextual: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
@@ -58,7 +58,7 @@ const SHOT_TYPE_OPTIONS = ['hero', 'lifestyle', 'detail', 'alternate', 'contextu
 // --- Editable input field ---
 function EditableField({ label, value, onChange, placeholder, multiline = false }) {
   const baseClasses =
-    'w-full bg-zinc-800/60 border border-zinc-700/40 rounded-lg px-3 py-1.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-cyan-500/40 transition-colors';
+    'w-full bg-zinc-800/60 border border-zinc-700/40 rounded-lg px-3 py-1.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-yellow-500/40 transition-colors';
 
   return (
     <div className="space-y-1">
@@ -112,7 +112,7 @@ function ShotEditor({ shot, index, onUpdate, onRemove, isRemoving }) {
               handleFieldChange('shot_type', e.target.value);
               handleFieldChange('type', e.target.value);
             }}
-            className="appearance-none bg-zinc-800/60 border border-zinc-700/40 rounded-lg px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-zinc-300 focus:outline-none focus:border-cyan-500/40 transition-colors cursor-pointer"
+            className="appearance-none bg-zinc-800/60 border border-zinc-700/40 rounded-lg px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-zinc-300 focus:outline-none focus:border-yellow-500/40 transition-colors cursor-pointer"
           >
             {SHOT_TYPE_OPTIONS.map((opt) => (
               <option key={opt} value={opt}>
@@ -176,7 +176,7 @@ function StatusBadge({ status }) {
   }
   if (status === 'user_modified') {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
         <Edit3 className="w-3 h-3" />
         Modified
       </span>
@@ -346,7 +346,7 @@ function ProductCard({
       exit={{ opacity: 0, y: -12 }}
       transition={{ duration: 0.25 }}
       className={`bg-zinc-900/50 border rounded-2xl overflow-hidden transition-colors ${
-        isEditing ? 'border-cyan-500/30' : 'border-zinc-800/60 hover:border-zinc-700/60'
+        isEditing ? 'border-yellow-500/30' : 'border-zinc-800/60 hover:border-zinc-700/60'
       }`}
     >
       {/* Collapsed row */}
@@ -437,7 +437,7 @@ function ProductCard({
                 onApprove(plan.plan_id);
               }}
               disabled={isApproving}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 text-yellow-400 transition-colors disabled:opacity-50"
             >
               {isApproving ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -527,7 +527,7 @@ function ProductCard({
                       <button
                         onClick={handleAddShot}
                         disabled={isAddingShot || isSaving}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 transition-colors disabled:opacity-50"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 text-yellow-400 transition-colors disabled:opacity-50"
                       >
                         {isAddingShot ? (
                           <Loader2 className="w-3 h-3 animate-spin" />
@@ -578,7 +578,7 @@ function ProductCard({
                       <button
                         onClick={handleSaveAllShots}
                         disabled={isSaving}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 transition-colors disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 text-yellow-400 transition-colors disabled:opacity-50"
                       >
                         {isSaving ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -647,7 +647,7 @@ function ProductCard({
                   <button
                     onClick={() => onApprove(plan.plan_id)}
                     disabled={isApproving}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 text-yellow-400 transition-colors disabled:opacity-50"
                   >
                     {isApproving ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -725,8 +725,8 @@ function ConfirmationModal({ open, onClose, stats, plans, onConfirm, isStarting 
 
             {/* Header */}
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-                <Rocket className="w-6 h-6 text-cyan-400" />
+              <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+                <Rocket className="w-6 h-6 text-yellow-400" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-white">Ready to start your photoshoot?</h3>
@@ -795,7 +795,7 @@ function ConfirmationModal({ open, onClose, stats, plans, onConfirm, isStarting 
               <button
                 onClick={onConfirm}
                 disabled={isStarting}
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-cyan-500 hover:bg-cyan-600 text-black shadow-lg shadow-cyan-500/20 transition-all disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-yellow-500 hover:bg-yellow-600 text-black shadow-lg shadow-yellow-500/20 transition-all disabled:opacity-50"
               >
                 {isStarting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -1197,10 +1197,10 @@ export default function SyncStudioDashboard() {
           transition={{ duration: 0.3 }}
           className="flex flex-col items-center gap-4"
         >
-          <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-            <Camera className="w-7 h-7 text-cyan-400" />
+          <div className="w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+            <Camera className="w-7 h-7 text-yellow-400" />
           </div>
-          <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
+          <Loader2 className="w-5 h-5 text-yellow-400 animate-spin" />
           <p className="text-zinc-400 text-sm">Loading shoot plans...</p>
         </motion.div>
       </div>
@@ -1226,7 +1226,7 @@ export default function SyncStudioDashboard() {
           </p>
           <button
             onClick={() => navigate('/SyncStudioHome')}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-sm font-medium rounded-xl transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 text-sm font-medium rounded-xl transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Sync Studio
@@ -1284,7 +1284,7 @@ export default function SyncStudioDashboard() {
                 disabled={!allApproved}
                 className={`inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg transition-all ${
                   allApproved
-                    ? 'bg-cyan-500 hover:bg-cyan-600 text-black shadow-lg shadow-cyan-500/20 animate-pulse'
+                    ? 'bg-yellow-500 hover:bg-yellow-600 text-black shadow-lg shadow-yellow-500/20 animate-pulse'
                     : 'bg-zinc-800/60 text-zinc-600 border border-zinc-700/40 cursor-not-allowed'
                 }`}
               >
@@ -1302,8 +1302,8 @@ export default function SyncStudioDashboard() {
             <Progress.Indicator
               className={`h-full rounded-full transition-all duration-500 ease-out ${
                 allApproved
-                  ? 'bg-gradient-to-r from-emerald-500 to-cyan-400'
-                  : 'bg-gradient-to-r from-cyan-500 to-cyan-400'
+                  ? 'bg-gradient-to-r from-emerald-500 to-yellow-400'
+                  : 'bg-gradient-to-r from-yellow-500 to-yellow-400'
               }`}
               style={{ width: `${stats.percentage}%` }}
             />
@@ -1312,7 +1312,7 @@ export default function SyncStudioDashboard() {
             <span className="text-[10px] text-zinc-600">
               {stats.approved} of {stats.total} approved
             </span>
-            <span className="text-[10px] text-cyan-400/80 font-medium tabular-nums">
+            <span className="text-[10px] text-yellow-400/80 font-medium tabular-nums">
               {stats.percentage}%
             </span>
           </div>
@@ -1329,7 +1329,7 @@ export default function SyncStudioDashboard() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="appearance-none bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-8 pr-8 py-2 text-sm text-zinc-300 focus:outline-none focus:border-cyan-500/40 transition-colors cursor-pointer"
+              className="appearance-none bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-8 pr-8 py-2 text-sm text-zinc-300 focus:outline-none focus:border-yellow-500/40 transition-colors cursor-pointer"
             >
               <option value="all">All</option>
               <option value="pending">Pending</option>
@@ -1348,7 +1348,7 @@ export default function SyncStudioDashboard() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by title or EAN..."
-              className="w-full bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-9 pr-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-cyan-500/40 transition-colors"
+              className="w-full bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-9 pr-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-yellow-500/40 transition-colors"
             />
           </div>
 
@@ -1357,7 +1357,7 @@ export default function SyncStudioDashboard() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="appearance-none bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-8 pr-8 py-2 text-sm text-zinc-300 focus:outline-none focus:border-cyan-500/40 transition-colors cursor-pointer"
+              className="appearance-none bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-8 pr-8 py-2 text-sm text-zinc-300 focus:outline-none focus:border-yellow-500/40 transition-colors cursor-pointer"
             >
               <option value="category">Category</option>
               <option value="shots">Shot Count</option>
