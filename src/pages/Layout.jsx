@@ -557,6 +557,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       items: [
         { label: 'Studio', path: createPageUrl('SyncStudioHome'), icon: Camera },
         { label: 'Import', path: createPageUrl('SyncStudioImport'), icon: Package },
+        { label: 'Dashboard', path: createPageUrl('SyncStudioDashboard'), icon: LayoutDashboard },
       ]
     };
   }
