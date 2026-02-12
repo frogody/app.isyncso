@@ -30,6 +30,7 @@ import {
   Coins,
   Presentation,
   Map,
+  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +55,7 @@ const adminNavItems = [
   { title: 'System', href: '/admin/system', icon: Server },
   { divider: true },
   { title: 'Roadmap', href: '/admin/roadmap', icon: Map, badge: 'NEW' },
+  { title: 'Structural Tests', href: '/admin/structural-tests', icon: ShieldCheck },
   { title: 'Feature Flags', href: '/admin/feature-flags', icon: Flag },
   { title: 'Settings', href: '/admin/settings', icon: Settings },
   { title: 'Audit Logs', href: '/admin/audit-logs', icon: ScrollText },
