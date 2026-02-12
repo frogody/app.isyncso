@@ -133,12 +133,12 @@ const ASPECT_RATIOS = [
 ];
 
 const SIZE_SCALE = [
-  { value: 1, label: 'Tiny',       desc: 'Fits on a fingertip (earring, pin, small gem)', cm: '1-2cm' },
-  { value: 2, label: 'Small',      desc: 'Fits in palm (ring, watch, key)', cm: '3-6cm' },
-  { value: 3, label: 'Hand-sized', desc: 'About the size of a hand (phone, wallet, soap)', cm: '8-15cm' },
-  { value: 4, label: 'Forearm',    desc: 'Forearm length (bottle, shoe, tablet)', cm: '20-35cm' },
-  { value: 5, label: 'Large',      desc: 'Larger than arm span (bag, guitar, chair)', cm: '40-80cm' },
-  { value: 6, label: 'Very Large', desc: 'Human-sized or bigger (furniture, appliance)', cm: '80cm+' },
+  { value: 1, label: 'Tiny',       desc: 'Fits on a fingertip (earring, pin, small gem)', cm: '1-2cm', emoji: '💎' },
+  { value: 2, label: 'Small',      desc: 'Fits in palm (ring, watch, key)', cm: '3-6cm', emoji: '⌚' },
+  { value: 3, label: 'Hand-sized', desc: 'About the size of a hand (phone, wallet, soap)', cm: '8-15cm', emoji: '📱' },
+  { value: 4, label: 'Forearm',    desc: 'Forearm length (bottle, shoe, tablet)', cm: '20-35cm', emoji: '👟' },
+  { value: 5, label: 'Large',      desc: 'Larger than arm span (bag, guitar, chair)', cm: '40-80cm', emoji: '🎸' },
+  { value: 6, label: 'Very Large', desc: 'Human-sized or bigger (furniture, appliance)', cm: '80cm+', emoji: '🪑' },
 ];
 
 const QUICK_SUGGESTIONS = [
@@ -834,21 +834,74 @@ export default function CreateImages() {
                         <ChevronDown className="w-3 h-3 opacity-50" />
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className={`w-72 ${ct('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')} p-4`}>
-                      <div className="space-y-3">
+                    <PopoverContent className={`w-80 ${ct('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')} p-0 overflow-hidden`} align="start">
+                      {/* Header */}
+                      <div className={`px-4 pt-3.5 pb-2.5 ${ct('bg-slate-50', 'bg-zinc-900')}`}>
                         <div className="flex items-center justify-between">
-                          <span className={`text-xs font-medium ${ct('text-slate-700', 'text-zinc-300')}`}>Size compared to hand</span>
-                          <span className="text-xs text-yellow-400">{SIZE_SCALE[productSizeScale - 1].cm}</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-md bg-yellow-400/10 flex items-center justify-center">
+                              <Hand className="w-3.5 h-3.5 text-yellow-400" />
+                            </div>
+                            <span className={`text-xs font-semibold ${ct('text-slate-800', 'text-zinc-200')}`}>Product Scale</span>
+                          </div>
+                          <span className="text-[10px] font-mono font-medium text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded-full">{SIZE_SCALE[productSizeScale - 1].cm}</span>
                         </div>
-                        <div className="relative h-16 flex items-end justify-center gap-3">
-                          <Hand className={`w-8 h-10 ${ct('text-slate-300', 'text-zinc-600')} flex-shrink-0`} />
-                          <div className="bg-yellow-400/20 border border-yellow-400/40 rounded transition-all"
-                            style={{ width: `${12 + productSizeScale * 8}px`, height: `${12 + productSizeScale * 8}px` }} />
+                      </div>
+
+                      {/* Visual comparison area */}
+                      <div className={`px-4 py-4 ${ct('bg-white', 'bg-zinc-950/50')}`}>
+                        <div className="relative h-24 flex items-end justify-center">
+                          {/* Hand silhouette (fixed reference) */}
+                          <svg viewBox="0 0 60 90" className={`h-20 ${ct('text-slate-200', 'text-zinc-800')} flex-shrink-0 -mr-1`} fill="currentColor">
+                            <path d="M30 2c-2 0-3.5 1.5-3.5 3.5v25h-4V10c0-2-1.5-3.5-3.5-3.5S15.5 8 15.5 10v22h-3V16c0-2-1.5-3.5-3.5-3.5S5.5 14 5.5 16v30c0 2 0 4 .5 6l4 12c1 3 3.5 5 6.5 5.5h0c1.5.3 3 .5 4.5.5h12c2 0 4-.5 5.5-1.5 3-2 5-5.5 5-9V34c0-2-1.5-3.5-3.5-3.5S36.5 32 36.5 34v-3.5h0V5.5C36.5 3.5 35 2 33 2h0c-1 0-1.5.5-2 1-.5-.5-1-1-1-1z" />
+                          </svg>
+                          {/* Product box (scales with slider) */}
+                          <motion.div
+                            animate={{
+                              width: [14, 22, 34, 48, 64, 80][productSizeScale - 1],
+                              height: [14, 22, 34, 48, 64, 80][productSizeScale - 1],
+                            }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                            className="rounded-lg border-2 border-yellow-400/50 bg-yellow-400/10 flex items-center justify-center flex-shrink-0"
+                          >
+                            <span className="select-none" style={{ fontSize: `${Math.max(10, [10, 12, 16, 20, 24, 28][productSizeScale - 1])}px` }}>
+                              {SIZE_SCALE[productSizeScale - 1].emoji}
+                            </span>
+                          </motion.div>
                         </div>
-                        <input type="range" min={1} max={6} value={productSizeScale}
-                          onChange={e => setProductSizeScale(Number(e.target.value))}
-                          className="w-full accent-yellow-400" />
-                        <p className={`text-[10px] ${ct('text-slate-400', 'text-zinc-500')}`}>{SIZE_SCALE[productSizeScale - 1].desc}</p>
+                      </div>
+
+                      {/* Size selector pills */}
+                      <div className={`px-3 pb-3 ${ct('bg-white', 'bg-zinc-900')}`}>
+                        <div className="grid grid-cols-6 gap-1">
+                          {SIZE_SCALE.map((size) => {
+                            const isActive = productSizeScale === size.value;
+                            return (
+                              <button
+                                key={size.value}
+                                onClick={() => setProductSizeScale(size.value)}
+                                className={`relative flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg text-center transition-all ${
+                                  isActive
+                                    ? 'bg-yellow-400/15 ring-1 ring-yellow-400/40'
+                                    : ct('hover:bg-slate-50', 'hover:bg-zinc-800/60')
+                                }`}
+                              >
+                                <span className={`text-[10px] font-semibold leading-none ${
+                                  isActive ? 'text-yellow-400' : ct('text-slate-600', 'text-zinc-400')
+                                }`}>{size.label}</span>
+                                <span className={`text-[9px] leading-none ${
+                                  isActive ? 'text-yellow-400/70' : ct('text-slate-400', 'text-zinc-600')
+                                }`}>{size.cm}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {/* Description */}
+                        <div className={`mt-2.5 px-1.5 py-1.5 rounded-md ${ct('bg-slate-50', 'bg-zinc-800/40')}`}>
+                          <p className={`text-[10px] leading-snug ${ct('text-slate-500', 'text-zinc-500')}`}>
+                            <span className="text-yellow-400/80 font-medium">{SIZE_SCALE[productSizeScale - 1].label}</span> — {SIZE_SCALE[productSizeScale - 1].desc}
+                          </p>
+                        </div>
                       </div>
                     </PopoverContent>
                   </Popover>
