@@ -1,31 +1,42 @@
 /**
- * AdminRoadmap Page
+ * AdminRoadmap Page — v2
  * Persistent feature request board with two-way conversation between user and Claude Code.
  *
  * Features:
- * - List view + Kanban board toggle
+ * - List view + Kanban board (drag-and-drop between columns)
+ * - Supabase Realtime subscription (live updates)
  * - Subtask checklists per item
- * - Assignee (agent/person), effort sizing, target dates
- * - File references (which code files a feature will touch)
- * - Dependencies between items
- * - Comment thread for async conversation (user <-> Claude Code)
- * - Category + priority + status filtering
- * - "Roadmap mode" protocol: Claude Code reads items, builds them, leaves comments
+ * - Comment thread with markdown rendering
+ * - Dependency picker (multi-select in modal)
+ * - Multi-tag labels system
+ * - Activity history tracking (status changes, comments, etc.)
+ * - Priority auto-escalation (visual stale indicator)
+ * - Export (CSV / JSON)
+ * - Notification integration (user_notifications)
  *
  * Status flow: requested -> planned -> in_progress -> review -> done | cancelled
  */
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/api/supabaseClient';
 import { useAdmin } from '@/components/admin/AdminGuard';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
+  DragOverlay, useDroppable,
+} from '@dnd-kit/core';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   Map, Plus, Search, RefreshCw, MessageSquare, Send,
   ChevronDown, ChevronUp, Clock, CheckCircle, Circle,
   Loader2, Eye, Pencil, Trash2, Save, Filter,
   ArrowUpDown, Sparkles, Bot, User, LayoutList,
   Columns3, CalendarDays, Link2, FileCode, Users,
-  CheckSquare, Square, XCircle, Gauge, Tag, GitBranch,
+  CheckSquare, XCircle, Gauge, Tag, GitBranch,
+  Download, AlertTriangle, History, X, GripVertical,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,9 +56,6 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import {
-  Tabs, TabsContent, TabsList, TabsTrigger,
-} from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -62,15 +70,13 @@ const STATUS_CONFIG = {
 };
 
 const PRIORITY_CONFIG = {
-  low:      { label: 'Low',      color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30' },
-  medium:   { label: 'Medium',   color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-  high:     { label: 'High',     color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
-  critical: { label: 'Critical', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
+  low:      { label: 'Low',      color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30', order: 3 },
+  medium:   { label: 'Medium',   color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', order: 2 },
+  high:     { label: 'High',     color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', order: 1 },
+  critical: { label: 'Critical', color: 'bg-red-500/20 text-red-400 border-red-500/30', order: 0 },
 };
 
-const EFFORT_CONFIG = {
-  xs: 'XS', s: 'S', m: 'M', l: 'L', xl: 'XL',
-};
+const EFFORT_CONFIG = { xs: 'XS', s: 'S', m: 'M', l: 'L', xl: 'XL' };
 
 const CATEGORIES = [
   'talent', 'crm', 'finance', 'growth', 'products', 'sync-agent',
@@ -78,6 +84,129 @@ const CATEGORIES = [
 ];
 
 const AGENTS = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'unassigned'];
+
+const SUGGESTED_TAGS = [
+  'bug', 'enhancement', 'ux', 'backend', 'frontend', 'database',
+  'edge-function', 'ai', 'design', 'performance', 'security', 'docs',
+];
+
+const STALE_DAYS = 7; // days before an item is considered stale
+
+// ─── Helpers ────────────────────────────────────────────────────────
+function daysSince(dateStr) {
+  if (!dateStr) return 0;
+  return Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function isStale(item) {
+  return item.status === 'requested' && daysSince(item.created_at) >= STALE_DAYS;
+}
+
+function escalatedPriority(item) {
+  if (!isStale(item)) return null;
+  const order = { low: 'medium', medium: 'high', high: 'critical' };
+  return order[item.priority] || null;
+}
+
+// ─── Markdown Renderer ──────────────────────────────────────────────
+function Md({ children }) {
+  if (!children) return null;
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        p: ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
+        a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">{children}</a>,
+        code: ({ inline, children }) => inline
+          ? <code className="bg-zinc-800 px-1 py-0.5 rounded text-[11px] text-red-400">{children}</code>
+          : <pre className="bg-zinc-800 rounded p-2 text-[11px] text-zinc-300 overflow-x-auto my-1"><code>{children}</code></pre>,
+        ul: ({ children }) => <ul className="list-disc list-inside ml-2 my-1">{children}</ul>,
+        ol: ({ children }) => <ol className="list-decimal list-inside ml-2 my-1">{children}</ol>,
+        li: ({ children }) => <li className="mb-0.5">{children}</li>,
+        strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+        h1: ({ children }) => <h1 className="text-sm font-bold text-white mt-2 mb-1">{children}</h1>,
+        h2: ({ children }) => <h2 className="text-xs font-bold text-white mt-2 mb-1">{children}</h2>,
+        h3: ({ children }) => <h3 className="text-xs font-semibold text-zinc-300 mt-1 mb-0.5">{children}</h3>,
+      }}
+    >
+      {children}
+    </ReactMarkdown>
+  );
+}
+
+// ─── Tag Input ──────────────────────────────────────────────────────
+function TagInput({ tags, onChange }) {
+  const [input, setInput] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const suggestions = SUGGESTED_TAGS.filter(t => !tags.includes(t) && t.includes(input.toLowerCase()));
+
+  const addTag = (tag) => {
+    const t = tag.toLowerCase().trim();
+    if (t && !tags.includes(t)) onChange([...tags, t]);
+    setInput('');
+    setShowSuggestions(false);
+  };
+
+  const removeTag = (tag) => onChange(tags.filter(t => t !== tag));
+
+  return (
+    <div className="relative">
+      <div className="flex flex-wrap gap-1 mb-1">
+        {tags.map(t => (
+          <Badge key={t} className="text-[10px] bg-cyan-500/20 text-cyan-400 border-cyan-500/30 gap-1 pr-1">
+            {t}
+            <button onClick={() => removeTag(t)} className="hover:text-red-400"><X className="w-2.5 h-2.5" /></button>
+          </Badge>
+        ))}
+      </div>
+      <Input
+        value={input}
+        onChange={(e) => { setInput(e.target.value); setShowSuggestions(true); }}
+        onFocus={() => setShowSuggestions(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && input.trim()) { e.preventDefault(); addTag(input); }
+          if (e.key === 'Backspace' && !input && tags.length) removeTag(tags[tags.length - 1]);
+        }}
+        placeholder="Add tags..."
+        className="bg-zinc-800/50 border-zinc-700 text-xs text-white h-7"
+      />
+      {showSuggestions && suggestions.length > 0 && input && (
+        <div className="absolute z-50 mt-1 w-full bg-zinc-800 border border-zinc-700 rounded-md shadow-lg max-h-32 overflow-y-auto">
+          {suggestions.map(s => (
+            <button key={s} onClick={() => addTag(s)}
+              className="w-full text-left px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700 hover:text-white">
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Activity History Panel ─────────────────────────────────────────
+function HistoryPanel({ history }) {
+  if (!history?.length) return null;
+  return (
+    <div className="mt-3 border-t border-zinc-800 pt-3">
+      <div className="flex items-center gap-2 mb-2">
+        <History className="w-3.5 h-3.5 text-zinc-500" />
+        <span className="text-xs font-medium text-zinc-400">Activity ({history.length})</span>
+      </div>
+      <div className="space-y-1.5 max-h-32 overflow-y-auto">
+        {history.slice().reverse().slice(0, 10).map((h, i) => (
+          <div key={i} className="flex items-center gap-2 text-[10px] text-zinc-500">
+            <span className="shrink-0">{new Date(h.at).toLocaleString()}</span>
+            <span className="text-zinc-600">—</span>
+            <span>{h.actor === 'claude' ? 'Claude' : 'User'}</span>
+            <span className="text-zinc-400">{h.action}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ─── Comment Thread ─────────────────────────────────────────────────
 function CommentThread({ itemId, comments, onAddComment }) {
@@ -99,9 +228,7 @@ function CommentThread({ itemId, comments, onAddComment }) {
     <div className="mt-3 border-t border-zinc-800 pt-3">
       <div className="flex items-center gap-2 mb-2">
         <MessageSquare className="w-3.5 h-3.5 text-zinc-500" />
-        <span className="text-xs font-medium text-zinc-400">
-          Conversation ({comments.length})
-        </span>
+        <span className="text-xs font-medium text-zinc-400">Conversation ({comments.length})</span>
       </div>
 
       <ScrollArea className="max-h-64">
@@ -120,7 +247,7 @@ function CommentThread({ itemId, comments, onAddComment }) {
                   ? 'bg-purple-500/10 border border-purple-500/20 text-zinc-300'
                   : 'bg-red-500/10 border border-red-500/20 text-zinc-300'
               )}>
-                <p className="whitespace-pre-wrap">{c.content}</p>
+                <div className="whitespace-pre-wrap"><Md>{c.content}</Md></div>
                 <span className="text-[10px] text-zinc-500 mt-1 block">
                   {c.author === 'claude' ? 'Claude Code' : 'You'} · {new Date(c.created_at).toLocaleString()}
                 </span>
@@ -132,15 +259,15 @@ function CommentThread({ itemId, comments, onAddComment }) {
       </ScrollArea>
 
       <div className="flex gap-2">
-        <Input
+        <Textarea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Reply..."
-          className="bg-zinc-800/50 border-zinc-700 text-sm text-white"
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+          placeholder="Reply... (supports **markdown**)"
+          className="bg-zinc-800/50 border-zinc-700 text-sm text-white min-h-[36px] max-h-24"
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
         />
         <Button size="sm" onClick={handleSend} disabled={!newComment.trim() || sending}
-          className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30">
+          className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 self-end">
           <Send className="w-3.5 h-3.5" />
         </Button>
       </div>
@@ -158,9 +285,7 @@ function SubtaskList({ subtasks, onToggle, onAdd, onRemove }) {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <CheckSquare className="w-3.5 h-3.5 text-zinc-500" />
-          <span className="text-xs font-medium text-zinc-400">
-            Subtasks ({done}/{subtasks.length})
-          </span>
+          <span className="text-xs font-medium text-zinc-400">Subtasks ({done}/{subtasks.length})</span>
         </div>
         {subtasks.length > 0 && (
           <div className="w-20 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
@@ -211,6 +336,9 @@ function RoadmapCard({ item, allItems, onStatusChange, onEdit, onDelete, onAddCo
   const subtasks = item.subtasks || [];
   const subtasksDone = subtasks.filter(s => s.done).length;
   const hasUnreadClaude = comments.length > 0 && comments[comments.length - 1]?.author === 'claude';
+  const stale = isStale(item);
+  const escalated = escalatedPriority(item);
+  const tags = item.tags || [];
 
   return (
     <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
@@ -219,6 +347,7 @@ function RoadmapCard({ item, allItems, onStatusChange, onEdit, onDelete, onAddCo
         item.status === 'in_progress' && 'border-l-2 border-l-yellow-500',
         item.status === 'done' && 'border-l-2 border-l-green-500',
         hasUnreadClaude && 'ring-1 ring-purple-500/30',
+        stale && 'ring-1 ring-orange-500/20',
       )}>
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-3">
@@ -231,6 +360,12 @@ function RoadmapCard({ item, allItems, onStatusChange, onEdit, onDelete, onAddCo
                   {status.label}
                 </Badge>
                 <Badge className={cn('text-[10px] px-1.5 py-px', priority.color)}>{priority.label}</Badge>
+                {stale && (
+                  <Badge className="text-[10px] px-1.5 py-px bg-orange-500/20 text-orange-400 border-orange-500/30 animate-pulse">
+                    <AlertTriangle className="w-2.5 h-2.5 mr-1" />Stale {daysSince(item.created_at)}d
+                    {escalated && <span className="ml-1">→ {escalated}</span>}
+                  </Badge>
+                )}
                 {item.category && (
                   <Badge className="text-[10px] px-1.5 py-px bg-zinc-800 text-zinc-400 border-zinc-700">
                     <Tag className="w-2.5 h-2.5 mr-1" />{item.category}
@@ -253,8 +388,17 @@ function RoadmapCard({ item, allItems, onStatusChange, onEdit, onDelete, onAddCo
                 )}
               </div>
 
-              {/* Description */}
-              <p className="text-xs text-zinc-400 whitespace-pre-wrap line-clamp-2">{item.description}</p>
+              {/* Tags */}
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-1">
+                  {tags.map(t => (
+                    <Badge key={t} className="text-[9px] px-1 py-0 bg-cyan-500/10 text-cyan-400/80 border-cyan-500/20">{t}</Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Description with markdown */}
+              <div className="text-xs text-zinc-400 line-clamp-2"><Md>{item.description}</Md></div>
 
               {/* Meta row */}
               <div className="flex items-center gap-3 mt-2 text-[10px] text-zinc-500 flex-wrap">
@@ -266,24 +410,16 @@ function RoadmapCard({ item, allItems, onStatusChange, onEdit, onDelete, onAddCo
                   </span>
                 )}
                 {comments.length > 0 && (
-                  <span className="flex items-center gap-1">
-                    <MessageSquare className="w-3 h-3" />{comments.length}
-                  </span>
+                  <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" />{comments.length}</span>
                 )}
                 {subtasks.length > 0 && (
-                  <span className="flex items-center gap-1">
-                    <CheckSquare className="w-3 h-3" />{subtasksDone}/{subtasks.length}
-                  </span>
+                  <span className="flex items-center gap-1"><CheckSquare className="w-3 h-3" />{subtasksDone}/{subtasks.length}</span>
                 )}
                 {item.files_affected?.length > 0 && (
-                  <span className="flex items-center gap-1">
-                    <FileCode className="w-3 h-3" />{item.files_affected.length} files
-                  </span>
+                  <span className="flex items-center gap-1"><FileCode className="w-3 h-3" />{item.files_affected.length} files</span>
                 )}
                 {item.orchestra_task_id && (
-                  <span className="flex items-center gap-1">
-                    <GitBranch className="w-3 h-3" />{item.orchestra_task_id}
-                  </span>
+                  <span className="flex items-center gap-1"><GitBranch className="w-3 h-3" />{item.orchestra_task_id}</span>
                 )}
               </div>
             </div>
@@ -372,6 +508,9 @@ function RoadmapCard({ item, allItems, onStatusChange, onEdit, onDelete, onAddCo
                   onRemove={(i) => onRemoveSubtask(item.id, i)}
                 />
 
+                {/* Activity History */}
+                <HistoryPanel history={item.history} />
+
                 {/* Comments */}
                 <CommentThread itemId={item.id} comments={comments} onAddComment={onAddComment} />
               </motion.div>
@@ -383,37 +522,64 @@ function RoadmapCard({ item, allItems, onStatusChange, onEdit, onDelete, onAddCo
   );
 }
 
-// ─── Kanban Card ────────────────────────────────────────────────────
-function KanbanCard({ item, onStatusChange, onEdit, onClick }) {
+// ─── Draggable Kanban Card ──────────────────────────────────────────
+function DraggableKanbanCard({ item, onEdit, onClick }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
   const priority = PRIORITY_CONFIG[item.priority] || PRIORITY_CONFIG.medium;
   const subtasks = item.subtasks || [];
   const done = subtasks.filter(s => s.done).length;
   const comments = item.comments || [];
   const hasUnreadClaude = comments.length > 0 && comments[comments.length - 1]?.author === 'claude';
+  const stale = isStale(item);
+  const tags = item.tags || [];
 
   return (
-    <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-      className="cursor-pointer" onClick={onClick}>
+    <div ref={setNodeRef} style={style} {...attributes}>
       <Card className={cn(
         'bg-zinc-900/80 border-zinc-800 hover:border-zinc-600 transition-all',
         hasUnreadClaude && 'ring-1 ring-purple-500/30',
+        stale && 'ring-1 ring-orange-500/20',
       )}>
         <CardContent className="p-3">
-          <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-            <Badge className={cn('text-[9px] px-1 py-0', priority.color)}>{priority.label}</Badge>
-            {item.category && (
-              <Badge className="text-[9px] px-1 py-0 bg-zinc-800 text-zinc-500 border-zinc-700">{item.category}</Badge>
-            )}
-            {item.effort && (
-              <Badge className="text-[9px] px-1 py-0 bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
-                {EFFORT_CONFIG[item.effort]}
-              </Badge>
-            )}
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap flex-1">
+              <Badge className={cn('text-[9px] px-1 py-0', priority.color)}>{priority.label}</Badge>
+              {item.category && (
+                <Badge className="text-[9px] px-1 py-0 bg-zinc-800 text-zinc-500 border-zinc-700">{item.category}</Badge>
+              )}
+              {item.effort && (
+                <Badge className="text-[9px] px-1 py-0 bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                  {EFFORT_CONFIG[item.effort]}
+                </Badge>
+              )}
+              {stale && (
+                <Badge className="text-[9px] px-1 py-0 bg-orange-500/20 text-orange-400 border-orange-500/30">
+                  <AlertTriangle className="w-2 h-2 mr-0.5" />{daysSince(item.created_at)}d
+                </Badge>
+              )}
+            </div>
+            <button {...listeners} className="text-zinc-600 hover:text-zinc-400 cursor-grab active:cursor-grabbing p-0.5">
+              <GripVertical className="w-3.5 h-3.5" />
+            </button>
           </div>
-          <h4 className="text-xs font-medium text-white mb-1 line-clamp-2">{item.title}</h4>
-          {item.description && (
-            <p className="text-[10px] text-zinc-500 line-clamp-2 mb-2">{item.description}</p>
+
+          <button onClick={onClick} className="text-left w-full">
+            <h4 className="text-xs font-medium text-white mb-1 line-clamp-2">{item.title}</h4>
+            {item.description && (
+              <p className="text-[10px] text-zinc-500 line-clamp-2 mb-1">{item.description}</p>
+            )}
+          </button>
+
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-0.5 mb-1">
+              {tags.slice(0, 3).map(t => (
+                <Badge key={t} className="text-[8px] px-1 py-0 bg-cyan-500/10 text-cyan-400/70 border-cyan-500/20">{t}</Badge>
+              ))}
+              {tags.length > 3 && <span className="text-[8px] text-zinc-500">+{tags.length - 3}</span>}
+            </div>
           )}
+
           <div className="flex items-center gap-2 text-[10px] text-zinc-500">
             {item.assignee && item.assignee !== 'unassigned' && (
               <span className="flex items-center gap-0.5"><Users className="w-2.5 h-2.5" />{item.assignee}</span>
@@ -429,31 +595,67 @@ function KanbanCard({ item, onStatusChange, onEdit, onClick }) {
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 }
 
-// ─── Kanban Column ──────────────────────────────────────────────────
-function KanbanColumn({ status, items, onStatusChange, onEdit, onItemClick }) {
+// ─── Droppable Kanban Column ────────────────────────────────────────
+function DroppableKanbanColumn({ status, items, onEdit, onItemClick }) {
   const config = STATUS_CONFIG[status];
+  const { setNodeRef, isOver } = useDroppable({ id: status });
+
   return (
-    <div className="flex-1 min-w-[220px]">
+    <div ref={setNodeRef} className={cn('flex-1 min-w-[220px] transition-all rounded-xl p-2', isOver && 'bg-zinc-800/30 ring-1 ring-zinc-600')}>
       <div className="flex items-center gap-2 mb-3 px-1">
         <div className={cn('w-2 h-2 rounded-full', config.dot)} />
         <span className="text-xs font-semibold text-zinc-300">{config.label}</span>
         <Badge className="text-[9px] px-1 py-0 bg-zinc-800 text-zinc-500 border-zinc-700">{items.length}</Badge>
       </div>
-      <ScrollArea className="h-[calc(100vh-380px)]">
-        <div className="space-y-2 pr-2">
-          {items.map(item => (
-            <KanbanCard key={item.id} item={item} onStatusChange={onStatusChange}
-              onEdit={onEdit} onClick={() => onItemClick(item)} />
+      <div className="space-y-2 min-h-[100px]">
+        {items.map(item => (
+          <DraggableKanbanCard key={item.id} item={item} onEdit={onEdit} onClick={() => onItemClick(item)} />
+        ))}
+        {items.length === 0 && (
+          <div className={cn('text-center py-8 text-xs rounded-lg border border-dashed transition-colors',
+            isOver ? 'border-zinc-500 text-zinc-400' : 'border-zinc-800 text-zinc-600')}>
+            {isOver ? 'Drop here' : 'No items'}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Dependency Picker ──────────────────────────────────────────────
+function DependencyPicker({ selected, onChange, allItems, currentId }) {
+  const available = allItems.filter(i => i.id !== currentId);
+  const [open, setOpen] = useState(false);
+
+  const toggle = (id) => {
+    if (selected.includes(id)) onChange(selected.filter(d => d !== id));
+    else onChange([...selected, id]);
+  };
+
+  return (
+    <div>
+      <button onClick={() => setOpen(!open)} className="w-full text-left bg-zinc-800/50 border border-zinc-700 rounded-md px-3 py-2 text-xs text-zinc-300 hover:border-zinc-600">
+        {selected.length ? `${selected.length} dependenc${selected.length === 1 ? 'y' : 'ies'} selected` : 'Select dependencies...'}
+      </button>
+      {open && (
+        <div className="mt-1 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg max-h-40 overflow-y-auto">
+          {available.length === 0 && <p className="px-3 py-2 text-xs text-zinc-500">No other items to depend on</p>}
+          {available.map(item => (
+            <label key={item.id} className="flex items-center gap-2 px-3 py-1.5 hover:bg-zinc-700 cursor-pointer">
+              <Checkbox checked={selected.includes(item.id)} onCheckedChange={() => toggle(item.id)}
+                className="border-zinc-600 data-[state=checked]:bg-blue-500" />
+              <span className="text-xs text-zinc-300 flex-1 truncate">{item.title}</span>
+              <Badge className={cn('text-[9px] px-1 py-0', STATUS_CONFIG[item.status]?.color)}>
+                {STATUS_CONFIG[item.status]?.label}
+              </Badge>
+            </label>
           ))}
-          {items.length === 0 && (
-            <div className="text-center py-8 text-zinc-600 text-xs">No items</div>
-          )}
         </div>
-      </ScrollArea>
+      )}
     </div>
   );
 }
@@ -464,6 +666,7 @@ function RoadmapItemModal({ open, onClose, onSave, editItem, allItems }) {
     title: '', description: '', priority: 'medium', category: 'other',
     status: 'requested', assignee: 'unassigned', effort: '',
     target_date: '', files_affected: '', depends_on: [], orchestra_task_id: '',
+    tags: [],
   });
   const [saving, setSaving] = useState(false);
 
@@ -481,12 +684,14 @@ function RoadmapItemModal({ open, onClose, onSave, editItem, allItems }) {
         files_affected: (editItem.files_affected || []).join('\n'),
         depends_on: editItem.depends_on || [],
         orchestra_task_id: editItem.orchestra_task_id || '',
+        tags: editItem.tags || [],
       });
     } else {
       setForm({
         title: '', description: '', priority: 'medium', category: 'other',
         status: 'requested', assignee: 'unassigned', effort: '',
         target_date: '', files_affected: '', depends_on: [], orchestra_task_id: '',
+        tags: [],
       });
     }
   }, [editItem, open]);
@@ -494,10 +699,7 @@ function RoadmapItemModal({ open, onClose, onSave, editItem, allItems }) {
   const handleSave = async () => {
     if (!form.title.trim()) { toast.error('Title is required'); return; }
     setSaving(true);
-    const files = form.files_affected
-      .split('\n')
-      .map(f => f.trim())
-      .filter(Boolean);
+    const files = form.files_affected.split('\n').map(f => f.trim()).filter(Boolean);
     await onSave({
       ...form,
       id: editItem?.id,
@@ -529,7 +731,7 @@ function RoadmapItemModal({ open, onClose, onSave, editItem, allItems }) {
           </div>
 
           <div>
-            <Label className="text-zinc-400 text-xs">Description</Label>
+            <Label className="text-zinc-400 text-xs">Description (supports markdown)</Label>
             <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="Describe the feature, why it's needed, acceptance criteria..."
               className="bg-zinc-800/50 border-zinc-700 text-white mt-1 min-h-[100px]" />
@@ -600,6 +802,25 @@ function RoadmapItemModal({ open, onClose, onSave, editItem, allItems }) {
           </div>
 
           <div>
+            <Label className="text-zinc-400 text-xs">Tags</Label>
+            <div className="mt-1">
+              <TagInput tags={form.tags} onChange={(tags) => setForm({ ...form, tags })} />
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-zinc-400 text-xs">Dependencies (blocks this item until selected items are done)</Label>
+            <div className="mt-1">
+              <DependencyPicker
+                selected={form.depends_on}
+                onChange={(deps) => setForm({ ...form, depends_on: deps })}
+                allItems={allItems}
+                currentId={editItem?.id}
+              />
+            </div>
+          </div>
+
+          <div>
             <Label className="text-zinc-400 text-xs">Orchestra Task ID</Label>
             <Input value={form.orchestra_task_id}
               onChange={(e) => setForm({ ...form, orchestra_task_id: e.target.value })}
@@ -629,6 +850,38 @@ function RoadmapItemModal({ open, onClose, onSave, editItem, allItems }) {
   );
 }
 
+// ─── Export Helpers ──────────────────────────────────────────────────
+function exportCSV(items) {
+  const headers = ['Title', 'Status', 'Priority', 'Category', 'Assignee', 'Effort', 'Target Date', 'Tags', 'Subtasks', 'Comments', 'Created'];
+  const rows = items.map(i => [
+    `"${(i.title || '').replace(/"/g, '""')}"`,
+    i.status,
+    i.priority,
+    i.category || '',
+    i.assignee || '',
+    i.effort || '',
+    i.target_date || '',
+    `"${(i.tags || []).join(', ')}"`,
+    `${(i.subtasks || []).filter(s => s.done).length}/${(i.subtasks || []).length}`,
+    (i.comments || []).length,
+    new Date(i.created_at).toLocaleDateString(),
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `roadmap-export-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function exportJSON(items) {
+  const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `roadmap-export-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────
 export default function AdminRoadmap() {
   const { adminRole } = useAdmin();
@@ -638,14 +891,21 @@ export default function AdminRoadmap() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
   const [sortBy, setSortBy] = useState('priority');
-  const [viewMode, setViewMode] = useState('list'); // list | kanban
+  const [viewMode, setViewMode] = useState('list');
   const [expandedId, setExpandedId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [activeId, setActiveId] = useState(null); // drag overlay
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor),
+  );
 
   // ─── Fetch ──────────────────────────────────────────────────
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('roadmap_items')
@@ -661,9 +921,37 @@ export default function AdminRoadmap() {
       setItems(data || []);
     }
     setLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { fetchItems(); }, []);
+  useEffect(() => { fetchItems(); }, [fetchItems]);
+
+  // ─── Realtime Subscription ────────────────────────────────
+  useEffect(() => {
+    const channel = supabase
+      .channel('roadmap-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'roadmap_items' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setItems(prev => [payload.new, ...prev]);
+          toast.info(`New: ${payload.new.title}`);
+        } else if (payload.eventType === 'UPDATE') {
+          setItems(prev => prev.map(i => i.id === payload.new.id ? payload.new : i));
+        } else if (payload.eventType === 'DELETE') {
+          setItems(prev => prev.filter(i => i.id !== payload.old.id));
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  // ─── History Helper ───────────────────────────────────────
+  const addHistory = useCallback(async (itemId, action, actor = 'user') => {
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+    const entry = { action, actor, at: new Date().toISOString() };
+    const updated = [...(item.history || []), entry];
+    await supabase.from('roadmap_items').update({ history: updated }).eq('id', itemId);
+  }, [items]);
 
   // ─── CRUD ───────────────────────────────────────────────────
   const handleSave = async (form) => {
@@ -677,15 +965,29 @@ export default function AdminRoadmap() {
       effort: form.effort,
       target_date: form.target_date,
       files_affected: form.files_affected,
+      depends_on: form.depends_on,
       orchestra_task_id: form.orchestra_task_id,
+      tags: form.tags,
     };
 
     if (form.id) {
+      const oldItem = items.find(i => i.id === form.id);
       const { error } = await supabase.from('roadmap_items').update(payload).eq('id', form.id);
       if (error) { toast.error('Update failed'); return; }
+      // Track changes in history
+      const changes = [];
+      if (oldItem?.status !== form.status) changes.push(`status: ${oldItem?.status} → ${form.status}`);
+      if (oldItem?.priority !== form.priority) changes.push(`priority: ${oldItem?.priority} → ${form.priority}`);
+      if (oldItem?.assignee !== (form.assignee === 'unassigned' ? null : form.assignee)) changes.push(`assignee changed`);
+      if (changes.length) await addHistory(form.id, changes.join(', '));
       toast.success('Updated');
     } else {
-      const { error } = await supabase.from('roadmap_items').insert({ ...payload, comments: [], subtasks: [] });
+      const { error } = await supabase.from('roadmap_items').insert({
+        ...payload,
+        comments: [],
+        subtasks: [],
+        history: [{ action: 'Created', actor: 'user', at: new Date().toISOString() }],
+      });
       if (error) { toast.error('Create failed'); return; }
       toast.success('Feature request added');
     }
@@ -693,9 +995,11 @@ export default function AdminRoadmap() {
   };
 
   const handleStatusChange = async (id, newStatus) => {
+    const oldItem = items.find(i => i.id === id);
     const { error } = await supabase.from('roadmap_items').update({ status: newStatus }).eq('id', id);
     if (error) { toast.error('Status update failed'); return; }
     setItems(prev => prev.map(i => i.id === id ? { ...i, status: newStatus } : i));
+    await addHistory(id, `Status: ${oldItem?.status} → ${newStatus}`);
   };
 
   const handleDelete = async () => {
@@ -713,6 +1017,21 @@ export default function AdminRoadmap() {
     const { error } = await supabase.from('roadmap_items').update({ comments: updated }).eq('id', itemId);
     if (error) { toast.error('Comment failed'); return; }
     setItems(prev => prev.map(i => i.id === itemId ? { ...i, comments: updated } : i));
+    await addHistory(itemId, `Comment by ${author}`);
+
+    // Create notification for admin when Claude comments
+    if (author === 'claude') {
+      try {
+        await supabase.from('user_notifications').insert({
+          type: 'roadmap_reply',
+          title: `Claude replied on "${item.title}"`,
+          message: content.slice(0, 200),
+          action_url: '/admin/roadmap',
+          read: false,
+          metadata: { roadmap_item_id: itemId },
+        });
+      } catch (_) { /* non-critical */ }
+    }
   };
 
   // ─── Subtask handlers ──────────────────────────────────────
@@ -741,8 +1060,23 @@ export default function AdminRoadmap() {
     if (!error) setItems(prev => prev.map(i => i.id === itemId ? { ...i, subtasks: updated } : i));
   };
 
+  // ─── DnD Handler ──────────────────────────────────────────
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    setActiveId(null);
+    if (!over) return;
+
+    const draggedItem = items.find(i => i.id === active.id);
+    if (!draggedItem) return;
+
+    // `over.id` is the column status (e.g. 'planned', 'in_progress')
+    const newStatus = over.id;
+    if (Object.keys(STATUS_CONFIG).includes(newStatus) && draggedItem.status !== newStatus) {
+      handleStatusChange(draggedItem.id, newStatus);
+    }
+  };
+
   // ─── Filter / Sort ──────────────────────────────────────────
-  const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
   const statusOrder = { in_progress: 0, review: 1, planned: 2, requested: 3, done: 4, cancelled: 5 };
 
   const filtered = useMemo(() => items
@@ -751,12 +1085,14 @@ export default function AdminRoadmap() {
       if (filterCategory !== 'all' && i.category !== filterCategory) return false;
       if (search) {
         const q = search.toLowerCase();
-        return i.title.toLowerCase().includes(q) || i.description?.toLowerCase().includes(q);
+        return i.title.toLowerCase().includes(q)
+          || i.description?.toLowerCase().includes(q)
+          || (i.tags || []).some(t => t.includes(q));
       }
       return true;
     })
     .sort((a, b) => {
-      if (sortBy === 'priority') return (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9);
+      if (sortBy === 'priority') return (PRIORITY_CONFIG[a.priority]?.order ?? 9) - (PRIORITY_CONFIG[b.priority]?.order ?? 9);
       if (sortBy === 'status') return (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9);
       return new Date(b.created_at) - new Date(a.created_at);
     }), [items, filterStatus, filterCategory, search, sortBy]);
@@ -768,6 +1104,7 @@ export default function AdminRoadmap() {
     in_progress: items.filter(i => i.status === 'in_progress').length,
     done: items.filter(i => i.status === 'done').length,
     unread: items.filter(i => (i.comments || []).length > 0 && i.comments[i.comments.length - 1]?.author === 'claude').length,
+    stale: items.filter(isStale).length,
   };
 
   // ─── Kanban groups ──────────────────────────────────────────
@@ -780,6 +1117,8 @@ export default function AdminRoadmap() {
     });
     return groups;
   }, [filtered]);
+
+  const draggedItem = activeId ? items.find(i => i.id === activeId) : null;
 
   // ─── Render ─────────────────────────────────────────────────
   return (
@@ -803,6 +1142,11 @@ export default function AdminRoadmap() {
               <Bot className="w-3 h-3 mr-1" />{stats.unread} awaiting reply
             </Badge>
           )}
+          {stats.stale > 0 && (
+            <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+              <AlertTriangle className="w-3 h-3 mr-1" />{stats.stale} stale
+            </Badge>
+          )}
           <div className="flex bg-zinc-800/50 rounded-lg p-0.5 border border-zinc-700">
             <Button variant="ghost" size="sm" onClick={() => setViewMode('list')}
               className={cn('h-7 px-2', viewMode === 'list' ? 'bg-zinc-700 text-white' : 'text-zinc-400')}>
@@ -813,6 +1157,18 @@ export default function AdminRoadmap() {
               <Columns3 className="w-3.5 h-3.5" />
             </Button>
           </div>
+
+          {/* Export dropdown */}
+          <Select value="" onValueChange={(v) => { if (v === 'csv') exportCSV(filtered); if (v === 'json') exportJSON(filtered); }}>
+            <SelectTrigger className="h-8 w-8 p-0 bg-zinc-800/50 border-zinc-700 text-zinc-400 [&>svg:last-child]:hidden">
+              <Download className="w-3.5 h-3.5" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="csv">Export CSV</SelectItem>
+              <SelectItem value="json">Export JSON</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Button variant="ghost" size="sm" onClick={fetchItems} className="text-zinc-400 hover:text-white">
             <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
           </Button>
@@ -824,13 +1180,14 @@ export default function AdminRoadmap() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-6 gap-3">
         {[
           { label: 'Total', value: stats.total, color: 'text-white' },
           { label: 'Requested', value: stats.requested, color: 'text-zinc-400' },
           { label: 'In Progress', value: stats.in_progress, color: 'text-yellow-400' },
           { label: 'Done', value: stats.done, color: 'text-green-400' },
           { label: 'Awaiting Reply', value: stats.unread, color: 'text-purple-400' },
+          { label: 'Stale', value: stats.stale, color: 'text-orange-400' },
         ].map(s => (
           <Card key={s.label} className="bg-zinc-900/50 border-zinc-800">
             <CardContent className="p-3 text-center">
@@ -846,7 +1203,7 @@ export default function AdminRoadmap() {
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <Input value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search..." className="pl-9 bg-zinc-900/50 border-zinc-800 text-white" />
+            placeholder="Search titles, descriptions, tags..." className="pl-9 bg-zinc-900/50 border-zinc-800 text-white" />
         </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-36 bg-zinc-900/50 border-zinc-800 text-white text-xs">
@@ -902,7 +1259,7 @@ export default function AdminRoadmap() {
               <CardContent className="p-12 text-center">
                 <Sparkles className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
                 <h3 className="text-white font-semibold mb-1">No feature requests yet</h3>
-                <p className="text-sm text-zinc-400 mb-4">Add your first request.</p>
+                <p className="text-sm text-zinc-400 mb-4">Add your first request and Claude Code will build it.</p>
                 <Button onClick={() => { setEditItem(null); setModalOpen(true); }}
                   className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30">
                   <Plus className="w-4 h-4 mr-2" />Add First Request
@@ -912,15 +1269,26 @@ export default function AdminRoadmap() {
           )}
         </div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {kanbanStatuses.map(status => (
-            <KanbanColumn key={status} status={status}
-              items={kanbanGroups[status] || []}
-              onStatusChange={handleStatusChange}
-              onEdit={(i) => { setEditItem(i); setModalOpen(true); }}
-              onItemClick={(i) => { setViewMode('list'); setExpandedId(i.id); }} />
-          ))}
-        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter}
+          onDragStart={(e) => setActiveId(e.active.id)} onDragEnd={handleDragEnd}>
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            {kanbanStatuses.map(status => (
+              <DroppableKanbanColumn key={status} status={status}
+                items={kanbanGroups[status] || []}
+                onEdit={(i) => { setEditItem(i); setModalOpen(true); }}
+                onItemClick={(i) => { setViewMode('list'); setExpandedId(i.id); }} />
+            ))}
+          </div>
+          <DragOverlay>
+            {draggedItem ? (
+              <Card className="bg-zinc-900 border-zinc-600 shadow-2xl w-[220px]">
+                <CardContent className="p-3">
+                  <h4 className="text-xs font-medium text-white line-clamp-2">{draggedItem.title}</h4>
+                </CardContent>
+              </Card>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       )}
 
       {/* Modal + Delete Dialog */}
