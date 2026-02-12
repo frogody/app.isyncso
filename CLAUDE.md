@@ -2338,6 +2338,6 @@ FROM enrichment_cache_companies;
 | 4 | bol.com Retailer API | **Complete** (P4-1 through P4-21 all done) |
 | 5 | Returns Workflow | Not Started |
 | EP | Email Pool Auto-Sync | Not Started |
-| SH | Shopify Admin API | Not Started |
+| SH | Shopify Admin API | **Complete** (SH-1 through SH-21 done, SH-16/18 deferred, SH-22 through SH-25 = testing) |
 
 ---
