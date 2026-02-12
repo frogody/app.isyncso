@@ -133,12 +133,12 @@ const ASPECT_RATIOS = [
 ];
 
 const SIZE_SCALE = [
-  { value: 1, label: 'Tiny',       desc: 'Fits on a fingertip (earring, pin, small gem)', cm: '1-2cm', emoji: '💎' },
-  { value: 2, label: 'Small',      desc: 'Fits in palm (ring, watch, key)', cm: '3-6cm', emoji: '⌚' },
-  { value: 3, label: 'Hand-sized', desc: 'About the size of a hand (phone, wallet, soap)', cm: '8-15cm', emoji: '📱' },
-  { value: 4, label: 'Forearm',    desc: 'Forearm length (bottle, shoe, tablet)', cm: '20-35cm', emoji: '👟' },
-  { value: 5, label: 'Large',      desc: 'Larger than arm span (bag, guitar, chair)', cm: '40-80cm', emoji: '🎸' },
-  { value: 6, label: 'Very Large', desc: 'Human-sized or bigger (furniture, appliance)', cm: '80cm+', emoji: '🪑' },
+  { value: 1, label: 'Tiny',       desc: 'Fingertip-sized (earring, ring, gemstone)', cm: '1-3cm', circle: 8 },
+  { value: 2, label: 'Small',      desc: 'Fits in your palm (key, lighter, AirPods case)', cm: '4-7cm', circle: 16 },
+  { value: 3, label: 'Hand-sized', desc: 'Size of a hand (phone, wallet, perfume bottle)', cm: '8-15cm', circle: 28 },
+  { value: 4, label: 'Forearm',    desc: 'Forearm length (shoe, wine bottle, tablet)', cm: '20-35cm', circle: 44 },
+  { value: 5, label: 'Large',      desc: 'Torso-sized (suitcase, backpack, side table)', cm: '40-80cm', circle: 64 },
+  { value: 6, label: 'Very Large', desc: 'Human-sized or bigger (chair, guitar, floor lamp)', cm: '80cm+', circle: 88 },
 ];
 
 const QUICK_SUGGESTIONS = [
@@ -848,26 +848,23 @@ export default function CreateImages() {
                         </div>
                       </div>
 
-                      {/* Visual comparison area */}
-                      <div className={`px-4 py-4 ${ct('bg-white', 'bg-zinc-950/50')}`}>
-                        <div className="relative h-24 flex items-end justify-center">
-                          {/* Hand silhouette (fixed reference) */}
-                          <svg viewBox="0 0 60 90" className={`h-20 ${ct('text-slate-200', 'text-zinc-800')} flex-shrink-0 -mr-1`} fill="currentColor">
-                            <path d="M30 2c-2 0-3.5 1.5-3.5 3.5v25h-4V10c0-2-1.5-3.5-3.5-3.5S15.5 8 15.5 10v22h-3V16c0-2-1.5-3.5-3.5-3.5S5.5 14 5.5 16v30c0 2 0 4 .5 6l4 12c1 3 3.5 5 6.5 5.5h0c1.5.3 3 .5 4.5.5h12c2 0 4-.5 5.5-1.5 3-2 5-5.5 5-9V34c0-2-1.5-3.5-3.5-3.5S36.5 32 36.5 34v-3.5h0V5.5C36.5 3.5 35 2 33 2h0c-1 0-1.5.5-2 1-.5-.5-1-1-1-1z" />
+                      {/* Visual comparison: hand + circle */}
+                      <div className={`px-4 py-5 ${ct('bg-white', 'bg-zinc-950/50')}`}>
+                        <div className="relative h-24 flex items-center justify-center gap-4">
+                          {/* Hand silhouette (fixed ~80px tall = reference) */}
+                          <svg viewBox="0 0 56 90" className={`h-[80px] ${ct('text-slate-200', 'text-zinc-700/80')} flex-shrink-0`} fill="currentColor">
+                            <path d="M28 2c-2 0-3.5 1.5-3.5 3.5V30h-3.5V10.5C21 8.5 19.5 7 17.5 7S14 8.5 14 10.5V32h-2.5V17c0-2-1.5-3.5-3.5-3.5S4.5 15 4.5 17v28c0 2.5.5 5 1.5 7l3 8.5c1.5 4 5 6.5 9 6.5h16c4.5 0 8.5-3 10-7.5l1-3c1-3 1.5-6.5 1.5-10V33c0-2-1.5-3.5-3.5-3.5S39.5 31 39.5 33v-1.5V5.5c0-2-1.5-3.5-3.5-3.5s-3.5 1.5-3.5 3.5V30h-1V5.5C31.5 3.5 30 2 28 2z"/>
                           </svg>
-                          {/* Product box (scales with slider) */}
+                          {/* Product circle (scales) */}
                           <motion.div
                             animate={{
-                              width: [14, 22, 34, 48, 64, 80][productSizeScale - 1],
-                              height: [14, 22, 34, 48, 64, 80][productSizeScale - 1],
+                              width: SIZE_SCALE[productSizeScale - 1].circle,
+                              height: SIZE_SCALE[productSizeScale - 1].circle,
                             }}
-                            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                            className="rounded-lg border-2 border-yellow-400/50 bg-yellow-400/10 flex items-center justify-center flex-shrink-0"
-                          >
-                            <span className="select-none" style={{ fontSize: `${Math.max(10, [10, 12, 16, 20, 24, 28][productSizeScale - 1])}px` }}>
-                              {SIZE_SCALE[productSizeScale - 1].emoji}
-                            </span>
-                          </motion.div>
+                            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                            className="rounded-full border-2 border-yellow-400/60 bg-yellow-400/10 flex-shrink-0"
+                            style={{ boxShadow: '0 0 12px rgba(250,204,21,0.08)' }}
+                          />
                         </div>
                       </div>
 
