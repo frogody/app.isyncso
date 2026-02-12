@@ -8,6 +8,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/api/supabaseClient';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   MessageSquare,
   Send,
@@ -24,6 +26,11 @@ import {
   Zap,
   RefreshCw,
   Trash2,
+  ListTodo,
+  AlertTriangle,
+  BarChart3,
+  Clock,
+  Target,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -31,10 +38,69 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxf
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
 
 const QUICK_COMMANDS = [
-  { label: 'Agent Status', cmd: '/status', icon: Activity },
-  { label: 'Health Check', cmd: '/health', icon: Shield },
-  { label: 'Recent PRs', cmd: '/prs', icon: GitBranch },
+  { label: 'Status', cmd: '/status', icon: Activity, desc: 'Agent status overview' },
+  { label: 'Health', cmd: '/health', icon: Shield, desc: 'Platform health check' },
+  { label: 'PRs', cmd: '/prs', icon: GitBranch, desc: 'Recent pull requests' },
+  { label: 'Backlog', cmd: '/backlog', icon: ListTodo, desc: 'Open backlog items' },
+  { label: 'Blockers', cmd: '/blockers', icon: AlertTriangle, desc: 'Current blockers' },
+  { label: 'Sprint', cmd: '/sprint', icon: Target, desc: 'Sprint progress' },
+  { label: 'Stats', cmd: '/stats', icon: BarChart3, desc: 'Roadmap statistics' },
 ];
+
+const SUGGESTED_PROMPTS = [
+  'Add a notification system for overdue tasks',
+  'What features are blocked right now?',
+  'Create a bulk import tool for products',
+  'Show me the progress of the Talent module',
+];
+
+// ─── Markdown for messages ──────────────────────────────────────────
+function MdMessage({ children }) {
+  if (!children) return null;
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+        a: ({ href, children }) => (
+          <a href={href} target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline hover:text-cyan-300">
+            {children}
+          </a>
+        ),
+        code: ({ inline, children }) =>
+          inline ? (
+            <code className="bg-zinc-700/50 px-1.5 py-0.5 rounded text-[12px] text-red-400 font-mono">{children}</code>
+          ) : (
+            <pre className="bg-zinc-800/80 rounded-lg p-3 text-[12px] text-zinc-300 overflow-x-auto my-2 font-mono border border-zinc-700/50">
+              <code>{children}</code>
+            </pre>
+          ),
+        ul: ({ children }) => <ul className="list-disc list-inside ml-1 my-1.5 space-y-0.5">{children}</ul>,
+        ol: ({ children }) => <ol className="list-decimal list-inside ml-1 my-1.5 space-y-0.5">{children}</ol>,
+        li: ({ children }) => <li className="text-zinc-300">{children}</li>,
+        strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+        em: ({ children }) => <em className="text-zinc-400 italic">{children}</em>,
+        h1: ({ children }) => <h1 className="text-base font-bold text-white mt-3 mb-1">{children}</h1>,
+        h2: ({ children }) => <h2 className="text-sm font-bold text-white mt-2.5 mb-1">{children}</h2>,
+        h3: ({ children }) => <h3 className="text-sm font-semibold text-zinc-200 mt-2 mb-1">{children}</h3>,
+        blockquote: ({ children }) => (
+          <blockquote className="border-l-2 border-cyan-500/40 pl-3 my-2 text-zinc-400 italic">{children}</blockquote>
+        ),
+        table: ({ children }) => (
+          <div className="overflow-x-auto my-2">
+            <table className="min-w-full text-xs border border-zinc-700 rounded">{children}</table>
+          </div>
+        ),
+        thead: ({ children }) => <thead className="bg-zinc-800/50">{children}</thead>,
+        th: ({ children }) => <th className="px-2 py-1.5 text-left text-zinc-400 font-medium border-b border-zinc-700">{children}</th>,
+        td: ({ children }) => <td className="px-2 py-1.5 text-zinc-300 border-b border-zinc-800">{children}</td>,
+        hr: () => <hr className="border-zinc-700/50 my-3" />,
+      }}
+    >
+      {children}
+    </ReactMarkdown>
+  );
+}
 
 function MessageBubble({ message, isLast }) {
   const isUser = message.role === 'user';
@@ -52,7 +118,7 @@ function MessageBubble({ message, isLast }) {
         </div>
         <div className="flex-1 bg-green-500/10 border border-green-500/20 rounded-xl p-3">
           <p className="text-xs text-green-400 font-medium mb-1">Action: {message.action}</p>
-          <p className="text-sm text-zinc-300 whitespace-pre-wrap">{message.content}</p>
+          <div className="text-sm text-zinc-300"><MdMessage>{message.content}</MdMessage></div>
         </div>
       </motion.div>
     );
@@ -86,17 +152,48 @@ function MessageBubble({ message, isLast }) {
             : 'bg-zinc-800/50 border border-zinc-700/50'
         )}
       >
-        <p className="text-sm text-zinc-200 whitespace-pre-wrap leading-relaxed">
-          {message.content}
-          {isLast && message.role === 'assistant' && message.streaming && (
-            <span className="inline-block w-2 h-4 bg-red-400 ml-1 animate-pulse" />
-          )}
-        </p>
-        <p className="text-[10px] text-zinc-500 mt-1">
+        {isUser ? (
+          <p className="text-sm text-zinc-200 whitespace-pre-wrap leading-relaxed">{message.content}</p>
+        ) : (
+          <div className="text-sm text-zinc-200 leading-relaxed">
+            <MdMessage>{message.content}</MdMessage>
+            {isLast && message.streaming && (
+              <span className="inline-block w-2 h-4 bg-red-400 ml-1 animate-pulse" />
+            )}
+          </div>
+        )}
+        <p className="text-[10px] text-zinc-500 mt-1.5">
           {new Date(message.timestamp).toLocaleTimeString()}
         </p>
       </div>
     </motion.div>
+  );
+}
+
+// ─── Typing indicator ────────────────────────────────────────────────
+function TypingIndicator() {
+  return (
+    <div className="flex gap-3 px-4 py-2">
+      <div className="w-8 h-8 rounded-lg bg-red-500/20 border border-red-500/30 flex items-center justify-center">
+        <Bot className="w-4 h-4 text-red-400" />
+      </div>
+      <div className="bg-zinc-800/50 border border-zinc-700/50 rounded-xl px-4 py-3">
+        <div className="flex items-center gap-1.5">
+          <div className="flex gap-1">
+            {[0, 1, 2].map(i => (
+              <motion.div
+                key={i}
+                className="w-1.5 h-1.5 rounded-full bg-zinc-400"
+                animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.1, 0.8] }}
+                transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+              />
+            ))}
+          </div>
+          <span className="text-xs text-zinc-500 ml-1">Commander is thinking</span>
+          <Sparkles className="w-3 h-3 text-red-400 animate-pulse" />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -107,6 +204,7 @@ export default function AdminCommander({ embedded = false }) {
   const [sessionId, setSessionId] = useState(null);
   const [error, setError] = useState(null);
   const [agentStats, setAgentStats] = useState({ total: 0, active: 0, idle: 0 });
+  const [showCommands, setShowCommands] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -140,12 +238,17 @@ export default function AdminCommander({ embedded = false }) {
           id: 'welcome',
           role: 'assistant',
           content:
-            "I'm the Roadmap Commander. Describe a feature you want to build and I'll help you place it on the roadmap with the right module, priority, and dependencies.\n\nYou can also ask me about agent status, platform health, or recent PRs.",
+            "I'm the **Roadmap Commander**. I can help you:\n\n- **Plan features** — describe what you want to build\n- **Check status** — agent activity, health, blockers\n- **Manage roadmap** — priorities, sprints, dependencies\n\nTry a quick command below or describe a feature.",
           timestamp: new Date().toISOString(),
         },
       ]);
     }
   }, []);
+
+  // Detect / commands in input
+  useEffect(() => {
+    setShowCommands(input.startsWith('/') && input.length <= 12);
+  }, [input]);
 
   const handleSend = useCallback(
     async (text) => {
@@ -154,12 +257,17 @@ export default function AdminCommander({ embedded = false }) {
 
       setInput('');
       setError(null);
+      setShowCommands(false);
 
       // Handle quick commands
       let actualMessage = trimmed;
       if (trimmed === '/status') actualMessage = 'What is the current status of all agents?';
       if (trimmed === '/health') actualMessage = 'Give me a health summary of the platform';
       if (trimmed === '/prs') actualMessage = 'List recent pull requests created by agents';
+      if (trimmed === '/backlog') actualMessage = 'Show me all open backlog items grouped by module, sorted by priority';
+      if (trimmed === '/blockers') actualMessage = 'What features are currently blocked? List blockers with their dependencies';
+      if (trimmed === '/sprint') actualMessage = 'Show me the current sprint progress — items in progress, items in review, and what\'s planned next';
+      if (trimmed === '/stats') actualMessage = 'Give me roadmap statistics: total features, completion rate by module, priority distribution, and velocity';
 
       // Add user message
       const userMsg = {
@@ -293,6 +401,12 @@ export default function AdminCommander({ embedded = false }) {
     setError(null);
   };
 
+  const filteredCommands = QUICK_COMMANDS.filter(cmd =>
+    !input || cmd.cmd.startsWith(input.toLowerCase())
+  );
+
+  const isWelcomeOnly = messages.length === 1 && messages[0].id === 'welcome';
+
   return (
     <div className={embedded ? "flex flex-col h-[calc(100vh-280px)] min-h-[500px]" : "min-h-screen bg-zinc-950 flex flex-col"}>
       {/* Header */}
@@ -311,6 +425,10 @@ export default function AdminCommander({ embedded = false }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800/50 border border-zinc-700/50 text-[10px] text-zinc-500">
+              <Clock className="w-3 h-3" />
+              Session: {sessionId?.substring(0, 8) || 'new'}
+            </div>
             <button
               onClick={handleNewSession}
               className="px-3 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors flex items-center gap-1.5"
@@ -336,17 +454,31 @@ export default function AdminCommander({ embedded = false }) {
         </AnimatePresence>
 
         {isLoading && messages[messages.length - 1]?.role === 'user' && (
-          <div className="flex gap-3 px-4 py-2">
-            <div className="w-8 h-8 rounded-lg bg-red-500/20 border border-red-500/30 flex items-center justify-center">
-              <Loader2 className="w-4 h-4 text-red-400 animate-spin" />
+          <TypingIndicator />
+        )}
+
+        {/* Suggested prompts on welcome */}
+        {isWelcomeOnly && !isLoading && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="px-4 pt-2"
+          >
+            <p className="text-[10px] text-zinc-600 uppercase tracking-wider mb-2 px-1">Suggestions</p>
+            <div className="grid grid-cols-2 gap-2">
+              {SUGGESTED_PROMPTS.map((prompt, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSend(prompt)}
+                  className="text-left px-3 py-2.5 rounded-xl bg-zinc-800/30 border border-zinc-700/30 text-xs text-zinc-400 hover:text-white hover:border-zinc-600 hover:bg-zinc-800/50 transition-all"
+                >
+                  <Sparkles className="w-3 h-3 text-red-400/60 mb-1" />
+                  {prompt}
+                </button>
+              ))}
             </div>
-            <div className="bg-zinc-800/50 border border-zinc-700/50 rounded-xl p-3">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-zinc-400">Thinking...</span>
-                <Sparkles className="w-3.5 h-3.5 text-red-400 animate-pulse" />
-              </div>
-            </div>
-          </div>
+          </motion.div>
         )}
 
         <div ref={messagesEndRef} />
@@ -366,8 +498,37 @@ export default function AdminCommander({ embedded = false }) {
         </div>
       )}
 
+      {/* Slash command autocomplete */}
+      <AnimatePresence>
+        {showCommands && filteredCommands.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            className="mx-4 mb-2 bg-zinc-800/90 border border-zinc-700 rounded-xl overflow-hidden backdrop-blur-sm"
+          >
+            {filteredCommands.map((cmd) => {
+              const Icon = cmd.icon;
+              return (
+                <button
+                  key={cmd.cmd}
+                  onClick={() => { setInput(''); handleSend(cmd.cmd); }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-700/50 transition-colors text-left"
+                >
+                  <Icon className="w-4 h-4 text-zinc-500" />
+                  <div className="flex-1">
+                    <span className="text-xs font-medium text-white">{cmd.cmd}</span>
+                    <span className="text-[10px] text-zinc-500 ml-2">{cmd.desc}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Quick Commands */}
-      <div className="px-4 pb-2 flex gap-2">
+      <div className="px-4 pb-2 flex gap-2 flex-wrap">
         {QUICK_COMMANDS.map((cmd) => {
           const Icon = cmd.icon;
           return (
@@ -392,7 +553,7 @@ export default function AdminCommander({ embedded = false }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Describe a feature to build, or ask about agent status..."
+            placeholder="Describe a feature, or type / for commands..."
             rows={1}
             className="flex-1 bg-zinc-900/50 border border-zinc-700/50 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-500 resize-none focus:outline-none focus:border-red-500/50 transition-colors"
             style={{ minHeight: '44px', maxHeight: '120px' }}
@@ -411,7 +572,7 @@ export default function AdminCommander({ embedded = false }) {
           </button>
         </div>
         <p className="text-[10px] text-zinc-600 mt-2 text-center">
-          Powered by Kimi-K2 via Together.ai | Session: {sessionId?.substring(0, 8) || 'new'}
+          Powered by Kimi-K2 via Together.ai{embedded ? '' : ` | Session: ${sessionId?.substring(0, 8) || 'new'}`}
         </p>
       </div>
     </div>

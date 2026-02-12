@@ -36,6 +36,7 @@ const CATEGORY_COLORS = {
   integrations: { bg: '#84cc16', border: '#a3e635', text: '#bef264' },
   infrastructure: { bg: '#78716c', border: '#a8a29e', text: '#d6d3d1' },
   learn: { bg: '#06b6d4', border: '#22d3ee', text: '#67e8f9' },
+  create: { bg: '#e879f9', border: '#f0abfc', text: '#f5d0fe' },
 };
 
 const MODULE_LABELS = {
@@ -52,6 +53,7 @@ const MODULE_LABELS = {
   integrations: 'Integrations',
   infrastructure: 'Infra',
   learn: 'Learn',
+  create: 'Create',
 };
 
 const STATUS_COLORS = {

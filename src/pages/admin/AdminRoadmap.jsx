@@ -99,7 +99,7 @@ const CATEGORY_COLORS = {
 
 const MODULE_LABELS = {
   platform: 'Platform Core', crm: 'CRM', finance: 'Finance', products: 'Products',
-  'sync-agent': 'SYNC Agent', talent: 'Talent', growth: 'Growth & Create',
+  'sync-agent': 'SYNC Agent', talent: 'Talent', growth: 'Growth',
   marketplace: 'Marketplace', admin: 'Admin Panel', sentinel: 'Sentinel',
   integrations: 'Integrations', infrastructure: 'Infrastructure', learn: 'Learn',
   create: 'Create', other: 'Other',
@@ -288,16 +288,16 @@ function DependencyPicker({ selected, onChange, allItems, currentId }) {
 // ─── Add/Edit Modal — Module-first creation flow ────────────────────
 function RoadmapItemModal({ open, onClose, onSave, editItem, allItems, preselectedCategory }) {
   const [step, setStep] = useState(editItem ? 'form' : 'module'); // 'module' | 'priority' | 'form'
-  const [form, setForm] = useState({ title: '', description: '', priority: 'medium', category: 'other', status: 'requested', assignee: 'unassigned', effort: '', target_date: '', files_affected: '', depends_on: [], orchestra_task_id: '', tags: [], auto_queued: false });
+  const [form, setForm] = useState({ title: '', description: '', priority: 'medium', category: 'other', status: 'requested', assignee: 'unassigned', effort: '', target_date: '', files_affected: '', depends_on: [], orchestra_task_id: '', tags: [], auto_queued: false, requires_human: false });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (editItem) {
       setStep('form');
-      setForm({ title: editItem.title || '', description: editItem.description || '', priority: editItem.priority || 'medium', category: editItem.category || 'other', status: editItem.status || 'requested', assignee: editItem.assignee || 'unassigned', effort: editItem.effort || '', target_date: editItem.target_date || '', files_affected: (editItem.files_affected || []).join('\n'), depends_on: editItem.depends_on || [], orchestra_task_id: editItem.orchestra_task_id || '', tags: editItem.tags || [], auto_queued: editItem.auto_queued || false });
+      setForm({ title: editItem.title || '', description: editItem.description || '', priority: editItem.priority || 'medium', category: editItem.category || 'other', status: editItem.status || 'requested', assignee: editItem.assignee || 'unassigned', effort: editItem.effort || '', target_date: editItem.target_date || '', files_affected: (editItem.files_affected || []).join('\n'), depends_on: editItem.depends_on || [], orchestra_task_id: editItem.orchestra_task_id || '', tags: editItem.tags || [], auto_queued: editItem.auto_queued || false, requires_human: editItem.requires_human || false });
     } else {
       setStep(preselectedCategory ? 'priority' : 'module');
-      setForm({ title: '', description: '', priority: 'medium', category: preselectedCategory || 'other', status: 'requested', assignee: 'unassigned', effort: '', target_date: '', files_affected: '', depends_on: [], orchestra_task_id: '', tags: [], auto_queued: false });
+      setForm({ title: '', description: '', priority: 'medium', category: preselectedCategory || 'other', status: 'requested', assignee: 'unassigned', effort: '', target_date: '', files_affected: '', depends_on: [], orchestra_task_id: '', tags: [], auto_queued: false, requires_human: false });
     }
   }, [editItem, open, preselectedCategory]);
 
@@ -305,7 +305,7 @@ function RoadmapItemModal({ open, onClose, onSave, editItem, allItems, preselect
     if (!form.title.trim()) { toast.error('Title is required'); return; }
     setSaving(true);
     const files = form.files_affected.split('\n').map(f => f.trim()).filter(Boolean);
-    await onSave({ ...form, id: editItem?.id, files_affected: files, effort: form.effort || null, target_date: form.target_date || null, assignee: form.assignee || null, orchestra_task_id: form.orchestra_task_id || null });
+    await onSave({ ...form, id: editItem?.id, files_affected: files, effort: form.effort || null, target_date: form.target_date || null, assignee: form.assignee || null, orchestra_task_id: form.orchestra_task_id || null, requires_human: form.requires_human || false });
     setSaving(false); onClose();
   };
 
@@ -405,6 +405,7 @@ function RoadmapItemModal({ open, onClose, onSave, editItem, allItems, preselect
               </div>
               <div><Label className="text-zinc-400 text-xs">Tags</Label><div className="mt-1"><TagInput tags={form.tags} onChange={(tags) => setForm({ ...form, tags })} /></div></div>
               <div><Label className="text-zinc-400 text-xs">Files Affected (one per line)</Label><Textarea value={form.files_affected} onChange={(e) => setForm({ ...form, files_affected: e.target.value })} placeholder="src/components/foo.jsx" className="bg-zinc-800/50 border-zinc-700 text-white mt-1 font-mono text-xs min-h-[50px]" /></div>
+              <div><Label className="text-zinc-400 text-xs">Dependencies</Label><div className="mt-1"><DependencyPicker selected={form.depends_on} onChange={(deps) => setForm({ ...form, depends_on: deps })} allItems={allItems} currentId={editItem?.id} /></div></div>
 
               {/* Auto-build toggle */}
               <div className="flex items-center gap-3 p-3 rounded-lg border border-zinc-800 bg-zinc-900/50">
@@ -417,6 +418,19 @@ function RoadmapItemModal({ open, onClose, onSave, editItem, allItems, preselect
                   <p className="text-[9px] text-zinc-500">Claude Code picks this up automatically and builds it</p>
                 </div>
                 {form.auto_queued && <Bot className="w-4 h-4 text-cyan-400 ml-auto" />}
+              </div>
+
+              {/* Requires Human toggle */}
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-zinc-800 bg-zinc-900/50">
+                <button onClick={() => setForm(f => ({ ...f, requires_human: !f.requires_human }))}
+                  className={cn('w-10 h-5 rounded-full transition-all relative', form.requires_human ? 'bg-amber-500' : 'bg-zinc-700')}>
+                  <div className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow', form.requires_human ? 'left-[22px]' : 'left-0.5')} />
+                </button>
+                <div>
+                  <p className="text-xs font-medium text-white">Requires Human Action</p>
+                  <p className="text-[9px] text-zinc-500">Manual step needed — decision, configuration, or external action</p>
+                </div>
+                {form.requires_human && <Users className="w-4 h-4 text-amber-400 ml-auto" />}
               </div>
             </div>
             <DialogFooter className="flex justify-between items-center">
@@ -513,6 +527,35 @@ function JourneyDetailDrawer({ item, onClose, allItems, onAddComment, onToggleSu
           {item.target_date && <div className="bg-zinc-900/50 rounded-lg p-2 border border-zinc-800"><span className="text-zinc-500">Target</span><p className="text-white font-medium">{new Date(item.target_date).toLocaleDateString()}</p></div>}
           {item.orchestra_task_id && <div className="bg-zinc-900/50 rounded-lg p-2 border border-zinc-800"><span className="text-zinc-500">Task</span><p className="text-white font-medium font-mono">{item.orchestra_task_id}</p></div>}
         </div>
+
+        {/* Requires Human */}
+        {item.requires_human && (
+          <div className="flex items-center gap-2 p-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5">
+            <Users className="w-4 h-4 text-amber-400 shrink-0" />
+            <span className="text-xs font-medium text-amber-400">Requires human action</span>
+          </div>
+        )}
+
+        {/* Dependencies */}
+        {(item.depends_on || []).length > 0 && (
+          <div>
+            <span className="text-xs text-zinc-500 flex items-center gap-1 mb-1"><GitBranch className="w-3 h-3" />Dependencies</span>
+            <div className="space-y-1">
+              {item.depends_on.map(depId => {
+                const dep = allItems.find(i => i.id === depId);
+                if (!dep) return null;
+                const depStatus = STATUS_CONFIG[dep.status] || STATUS_CONFIG.requested;
+                return (
+                  <div key={depId} className="flex items-center gap-2 bg-zinc-900/50 rounded-lg px-2.5 py-1.5 border border-zinc-800">
+                    <div className={cn('w-2 h-2 rounded-full', depStatus.dot)} />
+                    <span className="text-[11px] text-zinc-300 flex-1 truncate">{dep.title}</span>
+                    <Badge className={cn('text-[9px] px-1 py-0', depStatus.color)}>{depStatus.label}</Badge>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Files */}
         {item.files_affected?.length > 0 && (
@@ -921,6 +964,7 @@ export default function AdminRoadmap() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [activeId, setActiveId] = useState(null);
   const [preselectedCategory, setPreselectedCategory] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor));
 
@@ -961,7 +1005,7 @@ export default function AdminRoadmap() {
 
   // ─── CRUD ─────────────────────────────────────────────────────
   const handleSave = async (form) => {
-    const payload = { title: form.title, description: form.description, priority: form.priority, category: form.category, status: form.status, assignee: form.assignee === 'unassigned' ? null : form.assignee, effort: form.effort, target_date: form.target_date, files_affected: form.files_affected, depends_on: form.depends_on, orchestra_task_id: form.orchestra_task_id, tags: form.tags, auto_queued: form.auto_queued || false };
+    const payload = { title: form.title, description: form.description, priority: form.priority, category: form.category, status: form.status, assignee: form.assignee === 'unassigned' ? null : form.assignee, effort: form.effort, target_date: form.target_date, files_affected: form.files_affected, depends_on: form.depends_on, orchestra_task_id: form.orchestra_task_id, tags: form.tags, auto_queued: form.auto_queued || false, requires_human: form.requires_human || false };
     if (form.id) {
       const oldItem = items.find(i => i.id === form.id);
       const { error } = await supabase.from('roadmap_items').update(payload).eq('id', form.id);
@@ -1058,6 +1102,32 @@ export default function AdminRoadmap() {
     const draggedItem = items.find(i => i.id === active.id); if (!draggedItem) return;
     const newStatus = over.id;
     if (Object.keys(STATUS_CONFIG).includes(newStatus) && draggedItem.status !== newStatus) handleStatusChange(draggedItem.id, newStatus);
+  };
+
+  // ─── Batch Actions ────────────────────────────────────────
+  const toggleSelected = (id) => setSelectedIds(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(filtered.map(i => i.id)));
+  };
+  const handleBatchStatus = async (newStatus) => {
+    const ids = [...selectedIds];
+    for (const id of ids) await handleStatusChange(id, newStatus);
+    setSelectedIds(new Set());
+    toast.success(`${ids.length} items updated to ${STATUS_CONFIG[newStatus]?.label}`);
+  };
+  const handleBatchDelete = async () => {
+    const ids = [...selectedIds];
+    for (const id of ids) {
+      await supabase.from('roadmap_items').delete().eq('id', id);
+    }
+    setSelectedIds(new Set());
+    fetchItems();
+    toast.success(`${ids.length} items deleted`);
   };
 
   // ─── Filter / Sort ────────────────────────────────────────
@@ -1272,6 +1342,42 @@ export default function AdminRoadmap() {
         </div>
       ) : viewMode === 'list' ? (
         <div className="space-y-3">
+          {/* Batch action bar */}
+          <AnimatePresence>
+            {selectedIds.size > 0 && (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
+                <div className="flex items-center gap-3 px-4 py-3 bg-cyan-500/10 border border-cyan-500/20 rounded-xl">
+                  <Checkbox checked={selectedIds.size === filtered.length} onCheckedChange={toggleSelectAll} className="border-cyan-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500" />
+                  <span className="text-xs font-medium text-cyan-400">{selectedIds.size} selected</span>
+                  <div className="flex items-center gap-1.5 ml-auto">
+                    <span className="text-[10px] text-zinc-500 mr-1">Move to:</span>
+                    {['planned', 'in_progress', 'done', 'cancelled'].map(s => (
+                      <Button key={s} variant="ghost" size="sm" onClick={() => handleBatchStatus(s)}
+                        className={cn('h-7 px-2.5 text-[10px]', STATUS_CONFIG[s]?.color)}>
+                        {STATUS_CONFIG[s]?.label}
+                      </Button>
+                    ))}
+                    <div className="w-px h-5 bg-zinc-700 mx-1" />
+                    <Button variant="ghost" size="sm" onClick={handleBatchDelete}
+                      className="h-7 px-2.5 text-[10px] text-red-400 hover:text-red-300 hover:bg-red-500/10">
+                      <Trash2 className="w-3 h-3 mr-1" />Delete
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}
+                      className="h-7 px-2 text-[10px] text-zinc-500">Clear</Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Select all header */}
+          {filtered.length > 0 && selectedIds.size === 0 && (
+            <div className="flex items-center gap-2 px-1">
+              <Checkbox checked={false} onCheckedChange={toggleSelectAll} className="border-zinc-600" />
+              <span className="text-[10px] text-zinc-600">Select all ({filtered.length})</span>
+            </div>
+          )}
+
           <AnimatePresence mode="popLayout">
             {filtered.map(item => {
               const status = STATUS_CONFIG[item.status] || STATUS_CONFIG.requested;
@@ -1283,11 +1389,15 @@ export default function AdminRoadmap() {
               const stale = isStale(item);
               const tags = item.tags || [];
               const expanded = expandedId === item.id;
+              const isChecked = selectedIds.has(item.id);
               return (
                 <motion.div key={item.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                  <Card className={cn('bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 transition-all', item.status === 'in_progress' && 'border-l-2 border-l-yellow-500', item.status === 'done' && 'border-l-2 border-l-green-500', hasUnreadClaude && 'ring-1 ring-purple-500/30')}>
+                  <Card className={cn('bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 transition-all', item.status === 'in_progress' && 'border-l-2 border-l-yellow-500', item.status === 'done' && 'border-l-2 border-l-green-500', hasUnreadClaude && 'ring-1 ring-purple-500/30', isChecked && 'ring-1 ring-cyan-500/30 bg-cyan-500/[0.03]')}>
                     <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        {/* Checkbox */}
+                        <Checkbox checked={isChecked} onCheckedChange={() => toggleSelected(item.id)} className="mt-1 border-zinc-600 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500" />
+
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <h3 className="text-sm font-semibold text-white">{item.title}</h3>
@@ -1295,13 +1405,25 @@ export default function AdminRoadmap() {
                             <Badge className={cn('text-[10px] px-1.5 py-px', priority.color)}>{priority.label}</Badge>
                             {stale && <Badge className="text-[10px] px-1.5 py-px bg-orange-500/20 text-orange-400 border-orange-500/30"><AlertTriangle className="w-2.5 h-2.5 mr-1" />Stale</Badge>}
                             {item.category && <Badge className="text-[10px] px-1.5 py-px bg-zinc-800 text-zinc-400 border-zinc-700">{item.category}</Badge>}
+                            {item.auto_queued && <Badge className="text-[10px] px-1.5 py-px bg-cyan-500/20 text-cyan-400 border-cyan-500/30"><Bot className="w-2.5 h-2.5 mr-1" />Queued</Badge>}
+                            {item.requires_human && <Badge className="text-[10px] px-1.5 py-px bg-amber-500/20 text-amber-400 border-amber-500/30"><Users className="w-2.5 h-2.5 mr-1" />Human</Badge>}
                           </div>
                           {tags.length > 0 && <div className="flex flex-wrap gap-1 mb-1">{tags.map(t => (<Badge key={t} className="text-[9px] px-1 py-0 bg-cyan-500/10 text-cyan-400/80 border-cyan-500/20">{t}</Badge>))}</div>}
                           <div className="text-xs text-zinc-400 line-clamp-2"><Md>{item.description}</Md></div>
                           <div className="flex items-center gap-3 mt-2 text-[10px] text-zinc-500 flex-wrap">
                             <span>{new Date(item.created_at).toLocaleDateString()}</span>
+                            {item.assignee && item.assignee !== 'unassigned' && (
+                              <span className="flex items-center gap-1 text-zinc-400"><Users className="w-3 h-3" />{item.assignee}</span>
+                            )}
+                            {item.effort && (
+                              <span className="flex items-center gap-1"><Gauge className="w-3 h-3" />{EFFORT_CONFIG[item.effort]}</span>
+                            )}
+                            {item.target_date && (
+                              <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />{new Date(item.target_date).toLocaleDateString()}</span>
+                            )}
                             {comments.length > 0 && <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" />{comments.length}</span>}
                             {subtasks.length > 0 && <span className="flex items-center gap-1"><CheckSquare className="w-3 h-3" />{subtasks.filter(s => s.done).length}/{subtasks.length}</span>}
+                            {(item.depends_on || []).length > 0 && <span className="flex items-center gap-1"><GitBranch className="w-3 h-3" />{item.depends_on.length} dep{item.depends_on.length !== 1 ? 's' : ''}</span>}
                           </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
