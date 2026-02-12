@@ -186,7 +186,7 @@ export default function SyncStudioReturn() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black">
-        <div className="max-w-4xl mx-auto px-4 pt-12 pb-8">
+        <div className="w-full px-4 lg:px-8 pt-12 pb-8">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
               <Camera className="w-6 h-6 text-yellow-400" />
@@ -238,7 +238,7 @@ export default function SyncStudioReturn() {
   // -- Main return dashboard --
   return (
     <div className="min-h-screen bg-black">
-      <div className="max-w-4xl mx-auto px-4 pt-6 pb-8">
+      <div className="w-full px-4 lg:px-8 pt-6 pb-8">
         {/* Studio Nav */}
         <div className="flex justify-center mb-6">
           <SyncStudioNav />

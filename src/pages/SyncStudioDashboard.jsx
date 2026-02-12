@@ -1297,7 +1297,7 @@ export default function SyncStudioDashboard() {
       {/* STICKY TOP BAR                                                */}
       {/* ============================================================ */}
       <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-        <div className="max-w-4xl mx-auto px-4 py-3">
+        <div className="w-full px-4 lg:px-8 py-3">
           {/* Studio Nav */}
           <div className="mb-3">
             <SyncStudioNav />
@@ -1306,7 +1306,7 @@ export default function SyncStudioDashboard() {
       </div>
 
       {/* Shoot Style Configurator */}
-      <div className="max-w-4xl mx-auto px-4 pt-3 pb-1">
+      <div className="w-full px-4 lg:px-8 pt-3 pb-1">
         <ShootConfigurator
           settings={shootSettings}
           onSettingsChange={setShootSettings}
@@ -1317,7 +1317,7 @@ export default function SyncStudioDashboard() {
 
       {/* Stats bar */}
       <div className="bg-zinc-900/40 border-b border-zinc-800/40">
-        <div className="max-w-4xl mx-auto px-4 py-3">
+        <div className="w-full px-4 lg:px-8 py-3">
           {/* Stats row */}
           <div className="flex items-center justify-between gap-3 mb-2.5 flex-wrap">
             <div className="flex items-center gap-3 text-sm flex-wrap">
@@ -1395,7 +1395,7 @@ export default function SyncStudioDashboard() {
       {/* ============================================================ */}
       {/* FILTER / SEARCH BAR                                           */}
       {/* ============================================================ */}
-      <div className="max-w-4xl mx-auto px-4 pt-4 pb-2">
+      <div className="w-full px-4 lg:px-8 pt-4 pb-2">
         <div className="flex items-center gap-2 flex-wrap">
           {/* Filter dropdown */}
           <div className="relative">
@@ -1450,7 +1450,7 @@ export default function SyncStudioDashboard() {
       {/* ============================================================ */}
       {/* PRODUCT CARDS LIST                                            */}
       {/* ============================================================ */}
-      <div className="max-w-4xl mx-auto px-4 pb-8 space-y-3">
+      <div className="w-full px-4 lg:px-8 pb-8 space-y-3">
         <AnimatePresence mode="popLayout">
           {filteredPlans.map((plan, idx) => (
             <ProductCard

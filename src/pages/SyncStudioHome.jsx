@@ -188,7 +188,7 @@ export default function SyncStudioHome() {
         <div className="absolute bottom-1/4 right-0 w-[500px] h-[400px] bg-yellow-600/[0.02] rounded-full blur-[100px]" />
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 pt-6 pb-24">
+      <div className="relative z-10 w-full px-6 lg:px-10 pt-6 pb-24">
         {/* Nav */}
         <div className="flex justify-center mb-10">
           <SyncStudioNav />

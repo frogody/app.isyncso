@@ -576,8 +576,8 @@ export default function SyncStudioResults() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="min-h-screen bg-black p-6 lg:px-10">
+        <div className="w-full space-y-6">
           {/* Top bar skeleton */}
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6 animate-pulse">
             <div className="h-6 bg-zinc-800 rounded w-48 mb-4" />
@@ -673,8 +673,8 @@ export default function SyncStudioResults() {
   // -------------------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-black p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-black p-6 lg:px-10">
+      <div className="w-full space-y-6">
         {/* Studio Nav */}
         <SyncStudioNav current="/SyncStudioResults" />
 
