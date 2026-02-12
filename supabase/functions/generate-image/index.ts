@@ -142,14 +142,27 @@ function buildEnhancedPrompt(
   // Apply category-specific photography suffixes — respect style choice
   const category = detectProductCategory(productContext, userPrompt);
   const isLuxuryStyle = style === 'luxury' || !style;
+  // Detect jewelry sub-type for size-specific prompting
+  const jewelrySignals = [userPrompt, productContext?.name, productContext?.description, productContext?.tags?.join(' ')].filter(Boolean).join(' ').toLowerCase();
+  let jewelrySizeHint = ' Realistic jewelry scale and proportions, true-to-life size.';
+  if (/\bearring/i.test(jewelrySignals)) {
+    jewelrySizeHint = ' Small delicate earring at realistic 1-3cm scale proportional to a human ear, not oversized.';
+  } else if (/\bring\b/i.test(jewelrySignals)) {
+    jewelrySizeHint = ' Ring at realistic finger-sized scale, not oversized.';
+  } else if (/\bnecklace|pendant|chain\b/i.test(jewelrySignals)) {
+    jewelrySizeHint = ' Necklace at realistic scale proportional to human neck, pendant 1-4cm, not oversized.';
+  } else if (/\bbracelet|bangle|cuff\b/i.test(jewelrySignals)) {
+    jewelrySizeHint = ' Bracelet at realistic wrist-sized scale, not oversized.';
+  }
+
   const fullSuffixes: Record<string, string> = {
-    jewelry: ' Jewelry product photography, controlled reflections on metal, macro detail, gradient lighting shaping specular highlights, dark background, focus stacking, no color cast on metals.',
+    jewelry: ` Jewelry product photography, controlled reflections on metal, macro detail, gradient lighting shaping specular highlights, dark background, focus stacking, no color cast on metals.${jewelrySizeHint} Never oversized or disproportionate.`,
     luxury: ' Premium luxury presentation, aspirational aesthetic, dramatic controlled lighting, rich shadows, elegant negative space.',
     glass: ' Transparent product photography, rim lighting defining edges, gradient background, backlit material clarity.',
     standard: ''
   };
   const lightSuffixes: Record<string, string> = {
-    jewelry: ' Controlled reflections on metal, sharp macro detail, no color cast on metals.',
+    jewelry: ` Controlled reflections on metal, sharp macro detail, no color cast on metals.${jewelrySizeHint} Never oversized or disproportionate.`,
     luxury: ' Controlled reflections, ultra-sharp commercial quality.',
     glass: ' Rim lighting on edges, backlit clarity.',
     standard: ''
