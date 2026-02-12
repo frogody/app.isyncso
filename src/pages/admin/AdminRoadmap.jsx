@@ -27,7 +27,7 @@ import {
   Columns3, CalendarDays, Link2, FileCode, Users,
   CheckSquare, XCircle, Gauge, Tag, GitBranch,
   Download, AlertTriangle, History, X, GripVertical,
-  Route, Star, Lock, Zap, Trophy, Flag,
+  Route, Star, Lock, Zap, Trophy, Flag, TreePine,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,6 +49,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import TreeRoadmap from '@/components/admin/TreeRoadmap';
 
 // ─── Config ─────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -1108,6 +1109,7 @@ export default function AdminRoadmap() {
             <Button variant="ghost" size="sm" onClick={() => setViewMode('journey')} className={cn('h-7 px-2', viewMode === 'journey' ? 'bg-zinc-700 text-white' : 'text-zinc-400')}><Route className="w-3.5 h-3.5" /></Button>
             <Button variant="ghost" size="sm" onClick={() => setViewMode('list')} className={cn('h-7 px-2', viewMode === 'list' ? 'bg-zinc-700 text-white' : 'text-zinc-400')}><LayoutList className="w-3.5 h-3.5" /></Button>
             <Button variant="ghost" size="sm" onClick={() => setViewMode('kanban')} className={cn('h-7 px-2', viewMode === 'kanban' ? 'bg-zinc-700 text-white' : 'text-zinc-400')}><Columns3 className="w-3.5 h-3.5" /></Button>
+            <Button variant="ghost" size="sm" onClick={() => setViewMode('tree')} className={cn('h-7 px-2', viewMode === 'tree' ? 'bg-zinc-700 text-white' : 'text-zinc-400')}><TreePine className="w-3.5 h-3.5" /></Button>
           </div>
           <Select value="" onValueChange={(v) => { if (v === 'csv') exportCSV(filtered); if (v === 'json') exportJSON(filtered); }}>
             <SelectTrigger className="h-8 w-8 p-0 bg-zinc-800/50 border-zinc-700 text-zinc-400 [&>svg:last-child]:hidden"><Download className="w-3.5 h-3.5" /></SelectTrigger>
@@ -1134,7 +1136,7 @@ export default function AdminRoadmap() {
       </div>
 
       {/* Filters (hidden in journey view for cleaner look, shown for list/kanban) */}
-      {viewMode !== 'journey' && (
+      {viewMode !== 'journey' && viewMode !== 'tree' && (
         <div className="flex items-center gap-3">
           <div className="relative flex-1 max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
@@ -1167,7 +1169,14 @@ export default function AdminRoadmap() {
       )}
 
       {/* Content */}
-      {viewMode === 'journey' ? (
+      {viewMode === 'tree' ? (
+        <div className="bg-zinc-950/50 rounded-2xl border border-zinc-800/50 overflow-hidden">
+          <TreeRoadmap
+            items={filtered}
+            onSelectItem={(item) => setSelectedItem(prev => prev?.id === item.id ? null : item)}
+          />
+        </div>
+      ) : viewMode === 'journey' ? (
         <div className="bg-zinc-950/50 rounded-2xl border border-zinc-800/50 overflow-hidden">
           <JourneyRoad
             items={filtered}

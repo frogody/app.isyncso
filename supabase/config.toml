@@ -195,3 +195,12 @@ verify_jwt = false
 
 [functions.shopify-webhooks]
 verify_jwt = false
+
+[functions.commander-chat]
+verify_jwt = false
+
+[functions.github-integration]
+verify_jwt = false
+
+[functions.health-runner]
+verify_jwt = false

@@ -31,6 +31,8 @@ import {
   Presentation,
   Map,
   ShieldCheck,
+  MessageSquare,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -54,7 +56,10 @@ const adminNavItems = [
   { title: 'Integrations', href: '/admin/integrations', icon: Plug2 },
   { title: 'System', href: '/admin/system', icon: Server },
   { divider: true },
-  { title: 'Roadmap', href: '/admin/roadmap', icon: Map, badge: 'NEW' },
+  { title: 'Roadmap', href: '/admin/roadmap', icon: Map },
+  { title: 'Commander', href: '/admin/commander', icon: MessageSquare, badge: 'NEW' },
+  { title: 'Agents', href: '/admin/agents', icon: Bot, badge: 'NEW' },
+  { title: 'Health', href: '/admin/health', icon: Activity },
   { title: 'Structural Tests', href: '/admin/structural-tests', icon: ShieldCheck },
   { title: 'Feature Flags', href: '/admin/feature-flags', icon: Flag },
   { title: 'Settings', href: '/admin/settings', icon: Settings },
