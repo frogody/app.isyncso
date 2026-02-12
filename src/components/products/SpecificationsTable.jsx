@@ -25,7 +25,12 @@ export default function SpecificationsTable({
   const [expandedGroups, setExpandedGroups] = useState(new Set(['general']));
   const [searchQuery, setSearchQuery] = useState('');
 
-  const groupedSpecs = specifications.reduce((acc, spec) => {
+  // Safely ensure specifications is an array (may be a JSON string from DB)
+  const safeSpecs = Array.isArray(specifications) ? specifications
+    : typeof specifications === 'string' ? (() => { try { const p = JSON.parse(specifications); return Array.isArray(p) ? p : []; } catch { return []; } })()
+    : [];
+
+  const groupedSpecs = safeSpecs.reduce((acc, spec) => {
     const group = spec.group || spec.category || 'general';
     if (!acc[group]) acc[group] = [];
     acc[group].push(spec);
@@ -43,9 +48,10 @@ export default function SpecificationsTable({
   }
 
   const filterSpecs = (specs) => {
-    if (!searchQuery.trim()) return specs;
+    const arr = Array.isArray(specs) ? specs : [];
+    if (!searchQuery.trim()) return arr;
     const query = searchQuery.toLowerCase();
-    return specs.filter(spec =>
+    return arr.filter(spec =>
       spec.name?.toLowerCase().includes(query) ||
       spec.value?.toString().toLowerCase().includes(query)
     );

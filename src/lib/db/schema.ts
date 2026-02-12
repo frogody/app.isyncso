@@ -66,6 +66,8 @@ export interface Inventory {
   // Cost
   average_cost?: number;
   last_purchase_cost?: number;
+  // External stock tracking
+  quantity_external_shopify: number;
   // Timestamps
   last_counted_at?: string;
   last_received_at?: string;
@@ -303,6 +305,10 @@ export interface SalesOrder {
   // Notes
   internal_notes?: string;
   customer_notes?: string;
+  // Source tracking
+  source?: 'manual' | 'bolcom' | 'shopify' | 'email' | 'api';
+  shopify_order_id?: number;
+  shopify_order_number?: string;
   // Metadata
   metadata: Record<string, unknown>;
   created_at: string;
@@ -725,6 +731,189 @@ export type EmailMessageInsert = Omit<EmailMessage, 'id' | 'created_at'>;
 export type EmailMessageUpdate = Partial<EmailMessageInsert>;
 
 // =============================================================================
+// RETURNS
+// =============================================================================
+
+export interface Return {
+  id: string;
+  company_id: string;
+  return_code: string;
+  source: 'bolcom' | 'shopify' | 'manual' | 'other';
+  status: 'registered' | 'received' | 'inspected' | 'processed';
+  sales_order_id?: string;
+  customer_id?: string;
+  bol_return_id?: string;
+  registered_at: string;
+  received_at?: string;
+  processed_at?: string;
+  processed_by?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  // Joined
+  customers?: { id: string; name: string; email?: string };
+  sales_orders?: { id: string; order_number: string };
+  return_items?: ReturnItem[];
+}
+
+export type ReturnInsert = Omit<Return, 'id' | 'created_at' | 'updated_at' | 'customers' | 'sales_orders' | 'return_items'>;
+export type ReturnUpdate = Partial<Omit<ReturnInsert, 'company_id'>>;
+
+export interface ReturnItem {
+  id: string;
+  return_id: string;
+  product_id: string;
+  ean?: string;
+  quantity: number;
+  reason?: 'defective' | 'wrong_item' | 'not_as_described' | 'no_longer_needed' | 'arrived_late' | 'other';
+  reason_notes?: string;
+  action?: 'restock' | 'dispose' | 'inspect' | 'pending';
+  action_completed: boolean;
+  receiving_log_id?: string;
+  created_at: string;
+  // Joined
+  products?: { id: string; name: string; sku?: string; ean: string };
+}
+
+export type ReturnItemInsert = Omit<ReturnItem, 'id' | 'created_at' | 'products'>;
+export type ReturnItemUpdate = Partial<Omit<ReturnItemInsert, 'return_id'>>;
+
+// =============================================================================
+// EMAIL POOL
+// =============================================================================
+
+export interface EmailPoolAccount {
+  id: string;
+  company_id: string;
+  email_address: string;
+  display_name?: string;
+  label?: string;
+  provider: 'gmail' | 'outlook';
+  composio_connected_account_id?: string;
+  composio_trigger_subscription_id?: string;
+  toolkit_slug?: string;
+  connection_status: 'disconnected' | 'connecting' | 'connected' | 'error' | 'expired';
+  connection_error?: string;
+  is_active: boolean;
+  auto_approve_orders: boolean;
+  auto_approve_threshold: number;
+  sync_to_finance: boolean;
+  default_sales_channel: 'b2b' | 'b2c' | 'undecided';
+  total_emails_received: number;
+  total_orders_synced: number;
+  total_errors: number;
+  last_email_at?: string;
+  last_order_synced_at?: string;
+  last_error_at?: string;
+  connected_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type EmailPoolAccountInsert = Omit<EmailPoolAccount, 'id' | 'toolkit_slug' | 'created_at' | 'updated_at' | 'total_emails_received' | 'total_orders_synced' | 'total_errors'>;
+export type EmailPoolAccountUpdate = Partial<Omit<EmailPoolAccountInsert, 'company_id' | 'email_address'>>;
+
+export interface EmailPoolSyncLog {
+  id: string;
+  company_id: string;
+  email_pool_account_id: string;
+  email_from?: string;
+  email_to?: string;
+  email_subject?: string;
+  email_snippet?: string;
+  email_body?: string;
+  email_date?: string;
+  email_source_id?: string;
+  email_thread_id?: string;
+  classification?: 'order_confirmation' | 'shipping_update' | 'return_notification' | 'other' | 'skipped' | 'error';
+  classification_confidence?: number;
+  classification_method?: 'pattern_match' | 'ai' | 'skipped';
+  extracted_data?: Record<string, unknown>;
+  extraction_confidence?: number;
+  stock_purchase_id?: string;
+  expense_id?: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'skipped' | 'duplicate';
+  error_message?: string;
+  processing_time_ms?: number;
+  is_duplicate: boolean;
+  duplicate_of_id?: string;
+  created_at: string;
+}
+
+export type EmailPoolSyncLogInsert = Omit<EmailPoolSyncLog, 'id' | 'created_at'>;
+export type EmailPoolSyncLogUpdate = Partial<Omit<EmailPoolSyncLogInsert, 'company_id' | 'email_pool_account_id'>>;
+
+export interface SupplierEmailPattern {
+  id: string;
+  company_id: string;
+  supplier_id?: string;
+  supplier_name: string;
+  sender_patterns: string[];
+  subject_patterns: string[];
+  country: string;
+  default_sales_channel: 'b2b' | 'b2c' | 'undecided';
+  custom_extraction_hints?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type SupplierEmailPatternInsert = Omit<SupplierEmailPattern, 'id' | 'created_at' | 'updated_at'>;
+export type SupplierEmailPatternUpdate = Partial<Omit<SupplierEmailPatternInsert, 'company_id'>>;
+
+// =============================================================================
+// =============================================================================
+// SHOPIFY INTEGRATION
+// =============================================================================
+
+export interface ShopifyCredentials {
+  id: string;
+  company_id: string;
+  shop_domain: string;
+  shop_name?: string;
+  access_token_encrypted?: string;
+  scopes?: string[];
+  primary_location_id?: string;
+  auto_sync_orders: boolean;
+  auto_sync_inventory: boolean;
+  auto_fulfill: boolean;
+  sync_frequency_minutes: number;
+  status: 'connected' | 'disconnected' | 'error';
+  last_sync_at?: string;
+  last_order_sync_at?: string;
+  last_inventory_sync_at?: string;
+  last_error?: string;
+  webhook_ids?: unknown[];
+  oauth_state?: string;
+  connected_by?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+export type ShopifyCredentialsInsert = Omit<ShopifyCredentials, 'id' | 'created_at' | 'updated_at'>;
+export type ShopifyCredentialsUpdate = Partial<Omit<ShopifyCredentialsInsert, 'company_id'>>;
+
+export interface ShopifyProductMapping {
+  id: string;
+  company_id: string;
+  product_id: string;
+  shopify_product_id: number;
+  shopify_variant_id?: number;
+  shopify_inventory_item_id?: number;
+  matched_by: 'ean' | 'sku' | 'manual' | 'auto_created';
+  shopify_product_title?: string;
+  shopify_variant_title?: string;
+  shopify_sku?: string;
+  is_active: boolean;
+  sync_inventory: boolean;
+  last_synced_at?: string;
+  shopify_stock_level?: number;
+  created_at: string;
+  updated_at: string;
+}
+export type ShopifyProductMappingInsert = Omit<ShopifyProductMapping, 'id' | 'created_at' | 'updated_at'>;
+export type ShopifyProductMappingUpdate = Partial<Omit<ShopifyProductMappingInsert, 'company_id'>>;
+
 // BUSINESS CONSTANTS
 // =============================================================================
 

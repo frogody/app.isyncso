@@ -161,6 +161,8 @@ import Sequences from "./Sequences";
 
 import Settings from "./Settings";
 
+import ShopifyCallback from "./ShopifyCallback";
+
 import ShareView from "./ShareView";
 
 import SkillFrameworks from "./SkillFrameworks";
@@ -263,6 +265,18 @@ import CreateVideos from "./CreateVideos";
 
 import CreateLibrary from "./CreateLibrary";
 
+import SyncStudioHome from "./SyncStudioHome";
+
+import SyncStudioImport from "./SyncStudioImport";
+
+import SyncStudioDashboard from "./SyncStudioDashboard";
+
+import SyncStudioPhotoshoot from "./SyncStudioPhotoshoot";
+
+import SyncStudioResults from "./SyncStudioResults";
+
+import SyncStudioReturn from "./SyncStudioReturn";
+
 import InventoryReceiving from "./InventoryReceiving";
 
 import InventoryShipping from "./InventoryShipping";
@@ -270,7 +284,9 @@ import PalletBuilder from "./PalletBuilder";
 import ShipmentVerification from "./ShipmentVerification";
 
 import InventoryExpenses from "./InventoryExpenses";
+import InventoryReturns from "./InventoryReturns";
 import StockPurchases from "./StockPurchases";
+import EmailPoolSettings from "./EmailPoolSettings";
 
 import SyncAgent from "./SyncAgent";
 
@@ -504,7 +520,9 @@ const PAGES = {
     Sequences: Sequences,
     
     Settings: Settings,
-    
+
+    ShopifyCallback: ShopifyCallback,
+
     ShareView: ShareView,
     
     SkillFrameworks: SkillFrameworks,
@@ -607,6 +625,15 @@ const PAGES = {
 
     CreateLibrary: CreateLibrary,
 
+    SyncStudioHome: SyncStudioHome,
+
+    SyncStudioImport: SyncStudioImport,
+
+    SyncStudioDashboard: SyncStudioDashboard,
+    SyncStudioPhotoshoot: SyncStudioPhotoshoot,
+    SyncStudioResults: SyncStudioResults,
+    SyncStudioReturn: SyncStudioReturn,
+
     InventoryReceiving: InventoryReceiving,
 
     InventoryShipping: InventoryShipping,
@@ -616,7 +643,11 @@ const PAGES = {
 
     InventoryExpenses: InventoryExpenses,
 
+    InventoryReturns: InventoryReturns,
+
     StockPurchases: StockPurchases,
+
+    EmailPoolSettings: EmailPoolSettings,
 
     SyncAgent: SyncAgent,
 
@@ -951,6 +982,8 @@ function PagesContent() {
                 
                 <Route path="/Settings" element={<Settings />} />
 
+                <Route path="/shopifycallback" element={<ShopifyCallback />} />
+
                 <Route path="/SkillFrameworks" element={<SkillFrameworks />} />
                 
                 <Route path="/SkillMap" element={<SkillMap />} />
@@ -1050,6 +1083,14 @@ function PagesContent() {
 
                 <Route path="/CreateLibrary" element={<CreateLibrary />} />
 
+                <Route path="/SyncStudioHome" element={<SyncStudioHome />} />
+                <Route path="/SyncStudio" element={<SyncStudioHome />} />
+                <Route path="/SyncStudioImport" element={<SyncStudioImport />} />
+                <Route path="/SyncStudioDashboard" element={<SyncStudioDashboard />} />
+                <Route path="/SyncStudioPhotoshoot" element={<SyncStudioPhotoshoot />} />
+                <Route path="/SyncStudioResults" element={<SyncStudioResults />} />
+                <Route path="/SyncStudioReturn" element={<SyncStudioReturn />} />
+
                 <Route path="/InventoryReceiving" element={<InventoryReceiving />} />
 
                 <Route path="/InventoryShipping" element={<InventoryShipping />} />
@@ -1059,7 +1100,11 @@ function PagesContent() {
 
                 <Route path="/StockPurchases" element={<StockPurchases />} />
 
+                <Route path="/EmailPoolSettings" element={<EmailPoolSettings />} />
+
                 <Route path="/SyncAgent" element={<SyncAgent />} />
+
+                <Route path="/InventoryReturns" element={<InventoryReturns />} />
 
                 <Route path="/InventoryExpenses" element={<Navigate to="/StockPurchases" replace />} />
 

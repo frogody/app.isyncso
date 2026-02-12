@@ -25,6 +25,8 @@ import type {
   Shipment,
   Pallet,
   PalletItem,
+  Return,
+  ReturnItem,
 } from '@/lib/db/schema';
 
 // =============================================================================
@@ -206,6 +208,7 @@ export async function receiveStock(
     damageNotes?: string;
     receivedBy?: string;
     receivingSessionId?: string;
+    receiptType?: 'purchase' | 'return' | 'transfer' | 'adjustment';
   }
 ): Promise<{
   success: boolean;
@@ -224,7 +227,7 @@ export async function receiveStock(
     bin_location: options?.binLocation,
     condition: options?.condition || 'good',
     damage_notes: options?.damageNotes,
-    receipt_type: 'purchase',
+    receipt_type: options?.receiptType || 'purchase',
     received_by: options?.receivedBy,
     receiving_session_id: options?.receivingSessionId,
     received_at: new Date().toISOString(),
@@ -535,6 +538,41 @@ export async function completeShipping(
   // Update shipping task with tracking URL
   if (trackingUrl) {
     await db.updateShippingTask(taskId, { tracking_url: trackingUrl });
+  }
+
+  // Auto-push Shopify fulfillment if order source is 'shopify' and auto_fulfill is on
+  if (shippingTask.sales_order_id) {
+    try {
+      const { supabase: sb } = await import('@/api/supabaseClient');
+      const { data: salesOrder } = await sb
+        .from('sales_orders')
+        .select('source, shopify_order_id, company_id')
+        .eq('id', shippingTask.sales_order_id)
+        .single();
+
+      if (salesOrder?.source === 'shopify' && salesOrder.shopify_order_id) {
+        const { data: creds } = await sb
+          .from('shopify_credentials')
+          .select('auto_fulfill')
+          .eq('company_id', salesOrder.company_id)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (creds?.auto_fulfill) {
+          await callShopifyApi('createFulfillment', {
+            companyId: salesOrder.company_id,
+            orderId: salesOrder.shopify_order_id,
+            trackingNumber: trackTraceCode,
+            trackingCompany: carrier,
+            trackingUrl,
+          }).catch((err: unknown) => {
+            console.error('Shopify auto-fulfill failed (non-blocking):', err);
+          });
+        }
+      }
+    } catch {
+      // Non-blocking — don't fail shipping if Shopify push fails
+    }
   }
 
   return {
@@ -933,4 +971,358 @@ export async function getDashboardData(
     overdueDeliveries: overdueJobs.length,
     recentNotifications: notifications.slice(0, 10),
   };
+}
+
+// =============================================================================
+// RETURNS (Phase 5)
+// =============================================================================
+
+const BOL_REASON_MAP: Record<string, ReturnItem['reason']> = {
+  PRODUCT_DEFECT: 'defective',
+  PRODUCT_DOES_NOT_MATCH_DESCRIPTION: 'not_as_described',
+  WRONG_PRODUCT: 'wrong_item',
+  TOO_LATE_DELIVERY: 'arrived_late',
+  NO_LONGER_NEEDED: 'no_longer_needed',
+};
+
+function mapBolReason(bolReason: string): ReturnItem['reason'] {
+  return BOL_REASON_MAP[bolReason] || 'other';
+}
+
+/**
+ * Create a manual return with items
+ */
+export async function createManualReturn(
+  companyId: string,
+  items: Array<{
+    productId: string;
+    ean?: string;
+    quantity: number;
+    reason?: ReturnItem['reason'];
+    reasonNotes?: string;
+  }>,
+  options?: {
+    customerId?: string;
+    salesOrderId?: string;
+    notes?: string;
+  }
+): Promise<Return> {
+  const returnCode = db.generateReturnCode('manual');
+
+  const ret = await db.createReturn({
+    company_id: companyId,
+    return_code: returnCode,
+    source: 'manual',
+    status: 'registered',
+    customer_id: options?.customerId,
+    sales_order_id: options?.salesOrderId,
+    notes: options?.notes,
+    registered_at: new Date().toISOString(),
+  });
+
+  for (const item of items) {
+    await db.createReturnItem({
+      return_id: ret.id,
+      product_id: item.productId,
+      ean: item.ean,
+      quantity: item.quantity,
+      reason: item.reason || 'other',
+      reason_notes: item.reasonNotes,
+      action: 'pending',
+      action_completed: false,
+    });
+  }
+
+  return ret;
+}
+
+/**
+ * Process a return item: restock, dispose, or inspect
+ */
+export async function processReturnItem(
+  companyId: string,
+  itemId: string,
+  action: 'restock' | 'dispose' | 'inspect',
+  userId?: string
+): Promise<ReturnItem> {
+  const item = await db.getReturnItem(itemId);
+  if (!item) throw new Error('Return item not found');
+
+  if (action === 'restock') {
+    // Receive the returned stock back into inventory
+    const result = await receiveStock(companyId, item.product_id, item.quantity, {
+      eanScanned: item.ean,
+      receiptType: 'return',
+      receivedBy: userId,
+      condition: 'good',
+    });
+
+    // Link receiving log and mark completed
+    const updated = await db.updateReturnItem(itemId, {
+      action: 'restock',
+      action_completed: true,
+      receiving_log_id: result.receivingLog.id,
+    });
+
+    // Check if all items in the return are completed
+    await maybeCompleteReturn(item.return_id, userId);
+    return updated;
+  }
+
+  if (action === 'dispose') {
+    const updated = await db.updateReturnItem(itemId, {
+      action: 'dispose',
+      action_completed: true,
+    });
+    await maybeCompleteReturn(item.return_id, userId);
+    return updated;
+  }
+
+  // inspect — mark action but leave not completed
+  return db.updateReturnItem(itemId, {
+    action: 'inspect',
+    action_completed: false,
+  });
+}
+
+/**
+ * If all items in a return are completed, advance status to 'processed'
+ */
+async function maybeCompleteReturn(returnId: string, userId?: string): Promise<void> {
+  const items = await db.listReturnItems(returnId);
+  const allDone = items.every((i) => i.action_completed);
+
+  if (allDone) {
+    await db.updateReturn(returnId, {
+      status: 'processed',
+      processed_at: new Date().toISOString(),
+      processed_by: userId,
+    });
+  }
+}
+
+/**
+ * Advance a return's status
+ */
+export async function advanceReturnStatus(
+  returnId: string,
+  newStatus: Return['status'],
+  userId?: string
+): Promise<Return> {
+  const updates: Record<string, unknown> = { status: newStatus };
+
+  if (newStatus === 'received') {
+    updates.received_at = new Date().toISOString();
+  } else if (newStatus === 'processed') {
+    updates.processed_at = new Date().toISOString();
+    updates.processed_by = userId;
+  }
+
+  return db.updateReturn(returnId, updates);
+}
+
+/**
+ * Sync returns from bol.com — fetches unhandled returns and creates/updates records
+ */
+export async function syncBolcomReturns(
+  companyId: string
+): Promise<{ synced: number; errors: number }> {
+  const result = await callBolcomApi('getReturns', { companyId });
+  if (!result.success) throw new Error(result.error || 'Failed to fetch bol.com returns');
+
+  const returns = (result.data as { returns?: Array<Record<string, unknown>> })?.returns || [];
+  let synced = 0;
+  let errors = 0;
+
+  for (const bolReturn of returns) {
+    try {
+      const bolReturnId = String(bolReturn.returnId || '');
+      const returnCode = `RET-BOL-${bolReturnId}`;
+
+      // Check if return already exists
+      const existing = await db.listReturns(companyId, { search: returnCode });
+      if (existing.length > 0) continue;
+
+      const ret = await db.createReturn({
+        company_id: companyId,
+        return_code: returnCode,
+        source: 'bolcom',
+        bol_return_id: bolReturnId,
+        status: 'registered',
+        registered_at: (bolReturn.registrationDateTime as string) || new Date().toISOString(),
+      });
+
+      // Create return items from bol.com return items
+      const bolItems = (bolReturn.returnItems as Array<Record<string, unknown>>) || [];
+      for (const bolItem of bolItems) {
+        const ean = String(bolItem.ean || '');
+        // Try to find product by EAN
+        let productId: string | undefined;
+        if (ean) {
+          const { supabase } = await import('@/api/supabaseClient');
+          const { data: found } = await supabase
+            .from('products')
+            .select('id')
+            .eq('company_id', companyId)
+            .eq('ean', ean)
+            .limit(1)
+            .maybeSingle();
+          if (found) productId = found.id;
+        }
+
+        if (productId) {
+          await db.createReturnItem({
+            return_id: ret.id,
+            product_id: productId,
+            ean,
+            quantity: Number(bolItem.quantity) || 1,
+            reason: mapBolReason(String(bolItem.returnReason || '')),
+            reason_notes: String(bolItem.customerDetails || ''),
+            action: 'pending',
+            action_completed: false,
+          });
+        }
+      }
+      synced++;
+    } catch {
+      errors++;
+    }
+  }
+
+  return { synced, errors };
+}
+
+/**
+ * Send handling result back to bol.com for a return
+ */
+export async function sendBolcomHandlingResult(
+  companyId: string,
+  bolReturnId: string,
+  handlingResult: 'RETURN_RECEIVED' | 'EXCHANGE_PRODUCT' | 'RETURN_DOES_NOT_MEET_CONDITIONS' | 'REPAIR_PRODUCT' | 'CUSTOMER_KEEPS_PRODUCT_PAID',
+  quantityReturned: number
+): Promise<{ processStatusId: string }> {
+  const result = await callBolcomApi('handleReturn', {
+    companyId,
+    returnId: bolReturnId,
+    handlingResult,
+    quantityReturned,
+  });
+  if (!result.success) throw new Error(result.error || 'Failed to send handling result');
+  return result.data as { processStatusId: string };
+}
+
+// =============================================================================
+// SHOPIFY INTEGRATION (Phase SH)
+// =============================================================================
+
+/**
+ * Call the shopify-api edge function with a given action
+ */
+async function callShopifyApi(action: string, params: Record<string, unknown>): Promise<{
+  success: boolean;
+  data?: unknown;
+  error?: string;
+}> {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/shopify-api`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({ action, ...params }),
+  });
+
+  return response.json();
+}
+
+/**
+ * Initiate Shopify OAuth flow — returns the authorization URL
+ */
+export async function initiateShopifyOAuth(
+  companyId: string,
+  shopDomain: string
+): Promise<{ authUrl: string }> {
+  const result = await callShopifyApi('initiateOAuth', { companyId, shopDomain });
+  if (!result.success) throw new Error(result.error || 'Failed to initiate OAuth');
+  return result.data as { authUrl: string };
+}
+
+/**
+ * Test Shopify connection for a company
+ */
+export async function testShopifyConnection(
+  companyId: string
+): Promise<{ connected: boolean; shopName?: string }> {
+  const result = await callShopifyApi('testConnection', { companyId });
+  if (!result.success) throw new Error(result.error || 'Connection test failed');
+  return result.data as { connected: boolean; shopName?: string };
+}
+
+/**
+ * Disconnect Shopify — removes webhooks, deactivates credentials and mappings
+ */
+export async function disconnectShopify(companyId: string): Promise<void> {
+  const result = await callShopifyApi('disconnect', { companyId });
+  if (!result.success) throw new Error(result.error || 'Failed to disconnect');
+}
+
+/**
+ * Sync Shopify products — fetch all products, match by EAN/SKU
+ */
+export async function syncShopifyProducts(
+  companyId: string
+): Promise<{ mapped: number; unmapped: number }> {
+  const result = await callShopifyApi('syncProducts', { companyId });
+  if (!result.success) throw new Error(result.error || 'Failed to sync products');
+  return result.data as { mapped: number; unmapped: number };
+}
+
+/**
+ * Set inventory level for a single product on Shopify
+ */
+export async function setShopifyInventoryLevel(
+  companyId: string,
+  inventoryItemId: number,
+  locationId: number,
+  available: number
+): Promise<void> {
+  const result = await callShopifyApi('setInventoryLevel', {
+    companyId,
+    inventoryItemId,
+    locationId,
+    available,
+  });
+  if (!result.success) throw new Error(result.error || 'Failed to set inventory level');
+}
+
+/**
+ * Push fulfillment with tracking to Shopify for an order
+ */
+export async function createShopifyFulfillment(
+  companyId: string,
+  shopifyOrderId: number,
+  trackingNumber: string,
+  trackingCompany?: string,
+  trackingUrl?: string
+): Promise<{ fulfillmentId: number }> {
+  const result = await callShopifyApi('createFulfillment', {
+    companyId,
+    orderId: shopifyOrderId,
+    trackingNumber,
+    trackingCompany,
+    trackingUrl,
+  });
+  if (!result.success) throw new Error(result.error || 'Failed to create fulfillment');
+  return result.data as { fulfillmentId: number };
+}
+
+/**
+ * Batch update inventory levels on Shopify for multiple products
+ */
+export async function batchUpdateShopifyInventory(
+  companyId: string
+): Promise<{ synced: number; errors: number }> {
+  const result = await callShopifyApi('batchInventoryUpdate', { companyId });
+  if (!result.success) throw new Error(result.error || 'Failed to batch update inventory');
+  return result.data as { synced: number; errors: number };
 }

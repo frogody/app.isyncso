@@ -39,3 +39,12 @@ export * from './pallets';
 
 // bol.com Integration
 export * from './bolcom';
+
+// Returns
+export * from './returns';
+
+// Email Pool
+export * from './emailPool';
+
+// Shopify Integration
+export * from './shopify';

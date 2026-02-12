@@ -55,6 +55,8 @@ const TYPE_ICONS = {
 const CHANNEL_COLORS = {
   b2b: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30', label: 'B2B' },
   b2c: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/30', label: 'B2C' },
+  bolcom: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30', label: 'bol.com' },
+  shopify: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/30', label: 'Shopify' },
 };
 
 export function ProductGridCard({

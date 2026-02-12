@@ -386,7 +386,7 @@ export default function ProductsPhysical() {
 
     return {
       total: totalCount,
-      published: products.filter(p => p.status === 'published').length,
+      published: (products || []).filter(p => p.status === 'published').length,
       ...stockCounts,
     };
   }, [products, physicalProducts, totalCount]);
@@ -500,6 +500,8 @@ export default function ProductsPhysical() {
                 <SelectItem value="all">All Channels</SelectItem>
                 <SelectItem value="b2b">B2B</SelectItem>
                 <SelectItem value="b2c">B2C</SelectItem>
+                <SelectItem value="bolcom">bol.com</SelectItem>
+                <SelectItem value="shopify">Shopify</SelectItem>
               </SelectContent>
             </Select>
 

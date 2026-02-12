@@ -5,7 +5,7 @@ import { AnimatedCard } from "../components/AnimatedCard";
 import { AnimatedButton } from "../components/AnimatedButton";
 import { ease, springs, crossfade, stagger, hexToRgb, blurReveal, splitTextProgress } from "../lib/animations";
 
-const { fontFamily } = loadFont();
+const { fontFamily } = loadFont("normal", { weights: ["400", "500", "600", "700"], subsets: ["latin"] });
 
 interface ExtractedFeature {
   name: string;

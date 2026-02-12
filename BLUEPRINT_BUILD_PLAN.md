@@ -1833,19 +1833,19 @@ Pre-configured patterns for common Dutch e-commerce platforms:
 
 ### 5.12 BUILD TASKS
 
-- [ ] `EP-1` Create `email_pool_accounts` table + RLS policies
-- [ ] `EP-2` Create `email_pool_sync_log` table + RLS policies
-- [ ] `EP-3` Create `supplier_email_patterns` table + seed data + RLS policies
-- [ ] `EP-4` Add columns to `stock_purchases` (source_type, email_pool refs, order_url, order_number, country)
-- [ ] `EP-5` Modify `composio-webhooks/index.ts`: add pool account detection + routing before user-level processing
-- [ ] `EP-6` Create `process-order-email/index.ts` edge function: classification + extraction + record creation
-- [ ] `EP-7` Create `EmailPoolSettings.jsx` page: account list, add, connect, settings, sync log
-- [ ] `EP-8` Add OAuth flow for pool accounts (extend composio-connect or use `useComposio` hook with pool entity IDs)
-- [ ] `EP-9` Add trigger subscription management for pool accounts
-- [ ] `EP-10` Modify `StockPurchases.jsx`: show email-pool sourced purchases with source badge
+- [x] `EP-1` Create `email_pool_accounts` table + RLS policies
+- [x] `EP-2` Create `email_pool_sync_log` table + RLS policies
+- [x] `EP-3` Create `supplier_email_patterns` table + seed data + RLS policies
+- [x] `EP-4` Add columns to `stock_purchases` (source_type, email_pool refs, order_url, order_number, country)
+- [x] `EP-5` Modify `composio-webhooks/index.ts`: add pool account detection + routing before user-level processing
+- [x] `EP-6` Create `process-order-email/index.ts` edge function: classification + extraction + record creation
+- [x] `EP-7` Create `EmailPoolSettings.jsx` page: account list, add, connect, settings, sync log
+- [x] `EP-8` Add OAuth flow for pool accounts (extend composio-connect or use `useComposio` hook with pool entity IDs)
+- [x] `EP-9` Add trigger subscription management for pool accounts
+- [x] `EP-10` Modify `StockPurchases.jsx`: show email-pool sourced purchases with source badge
 - [ ] `EP-11` Add notification on auto-synced order (in-app notification to designated users)
-- [ ] `EP-12` Add route + navigation for EmailPoolSettings
-- [ ] `EP-13` Add RBAC permission `email_pool.manage`
+- [x] `EP-12` Add route + navigation for EmailPoolSettings
+- [x] `EP-13` Add RBAC permission `email_pool.manage`
 - [ ] `EP-14` Test: connect test Gmail → send mock order confirmation → verify purchase created
 - [ ] `EP-15` Test: duplicate detection → same email doesn't create two purchases
 - [ ] `EP-16` Test: shipping update email → updates expected_delivery tracking info
@@ -3044,52 +3044,52 @@ CREATE INDEX idx_receiving_log_session ON receiving_log(receiving_session_id) WH
 - [x] `P4-21` Test: return polling → create return record → handle return via API
 
 ### Phase 5: Returns Workflow
-- [ ] `P5-1` Returns page with list and filters
-- [ ] `P5-2` Return processing (restock/dispose/inspect)
-- [ ] `P5-3` Inventory update on restock
-- [ ] `P5-4` Link to bol.com returns (from Phase 4)
-- [ ] `P5-5` Test: manual return + restock flow
+- [x] `P5-1` Returns page with list and filters
+- [x] `P5-2` Return processing (restock/dispose/inspect)
+- [x] `P5-3` Inventory update on restock
+- [x] `P5-4` Link to bol.com returns (from Phase 4)
+- [x] `P5-5` Test: manual return + restock flow
 
 ### Email Pool Auto-Sync System
-- [ ] `EP-1` Create `email_pool_accounts` table + RLS policies
-- [ ] `EP-2` Create `email_pool_sync_log` table + RLS policies
-- [ ] `EP-3` Create `supplier_email_patterns` table + seed data + RLS policies
-- [ ] `EP-4` Add columns to `stock_purchases` (source_type, email_pool refs, order_url, order_number, country)
-- [ ] `EP-5` Modify `composio-webhooks/index.ts`: pool account detection + routing
-- [ ] `EP-6` Create `process-order-email/index.ts` edge function
-- [ ] `EP-7` Create `EmailPoolSettings.jsx` page with full UI
-- [ ] `EP-8` OAuth flow for pool accounts (Composio multi-account)
-- [ ] `EP-9` Trigger subscription management for pool accounts (Gmail: `GMAIL_NEW_GMAIL_MESSAGE`, Outlook: `OUTLOOK_MESSAGE_TRIGGER`)
-- [ ] `EP-10` Modify `StockPurchases.jsx`: email-pool source badge + filter
+- [x] `EP-1` Create `email_pool_accounts` table + RLS policies
+- [x] `EP-2` Create `email_pool_sync_log` table + RLS policies
+- [x] `EP-3` Create `supplier_email_patterns` table + seed data + RLS policies
+- [x] `EP-4` Add columns to `stock_purchases` (source_type, email_pool refs, order_url, order_number, country)
+- [x] `EP-5` Modify `composio-webhooks/index.ts`: pool account detection + routing
+- [x] `EP-6` Create `process-order-email/index.ts` edge function
+- [x] `EP-7` Create `EmailPoolSettings.jsx` page with full UI
+- [x] `EP-8` OAuth flow for pool accounts (Composio multi-account)
+- [x] `EP-9` Trigger subscription management for pool accounts (Gmail: `GMAIL_NEW_GMAIL_MESSAGE`, Outlook: `OUTLOOK_MESSAGE_TRIGGER`)
+- [x] `EP-10` Modify `StockPurchases.jsx`: email-pool source badge + filter
 - [ ] `EP-11` Optional: notification ONLY to the pool admin (connected_by user) on errors/failed extractions
-- [ ] `EP-12` Add route + navigation for EmailPoolSettings
-- [ ] `EP-13` Add RBAC permission `email_pool.manage`
+- [x] `EP-12` Add route + navigation for EmailPoolSettings
+- [x] `EP-13` Add RBAC permission `email_pool.manage`
 - [ ] `EP-14` Test: connect Gmail → mock order confirmation → verify purchase created
 - [ ] `EP-15` Test: duplicate detection (same email doesn't create two purchases)
 - [ ] `EP-16` Test: shipping update email → updates expected_delivery tracking
 
 ### Shopify Admin API Integration
-- [ ] `SH-1` Create `shopify_credentials` table + RLS policies
-- [ ] `SH-2` Create `shopify_product_mappings` table + RLS policies + indexes
-- [ ] `SH-3` Add columns to `sales_orders` (source, shopify_order_id, shopify_order_number)
-- [ ] `SH-4` Add columns to `inventory` (quantity_external_shopify) and `products` (shopify_listed)
-- [ ] `SH-5` Build `shopify-api/index.ts` edge function (unified API client with all 17 actions)
-- [ ] `SH-6` Implement OAuth Authorization Code flow (initiate → callback → store token)
-- [ ] `SH-7` Implement product sync: pull all Shopify products, match by EAN, create mappings
-- [ ] `SH-8` Implement push-to-Shopify: create product with EAN barcode + metafields
-- [ ] `SH-9` Implement inventory pull: fetch Shopify stock levels for comparison
-- [ ] `SH-10` Implement inventory push: set stock level on receiving/returns/adjustments
-- [ ] `SH-11` Implement order import: webhook-driven + periodic poll backup
-- [ ] `SH-12` Implement fulfillment push: tracking info sent to Shopify on ship
-- [ ] `SH-13` Build `shopify-webhooks/index.ts` edge function with HMAC-SHA256 verification
-- [ ] `SH-14` Handle all 8 webhook topics (orders, inventory, products, refunds, app/uninstalled)
-- [ ] `SH-15` Build ShopifySettings UI: connection, product sync status, inventory comparison, order settings
+- [x] `SH-1` Create `shopify_credentials` table + RLS policies
+- [x] `SH-2` Create `shopify_product_mappings` table + RLS policies + indexes
+- [x] `SH-3` Add columns to `sales_orders` (source, shopify_order_id, shopify_order_number)
+- [x] `SH-4` Add columns to `inventory` (quantity_external_shopify) and `products` (shopify_listed)
+- [x] `SH-5` Build `shopify-api/index.ts` edge function (unified API client with all 14 actions)
+- [x] `SH-6` Implement OAuth Authorization Code flow (initiate → callback → store token)
+- [x] `SH-7` Implement product sync: pull all Shopify products, match by EAN, create mappings
+- [x] `SH-8` Implement push-to-Shopify: create product with EAN barcode + metafields
+- [x] `SH-9` Implement inventory pull: fetch Shopify stock levels for comparison
+- [x] `SH-10` Implement inventory push: set stock level on receiving/returns/adjustments
+- [x] `SH-11` Implement order import: webhook-driven + periodic poll backup
+- [x] `SH-12` Implement fulfillment push: tracking info sent to Shopify on ship
+- [x] `SH-13` Build `shopify-webhooks/index.ts` edge function with HMAC-SHA256 verification
+- [x] `SH-14` Handle all 8 webhook topics (orders, inventory, products, refunds, app/uninstalled)
+- [x] `SH-15` Build ShopifySettings UI: connection, product sync status, inventory comparison, order settings
 - [ ] `SH-16` Build ShopifyProductMapper UI: unmapped products resolution
-- [ ] `SH-17` Add channel badges to ProductsPhysical (bol.com/Shopify/Both)
+- [x] `SH-17` Add channel badges to ProductsPhysical (bol.com/Shopify/Both)
 - [ ] `SH-18` Add cross-channel stock display (Internal | bol.com FBB | Shopify)
-- [ ] `SH-19` Modify InventoryShipping for auto-fulfill on Shopify orders
-- [ ] `SH-20` Implement rate limit handling (leaky bucket 40/2)
-- [ ] `SH-21` Implement disconnect flow (remove webhooks, mark disconnected)
+- [x] `SH-19` Modify InventoryShipping for auto-fulfill on Shopify orders
+- [x] `SH-20` Implement rate limit handling (leaky bucket 40/2)
+- [x] `SH-21` Implement disconnect flow (remove webhooks, mark disconnected)
 - [ ] `SH-22` Test: connect store → sync products → verify mappings created
 - [ ] `SH-23` Test: push stock update → verify in Shopify
 - [ ] `SH-24` Test: Shopify order webhook → sales_order created with correct line items

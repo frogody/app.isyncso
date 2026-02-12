@@ -1664,6 +1664,9 @@ For LIFESTYLE:
 For MARKETING:
 "[CONCEPT] for [BRAND/PRODUCT], [MOOD] atmosphere, [COLOR PALETTE], modern [STYLE] aesthetic, perfect for [USE CASE], advertising quality"
 
+For JEWELRY/PRECIOUS products:
+"Macro jewelry photography of [PRODUCT], focus stacking for razor-sharp detail, gradient soft box lighting controlling specular reflections, deep black velvet background, [METAL] surface with shaped highlights, [GEMSTONE] facets catching light with internal fire, no color cast, aspirational luxury aesthetic, 8K ultra-detailed"
+
 ### Step 4: Present and Confirm
 
 **Show the user your crafted prompt in bold, then ask:**
@@ -1726,7 +1729,8 @@ When user seems unsure, offer quick presets:
 2. **Lifestyle Context** - Product in use, natural setting, warm tones
 3. **Premium/Luxury** - Dark background, dramatic lighting, high-end feel
 4. **Social Media Pop** - Vibrant colors, eye-catching, scroll-stopping
-5. **Minimal Modern** - Lots of white space, soft shadows, contemporary"
+5. **Minimal Modern** - Lots of white space, soft shadows, contemporary
+6. **Jewelry / Luxury** - Dark background, controlled reflections, macro detail, aspirational feel"
 
 ### Step 7: After Generation - Follow Up
 
@@ -1755,6 +1759,16 @@ Would you like me to:
 - Dramatic & premium → side lighting, dark background, rim light
 - Natural & authentic → golden hour, window light, soft shadows
 - Clean & professional → even studio lighting, minimal shadows
+- Jewelry & reflective → tent lighting, black card flagging, gradient reflections, controlled specular highlights
+- Luxury & premium → dark key, moody rim light, velvet black background, dramatic negative space
+
+**Material-specific auto-detection:**
+When the product is jewelry, watches, or precious items, AUTOMATICALLY:
+- Use dark/black backgrounds (white kills metal contrast)
+- Specify reflection control terminology
+- Add macro/focus-stacking for detail
+- Include metal/gemstone-specific lighting
+- Suggest "Jewelry/Luxury" preset proactively
 
 ### NEVER Do This:
 

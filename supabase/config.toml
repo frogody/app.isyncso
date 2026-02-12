@@ -162,3 +162,36 @@ verify_jwt = false
 
 [functions.bolcom-webhooks]
 verify_jwt = false
+
+[functions.sync-studio-import-catalog]
+verify_jwt = false
+
+[functions.sync-studio-generate-plans]
+verify_jwt = false
+
+[functions.sync-studio-approve-plan]
+verify_jwt = false
+
+[functions.sync-studio-update-plan]
+verify_jwt = false
+
+[functions.sync-studio-execute-photoshoot]
+verify_jwt = false
+
+[functions.sync-studio-job-progress]
+verify_jwt = false
+
+[functions.sync-studio-regenerate-shot]
+verify_jwt = false
+
+[functions.sync-studio-export-zip]
+verify_jwt = false
+
+[functions.sync-studio-publish-bol]
+verify_jwt = false
+
+[functions.shopify-api]
+verify_jwt = false
+
+[functions.shopify-webhooks]
+verify_jwt = false

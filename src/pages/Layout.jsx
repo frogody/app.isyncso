@@ -85,6 +85,10 @@ import {
   BookText,
   Boxes,
   ClipboardCheck,
+  RotateCcw,
+  Camera,
+  Images,
+  History,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -231,7 +235,7 @@ const navigationItems = [
     url: createPageUrl("Products"),
     icon: Package,
     permission: null, // Always visible - core feature
-    matchPatterns: ["/product", "/inventory", "/stockpurchases"], // Matches /products, /productdetail, /inventory*, etc.
+    matchPatterns: ["/product", "/inventory", "/stockpurchases", "/emailpoolsettings"], // Matches /products, /productdetail, /inventory*, /emailpool*, etc.
   },
   {
     title: "Inbox",
@@ -447,7 +451,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   }
 
   // PRODUCTS routes
-  if (path.startsWith('/products') || path.startsWith('/productdetail') || path.startsWith('/inventory') || path.startsWith('/stockpurchases')) {
+  if (path.startsWith('/products') || path.startsWith('/productdetail') || path.startsWith('/inventory') || path.startsWith('/stockpurchases') || path.startsWith('/emailpoolsettings')) {
     const { digitalEnabled = true, physicalEnabled = true, serviceEnabled = true } = productsSettings;
 
     // Build items list based on settings
@@ -471,7 +475,9 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       items.push({ label: 'Shipping', path: createPageUrl('InventoryShipping'), icon: Truck });
       items.push({ label: 'Pallet Builder', path: createPageUrl('PalletBuilder'), icon: Boxes });
       items.push({ label: 'Verification', path: createPageUrl('ShipmentVerification'), icon: ClipboardCheck });
+      items.push({ label: 'Returns', path: createPageUrl('InventoryReturns'), icon: RotateCcw });
       items.push({ label: 'Stock Purchases', path: createPageUrl('StockPurchases'), icon: Receipt });
+      items.push({ label: 'Email Pool', path: createPageUrl('EmailPoolSettings'), icon: Mail });
       items.push({ label: 'Import', path: createPageUrl('InventoryImport'), icon: FileSpreadsheet });
     }
 
@@ -517,7 +523,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   }
 
   // SYNC routes
-  if (path.startsWith('/sync') || path.startsWith('/aiassistant') || path.startsWith('/actions') ||
+  if ((path.startsWith('/sync') && !path.startsWith('/syncstudio')) || path.startsWith('/aiassistant') || path.startsWith('/actions') ||
       path.startsWith('/activity') || path.startsWith('/desktop') || path.startsWith('/dailyjournal')) {
     const activityItems = [
       { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
@@ -532,8 +538,8 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
     };
   }
 
-  // CREATE routes
-  if (path.startsWith('/create')) {
+  // CREATE routes (includes Sync Studio)
+  if (path.startsWith('/create') || path.startsWith('/syncstudio')) {
     return {
       title: 'CREATE',
       color: 'yellow',
@@ -543,6 +549,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Branding', path: createPageUrl('CreateBranding'), icon: Palette },
         { label: 'Images', path: createPageUrl('CreateImages'), icon: Image },
         { label: 'Videos', path: createPageUrl('CreateVideos'), icon: Video },
+        { label: 'Sync Studio', path: createPageUrl('SyncStudioHome'), icon: Camera },
         { label: 'Library', path: createPageUrl('CreateLibrary'), icon: FolderOpen },
       ]
     };

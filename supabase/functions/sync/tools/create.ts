@@ -57,7 +57,7 @@ export async function generateImage(
     if (data.product_name) {
       const { data: products } = await ctx.supabase
         .from('products')
-        .select('id, name, description, type, featured_image, gallery')
+        .select('id, name, description, short_description, type, category, tags, featured_image, gallery')
         .ilike('name', `%${data.product_name}%`)
         .limit(1);
 

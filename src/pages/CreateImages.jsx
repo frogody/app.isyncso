@@ -120,6 +120,7 @@ const STYLE_PRESETS = [
   { id: 'minimalist', label: 'Minimal', icon: Square },
   { id: 'vintage', label: 'Vintage', icon: Clock },
   { id: 'cinematic', label: 'Cinema', icon: Film },
+  { id: 'luxury', label: 'Luxury', icon: Sparkles },
 ];
 
 const ASPECT_RATIOS = [
@@ -135,7 +136,8 @@ const QUICK_SUGGESTIONS = [
   'Lifestyle scene',
   'Social media post',
   'Marketing banner',
-  'Portrait photo',
+  'Luxury dark backdrop',
+  'Jewelry close-up',
 ];
 
 // Mode mapping: group old use cases into 3 modes
@@ -349,6 +351,7 @@ export default function CreateImages() {
       minimalist: 'minimalist composition, clean background, simple elegant design, negative space',
       vintage: 'vintage aesthetic, retro color grading, film grain, nostalgic atmosphere',
       cinematic: 'cinematic composition, dramatic lighting, movie still quality, anamorphic lens, depth of field',
+      luxury: 'luxury product photography, dark sophisticated backdrop, controlled reflections, dramatic lighting, aspirational premium aesthetic, negative space, editorial high-end feel',
     };
     return styleEnhancements[styleId] || '';
   };
@@ -435,6 +438,9 @@ export default function CreateImages() {
             style: selectedStyle,
             product_name: selectedProduct?.name,
             product_type: selectedProduct?.type,
+            product_description: selectedProduct?.description || selectedProduct?.short_description,
+            product_tags: selectedProduct?.tags,
+            product_category: selectedProduct?.category,
             brand_mood: brandAssets?.visual_style?.mood,
             has_reference_image: !!selectedReferenceImage
           }
