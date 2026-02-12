@@ -176,14 +176,23 @@ export default function SyncStudioImport() {
   }, []);
 
   // -- Update stats from response --
+  // Handles both camelCase (from start/continue) and snake_case (from status/DB rows)
   const updateStats = useCallback((data) => {
-    if (data.totalProducts != null) setTotalProducts(data.totalProducts);
-    if (data.estimatedTotal != null) setEstimatedTotal(data.estimatedTotal);
-    if (data.categories != null) setCategories(data.categories);
-    if (data.brands != null) setBrands(data.brands);
-    if (data.images != null) setImages(data.images);
-    if (data.currentProduct) setCurrentProduct(data.currentProduct);
-    if (data.importJobId) setImportJobId(data.importJobId);
+    const imported = data.totalImported ?? data.imported ?? data.imported_products;
+    const total = data.total ?? data.total_products ?? data.estimatedTotal;
+    const cats = data.categories ?? data.categories_found;
+    const br = data.brands ?? data.brands_found;
+    const img = data.images ?? data.images_found;
+    const curProd = data.currentProduct ?? data.current_product;
+    const jobId = data.importJobId ?? data.id;
+
+    if (imported != null) setTotalProducts(imported);
+    if (total != null) setEstimatedTotal(total);
+    if (cats != null) setCategories(cats);
+    if (br != null) setBrands(br);
+    if (img != null) setImages(img);
+    if (curProd) setCurrentProduct(curProd);
+    if (jobId) setImportJobId(jobId);
     if (data.nextPage != null) setNextPage(data.nextPage);
     if (data.hasMore != null) setHasMore(data.hasMore);
   }, []);
@@ -290,38 +299,7 @@ export default function SyncStudioImport() {
     }
   }, [importJobId, startPlanning, handleAllDone]);
 
-  // -- Continue import (fetch next page) --
-  const continueImport = useCallback(async (jobId, page) => {
-    if (!mountedRef.current || continueInFlightRef.current) return;
-    continueInFlightRef.current = true;
-
-    try {
-      const data = await callEdgeFunction({
-        action: 'continue',
-        userId: user?.id,
-        companyId: user?.company_id,
-        importJobId: jobId,
-        page,
-      });
-
-      if (!mountedRef.current) return;
-      updateStats(data);
-
-      if (!data.hasMore || data.status === 'planning' || data.status === 'completed') {
-        handleComplete(data.importJobId || jobId);
-      }
-    } catch (err) {
-      if (mountedRef.current) {
-        console.error('[SyncStudioImport] continue error:', err);
-        setError(err.message);
-        setStage('error');
-      }
-    } finally {
-      continueInFlightRef.current = false;
-    }
-  }, [callEdgeFunction, user, updateStats, handleComplete]);
-
-  // -- Poll for progress / trigger next page --
+  // -- Poll: call continue for each chunk until done --
   const startPolling = useCallback((jobId, initialPage) => {
     if (pollingRef.current) clearInterval(pollingRef.current);
 
@@ -336,38 +314,36 @@ export default function SyncStudioImport() {
 
       // If a continue is in flight, skip this tick
       if (continueInFlightRef.current) return;
+      continueInFlightRef.current = true;
 
       try {
-        // Check status first
-        const statusData = await callEdgeFunction({
-          action: 'status',
+        const data = await callEdgeFunction({
+          action: 'continue',
           userId: user?.id,
           companyId: user?.company_id,
+          importJobId: currentJobId,
+          page: currentPage,
         });
 
         if (!mountedRef.current) return;
-        updateStats(statusData);
+        updateStats(data);
 
-        // Import is done — transition to planning
-        if (statusData.status === 'planning' || statusData.status === 'completed' || !statusData.hasMore) {
-          handleComplete(statusData.importJobId || currentJobId);
-          return;
-        }
-
-        // There are more pages -- trigger continue
-        if (statusData.hasMore && statusData.nextPage != null) {
-          currentPage = statusData.nextPage;
-          currentJobId = statusData.importJobId || currentJobId;
-          await continueImport(currentJobId, currentPage);
+        // Import chunk done — check if more pages
+        if (!data.hasMore || data.status === 'planning' || data.status === 'completed') {
+          if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+          handleComplete(data.importJobId || currentJobId);
+        } else {
+          currentPage = data.nextPage || currentPage + 1;
         }
       } catch (err) {
         if (mountedRef.current) {
-          console.error('[SyncStudioImport] poll error:', err);
-          // Don't set error on transient failures, only after repeated issues
+          console.error('[SyncStudioImport] continue error:', err);
         }
+      } finally {
+        continueInFlightRef.current = false;
       }
     }, POLL_INTERVAL_MS);
-  }, [callEdgeFunction, user, updateStats, handleComplete, continueImport]);
+  }, [callEdgeFunction, user, updateStats, handleComplete]);
 
   // -- Init: check for existing job or start new one --
   useEffect(() => {
@@ -387,24 +363,21 @@ export default function SyncStudioImport() {
         if (!mountedRef.current) return;
         updateStats(statusData);
 
-        // Already fully completed — go to dashboard
-        if (statusData.status === 'completed') {
-          handleAllDone();
-          return;
-        }
-
         // In planning phase — resume planning
-        if (statusData.status === 'planning' && statusData.importJobId) {
-          handleComplete(statusData.importJobId);
+        const jobId = statusData.importJobId || statusData.id;
+        if (statusData.status === 'planning' && jobId) {
+          handleComplete(jobId);
           return;
         }
 
         // Active import found — resume
-        if (statusData.status === 'importing' && statusData.importJobId) {
+        if (statusData.status === 'importing' && jobId) {
           setStage('importing');
-          startPolling(statusData.importJobId, statusData.nextPage || 1);
+          startPolling(jobId, statusData.nextPage || 1);
           return;
         }
+
+        // Completed or no import — start fresh
 
         // 2) No active import — start one
         const startData = await callEdgeFunction({
