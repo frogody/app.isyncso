@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
+import { SyncStudioNav } from '@/components/sync-studio';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -237,7 +238,12 @@ export default function SyncStudioReturn() {
   // -- Main return dashboard --
   return (
     <div className="min-h-screen bg-black">
-      <div className="max-w-4xl mx-auto px-4 pt-12 pb-8">
+      <div className="max-w-4xl mx-auto px-4 pt-6 pb-8">
+        {/* Studio Nav */}
+        <div className="flex justify-center mb-6">
+          <SyncStudioNav />
+        </div>
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}

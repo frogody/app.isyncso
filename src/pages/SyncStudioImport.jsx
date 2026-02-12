@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
+import { SyncStudioNav } from '@/components/sync-studio';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxfntqleig.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
@@ -544,11 +545,16 @@ export default function SyncStudioImport() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-black flex flex-col items-center p-4 relative overflow-hidden">
       {/* Ambient background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-yellow-500/[0.03] rounded-full blur-[120px]" />
         <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] bg-yellow-600/[0.02] rounded-full blur-[100px]" />
+      </div>
+
+      {/* Studio Nav */}
+      <div className="relative z-10 mt-2 shrink-0">
+        <SyncStudioNav />
       </div>
 
       {/* Back button */}
@@ -562,7 +568,7 @@ export default function SyncStudioImport() {
         </button>
       )}
 
-      <div className="relative z-10 max-w-lg w-full">
+      <div className="relative z-10 max-w-lg w-full my-auto">
         {/* Step indicator (hidden during loading) */}
         {stage !== 'loading' && <StepIndicator currentStage={stage} />}
 

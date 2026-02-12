@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
+import { SyncStudioNav } from '@/components/sync-studio';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -138,7 +139,11 @@ export default function SyncStudioHome() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 max-w-3xl mx-auto px-6 pt-24 pb-20">
+      <div className="relative z-10 max-w-3xl mx-auto px-6 pt-8 pb-20">
+        {/* Studio Nav */}
+        <div className="flex justify-center mb-12">
+          <SyncStudioNav />
+        </div>
         {/* Hero */}
         <motion.div
           className="flex flex-col items-center text-center"
