@@ -103,13 +103,16 @@ export default function DesktopActivity() {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [copiedCommand, setCopiedCommand] = useState(false);
 
-  const DOWNLOAD_URL = "https://github.com/frogody/sync.desktop/releases/download/v1.0.0/SYNC.Desktop-1.0.0-arm64.dmg";
+  const DOWNLOAD_URL_ARM64 = "https://github.com/frogody/sync.desktop/releases/download/v2.0.0/SYNC.Desktop-2.0.0-arm64.dmg";
+  const DOWNLOAD_URL_INTEL = "https://github.com/frogody/sync.desktop/releases/download/v2.0.0/SYNC.Desktop-2.0.0.dmg";
   const BYPASS_COMMAND = "xattr -cr ~/Downloads/SYNC.Desktop*.dmg && open ~/Downloads/SYNC.Desktop*.dmg";
 
   const handleDownload = () => {
-    // Start the download
-    window.open(DOWNLOAD_URL, '_blank');
-    // Show the installation guide
+    // Auto-detect architecture and download the right DMG
+    const ua = navigator.userAgent || "";
+    const platform = navigator.platform || "";
+    const isArm = platform.includes("ARM") || ua.includes("ARM64") || ua.includes("Apple");
+    window.open(isArm ? DOWNLOAD_URL_ARM64 : DOWNLOAD_URL_INTEL, '_blank');
     setShowInstallModal(true);
   };
 
@@ -1139,7 +1142,7 @@ export default function DesktopActivity() {
                 <h4 className="font-medium text-zinc-200 mb-1">Download Started</h4>
                 <p className="text-sm text-zinc-400">
                   The download should begin automatically. If not,
-                  <a href={DOWNLOAD_URL} className="text-cyan-400 hover:underline ml-1">click here</a>.
+                  <a href={DOWNLOAD_URL_ARM64} className="text-cyan-400 hover:underline ml-1">click here</a>.
                 </p>
               </div>
             </div>

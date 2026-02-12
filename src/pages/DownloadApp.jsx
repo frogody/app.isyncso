@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,11 +12,49 @@ import {
   Activity,
   HelpCircle,
   HardDrive,
-  Wifi
+  Wifi,
+  Apple,
+  Cpu,
+  Terminal,
+  Copy,
+  Check,
+  Shield,
+  Eye,
+  Clock,
 } from "lucide-react";
 
+const VERSION = "2.0.0";
+const BASE_URL = `https://github.com/frogody/sync.desktop/releases/download/v${VERSION}`;
+const DMG_ARM64 = `${BASE_URL}/SYNC.Desktop-${VERSION}-arm64.dmg`;
+const DMG_INTEL = `${BASE_URL}/SYNC.Desktop-${VERSION}.dmg`;
+const INSTALL_SCRIPT = `${BASE_URL}/install-macos.command`;
+
+function detectArch() {
+  if (typeof navigator === "undefined") return "arm64";
+  const ua = navigator.userAgent || "";
+  const platform = navigator.platform || "";
+  if (platform.includes("ARM") || ua.includes("ARM64") || ua.includes("Apple")) {
+    return "arm64";
+  }
+  return "x64";
+}
+
 export default function DownloadApp() {
-  const downloadUrl = "https://github.com/frogody/learning-tracker/releases/download/v1.0.0/LearningTracker-1.0.0.dmg";
+  const arch = useMemo(() => detectArch(), []);
+  const [copied, setCopied] = useState(false);
+
+  const primaryUrl = arch === "arm64" ? DMG_ARM64 : DMG_INTEL;
+  const secondaryUrl = arch === "arm64" ? DMG_INTEL : DMG_ARM64;
+  const primaryLabel = arch === "arm64" ? "Apple Silicon (M1/M2/M3/M4)" : "Intel";
+  const secondaryLabel = arch === "arm64" ? "Intel Mac" : "Apple Silicon (M1/M2/M3/M4)";
+
+  const terminalCommand = `curl -fsSL ${INSTALL_SCRIPT} | bash`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(terminalCommand);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="min-h-screen bg-black">
@@ -24,266 +62,254 @@ export default function DownloadApp() {
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-zinc-950 via-gray-900 to-zinc-950">
           <div className="absolute inset-0">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-emerald-500/20 to-green-600/20 rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-gradient-to-r from-teal-500/20 to-emerald-400/20 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-cyan-500/20 to-blue-600/20 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-gradient-to-r from-blue-500/20 to-cyan-400/20 rounded-full blur-3xl animate-pulse"></div>
           </div>
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 lg:px-6 py-4 space-y-4">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 lg:px-6 py-12 space-y-6">
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center gap-3 mb-6">
               <img
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/4314197e6_logoisyncso1.png"
-                alt="ISYNCSO"
+                alt="iSyncSO"
                 className="w-16 h-16 rounded-xl"
               />
             </div>
-            
+
             <h1 className="text-5xl md:text-6xl font-bold text-white">
-              Track Your Learning Journey Automatically
+              SYNC Desktop
             </h1>
-            
+
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Install our macOS app to get personalized course recommendations based on your real activity
+              Your AI-powered productivity companion. Tracks your workflow, detects commitments,
+              and gives SYNC the context to truly help you.
             </p>
 
-            <div className="max-w-2xl mx-auto my-8">
-              <div className="rounded-xl bg-gray-800/50 border border-gray-700 p-4 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-4">
-                  <Activity className="w-6 h-6 text-emerald-400" />
-                  <span className="text-white font-medium">Menu Bar App Preview</span>
-                </div>
-                <div className="aspect-video bg-gray-900/50 rounded-lg flex items-center justify-center border border-gray-700">
-                  <Monitor className="w-16 h-16 text-gray-600" />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <a href={downloadUrl} download>
-                <Button className="btn-primary text-xl px-12 py-8 text-white">
-                  <Download className="w-6 h-6 mr-3" />
-                  Download for Mac (v1.0)
+            {/* Download buttons */}
+            <div className="flex flex-col items-center gap-3 pt-4">
+              <a href={primaryUrl}>
+                <Button className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white text-lg px-10 py-7 rounded-xl shadow-lg shadow-cyan-500/25">
+                  <Download className="w-5 h-5 mr-2" />
+                  Download for Mac — {primaryLabel}
                 </Button>
               </a>
-              <p className="text-sm text-gray-400">
-                macOS 14.0 or later • Free
+              <a href={secondaryUrl} className="text-sm text-cyan-400 hover:text-cyan-300 underline underline-offset-4">
+                Download for {secondaryLabel} instead
+              </a>
+              <p className="text-sm text-gray-500">
+                v{VERSION} &middot; macOS 12.0+ &middot; Free
               </p>
+            </div>
+
+            {/* Terminal installer */}
+            <div className="max-w-xl mx-auto pt-4">
+              <p className="text-xs text-gray-500 mb-2">Or install via Terminal (downloads, installs, and launches automatically):</p>
+              <div
+                className="flex items-center gap-2 bg-zinc-900/80 border border-zinc-700/60 rounded-lg px-4 py-3 cursor-pointer hover:border-cyan-800/60 transition-colors"
+                onClick={handleCopy}
+              >
+                <Terminal className="w-4 h-4 text-cyan-500 flex-shrink-0" />
+                <code className="text-sm text-gray-300 flex-1 overflow-x-auto whitespace-nowrap">
+                  {terminalCommand}
+                </code>
+                {copied ? (
+                  <Check className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                ) : (
+                  <Copy className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 lg:px-6 py-8">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-white mb-4">
-            Installation Instructions
-          </h2>
-          <p className="text-gray-400">
-            Follow these simple steps to get started
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          <Card className="glass-card border-0 p-4">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                  <span className="text-lg font-bold text-emerald-400">1</span>
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white mb-3">Download and Install</h3>
-                <ul className="space-y-2 text-gray-300">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                    <span>Click the download button above</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                    <span>Open the downloaded DMG file</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                    <span>Drag LearningTracker to Applications folder</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                    <span>Eject the DMG</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="glass-card border-0 p-4">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
-                  <span className="text-lg font-bold text-blue-400">2</span>
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white mb-3">First Launch</h3>
-                <ul className="space-y-2 text-gray-300">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
-                    <span>Open LearningTracker from Applications</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
-                    <span>macOS will show a security warning (because it's not from App Store)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
-                    <span>Go to System Settings → Privacy & Security</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
-                    <span>Click "Open Anyway" next to the warning</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
-                    <span>Click "Open" to confirm</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="glass-card border-0 p-4">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
-                  <span className="text-lg font-bold text-purple-400">3</span>
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white mb-3">Grant Permissions</h3>
-                <ul className="space-y-2 text-gray-300">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0" />
-                    <span>The app will request Accessibility access</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0" />
-                    <span>Click "Open System Settings"</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0" />
-                    <span>Enable LearningTracker in Accessibility list</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0" />
-                    <span>The app will guide you through this</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="glass-card border-0 p-4">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
-                  <span className="text-lg font-bold text-amber-400">4</span>
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white mb-3">Connect Your Account</h3>
-                <ul className="space-y-2 text-gray-300">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
-                    <span>Enter your email (the one you use for courses)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
-                    <span>The app will authenticate automatically</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
-                    <span>You're ready to start tracking!</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </div>
-
-      <div className="bg-gradient-to-b from-gray-900/50 to-black py-8">
+      {/* How It Works */}
+      <div className="bg-gradient-to-b from-gray-900/50 to-black py-12">
         <div className="max-w-7xl mx-auto px-4 lg:px-6">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-white mb-4">
-              How It Works
+              What SYNC Desktop Does
             </h2>
             <p className="text-gray-400">
-              Intelligent tracking that adapts to your learning style
+              Runs silently in the background — gives your SYNC AI real context about your work
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="glass-card border-0 p-4 text-center">
-              <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-3">
-                <Activity className="w-6 h-6 text-emerald-400" />
+            <Card className="glass-card border-0 p-5 text-center">
+              <div className="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center mx-auto mb-3">
+                <Eye className="w-6 h-6 text-cyan-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Runs Silently</h3>
-              <p className="text-gray-400">
-                Lives in menu bar, works in background
+              <h3 className="text-lg font-semibold text-white mb-2">Context Awareness</h3>
+              <p className="text-gray-400 text-sm">
+                Understands what app you're in, what you're working on, and detects context switches
               </p>
             </Card>
 
-            <Card className="glass-card border-0 p-4 text-center">
-              <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-3">
-                <Brain className="w-6 h-6 text-blue-400" />
+            <Card className="glass-card border-0 p-5 text-center">
+              <div className="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center mx-auto mb-3">
+                <Brain className="w-6 h-6 text-cyan-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Learns Your Workflow</h3>
-              <p className="text-gray-400">
-                Understands what skills you use
+              <h3 className="text-lg font-semibold text-white mb-2">Commitment Detection</h3>
+              <p className="text-gray-400 text-sm">
+                Detects when you say "I'll send that by Friday" and tracks it as a commitment
               </p>
             </Card>
 
-            <Card className="glass-card border-0 p-4 text-center">
-              <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-3">
-                <Zap className="w-6 h-6 text-purple-400" />
+            <Card className="glass-card border-0 p-5 text-center">
+              <div className="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center mx-auto mb-3">
+                <Clock className="w-6 h-6 text-cyan-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Personalizes Courses</h3>
-              <p className="text-gray-400">
-                Recommends what you need to learn
+              <h3 className="text-lg font-semibold text-white mb-2">Daily Journals</h3>
+              <p className="text-gray-400 text-sm">
+                Auto-generates daily activity summaries with focus scores and productivity insights
               </p>
             </Card>
 
-            <Card className="glass-card border-0 p-4 text-center">
-              <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-3">
-                <Lock className="w-6 h-6 text-amber-400" />
+            <Card className="glass-card border-0 p-5 text-center">
+              <div className="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center mx-auto mb-3">
+                <Lock className="w-6 h-6 text-cyan-400" />
               </div>
               <h3 className="text-lg font-semibold text-white mb-2">Privacy First</h3>
-              <p className="text-gray-400">
-                All data encrypted, you control everything
+              <p className="text-gray-400 text-sm">
+                All data encrypted locally. Sensitive apps auto-excluded. You control everything.
               </p>
             </Card>
           </div>
         </div>
       </div>
 
+      {/* Installation Steps */}
+      <div className="max-w-5xl mx-auto px-4 lg:px-6 py-12">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Installation
+          </h2>
+          <p className="text-gray-400">
+            Standard macOS install — download, drag, done
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <Card className="glass-card border-0 p-5">
+            <div className="flex gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
+                  <span className="text-sm font-bold text-cyan-400">1</span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-white mb-2">Download the DMG</h3>
+                <ul className="space-y-1.5 text-gray-300 text-sm">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                    <span>Click the download button above (auto-detects your Mac type)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                    <span>Open the downloaded <code className="text-cyan-300">.dmg</code> file</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="glass-card border-0 p-5">
+            <div className="flex gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
+                  <span className="text-sm font-bold text-cyan-400">2</span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-white mb-2">Drag to Applications</h3>
+                <ul className="space-y-1.5 text-gray-300 text-sm">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                    <span>Drag <strong>SYNC Desktop</strong> to the <strong>Applications</strong> folder shortcut</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                    <span>Eject the DMG when done</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="glass-card border-0 p-5">
+            <div className="flex gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
+                  <span className="text-sm font-bold text-cyan-400">3</span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-white mb-2">Launch and Allow Permissions</h3>
+                <ul className="space-y-1.5 text-gray-300 text-sm">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                    <span>Open SYNC Desktop from Applications</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                    <span>If macOS shows a security warning: go to <strong>System Settings → Privacy & Security</strong> and click <strong>"Open Anyway"</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                    <span>Grant <strong>Accessibility</strong> access when prompted (required for activity tracking)</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="glass-card border-0 p-5">
+            <div className="flex gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
+                  <span className="text-sm font-bold text-cyan-400">4</span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-white mb-2">Connect Your Account</h3>
+                <ul className="space-y-1.5 text-gray-300 text-sm">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                    <span>Click <strong>"Sign in with iSyncSO"</strong> in the app</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                    <span>Your browser opens — log in with your iSyncSO account</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                    <span>The app connects automatically — you're all set</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      {/* FAQ */}
       <div className="max-w-5xl mx-auto px-4 lg:px-6 py-8">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-white mb-4">
             Frequently Asked Questions
           </h2>
-          <p className="text-gray-400">
-            Everything you need to know about the app
-          </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           <Card className="glass-card border-0 p-4">
             <div className="flex gap-3">
-              <HelpCircle className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-1" />
+              <HelpCircle className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
               <div>
-                <h3 className="text-lg font-semibold text-white mb-2">Is it safe?</h3>
-                <p className="text-gray-300">
-                  Yes! The app is notarized by Apple and all data is encrypted. We only track development activity, not personal browsing.
+                <h3 className="text-base font-semibold text-white mb-1">Is it safe?</h3>
+                <p className="text-sm text-gray-300">
+                  Yes. All data is encrypted locally with AES-256. Sensitive apps (banking, password managers, medical) are automatically excluded. Raw screen content never leaves your device — only structured activity summaries sync to your account.
                 </p>
               </div>
             </div>
@@ -291,11 +317,11 @@ export default function DownloadApp() {
 
           <Card className="glass-card border-0 p-4">
             <div className="flex gap-3">
-              <HelpCircle className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-1" />
+              <HelpCircle className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
               <div>
-                <h3 className="text-lg font-semibold text-white mb-2">Will it slow down my Mac?</h3>
-                <p className="text-gray-300">
-                  No, it uses less than 3% CPU and 100MB of RAM. You won't notice it running.
+                <h3 className="text-base font-semibold text-white mb-1">Will it slow down my Mac?</h3>
+                <p className="text-sm text-gray-300">
+                  No. SYNC Desktop uses the macOS Accessibility API to read window text directly — no screenshots or OCR. It uses less than 3% CPU and ~100MB RAM.
                 </p>
               </div>
             </div>
@@ -303,11 +329,11 @@ export default function DownloadApp() {
 
           <Card className="glass-card border-0 p-4">
             <div className="flex gap-3">
-              <HelpCircle className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-1" />
+              <HelpCircle className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
               <div>
-                <h3 className="text-lg font-semibold text-white mb-2">What does it track?</h3>
-                <p className="text-gray-300">
-                  Which applications you use for learning/work, how long you spend, and what skills you apply. It never captures passwords, personal data, or sensitive content.
+                <h3 className="text-base font-semibold text-white mb-1">What does it track?</h3>
+                <p className="text-sm text-gray-300">
+                  Which apps you use, how long you spend in each, what you're working on (document names, email subjects, code files), and commitments you make in communication tools. It never captures passwords, personal messages in full, or content from excluded apps.
                 </p>
               </div>
             </div>
@@ -315,11 +341,11 @@ export default function DownloadApp() {
 
           <Card className="glass-card border-0 p-4">
             <div className="flex gap-3">
-              <HelpCircle className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-1" />
+              <HelpCircle className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
               <div>
-                <h3 className="text-lg font-semibold text-white mb-2">Can I pause it?</h3>
-                <p className="text-gray-300">
-                  Yes, click the menu bar icon and choose "Pause" anytime.
+                <h3 className="text-base font-semibold text-white mb-1">Can I pause or exclude specific apps?</h3>
+                <p className="text-sm text-gray-300">
+                  Yes. Click the menu bar icon to pause tracking anytime. Banking apps, password managers, and private/incognito browser windows are excluded by default. You can add custom exclusions in settings.
                 </p>
               </div>
             </div>
@@ -327,11 +353,23 @@ export default function DownloadApp() {
 
           <Card className="glass-card border-0 p-4">
             <div className="flex gap-3">
-              <HelpCircle className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-1" />
+              <HelpCircle className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
               <div>
-                <h3 className="text-lg font-semibold text-white mb-2">How do I uninstall?</h3>
-                <p className="text-gray-300">
-                  Just drag LearningTracker from Applications to Trash.
+                <h3 className="text-base font-semibold text-white mb-1">What about Windows?</h3>
+                <p className="text-sm text-gray-300">
+                  Windows support is coming soon. Currently macOS only (12.0 Monterey and later).
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="glass-card border-0 p-4">
+            <div className="flex gap-3">
+              <HelpCircle className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="text-base font-semibold text-white mb-1">How do I uninstall?</h3>
+                <p className="text-sm text-gray-300">
+                  Drag SYNC Desktop from Applications to Trash. Your synced data on app.isyncso.com is preserved.
                 </p>
               </div>
             </div>
@@ -339,34 +377,35 @@ export default function DownloadApp() {
         </div>
       </div>
 
+      {/* System Requirements */}
       <div className="bg-gradient-to-t from-gray-900/50 to-black py-8">
         <div className="max-w-5xl mx-auto px-4 lg:px-6">
-          <Card className="glass-card border-0 p-4">
-            <h2 className="text-2xl font-bold text-white mb-4 text-center">
+          <Card className="glass-card border-0 p-5">
+            <h2 className="text-xl font-bold text-white mb-4 text-center">
               System Requirements
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-start gap-4">
-                <Monitor className="w-8 h-8 text-emerald-400 flex-shrink-0" />
+              <div className="flex items-start gap-3">
+                <Monitor className="w-7 h-7 text-cyan-400 flex-shrink-0" />
                 <div>
-                  <h4 className="font-semibold text-white mb-2">Operating System</h4>
-                  <p className="text-gray-400">macOS 14.0 (Sonoma) or later</p>
+                  <h4 className="font-semibold text-white text-sm mb-1">Operating System</h4>
+                  <p className="text-gray-400 text-sm">macOS 12.0 (Monterey) or later</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-4">
-                <HardDrive className="w-8 h-8 text-emerald-400 flex-shrink-0" />
+              <div className="flex items-start gap-3">
+                <Cpu className="w-7 h-7 text-cyan-400 flex-shrink-0" />
                 <div>
-                  <h4 className="font-semibold text-white mb-2">Disk Space</h4>
-                  <p className="text-gray-400">100MB free disk space</p>
+                  <h4 className="font-semibold text-white text-sm mb-1">Architecture</h4>
+                  <p className="text-gray-400 text-sm">Apple Silicon (M1+) or Intel x64</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-4">
-                <Wifi className="w-8 h-8 text-emerald-400 flex-shrink-0" />
+              <div className="flex items-start gap-3">
+                <Wifi className="w-7 h-7 text-cyan-400 flex-shrink-0" />
                 <div>
-                  <h4 className="font-semibold text-white mb-2">Connectivity</h4>
-                  <p className="text-gray-400">Internet connection for syncing</p>
+                  <h4 className="font-semibold text-white text-sm mb-1">Connectivity</h4>
+                  <p className="text-gray-400 text-sm">Internet for account sync (works offline too)</p>
                 </div>
               </div>
             </div>
@@ -374,18 +413,19 @@ export default function DownloadApp() {
         </div>
       </div>
 
-      <div className="py-8 text-center">
+      {/* Bottom CTA */}
+      <div className="py-12 text-center">
         <div className="max-w-3xl mx-auto px-4 lg:px-6 space-y-4">
           <h2 className="text-3xl font-bold text-white">
             Ready to Get Started?
           </h2>
-          <p className="text-xl text-gray-400">
-            Download now and start tracking your learning journey
+          <p className="text-lg text-gray-400">
+            Download SYNC Desktop and let your AI assistant understand your workflow
           </p>
-          <a href={downloadUrl} download>
-            <Button className="btn-primary text-xl px-12 py-8 text-white">
-              <Download className="w-6 h-6 mr-3" />
-              Download for Mac (v1.0)
+          <a href={primaryUrl}>
+            <Button className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white text-lg px-10 py-7 rounded-xl shadow-lg shadow-cyan-500/25">
+              <Download className="w-5 h-5 mr-2" />
+              Download for Mac (v{VERSION})
             </Button>
           </a>
         </div>
