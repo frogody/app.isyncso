@@ -139,6 +139,12 @@ function buildEnhancedPrompt(
     }
   }
 
+  // User-provided size scale
+  if (productContext?.product_size_scale) {
+    const s = productContext.product_size_scale;
+    enhanced += ` Product shown at realistic ${s.label.toLowerCase()} scale (${s.cm}), ${s.desc}.`;
+  }
+
   // Apply category-specific photography suffixes — respect style choice
   const category = detectProductCategory(productContext, userPrompt);
   const isLuxuryStyle = style === 'luxury' || !style;

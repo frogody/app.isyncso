@@ -33,6 +33,7 @@ import {
   Save,
   ChevronRight,
   BookmarkPlus,
+  Hand,
 } from 'lucide-react';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/contexts/GlobalThemeContext';
@@ -131,6 +132,15 @@ const ASPECT_RATIOS = [
   { id: '3:4', label: '3:4', width: 1024, height: 1365, shape: 'w-5 h-6' },
 ];
 
+const SIZE_SCALE = [
+  { value: 1, label: 'Tiny',       desc: 'Fits on a fingertip (earring, pin, small gem)', cm: '1-2cm' },
+  { value: 2, label: 'Small',      desc: 'Fits in palm (ring, watch, key)', cm: '3-6cm' },
+  { value: 3, label: 'Hand-sized', desc: 'About the size of a hand (phone, wallet, soap)', cm: '8-15cm' },
+  { value: 4, label: 'Forearm',    desc: 'Forearm length (bottle, shoe, tablet)', cm: '20-35cm' },
+  { value: 5, label: 'Large',      desc: 'Larger than arm span (bag, guitar, chair)', cm: '40-80cm' },
+  { value: 6, label: 'Very Large', desc: 'Human-sized or bigger (furniture, appliance)', cm: '80cm+' },
+];
+
 const QUICK_SUGGESTIONS = [
   'Product on marble',
   'Lifestyle scene',
@@ -194,6 +204,7 @@ export default function CreateImages() {
   const [selectedReferenceImage, setSelectedReferenceImage] = useState(null);
   const [showEnhancedPrompt, setShowEnhancedPrompt] = useState(false);
   const [promptError, setPromptError] = useState('');
+  const [productSizeScale, setProductSizeScale] = useState(3);
 
   const selectedMode = getModeFromUseCase(selectedUseCase);
 
@@ -442,7 +453,8 @@ export default function CreateImages() {
             product_tags: selectedProduct?.tags,
             product_category: selectedProduct?.category,
             brand_mood: brandAssets?.visual_style?.mood,
-            has_reference_image: !!selectedReferenceImage
+            has_reference_image: !!selectedReferenceImage,
+            product_size_scale: selectedProduct ? SIZE_SCALE[productSizeScale - 1] : null,
           }
         });
         if (!enhanceError && enhanceData?.enhanced_prompt) {
@@ -470,7 +482,7 @@ export default function CreateImages() {
           width: aspectConfig?.width || 1024,
           height: aspectConfig?.height || 1024,
           brand_context: useBrandContext ? brandAssets : null,
-          product_context: selectedProduct ? { ...selectedProduct, type: selectedProduct.type } : null,
+          product_context: selectedProduct ? { ...selectedProduct, type: selectedProduct.type, product_size_scale: SIZE_SCALE[productSizeScale - 1] } : null,
           product_images: isPhysicalProduct ? productImages : [],
           is_physical_product: isPhysicalProduct,
           company_id: user.company_id,
@@ -809,6 +821,39 @@ export default function CreateImages() {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Product size scale (only when product selected) */}
+              {isProductMode && selectedProduct && (
+                <div className="space-y-1.5">
+                  <Label className={`${ct('text-slate-500', 'text-zinc-500')} text-[11px] uppercase tracking-wider`}>Size</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className={`flex items-center gap-2 px-3 py-2 rounded-lg ${ct('bg-slate-100 border-slate-200 text-slate-700 hover:border-slate-300', 'bg-zinc-800/40 border-zinc-700/40 text-zinc-300 hover:border-zinc-600')} border text-sm transition-colors`}>
+                        <Hand className="w-3.5 h-3.5 text-yellow-400/70" />
+                        <span>{SIZE_SCALE[productSizeScale - 1].label}</span>
+                        <ChevronDown className="w-3 h-3 opacity-50" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className={`w-72 ${ct('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')} p-4`}>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className={`text-xs font-medium ${ct('text-slate-700', 'text-zinc-300')}`}>Size compared to hand</span>
+                          <span className="text-xs text-yellow-400">{SIZE_SCALE[productSizeScale - 1].cm}</span>
+                        </div>
+                        <div className="relative h-16 flex items-end justify-center gap-3">
+                          <Hand className={`w-8 h-10 ${ct('text-slate-300', 'text-zinc-600')} flex-shrink-0`} />
+                          <div className="bg-yellow-400/20 border border-yellow-400/40 rounded transition-all"
+                            style={{ width: `${12 + productSizeScale * 8}px`, height: `${12 + productSizeScale * 8}px` }} />
+                        </div>
+                        <input type="range" min={1} max={6} value={productSizeScale}
+                          onChange={e => setProductSizeScale(Number(e.target.value))}
+                          className="w-full accent-yellow-400" />
+                        <p className={`text-[10px] ${ct('text-slate-400', 'text-zinc-500')}`}>{SIZE_SCALE[productSizeScale - 1].desc}</p>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
 
               {/* Brand context toggle */}
               {brandAssets && (

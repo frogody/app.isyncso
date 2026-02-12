@@ -116,7 +116,8 @@ serve(async (req) => {
       product_tags,
       product_category,
       brand_mood,
-      has_reference_image
+      has_reference_image,
+      product_size_scale
     } = await req.json();
 
     if (!prompt?.trim()) {
@@ -169,6 +170,11 @@ serve(async (req) => {
 
     if (has_reference_image) {
       context.push('NOTE: A reference image will be provided. Focus the prompt on the desired SCENE/ENVIRONMENT, not the product itself.');
+    }
+
+    // User-provided size reference — takes priority over hardcoded jewelry rules
+    if (product_size_scale) {
+      context.push(`CRITICAL SIZE REFERENCE: This product is "${product_size_scale.label}" sized (approximately ${product_size_scale.cm}). ${product_size_scale.desc}. When generating the image, the product MUST appear at this realistic scale relative to any hands, human body parts, surfaces, or objects in the scene. Do NOT make it larger or smaller than this real-world size.`);
     }
 
     // Detect material early and add explicit instruction to LLM — but respect style choice
