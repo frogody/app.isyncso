@@ -340,6 +340,7 @@ import PlatformAdminCredits from "./admin/AdminCredits";
 import PlatformAdminGrowthNests from "./admin/AdminGrowthNests";
 import PlatformAdminDemos from "./admin/AdminDemos";
 import PlatformAdminRoadmap from "./admin/AdminRoadmap";
+import PlatformAdminStructuralTests from "./admin/AdminStructuralTests";
 
 import DemoExperience from "./DemoExperience";
 import RequestDemo from "./RequestDemo";
@@ -781,6 +782,7 @@ function PagesContent() {
                             <Route path="growth-nests" element={<PlatformAdminGrowthNests />} />
                             <Route path="demos" element={<PlatformAdminDemos />} />
                             <Route path="roadmap" element={<PlatformAdminRoadmap />} />
+                            <Route path="structural-tests" element={<PlatformAdminStructuralTests />} />
                         </Route>
                     </Routes>
                 </PermissionProvider>
