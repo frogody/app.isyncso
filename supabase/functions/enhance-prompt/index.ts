@@ -23,7 +23,8 @@ RULES:
    - Lighting: soft box diffusion controlling reflections, gradient lighting on metal, black card flagging to shape highlights, tent lighting for even metal coverage
    - Surface: polished mirror finish, brushed metal texture, warm gold tone, crisp specular highlights
    - Technique: focus stacking for macro detail, dark background (NOT white — white kills metal contrast)
-   - Negative: no fingerprints, no dust, no color cast on metals, no blown-out highlights
+   - SIZE/SCALE (CRITICAL): jewelry must appear at realistic actual size relative to any human features or props. Earrings are typically 1-3cm, rings fit on a finger, necklaces drape around a neck, bracelets fit a wrist. Show true-to-life proportions. If a hand or ear is in frame, the jewelry must be correctly scaled to it.
+   - Negative: no fingerprints, no dust, no color cast on metals, no blown-out highlights, no oversized jewelry, no giant earrings, no unrealistic proportions, no disproportionate scale
 
    GEMSTONE/CRYSTAL (diamonds, sapphires, rubies, emeralds, pearls, crystal):
    - Lighting: backlit for translucency and fire, fiber optic spot on facets, dark field illumination
@@ -56,8 +57,8 @@ function detectMaterial(name?: string, description?: string, tags?: string[], ca
 // Full treatment: dark backgrounds + all jewelry terms (for Luxury style)
 const MATERIAL_FULL: Record<string, { suffix: string; negative: string; background: string }> = {
   jewelry: {
-    suffix: ', soft box diffusion controlling reflections, gradient lighting on polished metal, black card flagging shaping crisp specular highlights, tent lighting for even metal coverage, focus stacking for razor-sharp macro detail, polished mirror finish',
-    negative: 'fingerprints, dust, color cast on metals, blown-out highlights, flat lighting',
+    suffix: ', soft box diffusion controlling reflections, gradient lighting on polished metal, black card flagging shaping crisp specular highlights, tent lighting for even metal coverage, focus stacking for razor-sharp macro detail, polished mirror finish, realistic jewelry scale and proportions, true-to-life size relative to human body',
+    negative: 'fingerprints, dust, color cast on metals, blown-out highlights, flat lighting, oversized jewelry, giant earrings, unrealistic proportions, disproportionate scale, exaggerated size',
     background: 'deep black velvet background'
   },
   gemstone: {
@@ -81,8 +82,8 @@ const MATERIAL_FULL: Record<string, { suffix: string; negative: string; backgrou
 // Light treatment: sharpness + reflection quality only, NO background override (for non-Luxury styles)
 const MATERIAL_LIGHT: Record<string, { suffix: string; negative: string }> = {
   jewelry: {
-    suffix: ', crisp specular highlights on metal, focus stacking for sharp detail, controlled reflections',
-    negative: 'fingerprints, dust, color cast on metals'
+    suffix: ', crisp specular highlights on metal, focus stacking for sharp detail, controlled reflections, realistic jewelry scale and proportions, true-to-life size',
+    negative: 'fingerprints, dust, color cast on metals, oversized jewelry, giant earrings, unrealistic proportions, disproportionate scale'
   },
   gemstone: {
     suffix: ', facet reflections with light dispersion, sharp gemstone detail',
@@ -174,10 +175,25 @@ serve(async (req) => {
     const detectedMaterial = detectMaterial(product_name, product_description, product_tags, product_category);
     const isLuxuryStyle = style === 'luxury';
     if (detectedMaterial === 'jewelry' || detectedMaterial === 'gemstone') {
+      // Detect specific jewelry sub-type for size guidance
+      const jewelrySignals = [prompt, product_name, product_description, product_tags?.join(' ')].filter(Boolean).join(' ').toLowerCase();
+      let sizeGuidance = 'SCALE RULE: Jewelry must appear at realistic actual size.';
+      if (/\bearring/i.test(jewelrySignals)) {
+        sizeGuidance += ' Earrings are small delicate items typically 1-3cm long, proportional to a human ear. They should never appear larger than an ear.';
+      } else if (/\bring\b/i.test(jewelrySignals)) {
+        sizeGuidance += ' Rings are small items that fit on a human finger. They should be finger-sized, not oversized.';
+      } else if (/\bnecklace|pendant|chain\b/i.test(jewelrySignals)) {
+        sizeGuidance += ' Necklaces and pendants drape around a human neck/chest. The pendant is typically 1-4cm, the chain fits around the neck.';
+      } else if (/\bbracelet|bangle|cuff\b/i.test(jewelrySignals)) {
+        sizeGuidance += ' Bracelets are wrist-sized accessories, typically 6-8cm in diameter. They should be proportional to a human wrist.';
+      } else if (/\bbrooch\b/i.test(jewelrySignals)) {
+        sizeGuidance += ' Brooches are small decorative pins typically 3-6cm, pinned on clothing.';
+      }
+
       if (isLuxuryStyle) {
-        context.push('CRITICAL: This is a JEWELRY/PRECIOUS product with Luxury style. You MUST use dark/black background, macro detail, controlled specular highlights, focus stacking, gradient lighting on metal. NEVER use white or neutral backgrounds.');
+        context.push(`CRITICAL: This is a JEWELRY/PRECIOUS product with Luxury style. You MUST use dark/black background, macro detail, controlled specular highlights, focus stacking, gradient lighting on metal. NEVER use white or neutral backgrounds. ${sizeGuidance} NEVER render jewelry oversized, giant, or disproportionate.`);
       } else {
-        context.push('NOTE: This is a jewelry product. Add controlled reflections and sharp detail, but follow the selected style for background and mood.');
+        context.push(`NOTE: This is a jewelry product. Add controlled reflections and sharp detail, but follow the selected style for background and mood. ${sizeGuidance} NEVER render jewelry oversized, giant, or disproportionate.`);
       }
     } else if (detectedMaterial === 'luxury') {
       if (isLuxuryStyle) {
