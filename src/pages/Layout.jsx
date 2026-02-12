@@ -86,6 +86,8 @@ import {
   Boxes,
   ClipboardCheck,
   Camera,
+  Images,
+  History,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -559,6 +561,8 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Import', path: createPageUrl('SyncStudioImport'), icon: Package },
         { label: 'Dashboard', path: createPageUrl('SyncStudioDashboard'), icon: LayoutDashboard },
         { label: 'Photoshoot', path: createPageUrl('SyncStudioPhotoshoot'), icon: Sparkles },
+        { label: 'Results', path: createPageUrl('SyncStudioResults'), icon: Images },
+        { label: 'History', path: createPageUrl('SyncStudioReturn'), icon: History },
       ]
     };
   }
