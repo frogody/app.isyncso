@@ -104,7 +104,7 @@ export default function DesktopActivity() {
   const [copiedCommand, setCopiedCommand] = useState(false);
 
   const DOWNLOAD_URL_ARM64 = "https://github.com/frogody/sync.desktop/releases/download/v2.0.0/SYNC.Desktop-2.0.0-arm64.dmg";
-  const DOWNLOAD_URL_INTEL = "https://github.com/frogody/sync.desktop/releases/download/v2.0.0/SYNC.Desktop-2.0.0.dmg";
+  const DOWNLOAD_URL_INTEL = "https://github.com/frogody/sync.desktop/releases/download/v2.0.0/SYNC.Desktop-2.0.0-x64.dmg";
   const INSTALL_SCRIPT_URL = "https://github.com/frogody/sync.desktop/releases/download/v2.0.0/install-macos.command";
   const INSTALL_COMMAND = `curl -fsSL ${INSTALL_SCRIPT_URL} | bash`;
 

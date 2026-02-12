@@ -56,13 +56,15 @@ export default function DesktopAuth() {
         }
 
         const accessToken = sessionData.session.access_token;
+        const refreshToken = sessionData.session.refresh_token;
 
         // Success! Redirect to desktop app via deep link
         setStatus("success");
         setMessage("Authentication successful! Opening SYNC Desktop...");
 
-        // Build the deep link URL
-        const deepLinkUrl = `isyncso://auth?token=${encodeURIComponent(accessToken)}&state=${encodeURIComponent(state)}`;
+        // Build the deep link URL — include refresh_token so the desktop app
+        // can refresh expired access tokens (Supabase JWTs expire after ~1 hour)
+        const deepLinkUrl = `isyncso://auth?token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken || '')}&state=${encodeURIComponent(state)}`;
 
         // Small delay to show success message, then redirect
         setTimeout(() => {

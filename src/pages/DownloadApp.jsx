@@ -26,7 +26,7 @@ import {
 const VERSION = "2.0.0";
 const BASE_URL = `https://github.com/frogody/sync.desktop/releases/download/v${VERSION}`;
 const DMG_ARM64 = `${BASE_URL}/SYNC.Desktop-${VERSION}-arm64.dmg`;
-const DMG_INTEL = `${BASE_URL}/SYNC.Desktop-${VERSION}.dmg`;
+const DMG_INTEL = `${BASE_URL}/SYNC.Desktop-${VERSION}-x64.dmg`;
 const INSTALL_SCRIPT = `${BASE_URL}/install-macos.command`;
 
 function detectArch() {
