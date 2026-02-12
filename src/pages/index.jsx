@@ -263,6 +263,10 @@ import CreateVideos from "./CreateVideos";
 
 import CreateLibrary from "./CreateLibrary";
 
+import SyncStudioHome from "./SyncStudioHome";
+
+import SyncStudioImport from "./SyncStudioImport";
+
 import InventoryReceiving from "./InventoryReceiving";
 
 import InventoryShipping from "./InventoryShipping";
@@ -606,6 +610,10 @@ const PAGES = {
     CreateVideos: CreateVideos,
 
     CreateLibrary: CreateLibrary,
+
+    SyncStudioHome: SyncStudioHome,
+
+    SyncStudioImport: SyncStudioImport,
 
     InventoryReceiving: InventoryReceiving,
 
@@ -1049,6 +1057,10 @@ function PagesContent() {
                 <Route path="/CreateVideos" element={<CreateVideos />} />
 
                 <Route path="/CreateLibrary" element={<CreateLibrary />} />
+
+                <Route path="/SyncStudioHome" element={<SyncStudioHome />} />
+                <Route path="/SyncStudio" element={<SyncStudioHome />} />
+                <Route path="/SyncStudioImport" element={<SyncStudioImport />} />
 
                 <Route path="/InventoryReceiving" element={<InventoryReceiving />} />
 

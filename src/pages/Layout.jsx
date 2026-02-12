@@ -85,6 +85,7 @@ import {
   BookText,
   Boxes,
   ClipboardCheck,
+  Camera,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -544,6 +545,18 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Images', path: createPageUrl('CreateImages'), icon: Image },
         { label: 'Videos', path: createPageUrl('CreateVideos'), icon: Video },
         { label: 'Library', path: createPageUrl('CreateLibrary'), icon: FolderOpen },
+      ]
+    };
+  }
+
+  // SYNC STUDIO routes
+  if (path.startsWith('/syncstudio')) {
+    return {
+      title: 'SYNC STUDIO',
+      color: 'cyan',
+      items: [
+        { label: 'Studio', path: createPageUrl('SyncStudioHome'), icon: Camera },
+        { label: 'Import', path: createPageUrl('SyncStudioImport'), icon: Package },
       ]
     };
   }
