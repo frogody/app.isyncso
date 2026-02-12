@@ -3069,27 +3069,27 @@ CREATE INDEX idx_receiving_log_session ON receiving_log(receiving_session_id) WH
 - [ ] `EP-16` Test: shipping update email → updates expected_delivery tracking
 
 ### Shopify Admin API Integration
-- [ ] `SH-1` Create `shopify_credentials` table + RLS policies
-- [ ] `SH-2` Create `shopify_product_mappings` table + RLS policies + indexes
-- [ ] `SH-3` Add columns to `sales_orders` (source, shopify_order_id, shopify_order_number)
-- [ ] `SH-4` Add columns to `inventory` (quantity_external_shopify) and `products` (shopify_listed)
-- [ ] `SH-5` Build `shopify-api/index.ts` edge function (unified API client with all 17 actions)
-- [ ] `SH-6` Implement OAuth Authorization Code flow (initiate → callback → store token)
-- [ ] `SH-7` Implement product sync: pull all Shopify products, match by EAN, create mappings
-- [ ] `SH-8` Implement push-to-Shopify: create product with EAN barcode + metafields
-- [ ] `SH-9` Implement inventory pull: fetch Shopify stock levels for comparison
-- [ ] `SH-10` Implement inventory push: set stock level on receiving/returns/adjustments
-- [ ] `SH-11` Implement order import: webhook-driven + periodic poll backup
-- [ ] `SH-12` Implement fulfillment push: tracking info sent to Shopify on ship
-- [ ] `SH-13` Build `shopify-webhooks/index.ts` edge function with HMAC-SHA256 verification
-- [ ] `SH-14` Handle all 8 webhook topics (orders, inventory, products, refunds, app/uninstalled)
-- [ ] `SH-15` Build ShopifySettings UI: connection, product sync status, inventory comparison, order settings
+- [x] `SH-1` Create `shopify_credentials` table + RLS policies
+- [x] `SH-2` Create `shopify_product_mappings` table + RLS policies + indexes
+- [x] `SH-3` Add columns to `sales_orders` (source, shopify_order_id, shopify_order_number)
+- [x] `SH-4` Add columns to `inventory` (quantity_external_shopify) and `products` (shopify_listed)
+- [x] `SH-5` Build `shopify-api/index.ts` edge function (unified API client with all 14 actions)
+- [x] `SH-6` Implement OAuth Authorization Code flow (initiate → callback → store token)
+- [x] `SH-7` Implement product sync: pull all Shopify products, match by EAN, create mappings
+- [x] `SH-8` Implement push-to-Shopify: create product with EAN barcode + metafields
+- [x] `SH-9` Implement inventory pull: fetch Shopify stock levels for comparison
+- [x] `SH-10` Implement inventory push: set stock level on receiving/returns/adjustments
+- [x] `SH-11` Implement order import: webhook-driven + periodic poll backup
+- [x] `SH-12` Implement fulfillment push: tracking info sent to Shopify on ship
+- [x] `SH-13` Build `shopify-webhooks/index.ts` edge function with HMAC-SHA256 verification
+- [x] `SH-14` Handle all 8 webhook topics (orders, inventory, products, refunds, app/uninstalled)
+- [x] `SH-15` Build ShopifySettings UI: connection, product sync status, inventory comparison, order settings
 - [ ] `SH-16` Build ShopifyProductMapper UI: unmapped products resolution
-- [ ] `SH-17` Add channel badges to ProductsPhysical (bol.com/Shopify/Both)
+- [x] `SH-17` Add channel badges to ProductsPhysical (bol.com/Shopify/Both)
 - [ ] `SH-18` Add cross-channel stock display (Internal | bol.com FBB | Shopify)
-- [ ] `SH-19` Modify InventoryShipping for auto-fulfill on Shopify orders
-- [ ] `SH-20` Implement rate limit handling (leaky bucket 40/2)
-- [ ] `SH-21` Implement disconnect flow (remove webhooks, mark disconnected)
+- [x] `SH-19` Modify InventoryShipping for auto-fulfill on Shopify orders
+- [x] `SH-20` Implement rate limit handling (leaky bucket 40/2)
+- [x] `SH-21` Implement disconnect flow (remove webhooks, mark disconnected)
 - [ ] `SH-22` Test: connect store → sync products → verify mappings created
 - [ ] `SH-23` Test: push stock update → verify in Shopify
 - [ ] `SH-24` Test: Shopify order webhook → sales_order created with correct line items

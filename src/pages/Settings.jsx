@@ -20,7 +20,7 @@ import {
   CheckCircle, Globe, Linkedin, Clock, Target, Shield, Loader2,
   ChevronRight, Award, Zap, LogOut, MapPin, Calendar, Cpu,
   Euro, Phone, Twitter, Facebook, TrendingUp, BarChart3, Plug,
-  UserCog, ExternalLink, ShoppingBag
+  UserCog, ExternalLink, ShoppingBag, Store
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,6 +39,7 @@ import { LayoutGrid, Sun, Moon } from "lucide-react";
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { SettingsPageTransition } from '@/components/settings/ui';
 import BolcomSettings from "@/components/settings/BolcomSettings";
+import ShopifySettings from "@/components/settings/ShopifySettings";
 
 export default function Settings() {
   const { user, company, settings: userSettings, updateUser, updateCompany, updateSettings, isLoading: userLoading } = useUser();
@@ -627,6 +628,7 @@ export default function Settings() {
     { id: 'teams', label: 'Teams & Rights', icon: Shield, color: 'cyan' },
     { id: 'integrations', label: 'Integrations', icon: Plug, color: 'cyan' },
     { id: 'bolcom', label: 'bol.com', icon: ShoppingBag, color: 'cyan' },
+    { id: 'shopify', label: 'Shopify', icon: Store, color: 'cyan' },
     { id: 'workspace', label: 'Workspace', icon: LayoutGrid, color: 'cyan' },
     { id: 'privacy', label: 'Privacy', icon: Lock, color: 'red' },
     ...(isSuperAdmin ? [{ id: 'admin', label: 'Admin', icon: Brain, color: 'purple' }] : [])
@@ -1481,6 +1483,18 @@ export default function Settings() {
                   exit={{ opacity: 0, y: -20 }}
                 >
                   <BolcomSettings />
+                </motion.div>
+              )}
+
+              {/* SHOPIFY TAB */}
+              {activeTab === 'shopify' && (
+                <motion.div
+                  key="shopify"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                >
+                  <ShopifySettings />
                 </motion.div>
               )}
 

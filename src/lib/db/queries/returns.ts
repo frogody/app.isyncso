@@ -123,6 +123,20 @@ export async function listReturnItems(returnId: string): Promise<ReturnItem[]> {
   return data || [];
 }
 
+export async function getReturnItem(id: string): Promise<ReturnItem | null> {
+  const { data, error } = await supabase
+    .from('return_items')
+    .select(`
+      *,
+      products (id, name, sku, ean)
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+}
+
 export async function createReturnItem(item: ReturnItemInsert): Promise<ReturnItem> {
   const { data, error } = await supabase
     .from('return_items')

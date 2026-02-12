@@ -189,3 +189,9 @@ verify_jwt = false
 
 [functions.sync-studio-publish-bol]
 verify_jwt = false
+
+[functions.shopify-api]
+verify_jwt = false
+
+[functions.shopify-webhooks]
+verify_jwt = false

@@ -161,6 +161,8 @@ import Sequences from "./Sequences";
 
 import Settings from "./Settings";
 
+import ShopifyCallback from "./ShopifyCallback";
+
 import ShareView from "./ShareView";
 
 import SkillFrameworks from "./SkillFrameworks";
@@ -518,7 +520,9 @@ const PAGES = {
     Sequences: Sequences,
     
     Settings: Settings,
-    
+
+    ShopifyCallback: ShopifyCallback,
+
     ShareView: ShareView,
     
     SkillFrameworks: SkillFrameworks,
@@ -977,6 +981,8 @@ function PagesContent() {
                 <Route path="/Sequences" element={<Sequences />} />
                 
                 <Route path="/Settings" element={<Settings />} />
+
+                <Route path="/shopifycallback" element={<ShopifyCallback />} />
 
                 <Route path="/SkillFrameworks" element={<SkillFrameworks />} />
                 

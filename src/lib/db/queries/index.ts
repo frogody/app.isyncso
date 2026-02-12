@@ -45,3 +45,6 @@ export * from './returns';
 
 // Email Pool
 export * from './emailPool';
+
+// Shopify Integration
+export * from './shopify';
