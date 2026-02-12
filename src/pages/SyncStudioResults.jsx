@@ -154,7 +154,7 @@ export default function SyncStudioResults() {
       const { data: jobData, error: jobErr } = await supabase
         .from('sync_studio_jobs')
         .select('*')
-        .eq('id', jobId)
+        .eq('job_id', jobId)
         .single();
       if (jobErr) throw new Error(`Failed to load job: ${jobErr.message}`);
       setJob(jobData);
@@ -162,7 +162,7 @@ export default function SyncStudioResults() {
       // Fetch completed images
       const { data: images, error: imgErr } = await supabase
         .from('sync_studio_generated_images')
-        .select('image_id, image_url, product_ean, shot_number, plan_id, status, rating, synced_to_library, synced_at, metadata, shot_type')
+        .select('image_id, image_url, product_ean, shot_number, plan_id, status, rating, synced_to_library, synced_at')
         .eq('job_id', jobId)
         .eq('status', 'completed');
       if (imgErr) throw new Error(`Failed to load images: ${imgErr.message}`);

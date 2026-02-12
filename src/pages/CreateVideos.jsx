@@ -750,6 +750,82 @@ export default function CreateVideos() {
             </div>
           </div>
 
+          {/* ───── 6. Output Area (moved above prompt) ───── */}
+          {mode === 'ai' && (
+            <AnimatePresence>
+              {(isGenerating || generatedVideo) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ duration: 0.4 }}
+                  className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} overflow-hidden`}
+                >
+                  <div className="aspect-video relative">
+                    {isGenerating ? (
+                      <div className={`absolute inset-0 flex flex-col items-center justify-center ${ct('bg-slate-100/90', 'bg-zinc-950/80')}`}>
+                        <Loader2 className="w-10 h-10 text-yellow-400 animate-spin mb-3" />
+                        <p className={`${ct('text-slate-500', 'text-zinc-400')} text-sm`}>Creating your video...</p>
+                        <p className={`${ct('text-slate-400', 'text-zinc-600')} text-xs mt-1`}>This may take 1-3 minutes</p>
+                        <div className={`w-40 h-1.5 ${ct('bg-slate-200', 'bg-zinc-800')} rounded-full mt-4 overflow-hidden`}>
+                          <div className="h-full bg-yellow-500 rounded-full animate-pulse" style={{ width: '60%' }} />
+                        </div>
+                      </div>
+                    ) : generatedVideo ? (
+                      <video
+                        src={generatedVideo.url}
+                        controls
+                        className="w-full h-full object-contain bg-black"
+                        poster={generatedVideo.thumbnail_url}
+                      />
+                    ) : null}
+                  </div>
+
+                  {generatedVideo && (
+                    <div className={`p-4 border-t ${ct('border-slate-100', 'border-zinc-800/40')}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={`${ct('border-slate-200', 'border-zinc-700')} ${ct('text-slate-600', 'text-zinc-300')} ${ct('bg-slate-50', 'bg-zinc-800/50')} text-xs`}>
+                            <Clock className="w-3 h-3 mr-1" />
+                            {generatedVideo.duration}s
+                          </Badge>
+                          <Badge variant="outline" className={`${ct('border-slate-200', 'border-zinc-700')} ${ct('text-slate-600', 'text-zinc-300')} ${ct('bg-slate-50', 'bg-zinc-800/50')} text-xs`}>
+                            {aspectRatio}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleDownload(generatedVideo.url)}
+                            className={`p-2 rounded-full ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:text-slate-900', 'hover:text-white')} ${ct('hover:bg-slate-100', 'hover:bg-zinc-800')} transition-colors`}
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={handleGenerate}
+                            className={`p-2 rounded-full ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:text-slate-900', 'hover:text-white')} ${ct('hover:bg-slate-100', 'hover:bg-zinc-800')} transition-colors`}
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {generatedVideo.enhanced_prompt && (
+                        <details className="mt-3">
+                          <summary className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} cursor-pointer ${ct('hover:text-slate-700', 'hover:text-zinc-400')} transition-colors`}>
+                            Prompt details
+                          </summary>
+                          <p className={`text-xs ${ct('text-slate-500', 'text-zinc-400')} mt-2 p-2 ${ct('bg-slate-50', 'bg-zinc-800/50')} rounded-xl border ${ct('border-slate-200', 'border-zinc-700/50')}`}>
+                            {generatedVideo.enhanced_prompt}
+                          </p>
+                        </details>
+                      )}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
+
           {/* ───── 2. Hero Prompt Area (AI modes only) ───── */}
           {(mode === 'ai' || mode === 'studio') && mode === 'ai' && (
             <motion.div
@@ -976,80 +1052,6 @@ export default function CreateVideos() {
                   ~{durationConfig?.seconds || 10}s video &middot; est. 1-3 min
                 </span>
               </div>
-
-              {/* ───── 6. Output Area ───── */}
-              <AnimatePresence>
-                {(isGenerating || generatedVideo) && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 20 }}
-                    transition={{ duration: 0.4 }}
-                    className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} overflow-hidden`}
-                  >
-                    <div className="aspect-video relative">
-                      {isGenerating ? (
-                        <div className={`absolute inset-0 flex flex-col items-center justify-center ${ct('bg-slate-100/90', 'bg-zinc-950/80')}`}>
-                          <Loader2 className="w-10 h-10 text-yellow-400 animate-spin mb-3" />
-                          <p className={`${ct('text-slate-500', 'text-zinc-400')} text-sm`}>Creating your video...</p>
-                          <p className={`${ct('text-slate-400', 'text-zinc-600')} text-xs mt-1`}>This may take 1-3 minutes</p>
-                          <div className={`w-40 h-1.5 ${ct('bg-slate-200', 'bg-zinc-800')} rounded-full mt-4 overflow-hidden`}>
-                            <div className="h-full bg-yellow-500 rounded-full animate-pulse" style={{ width: '60%' }} />
-                          </div>
-                        </div>
-                      ) : generatedVideo ? (
-                        <video
-                          src={generatedVideo.url}
-                          controls
-                          className="w-full h-full object-contain bg-black"
-                          poster={generatedVideo.thumbnail_url}
-                        />
-                      ) : null}
-                    </div>
-
-                    {generatedVideo && (
-                      <div className={`p-4 border-t ${ct('border-slate-100', 'border-zinc-800/40')}`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className={`${ct('border-slate-200', 'border-zinc-700')} ${ct('text-slate-600', 'text-zinc-300')} ${ct('bg-slate-50', 'bg-zinc-800/50')} text-xs`}>
-                              <Clock className="w-3 h-3 mr-1" />
-                              {generatedVideo.duration}s
-                            </Badge>
-                            <Badge variant="outline" className={`${ct('border-slate-200', 'border-zinc-700')} ${ct('text-slate-600', 'text-zinc-300')} ${ct('bg-slate-50', 'bg-zinc-800/50')} text-xs`}>
-                              {aspectRatio}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              onClick={() => handleDownload(generatedVideo.url)}
-                              className={`p-2 rounded-full ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:text-slate-900', 'hover:text-white')} ${ct('hover:bg-slate-100', 'hover:bg-zinc-800')} transition-colors`}
-                            >
-                              <Download className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={handleGenerate}
-                              className={`p-2 rounded-full ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:text-slate-900', 'hover:text-white')} ${ct('hover:bg-slate-100', 'hover:bg-zinc-800')} transition-colors`}
-                            >
-                              <RefreshCw className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {generatedVideo.enhanced_prompt && (
-                          <details className="mt-3">
-                            <summary className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} cursor-pointer ${ct('hover:text-slate-700', 'hover:text-zinc-400')} transition-colors`}>
-                              Prompt details
-                            </summary>
-                            <p className={`text-xs ${ct('text-slate-500', 'text-zinc-400')} mt-2 p-2 ${ct('bg-slate-50', 'bg-zinc-800/50')} rounded-xl border ${ct('border-slate-200', 'border-zinc-700/50')}`}>
-                              {generatedVideo.enhanced_prompt}
-                            </p>
-                          </details>
-                        )}
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </motion.div>
           )}
 

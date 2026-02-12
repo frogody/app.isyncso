@@ -1316,7 +1316,7 @@ export default function SyncStudioDashboard() {
       </div>
 
       {/* Stats bar */}
-      <div className="bg-zinc-900/40 border-b border-zinc-800/40">
+      <div className="border-b border-zinc-800/40">
         <div className="w-full px-4 lg:px-8 py-3">
           {/* Stats row */}
           <div className="flex items-center justify-between gap-3 mb-2.5 flex-wrap">
