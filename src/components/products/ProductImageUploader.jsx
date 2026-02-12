@@ -39,9 +39,10 @@ export default function ProductImageUploader({
   const [uploadProgress, setUploadProgress] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
 
+  const safeImages = Array.isArray(images) ? images : [];
   const allImages = [
-    ...(featuredImage ? [{ ...featuredImage, isFeatured: true }] : []),
-    ...images.filter(img => img.url !== featuredImage?.url)
+    ...(featuredImage ? [{ ...(typeof featuredImage === 'string' ? { url: featuredImage } : featuredImage), isFeatured: true }] : []),
+    ...safeImages.filter(img => img.url !== featuredImage?.url)
   ];
 
   const handleDragEnter = useCallback((e) => {

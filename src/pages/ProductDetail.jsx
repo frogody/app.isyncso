@@ -1916,6 +1916,21 @@ export default function ProductDetail() {
       }
 
       const productData = products[0];
+
+      // Safely parse JSONB fields that may be stored as strings
+      if (typeof productData.featured_image === 'string') {
+        try { productData.featured_image = JSON.parse(productData.featured_image); } catch { /* keep as-is */ }
+      }
+      if (typeof productData.gallery === 'string') {
+        try { productData.gallery = JSON.parse(productData.gallery); } catch { /* keep as-is */ }
+      }
+      if (!Array.isArray(productData.gallery)) {
+        productData.gallery = [];
+      }
+      if (!Array.isArray(productData.tags)) {
+        productData.tags = [];
+      }
+
       setProduct(productData);
 
       // Fetch audit info (created_by / updated_by user names)
@@ -1965,7 +1980,7 @@ export default function ProductDetail() {
           { type, category: productData.category, status: 'published' },
           { limit: 5 }
         );
-        setRelatedProducts(related.filter(p => p.id !== productData.id));
+        setRelatedProducts((related || []).filter(p => p.id !== productData.id));
       } catch (relatedErr) {
         console.log('Could not load related products:', relatedErr);
       }

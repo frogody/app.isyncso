@@ -1,7 +1,7 @@
 import { useCurrentFrame, useVideoConfig, spring, interpolate } from "remotion";
 import { loadFont } from "@remotion/google-fonts/Inter";
 
-const { fontFamily } = loadFont();
+const { fontFamily } = loadFont("normal", { weights: ["400", "500", "600", "700"], subsets: ["latin"] });
 
 interface AnimatedSidebarProps {
   accentColor?: string;

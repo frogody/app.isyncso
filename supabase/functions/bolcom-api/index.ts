@@ -78,7 +78,10 @@ type BolcomAction =
   | "createOffer"
   | "updateOffer"
   | "getReturns"
-  | "handleReturn";
+  | "handleReturn"
+  | "enrichProduct"
+  | "batchEnrichProducts"
+  | "batchEnrichByEan";
 
 interface BolcomRequest {
   action: BolcomAction;
@@ -120,7 +123,8 @@ async function bolFetch<T = unknown>(
   method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
   body?: unknown,
   accept?: string,
-  retries = 2
+  retries = 2,
+  extraHeaders?: Record<string, string>
 ): Promise<T> {
   const url = `${BOL_API_BASE}${endpoint}`;
   const contentType = "application/vnd.retailer.v10+json";
@@ -132,6 +136,7 @@ async function bolFetch<T = unknown>(
         "Authorization": `Bearer ${token}`,
         "Content-Type": contentType,
         "Accept": accept || contentType,
+        ...(extraHeaders || {}),
       },
       ...(body && method !== "GET" ? { body: JSON.stringify(body) } : {}),
     });
@@ -969,6 +974,400 @@ serve(async (req) => {
         }
 
         result = { success: true, data: handleResult };
+        break;
+      }
+
+      // ==================================================
+      // PRODUCT ENRICHMENT
+      // ==================================================
+
+      case "enrichProduct": {
+        const tokenResult = await getBolToken(supabase, companyId);
+        if ("error" in tokenResult) { result = { success: false, error: tokenResult.error }; break; }
+
+        const ean = body.ean as string;
+        if (!ean) { result = { success: false, error: "Missing ean" }; break; }
+
+        const enrichData: Record<string, unknown> = { ean };
+        const nlHeaders = { "Accept-Language": "nl" };
+
+        // 1. Fetch product assets (images) — PRIMARY and IMAGE separately
+        try {
+          const allAssets: Array<{ url: string; usage: string; variants?: Array<{ url: string; width: number; height: number }> }> = [];
+          for (const usage of ["PRIMARY", "ADDITIONAL", "IMAGE"]) {
+            try {
+              const assets = await bolFetch<{ assets?: typeof allAssets }>(
+                tokenResult.token, `/products/${ean}/assets?usage=${usage}`, "GET",
+                undefined, undefined, 1, nlHeaders
+              );
+              if (assets.assets && assets.assets.length > 0) {
+                allAssets.push(...assets.assets);
+              }
+            } catch {
+              // Some usage types may not exist for this product — skip
+            }
+          }
+          if (allAssets.length > 0) enrichData.assets = allAssets;
+        } catch (e) {
+          enrichData.assetsError = e instanceof Error ? e.message : "Failed to fetch assets";
+        }
+
+        // 2. Fetch product placement (category + URL) — requires Accept-Language: nl
+        try {
+          const placement = await bolFetch<{ url?: string; category?: { categoryId: string; categoryName: string; parentCategories?: Array<{ categoryId: string; categoryName: string }> } }>(
+            tokenResult.token, `/products/${ean}/placement`, "GET",
+            undefined, undefined, 2, nlHeaders
+          );
+          enrichData.placement = placement;
+        } catch (e) {
+          enrichData.placementError = e instanceof Error ? e.message : "Failed to fetch placement";
+        }
+
+        // 3. Fetch catalog product content (attributes, classification)
+        try {
+          const catalog = await bolFetch<{ products?: Array<{ published?: boolean; gpc?: { chunkId: string }; enrichment?: { status: number }; attributes?: Array<{ id: string; values: Array<{ value: string }> }>; parties?: Array<{ name: string; type: string; role: string }> }> }>(
+            tokenResult.token, `/catalog-products/${ean}`, "GET",
+            undefined, undefined, 2, nlHeaders
+          );
+          if (catalog.products && catalog.products.length > 0) {
+            enrichData.catalog = catalog.products[0];
+          }
+        } catch (e) {
+          enrichData.catalogError = e instanceof Error ? e.message : "Failed to fetch catalog";
+        }
+
+        // 4. Fetch competing offers (to get description and pricing)
+        try {
+          const offers = await bolFetch<{ offers?: Array<{ offerId: string; retailerName: string; bestOffer: boolean; price: number; fulfilmentMethod: string; condition: string; deliveryCode: string }> }>(
+            tokenResult.token, `/products/${ean}/offers`, "GET",
+            undefined, undefined, 2, nlHeaders
+          );
+          enrichData.offers = offers.offers || [];
+        } catch (e) {
+          enrichData.offersError = e instanceof Error ? e.message : "Failed to fetch offers";
+        }
+
+        result = { success: true, data: enrichData };
+        break;
+      }
+
+      case "batchEnrichProducts": {
+        const tokenResult = await getBolToken(supabase, companyId);
+        if ("error" in tokenResult) { result = { success: false, error: tokenResult.error }; break; }
+
+        const batchSize = Math.min((body.batchSize as number) || 20, 50);
+        const offset = (body.offset as number) || 0;
+        const nlHeaders = { "Accept-Language": "nl" };
+
+        // Fetch products that have EANs but haven't been enriched yet (no featured_image or empty gallery)
+        const { data: products, error: prodErr } = await supabase
+          .from("bolcom_offer_mappings")
+          .select("ean, product_id")
+          .eq("company_id", companyId)
+          .eq("is_active", true)
+          .range(offset, offset + batchSize - 1);
+
+        if (prodErr) { result = { success: false, error: prodErr.message }; break; }
+        if (!products || products.length === 0) {
+          result = { success: true, data: { enriched: 0, total: 0, done: true } };
+          break;
+        }
+
+        let enriched = 0;
+        let skipped = 0;
+        let errors = 0;
+        const details: Array<{ ean: string; status: string; imageCount?: number; category?: string }> = [];
+
+        for (const mapping of products) {
+          const { ean, product_id } = mapping;
+          try {
+            // Check if product already has images
+            const { data: existing } = await supabase
+              .from("products")
+              .select("featured_image, gallery")
+              .eq("id", product_id)
+              .single();
+
+            const hasImages = existing?.featured_image?.url || (existing?.gallery && existing.gallery.length > 0);
+            if (hasImages) {
+              skipped++;
+              details.push({ ean, status: "skipped_has_images" });
+              continue;
+            }
+
+            // Fetch assets (PRIMARY + ADDITIONAL)
+            const allAssets: Array<{ url: string; usage: string; order?: number; variants?: Array<{ url: string; width: number; height: number; size: string }> }> = [];
+            for (const usage of ["PRIMARY", "ADDITIONAL"]) {
+              try {
+                const assets = await bolFetch<{ assets?: typeof allAssets }>(
+                  tokenResult.token, `/products/${ean}/assets?usage=${usage}`, "GET",
+                  undefined, undefined, 1, nlHeaders
+                );
+                if (assets.assets) allAssets.push(...assets.assets);
+              } catch { /* skip */ }
+            }
+
+            // Fetch placement
+            let placementData: { url?: string; categories?: Array<{ categoryName: string; subcategories?: unknown[] }> } | null = null;
+            try {
+              placementData = await bolFetch(tokenResult.token, `/products/${ean}/placement`, "GET", undefined, undefined, 1, nlHeaders);
+            } catch { /* skip */ }
+
+            // Build update payload
+            const updatePayload: Record<string, unknown> = { updated_at: new Date().toISOString() };
+
+            // Set featured image from PRIMARY asset (largest variant)
+            const primaryAsset = allAssets.find(a => a.usage === "PRIMARY");
+            if (primaryAsset?.variants && primaryAsset.variants.length > 0) {
+              const largest = primaryAsset.variants.reduce((a, b) => (a.width > b.width ? a : b));
+              updatePayload.featured_image = { url: largest.url, width: largest.width, height: largest.height };
+            }
+
+            // Set gallery from ADDITIONAL assets (medium variants)
+            const additionalAssets = allAssets.filter(a => a.usage === "ADDITIONAL");
+            if (additionalAssets.length > 0) {
+              const galleryImages = additionalAssets
+                .sort((a, b) => (a.order || 0) - (b.order || 0))
+                .map(asset => {
+                  const medium = asset.variants?.find(v => v.size === "medium") || asset.variants?.[0];
+                  return medium ? { url: medium.url, width: medium.width, height: medium.height } : null;
+                })
+                .filter(Boolean);
+              // Deduplicate by URL
+              const seen = new Set<string>();
+              updatePayload.gallery = galleryImages.filter(img => {
+                if (!img || seen.has((img as { url: string }).url)) return false;
+                seen.add((img as { url: string }).url);
+                return true;
+              });
+            }
+
+            // Set category from placement
+            if (placementData?.categories?.[0]) {
+              const topCat = placementData.categories[0];
+              // Walk down the category tree to get the most specific category
+              let catName = topCat.categoryName;
+              let sub = topCat.subcategories as Array<{ name?: string; categoryName?: string; subcategories?: unknown[] }> | undefined;
+              while (sub && sub.length > 0) {
+                const child = sub[0];
+                catName = child.name || child.categoryName || catName;
+                sub = child.subcategories as typeof sub;
+              }
+              updatePayload.category = catName;
+            }
+
+            // Set tags from category hierarchy
+            if (placementData?.categories?.[0]) {
+              const tags: string[] = [];
+              const extractTags = (cats: unknown[]) => {
+                for (const cat of cats) {
+                  const c = cat as { name?: string; categoryName?: string; subcategories?: unknown[] };
+                  const name = c.name || c.categoryName;
+                  if (name) tags.push(name);
+                  if (c.subcategories) extractTags(c.subcategories as unknown[]);
+                }
+              };
+              extractTags(placementData.categories);
+              if (tags.length > 0) updatePayload.tags = tags;
+            }
+
+            // Set SEO OG image
+            if (updatePayload.featured_image) {
+              updatePayload.seo_og_image = (updatePayload.featured_image as { url: string }).url;
+            }
+
+            // Only update if we have something new
+            if (Object.keys(updatePayload).length > 1) { // >1 because updated_at always present
+              const { error: updateErr } = await supabase
+                .from("products")
+                .update(updatePayload)
+                .eq("id", product_id);
+
+              if (updateErr) {
+                errors++;
+                details.push({ ean, status: `update_error: ${updateErr.message}` });
+              } else {
+                enriched++;
+                details.push({
+                  ean,
+                  status: "enriched",
+                  imageCount: allAssets.length,
+                  category: updatePayload.category as string || undefined,
+                });
+              }
+            } else {
+              skipped++;
+              details.push({ ean, status: "no_data_available" });
+            }
+
+            // Small delay to avoid rate limiting
+            await new Promise(r => setTimeout(r, 200));
+
+          } catch (e) {
+            errors++;
+            details.push({ ean, status: `error: ${e instanceof Error ? e.message : "unknown"}` });
+          }
+        }
+
+        result = {
+          success: true,
+          data: {
+            enriched,
+            skipped,
+            errors,
+            total: products.length,
+            offset,
+            nextOffset: offset + products.length,
+            done: products.length < batchSize,
+            details,
+          },
+        };
+        break;
+      }
+
+      case "batchEnrichByEan": {
+        // Enriches products directly by EAN from products table (no mapping needed)
+        const tokenResult = await getBolToken(supabase, companyId);
+        if ("error" in tokenResult) { result = { success: false, error: tokenResult.error }; break; }
+
+        const batchSize = Math.min((body.batchSize as number) || 20, 50);
+        const offset = (body.offset as number) || 0;
+        const nlHeaders = { "Accept-Language": "nl" };
+
+        // Fetch products with EAN that don't have featured_image yet
+        const { data: products, error: prodErr } = await supabase
+          .from("products")
+          .select("id, ean, name")
+          .eq("company_id", companyId)
+          .not("ean", "is", null)
+          .neq("ean", "")
+          .is("featured_image", null)
+          .order("created_at", { ascending: true })
+          .range(offset, offset + batchSize - 1);
+
+        if (prodErr) { result = { success: false, error: prodErr.message }; break; }
+        if (!products || products.length === 0) {
+          result = { success: true, data: { enriched: 0, total: 0, done: true } };
+          break;
+        }
+
+        let enriched = 0;
+        let noData = 0;
+        let errors = 0;
+        const details: Array<{ ean: string; status: string; imageCount?: number; category?: string }> = [];
+
+        for (const product of products) {
+          const { id: productId, ean } = product;
+          if (!ean) { noData++; continue; }
+
+          try {
+            // Fetch assets (PRIMARY + ADDITIONAL)
+            const allAssets: Array<{ url: string; usage: string; order?: number; variants?: Array<{ url: string; width: number; height: number; size: string }> }> = [];
+            for (const usage of ["PRIMARY", "ADDITIONAL"]) {
+              try {
+                const assets = await bolFetch<{ assets?: typeof allAssets }>(
+                  tokenResult.token, `/products/${ean}/assets?usage=${usage}`, "GET",
+                  undefined, undefined, 1, nlHeaders
+                );
+                if (assets.assets) allAssets.push(...assets.assets);
+              } catch { /* skip */ }
+            }
+
+            // Fetch placement
+            let placementData: { url?: string; categories?: Array<{ categoryName: string; subcategories?: unknown[] }> } | null = null;
+            try {
+              placementData = await bolFetch(tokenResult.token, `/products/${ean}/placement`, "GET", undefined, undefined, 1, nlHeaders);
+            } catch { /* skip */ }
+
+            // Build update payload
+            const updatePayload: Record<string, unknown> = { updated_at: new Date().toISOString() };
+
+            // Set featured image from PRIMARY asset
+            const primaryAsset = allAssets.find(a => a.usage === "PRIMARY");
+            if (primaryAsset?.variants && primaryAsset.variants.length > 0) {
+              const largest = primaryAsset.variants.reduce((a, b) => (a.width > b.width ? a : b));
+              updatePayload.featured_image = { url: largest.url, width: largest.width, height: largest.height };
+            }
+
+            // Set gallery from ADDITIONAL assets
+            const additionalAssets = allAssets.filter(a => a.usage === "ADDITIONAL");
+            if (additionalAssets.length > 0) {
+              const galleryImages = additionalAssets
+                .sort((a, b) => (a.order || 0) - (b.order || 0))
+                .map(asset => {
+                  const medium = asset.variants?.find(v => v.size === "medium") || asset.variants?.[0];
+                  return medium ? { url: medium.url, width: medium.width, height: medium.height } : null;
+                })
+                .filter(Boolean);
+              const seen = new Set<string>();
+              updatePayload.gallery = galleryImages.filter(img => {
+                if (!img || seen.has((img as { url: string }).url)) return false;
+                seen.add((img as { url: string }).url);
+                return true;
+              });
+            }
+
+            // Set category from placement
+            if (placementData?.categories?.[0]) {
+              const topCat = placementData.categories[0];
+              let catName = topCat.categoryName;
+              let sub = topCat.subcategories as Array<{ name?: string; categoryName?: string; subcategories?: unknown[] }> | undefined;
+              while (sub && sub.length > 0) {
+                const child = sub[0];
+                catName = child.name || child.categoryName || catName;
+                sub = child.subcategories as typeof sub;
+              }
+              updatePayload.category = catName;
+            }
+
+            // Set tags from category hierarchy
+            if (placementData?.categories?.[0]) {
+              const tags: string[] = [];
+              const extractTags = (cats: unknown[]) => {
+                for (const cat of cats) {
+                  const c = cat as { name?: string; categoryName?: string; subcategories?: unknown[] };
+                  const name = c.name || c.categoryName;
+                  if (name) tags.push(name);
+                  if (c.subcategories) extractTags(c.subcategories as unknown[]);
+                }
+              };
+              extractTags(placementData.categories);
+              if (tags.length > 0) updatePayload.tags = tags;
+            }
+
+            if (updatePayload.featured_image) {
+              updatePayload.seo_og_image = (updatePayload.featured_image as { url: string }).url;
+            }
+
+            if (Object.keys(updatePayload).length > 1) {
+              const { error: updateErr } = await supabase
+                .from("products")
+                .update(updatePayload)
+                .eq("id", productId);
+
+              if (updateErr) {
+                errors++;
+                details.push({ ean, status: `update_error: ${updateErr.message}` });
+              } else {
+                enriched++;
+                details.push({ ean, status: "enriched", imageCount: allAssets.length, category: updatePayload.category as string || undefined });
+              }
+            } else {
+              noData++;
+              details.push({ ean, status: "not_on_bolcom" });
+            }
+
+            await new Promise(r => setTimeout(r, 200));
+          } catch (e) {
+            errors++;
+            details.push({ ean, status: `error: ${e instanceof Error ? e.message : "unknown"}` });
+          }
+        }
+
+        result = {
+          success: true,
+          data: { enriched, noData, errors, total: products.length, offset, nextOffset: offset + products.length, done: products.length < batchSize, details },
+        };
         break;
       }
 

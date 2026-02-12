@@ -386,7 +386,7 @@ export default function ProductsPhysical() {
 
     return {
       total: totalCount,
-      published: products.filter(p => p.status === 'published').length,
+      published: (products || []).filter(p => p.status === 'published').length,
       ...stockCounts,
     };
   }, [products, physicalProducts, totalCount]);

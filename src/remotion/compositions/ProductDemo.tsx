@@ -12,7 +12,7 @@ import { AnimatedText } from "../components/AnimatedText";
 import { PulsingButton } from "../components/PulsingButton";
 import { ease, springs, crossfade, hexToRgb, stagger } from "../lib/animations";
 
-const { fontFamily } = loadFont();
+const { fontFamily } = loadFont("normal", { weights: ["400", "500", "600", "700"], subsets: ["latin"] });
 
 interface ProductDemoProps {
   productName: string;
