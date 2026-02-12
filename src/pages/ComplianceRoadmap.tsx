@@ -278,6 +278,7 @@ export default function ComplianceRoadmap() {
   const { systems, stats, loading } = useRoadmap();
   const [aiPlan, setAiPlan] = useState<AIPlan | null>(null);
   const [generatingPlan, setGeneratingPlan] = useState(false);
+  const [aiPlanOpen, setAiPlanOpen] = useState(false);
   const { st } = useTheme();
 
   const generateAIPlan = useCallback(async () => {
@@ -325,116 +326,133 @@ export default function ComplianceRoadmap() {
       <div className="w-full max-w-4xl mx-auto px-4 lg:px-6 py-6 space-y-8">
 
         {/* ── Header ─────────────────────────────────────── */}
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className={cn('w-11 h-11 rounded-2xl flex items-center justify-center', st('bg-emerald-100', 'bg-emerald-400/10'))}>
               <Map className={cn('w-5 h-5', st('text-emerald-600', 'text-emerald-400'))} />
             </div>
             <div>
               <h1 className={cn('text-xl font-semibold', st('text-slate-900', 'text-white'))}>Compliance Roadmap</h1>
-              <p className={cn('text-xs mt-0.5', st('text-slate-400', 'text-zinc-500'))}>EU AI Act enforcement timeline & obligations</p>
+              <div className={cn('flex items-center gap-3 mt-0.5 text-xs', st('text-slate-400', 'text-zinc-500'))}>
+                <span>{stats.allTasks.length} tasks</span>
+                <span className="opacity-30">/</span>
+                <span className={cn(stats.completedCount > 0 && st('text-emerald-600', 'text-emerald-400'))}>{stats.completedCount} done</span>
+                {stats.overdueCount > 0 && <>
+                  <span className="opacity-30">/</span>
+                  <span className={st('text-red-500', 'text-red-400')}>{stats.overdueCount} overdue</span>
+                </>}
+                <span className="opacity-30">/</span>
+                <span className={cn(st('text-emerald-600', 'text-emerald-400'))}>{stats.progressPercent}%</span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 relative">
             <ThemeToggle />
-            <SentinelButton
-              onClick={generateAIPlan}
-              disabled={generatingPlan || systems.length === 0}
-              loading={generatingPlan}
-              icon={!generatingPlan ? <Sparkles className="w-4 h-4" /> : undefined}
-            >
-              {generatingPlan ? 'Analyzing...' : 'AI Action Plan'}
-            </SentinelButton>
+            {!aiPlan ? (
+              <SentinelButton
+                size="sm"
+                onClick={generateAIPlan}
+                disabled={generatingPlan || systems.length === 0}
+                loading={generatingPlan}
+                icon={!generatingPlan ? <Sparkles className="w-3.5 h-3.5" /> : undefined}
+              >
+                {generatingPlan ? 'Analyzing...' : 'AI Plan'}
+              </SentinelButton>
+            ) : (
+              <SentinelButton
+                size="sm"
+                variant={aiPlanOpen ? 'primary' : 'secondary'}
+                onClick={() => setAiPlanOpen(!aiPlanOpen)}
+                icon={<Sparkles className="w-3.5 h-3.5" />}
+              >
+                AI Plan
+                <ChevronDown className={cn('w-3 h-3 transition-transform', aiPlanOpen && 'rotate-180')} />
+              </SentinelButton>
+            )}
+
+            {/* AI Plan dropdown */}
+            <AnimatePresence>
+              {aiPlan && aiPlanOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                  transition={{ duration: 0.15 }}
+                  className={cn(
+                    'absolute top-full right-0 mt-2 w-[420px] z-50 rounded-2xl border backdrop-blur-xl shadow-xl',
+                    st('bg-white border-slate-200', 'bg-zinc-900/95 border-zinc-800/80')
+                  )}
+                >
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={cn('text-xs font-semibold flex items-center gap-1.5', st('text-emerald-700', 'text-emerald-400'))}>
+                        <Sparkles className="w-3.5 h-3.5" /> AI Action Plan
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button onClick={generateAIPlan} disabled={generatingPlan} className={cn('text-[10px] px-2 py-0.5 rounded-full transition-colors', st('text-slate-500 hover:text-slate-700 hover:bg-slate-100', 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'))}>
+                          Redo
+                        </button>
+                        <button onClick={() => { setAiPlan(null); setAiPlanOpen(false); }} className={cn('p-1 rounded-lg transition-colors', st('text-slate-400 hover:text-slate-600', 'text-zinc-600 hover:text-zinc-300'))}>
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+                      {/* Immediate Actions */}
+                      {aiPlan.immediate_actions && aiPlan.immediate_actions.length > 0 && (
+                        <div>
+                          <div className={cn('text-[10px] font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1', st('text-slate-400', 'text-zinc-500'))}>
+                            <Target className="w-3 h-3" /> Actions
+                          </div>
+                          <ul className="space-y-1.5">
+                            {aiPlan.immediate_actions.map((action, i) => (
+                              <li key={i} className={cn('text-[11px] leading-snug flex items-start gap-1.5', st('text-slate-600', 'text-zinc-300'))}>
+                                <span className={cn('w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-px text-[9px] font-bold', st('bg-emerald-100 text-emerald-700', 'bg-emerald-400/15 text-emerald-400'))}>
+                                  {i + 1}
+                                </span>
+                                {action}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Quick Wins */}
+                      {aiPlan.quick_wins && aiPlan.quick_wins.length > 0 && (
+                        <div>
+                          <div className={cn('text-[10px] font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1', st('text-slate-400', 'text-zinc-500'))}>
+                            <Zap className="w-3 h-3" /> Quick Wins
+                          </div>
+                          <ul className="space-y-1.5">
+                            {aiPlan.quick_wins.map((win, i) => (
+                              <li key={i} className={cn('text-[11px] leading-snug flex items-start gap-1.5', st('text-slate-600', 'text-zinc-300'))}>
+                                <span className={cn('w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-px text-[9px] font-bold', st('bg-emerald-50 text-emerald-600', 'bg-emerald-400/10 text-emerald-300'))}>
+                                  {i + 1}
+                                </span>
+                                {win}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* 30-Day Plan */}
+                      {aiPlan.thirty_day_plan && (
+                        <div className={cn('pt-2.5 border-t', st('border-slate-100', 'border-zinc-800/60'))}>
+                          <div className={cn('text-[10px] font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1', st('text-slate-400', 'text-zinc-500'))}>
+                            <Calendar className="w-3 h-3" /> 30-Day Plan
+                          </div>
+                          <p className={cn('text-[11px] leading-snug', st('text-slate-600', 'text-zinc-300'))}>{aiPlan.thirty_day_plan}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
-
-        {/* ── Inline Stats Strip ─────────────────────────── */}
-        <SentinelCard padding="sm">
-          <div className="flex items-center justify-between flex-wrap gap-y-2">
-            {[
-              { label: 'Total Tasks', value: stats.allTasks.length, icon: FileText, color: st('text-slate-900', 'text-white') },
-              { label: 'Completed', value: stats.completedCount, icon: CheckCircle, color: st('text-emerald-600', 'text-emerald-400') },
-              { label: 'Overdue', value: stats.overdueCount, icon: AlertTriangle, color: stats.overdueCount > 0 ? st('text-red-500', 'text-red-400') : st('text-slate-400', 'text-zinc-600') },
-              { label: 'Urgent', value: stats.urgentTasks.length, icon: Zap, color: stats.urgentTasks.length > 0 ? st('text-yellow-600', 'text-yellow-400') : st('text-slate-400', 'text-zinc-600') },
-              { label: 'Progress', value: `${stats.progressPercent}%`, icon: TrendingUp, color: st('text-emerald-600', 'text-emerald-400') },
-            ].map((s, i) => (
-              <div key={s.label} className="flex items-center gap-2 px-3">
-                {i > 0 && <div className={cn('w-px h-6 -ml-3 mr-0', st('bg-slate-200', 'bg-zinc-800'))} />}
-                <s.icon className={cn('w-3.5 h-3.5', st('text-slate-400', 'text-zinc-600'))} />
-                <span className={cn('text-lg font-bold tabular-nums', s.color)}>{s.value}</span>
-                <span className={cn('text-[11px]', st('text-slate-400', 'text-zinc-600'))}>{s.label}</span>
-              </div>
-            ))}
-          </div>
-        </SentinelCard>
-
-        {/* ── AI Action Plan ─────────────────────────────── */}
-        <AnimatePresence>
-          {aiPlan && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-              <SentinelCard padding="md">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center', st('bg-emerald-100', 'bg-emerald-400/10'))}>
-                      <Sparkles className={cn('w-4 h-4', st('text-emerald-600', 'text-emerald-400'))} />
-                    </div>
-                    <h3 className={cn('font-semibold', st('text-slate-900', 'text-white'))}>AI Action Plan</h3>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <SentinelButton size="sm" variant="ghost" onClick={generateAIPlan} disabled={generatingPlan}>Regenerate</SentinelButton>
-                    <button onClick={() => setAiPlan(null)} className={cn('p-1.5 rounded-lg transition-colors', st('text-slate-400 hover:text-slate-600 hover:bg-slate-100', 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'))}>
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* Immediate Actions */}
-                  <div>
-                    <div className={cn('flex items-center gap-1.5 mb-2.5 text-xs font-medium', st('text-emerald-700', 'text-emerald-400'))}>
-                      <Target className="w-3.5 h-3.5" /> Immediate Actions
-                    </div>
-                    <ul className="space-y-2">
-                      {aiPlan.immediate_actions?.map((action, i) => (
-                        <li key={i} className={cn('text-xs flex items-start gap-2 leading-relaxed', st('text-slate-600', 'text-zinc-300'))}>
-                          <span className={cn('w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-[10px] font-bold', st('bg-emerald-100 text-emerald-700', 'bg-emerald-400/15 text-emerald-400'))}>
-                            {i + 1}
-                          </span>
-                          {action}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  {/* Quick Wins */}
-                  <div>
-                    <div className={cn('flex items-center gap-1.5 mb-2.5 text-xs font-medium', st('text-emerald-600', 'text-emerald-300'))}>
-                      <Zap className="w-3.5 h-3.5" /> Quick Wins
-                    </div>
-                    <ul className="space-y-2">
-                      {aiPlan.quick_wins?.map((win, i) => (
-                        <li key={i} className={cn('text-xs flex items-start gap-2 leading-relaxed', st('text-slate-600', 'text-zinc-300'))}>
-                          <span className={cn('w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-[10px] font-bold', st('bg-emerald-50 text-emerald-600', 'bg-emerald-400/10 text-emerald-300'))}>
-                            {i + 1}
-                          </span>
-                          {win}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                {aiPlan.thirty_day_plan && (
-                  <div className={cn('mt-4 pt-4 border-t', st('border-slate-100', 'border-zinc-800/60'))}>
-                    <div className={cn('flex items-center gap-1.5 mb-2 text-xs font-medium', st('text-emerald-700', 'text-emerald-400'))}>
-                      <Calendar className="w-3.5 h-3.5" /> 30-Day Plan
-                    </div>
-                    <p className={cn('text-xs leading-relaxed', st('text-slate-600', 'text-zinc-300'))}>{aiPlan.thirty_day_plan}</p>
-                  </div>
-                )}
-              </SentinelCard>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* ── Enforcement Timeline ──────────────────────── */}
         <section>
