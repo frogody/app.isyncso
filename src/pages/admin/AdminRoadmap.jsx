@@ -415,239 +415,225 @@ function JourneyDetailDrawer({ item, onClose, allItems, onAddComment, onToggleSu
 }
 
 // ============================================================
-// JOURNEY ROAD VIEW — The Candy Crush-style winding path
+// JOURNEY ROAD VIEW — Candy Crush winding SVG path
+// Each node colored by CATEGORY, sized by importance.
 // ============================================================
 
 function JourneyRoad({ items, onNodeClick, selectedId }) {
-  const NODES_PER_ROW = 5;
+  const scrollRef = useRef(null);
 
-  // Group items into rows for the winding path
-  const rows = useMemo(() => {
+  const { nodes, pathD, progressD, totalHeight, zones } = useMemo(() => {
     const sorted = [...items].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-    const result = [];
-    for (let i = 0; i < sorted.length; i += NODES_PER_ROW) {
-      const row = sorted.slice(i, i + NODES_PER_ROW);
-      const isReversed = Math.floor(i / NODES_PER_ROW) % 2 === 1;
-      result.push({ items: isReversed ? [...row].reverse() : row, reversed: isReversed, index: Math.floor(i / NODES_PER_ROW) });
-    }
-    return result;
+    if (!sorted.length) return { nodes: [], pathD: '', progressD: '', totalHeight: 300, zones: [] };
+
+    const CENTER = 480;
+    const AMP = 280;
+    const SPACING = 105;
+    const START_Y = 90;
+
+    const nodeList = sorted.map((item, i) => {
+      const x = CENTER + Math.sin(i * 0.55) * AMP;
+      const y = START_Y + i * SPACING;
+      const isMilestone = i === 0 || item.priority === 'critical' ||
+        (i > 0 && sorted[i].category !== sorted[i - 1].category);
+      return { ...item, x, y, isMilestone, nodeIndex: i };
+    });
+
+    // SVG cubic bezier through all nodes
+    const buildPath = (list) => {
+      if (list.length < 1) return '';
+      let d = `M ${list[0].x} ${list[0].y}`;
+      for (let i = 1; i < list.length; i++) {
+        const p = list[i - 1], c = list[i], midY = (p.y + c.y) / 2;
+        d += ` C ${p.x} ${midY}, ${c.x} ${midY}, ${c.x} ${c.y}`;
+      }
+      return d;
+    };
+
+    const fullPath = buildPath(nodeList);
+
+    // Progress path = only done nodes
+    const lastDone = nodeList.reduce((acc, n, i) => n.status === 'done' ? i : acc, -1);
+    const progPath = lastDone >= 1 ? buildPath(nodeList.slice(0, lastDone + 1)) : '';
+
+    // Zone labels where category changes
+    const zoneList = [];
+    let lastCat = null;
+    nodeList.forEach((n) => {
+      if (n.category !== lastCat) {
+        zoneList.push({ category: n.category, y: n.y, x: n.x });
+        lastCat = n.category;
+      }
+    });
+
+    return {
+      nodes: nodeList,
+      pathD: fullPath,
+      progressD: progPath,
+      totalHeight: nodeList.length > 0 ? nodeList[nodeList.length - 1].y + 160 : 300,
+      zones: zoneList,
+    };
   }, [items]);
 
-  // Date labels for milestone markers
-  const getDateLabel = (dateStr) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
+  const doneCount = items.filter(i => i.status === 'done').length;
+  const lastDoneIdx = nodes.reduce((acc, n, i) => n.status === 'done' ? i : acc, -1);
+
+  // Auto-scroll near the frontier
+  useEffect(() => {
+    if (scrollRef.current && lastDoneIdx >= 0 && nodes[lastDoneIdx]) {
+      scrollRef.current.scrollTop = Math.max(0, nodes[lastDoneIdx].y - 240);
+    }
+  }, [nodes, lastDoneIdx]);
+
+  if (!items.length) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Map className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
+        <p className="text-zinc-500 ml-3">No features yet. Start building!</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="relative px-4 py-8">
-      {/* Background grid dots */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
-        backgroundSize: '24px 24px',
-      }} />
+    <div ref={scrollRef} className="relative overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 340px)' }}>
+      <div className="relative mx-auto" style={{ height: totalHeight, width: 960 }}>
+        {/* Subtle dot grid */}
+        <div className="absolute inset-0 opacity-[0.015]" style={{
+          backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+        }} />
 
-      {rows.map((row, rowIdx) => {
-        const isLast = rowIdx === rows.length - 1;
+        {/* SVG Road */}
+        <svg className="absolute inset-0" width="960" height={totalHeight}>
+          <defs>
+            <linearGradient id="roadBg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.08" />
+              <stop offset="50%" stopColor="#a78bfa" stopOpacity="0.06" />
+              <stop offset="100%" stopColor="#f87171" stopOpacity="0.08" />
+            </linearGradient>
+          </defs>
+          {/* Wide glow behind road */}
+          <path d={pathD} fill="none" stroke="url(#roadBg)" strokeWidth="52" strokeLinecap="round" />
+          {/* Dashed center line (unfinished road) */}
+          <path d={pathD} fill="none" stroke="#3f3f46" strokeWidth="2" strokeLinecap="round" strokeDasharray="6 8" opacity="0.5" />
+          {/* Solid progress line (done road) */}
+          {progressD && <path d={progressD} fill="none" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.6" />}
+        </svg>
 
-        return (
-          <div key={rowIdx}>
-            {/* Date marker at start of each row */}
-            {row.items.length > 0 && (
-              <div className={cn(
-                'flex items-center gap-2 mb-4',
-                row.reversed ? 'justify-end pr-4' : 'justify-start pl-4'
-              )}>
-                <div className="flex items-center gap-2 bg-zinc-900/80 border border-zinc-800 rounded-full px-3 py-1">
-                  <CalendarDays className="w-3 h-3 text-zinc-500" />
-                  <span className="text-[10px] text-zinc-400 font-medium">
-                    {getDateLabel(row.reversed ? row.items[row.items.length - 1].created_at : row.items[0].created_at)}
-                  </span>
-                </div>
+        {/* Zone labels */}
+        {zones.map((z, i) => {
+          const side = z.x > 480 ? 'right' : 'left';
+          return (
+            <div key={i} className="absolute pointer-events-none" style={{
+              [side]: side === 'right' ? 960 - z.x + 50 : z.x > 200 ? z.x - 170 : 10,
+              top: z.y - 16,
+            }}>
+              <div className="flex items-center gap-1.5 bg-zinc-900/80 border rounded-full px-2.5 py-0.5 backdrop-blur-sm"
+                style={{ borderColor: (CATEGORY_COLORS[z.category] || '#71717a') + '30' }}>
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[z.category] }} />
+                <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: CATEGORY_COLORS[z.category] }}>{z.category}</span>
               </div>
-            )}
-
-            {/* Node row */}
-            <div className={cn(
-              'flex items-center gap-0 relative',
-              row.reversed ? 'flex-row-reverse' : 'flex-row',
-              'px-4'
-            )}>
-              {row.items.map((item, nodeIdx) => {
-                const status = STATUS_CONFIG[item.status] || STATUS_CONFIG.requested;
-                const catColor = CATEGORY_COLORS[item.category] || '#71717a';
-                const isSelected = selectedId === item.id;
-                const isDone = item.status === 'done';
-                const isActive = item.status === 'in_progress';
-                const isFirst = rowIdx === 0 && nodeIdx === 0 && !row.reversed;
-                const isLastNode = isLast && nodeIdx === row.items.length - 1;
-                const nodeSize = isDone ? 56 : isActive ? 60 : 48;
-
-                return (
-                  <React.Fragment key={item.id}>
-                    {/* Connector line before node (except first) */}
-                    {nodeIdx > 0 && (
-                      <div className="flex-1 h-[3px] min-w-[20px] relative">
-                        <div className="absolute inset-0 rounded-full" style={{
-                          background: `linear-gradient(${row.reversed ? '270deg' : '90deg'}, ${STATUS_CONFIG[row.items[nodeIdx - 1]?.status]?.node || '#3f3f46'}, ${status.node})`,
-                          opacity: isDone && row.items[nodeIdx - 1]?.status === 'done' ? 0.8 : 0.3,
-                        }} />
-                      </div>
-                    )}
-
-                    {/* The node */}
-                    <motion.button
-                      onClick={() => onNodeClick(item)}
-                      whileHover={{ scale: 1.15 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="relative group flex flex-col items-center shrink-0"
-                      style={{ width: 100 }}
-                    >
-                      {/* Glow ring for active/selected */}
-                      {(isActive || isSelected) && (
-                        <motion.div
-                          className="absolute rounded-full"
-                          style={{
-                            width: nodeSize + 16,
-                            height: nodeSize + 16,
-                            top: '50%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            border: `2px solid ${status.node}`,
-                            opacity: 0.3,
-                          }}
-                          animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.15, 0.3] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        />
-                      )}
-
-                      {/* Node circle */}
-                      <div
-                        className={cn(
-                          'rounded-full flex items-center justify-center border-2 transition-all relative',
-                          isSelected && 'ring-2 ring-offset-2 ring-offset-black',
-                          !isDone && !isActive && 'opacity-60',
-                        )}
-                        style={{
-                          width: nodeSize,
-                          height: nodeSize,
-                          borderColor: status.node,
-                          background: isDone
-                            ? `radial-gradient(circle at 35% 35%, ${status.node}30, ${status.node}10)`
-                            : isActive
-                            ? `radial-gradient(circle at 35% 35%, ${status.node}20, transparent)`
-                            : 'rgba(24,24,27,0.8)',
-                          boxShadow: isDone || isActive ? `0 0 20px ${status.glow}` : 'none',
-                          ringColor: isSelected ? status.node : undefined,
-                        }}
-                      >
-                        {/* Category color dot */}
-                        <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-zinc-950" style={{ backgroundColor: catColor }} />
-
-                        {/* Icon inside */}
-                        {isDone ? (
-                          <CheckCircle className="w-5 h-5" style={{ color: status.node }} />
-                        ) : isActive ? (
-                          <motion.div animate={{ rotate: 360 }} transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}>
-                            <Loader2 className="w-5 h-5" style={{ color: status.node }} />
-                          </motion.div>
-                        ) : item.status === 'review' ? (
-                          <Eye className="w-5 h-5" style={{ color: status.node }} />
-                        ) : item.status === 'planned' ? (
-                          <Clock className="w-5 h-5" style={{ color: status.node }} />
-                        ) : (
-                          <Circle className="w-4 h-4" style={{ color: status.node }} />
-                        )}
-
-                        {/* Priority star for critical/high */}
-                        {(item.priority === 'critical' || item.priority === 'high') && (
-                          <div className="absolute -bottom-1 -right-1">
-                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Title label below */}
-                      <div className="mt-2 text-center max-w-[100px]">
-                        <p className={cn(
-                          'text-[10px] font-medium leading-tight line-clamp-2 transition-colors',
-                          isSelected ? 'text-white' : isDone ? 'text-zinc-300' : 'text-zinc-500',
-                          'group-hover:text-white'
-                        )}>
-                          {item.title}
-                        </p>
-                      </div>
-
-                      {/* Tooltip on hover */}
-                      <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
-                        <div className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 shadow-xl max-w-[200px]">
-                          <p className="text-xs font-medium text-white mb-1">{item.title}</p>
-                          <div className="flex items-center gap-2 text-[10px]">
-                            <Badge className={cn('text-[9px] px-1 py-0', status.color)}>{status.label}</Badge>
-                            <span className="text-zinc-500">{item.category}</span>
-                          </div>
-                          {item.description && (
-                            <p className="text-[10px] text-zinc-400 mt-1 line-clamp-2">{item.description}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Start flag */}
-                      {isFirst && (
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2">
-                          <div className="flex items-center gap-1 bg-green-500/20 border border-green-500/30 rounded-full px-2 py-0.5">
-                            <Flag className="w-2.5 h-2.5 text-green-400" />
-                            <span className="text-[9px] text-green-400 font-medium">START</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Current position flag */}
-                      {isLastNode && (
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2">
-                          <motion.div
-                            animate={{ y: [0, -3, 0] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                            className="flex items-center gap-1 bg-cyan-500/20 border border-cyan-500/30 rounded-full px-2 py-0.5"
-                          >
-                            <Zap className="w-2.5 h-2.5 text-cyan-400" />
-                            <span className="text-[9px] text-cyan-400 font-medium">NOW</span>
-                          </motion.div>
-                        </div>
-                      )}
-                    </motion.button>
-                  </React.Fragment>
-                );
-              })}
             </div>
+          );
+        })}
 
-            {/* U-turn connector between rows */}
-            {!isLast && (
-              <div className={cn('flex', row.reversed ? 'justify-start pl-[52px]' : 'justify-end pr-[52px]')}>
-                <div className="relative w-[3px] h-16">
-                  <div className="absolute inset-0 rounded-full" style={{
-                    background: `linear-gradient(180deg, ${STATUS_CONFIG[row.items[row.reversed ? 0 : row.items.length - 1]?.status]?.node || '#3f3f46'}50, ${STATUS_CONFIG[rows[rowIdx + 1]?.items[rows[rowIdx + 1]?.reversed ? rows[rowIdx + 1].items.length - 1 : 0]?.status]?.node || '#3f3f46'}50)`,
-                  }} />
+        {/* Nodes */}
+        {nodes.map((node, i) => {
+          const catColor = CATEGORY_COLORS[node.category] || '#71717a';
+          const statusCfg = STATUS_CONFIG[node.status] || STATUS_CONFIG.requested;
+          const isDone = node.status === 'done';
+          const isActive = node.status === 'in_progress';
+          const isSelected = selectedId === node.id;
+          const size = node.isMilestone ? 54 : 42;
+          const isNow = i === lastDoneIdx + 1 || (lastDoneIdx === nodes.length - 1 && i === nodes.length - 1);
+
+          return (
+            <motion.button
+              key={node.id}
+              onClick={() => onNodeClick(node)}
+              className="absolute group"
+              style={{ left: node.x - size / 2, top: node.y - size / 2, width: size, height: size, zIndex: isSelected ? 20 : 10 }}
+              whileHover={{ scale: 1.2, zIndex: 30 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {/* Pulse ring */}
+              {(isActive || isSelected || isNow) && (
+                <motion.div className="absolute inset-[-8px] rounded-full" style={{ border: `2px solid ${catColor}`, opacity: 0.25 }}
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.25, 0.08, 0.25] }} transition={{ duration: 2, repeat: Infinity }} />
+              )}
+
+              {/* Circle */}
+              <div className={cn('w-full h-full rounded-full flex items-center justify-center border-[2.5px] transition-all',
+                isSelected && 'ring-2 ring-white/20 ring-offset-2 ring-offset-zinc-950'
+              )} style={{
+                borderColor: isDone ? catColor : isActive ? '#facc15' : catColor + '35',
+                background: isDone ? `radial-gradient(circle at 30% 30%, ${catColor}35, ${catColor}10)` :
+                  isActive ? 'radial-gradient(circle at 30% 30%, #facc1525, transparent)' : 'rgba(9,9,11,0.9)',
+                boxShadow: isDone ? `0 0 20px ${catColor}25` : isActive ? '0 0 20px #facc1525' : 'none',
+              }}>
+                {isDone ? <CheckCircle className="w-4 h-4" style={{ color: catColor }} /> :
+                 isActive ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}><Loader2 className="w-4 h-4 text-yellow-400" /></motion.div> :
+                 <Circle className="w-3 h-3" style={{ color: catColor + '50' }} />}
+                {node.isMilestone && isDone && (
+                  <div className="absolute -top-1 -right-1"><Star className="w-3 h-3 fill-yellow-400 text-yellow-400 drop-shadow" /></div>
+                )}
+              </div>
+
+              {/* Label */}
+              <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 w-[110px] text-center pointer-events-none">
+                <p className={cn('text-[9px] font-medium leading-tight line-clamp-2',
+                  isSelected || isDone ? 'text-zinc-300' : 'text-zinc-600', 'group-hover:text-white'
+                )}>{node.title}</p>
+              </div>
+
+              {/* NOW flag */}
+              {isNow && (
+                <motion.div className="absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap"
+                  animate={{ y: [0, -4, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
+                  <div className="flex items-center gap-1 bg-cyan-500/20 border border-cyan-500/40 rounded-full px-2.5 py-0.5 shadow-lg shadow-cyan-500/10">
+                    <Zap className="w-2.5 h-2.5 text-cyan-400" /><span className="text-[9px] text-cyan-400 font-bold">YOU ARE HERE</span>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* START flag */}
+              {i === 0 && !isNow && (
+                <div className="absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                  <div className="flex items-center gap-1 bg-green-500/20 border border-green-500/40 rounded-full px-2.5 py-0.5">
+                    <Flag className="w-2.5 h-2.5 text-green-400" /><span className="text-[9px] text-green-400 font-bold">JAN 5</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Hover tooltip */}
+              <div className="absolute bottom-full mb-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-40 whitespace-nowrap">
+                <div className="bg-zinc-800/95 border border-zinc-700 rounded-xl px-3 py-2 shadow-2xl backdrop-blur-sm min-w-[180px]">
+                  <p className="text-xs font-semibold text-white mb-1">{node.title}</p>
+                  <div className="flex items-center gap-2 text-[10px]">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: catColor }} />
+                    <span style={{ color: catColor }}>{node.category}</span>
+                    <span className="text-zinc-600">&middot;</span>
+                    <Badge className={cn('text-[8px] px-1 py-0', statusCfg.color)}>{statusCfg.label}</Badge>
+                  </div>
+                  {node.description && <p className="text-[10px] text-zinc-400 mt-1 line-clamp-2 whitespace-normal max-w-[200px]">{node.description}</p>}
+                  <p className="text-[9px] text-zinc-600 mt-1">{new Date(node.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                 </div>
               </div>
-            )}
-          </div>
-        );
-      })}
+            </motion.button>
+          );
+        })}
 
-      {/* Trophy at the end */}
-      {items.length > 0 && (
-        <div className="flex justify-center mt-8">
-          <div className="flex items-center gap-2 bg-zinc-900/80 border border-zinc-800 rounded-full px-4 py-2">
-            <Trophy className="w-4 h-4 text-yellow-400" />
-            <span className="text-xs text-zinc-400">
-              <span className="text-white font-bold">{items.filter(i => i.status === 'done').length}</span> features built
-              <span className="text-zinc-600 mx-1">·</span>
-              <span className="text-yellow-400 font-bold">{items.filter(i => i.status !== 'done' && i.status !== 'cancelled').length}</span> in pipeline
-            </span>
+        {/* End trophy */}
+        <div className="absolute left-1/2 -translate-x-1/2" style={{ top: totalHeight - 100 }}>
+          <div className="flex items-center gap-3 bg-zinc-900/90 border border-zinc-800 rounded-2xl px-5 py-3">
+            <Trophy className="w-5 h-5 text-yellow-400" />
+            <div>
+              <p className="text-sm font-bold text-white">{doneCount} features shipped</p>
+              <p className="text-[10px] text-zinc-500">{items.length - doneCount} in pipeline</p>
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
