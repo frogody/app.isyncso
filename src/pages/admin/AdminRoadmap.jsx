@@ -415,221 +415,313 @@ function JourneyDetailDrawer({ item, onClose, allItems, onAddComment, onToggleSu
 }
 
 // ============================================================
-// JOURNEY ROAD VIEW — Candy Crush winding SVG path
-// Each node colored by CATEGORY, sized by importance.
+// JOURNEY ROAD — Module-based winding path
+// Big nodes = app modules (expandable), sub-features branch off.
 // ============================================================
+
+const MODULE_LABELS = {
+  platform: 'Platform Core', crm: 'CRM', finance: 'Finance', products: 'Products',
+  'sync-agent': 'SYNC Agent', talent: 'Talent', growth: 'Growth & Create',
+  marketplace: 'Marketplace', admin: 'Admin Panel', sentinel: 'Sentinel',
+  integrations: 'Integrations', infrastructure: 'Infrastructure', learn: 'Learn',
+  other: 'Other',
+};
+
+const ACHIEVEMENTS = [
+  { at: 10, label: '10 Features!', icon: '🔥' },
+  { at: 25, label: '25 Features!', icon: '⚡' },
+  { at: 50, label: '50 Club!', icon: '🏆' },
+];
 
 function JourneyRoad({ items, onNodeClick, selectedId }) {
   const scrollRef = useRef(null);
+  const [expandedMods, setExpandedMods] = useState(new Set());
 
-  const { nodes, pathD, progressD, totalHeight, zones } = useMemo(() => {
+  const toggleModule = (cat) => {
+    setExpandedMods(prev => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat); else next.add(cat);
+      return next;
+    });
+  };
+
+  // Group items into modules (chronological by first feature)
+  const modules = useMemo(() => {
     const sorted = [...items].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-    if (!sorted.length) return { nodes: [], pathD: '', progressD: '', totalHeight: 300, zones: [] };
-
-    const CENTER = 480;
-    const AMP = 280;
-    const SPACING = 105;
-    const START_Y = 90;
-
-    const nodeList = sorted.map((item, i) => {
-      const x = CENTER + Math.sin(i * 0.55) * AMP;
-      const y = START_Y + i * SPACING;
-      const isMilestone = i === 0 || item.priority === 'critical' ||
-        (i > 0 && sorted[i].category !== sorted[i - 1].category);
-      return { ...item, x, y, isMilestone, nodeIndex: i };
+    const catOrder = [];
+    const catMap = {};
+    sorted.forEach(item => {
+      if (!catMap[item.category]) { catMap[item.category] = []; catOrder.push(item.category); }
+      catMap[item.category].push(item);
     });
-
-    // SVG cubic bezier through all nodes
-    const buildPath = (list) => {
-      if (list.length < 1) return '';
-      let d = `M ${list[0].x} ${list[0].y}`;
-      for (let i = 1; i < list.length; i++) {
-        const p = list[i - 1], c = list[i], midY = (p.y + c.y) / 2;
-        d += ` C ${p.x} ${midY}, ${c.x} ${midY}, ${c.x} ${c.y}`;
-      }
-      return d;
-    };
-
-    const fullPath = buildPath(nodeList);
-
-    // Progress path = only done nodes
-    const lastDone = nodeList.reduce((acc, n, i) => n.status === 'done' ? i : acc, -1);
-    const progPath = lastDone >= 1 ? buildPath(nodeList.slice(0, lastDone + 1)) : '';
-
-    // Zone labels where category changes
-    const zoneList = [];
-    let lastCat = null;
-    nodeList.forEach((n) => {
-      if (n.category !== lastCat) {
-        zoneList.push({ category: n.category, y: n.y, x: n.x });
-        lastCat = n.category;
-      }
-    });
-
-    return {
-      nodes: nodeList,
-      pathD: fullPath,
-      progressD: progPath,
-      totalHeight: nodeList.length > 0 ? nodeList[nodeList.length - 1].y + 160 : 300,
-      zones: zoneList,
-    };
+    return catOrder.map(cat => ({
+      category: cat,
+      label: MODULE_LABELS[cat] || cat,
+      color: CATEGORY_COLORS[cat] || '#71717a',
+      items: catMap[cat],
+      done: catMap[cat].filter(i => i.status === 'done').length,
+      total: catMap[cat].length,
+    }));
   }, [items]);
 
-  const doneCount = items.filter(i => i.status === 'done').length;
-  const lastDoneIdx = nodes.reduce((acc, n, i) => n.status === 'done' ? i : acc, -1);
+  // Layout: compute positions for modules and their expanded features
+  const { layout, pathD, totalHeight } = useMemo(() => {
+    const W = 960, CENTER = W / 2, AMP = 200;
+    const MOD_H = 100; // collapsed module height
+    const FEAT_ROW = 44; // each feature row height
+    const GAP = 30;
+    let y = 80;
+    const lyt = [];
+    let featureRunning = 0;
 
-  // Auto-scroll near the frontier
-  useEffect(() => {
-    if (scrollRef.current && lastDoneIdx >= 0 && nodes[lastDoneIdx]) {
-      scrollRef.current.scrollTop = Math.max(0, nodes[lastDoneIdx].y - 240);
+    modules.forEach((mod, i) => {
+      const x = CENTER + Math.sin(i * 0.65) * AMP;
+      const isExp = expandedMods.has(mod.category);
+      const featH = isExp ? mod.items.length * FEAT_ROW + 16 : 0;
+      lyt.push({ ...mod, x, y: y + MOD_H / 2, top: y, expanded: isExp, featH, index: i });
+      y += MOD_H + featH + GAP;
+      featureRunning += mod.total;
+
+      // Insert achievement markers
+      ACHIEVEMENTS.forEach(ach => {
+        if (featureRunning >= ach.at && featureRunning - mod.total < ach.at) {
+          lyt.push({ isAchievement: true, ...ach, y: y - GAP / 2, x: CENTER });
+          y += 40;
+        }
+      });
+    });
+
+    // SVG path through module centers
+    const modNodes = lyt.filter(l => !l.isAchievement);
+    let d = '';
+    if (modNodes.length >= 1) {
+      d = `M ${modNodes[0].x} ${modNodes[0].y}`;
+      for (let j = 1; j < modNodes.length; j++) {
+        const p = modNodes[j - 1], c = modNodes[j], midY = (p.y + c.y) / 2;
+        d += ` C ${p.x} ${midY}, ${c.x} ${midY}, ${c.x} ${c.y}`;
+      }
     }
-  }, [nodes, lastDoneIdx]);
+    return { layout: lyt, pathD: d, totalHeight: y + 80 };
+  }, [modules, expandedMods]);
+
+  const totalDone = items.filter(i => i.status === 'done').length;
+  const totalAll = items.length;
+  const level = modules.length;
+  const currentMod = modules.find(m => m.done < m.total) || modules[modules.length - 1];
 
   if (!items.length) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Map className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-        <p className="text-zinc-500 ml-3">No features yet. Start building!</p>
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
+        <Map className="w-12 h-12 text-zinc-700" />
+        <p className="text-zinc-500">No features yet. Start building!</p>
       </div>
     );
   }
 
   return (
-    <div ref={scrollRef} className="relative overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 340px)' }}>
-      <div className="relative mx-auto" style={{ height: totalHeight, width: 960 }}>
-        {/* Subtle dot grid */}
-        <div className="absolute inset-0 opacity-[0.015]" style={{
-          backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
-          backgroundSize: '32px 32px',
-        }} />
-
-        {/* SVG Road */}
-        <svg className="absolute inset-0" width="960" height={totalHeight}>
-          <defs>
-            <linearGradient id="roadBg" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.08" />
-              <stop offset="50%" stopColor="#a78bfa" stopOpacity="0.06" />
-              <stop offset="100%" stopColor="#f87171" stopOpacity="0.08" />
-            </linearGradient>
-          </defs>
-          {/* Wide glow behind road */}
-          <path d={pathD} fill="none" stroke="url(#roadBg)" strokeWidth="52" strokeLinecap="round" />
-          {/* Dashed center line (unfinished road) */}
-          <path d={pathD} fill="none" stroke="#3f3f46" strokeWidth="2" strokeLinecap="round" strokeDasharray="6 8" opacity="0.5" />
-          {/* Solid progress line (done road) */}
-          {progressD && <path d={progressD} fill="none" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.6" />}
-        </svg>
-
-        {/* Zone labels */}
-        {zones.map((z, i) => {
-          const side = z.x > 480 ? 'right' : 'left';
-          return (
-            <div key={i} className="absolute pointer-events-none" style={{
-              [side]: side === 'right' ? 960 - z.x + 50 : z.x > 200 ? z.x - 170 : 10,
-              top: z.y - 16,
-            }}>
-              <div className="flex items-center gap-1.5 bg-zinc-900/80 border rounded-full px-2.5 py-0.5 backdrop-blur-sm"
-                style={{ borderColor: (CATEGORY_COLORS[z.category] || '#71717a') + '30' }}>
-                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[z.category] }} />
-                <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: CATEGORY_COLORS[z.category] }}>{z.category}</span>
-              </div>
+    <div className="space-y-0">
+      {/* Hero stats bar */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800/50">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 flex items-center justify-center">
+              <span className="text-sm font-black text-cyan-400">{level}</span>
             </div>
-          );
-        })}
-
-        {/* Nodes */}
-        {nodes.map((node, i) => {
-          const catColor = CATEGORY_COLORS[node.category] || '#71717a';
-          const statusCfg = STATUS_CONFIG[node.status] || STATUS_CONFIG.requested;
-          const isDone = node.status === 'done';
-          const isActive = node.status === 'in_progress';
-          const isSelected = selectedId === node.id;
-          const size = node.isMilestone ? 54 : 42;
-          const isNow = i === lastDoneIdx + 1 || (lastDoneIdx === nodes.length - 1 && i === nodes.length - 1);
-
-          return (
-            <motion.button
-              key={node.id}
-              onClick={() => onNodeClick(node)}
-              className="absolute group"
-              style={{ left: node.x - size / 2, top: node.y - size / 2, width: size, height: size, zIndex: isSelected ? 20 : 10 }}
-              whileHover={{ scale: 1.2, zIndex: 30 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {/* Pulse ring */}
-              {(isActive || isSelected || isNow) && (
-                <motion.div className="absolute inset-[-8px] rounded-full" style={{ border: `2px solid ${catColor}`, opacity: 0.25 }}
-                  animate={{ scale: [1, 1.2, 1], opacity: [0.25, 0.08, 0.25] }} transition={{ duration: 2, repeat: Infinity }} />
-              )}
-
-              {/* Circle */}
-              <div className={cn('w-full h-full rounded-full flex items-center justify-center border-[2.5px] transition-all',
-                isSelected && 'ring-2 ring-white/20 ring-offset-2 ring-offset-zinc-950'
-              )} style={{
-                borderColor: isDone ? catColor : isActive ? '#facc15' : catColor + '35',
-                background: isDone ? `radial-gradient(circle at 30% 30%, ${catColor}35, ${catColor}10)` :
-                  isActive ? 'radial-gradient(circle at 30% 30%, #facc1525, transparent)' : 'rgba(9,9,11,0.9)',
-                boxShadow: isDone ? `0 0 20px ${catColor}25` : isActive ? '0 0 20px #facc1525' : 'none',
-              }}>
-                {isDone ? <CheckCircle className="w-4 h-4" style={{ color: catColor }} /> :
-                 isActive ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}><Loader2 className="w-4 h-4 text-yellow-400" /></motion.div> :
-                 <Circle className="w-3 h-3" style={{ color: catColor + '50' }} />}
-                {node.isMilestone && isDone && (
-                  <div className="absolute -top-1 -right-1"><Star className="w-3 h-3 fill-yellow-400 text-yellow-400 drop-shadow" /></div>
-                )}
-              </div>
-
-              {/* Label */}
-              <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 w-[110px] text-center pointer-events-none">
-                <p className={cn('text-[9px] font-medium leading-tight line-clamp-2',
-                  isSelected || isDone ? 'text-zinc-300' : 'text-zinc-600', 'group-hover:text-white'
-                )}>{node.title}</p>
-              </div>
-
-              {/* NOW flag */}
-              {isNow && (
-                <motion.div className="absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap"
-                  animate={{ y: [0, -4, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
-                  <div className="flex items-center gap-1 bg-cyan-500/20 border border-cyan-500/40 rounded-full px-2.5 py-0.5 shadow-lg shadow-cyan-500/10">
-                    <Zap className="w-2.5 h-2.5 text-cyan-400" /><span className="text-[9px] text-cyan-400 font-bold">YOU ARE HERE</span>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* START flag */}
-              {i === 0 && !isNow && (
-                <div className="absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                  <div className="flex items-center gap-1 bg-green-500/20 border border-green-500/40 rounded-full px-2.5 py-0.5">
-                    <Flag className="w-2.5 h-2.5 text-green-400" /><span className="text-[9px] text-green-400 font-bold">JAN 5</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Hover tooltip */}
-              <div className="absolute bottom-full mb-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-40 whitespace-nowrap">
-                <div className="bg-zinc-800/95 border border-zinc-700 rounded-xl px-3 py-2 shadow-2xl backdrop-blur-sm min-w-[180px]">
-                  <p className="text-xs font-semibold text-white mb-1">{node.title}</p>
-                  <div className="flex items-center gap-2 text-[10px]">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: catColor }} />
-                    <span style={{ color: catColor }}>{node.category}</span>
-                    <span className="text-zinc-600">&middot;</span>
-                    <Badge className={cn('text-[8px] px-1 py-0', statusCfg.color)}>{statusCfg.label}</Badge>
-                  </div>
-                  {node.description && <p className="text-[10px] text-zinc-400 mt-1 line-clamp-2 whitespace-normal max-w-[200px]">{node.description}</p>}
-                  <p className="text-[9px] text-zinc-600 mt-1">{new Date(node.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                </div>
-              </div>
-            </motion.button>
-          );
-        })}
-
-        {/* End trophy */}
-        <div className="absolute left-1/2 -translate-x-1/2" style={{ top: totalHeight - 100 }}>
-          <div className="flex items-center gap-3 bg-zinc-900/90 border border-zinc-800 rounded-2xl px-5 py-3">
-            <Trophy className="w-5 h-5 text-yellow-400" />
             <div>
-              <p className="text-sm font-bold text-white">{doneCount} features shipped</p>
-              <p className="text-[10px] text-zinc-500">{items.length - doneCount} in pipeline</p>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Level</p>
+              <p className="text-xs font-semibold text-white">{modules.length} Modules</p>
+            </div>
+          </div>
+          <div className="h-8 w-px bg-zinc-800" />
+          <div>
+            <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Features Shipped</p>
+            <p className="text-xs font-semibold text-white">{totalDone}<span className="text-zinc-600">/{totalAll}</span></p>
+          </div>
+          <div className="h-8 w-px bg-zinc-800" />
+          <div className="w-32">
+            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Overall Progress</p>
+            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <motion.div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-green-400"
+                initial={{ width: 0 }} animate={{ width: `${totalAll ? (totalDone / totalAll * 100) : 0}%` }}
+                transition={{ duration: 1, ease: 'easeOut' }} />
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {currentMod && (
+            <Badge className="text-[10px] px-2 py-0.5" style={{ backgroundColor: currentMod.color + '20', color: currentMod.color, borderColor: currentMod.color + '30' }}>
+              <Zap className="w-3 h-3 mr-1" />Building: {MODULE_LABELS[currentMod.category] || currentMod.category}
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      {/* The Road */}
+      <div ref={scrollRef} className="relative overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 420px)' }}>
+        <div className="relative mx-auto" style={{ height: totalHeight, width: 960 }}>
+          {/* Dot grid */}
+          <div className="absolute inset-0 opacity-[0.012]" style={{
+            backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '32px 32px',
+          }} />
+
+          {/* SVG road */}
+          <svg className="absolute inset-0" width="960" height={totalHeight} style={{ pointerEvents: 'none' }}>
+            <defs>
+              <linearGradient id="roadGlow" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.06" />
+                <stop offset="50%" stopColor="#a78bfa" stopOpacity="0.04" />
+                <stop offset="100%" stopColor="#f87171" stopOpacity="0.06" />
+              </linearGradient>
+            </defs>
+            <path d={pathD} fill="none" stroke="url(#roadGlow)" strokeWidth="80" strokeLinecap="round" />
+            <path d={pathD} fill="none" stroke="#27272a" strokeWidth="3" strokeLinecap="round" strokeDasharray="8 10" opacity="0.6" />
+          </svg>
+
+          {/* Render modules + achievements */}
+          {layout.map((item, i) => {
+            if (item.isAchievement) {
+              return (
+                <div key={`ach-${item.at}`} className="absolute left-1/2 -translate-x-1/2 z-20" style={{ top: item.y - 16 }}>
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-full px-4 py-1.5">
+                    <span className="text-base">{item.icon}</span>
+                    <span className="text-xs font-bold text-yellow-400">{item.label}</span>
+                  </motion.div>
+                </div>
+              );
+            }
+
+            const mod = item;
+            const pct = mod.total ? Math.round(mod.done / mod.total * 100) : 0;
+            const allDone = mod.done === mod.total;
+            const side = mod.x > 480 ? 'left' : 'right'; // features expand opposite side
+            const NODE_SIZE = 68;
+
+            return (
+              <div key={mod.category} className="absolute" style={{ left: 0, right: 0, top: mod.top }}>
+                {/* Module node */}
+                <motion.button
+                  onClick={() => toggleModule(mod.category)}
+                  className="absolute group z-10"
+                  style={{ left: mod.x - NODE_SIZE / 2, top: 0, width: NODE_SIZE, height: NODE_SIZE }}
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.96 }}
+                >
+                  {/* Progress ring (SVG) */}
+                  <svg className="absolute inset-[-6px]" width={NODE_SIZE + 12} height={NODE_SIZE + 12} viewBox="0 0 80 80">
+                    <circle cx="40" cy="40" r="36" fill="none" stroke="#27272a" strokeWidth="3" />
+                    <circle cx="40" cy="40" r="36" fill="none" stroke={mod.color} strokeWidth="3"
+                      strokeDasharray={`${pct * 2.26} ${226 - pct * 2.26}`}
+                      strokeDashoffset="56.5" strokeLinecap="round" opacity="0.7" />
+                  </svg>
+
+                  {/* Node body */}
+                  <div className={cn('w-full h-full rounded-2xl flex flex-col items-center justify-center border-2 transition-all relative',
+                    mod.expanded && 'ring-2 ring-white/10 ring-offset-2 ring-offset-zinc-950'
+                  )} style={{
+                    borderColor: allDone ? mod.color : mod.color + '50',
+                    background: allDone
+                      ? `radial-gradient(circle at 30% 30%, ${mod.color}25, ${mod.color}08)`
+                      : `radial-gradient(circle at 30% 30%, ${mod.color}10, rgba(9,9,11,0.95))`,
+                    boxShadow: allDone ? `0 0 30px ${mod.color}20` : 'none',
+                  }}>
+                    <span className="text-lg font-black" style={{ color: mod.color }}>{mod.done}</span>
+                    <span className="text-[8px] text-zinc-500 font-medium">/{mod.total}</span>
+                    {allDone && <Star className="absolute -top-1.5 -right-1.5 w-4 h-4 fill-yellow-400 text-yellow-400" />}
+                  </div>
+
+                  {/* Label below */}
+                  <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-center whitespace-nowrap pointer-events-none">
+                    <p className={cn('text-[11px] font-bold', allDone ? 'text-zinc-200' : 'text-zinc-400')} style={{ color: allDone ? mod.color : undefined }}>
+                      {mod.label}
+                    </p>
+                    <p className="text-[9px] text-zinc-600">{pct}% complete</p>
+                  </div>
+
+                  {/* Expand hint */}
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
+                    <motion.div animate={{ rotate: mod.expanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                      <ChevronDown className="w-3 h-3 text-zinc-600" />
+                    </motion.div>
+                  </div>
+                </motion.button>
+
+                {/* Expanded features list */}
+                <AnimatePresence>
+                  {mod.expanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="absolute z-20"
+                      style={{
+                        [side]: side === 'right' ? mod.x + NODE_SIZE / 2 + 24 : undefined,
+                        left: side === 'left' ? mod.x - NODE_SIZE / 2 - 320 : undefined,
+                        top: 6,
+                        width: 296,
+                      }}
+                    >
+                      {/* Connector line from node to list */}
+                      <div className="absolute top-8" style={{
+                        [side === 'right' ? 'left' : 'right']: -16,
+                        width: 16, height: 2, background: mod.color + '40',
+                      }} />
+
+                      <div className="bg-zinc-900/95 border rounded-xl overflow-hidden backdrop-blur-sm" style={{ borderColor: mod.color + '25' }}>
+                        {/* List header */}
+                        <div className="px-3 py-2 border-b flex items-center gap-2" style={{ borderColor: mod.color + '15', background: mod.color + '08' }}>
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: mod.color }} />
+                          <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: mod.color }}>{mod.label}</span>
+                          <span className="text-[9px] text-zinc-600 ml-auto">{mod.done}/{mod.total} shipped</span>
+                        </div>
+                        {/* Feature rows */}
+                        <div className="max-h-[280px] overflow-y-auto">
+                          {mod.items.map((feat) => {
+                            const isDone = feat.status === 'done';
+                            const isActive = feat.status === 'in_progress';
+                            const isSelected = selectedId === feat.id;
+                            return (
+                              <button
+                                key={feat.id}
+                                onClick={(e) => { e.stopPropagation(); onNodeClick(feat); }}
+                                className={cn(
+                                  'w-full flex items-center gap-2.5 px-3 py-2 text-left transition-all hover:bg-white/[0.03]',
+                                  isSelected && 'bg-white/[0.05]'
+                                )}
+                              >
+                                {isDone ? (
+                                  <CheckCircle className="w-3.5 h-3.5 shrink-0" style={{ color: mod.color }} />
+                                ) : isActive ? (
+                                  <Loader2 className="w-3.5 h-3.5 shrink-0 text-yellow-400 animate-spin" />
+                                ) : (
+                                  <Circle className="w-3.5 h-3.5 shrink-0 text-zinc-600" />
+                                )}
+                                <span className={cn('text-[11px] truncate flex-1', isDone ? 'text-zinc-300' : 'text-zinc-500')}>
+                                  {feat.title}
+                                </span>
+                                {(feat.tags || []).length > 0 && (
+                                  <span className="text-[8px] text-zinc-600 shrink-0">{feat.tags.length} tags</span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+
+          {/* End marker */}
+          <div className="absolute left-1/2 -translate-x-1/2" style={{ top: totalHeight - 60 }}>
+            <div className="flex items-center gap-3 bg-zinc-900/90 border border-zinc-800 rounded-2xl px-5 py-3">
+              <Trophy className="w-5 h-5 text-yellow-400" />
+              <div>
+                <p className="text-sm font-bold text-white">{totalDone} shipped across {modules.length} modules</p>
+                <p className="text-[10px] text-zinc-500">{totalAll - totalDone} in pipeline &middot; keep building</p>
+              </div>
             </div>
           </div>
         </div>
