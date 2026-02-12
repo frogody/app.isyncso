@@ -295,6 +295,7 @@ import InventoryReceiving from "./InventoryReceiving";
 import InventoryShipping from "./InventoryShipping";
 import PalletBuilder from "./PalletBuilder";
 import ShipmentVerification from "./ShipmentVerification";
+import Warehouse from "./Warehouse";
 
 import InventoryExpenses from "./InventoryExpenses";
 import InventoryReturns from "./InventoryReturns";
@@ -668,6 +669,7 @@ const PAGES = {
 
     PalletBuilder: PalletBuilder,
     ShipmentVerification: ShipmentVerification,
+    Warehouse: Warehouse,
 
     InventoryExpenses: InventoryExpenses,
 
@@ -1095,11 +1097,11 @@ function PagesContent() {
 
                 <Route path="/Products" element={<Products />} />
 
-                <Route path="/ProductsDigital" element={<ProductsDigital />} />
+                <Route path="/ProductsDigital" element={<Navigate to="/Products?tab=digital" replace />} />
 
-                <Route path="/ProductsPhysical" element={<ProductsPhysical />} />
+                <Route path="/ProductsPhysical" element={<Navigate to="/Products?tab=physical" replace />} />
 
-                <Route path="/ProductsServices" element={<ProductsServices />} />
+                <Route path="/ProductsServices" element={<Navigate to="/Products?tab=service" replace />} />
 
                 <Route path="/ProductDetail" element={<ProductDetail />} />
 
@@ -1135,16 +1137,15 @@ function PagesContent() {
                 <Route path="/StudioVoice" element={<StudioVoice />} />
                 <Route path="/StudioAvatar" element={<StudioAvatar />} />
 
-                <Route path="/InventoryReceiving" element={<InventoryReceiving />} />
-
-                <Route path="/InventoryShipping" element={<InventoryShipping />} />
-
-                <Route path="/PalletBuilder" element={<PalletBuilder />} />
-                <Route path="/ShipmentVerification" element={<ShipmentVerification />} />
+                <Route path="/Warehouse" element={<Warehouse />} />
+                <Route path="/InventoryReceiving" element={<Navigate to="/Warehouse?tab=receiving" replace />} />
+                <Route path="/InventoryShipping" element={<Navigate to="/Warehouse?tab=shipping" replace />} />
+                <Route path="/PalletBuilder" element={<Navigate to="/Warehouse?tab=packing" replace />} />
+                <Route path="/ShipmentVerification" element={<Navigate to="/Warehouse?tab=verification" replace />} />
 
                 <Route path="/StockPurchases" element={<StockPurchases />} />
 
-                <Route path="/EmailPoolSettings" element={<EmailPoolSettings />} />
+                <Route path="/EmailPoolSettings" element={<Navigate to="/Settings?tab=email-pool" replace />} />
 
                 <Route path="/SyncAgent" element={<SyncAgent />} />
 

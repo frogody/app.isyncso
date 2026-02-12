@@ -190,7 +190,7 @@ function BarcodeScanner({ onScan, isActive }) {
 // MAIN PAGE
 // =============================================================================
 
-export default function PalletBuilder() {
+export default function PalletBuilder({ embedded = false }) {
   const { t, theme, toggleTheme } = useTheme();
   const { user } = useUser();
   const companyId = user?.company_id;
@@ -575,13 +575,13 @@ export default function PalletBuilder() {
   // RENDER
   // ------------------------------------------------------------------
 
-  return (
-    <PermissionGuard permission="inventory.manage">
-      <div className={`min-h-screen ${t("bg-gray-50", "bg-black")} transition-colors`}>
-        <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
+  const pageContent = (
+      <div className={embedded ? "" : `min-h-screen ${t("bg-gray-50", "bg-black")} transition-colors`}>
+        <div className={embedded ? "space-y-4" : "max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4"}>
 
           {/* Header */}
           <div className="flex items-center justify-between">
+            {!embedded && (
             <div>
               <h1 className={`text-2xl font-bold ${t("text-gray-900", "text-white")} flex items-center gap-3`}>
                 <Boxes className="w-7 h-7 text-cyan-400" />
@@ -591,6 +591,7 @@ export default function PalletBuilder() {
                 Build pallets within shipments for packing and shipping
               </p>
             </div>
+            )}
             <div className="flex items-center gap-2">
               <Button
                 onClick={() => setShowNewShipmentDialog(true)}
@@ -1362,6 +1363,13 @@ export default function PalletBuilder() {
 
         </div>
       </div>
+  );
+
+  if (embedded) return pageContent;
+
+  return (
+    <PermissionGuard permission="inventory.manage">
+      {pageContent}
     </PermissionGuard>
   );
 }

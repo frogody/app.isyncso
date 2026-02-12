@@ -677,7 +677,7 @@ function SessionTimer({ startedAt }) {
   return <span>{elapsed}</span>;
 }
 
-export default function InventoryReceiving() {
+export default function InventoryReceiving({ embedded = false }) {
   const { user } = useUser();
   const { theme, toggleTheme, t } = useTheme();
   const [scanResult, setScanResult] = useState(null);
@@ -930,15 +930,16 @@ export default function InventoryReceiving() {
     }
   };
 
-  return (
-    <PermissionGuard permission="inventory.manage" showMessage>
-      <ProductsPageTransition>
-        <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
+  const pageContent = (
+    <>
+        <div className={embedded ? "space-y-4" : "max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4"}>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+            {!embedded && (
             <div>
               <h1 className={`text-lg font-bold ${t('text-gray-900', 'text-white')}`}>Receiving</h1>
               <p className={`text-xs ${t('text-gray-600', 'text-zinc-400')}`}>Scan and receive incoming inventory</p>
             </div>
+            )}
             <div className="flex items-center gap-2">
               {!activeSession && (
                 <Button
@@ -1364,6 +1365,15 @@ export default function InventoryReceiving() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+    </>
+  );
+
+  if (embedded) return pageContent;
+
+  return (
+    <PermissionGuard permission="inventory.manage" showMessage>
+      <ProductsPageTransition>
+        {pageContent}
       </ProductsPageTransition>
     </PermissionGuard>
   );

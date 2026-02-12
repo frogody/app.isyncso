@@ -2089,7 +2089,7 @@ export default function ProductDetail() {
     setInquiryModalOpen(true);
   };
 
-  const backUrl = isPhysical ? 'ProductsPhysical' : isService ? 'ProductsServices' : 'ProductsDigital';
+  const backTab = isPhysical ? 'physical' : isService ? 'service' : 'digital';
 
   // Loading State
   if (loading) {
@@ -2139,7 +2139,7 @@ export default function ProductDetail() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Link to={createPageUrl(backUrl)}>
+            <Link to={`/Products?tab=${backTab}`}>
               <Button variant="ghost" size="sm" className={cn(t('text-slate-500', 'text-zinc-400'), t('hover:text-slate-900', 'hover:text-white'), "-ml-2")}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back

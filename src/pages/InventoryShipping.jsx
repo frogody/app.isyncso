@@ -386,7 +386,7 @@ function OverdueAlert({ count, onClick }) {
   );
 }
 
-export default function InventoryShipping() {
+export default function InventoryShipping({ embedded = false }) {
   const { user } = useUser();
   const { theme, toggleTheme, t } = useTheme();
   const [tasks, setTasks] = useState([]);
@@ -468,15 +468,15 @@ export default function InventoryShipping() {
     setShowShipModal(true);
   };
 
-  return (
-    <ProductsPageTransition>
-      <PermissionGuard permission="shipping.manage" showMessage>
-        <div className={`max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4 ${t('bg-white text-slate-900', 'bg-transparent text-white')}`}>
+  const pageContent = (
+        <div className={`${embedded ? 'space-y-4' : 'max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4'} ${t('text-slate-900', 'text-white')}`}>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+            {!embedded && (
             <div>
               <h1 className={`text-lg font-bold ${t('text-slate-900', 'text-white')}`}>Shipping</h1>
               <p className={`text-xs ${t('text-slate-500', 'text-zinc-400')}`}>Manage outbound shipments</p>
             </div>
+            )}
             <div className="flex items-center gap-2">
               <button
                 onClick={toggleTheme}
@@ -593,6 +593,14 @@ export default function InventoryShipping() {
             t={t}
           />
         </div>
+  );
+
+  if (embedded) return pageContent;
+
+  return (
+    <ProductsPageTransition>
+      <PermissionGuard permission="shipping.manage" showMessage>
+        {pageContent}
       </PermissionGuard>
     </ProductsPageTransition>
   );

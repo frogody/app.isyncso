@@ -34,12 +34,13 @@ import PortalBranding from "@/components/settings/PortalBranding";
 import AppsManagerModal from "@/components/layout/AppsManagerModal";
 import TeamManagement from "@/pages/TeamManagement";
 import Integrations from "@/pages/Integrations";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { LayoutGrid, Sun, Moon } from "lucide-react";
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { SettingsPageTransition } from '@/components/settings/ui';
 import BolcomSettings from "@/components/settings/BolcomSettings";
 import ShopifySettings from "@/components/settings/ShopifySettings";
+import EmailPoolSettings from "@/pages/EmailPoolSettings";
 
 export default function Settings() {
   const { user, company, settings: userSettings, updateUser, updateCompany, updateSettings, isLoading: userLoading } = useUser();
@@ -49,7 +50,8 @@ export default function Settings() {
   const [activeChannel, setActiveChannel] = useState('bolcom');
   const [refreshingCompany, setRefreshingCompany] = useState(false);
   const [settings, setSettings] = useState(null);
-  const [activeTab, setActiveTab] = useState("profile");
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || "profile");
 
   const [profileForm, setProfileForm] = useState({
     full_name: "",
@@ -629,6 +631,7 @@ export default function Settings() {
     { id: 'teams', label: 'Teams & Rights', icon: Shield, color: 'cyan' },
     { id: 'integrations', label: 'Integrations', icon: Plug, color: 'cyan' },
     { id: 'channels', label: 'Channels', icon: Radio, color: 'cyan' },
+    { id: 'email-pool', label: 'Email Pool', icon: Mail, color: 'cyan' },
     { id: 'workspace', label: 'Workspace', icon: LayoutGrid, color: 'cyan' },
     { id: 'privacy', label: 'Privacy', icon: Lock, color: 'red' },
     ...(isSuperAdmin ? [{ id: 'admin', label: 'Admin', icon: Brain, color: 'purple' }] : [])
@@ -1504,6 +1507,18 @@ export default function Settings() {
                   </div>
                   {activeChannel === 'bolcom' && <BolcomSettings />}
                   {activeChannel === 'shopify' && <ShopifySettings />}
+                </motion.div>
+              )}
+
+              {/* EMAIL POOL TAB */}
+              {activeTab === 'email-pool' && (
+                <motion.div
+                  key="email-pool"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                >
+                  <EmailPoolSettings embedded />
                 </motion.div>
               )}
 

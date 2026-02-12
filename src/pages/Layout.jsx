@@ -451,33 +451,19 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   }
 
   // PRODUCTS routes
-  if (path.startsWith('/products') || path.startsWith('/productdetail') || path.startsWith('/inventory') || path.startsWith('/stockpurchases') || path.startsWith('/emailpoolsettings')) {
+  if (path.startsWith('/products') || path.startsWith('/productdetail') || path.startsWith('/inventory') || path.startsWith('/stockpurchases') || path.startsWith('/warehouse')) {
     const { digitalEnabled = true, physicalEnabled = true, serviceEnabled = true } = productsSettings;
 
     // Build items list based on settings
     const items = [
-      { label: 'Overview', path: createPageUrl('Products'), icon: Package },
+      { label: 'Products', path: createPageUrl('Products'), icon: Package },
     ];
-
-    if (digitalEnabled) {
-      items.push({ label: 'Digital', path: createPageUrl('ProductsDigital'), icon: Cloud });
-    }
-    if (physicalEnabled) {
-      items.push({ label: 'Physical', path: createPageUrl('ProductsPhysical'), icon: Box });
-    }
-    if (serviceEnabled) {
-      items.push({ label: 'Services', path: createPageUrl('ProductsServices'), icon: Briefcase });
-    }
 
     // Inventory management items (only for physical products)
     if (physicalEnabled) {
-      items.push({ label: 'Receiving', path: createPageUrl('InventoryReceiving'), icon: PackageCheck });
-      items.push({ label: 'Shipping', path: createPageUrl('InventoryShipping'), icon: Truck });
-      items.push({ label: 'Pallet Builder', path: createPageUrl('PalletBuilder'), icon: Boxes });
-      items.push({ label: 'Verification', path: createPageUrl('ShipmentVerification'), icon: ClipboardCheck });
+      items.push({ label: 'Warehouse', path: createPageUrl('Warehouse'), icon: Boxes });
       items.push({ label: 'Returns', path: createPageUrl('InventoryReturns'), icon: RotateCcw });
       items.push({ label: 'Stock Purchases', path: createPageUrl('StockPurchases'), icon: Receipt });
-      items.push({ label: 'Email Pool', path: createPageUrl('EmailPoolSettings'), icon: Mail });
     }
 
     return {

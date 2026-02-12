@@ -1,24 +1,20 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
-  Package, Cloud, Box, Briefcase, Plus, ArrowRight,
-  Search, Tag,
-  Eye, Edit2,
-  Settings, Loader2
+  Package, Cloud, Box, Briefcase, Plus,
+  Settings, Loader2, Layers
 } from "lucide-react";
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { ProductsPageTransition } from '@/components/products/ui';
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
-import { Product, ProductCategory } from "@/api/entities";
-import { db, supabase } from "@/api/supabaseClient";
+import { Product } from "@/api/entities";
+import { db } from "@/api/supabaseClient";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -41,87 +37,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import ProductTypeContent from "@/components/products/ProductTypeContent";
 
-const STATUS_COLORS = {
-  published: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/30' },
-  draft: { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/30' },
-  archived: { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/30' },
-};
-
-const TYPE_ICONS = {
-  digital: Cloud,
-  physical: Box,
-  service: Briefcase,
-};
-
-function ProductCard({ product }) {
-  const { t } = useTheme();
-  const Icon = TYPE_ICONS[product.type] || Package;
-  const status = STATUS_COLORS[product.status] || STATUS_COLORS.draft;
-
-  return (
-    <Link to={createPageUrl(`ProductDetail?type=${product.type}&slug=${product.slug}`)}>
-      <div className={cn("group p-4 rounded-xl border transition-all cursor-pointer", t('bg-white shadow-sm', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'), "hover:border-cyan-500/30")}>
-        <div className="flex items-start gap-4">
-          {/* Product Image or Icon */}
-          <div className="w-16 h-16 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
-            {product.featured_image?.url ? (
-              <img
-                src={product.featured_image.url}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <Icon className="w-7 h-7 text-cyan-400" />
-            )}
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <h3 className={cn("font-medium truncate group-hover:text-cyan-400 transition-colors", t('text-slate-900', 'text-white'))}>
-                  {product.name}
-                </h3>
-                <p className={cn("text-sm mt-0.5 line-clamp-1", t('text-slate-400', 'text-zinc-500'))}>
-                  {product.tagline || product.short_description || 'No description'}
-                </p>
-              </div>
-              <Badge className={`${status.bg} ${status.text} ${status.border} text-xs`}>
-                {product.status}
-              </Badge>
-            </div>
-
-            <div className="flex items-center gap-3 mt-3">
-              <span className={`inline-flex items-center gap-1 text-xs ${product.type === 'digital' ? 'text-cyan-400' : 'text-cyan-400'}`}>
-                <Icon className="w-3 h-3" />
-                {product.type}
-              </span>
-              {product.category && (
-                <span className={cn("text-xs", t('text-slate-400', 'text-zinc-500'))}>
-                  {product.category}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-
-// Settings key for localStorage (synced with UserAppConfig when available)
 const PRODUCTS_SETTINGS_KEY = 'isyncso_products_settings';
+
+const TABS = [
+  { id: "all", label: "All", icon: Layers, alwaysShow: true },
+  { id: "digital", label: "Digital", icon: Cloud, settingKey: "digitalEnabled" },
+  { id: "physical", label: "Physical", icon: Box, settingKey: "physicalEnabled" },
+  { id: "service", label: "Services", icon: Briefcase, settingKey: "serviceEnabled" },
+];
 
 export default function Products() {
   const { user, companyId } = useUser();
   const { theme, toggleTheme, t } = useTheme();
   const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [serverStats, setServerStats] = useState({ total: 0, physical: 0, digital: 0, service: 0, published: 0, draft: 0, categories: 0 });
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "all");
 
   // Product type settings
   const [digitalEnabled, setDigitalEnabled] = useState(true);
@@ -138,16 +70,14 @@ export default function Products() {
     status: 'draft'
   });
 
-  // SEO: Set page title
   useEffect(() => {
     document.title = 'Products | iSyncSO';
     return () => { document.title = 'iSyncSO'; };
   }, []);
 
-  // Load settings from localStorage and UserAppConfig
+  // Load settings
   useEffect(() => {
     const loadSettings = async () => {
-      // First try localStorage for immediate UI
       const localSettings = localStorage.getItem(PRODUCTS_SETTINGS_KEY);
       if (localSettings) {
         try {
@@ -160,7 +90,6 @@ export default function Products() {
         }
       }
 
-      // Then try to load from UserAppConfig
       if (user?.id) {
         try {
           const configs = await db.entities.UserAppConfig.filter({ user_id: user.id });
@@ -169,7 +98,6 @@ export default function Products() {
             setDigitalEnabled(settings.digitalEnabled ?? true);
             setPhysicalEnabled(settings.physicalEnabled ?? true);
             setServiceEnabled(settings.serviceEnabled ?? true);
-            // Sync to localStorage
             localStorage.setItem(PRODUCTS_SETTINGS_KEY, JSON.stringify(settings));
           }
         } catch (e) {
@@ -181,30 +109,39 @@ export default function Products() {
     loadSettings();
   }, [user?.id]);
 
+  const settingsMap = { digitalEnabled, physicalEnabled, serviceEnabled };
+
+  const visibleTabs = TABS.filter(tab =>
+    tab.alwaysShow || settingsMap[tab.settingKey]
+  );
+
+  // If current tab is hidden by settings, reset to "all"
+  useEffect(() => {
+    if (!visibleTabs.find(t => t.id === activeTab)) {
+      setActiveTab("all");
+      setSearchParams({ tab: "all" }, { replace: true });
+    }
+  }, [digitalEnabled, physicalEnabled, serviceEnabled]);
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    setSearchParams({ tab: tabId }, { replace: true });
+  };
+
   // Save settings
   const saveSettings = async (digital, physical, service) => {
     const settings = { digitalEnabled: digital, physicalEnabled: physical, serviceEnabled: service };
-
-    // Save to localStorage immediately
     localStorage.setItem(PRODUCTS_SETTINGS_KEY, JSON.stringify(settings));
-
-    // Dispatch event so sidebar can update
     window.dispatchEvent(new CustomEvent('products-settings-changed', { detail: settings }));
 
-    // Save to UserAppConfig
     if (user?.id) {
       setSettingsSaving(true);
       try {
         const configs = await db.entities.UserAppConfig.filter({ user_id: user.id });
         if (configs.length > 0) {
-          await db.entities.UserAppConfig.update(configs[0].id, {
-            products_settings: settings
-          });
+          await db.entities.UserAppConfig.update(configs[0].id, { products_settings: settings });
         } else {
-          await db.entities.UserAppConfig.create({
-            user_id: user.id,
-            products_settings: settings
-          });
+          await db.entities.UserAppConfig.create({ user_id: user.id, products_settings: settings });
         }
         toast.success('Settings saved');
       } catch (e) {
@@ -243,7 +180,6 @@ export default function Products() {
     saveSettings(digitalEnabled, physicalEnabled, checked);
   };
 
-  // Create a new product
   const handleCreateProduct = async () => {
     if (!newProductData.name.trim()) {
       toast.error('Please enter a product name');
@@ -252,7 +188,6 @@ export default function Products() {
 
     setCreatingProduct(true);
     try {
-      // Generate a slug from the name
       const slug = newProductData.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
@@ -271,8 +206,6 @@ export default function Products() {
       toast.success('Product created! Redirecting to edit...');
       setShowCreateModal(false);
       setNewProductData({ name: '', type: 'digital', status: 'draft' });
-
-      // Navigate to the product detail page
       navigate(createPageUrl('ProductDetail') + `?type=${created.type}&slug=${created.slug}`);
     } catch (error) {
       console.error('Failed to create product:', error);
@@ -282,105 +215,17 @@ export default function Products() {
     }
   };
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadData = async () => {
-      if (!user?.id) {
-        if (isMounted) setLoading(false);
-        return;
-      }
-
-      try {
-        // Use server-side counts for accurate stats (no row limit)
-        const [
-          { count: totalCount },
-          { count: physicalCount },
-          { count: digitalCount },
-          { count: serviceCount },
-          { count: publishedCount },
-          { count: draftCount },
-          categoriesData,
-          recentData,
-        ] = await Promise.all([
-          supabase.from('products').select('*', { count: 'exact', head: true }),
-          supabase.from('products').select('*', { count: 'exact', head: true }).eq('type', 'physical'),
-          supabase.from('products').select('*', { count: 'exact', head: true }).eq('type', 'digital'),
-          supabase.from('products').select('*', { count: 'exact', head: true }).eq('type', 'service'),
-          supabase.from('products').select('*', { count: 'exact', head: true }).eq('status', 'published'),
-          supabase.from('products').select('*', { count: 'exact', head: true }).eq('status', 'draft'),
-          ProductCategory.list({ limit: 200 }).catch(() => []),
-          supabase.from('products').select('*').order('created_at', { ascending: false }).limit(20),
-        ]);
-
-        if (!isMounted) return;
-        setProducts(recentData.data || []);
-        setCategories(categoriesData || []);
-        setServerStats({
-          total: totalCount || 0,
-          physical: physicalCount || 0,
-          digital: digitalCount || 0,
-          service: serviceCount || 0,
-          published: publishedCount || 0,
-          draft: draftCount || 0,
-          categories: (categoriesData || []).length,
-        });
-      } catch (error) {
-        console.error('Failed to load products:', error);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    loadData();
-    return () => { isMounted = false; };
-  }, [user]);
-
-  const stats = serverStats;
-
-  const recentProducts = useMemo(() => {
-    return [...products]
-      .filter(p => {
-        if (p.type === 'digital' && !digitalEnabled) return false;
-        if (p.type === 'physical' && !physicalEnabled) return false;
-        if (p.type === 'service' && !serviceEnabled) return false;
-        return true;
-      })
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .slice(0, 6);
-  }, [products, digitalEnabled, physicalEnabled, serviceEnabled]);
-
-  const filteredProducts = useMemo(() => {
-    let filtered = products.filter(p => {
-      if (p.type === 'digital' && !digitalEnabled) return false;
-      if (p.type === 'physical' && !physicalEnabled) return false;
-      if (p.type === 'service' && !serviceEnabled) return false;
-      return true;
-    });
-
-    if (!searchQuery.trim()) return filtered.slice(0, 6);
-
-    const q = searchQuery.toLowerCase();
-    return filtered.filter(p =>
-      p.name?.toLowerCase().includes(q) ||
-      p.tagline?.toLowerCase().includes(q) ||
-      p.category?.toLowerCase().includes(q)
-    ).slice(0, 6);
-  }, [products, digitalEnabled, physicalEnabled, serviceEnabled, searchQuery]);
-
-
   return (
     <ProductsPageTransition className={cn("min-h-screen", t('bg-slate-50', 'bg-black'))}>
       <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div>
             <h1 className={cn("text-lg font-bold", t('text-slate-900', 'text-white'))}>Products</h1>
-            <p className={cn("text-xs", t('text-slate-500', 'text-zinc-400'))}>{stats.total} total products</p>
+            <p className={cn("text-xs", t('text-slate-500', 'text-zinc-400'))}>Manage your product catalog</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Theme Toggle */}
             <Button
               variant="outline"
               size="sm"
@@ -390,7 +235,6 @@ export default function Products() {
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
 
-            {/* Settings Popover */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -457,178 +301,31 @@ export default function Products() {
           </div>
         </div>
 
-        {/* Stat Cards */}
-        <div className={`grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-${3 + (digitalEnabled ? 1 : 0) + (physicalEnabled ? 1 : 0) + (serviceEnabled ? 1 : 0)}`}>
-          {[
-            { icon: Package, label: 'Total Products', value: loading ? '-' : stats.total },
-            ...(digitalEnabled ? [{ icon: Cloud, label: 'Digital', value: loading ? '-' : stats.digital }] : []),
-            ...(physicalEnabled ? [{ icon: Box, label: 'Physical', value: loading ? '-' : stats.physical }] : []),
-            ...(serviceEnabled ? [{ icon: Briefcase, label: 'Services', value: loading ? '-' : stats.service }] : []),
-            { icon: Eye, label: 'Published', value: loading ? '-' : stats.published },
-            { icon: Edit2, label: 'Drafts', value: loading ? '-' : stats.draft },
-            { icon: Tag, label: 'Categories', value: loading ? '-' : stats.categories },
-          ].map((stat) => {
-            const StatIcon = stat.icon;
+        {/* Tab Bar */}
+        <div className={cn("flex items-center gap-1 p-1 rounded-xl", t("bg-slate-100 border border-slate-200", "bg-zinc-900/60 border border-zinc-800/60"))}>
+          {visibleTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
             return (
-              <div key={stat.label} className={cn("border rounded-xl p-3", t('bg-white shadow-sm', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
-                <div className="flex items-center justify-between mb-2">
-                  <StatIcon className="w-4 h-4 text-cyan-400/70" />
-                </div>
-                <div className={cn("text-lg font-bold", t('text-slate-900', 'text-white'))}>{stat.value}</div>
-                <div className={cn("text-[10px]", t('text-slate-400', 'text-zinc-500'))}>{stat.label}</div>
-              </div>
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex-1 justify-center",
+                  isActive
+                    ? cn(t("bg-white shadow-sm", "bg-zinc-800"), "text-cyan-400")
+                    : t("text-slate-500 hover:text-slate-700 hover:bg-slate-50", "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50")
+                )}
+              >
+                <Icon className={cn("w-4 h-4", isActive && "text-cyan-400")} />
+                <span className="hidden sm:inline">{tab.label}</span>
+              </button>
             );
           })}
         </div>
 
-        {/* Quick Navigation Cards */}
-        <div className={`grid gap-4 grid-cols-1 ${[digitalEnabled, physicalEnabled, serviceEnabled].filter(Boolean).length >= 2 ? 'md:grid-cols-2' : ''} ${[digitalEnabled, physicalEnabled, serviceEnabled].filter(Boolean).length >= 3 ? 'lg:grid-cols-3' : ''}`}>
-          {digitalEnabled && (
-            <Link to={createPageUrl('ProductsDigital')}>
-              <div className={cn("group p-4 border rounded-xl hover:border-cyan-500/30 transition-all cursor-pointer", t('bg-white shadow-sm', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                    <Cloud className="w-5 h-5 text-cyan-400" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className={cn("text-base font-semibold group-hover:text-cyan-400 transition-colors", t('text-slate-900', 'text-white'))}>
-                      Digital Products
-                    </h3>
-                    <p className={cn("text-xs mt-1", t('text-slate-500', 'text-zinc-400'))}>
-                      Software, SaaS, courses, subscriptions, and downloadable content
-                    </p>
-                    <div className="flex items-center gap-3 mt-3">
-                      <span className="text-lg font-bold text-cyan-400">{stats.digital}</span>
-                      <span className={cn("text-xs", t('text-slate-400', 'text-zinc-500'))}>products</span>
-                      <ArrowRight className={cn("w-4 h-4 ml-auto group-hover:text-cyan-400 transition-colors", t('text-slate-400', 'text-zinc-500'))} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          )}
-
-          {physicalEnabled && (
-            <Link to={createPageUrl('ProductsPhysical')}>
-              <div className={cn("group p-4 border rounded-xl hover:border-cyan-500/30 transition-all cursor-pointer", t('bg-white shadow-sm', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                    <Box className="w-5 h-5 text-cyan-400" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className={cn("text-base font-semibold group-hover:text-cyan-400 transition-colors", t('text-slate-900', 'text-white'))}>
-                      Physical Products
-                    </h3>
-                    <p className={cn("text-xs mt-1", t('text-slate-500', 'text-zinc-400'))}>
-                      Hardware, merchandise, equipment, and tangible goods
-                    </p>
-                    <div className="flex items-center gap-3 mt-3">
-                      <span className="text-lg font-bold text-cyan-400">{stats.physical}</span>
-                      <span className={cn("text-xs", t('text-slate-400', 'text-zinc-500'))}>products</span>
-                      <ArrowRight className={cn("w-4 h-4 ml-auto group-hover:text-cyan-400 transition-colors", t('text-slate-400', 'text-zinc-500'))} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          )}
-
-          {serviceEnabled && (
-            <Link to={createPageUrl('ProductsServices')}>
-              <div className={cn("group p-4 border rounded-xl hover:border-cyan-500/30 transition-all cursor-pointer", t('bg-white shadow-sm', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                    <Briefcase className="w-5 h-5 text-cyan-400" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className={cn("text-base font-semibold group-hover:text-cyan-400 transition-colors", t('text-slate-900', 'text-white'))}>
-                      Services
-                    </h3>
-                    <p className={cn("text-xs mt-1", t('text-slate-500', 'text-zinc-400'))}>
-                      Consulting, headhunting, design, and advisory services
-                    </p>
-                    <div className="flex items-center gap-3 mt-3">
-                      <span className="text-lg font-bold text-cyan-400">{stats.service}</span>
-                      <span className={cn("text-xs", t('text-slate-400', 'text-zinc-500'))}>services</span>
-                      <ArrowRight className={cn("w-4 h-4 ml-auto group-hover:text-cyan-400 transition-colors", t('text-slate-400', 'text-zinc-500'))} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          )}
-        </div>
-
-        {/* Search */}
-        <div className="relative">
-          <Search className={cn("absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4", t('text-slate-400', 'text-zinc-500'))} />
-          <Input
-            placeholder="Search products..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={cn("pl-9", t('bg-white border-slate-200 text-slate-900 placeholder:text-slate-400', 'bg-zinc-900/50 border-zinc-800/60 text-white placeholder:text-zinc-500'))}
-          />
-        </div>
-
-        {/* Products Grid */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className={cn("h-20", t('bg-slate-200', 'bg-zinc-800/50'))} />
-            ))}
-          </div>
-        ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-16">
-            <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4", t('bg-slate-100', 'bg-zinc-800/50'))}>
-              <Package className="w-7 h-7 text-zinc-600" />
-            </div>
-            <p className={cn("font-medium", t('text-slate-900', 'text-white'))}>No products yet</p>
-            <p className={cn("text-sm mt-1 max-w-xs mx-auto", t('text-slate-400', 'text-zinc-500'))}>
-              {searchQuery ? 'No products match your search' : 'Get started by adding your first product'}
-            </p>
-            {!searchQuery && (
-              <Button onClick={() => setShowCreateModal(true)} className="mt-4 bg-cyan-600/80 hover:bg-cyan-600 text-white">
-                <Plus className="w-4 h-4 mr-1" /> Add Your First Product
-              </Button>
-            )}
-          </div>
-        )}
-
-        {filteredProducts.length > 0 && (
-          <div className="flex justify-center">
-            <Link to={createPageUrl(digitalEnabled ? 'ProductsDigital' : 'ProductsPhysical')}>
-              <Button variant="outline" className={cn("border", t('border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100', 'border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800'))}>
-                View All Products <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-          </div>
-        )}
-
-        {/* Categories */}
-        {categories.length > 0 && (
-          <div className={cn("border rounded-xl p-4", t('bg-white shadow-sm', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
-            <h3 className={cn("text-sm font-semibold mb-3", t('text-slate-900', 'text-white'))}>Categories</h3>
-            <div className="flex flex-wrap gap-2">
-              {categories.map((category) => (
-                <Badge
-                  key={category.id}
-                  className={cn("border hover:border-cyan-500/30 hover:text-cyan-400 cursor-pointer transition-colors", t('bg-slate-100 border-slate-200 text-slate-600', 'bg-zinc-800/50 border-zinc-700/50 text-zinc-300'))}
-                >
-                  {category.name}
-                  <span className={cn("ml-2 text-[10px]", t('text-slate-400', 'text-zinc-500'))}>
-                    {products.filter(p => p.category_id === category.id).length}
-                  </span>
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Tab Content */}
+        <ProductTypeContent productType={activeTab} />
       </div>
 
       {/* Create Product Modal */}
