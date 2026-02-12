@@ -13,11 +13,15 @@ import {
   Loader2,
   Package,
   Play,
+  Rocket,
   Search,
   SortAsc,
   Sparkles,
+  Timer,
+  Zap,
   Image as ImageIcon,
   ArrowLeft,
+  X,
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
@@ -26,6 +30,8 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxf
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
 
 const APPROVE_EDGE_FUNCTION = 'sync-studio-approve-plan';
+const EXECUTE_EDGE_FUNCTION = 'sync-studio-execute-photoshoot';
+const PROGRESS_EDGE_FUNCTION = 'sync-studio-job-progress';
 
 // --- Shot type styling map ---
 const SHOT_TYPE_STYLES = {
@@ -79,7 +85,7 @@ function ProductCard({ plan, product, onApprove, isApproving }) {
 
   const shots = Array.isArray(plan.shots) ? plan.shots : [];
   const shotTypes = shots.map((s) => s.type || s.shot_type || 'photo').join(', ');
-  const isApproved = plan.status === 'approved';
+  const isApproved = plan.plan_status === 'approved';
   const thumbnail = product?.existing_image_urls?.[0] || null;
   const categoryLabel = getCategoryLabel(product?.category_path);
 
@@ -141,13 +147,13 @@ function ProductCard({ plan, product, onApprove, isApproving }) {
 
         {/* Status + Approve + Chevron */}
         <div className="flex items-center gap-2 shrink-0">
-          <StatusBadge status={plan.status} />
+          <StatusBadge status={plan.plan_status} />
 
           {!isApproved && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onApprove(plan.id);
+                onApprove(plan.plan_id);
               }}
               disabled={isApproving}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 transition-colors disabled:opacity-50"
@@ -264,7 +270,7 @@ function ProductCard({ plan, product, onApprove, isApproving }) {
               {!isApproved && (
                 <div className="pt-1">
                   <button
-                    onClick={() => onApprove(plan.id)}
+                    onClick={() => onApprove(plan.plan_id)}
                     disabled={isApproving}
                     className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 transition-colors disabled:opacity-50"
                   >
@@ -282,6 +288,152 @@ function ProductCard({ plan, product, onApprove, isApproving }) {
         )}
       </AnimatePresence>
     </motion.div>
+  );
+}
+
+// ========================================================================
+// Confirmation Modal
+// ========================================================================
+
+function ConfirmationModal({ open, onClose, stats, plans, onConfirm, isStarting }) {
+  if (!open) return null;
+
+  // Build shot type breakdown from plans
+  const shotBreakdown = useMemo(() => {
+    const counts = {};
+    plans.forEach((plan) => {
+      const shots = Array.isArray(plan.shots) ? plan.shots : [];
+      shots.forEach((shot) => {
+        const type = shot.shot_type || shot.type || 'photo';
+        counts[type] = (counts[type] || 0) + 1;
+      });
+    });
+    return counts;
+  }, [plans]);
+
+  // Estimate time: ~12 images/min
+  const estimatedMinutes = Math.max(1, Math.ceil(stats.totalShots / 12));
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        >
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={onClose}
+          />
+
+          {/* Dialog */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="relative bg-zinc-900 border border-zinc-800/80 rounded-2xl shadow-2xl max-w-md w-full p-6 overflow-hidden"
+          >
+            {/* Close */}
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 text-zinc-500 hover:text-zinc-300 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                <Rocket className="w-6 h-6 text-cyan-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Ready to start your photoshoot?</h3>
+              </div>
+            </div>
+
+            {/* Stats grid */}
+            <div className="grid grid-cols-2 gap-3 mb-5">
+              <div className="bg-zinc-800/50 border border-zinc-700/30 rounded-xl p-3 text-center">
+                <Package className="w-4 h-4 text-zinc-500 mx-auto mb-1" />
+                <p className="text-lg font-bold text-white tabular-nums">{stats.approved}</p>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Products</p>
+              </div>
+              <div className="bg-zinc-800/50 border border-zinc-700/30 rounded-xl p-3 text-center">
+                <Camera className="w-4 h-4 text-zinc-500 mx-auto mb-1" />
+                <p className="text-lg font-bold text-white tabular-nums">{stats.totalShots}</p>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Images</p>
+              </div>
+              <div className="bg-zinc-800/50 border border-zinc-700/30 rounded-xl p-3 text-center">
+                <Timer className="w-4 h-4 text-zinc-500 mx-auto mb-1" />
+                <p className="text-lg font-bold text-white tabular-nums">~{estimatedMinutes} min</p>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Estimated</p>
+              </div>
+              <div className="bg-zinc-800/50 border border-zinc-700/30 rounded-xl p-3 text-center">
+                <Zap className="w-4 h-4 text-zinc-500 mx-auto mb-1" />
+                <p className="text-lg font-bold text-white tabular-nums">{stats.totalShots}</p>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Credits</p>
+              </div>
+            </div>
+
+            {/* Shot breakdown */}
+            {Object.keys(shotBreakdown).length > 0 && (
+              <div className="mb-5">
+                <p className="text-xs font-medium text-zinc-400 mb-2">Shot breakdown</p>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(shotBreakdown).map(([type, count]) => {
+                    const style = getShotStyle(type);
+                    return (
+                      <span
+                        key={type}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${style.bg} ${style.text} border ${style.border}`}
+                      >
+                        <span className="capitalize">{type}</span>
+                        <span className="opacity-60">{count}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Notice */}
+            <p className="text-xs text-zinc-500 mb-5">
+              You can cancel at any time. Completed images will be saved.
+            </p>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={onClose}
+                disabled={isStarting}
+                className="px-4 py-2 text-sm font-medium text-zinc-400 hover:text-zinc-300 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={onConfirm}
+                disabled={isStarting}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-cyan-500 hover:bg-cyan-600 text-black shadow-lg shadow-cyan-500/20 transition-all disabled:opacity-50"
+              >
+                {isStarting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Rocket className="w-4 h-4" />
+                )}
+                {isStarting ? 'Starting...' : 'Start Photoshoot'}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -307,14 +459,18 @@ export default function SyncStudioDashboard() {
   const [approvingIds, setApprovingIds] = useState(new Set());
   const [approveAllLoading, setApproveAllLoading] = useState(false);
 
+  // Confirmation modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+
   // -- Edge function caller --
-  const callEdgeFunction = useCallback(async (body) => {
+  const callEdgeFunction = useCallback(async (body, fnName = APPROVE_EDGE_FUNCTION) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
       throw new Error('Not authenticated. Please log in again.');
     }
 
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/${APPROVE_EDGE_FUNCTION}`, {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/${fnName}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -382,7 +538,7 @@ export default function SyncStudioDashboard() {
   // -- Computed stats --
   const stats = useMemo(() => {
     const total = plans.length;
-    const approved = plans.filter((p) => p.status === 'approved').length;
+    const approved = plans.filter((p) => p.plan_status === 'approved').length;
     const pending = total - approved;
     const totalShots = plans.reduce((sum, p) => {
       const shots = Array.isArray(p.shots) ? p.shots.length : 0;
@@ -398,11 +554,11 @@ export default function SyncStudioDashboard() {
 
     // Status filter
     if (filterStatus === 'pending') {
-      result = result.filter((p) => p.status === 'pending_approval' || p.status === 'pending');
+      result = result.filter((p) => p.plan_status === 'pending_approval' || p.plan_status === 'pending');
     } else if (filterStatus === 'approved') {
-      result = result.filter((p) => p.status === 'approved');
+      result = result.filter((p) => p.plan_status === 'approved');
     } else if (filterStatus === 'modified') {
-      result = result.filter((p) => p.status === 'user_modified');
+      result = result.filter((p) => p.plan_status === 'user_modified');
     }
 
     // Search filter (title or EAN)
@@ -445,7 +601,7 @@ export default function SyncStudioDashboard() {
     async (planId) => {
       // Optimistic update
       setPlans((prev) =>
-        prev.map((p) => (p.id === planId ? { ...p, status: 'approved' } : p))
+        prev.map((p) => (p.plan_id === planId ? { ...p, plan_status: 'approved' } : p))
       );
       setApprovingIds((prev) => new Set(prev).add(planId));
 
@@ -459,7 +615,7 @@ export default function SyncStudioDashboard() {
         console.error('[SyncStudioDashboard] approve error:', err);
         // Revert on failure
         setPlans((prev) =>
-          prev.map((p) => (p.id === planId ? { ...p, status: 'pending_approval' } : p))
+          prev.map((p) => (p.plan_id === planId ? { ...p, plan_status: 'pending_approval' } : p))
         );
       } finally {
         setApprovingIds((prev) => {
@@ -475,7 +631,7 @@ export default function SyncStudioDashboard() {
   // -- Approve all (optimistic) --
   const handleApproveAll = useCallback(async () => {
     const pendingPlans = plans.filter(
-      (p) => p.status !== 'approved'
+      (p) => p.plan_status !== 'approved'
     );
     if (pendingPlans.length === 0) return;
 
@@ -483,7 +639,7 @@ export default function SyncStudioDashboard() {
 
     // Optimistic: mark all as approved
     setPlans((prev) =>
-      prev.map((p) => ({ ...p, status: 'approved' }))
+      prev.map((p) => ({ ...p, plan_status: 'approved' }))
     );
 
     try {
@@ -504,6 +660,31 @@ export default function SyncStudioDashboard() {
       setApproveAllLoading(false);
     }
   }, [plans, callEdgeFunction, user]);
+
+  // -- Start photoshoot --
+  const handleStartPhotoshoot = useCallback(async () => {
+    setIsStarting(true);
+    try {
+      const result = await callEdgeFunction(
+        {
+          action: 'start',
+          userId: user?.id,
+          companyId: user?.company_id || user?.id,
+        },
+        EXECUTE_EDGE_FUNCTION
+      );
+
+      if (result?.jobId) {
+        // Navigate to progress page with job ID
+        navigate(`/SyncStudioPhotoshoot?jobId=${result.jobId}`);
+      } else {
+        console.error('[SyncStudioDashboard] No jobId returned from start:', result);
+      }
+    } catch (err) {
+      console.error('[SyncStudioDashboard] start photoshoot error:', err);
+      setIsStarting(false);
+    }
+  }, [callEdgeFunction, user, navigate]);
 
   // -- Loading state --
   if (loading) {
@@ -597,7 +778,7 @@ export default function SyncStudioDashboard() {
 
               <button
                 onClick={() => {
-                  if (allApproved) navigate('/SyncStudioPhotoshoot');
+                  if (allApproved) setShowConfirmModal(true);
                 }}
                 disabled={!allApproved}
                 className={`inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg transition-all ${
@@ -699,11 +880,11 @@ export default function SyncStudioDashboard() {
         <AnimatePresence mode="popLayout">
           {filteredPlans.map((plan) => (
             <ProductCard
-              key={plan.id}
+              key={plan.plan_id}
               plan={plan}
               product={productMap[plan.product_ean]}
               onApprove={handleApprove}
-              isApproving={approvingIds.has(plan.id)}
+              isApproving={approvingIds.has(plan.plan_id)}
             />
           ))}
         </AnimatePresence>
@@ -719,6 +900,16 @@ export default function SyncStudioDashboard() {
           </motion.div>
         )}
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        open={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        stats={stats}
+        plans={plans.filter((p) => p.plan_status === 'approved')}
+        onConfirm={handleStartPhotoshoot}
+        isStarting={isStarting}
+      />
     </div>
   );
 }
