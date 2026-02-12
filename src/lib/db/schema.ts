@@ -725,6 +725,54 @@ export type EmailMessageInsert = Omit<EmailMessage, 'id' | 'created_at'>;
 export type EmailMessageUpdate = Partial<EmailMessageInsert>;
 
 // =============================================================================
+// RETURNS
+// =============================================================================
+
+export interface Return {
+  id: string;
+  company_id: string;
+  return_code: string;
+  source: 'bolcom' | 'shopify' | 'manual' | 'other';
+  status: 'registered' | 'received' | 'inspected' | 'processed';
+  sales_order_id?: string;
+  customer_id?: string;
+  bol_return_id?: string;
+  registered_at: string;
+  received_at?: string;
+  processed_at?: string;
+  processed_by?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  // Joined
+  customers?: { id: string; name: string; email?: string };
+  sales_orders?: { id: string; order_number: string };
+  return_items?: ReturnItem[];
+}
+
+export type ReturnInsert = Omit<Return, 'id' | 'created_at' | 'updated_at' | 'customers' | 'sales_orders' | 'return_items'>;
+export type ReturnUpdate = Partial<Omit<ReturnInsert, 'company_id'>>;
+
+export interface ReturnItem {
+  id: string;
+  return_id: string;
+  product_id: string;
+  ean?: string;
+  quantity: number;
+  reason?: 'defective' | 'wrong_item' | 'not_as_described' | 'no_longer_needed' | 'arrived_late' | 'other';
+  reason_notes?: string;
+  action?: 'restock' | 'dispose' | 'inspect' | 'pending';
+  action_completed: boolean;
+  receiving_log_id?: string;
+  created_at: string;
+  // Joined
+  products?: { id: string; name: string; sku?: string; ean: string };
+}
+
+export type ReturnItemInsert = Omit<ReturnItem, 'id' | 'created_at' | 'products'>;
+export type ReturnItemUpdate = Partial<Omit<ReturnItemInsert, 'return_id'>>;
+
+// =============================================================================
 // BUSINESS CONSTANTS
 // =============================================================================
 

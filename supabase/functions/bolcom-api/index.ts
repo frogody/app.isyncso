@@ -943,7 +943,9 @@ serve(async (req) => {
               company_id: companyId,
               return_code: `RET-BOL-${ret.returnId}`,
               source: "bolcom",
+              bol_return_id: ret.returnId,
               status: "registered",
+              registered_at: new Date().toISOString(),
             });
             newReturns++;
           }

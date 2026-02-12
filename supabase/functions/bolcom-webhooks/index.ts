@@ -153,9 +153,42 @@ serve(async (req) => {
       case "RETURN": {
         const returnId = payload.entityId || payload.returnId;
         if (returnId) {
-          // Try to find the company by matching existing replenishments
-          // For now, log and create a basic record
           console.log(`[bolcom-webhooks] Return created: ${returnId}`);
+
+          // Find the company by looking up bolcom_credentials
+          const { data: creds } = await supabase
+            .from("bolcom_credentials")
+            .select("company_id")
+            .limit(10);
+
+          // Try each company — the webhook doesn't tell us which company it belongs to,
+          // so we create the return for all companies that have bol.com credentials.
+          // Duplicates are prevented by the return_code check.
+          for (const cred of (creds || [])) {
+            const { data: existing } = await supabase
+              .from("returns")
+              .select("id")
+              .eq("company_id", cred.company_id)
+              .eq("bol_return_id", returnId)
+              .maybeSingle();
+
+            if (!existing) {
+              const { error: insertErr } = await supabase.from("returns").insert({
+                company_id: cred.company_id,
+                return_code: `RET-BOL-${returnId}`,
+                source: "bolcom",
+                bol_return_id: returnId,
+                status: "registered",
+                registered_at: new Date().toISOString(),
+              });
+
+              if (insertErr) {
+                console.error(`[bolcom-webhooks] Failed to create return for company ${cred.company_id}:`, insertErr.message);
+              } else {
+                console.log(`[bolcom-webhooks] Created return RET-BOL-${returnId} for company ${cred.company_id}`);
+              }
+            }
+          }
         }
         break;
       }

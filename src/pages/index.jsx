@@ -270,6 +270,7 @@ import PalletBuilder from "./PalletBuilder";
 import ShipmentVerification from "./ShipmentVerification";
 
 import InventoryExpenses from "./InventoryExpenses";
+import InventoryReturns from "./InventoryReturns";
 import StockPurchases from "./StockPurchases";
 
 import SyncAgent from "./SyncAgent";
@@ -615,6 +616,8 @@ const PAGES = {
     ShipmentVerification: ShipmentVerification,
 
     InventoryExpenses: InventoryExpenses,
+
+    InventoryReturns: InventoryReturns,
 
     StockPurchases: StockPurchases,
 
@@ -1060,6 +1063,8 @@ function PagesContent() {
                 <Route path="/StockPurchases" element={<StockPurchases />} />
 
                 <Route path="/SyncAgent" element={<SyncAgent />} />
+
+                <Route path="/InventoryReturns" element={<InventoryReturns />} />
 
                 <Route path="/InventoryExpenses" element={<Navigate to="/StockPurchases" replace />} />
 

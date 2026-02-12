@@ -3044,11 +3044,11 @@ CREATE INDEX idx_receiving_log_session ON receiving_log(receiving_session_id) WH
 - [x] `P4-21` Test: return polling → create return record → handle return via API
 
 ### Phase 5: Returns Workflow
-- [ ] `P5-1` Returns page with list and filters
-- [ ] `P5-2` Return processing (restock/dispose/inspect)
-- [ ] `P5-3` Inventory update on restock
-- [ ] `P5-4` Link to bol.com returns (from Phase 4)
-- [ ] `P5-5` Test: manual return + restock flow
+- [x] `P5-1` Returns page with list and filters
+- [x] `P5-2` Return processing (restock/dispose/inspect)
+- [x] `P5-3` Inventory update on restock
+- [x] `P5-4` Link to bol.com returns (from Phase 4)
+- [x] `P5-5` Test: manual return + restock flow
 
 ### Email Pool Auto-Sync System
 - [ ] `EP-1` Create `email_pool_accounts` table + RLS policies

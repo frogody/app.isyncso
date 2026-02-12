@@ -25,6 +25,8 @@ import type {
   Shipment,
   Pallet,
   PalletItem,
+  Return,
+  ReturnItem,
 } from '@/lib/db/schema';
 
 // =============================================================================
@@ -206,6 +208,7 @@ export async function receiveStock(
     damageNotes?: string;
     receivedBy?: string;
     receivingSessionId?: string;
+    receiptType?: 'purchase' | 'return' | 'transfer' | 'adjustment';
   }
 ): Promise<{
   success: boolean;
@@ -224,7 +227,7 @@ export async function receiveStock(
     bin_location: options?.binLocation,
     condition: options?.condition || 'good',
     damage_notes: options?.damageNotes,
-    receipt_type: 'purchase',
+    receipt_type: options?.receiptType || 'purchase',
     received_by: options?.receivedBy,
     receiving_session_id: options?.receivingSessionId,
     received_at: new Date().toISOString(),
@@ -933,4 +936,242 @@ export async function getDashboardData(
     overdueDeliveries: overdueJobs.length,
     recentNotifications: notifications.slice(0, 10),
   };
+}
+
+// =============================================================================
+// RETURNS (Phase 5)
+// =============================================================================
+
+const BOL_REASON_MAP: Record<string, ReturnItem['reason']> = {
+  PRODUCT_DEFECT: 'defective',
+  PRODUCT_DOES_NOT_MATCH_DESCRIPTION: 'not_as_described',
+  WRONG_PRODUCT: 'wrong_item',
+  TOO_LATE_DELIVERY: 'arrived_late',
+  NO_LONGER_NEEDED: 'no_longer_needed',
+};
+
+function mapBolReason(bolReason: string): ReturnItem['reason'] {
+  return BOL_REASON_MAP[bolReason] || 'other';
+}
+
+/**
+ * Create a manual return with items
+ */
+export async function createManualReturn(
+  companyId: string,
+  items: Array<{
+    productId: string;
+    ean?: string;
+    quantity: number;
+    reason?: ReturnItem['reason'];
+    reasonNotes?: string;
+  }>,
+  options?: {
+    customerId?: string;
+    salesOrderId?: string;
+    notes?: string;
+  }
+): Promise<Return> {
+  const returnCode = db.generateReturnCode('manual');
+
+  const ret = await db.createReturn({
+    company_id: companyId,
+    return_code: returnCode,
+    source: 'manual',
+    status: 'registered',
+    customer_id: options?.customerId,
+    sales_order_id: options?.salesOrderId,
+    notes: options?.notes,
+    registered_at: new Date().toISOString(),
+  });
+
+  for (const item of items) {
+    await db.createReturnItem({
+      return_id: ret.id,
+      product_id: item.productId,
+      ean: item.ean,
+      quantity: item.quantity,
+      reason: item.reason || 'other',
+      reason_notes: item.reasonNotes,
+      action: 'pending',
+      action_completed: false,
+    });
+  }
+
+  return ret;
+}
+
+/**
+ * Process a return item: restock, dispose, or inspect
+ */
+export async function processReturnItem(
+  companyId: string,
+  itemId: string,
+  action: 'restock' | 'dispose' | 'inspect',
+  userId?: string
+): Promise<ReturnItem> {
+  const item = (await db.listReturnItems('')).find((i) => i.id === itemId);
+  if (!item) throw new Error('Return item not found');
+
+  if (action === 'restock') {
+    // Receive the returned stock back into inventory
+    const result = await receiveStock(companyId, item.product_id, item.quantity, {
+      eanScanned: item.ean,
+      receiptType: 'return',
+      receivedBy: userId,
+      condition: 'good',
+    });
+
+    // Link receiving log and mark completed
+    const updated = await db.updateReturnItem(itemId, {
+      action: 'restock',
+      action_completed: true,
+      receiving_log_id: result.receivingLog.id,
+    });
+
+    // Check if all items in the return are completed
+    await maybeCompleteReturn(item.return_id, userId);
+    return updated;
+  }
+
+  if (action === 'dispose') {
+    const updated = await db.updateReturnItem(itemId, {
+      action: 'dispose',
+      action_completed: true,
+    });
+    await maybeCompleteReturn(item.return_id, userId);
+    return updated;
+  }
+
+  // inspect — mark action but leave not completed
+  return db.updateReturnItem(itemId, {
+    action: 'inspect',
+    action_completed: false,
+  });
+}
+
+/**
+ * If all items in a return are completed, advance status to 'processed'
+ */
+async function maybeCompleteReturn(returnId: string, userId?: string): Promise<void> {
+  const items = await db.listReturnItems(returnId);
+  const allDone = items.every((i) => i.action_completed);
+
+  if (allDone) {
+    await db.updateReturn(returnId, {
+      status: 'processed',
+      processed_at: new Date().toISOString(),
+      processed_by: userId,
+    });
+  }
+}
+
+/**
+ * Advance a return's status
+ */
+export async function advanceReturnStatus(
+  returnId: string,
+  newStatus: Return['status'],
+  userId?: string
+): Promise<Return> {
+  const updates: Record<string, unknown> = { status: newStatus };
+
+  if (newStatus === 'received') {
+    updates.received_at = new Date().toISOString();
+  } else if (newStatus === 'processed') {
+    updates.processed_at = new Date().toISOString();
+    updates.processed_by = userId;
+  }
+
+  return db.updateReturn(returnId, updates);
+}
+
+/**
+ * Sync returns from bol.com — fetches unhandled returns and creates/updates records
+ */
+export async function syncBolcomReturns(
+  companyId: string
+): Promise<{ synced: number; errors: number }> {
+  const result = await callBolcomApi('getReturns', { companyId });
+  if (!result.success) throw new Error(result.error || 'Failed to fetch bol.com returns');
+
+  const returns = (result.data as { returns?: Array<Record<string, unknown>> })?.returns || [];
+  let synced = 0;
+  let errors = 0;
+
+  for (const bolReturn of returns) {
+    try {
+      const bolReturnId = String(bolReturn.returnId || '');
+      const returnCode = `RET-BOL-${bolReturnId}`;
+
+      // Check if return already exists
+      const existing = await db.listReturns(companyId, { search: returnCode });
+      if (existing.length > 0) continue;
+
+      const ret = await db.createReturn({
+        company_id: companyId,
+        return_code: returnCode,
+        source: 'bolcom',
+        bol_return_id: bolReturnId,
+        status: 'registered',
+        registered_at: (bolReturn.registrationDateTime as string) || new Date().toISOString(),
+      });
+
+      // Create return items from bol.com return items
+      const bolItems = (bolReturn.returnItems as Array<Record<string, unknown>>) || [];
+      for (const bolItem of bolItems) {
+        const ean = String(bolItem.ean || '');
+        // Try to find product by EAN
+        let productId: string | undefined;
+        if (ean) {
+          const { supabase } = await import('@/api/supabaseClient');
+          const { data: found } = await supabase
+            .from('products')
+            .select('id')
+            .eq('company_id', companyId)
+            .eq('ean', ean)
+            .limit(1)
+            .maybeSingle();
+          if (found) productId = found.id;
+        }
+
+        if (productId) {
+          await db.createReturnItem({
+            return_id: ret.id,
+            product_id: productId,
+            ean,
+            quantity: Number(bolItem.quantity) || 1,
+            reason: mapBolReason(String(bolItem.returnReason || '')),
+            reason_notes: String(bolItem.customerDetails || ''),
+            action: 'pending',
+            action_completed: false,
+          });
+        }
+      }
+      synced++;
+    } catch {
+      errors++;
+    }
+  }
+
+  return { synced, errors };
+}
+
+/**
+ * Send handling result back to bol.com for a return
+ */
+export async function sendBolcomHandlingResult(
+  companyId: string,
+  bolReturnId: string,
+  handlingResult: 'RETURN_RECEIVED' | 'EXCHANGE_PRODUCT' | 'RETURN_DOES_NOT_MEET_CONDITIONS' | 'REPAIR_PRODUCT' | 'CUSTOMER_KEEPS_PRODUCT_PAID',
+  quantityReturned: number
+): Promise<{ processStatusId: string }> {
+  const result = await callBolcomApi('handleReturn', {
+    companyId,
+    returnId: bolReturnId,
+    handlingResult,
+    quantityReturned,
+  });
+  if (!result.success) throw new Error(result.error || 'Failed to send handling result');
+  return result.data as { processStatusId: string };
 }
