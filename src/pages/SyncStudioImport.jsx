@@ -307,7 +307,7 @@ export default function SyncStudioImport() {
       if (!mountedRef.current) return;
       updateStats(data);
 
-      if (!data.hasMore || data.status === 'planning' || data.status === 'complete') {
+      if (!data.hasMore || data.status === 'planning' || data.status === 'completed') {
         handleComplete(data.importJobId || jobId);
       }
     } catch (err) {
@@ -349,7 +349,7 @@ export default function SyncStudioImport() {
         updateStats(statusData);
 
         // Import is done — transition to planning
-        if (statusData.status === 'planning' || statusData.status === 'complete' || !statusData.hasMore) {
+        if (statusData.status === 'planning' || statusData.status === 'completed' || !statusData.hasMore) {
           handleComplete(statusData.importJobId || currentJobId);
           return;
         }
@@ -388,7 +388,7 @@ export default function SyncStudioImport() {
         updateStats(statusData);
 
         // Already fully completed — go to dashboard
-        if (statusData.status === 'completed' || statusData.status === 'complete') {
+        if (statusData.status === 'completed') {
           handleAllDone();
           return;
         }
@@ -417,7 +417,7 @@ export default function SyncStudioImport() {
         updateStats(startData);
         setStage('importing');
 
-        if (!startData.hasMore || startData.status === 'planning' || startData.status === 'complete') {
+        if (!startData.hasMore || startData.status === 'planning' || startData.status === 'completed') {
           handleComplete(startData.importJobId);
         } else {
           startPolling(startData.importJobId, startData.nextPage || 2);

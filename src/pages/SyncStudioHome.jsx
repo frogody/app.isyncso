@@ -67,7 +67,7 @@ export default function SyncStudioHome() {
         // Check for synced products
         supabase
           .from('sync_studio_products')
-          .select('id')
+          .select('ean')
           .eq('user_id', user.id)
           .limit(1),
 
@@ -76,7 +76,7 @@ export default function SyncStudioHome() {
           .from('sync_studio_import_jobs')
           .select('id, status')
           .eq('user_id', user.id)
-          .in('status', ['pending', 'processing', 'in_progress'])
+          .in('status', ['importing', 'planning'])
           .limit(1),
       ]);
 
