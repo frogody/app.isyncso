@@ -478,7 +478,6 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       items.push({ label: 'Returns', path: createPageUrl('InventoryReturns'), icon: RotateCcw });
       items.push({ label: 'Stock Purchases', path: createPageUrl('StockPurchases'), icon: Receipt });
       items.push({ label: 'Email Pool', path: createPageUrl('EmailPoolSettings'), icon: Mail });
-      items.push({ label: 'Import', path: createPageUrl('InventoryImport'), icon: FileSpreadsheet });
     }
 
     return {
@@ -545,10 +544,9 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       color: 'yellow',
       agent: 'create',
       items: [
-        { label: 'Dashboard', path: createPageUrl('Create'), icon: LayoutDashboard },
+        { label: 'Studio', path: createPageUrl('Create'), icon: LayoutDashboard },
         { label: 'Calendar', path: createPageUrl('ContentCalendar'), icon: Calendar },
         { label: 'Branding', path: createPageUrl('CreateBranding'), icon: Palette },
-        { label: 'Studio', path: createPageUrl('Studio'), icon: Camera },
         { label: 'Library', path: createPageUrl('StudioLibrary'), icon: FolderOpen },
       ]
     };

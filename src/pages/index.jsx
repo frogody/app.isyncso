@@ -1124,7 +1124,7 @@ function PagesContent() {
                 <Route path="/SyncStudioReturn" element={<SyncStudioReturn />} />
 
                 {/* Unified Studio routes */}
-                <Route path="/Studio" element={<Studio />} />
+                <Route path="/Studio" element={<Navigate to="/Create" replace />} />
                 <Route path="/StudioImage" element={<StudioImage />} />
                 <Route path="/StudioVideo" element={<StudioVideo />} />
                 <Route path="/StudioPhotoshoot" element={<StudioPhotoshoot />} />
