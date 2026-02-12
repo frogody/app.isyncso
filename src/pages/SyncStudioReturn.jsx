@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Camera,
   ArrowRight,
@@ -35,19 +35,6 @@ function formatDate(dateString) {
   });
 }
 
-function formatDateRelative(dateString) {
-  if (!dateString) return null;
-  const now = new Date();
-  const date = new Date(dateString);
-  const diffMs = now - date;
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return 'today';
-  if (diffDays === 1) return 'yesterday';
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) !== 1 ? 's' : ''} ago`;
-  return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) !== 1 ? 's' : ''} ago`;
-}
-
 function formatDuration(ms) {
   if (!ms || ms <= 0) return '-';
   const totalSeconds = Math.round(ms / 1000);
@@ -62,57 +49,20 @@ function formatDuration(ms) {
 // ---------------------------------------------------------------------------
 
 function JobStatusBadge({ status }) {
-  if (status === 'completed') {
-    return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
-        <CheckCircle2 className="w-3 h-3" />
-        Completed
-      </span>
-    );
-  }
-  if (status === 'cancelled') {
-    return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-zinc-500/10 text-zinc-400 border border-zinc-500/20">
-        <XCircle className="w-3 h-3" />
-        Cancelled
-      </span>
-    );
-  }
-  if (status === 'failed') {
-    return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
-        <XCircle className="w-3 h-3" />
-        Failed
-      </span>
-    );
-  }
-  if (status === 'processing' || status === 'in_progress') {
-    return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
-        <Loader2 className="w-3 h-3 animate-spin" />
-        In Progress
-      </span>
-    );
-  }
+  const configs = {
+    completed: { icon: CheckCircle2, label: 'Completed', cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
+    cancelled: { icon: XCircle, label: 'Cancelled', cls: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20' },
+    failed: { icon: XCircle, label: 'Failed', cls: 'bg-red-500/10 text-red-400 border-red-500/20' },
+    processing: { icon: Loader2, label: 'In Progress', cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20', spin: true },
+    in_progress: { icon: Loader2, label: 'In Progress', cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20', spin: true },
+  };
+  const cfg = configs[status] || { icon: Clock, label: status || 'Unknown', cls: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20' };
+  const Icon = cfg.icon;
   return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-zinc-500/10 text-zinc-400 border border-zinc-500/20">
-      <Clock className="w-3 h-3" />
-      {status || 'Unknown'}
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${cfg.cls}`}>
+      <Icon className={`w-3 h-3 ${cfg.spin ? 'animate-spin' : ''}`} />
+      {cfg.label}
     </span>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Skeleton Loader
-// ---------------------------------------------------------------------------
-
-function SkeletonCard() {
-  return (
-    <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6 animate-pulse">
-      <div className="h-4 bg-zinc-800/60 rounded w-1/3 mb-3" />
-      <div className="h-3 bg-zinc-800/40 rounded w-2/3 mb-2" />
-      <div className="h-3 bg-zinc-800/40 rounded w-1/2" />
-    </div>
   );
 }
 
@@ -127,41 +77,27 @@ export default function SyncStudioReturn() {
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState([]);
   const [productCount, setProductCount] = useState(0);
-  const [lastSyncedAt, setLastSyncedAt] = useState(null);
 
-  // -- Fetch data --
   useEffect(() => {
     if (!user?.id) return;
 
     async function fetchData() {
       setLoading(true);
       try {
-        const [jobsRes, productsCountRes, lastSyncRes] = await Promise.all([
-          // All past jobs
+        const [jobsRes, productsCountRes] = await Promise.all([
           supabase
             .from('sync_studio_jobs')
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false }),
-
-          // Product count
           supabase
             .from('sync_studio_products')
             .select('ean', { count: 'exact', head: true })
             .eq('user_id', user.id),
-
-          // Last synced time (max updated_at)
-          supabase
-            .from('sync_studio_products')
-            .select('updated_at')
-            .eq('user_id', user.id)
-            .order('updated_at', { ascending: false })
-            .limit(1),
         ]);
 
         if (jobsRes.data) setJobs(jobsRes.data);
         if (productsCountRes.count != null) setProductCount(productsCountRes.count);
-        if (lastSyncRes.data?.[0]?.updated_at) setLastSyncedAt(lastSyncRes.data[0].updated_at);
       } catch (err) {
         console.error('[SyncStudioReturn] fetch error:', err);
       } finally {
@@ -172,48 +108,35 @@ export default function SyncStudioReturn() {
     fetchData();
   }, [user?.id]);
 
-  // -- Derived data --
-  const latestJob = useMemo(() => {
-    if (!jobs.length) return null;
-    return jobs[0];
-  }, [jobs]);
+  const latestJob = useMemo(() => jobs[0] || null, [jobs]);
 
-  const lastSyncedRelative = useMemo(() => {
-    return formatDateRelative(lastSyncedAt);
-  }, [lastSyncedAt]);
+  // Resolve the correct job ID field (table uses `id`, but some edge functions return `job_id`)
+  function getJobId(job) {
+    return job?.id || job?.job_id;
+  }
 
-  // -- Loading state --
+  // -- Loading --
   if (loading) {
     return (
-      <div className="min-h-screen bg-black">
-        <div className="w-full px-4 lg:px-8 pt-12 pb-8">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
-              <Camera className="w-6 h-6 text-yellow-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Sync Studio</h1>
-              <p className="text-sm text-zinc-500">Loading your studio...</p>
-            </div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+            <Camera className="w-7 h-7 text-yellow-400" />
           </div>
-          <div className="space-y-4">
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
-        </div>
+          <Loader2 className="w-5 h-5 text-yellow-400 animate-spin" />
+          <p className="text-zinc-400 text-sm">Loading history...</p>
+        </motion.div>
       </div>
     );
   }
 
-  // -- No history (first-time user) --
+  // -- Empty --
   if (jobs.length === 0 && productCount === 0) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
           className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8 max-w-md w-full text-center"
         >
           <div className="w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mx-auto mb-5">
@@ -225,7 +148,7 @@ export default function SyncStudioReturn() {
           </p>
           <button
             onClick={() => navigate('/SyncStudioHome')}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-black text-sm font-semibold rounded-xl transition-all shadow-lg shadow-yellow-500/20"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-black text-sm font-semibold rounded-full transition-all shadow-lg shadow-yellow-500/20"
           >
             Get Started
             <ArrowRight className="w-4 h-4" />
@@ -235,232 +158,157 @@ export default function SyncStudioReturn() {
     );
   }
 
-  // -- Main return dashboard --
+  // -- Main --
   return (
     <div className="min-h-screen bg-black">
-      <div className="w-full px-4 lg:px-8 pt-6 pb-8">
-        {/* Studio Nav */}
-        <div className="flex justify-center mb-6">
+      {/* ─── Sticky Nav (matches Dashboard) ────────────────────── */}
+      <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
+        <div className="w-full px-4 lg:px-8 py-3">
           <SyncStudioNav />
         </div>
+      </div>
 
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="flex items-center gap-3 mb-8"
-        >
-          <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
-            <Camera className="w-6 h-6 text-yellow-400" />
+      {/* ─── Stats Strip ───────────────────────────────────────── */}
+      <div className="bg-zinc-900/40 border-b border-zinc-800/40">
+        <div className="w-full px-4 lg:px-8 py-3 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3 text-sm">
+            <span className="text-zinc-400">
+              <span className="text-white font-semibold tabular-nums">{productCount.toLocaleString()}</span> products in catalog
+            </span>
+            <span className="text-zinc-700">|</span>
+            <span className="text-zinc-400">
+              <span className="text-white font-semibold tabular-nums">{jobs.length}</span> photoshoot{jobs.length !== 1 ? 's' : ''}
+            </span>
+            {latestJob && (
+              <>
+                <span className="text-zinc-700">|</span>
+                <span className="text-zinc-400">
+                  Last: <span className="text-zinc-300">{formatDate(latestJob.created_at)}</span>
+                </span>
+              </>
+            )}
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white">Sync Studio</h1>
-            <p className="text-sm text-zinc-500">
-              {productCount.toLocaleString()} product{productCount !== 1 ? 's' : ''} in catalog
-              {lastSyncedRelative && (
-                <span className="text-zinc-600"> &middot; last synced {lastSyncedRelative}</span>
-              )}
-            </p>
-          </div>
-        </motion.div>
 
-        {/* ============================================================ */}
-        {/* LAST PHOTOSHOOT CARD                                          */}
-        {/* ============================================================ */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/SyncStudioImport')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/50 text-zinc-300 transition-colors"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Re-sync Catalog
+            </button>
+            <button
+              onClick={() => navigate('/SyncStudioDashboard')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 text-yellow-400 transition-colors"
+            >
+              <Play className="w-3 h-3" />
+              New Photoshoot
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Content ───────────────────────────────────────────── */}
+      <div className="w-full px-4 lg:px-8 pt-4 pb-8">
+
+        {/* ─── Latest Photoshoot Card ──────────────────────────── */}
         {latestJob && (
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.05 }}
-            className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6 mb-4"
+            className="border border-zinc-800/60 rounded-2xl mb-4 overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
-                Last Photoshoot
-              </h2>
-              <JobStatusBadge status={latestJob.status} />
-            </div>
-
-            <div className="flex items-center gap-4 flex-wrap text-sm text-zinc-300 mb-4">
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-zinc-500" />
-                <span>{formatDate(latestJob.created_at)}</span>
+            <div className="flex items-center gap-3 p-4 bg-zinc-900/50">
+              <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center shrink-0">
+                <Camera className="w-5 h-5 text-yellow-400" />
               </div>
-              {latestJob.total_products != null && (
-                <div className="flex items-center gap-1.5">
-                  <Package className="w-3.5 h-3.5 text-zinc-500" />
-                  <span>{latestJob.total_products?.toLocaleString()} products</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm font-medium text-white">Latest Photoshoot</h3>
+                  <JobStatusBadge status={latestJob.status} />
                 </div>
-              )}
-              {latestJob.total_images != null && (
-                <div className="flex items-center gap-1.5">
-                  <Images className="w-3.5 h-3.5 text-zinc-500" />
-                  <span>{latestJob.total_images?.toLocaleString()} images</span>
+                <div className="flex items-center gap-3 mt-0.5 text-[11px] text-zinc-500">
+                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{formatDate(latestJob.created_at)}</span>
+                  {latestJob.total_products != null && <span className="flex items-center gap-1"><Package className="w-3 h-3" />{latestJob.total_products} products</span>}
+                  {latestJob.total_images != null && <span className="flex items-center gap-1"><Images className="w-3 h-3" />{latestJob.total_images} images</span>}
+                  {latestJob.duration_ms != null && <span className="flex items-center gap-1"><Timer className="w-3 h-3" />{formatDuration(latestJob.duration_ms)}</span>}
                 </div>
-              )}
-              {latestJob.duration_ms != null && (
-                <div className="flex items-center gap-1.5">
-                  <Timer className="w-3.5 h-3.5 text-zinc-500" />
-                  <span>{formatDuration(latestJob.duration_ms)}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={() => navigate(`/SyncStudioResults?jobId=${latestJob.job_id}`)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/50 text-zinc-300 transition-colors"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                View Results
-              </button>
-              {latestJob.status === 'completed' && (
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={() => navigate(`/SyncStudioResults?jobId=${latestJob.job_id}&publish=true`)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 text-yellow-400 transition-colors"
+                  onClick={() => navigate(`/SyncStudioResults?jobId=${getJobId(latestJob)}`)}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/50 text-zinc-300 transition-colors"
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  Publish to Bol.com
+                  <Eye className="w-3 h-3" />
+                  View Results
                 </button>
-              )}
+                {latestJob.status === 'completed' && (
+                  <button
+                    onClick={() => navigate(`/SyncStudioResults?jobId=${getJobId(latestJob)}&publish=true`)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 text-yellow-400 transition-colors"
+                  >
+                    <Send className="w-3 h-3" />
+                    Publish
+                  </button>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
 
-        {/* ============================================================ */}
-        {/* START NEW PHOTOSHOOT CARD                                      */}
-        {/* ============================================================ */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.1 }}
-          className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6 mb-4"
-        >
-          <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">
-            Start New Photoshoot
-          </h2>
-
-          {lastSyncedRelative && (
-            <p className="text-sm text-zinc-400 mb-4">
-              Your catalog was last synced <span className="text-zinc-300 font-medium">{lastSyncedRelative}</span>.
-            </p>
-          )}
-
-          <div className="space-y-3">
-            {/* Re-sync & Plan */}
-            <button
-              onClick={() => navigate('/SyncStudioHome?resync=true')}
-              className="group w-full text-left bg-zinc-800/40 hover:bg-zinc-800/60 border border-zinc-700/40 hover:border-yellow-500/30 rounded-xl p-4 transition-all"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center shrink-0">
-                  <RefreshCw className="w-5 h-5 text-yellow-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white group-hover:text-yellow-300 transition-colors">
-                    Re-sync & Plan New Shoot
-                  </p>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    Delta update, only new/changed products
-                  </p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-yellow-400 transition-colors shrink-0" />
-              </div>
-            </button>
-
-            {/* Use Current Catalog */}
-            <button
-              onClick={() => navigate('/SyncStudioDashboard')}
-              className="group w-full text-left bg-zinc-800/40 hover:bg-zinc-800/60 border border-zinc-700/40 hover:border-zinc-600/60 rounded-xl p-4 transition-all"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-zinc-700/30 border border-zinc-600/30 flex items-center justify-center shrink-0">
-                  <Play className="w-5 h-5 text-zinc-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white group-hover:text-zinc-200 transition-colors">
-                    Use Current Catalog
-                  </p>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    Reuse existing data, generate new plans
-                  </p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors shrink-0" />
-              </div>
-            </button>
-          </div>
-        </motion.div>
-
-        {/* ============================================================ */}
-        {/* PHOTOSHOOT HISTORY TABLE                                       */}
-        {/* ============================================================ */}
+        {/* ─── History Table ───────────────────────────────────── */}
         {jobs.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.15 }}
-            className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl overflow-hidden"
+            transition={{ delay: 0.05 }}
+            className="border border-zinc-800/60 rounded-2xl overflow-hidden"
           >
-            <div className="px-6 pt-5 pb-3">
-              <div className="flex items-center gap-2">
-                <History className="w-4 h-4 text-zinc-500" />
-                <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
-                  Photoshoot History
-                </h2>
-              </div>
+            <div className="px-4 pt-4 pb-2 flex items-center gap-2">
+              <History className="w-4 h-4 text-zinc-500" />
+              <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                All Photoshoots
+              </h2>
+              <span className="text-[10px] text-zinc-600 ml-auto">{jobs.length} total</span>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-700/50">
+            <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[600px]">
                 <thead>
                   <tr className="border-t border-zinc-800/60">
-                    <th className="text-left text-[11px] font-medium text-zinc-500 uppercase tracking-wider px-6 py-3">
-                      Date
-                    </th>
-                    <th className="text-left text-[11px] font-medium text-zinc-500 uppercase tracking-wider px-3 py-3">
-                      Products
-                    </th>
-                    <th className="text-left text-[11px] font-medium text-zinc-500 uppercase tracking-wider px-3 py-3">
-                      Images
-                    </th>
-                    <th className="text-left text-[11px] font-medium text-zinc-500 uppercase tracking-wider px-3 py-3">
-                      Duration
-                    </th>
-                    <th className="text-left text-[11px] font-medium text-zinc-500 uppercase tracking-wider px-3 py-3">
-                      Status
-                    </th>
-                    <th className="text-right text-[11px] font-medium text-zinc-500 uppercase tracking-wider px-6 py-3">
-                      Actions
-                    </th>
+                    <th className="text-left text-[10px] font-medium text-zinc-600 uppercase tracking-wider px-4 py-2">Date</th>
+                    <th className="text-left text-[10px] font-medium text-zinc-600 uppercase tracking-wider px-3 py-2">Products</th>
+                    <th className="text-left text-[10px] font-medium text-zinc-600 uppercase tracking-wider px-3 py-2">Images</th>
+                    <th className="text-left text-[10px] font-medium text-zinc-600 uppercase tracking-wider px-3 py-2">Duration</th>
+                    <th className="text-left text-[10px] font-medium text-zinc-600 uppercase tracking-wider px-3 py-2">Status</th>
+                    <th className="text-right text-[10px] font-medium text-zinc-600 uppercase tracking-wider px-4 py-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {jobs.map((job, idx) => (
                     <tr
-                      key={job.job_id || job.id || idx}
-                      className={`border-t border-zinc-800/40 hover:bg-zinc-800/30 transition-colors ${idx % 2 === 1 ? 'bg-zinc-800/10' : ''}`}
+                      key={getJobId(job) || idx}
+                      className="border-t border-zinc-800/40 hover:bg-zinc-800/30 transition-colors"
                     >
-                      <td className="px-6 py-3 text-zinc-300 whitespace-nowrap">
+                      <td className="px-4 py-2.5 text-zinc-300 text-xs whitespace-nowrap">
                         {formatDate(job.created_at)}
                       </td>
-                      <td className="px-3 py-3 text-zinc-300 font-medium tabular-nums whitespace-nowrap">
+                      <td className="px-3 py-2.5 text-zinc-300 text-xs font-medium tabular-nums whitespace-nowrap">
                         {job.total_products != null ? job.total_products.toLocaleString() : '-'}
                       </td>
-                      <td className="px-3 py-3 text-zinc-300 font-medium tabular-nums whitespace-nowrap">
+                      <td className="px-3 py-2.5 text-zinc-300 text-xs font-medium tabular-nums whitespace-nowrap">
                         {job.total_images != null ? job.total_images.toLocaleString() : '-'}
                       </td>
-                      <td className="px-3 py-3 text-zinc-400 whitespace-nowrap">
+                      <td className="px-3 py-2.5 text-zinc-500 text-xs whitespace-nowrap">
                         {formatDuration(job.duration_ms)}
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap">
+                      <td className="px-3 py-2.5 whitespace-nowrap">
                         <JobStatusBadge status={job.status} />
                       </td>
-                      <td className="px-6 py-3 text-right whitespace-nowrap">
+                      <td className="px-4 py-2.5 text-right whitespace-nowrap">
                         <button
-                          onClick={() => navigate(`/SyncStudioResults?jobId=${job.job_id}`)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/50 text-zinc-300 transition-colors"
+                          onClick={() => navigate(`/SyncStudioResults?jobId=${getJobId(job)}`)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/50 text-zinc-300 transition-colors"
                         >
                           <Eye className="w-3 h-3" />
                           View
@@ -470,13 +318,6 @@ export default function SyncStudioReturn() {
                   ))}
                 </tbody>
               </table>
-            </div>
-
-            {/* Footer */}
-            <div className="px-6 py-3 border-t border-zinc-800/40">
-              <p className="text-[11px] text-zinc-600">
-                {jobs.length} photoshoot{jobs.length !== 1 ? 's' : ''} total
-              </p>
             </div>
           </motion.div>
         )}
