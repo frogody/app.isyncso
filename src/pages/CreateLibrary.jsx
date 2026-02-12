@@ -55,7 +55,7 @@ const FILTER_CHIPS = [
   { value: 'sync_studio', label: 'Sync Studio' },
 ];
 
-export default function CreateLibrary() {
+export default function CreateLibrary({ embedded = false }) {
   const { theme, toggleTheme, ct } = useTheme();
   const { user } = useUser();
   const navigate = useNavigate();
@@ -313,22 +313,28 @@ export default function CreateLibrary() {
 
   const deleteCount = deleteTarget === 'bulk' ? selectedItems.length : 1;
 
+  const Wrapper = embedded ? React.Fragment : CreatePageTransition;
+
   return (
-    <CreatePageTransition>
-      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-[#09090b]')}`}>
+    <Wrapper>
+      <div className={`${embedded ? '' : 'min-h-screen'} ${ct('bg-slate-50', 'bg-[#09090b]')}`}>
         <div className="w-full px-4 lg:px-6 py-4 space-y-4">
 
           {/* Header Row */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate(createPageUrl('Create'))}
-                className={`flex items-center gap-1.5 text-sm ${ct('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')} transition-colors`}
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Create Studio
-              </button>
-              <div className={`w-px h-5 ${ct('bg-slate-200', 'bg-zinc-800')}`} />
+              {!embedded && (
+                <>
+                  <button
+                    onClick={() => navigate(createPageUrl('Create'))}
+                    className={`flex items-center gap-1.5 text-sm ${ct('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')} transition-colors`}
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Create Studio
+                  </button>
+                  <div className={`w-px h-5 ${ct('bg-slate-200', 'bg-zinc-800')}`} />
+                </>
+              )}
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
                   <FolderOpen className="w-4 h-4 text-yellow-400" />
@@ -821,6 +827,6 @@ export default function CreateLibrary() {
           )}
         </AnimatePresence>
       </div>
-    </CreatePageTransition>
+    </Wrapper>
   );
 }

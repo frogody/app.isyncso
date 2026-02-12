@@ -141,12 +141,12 @@ function getTemplateProps(templateId, selectedProduct, brandAssets, digitalProdu
     accent: designAnalysis.colorPalette.accent,
   } : {
     primary: brandAssets?.colors?.primary || '#0f0f0f',
-    secondary: brandAssets?.colors?.secondary || '#1a1a2e',
-    accent: brandAssets?.colors?.accent || '#06b6d4',
+    secondary: brandAssets?.colors?.secondary || '#1c1917',
+    accent: brandAssets?.colors?.accent || '#EAB308',
   };
 
   const productName = selectedProduct?.name || 'Your Product';
-  const productImage = selectedProduct?.featured_image?.url || 'https://placehold.co/800x600/1a1a2e/06b6d4?text=Product';
+  const productImage = selectedProduct?.featured_image?.url || 'https://placehold.co/800x600/1c1917/EAB308?text=Product';
 
   const dpFeatures = digitalProductData?.features;
 
@@ -311,10 +311,10 @@ function ProductSelector({ selectedProduct, setSelectedProduct, products, produc
   );
 }
 
-export default function CreateVideos({ embedded = false }) {
+export default function CreateVideos({ embedded = false, defaultMode = 'ai' }) {
   const { user } = useUser();
   const { theme, toggleTheme, ct } = useTheme();
-  const [mode, setMode] = useState('ai');
+  const [mode, setMode] = useState(defaultMode);
   const [prompt, setPrompt] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('cinematic');
   const [duration, setDuration] = useState('10');
@@ -903,17 +903,6 @@ export default function CreateVideos({ embedded = false }) {
                 <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>Multi-shot storyboard with automatic assembly</p>
               </button>
             </div>
-          )}
-
-          {/* Back button when in studio or templates mode */}
-          {(mode === 'studio' || mode === 'templates') && (
-            <button
-              onClick={() => setMode('ai')}
-              className={`flex items-center gap-1.5 text-sm ${ct('text-slate-500', 'text-zinc-500')} ${ct('hover:text-slate-700', 'hover:text-zinc-300')} transition-colors`}
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Back to modes
-            </button>
           )}
 
           {/* ───── AI Studio Mode ───── */}

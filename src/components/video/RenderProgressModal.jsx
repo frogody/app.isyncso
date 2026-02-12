@@ -31,7 +31,7 @@ export default function RenderProgressModal({ isOpen, onClose, job, onRetry }) {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <Film className="w-5 h-5 text-cyan-400" />
+            <Film className="w-5 h-5 text-yellow-400" />
             <h3 className="text-lg font-semibold text-white">Video Render</h3>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
@@ -46,7 +46,7 @@ export default function RenderProgressModal({ isOpen, onClose, job, onRetry }) {
             {isComplete && <CheckCircle className="w-12 h-12 text-green-400" />}
             {isFailed && <AlertCircle className="w-12 h-12 text-red-400" />}
             {isActive && (
-              <div className="w-12 h-12 border-3 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+              <div className="w-12 h-12 border-3 border-yellow-400 border-t-transparent rounded-full animate-spin" />
             )}
           </div>
 
@@ -59,7 +59,7 @@ export default function RenderProgressModal({ isOpen, onClose, job, onRetry }) {
           <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
-                isFailed ? 'bg-red-500' : isComplete ? 'bg-green-500' : 'bg-cyan-500'
+                isFailed ? 'bg-red-500' : isComplete ? 'bg-green-500' : 'bg-yellow-500'
               }`}
               style={{ width: `${progress}%` }}
             />
@@ -76,7 +76,7 @@ export default function RenderProgressModal({ isOpen, onClose, job, onRetry }) {
             <a
               href={job.output_url}
               download
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black text-white rounded-lg text-sm font-medium transition-colors"
             >
               <Download className="w-4 h-4" />
               Download MP4
@@ -90,7 +90,7 @@ export default function RenderProgressModal({ isOpen, onClose, job, onRetry }) {
               </div>
               <button
                 onClick={onClose}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 rounded-lg text-sm font-medium transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 rounded-lg text-sm font-medium transition-colors"
               >
                 <Play className="w-4 h-4" />
                 Preview in Player
@@ -100,7 +100,7 @@ export default function RenderProgressModal({ isOpen, onClose, job, onRetry }) {
           {isFailed && onRetry && (
             <button
               onClick={onRetry}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 rounded-lg text-sm font-medium transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 rounded-lg text-sm font-medium transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
               Retry

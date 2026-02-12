@@ -9,6 +9,9 @@ import {
   Clapperboard,
   LayoutTemplate,
   FolderOpen,
+  Mic,
+  AudioLines,
+  UserCircle,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -19,6 +22,9 @@ const NAV_ITEMS = [
   { key: 'clipshoot',  label: 'Clipshoot',  path: '/StudioClipshoot',  icon: Clapperboard },
   { key: 'templates',  label: 'Templates',  path: '/StudioTemplates',  icon: LayoutTemplate },
   { key: 'library',    label: 'Library',    path: '/StudioLibrary',    icon: FolderOpen },
+  { key: 'podcast',    label: 'Podcast',    path: '/StudioPodcast',    icon: Mic },
+  { key: 'voice',      label: 'Voice',      path: '/StudioVoice',      icon: AudioLines },
+  { key: 'avatar',     label: 'Avatar',     path: '/StudioAvatar',     icon: UserCircle },
 ];
 
 export default function StudioNav({ current }) {

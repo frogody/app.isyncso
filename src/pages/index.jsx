@@ -286,6 +286,9 @@ import StudioPhotoshoot from "./StudioPhotoshoot";
 import StudioClipshoot from "./StudioClipshoot";
 import StudioTemplates from "./StudioTemplates";
 import StudioLibrary from "./StudioLibrary";
+import StudioPodcast from "./StudioPodcast";
+import StudioVoice from "./StudioVoice";
+import StudioAvatar from "./StudioAvatar";
 
 import InventoryReceiving from "./InventoryReceiving";
 
@@ -655,6 +658,9 @@ const PAGES = {
     StudioClipshoot: StudioClipshoot,
     StudioTemplates: StudioTemplates,
     StudioLibrary: StudioLibrary,
+    StudioPodcast: StudioPodcast,
+    StudioVoice: StudioVoice,
+    StudioAvatar: StudioAvatar,
 
     InventoryReceiving: InventoryReceiving,
 
@@ -1101,11 +1107,11 @@ function PagesContent() {
 
                 <Route path="/CreateBranding" element={<CreateBranding />} />
 
-                <Route path="/CreateImages" element={<CreateImages />} />
+                <Route path="/CreateImages" element={<Navigate to="/StudioImage" replace />} />
 
-                <Route path="/CreateVideos" element={<CreateVideos />} />
+                <Route path="/CreateVideos" element={<Navigate to="/StudioVideo" replace />} />
 
-                <Route path="/CreateLibrary" element={<CreateLibrary />} />
+                <Route path="/CreateLibrary" element={<Navigate to="/StudioLibrary" replace />} />
 
                 <Route path="/ContentCalendar" element={<ContentCalendar />} />
 
@@ -1125,6 +1131,9 @@ function PagesContent() {
                 <Route path="/StudioClipshoot" element={<StudioClipshoot />} />
                 <Route path="/StudioTemplates" element={<StudioTemplates />} />
                 <Route path="/StudioLibrary" element={<StudioLibrary />} />
+                <Route path="/StudioPodcast" element={<StudioPodcast />} />
+                <Route path="/StudioVoice" element={<StudioVoice />} />
+                <Route path="/StudioAvatar" element={<StudioAvatar />} />
 
                 <Route path="/InventoryReceiving" element={<InventoryReceiving />} />
 

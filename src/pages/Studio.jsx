@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Image, Film, Camera, Clapperboard, ArrowRight, Sparkles } from 'lucide-react';
+import { Image, Film, Camera, Clapperboard, ArrowRight, Sparkles, Mic, AudioLines, UserCircle } from 'lucide-react';
 import { StudioNav } from '@/components/studio';
 
 const TOOLS = [
@@ -41,6 +41,33 @@ const TOOLS = [
     gradient: 'from-emerald-500/20 to-green-500/10',
     color: 'text-emerald-400',
   },
+  {
+    key: 'podcast',
+    title: 'Podcast',
+    description: 'Create AI-powered podcasts with multiple speakers and voice clones',
+    icon: Mic,
+    route: '/StudioPodcast',
+    gradient: 'from-orange-500/20 to-red-500/10',
+    color: 'text-orange-400',
+  },
+  {
+    key: 'voiceclone',
+    title: 'Voice Clone',
+    description: 'Clone your voice for videos, podcasts, and explainer content',
+    icon: AudioLines,
+    route: '/StudioVoice',
+    gradient: 'from-pink-500/20 to-rose-500/10',
+    color: 'text-pink-400',
+  },
+  {
+    key: 'avatar',
+    title: 'Avatar',
+    description: 'Create AI avatars from photos for UGC videos and Instagram posts',
+    icon: UserCircle,
+    route: '/StudioAvatar',
+    gradient: 'from-violet-500/20 to-purple-500/10',
+    color: 'text-violet-400',
+  },
 ];
 
 export default function Studio() {
@@ -64,12 +91,12 @@ export default function Studio() {
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Create Studio</h1>
           <p className="text-zinc-500 text-sm max-w-md mx-auto">
-            Generate images, videos, bulk photoshoots, and multi-shot clipshoot assemblies — all in one place.
+            Generate images, videos, podcasts, avatars, and more — all in one place.
           </p>
         </div>
 
         {/* Tool Cards */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
           {TOOLS.map((tool, i) => {
             const Icon = tool.icon;
             return (
