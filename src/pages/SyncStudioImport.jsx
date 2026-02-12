@@ -69,7 +69,7 @@ function StatPill({ icon: Icon, label, value, suffix = '' }) {
       animate={{ opacity: 1, y: 0 }}
       className="flex items-center gap-2 bg-zinc-800/60 border border-zinc-700/50 rounded-xl px-3.5 py-2"
     >
-      <Icon className="w-4 h-4 text-cyan-400 shrink-0" />
+      <Icon className="w-4 h-4 text-yellow-400 shrink-0" />
       <span className="text-sm text-zinc-400">{label}</span>
       <span className="text-sm font-semibold text-white tabular-nums">
         <AnimatedCounter value={value} />
@@ -90,7 +90,7 @@ function ImportProgressBar({ current, total }) {
         value={percentage}
       >
         <Progress.Indicator
-          className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400 transition-all duration-500 ease-out"
+          className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 transition-all duration-500 ease-out"
           style={{ width: `${percentage}%` }}
         />
       </Progress.Root>
@@ -104,7 +104,7 @@ function ImportProgressBar({ current, total }) {
             <AnimatedCounter value={total} />
           </span>
         </span>
-        <span className="tabular-nums text-cyan-400/80 font-medium">{percentage}%</span>
+        <span className="tabular-nums text-yellow-400/80 font-medium">{percentage}%</span>
       </div>
     </div>
   );
@@ -470,7 +470,7 @@ export default function SyncStudioImport() {
             transition={{ duration: 0.3 }}
             className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8 max-w-lg w-full text-center"
           >
-            <Loader2 className="w-10 h-10 text-cyan-400 animate-spin mx-auto mb-4" />
+            <Loader2 className="w-10 h-10 text-yellow-400 animate-spin mx-auto mb-4" />
             <p className="text-zinc-400 text-sm">Connecting to Bol.com...</p>
           </motion.div>
         )}
@@ -487,8 +487,8 @@ export default function SyncStudioImport() {
           >
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-                <Package className="w-5 h-5 text-cyan-400" />
+              <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+                <Package className="w-5 h-5 text-yellow-400" />
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-white">Importing your catalog...</h2>
@@ -547,8 +547,8 @@ export default function SyncStudioImport() {
           >
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-                <Palette className="w-5 h-5 text-cyan-400" />
+              <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+                <Palette className="w-5 h-5 text-yellow-400" />
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-white">Creating shoot plans...</h2>
@@ -577,7 +577,7 @@ export default function SyncStudioImport() {
 
             {/* Spinner */}
             <div className="flex items-center gap-2 text-xs text-zinc-600">
-              <Loader2 className="w-3 h-3 animate-spin shrink-0 text-cyan-400" />
+              <Loader2 className="w-3 h-3 animate-spin shrink-0 text-yellow-400" />
               <span>Analyzing categories, prices & existing images...</span>
             </div>
           </motion.div>
@@ -597,9 +597,9 @@ export default function SyncStudioImport() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
-              className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto mb-5"
+              className="w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mx-auto mb-5"
             >
-              <CheckCircle2 className="w-7 h-7 text-cyan-400" />
+              <CheckCircle2 className="w-7 h-7 text-yellow-400" />
             </motion.div>
 
             <h2 className="text-xl font-semibold text-white mb-2">Studio ready!</h2>
@@ -617,9 +617,9 @@ export default function SyncStudioImport() {
             </p>
 
             <div className="flex items-center justify-center gap-2 text-sm text-zinc-500">
-              <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+              <Loader2 className="w-4 h-4 animate-spin text-yellow-400" />
               <span>Redirecting to dashboard...</span>
-              <ArrowRight className="w-4 h-4 text-cyan-400" />
+              <ArrowRight className="w-4 h-4 text-yellow-400" />
             </div>
           </motion.div>
         )}
@@ -645,7 +645,7 @@ export default function SyncStudioImport() {
 
             <button
               onClick={handleRetry}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-sm font-medium rounded-xl transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 text-sm font-medium rounded-xl transition-colors"
             >
               Try again
             </button>

@@ -63,7 +63,7 @@ function formatDuration(ms) {
 function JobStatusBadge({ status }) {
   if (status === 'completed') {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
         <CheckCircle2 className="w-3 h-3" />
         Completed
       </span>
@@ -87,7 +87,7 @@ function JobStatusBadge({ status }) {
   }
   if (status === 'processing' || status === 'in_progress') {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
         <Loader2 className="w-3 h-3 animate-spin" />
         In Progress
       </span>
@@ -187,8 +187,8 @@ export default function SyncStudioReturn() {
       <div className="min-h-screen bg-black">
         <div className="max-w-4xl mx-auto px-4 pt-12 pb-8">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-              <Camera className="w-6 h-6 text-cyan-400" />
+            <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+              <Camera className="w-6 h-6 text-yellow-400" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">Sync Studio</h1>
@@ -215,8 +215,8 @@ export default function SyncStudioReturn() {
           transition={{ duration: 0.4 }}
           className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8 max-w-md w-full text-center"
         >
-          <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto mb-5">
-            <Camera className="w-7 h-7 text-cyan-400" />
+          <div className="w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mx-auto mb-5">
+            <Camera className="w-7 h-7 text-yellow-400" />
           </div>
           <h2 className="text-xl font-semibold text-white mb-2">Welcome to Sync Studio</h2>
           <p className="text-sm text-zinc-400 mb-6">
@@ -224,7 +224,7 @@ export default function SyncStudioReturn() {
           </p>
           <button
             onClick={() => navigate('/SyncStudioHome')}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-black text-sm font-semibold rounded-xl transition-all shadow-lg shadow-cyan-500/20"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-black text-sm font-semibold rounded-xl transition-all shadow-lg shadow-yellow-500/20"
           >
             Get Started
             <ArrowRight className="w-4 h-4" />
@@ -245,8 +245,8 @@ export default function SyncStudioReturn() {
           transition={{ duration: 0.3 }}
           className="flex items-center gap-3 mb-8"
         >
-          <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-            <Camera className="w-6 h-6 text-cyan-400" />
+          <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+            <Camera className="w-6 h-6 text-yellow-400" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">Sync Studio</h1>
@@ -312,7 +312,7 @@ export default function SyncStudioReturn() {
               {latestJob.status === 'completed' && (
                 <button
                   onClick={() => navigate(`/SyncStudioResults?jobId=${latestJob.job_id}&publish=true`)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 text-yellow-400 transition-colors"
                 >
                   <Send className="w-3.5 h-3.5" />
                   Publish to Bol.com
@@ -345,21 +345,21 @@ export default function SyncStudioReturn() {
             {/* Re-sync & Plan */}
             <button
               onClick={() => navigate('/SyncStudioHome?resync=true')}
-              className="group w-full text-left bg-zinc-800/40 hover:bg-zinc-800/60 border border-zinc-700/40 hover:border-cyan-500/30 rounded-xl p-4 transition-all"
+              className="group w-full text-left bg-zinc-800/40 hover:bg-zinc-800/60 border border-zinc-700/40 hover:border-yellow-500/30 rounded-xl p-4 transition-all"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0">
-                  <RefreshCw className="w-5 h-5 text-cyan-400" />
+                <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center shrink-0">
+                  <RefreshCw className="w-5 h-5 text-yellow-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white group-hover:text-cyan-300 transition-colors">
+                  <p className="text-sm font-semibold text-white group-hover:text-yellow-300 transition-colors">
                     Re-sync & Plan New Shoot
                   </p>
                   <p className="text-xs text-zinc-500 mt-0.5">
                     Delta update, only new/changed products
                   </p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-cyan-400 transition-colors shrink-0" />
+                <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-yellow-400 transition-colors shrink-0" />
               </div>
             </button>
 
