@@ -522,6 +522,22 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
     };
   }
 
+  // SYNC STUDIO routes (must come before SYNC to avoid /sync prefix match)
+  if (path.startsWith('/syncstudio')) {
+    return {
+      title: 'SYNC STUDIO',
+      color: 'cyan',
+      items: [
+        { label: 'Studio', path: createPageUrl('SyncStudioHome'), icon: Camera },
+        { label: 'Import', path: createPageUrl('SyncStudioImport'), icon: Package },
+        { label: 'Dashboard', path: createPageUrl('SyncStudioDashboard'), icon: LayoutDashboard },
+        { label: 'Photoshoot', path: createPageUrl('SyncStudioPhotoshoot'), icon: Sparkles },
+        { label: 'Results', path: createPageUrl('SyncStudioResults'), icon: Images },
+        { label: 'History', path: createPageUrl('SyncStudioReturn'), icon: History },
+      ]
+    };
+  }
+
   // SYNC routes
   if (path.startsWith('/sync') || path.startsWith('/aiassistant') || path.startsWith('/actions') ||
       path.startsWith('/activity') || path.startsWith('/desktop') || path.startsWith('/dailyjournal')) {
@@ -530,6 +546,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       { label: 'Actions', path: createPageUrl('Actions'), icon: Zap },
       { label: 'Activity', path: createPageUrl('DesktopActivity') + '?tab=overview', icon: BarChart3, matchPath: '/desktopactivity' },
       { label: 'Daily Journals', path: createPageUrl('DailyJournal'), icon: BookOpen },
+      { label: 'Sync Studio', path: createPageUrl('SyncStudioHome'), icon: Camera },
     ];
     return {
       title: 'SYNC',
@@ -550,22 +567,6 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Images', path: createPageUrl('CreateImages'), icon: Image },
         { label: 'Videos', path: createPageUrl('CreateVideos'), icon: Video },
         { label: 'Library', path: createPageUrl('CreateLibrary'), icon: FolderOpen },
-      ]
-    };
-  }
-
-  // SYNC STUDIO routes
-  if (path.startsWith('/syncstudio')) {
-    return {
-      title: 'SYNC STUDIO',
-      color: 'cyan',
-      items: [
-        { label: 'Studio', path: createPageUrl('SyncStudioHome'), icon: Camera },
-        { label: 'Import', path: createPageUrl('SyncStudioImport'), icon: Package },
-        { label: 'Dashboard', path: createPageUrl('SyncStudioDashboard'), icon: LayoutDashboard },
-        { label: 'Photoshoot', path: createPageUrl('SyncStudioPhotoshoot'), icon: Sparkles },
-        { label: 'Results', path: createPageUrl('SyncStudioResults'), icon: Images },
-        { label: 'History', path: createPageUrl('SyncStudioReturn'), icon: History },
       ]
     };
   }

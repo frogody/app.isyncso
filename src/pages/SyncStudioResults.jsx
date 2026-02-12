@@ -308,6 +308,36 @@ export default function SyncStudioResults() {
   }, [user, jobId]);
 
   // -------------------------------------------------------------------------
+  // Render: No jobId guard
+  // -------------------------------------------------------------------------
+
+  if (!jobId) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center max-w-sm"
+        >
+          <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center mx-auto mb-5">
+            <Images className="w-7 h-7 text-zinc-500" />
+          </div>
+          <h2 className="text-xl font-semibold text-white mb-2">No Results Found</h2>
+          <p className="text-sm text-zinc-400 mb-6">
+            No job ID was provided. Please start from the dashboard.
+          </p>
+          <button
+            onClick={() => navigate('/SyncStudioDashboard')}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-black font-semibold rounded-xl transition-all"
+          >
+            Go to Dashboard
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // -------------------------------------------------------------------------
   // Render: Loading State
   // -------------------------------------------------------------------------
 
