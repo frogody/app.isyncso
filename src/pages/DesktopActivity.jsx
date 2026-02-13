@@ -105,6 +105,7 @@ export default function DesktopActivity() {
   const [generatingJournal, setGeneratingJournal] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [copiedCommand, setCopiedCommand] = useState(false);
+  const [expandedOcr, setExpandedOcr] = useState(new Set());
 
   const DOWNLOAD_URL_ARM64 = "https://github.com/frogody/sync.desktop/releases/download/v2.0.2/SYNC.Desktop-2.0.2-arm64.dmg";
   const DOWNLOAD_URL_INTEL = "https://github.com/frogody/sync.desktop/releases/download/v2.0.2/SYNC.Desktop-2.0.2-x64.dmg";
@@ -381,6 +382,25 @@ export default function DesktopActivity() {
       }
     }
     return 'from-zinc-500 to-zinc-600';
+  };
+
+  const parseCommitments = (raw) => {
+    if (!raw) return null;
+    try {
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      return typeof raw === 'string' && raw.trim() ? [{ description: raw }] : null;
+    }
+  };
+
+  const toggleOcrExpand = (logId) => {
+    setExpandedOcr(prev => {
+      const next = new Set(prev);
+      if (next.has(logId)) next.delete(logId);
+      else next.add(logId);
+      return next;
+    });
   };
 
   if (loading) {
@@ -953,6 +973,11 @@ export default function DesktopActivity() {
                           <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">
                             {Math.round((log.focus_score || 0) * 100)}% focus
                           </Badge>
+                          {log.semantic_category && (
+                            <Badge className="bg-cyan-500/10 text-cyan-300 border-cyan-500/30 text-xs">
+                              {log.semantic_category}
+                            </Badge>
+                          )}
                         </div>
                         {log.app_breakdown && (Array.isArray(log.app_breakdown) ? log.app_breakdown.length > 0 : Object.keys(log.app_breakdown).length > 0) && (
                           <div className="flex flex-wrap gap-1.5 mt-2">
@@ -975,6 +1000,38 @@ export default function DesktopActivity() {
                               ))}
                           </div>
                         )}
+                        {log.ocr_text && (
+                          <div className="mt-2">
+                            <button
+                              onClick={() => toggleOcrExpand(log.id)}
+                              className="w-full text-left p-2.5 rounded-lg bg-zinc-900/60 border border-zinc-700/30 hover:border-zinc-600/50 transition-colors"
+                            >
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <FileText className="w-3 h-3 text-zinc-500" />
+                                <span className="text-[10px] text-zinc-500">Screen Content</span>
+                                <span className="text-[10px] text-cyan-400 ml-auto">
+                                  {expandedOcr.has(log.id) ? 'collapse' : 'expand'}
+                                </span>
+                              </div>
+                              <p className={`text-xs text-zinc-400 ${expandedOcr.has(log.id) ? 'whitespace-pre-wrap' : 'line-clamp-2'}`}>
+                                {log.ocr_text}
+                              </p>
+                            </button>
+                          </div>
+                        )}
+                        {(() => {
+                          const commitments = parseCommitments(log.commitments);
+                          if (!commitments || commitments.length === 0) return null;
+                          return (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {commitments.map((c, ci) => (
+                                <Badge key={ci} className="bg-amber-500/10 text-amber-200/90 border-amber-500/20 text-xs">
+                                  {c.description || c.title || c.text || (typeof c === 'string' ? c : JSON.stringify(c))}
+                                </Badge>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </motion.div>
                   ))}
@@ -1018,15 +1075,25 @@ export default function DesktopActivity() {
                         </Badge>
                       </div>
                       <div className="space-y-2">
-                        {['Morning (6-12)', 'Afternoon (12-18)', 'Evening (18-24)'].map((period, i) => {
-                          const value = 20 + Math.random() * 60; // Placeholder - will be real data
+                        {[
+                          { label: 'Morning (6-12)', min: 6, max: 12 },
+                          { label: 'Afternoon (12-18)', min: 12, max: 18 },
+                          { label: 'Evening (18-24)', min: 18, max: 24 },
+                        ].map(({ label, min, max }) => {
+                          const periodLogs = activityLogs.filter(log => {
+                            const h = new Date(log.hour_start).getHours();
+                            return h >= min && h < max;
+                          });
+                          const avgFocus = periodLogs.length > 0
+                            ? periodLogs.reduce((sum, l) => sum + (l.focus_score || 0), 0) / periodLogs.length * 100
+                            : 0;
                           return (
-                            <div key={period}>
+                            <div key={label}>
                               <div className="flex justify-between text-sm mb-1">
-                                <span className="text-zinc-400">{period}</span>
-                                <span className="text-cyan-300">{Math.round(value)}%</span>
+                                <span className="text-zinc-400">{label}</span>
+                                <span className="text-cyan-300">{Math.round(avgFocus)}%</span>
                               </div>
-                              <Progress value={value} className="h-2 bg-zinc-800" />
+                              <Progress value={avgFocus} className="h-2 bg-zinc-800" />
                             </div>
                           );
                         })}
@@ -1044,47 +1111,53 @@ export default function DesktopActivity() {
                   Category Breakdown
                 </h3>
                 <div className="space-y-3">
-                  {stats.topApps.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Monitor className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-                      <p className="text-zinc-500">No category data yet</p>
-                    </div>
-                  ) : (
-                    <>
-                      {['Development', 'Communication', 'Browsing', 'Writing'].map((category, i) => {
-                        const categoryApps = stats.topApps.filter(app => {
-                          const appName = app.appName?.toLowerCase() || '';
-                          if (category === 'Development') return appName.includes('code') || appName.includes('terminal');
-                          if (category === 'Communication') return appName.includes('slack') || appName.includes('mail');
-                          if (category === 'Browsing') return appName.includes('chrome') || appName.includes('safari');
-                          if (category === 'Writing') return appName.includes('notion') || appName.includes('docs');
-                          return false;
-                        });
-                        const totalMins = categoryApps.reduce((sum, app) => sum + (app.minutes || 0), 0);
-                        const percentage = stats.totalMinutes > 0 ? (totalMins / stats.totalMinutes) * 100 : 0;
+                  {(() => {
+                    const categoryCounts = {};
+                    let totalWithCategory = 0;
+                    activityLogs.forEach(log => {
+                      if (log.semantic_category) {
+                        categoryCounts[log.semantic_category] = (categoryCounts[log.semantic_category] || 0) + (log.total_minutes || 1);
+                        totalWithCategory += (log.total_minutes || 1);
+                      }
+                    });
+                    const categories = Object.entries(categoryCounts)
+                      .sort(([,a], [,b]) => b - a);
 
-                        const colors = {
-                          'Development': 'from-blue-500 to-cyan-500',
-                          'Communication': 'from-cyan-500 to-cyan-400',
-                          'Browsing': 'from-cyan-500 to-blue-500',
-                          'Writing': 'from-blue-500 to-blue-400'
-                        };
+                    if (categories.length === 0) {
+                      return (
+                        <div className="text-center py-8">
+                          <Monitor className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
+                          <p className="text-zinc-500">No category data yet</p>
+                          <p className="text-xs text-zinc-600 mt-1">Categories appear as SYNC Desktop analyzes your work</p>
+                        </div>
+                      );
+                    }
 
-                        return (
-                          <div key={category} className="flex items-center gap-3">
-                            <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${colors[category]}`} />
-                            <div className="flex-1">
-                              <div className="flex justify-between text-sm mb-1">
-                                <span className="text-zinc-300">{category}</span>
-                                <span className="text-zinc-400">{Math.round(percentage)}%</span>
-                              </div>
-                              <Progress value={percentage} className="h-1.5 bg-zinc-800" />
+                    const gradients = [
+                      'from-blue-500 to-cyan-500',
+                      'from-cyan-500 to-cyan-400',
+                      'from-cyan-500 to-blue-500',
+                      'from-blue-500 to-blue-400',
+                      'from-cyan-400 to-blue-400',
+                      'from-blue-400 to-cyan-300',
+                    ];
+
+                    return categories.map(([category, mins], i) => {
+                      const percentage = totalWithCategory > 0 ? (mins / totalWithCategory) * 100 : 0;
+                      return (
+                        <div key={category} className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${gradients[i % gradients.length]}`} />
+                          <div className="flex-1">
+                            <div className="flex justify-between text-sm mb-1">
+                              <span className="text-zinc-300">{category}</span>
+                              <span className="text-zinc-400">{Math.round(percentage)}%</span>
                             </div>
+                            <Progress value={percentage} className="h-1.5 bg-zinc-800" />
                           </div>
-                        );
-                      })}
-                    </>
-                  )}
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </GlassCard>
             </div>
@@ -1171,12 +1244,49 @@ export default function DesktopActivity() {
                         )}
 
                         {log.ocr_text && (
-                          <div className="mt-2 p-3 rounded-lg bg-zinc-900/60 border border-zinc-700/30">
+                          <button
+                            onClick={() => toggleOcrExpand(`ctx-${log.id}`)}
+                            className="w-full text-left mt-2 p-3 rounded-lg bg-zinc-900/60 border border-zinc-700/30 hover:border-zinc-600/50 transition-colors"
+                          >
                             <div className="text-xs text-zinc-500 mb-1 flex items-center gap-1">
                               <FileText className="w-3 h-3" />
-                              Screen Content Preview
+                              <span>Screen Content</span>
+                              <span className="text-[10px] text-cyan-400 ml-auto">
+                                {expandedOcr.has(`ctx-${log.id}`) ? 'collapse' : 'expand'}
+                              </span>
                             </div>
-                            <p className="text-sm text-zinc-400 line-clamp-2">{log.ocr_text}</p>
+                            <p className={`text-sm text-zinc-400 ${expandedOcr.has(`ctx-${log.id}`) ? 'whitespace-pre-wrap' : 'line-clamp-2'}`}>
+                              {log.ocr_text}
+                            </p>
+                          </button>
+                        )}
+
+                        {(() => {
+                          const commitments = parseCommitments(log.commitments);
+                          if (!commitments || commitments.length === 0) return null;
+                          return (
+                            <div className="mt-2 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                              <div className="text-xs text-amber-300/70 mb-1.5 flex items-center gap-1">
+                                <Target className="w-3 h-3" />
+                                Commitments
+                              </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {commitments.map((c, ci) => (
+                                  <Badge key={ci} className="bg-amber-500/10 text-amber-200/90 border-amber-500/20 text-xs">
+                                    {c.description || c.title || c.text || (typeof c === 'string' ? c : JSON.stringify(c))}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {log.screen_captures && (
+                          <div className="mt-2 flex items-center gap-1.5">
+                            <Monitor className="w-3 h-3 text-zinc-500" />
+                            <span className="text-[10px] text-zinc-500">
+                              {Array.isArray(log.screen_captures) ? log.screen_captures.length : log.screen_captures} screen capture{(Array.isArray(log.screen_captures) ? log.screen_captures.length : log.screen_captures) !== 1 ? 's' : ''}
+                            </span>
                           </div>
                         )}
                       </motion.div>

@@ -20,10 +20,64 @@ export default function DailyJournal() {
   const [journals, setJournals] = useState([]);
   const [selectedJournal, setSelectedJournal] = useState(null);
   const [generatingJournal, setGeneratingJournal] = useState(false);
+  const [dayLogs, setDayLogs] = useState({ commitments: [], categories: {} });
 
   useEffect(() => {
     loadData();
   }, []);
+
+  // Fetch activity logs when a journal is selected to get commitments & categories
+  useEffect(() => {
+    if (!selectedJournal?.journal_date || !user?.id) {
+      setDayLogs({ commitments: [], categories: {} });
+      return;
+    }
+    const fetchDayLogs = async () => {
+      try {
+        const { data: logs } = await db.from('desktop_activity_logs')
+          .select('commitments, semantic_category, total_minutes')
+          .eq('user_id', user.id)
+          .gte('hour_start', `${selectedJournal.journal_date}T00:00:00`)
+          .lt('hour_start', `${selectedJournal.journal_date}T23:59:59`);
+
+        if (!logs || logs.length === 0) {
+          setDayLogs({ commitments: [], categories: {} });
+          return;
+        }
+
+        // Extract and deduplicate commitments
+        const allCommitments = [];
+        const seen = new Set();
+        logs.forEach(log => {
+          if (!log.commitments) return;
+          try {
+            const parsed = typeof log.commitments === 'string' ? JSON.parse(log.commitments) : log.commitments;
+            const items = Array.isArray(parsed) ? parsed : [parsed];
+            items.forEach(c => {
+              const key = c.description || c.title || c.text || (typeof c === 'string' ? c : JSON.stringify(c));
+              if (!seen.has(key)) {
+                seen.add(key);
+                allCommitments.push({ ...c, _display: key });
+              }
+            });
+          } catch {}
+        });
+
+        // Aggregate semantic categories
+        const categories = {};
+        logs.forEach(log => {
+          if (log.semantic_category) {
+            categories[log.semantic_category] = (categories[log.semantic_category] || 0) + (log.total_minutes || 1);
+          }
+        });
+
+        setDayLogs({ commitments: allCommitments, categories });
+      } catch (err) {
+        console.error('Failed to fetch day logs:', err);
+      }
+    };
+    fetchDayLogs();
+  }, [selectedJournal?.journal_date, user?.id]);
 
   const loadData = async () => {
     try {
@@ -383,6 +437,57 @@ export default function DailyJournal() {
                       <p className="text-xs text-amber-200/90 leading-relaxed">
                         {selectedJournal.personal_notes}
                       </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Commitments Detected */}
+                {dayLogs.commitments.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-zinc-200 mb-3 flex items-center gap-2">
+                      <Target className="w-4 h-4 text-amber-400" />
+                      Commitments Detected
+                      <Badge className="bg-amber-500/10 text-amber-300 border-amber-500/20 text-[10px] ml-1">
+                        {dayLogs.commitments.length}
+                      </Badge>
+                    </h3>
+                    <div className="space-y-2">
+                      {dayLogs.commitments.map((c, idx) => (
+                        <div key={idx} className="p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/15">
+                          <p className="text-xs text-amber-200/90">{c._display}</p>
+                          {(c.status || c.due_date) && (
+                            <div className="flex items-center gap-2 mt-1.5">
+                              {c.status && (
+                                <Badge className="bg-zinc-800/50 text-zinc-400 border-zinc-700/50 text-[10px]">
+                                  {c.status}
+                                </Badge>
+                              )}
+                              {c.due_date && (
+                                <span className="text-[10px] text-zinc-500">Due: {c.due_date}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Semantic Categories */}
+                {Object.keys(dayLogs.categories).length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-zinc-200 mb-3 flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-cyan-400" />
+                      Work Categories
+                    </h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries(dayLogs.categories)
+                        .sort(([,a], [,b]) => b - a)
+                        .map(([category, mins]) => (
+                          <Badge key={category} className="bg-cyan-500/10 text-cyan-300 border-cyan-500/30 text-xs">
+                            {category} ({Math.round(mins)}m)
+                          </Badge>
+                        ))}
                     </div>
                   </div>
                 )}
