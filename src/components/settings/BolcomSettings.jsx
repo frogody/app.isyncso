@@ -68,6 +68,10 @@ export default function BolcomSettings() {
   const [fetchingImages, setFetchingImages] = useState(false);
   const [imagesResult, setImagesResult] = useState(null);
 
+  // Sync stock
+  const [syncingStock, setSyncingStock] = useState(false);
+  const [stockResult, setStockResult] = useState(null);
+
   // Offer mappings
   const [mappings, setMappings] = useState([]);
   const [loadingMappings, setLoadingMappings] = useState(false);
@@ -241,6 +245,24 @@ export default function BolcomSettings() {
     }
   };
 
+  // Sync stock from bol.com inventory
+  const handleSyncStock = async () => {
+    if (!companyId) { toast.error("No company linked to your account."); return; }
+    setSyncingStock(true);
+    setStockResult(null);
+    try {
+      const result = await callBolcomApi("fetchStock", { companyId });
+      if (!result.success) throw new Error(result.error);
+      setStockResult(result.data);
+      toast.success(`Synced stock for ${result.data.synced} products (${result.data.withStock} with stock)`);
+    } catch (err) {
+      toast.error(err.message || "Failed to sync stock");
+      setStockResult({ error: err.message });
+    } finally {
+      setSyncingStock(false);
+    }
+  };
+
   // Compare stock
   const handleCompareStock = async () => {
     setLoadingStock(true);
@@ -395,7 +417,7 @@ export default function BolcomSettings() {
           <div className="flex items-center gap-2">
             <Button
               onClick={handleImportProducts}
-              disabled={importing || fetchingPricing || fetchingImages}
+              disabled={importing || fetchingPricing || fetchingImages || syncingStock}
               size="sm"
               className="bg-cyan-600 hover:bg-cyan-700 text-white gap-1"
             >
@@ -404,7 +426,7 @@ export default function BolcomSettings() {
             </Button>
             <Button
               onClick={handleFetchPricing}
-              disabled={fetchingPricing || importing || fetchingImages}
+              disabled={fetchingPricing || importing || fetchingImages || syncingStock}
               size="sm"
               variant="outline"
               className="gap-1 border-cyan-600/40 text-cyan-400 hover:bg-cyan-600/10"
@@ -414,13 +436,23 @@ export default function BolcomSettings() {
             </Button>
             <Button
               onClick={handleFetchImages}
-              disabled={fetchingImages || importing || fetchingPricing}
+              disabled={fetchingImages || importing || fetchingPricing || syncingStock}
               size="sm"
               variant="outline"
               className="gap-1 border-cyan-600/40 text-cyan-400 hover:bg-cyan-600/10"
             >
               {fetchingImages ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
               {fetchingImages ? "Fetching Images..." : "Fetch Images"}
+            </Button>
+            <Button
+              onClick={handleSyncStock}
+              disabled={syncingStock || importing || fetchingPricing || fetchingImages}
+              size="sm"
+              variant="outline"
+              className="gap-1 border-orange-500/40 text-orange-400 hover:bg-orange-500/10"
+            >
+              {syncingStock ? <Loader2 className="w-3 h-3 animate-spin" /> : <Truck className="w-3 h-3" />}
+              {syncingStock ? "Syncing Stock..." : "Sync Stock"}
             </Button>
           </div>
 
@@ -543,6 +575,48 @@ export default function BolcomSettings() {
               <p className="text-sm text-red-400 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" />
                 {imagesResult.error}
+              </p>
+            </div>
+          )}
+
+          {syncingStock && (
+            <div className={`mt-4 flex items-center gap-2 p-3 rounded-lg ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+              <Loader2 className="w-4 h-4 animate-spin text-orange-400" />
+              <span className={`text-sm ${mutedClass}`}>
+                Syncing stock levels from bol.com inventory...
+              </span>
+            </div>
+          )}
+
+          {stockResult && !stockResult.error && (
+            <div className="mt-4 space-y-3">
+              <p className={`text-sm font-medium ${t("text-gray-900", "text-white")}`}>Stock Sync Results</p>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className="text-2xl font-bold text-cyan-400">{stockResult.synced}</p>
+                  <p className={`text-xs ${mutedClass}`}>Products Synced</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{stockResult.withStock}</p>
+                  <p className={`text-xs ${mutedClass}`}>With Stock</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center bg-orange-500/10`}>
+                  <p className="text-2xl font-bold text-orange-400">{stockResult.fbb}</p>
+                  <p className={`text-xs ${mutedClass}`}>FBB (bol.com Warehouse)</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{stockResult.fbr}</p>
+                  <p className={`text-xs ${mutedClass}`}>FBR (Own Warehouse)</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {stockResult?.error && (
+            <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+              <p className="text-sm text-red-400 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                {stockResult.error}
               </p>
             </div>
           )}

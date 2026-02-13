@@ -85,6 +85,7 @@ type BolcomAction =
   | "batchEnrichByEan"
   | "importProducts"
   | "fetchPricing"
+  | "fetchStock"
   | "fetchImages";
 
 interface BolcomRequest {
@@ -1487,16 +1488,17 @@ serve(async (req) => {
           promises.push(supabase.from("bolcom_offer_mappings").upsert(mappingRows, { onConflict: "company_id,ean" }));
 
           // c) Batch upsert physical_products (single query per batch instead of N individual updates)
+          // NOTE: physical_products does NOT have updated_at column — do not include it
           const physRows = batch.map(item => ({
             product_id: item.productId,
             sku: item.bsku || item.ean,
             barcode: item.ean,
             inventory: {
+              quantity: item.regularStock + item.gradedStock,
               regular_stock: item.regularStock,
               graded_stock: item.gradedStock,
               total: item.regularStock + item.gradedStock,
             },
-            updated_at: now,
           }));
           promises.push(supabase.from("physical_products").upsert(physRows, { onConflict: "product_id" }));
 
@@ -1542,6 +1544,7 @@ serve(async (req) => {
               sku: item.bsku || item.ean,
               barcode: item.ean,
               inventory: {
+                quantity: item.regularStock + item.gradedStock,
                 regular_stock: item.regularStock,
                 graded_stock: item.gradedStock,
                 total: item.regularStock + item.gradedStock,
@@ -1716,6 +1719,175 @@ serve(async (req) => {
             fetchErrors,
             ...(pricingError ? { pricingError } : {}),
           },
+        };
+        break;
+      }
+
+      // ==================================================
+      // FETCH STOCK — sync bol.com inventory to all tables
+      // ==================================================
+      case "fetchStock": {
+        const stkToken = await getBolToken(supabase, companyId);
+        if ("error" in stkToken) { result = { success: false, error: stkToken.error }; break; }
+
+        console.log(`[bolcom-api] fetchStock: syncing inventory for company ${companyId}`);
+
+        // 1. Paginate through all bol.com inventory
+        const stkInventory: Array<{ ean: string; bsku: string; regularStock: number; gradedStock: number; title?: string }> = [];
+        let stkPage = 1;
+        let stkMore = true;
+        while (stkMore) {
+          const pageData = await bolFetch<{ inventory: typeof stkInventory }>(
+            stkToken.token, `/inventory?page=${stkPage}`, "GET"
+          );
+          if (pageData.inventory?.length) {
+            stkInventory.push(...pageData.inventory);
+            stkPage++;
+          } else {
+            stkMore = false;
+          }
+          if (stkPage > 100) break;
+        }
+
+        // Deduplicate by EAN
+        const stkSeen = new Set<string>();
+        const stkDeduped = stkInventory.filter(item => {
+          if (stkSeen.has(item.ean)) return false;
+          stkSeen.add(item.ean);
+          return true;
+        });
+
+        console.log(`[bolcom-api] fetchStock: ${stkDeduped.length} unique inventory items from bol.com`);
+
+        if (stkDeduped.length === 0) {
+          result = { success: true, data: { synced: 0, withStock: 0, fbb: 0, fbr: 0, message: "No inventory found on bol.com" } };
+          break;
+        }
+
+        // 2. Build EAN→product map (chunked)
+        const stkEans = stkDeduped.map(i => i.ean);
+        const stkProductMap = new Map<string, { id: string; ean: string }>();
+        for (let i = 0; i < stkEans.length; i += 500) {
+          const chunk = stkEans.slice(i, i + 500);
+          const { data } = await supabase.from("products").select("id, ean")
+            .eq("company_id", companyId).in("ean", chunk);
+          for (const p of (data || []) as Array<{ id: string; ean: string }>) {
+            stkProductMap.set(p.ean, p);
+          }
+        }
+
+        // 3. Get fulfilment method from existing pricing data (smaller chunks to avoid URL length limits)
+        const stkProductIds = [...stkProductMap.values()].map(p => p.id);
+        const fulfilmentMap = new Map<string, string>();
+        for (let i = 0; i < stkProductIds.length; i += 100) {
+          const chunk = stkProductIds.slice(i, i + 100);
+          const { data: ppData, error: ppErr } = await supabase.from("physical_products")
+            .select("product_id, pricing")
+            .in("product_id", chunk);
+          if (ppErr) console.warn(`[fetchStock] fulfilment query error: ${ppErr.message}`);
+          for (const pp of (ppData || []) as Array<{ product_id: string; pricing: { fulfilment_method?: string } | null }>) {
+            if (pp.pricing?.fulfilment_method) {
+              fulfilmentMap.set(pp.product_id, pp.pricing.fulfilment_method);
+            }
+          }
+        }
+        console.log(`[fetchStock] fulfilmentMap has ${fulfilmentMap.size} entries (${[...fulfilmentMap.values()].filter(v => v === 'FBB').length} FBB, ${[...fulfilmentMap.values()].filter(v => v === 'FBR').length} FBR)`);
+
+        // 4. Batch update all tables
+        const STK_BATCH = 200;
+        let synced = 0;
+        let withStock = 0;
+        let fbbCount = 0;
+        let fbrCount = 0;
+        const now = new Date().toISOString();
+
+        for (let i = 0; i < stkDeduped.length; i += STK_BATCH) {
+          const batch = stkDeduped.slice(i, i + STK_BATCH);
+          const promises: Promise<unknown>[] = [];
+
+          // a) physical_products.inventory with quantity field
+          const physRows = batch
+            .filter(item => stkProductMap.has(item.ean))
+            .map(item => {
+              const prod = stkProductMap.get(item.ean)!;
+              const fm = fulfilmentMap.get(prod.id) || "UNKNOWN";
+              const qty = item.regularStock + item.gradedStock;
+              return {
+                product_id: prod.id,
+                inventory: {
+                  quantity: qty,
+                  regular_stock: item.regularStock,
+                  graded_stock: item.gradedStock,
+                  total: qty,
+                  fulfilment_method: fm,
+                },
+              };
+            });
+          if (physRows.length > 0) {
+            promises.push(supabase.from("physical_products").upsert(physRows, { onConflict: "product_id" }));
+          }
+
+          // b) bolcom_offer_mappings.bolcom_stock_amount
+          const mapRows = batch
+            .filter(item => stkProductMap.has(item.ean))
+            .map(item => ({
+              company_id: companyId,
+              ean: item.ean,
+              product_id: stkProductMap.get(item.ean)!.id,
+              bolcom_stock_amount: item.regularStock + item.gradedStock,
+              is_active: true,
+              updated_at: now,
+            }));
+          if (mapRows.length > 0) {
+            promises.push(supabase.from("bolcom_offer_mappings").upsert(mapRows, { onConflict: "company_id,ean" }));
+          }
+
+          // c) inventory table — cross-channel stock display
+          const invRows = batch
+            .filter(item => stkProductMap.has(item.ean))
+            .map(item => {
+              const prod = stkProductMap.get(item.ean)!;
+              const fm = fulfilmentMap.get(prod.id) || "UNKNOWN";
+              const qty = item.regularStock + item.gradedStock;
+              const isFBB = fm === "FBB";
+              if (isFBB) fbbCount++; else fbrCount++;
+              if (qty > 0) withStock++;
+              return {
+                company_id: companyId,
+                product_id: prod.id,
+                quantity_on_hand: qty,
+                quantity_external_bolcom: isFBB ? qty : 0,
+                warehouse_location: isFBB ? "bol.com Fulfilment Centre" : null,
+                updated_at: now,
+              };
+            });
+          if (invRows.length > 0) {
+            promises.push(supabase.from("inventory").upsert(invRows, { onConflict: "company_id,product_id" }));
+          }
+
+          // d) product_sales_channels — mark as listed on bolcom
+          const channelRows = batch
+            .filter(item => stkProductMap.has(item.ean))
+            .map(item => ({
+              company_id: companyId,
+              product_id: stkProductMap.get(item.ean)!.id,
+              channel: "bolcom" as const,
+              is_active: true,
+              listed_at: now,
+            }));
+          if (channelRows.length > 0) {
+            promises.push(supabase.from("product_sales_channels").upsert(channelRows, { onConflict: "company_id,product_id,channel" }));
+          }
+
+          await Promise.all(promises);
+          synced += batch.filter(item => stkProductMap.has(item.ean)).length;
+        }
+
+        console.log(`[bolcom-api] fetchStock complete: ${synced} synced, ${withStock} with stock, ${fbbCount} FBB, ${fbrCount} FBR`);
+
+        result = {
+          success: true,
+          data: { synced, withStock, fbb: fbbCount, fbr: fbrCount, totalBolInventory: stkDeduped.length },
         };
         break;
       }

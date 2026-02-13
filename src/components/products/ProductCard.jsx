@@ -144,6 +144,20 @@ export function ProductGridCard({
                 )
               )}
 
+              {/* Physical: FBB/FBR fulfilment badge */}
+              {isPhysical && (details?.inventory?.fulfilment_method || details?.pricing?.fulfilment_method) && (() => {
+                const fm = details?.inventory?.fulfilment_method || details?.pricing?.fulfilment_method;
+                return fm === 'FBB' ? (
+                  <Badge className="bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs">
+                    <Truck className="w-3 h-3 mr-1" /> bol.com Warehouse
+                  </Badge>
+                ) : fm === 'FBR' ? (
+                  <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs">
+                    <Package className="w-3 h-3 mr-1" /> Own Warehouse
+                  </Badge>
+                ) : null;
+              })()}
+
               {/* Physical: Channel badges */}
               {isPhysical && salesChannels?.length > 0 && salesChannels.map(ch => {
                 const style = CHANNEL_COLORS[ch];
@@ -169,14 +183,12 @@ export function ProductGridCard({
               )}
             </div>
 
-            {/* Cross-channel stock breakdown (SH-18) */}
-            {isPhysical && channelInventory && salesChannels?.length >= 2 && (
+            {/* Cross-channel stock breakdown */}
+            {isPhysical && channelInventory && salesChannels?.includes('bolcom') && (
               <div className={`flex items-center gap-2 flex-wrap text-xs mt-1 ${t('text-slate-500', 'text-zinc-500')}`}>
                 <span>Internal: {channelInventory.quantity_available ?? channelInventory.quantity_on_hand ?? '—'}</span>
-                {salesChannels.includes('bolcom') && (
-                  <><span className={t('text-slate-300', 'text-zinc-600')}>|</span>
-                  <span>bol.com: {channelInventory.quantity_external_bolcom ?? '—'}</span></>
-                )}
+                <span className={t('text-slate-300', 'text-zinc-600')}>|</span>
+                <span>bol.com: {channelInventory.quantity_external_bolcom ?? '—'}</span>
                 {salesChannels.includes('shopify') && (
                   <><span className={t('text-slate-300', 'text-zinc-600')}>|</span>
                   <span>Shopify: {channelInventory.quantity_external_shopify ?? '—'}</span></>
@@ -345,6 +357,20 @@ export function ProductListRow({
                 )
               )}
 
+              {/* Physical: FBB/FBR fulfilment badge */}
+              {isPhysical && (details?.inventory?.fulfilment_method || details?.pricing?.fulfilment_method) && (() => {
+                const fm = details?.inventory?.fulfilment_method || details?.pricing?.fulfilment_method;
+                return fm === 'FBB' ? (
+                  <Badge className="bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs">
+                    <Truck className="w-3 h-3 mr-1" /> bol.com Warehouse
+                  </Badge>
+                ) : fm === 'FBR' ? (
+                  <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs">
+                    <Package className="w-3 h-3 mr-1" /> Own Warehouse
+                  </Badge>
+                ) : null;
+              })()}
+
               {/* Physical: Channel badges */}
               {isPhysical && salesChannels?.length > 0 && salesChannels.map(ch => {
                 const style = CHANNEL_COLORS[ch];
@@ -373,7 +399,7 @@ export function ProductListRow({
               {product.tagline || product.short_description || 'No description'}
             </p>
             {/* Cross-channel stock breakdown (SH-18) */}
-            {isPhysical && channelInventory && salesChannels?.length >= 2 && (
+            {isPhysical && channelInventory && salesChannels?.includes('bolcom') && (
               <div className={`flex items-center gap-2 text-xs mt-0.5 ${t('text-slate-400', 'text-zinc-500')}`}>
                 <span>Internal: {channelInventory.quantity_available ?? channelInventory.quantity_on_hand ?? '—'}</span>
                 {salesChannels.includes('bolcom') && (
@@ -689,7 +715,7 @@ export function ProductTableView({
                         <span className="text-[13px] text-zinc-600">—</span>
                       )}
                     </TableCell>
-                    {/* Stock qty */}
+                    {/* Stock qty + fulfilment */}
                     <TableCell className="py-2 text-center">
                       {editMode ? (
                         <EditCell
@@ -699,17 +725,33 @@ export function ProductTableView({
                           placeholder="0"
                           className="text-center"
                         />
-                      ) : qty != null ? (
-                        <span className={cn(
-                          "text-[13px] font-medium tabular-nums",
-                          qty <= 0 ? "text-red-400" :
-                          qty <= low ? "text-amber-400" :
-                          "text-zinc-300"
-                        )}>
-                          {qty}
-                        </span>
                       ) : (
-                        <span className="text-[13px] text-zinc-600">—</span>
+                        <div className="flex flex-col items-center gap-0.5">
+                          {qty != null ? (
+                            <span className={cn(
+                              "text-[13px] font-medium tabular-nums",
+                              qty <= 0 ? "text-red-400" :
+                              qty <= low ? "text-amber-400" :
+                              "text-zinc-300"
+                            )}>
+                              {qty}
+                            </span>
+                          ) : (
+                            <span className="text-[13px] text-zinc-600">—</span>
+                          )}
+                          {(() => {
+                            const fm = details?.inventory?.fulfilment_method || details?.pricing?.fulfilment_method;
+                            return fm === 'FBB' ? (
+                              <span className="text-[10px] text-orange-400 flex items-center gap-0.5">
+                                <Truck className="w-2.5 h-2.5" /> bol.com
+                              </span>
+                            ) : fm === 'FBR' ? (
+                              <span className="text-[10px] text-blue-400 flex items-center gap-0.5">
+                                <Package className="w-2.5 h-2.5" /> own
+                              </span>
+                            ) : null;
+                          })()}
+                        </div>
                       )}
                     </TableCell>
                     {/* Status */}
