@@ -3419,16 +3419,19 @@ export default function Layout({ children, currentPageName }) {
                     />
                   </SheetContent>
                 </Sheet>
-                <span className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent">
-                  iSyncSo
-                </span>
               </div>
-              {/* Show current section badge on mobile */}
-              {secondaryNavConfig && (
-                <div className={`px-2.5 py-1 rounded-lg text-xs font-medium ${COLOR_CLASSES[secondaryNavConfig.color]?.bg || 'bg-cyan-500/10'} ${COLOR_CLASSES[secondaryNavConfig.color]?.text || 'text-cyan-400'}`}>
-                  {secondaryNavConfig.title}
-                </div>
-              )}
+              {/* Show current page / section title */}
+              <div className="flex items-center gap-2 min-w-0 flex-1 justify-center">
+                {secondaryNavConfig ? (
+                  <span className={`text-sm font-semibold truncate ${COLOR_CLASSES[secondaryNavConfig.color]?.text || 'text-cyan-400'}`}>
+                    {secondaryNavConfig.title}
+                  </span>
+                ) : (
+                  <span className="text-sm font-semibold text-zinc-200 truncate">
+                    {currentPageName?.replace(/([A-Z])/g, ' $1').trim() || 'Dashboard'}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-1">
                 <NotificationsDropdown sidebarMode={false} />
               </div>
