@@ -23,7 +23,7 @@ import {
   Clock,
 } from "lucide-react";
 
-const VERSION = "2.0.2";
+const VERSION = "2.1.0";
 const BASE_URL = `https://github.com/frogody/sync.desktop/releases/download/v${VERSION}`;
 const DMG_ARM64 = `${BASE_URL}/SYNC.Desktop-${VERSION}-arm64.dmg`;
 const DMG_INTEL = `${BASE_URL}/SYNC.Desktop-${VERSION}-x64.dmg`;
