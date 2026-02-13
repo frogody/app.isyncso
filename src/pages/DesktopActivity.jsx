@@ -465,7 +465,13 @@ export default function DesktopActivity() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          {/* TabsList removed — navigation handled by Layout SYNC top tabs */}
+          <TabsList className="bg-zinc-900/60 border border-zinc-800/50 p-0.5 rounded-lg">
+            <TabsTrigger value="overview" className="text-xs px-3 py-1.5 data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 rounded-md">Overview</TabsTrigger>
+            <TabsTrigger value="timeline" className="text-xs px-3 py-1.5 data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 rounded-md">Timeline</TabsTrigger>
+            <TabsTrigger value="context" className="text-xs px-3 py-1.5 data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 rounded-md">Context</TabsTrigger>
+            <TabsTrigger value="apps" className="text-xs px-3 py-1.5 data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 rounded-md">Apps</TabsTrigger>
+            <TabsTrigger value="journals" className="text-xs px-3 py-1.5 data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 rounded-md">Journals</TabsTrigger>
+          </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="mt-5 space-y-5">
