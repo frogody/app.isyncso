@@ -3366,7 +3366,7 @@ export default function Layout({ children, currentPageName }) {
           html:not(.dark) .bg-gradient-to-l.text-white { color: #FFFFFF !important; }
           `}</style>
 
-        <div className="flex h-screen">
+        <div className="flex h-screen overflow-x-hidden">
           {/* Desktop/Tablet Sidebar with Flyout Submenu */}
           <div className="hidden md:flex flex-col sidebar-shell w-[72px] lg:w-[80px] overflow-visible relative z-20">
             <SidebarContent
@@ -3441,7 +3441,7 @@ export default function Layout({ children, currentPageName }) {
           {/* Main Content - Mobile optimized with safe areas */}
           <main
             id="main-content"
-            className={`relative flex-1 md:pt-0 overflow-auto transition-all duration-300 pb-safe scroll-smooth-ios ${
+            className={`relative flex-1 md:pt-0 overflow-y-auto overflow-x-hidden transition-all duration-300 pb-safe scroll-smooth-ios ${
               secondaryNavConfig ? 'pt-[calc(3.5rem+2.5rem)] sm:pt-[calc(4rem+2.5rem)]' : 'pt-14 sm:pt-16'
             }`}
             role="main"
