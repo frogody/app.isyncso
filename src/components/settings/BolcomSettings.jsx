@@ -60,6 +60,10 @@ export default function BolcomSettings() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
 
+  // Fetch pricing
+  const [fetchingPricing, setFetchingPricing] = useState(false);
+  const [pricingResult, setPricingResult] = useState(null);
+
   // Offer mappings
   const [mappings, setMappings] = useState([]);
   const [loadingMappings, setLoadingMappings] = useState(false);
@@ -178,6 +182,24 @@ export default function BolcomSettings() {
       setImportResult({ error: err.message });
     } finally {
       setImporting(false);
+    }
+  };
+
+  // Fetch pricing from bol.com offers export
+  const handleFetchPricing = async () => {
+    if (!companyId) { toast.error("No company linked to your account."); return; }
+    setFetchingPricing(true);
+    setPricingResult(null);
+    try {
+      const result = await callBolcomApi("fetchPricing", { companyId });
+      if (!result.success) throw new Error(result.error);
+      setPricingResult(result.data);
+      toast.success(`Updated pricing for ${result.data.pricesUpdated} products`);
+    } catch (err) {
+      toast.error(err.message || "Failed to fetch pricing");
+      setPricingResult({ error: err.message });
+    } finally {
+      setFetchingPricing(false);
     }
   };
 
@@ -332,15 +354,27 @@ export default function BolcomSettings() {
             Pull your entire bol.com catalog into SYNC. This will fetch product titles, images, categories, stock levels, and EAN codes.
           </p>
 
-          <Button
-            onClick={handleImportProducts}
-            disabled={importing}
-            size="sm"
-            className="bg-cyan-600 hover:bg-cyan-700 text-white gap-1"
-          >
-            {importing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
-            {importing ? "Importing..." : "Import Products"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleImportProducts}
+              disabled={importing || fetchingPricing}
+              size="sm"
+              className="bg-cyan-600 hover:bg-cyan-700 text-white gap-1"
+            >
+              {importing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+              {importing ? "Importing..." : "Import Products"}
+            </Button>
+            <Button
+              onClick={handleFetchPricing}
+              disabled={fetchingPricing || importing}
+              size="sm"
+              variant="outline"
+              className="gap-1 border-cyan-600/40 text-cyan-400 hover:bg-cyan-600/10"
+            >
+              {fetchingPricing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              {fetchingPricing ? "Fetching Pricing..." : "Fetch Pricing"}
+            </Button>
+          </div>
 
           {importing && (
             <div className={`mt-4 flex items-center gap-2 p-3 rounded-lg ${t("bg-gray-50", "bg-zinc-800/50")}`}>
@@ -372,27 +406,8 @@ export default function BolcomSettings() {
                 </div>
               </div>
 
-              {importResult.details && importResult.details.length > 0 && (
-                <details className={`text-xs ${mutedClass}`}>
-                  <summary className="cursor-pointer hover:text-cyan-400 transition-colors">
-                    View import details ({importResult.details.length} items)
-                  </summary>
-                  <div className={`mt-2 max-h-48 overflow-y-auto rounded-lg border p-2 space-y-1 ${t("border-gray-200 bg-gray-50", "border-zinc-800 bg-zinc-900/50")}`}>
-                    {importResult.details.map((d, i) => (
-                      <div key={i} className="flex items-center justify-between gap-2">
-                        <span className="font-mono">{d.ean}</span>
-                        <span className={d.name ? t("text-gray-700", "text-zinc-300") : ""}>{d.name || ""}</span>
-                        <Badge variant="outline" className={`text-[10px] shrink-0 ${
-                          d.status === "imported" ? "border-cyan-500/30 text-cyan-400"
-                            : d.status === "updated" ? "border-blue-500/30 text-blue-400"
-                              : "border-red-500/30 text-red-400"
-                        }`}>
-                          {d.status}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </details>
+              {importResult.message && (
+                <p className={`text-sm ${mutedClass}`}>{importResult.message}</p>
               )}
             </div>
           )}
@@ -402,6 +417,44 @@ export default function BolcomSettings() {
               <p className="text-sm text-red-400 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" />
                 {importResult.error}
+              </p>
+            </div>
+          )}
+
+          {fetchingPricing && (
+            <div className={`mt-4 flex items-center gap-2 p-3 rounded-lg ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+              <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+              <span className={`text-sm ${mutedClass}`}>
+                Exporting offers from bol.com and fetching pricing data... This may take up to 90 seconds.
+              </span>
+            </div>
+          )}
+
+          {pricingResult && !pricingResult.error && (
+            <div className="mt-4 space-y-3">
+              <p className={`text-sm font-medium ${t("text-gray-900", "text-white")}`}>Pricing Update Results</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className="text-2xl font-bold text-cyan-400">{pricingResult.offersFound}</p>
+                  <p className={`text-xs ${mutedClass}`}>Offers Found</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{pricingResult.pricesUpdated}</p>
+                  <p className={`text-xs ${mutedClass}`}>Prices Updated</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{pricingResult.offersLinked}</p>
+                  <p className={`text-xs ${mutedClass}`}>Offers Linked</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {pricingResult?.error && (
+            <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+              <p className="text-sm text-red-400 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                {pricingResult.error}
               </p>
             </div>
           )}

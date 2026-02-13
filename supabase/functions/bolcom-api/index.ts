@@ -83,7 +83,8 @@ type BolcomAction =
   | "enrichProduct"
   | "batchEnrichProducts"
   | "batchEnrichByEan"
-  | "importProducts";
+  | "importProducts"
+  | "fetchPricing";
 
 interface BolcomRequest {
   action: BolcomAction;
@@ -1385,8 +1386,8 @@ serve(async (req) => {
 
         const nlHeaders = { "Accept-Language": "nl" };
 
-        // 1. Paginate through all inventory
-        const allInventory: Array<{ ean: string; bsku: string; regularStock: number; gradedStock: number }> = [];
+        // 1. Paginate through all inventory (includes title from bol.com)
+        const allInventory: Array<{ ean: string; bsku: string; regularStock: number; gradedStock: number; title?: string }> = [];
         let invPage = 1;
         let hasMore = true;
         while (hasMore) {
@@ -1402,9 +1403,17 @@ serve(async (req) => {
           if (invPage > 100) break; // safety limit
         }
 
-        console.log(`[bolcom-api] importProducts: found ${allInventory.length} inventory items for company ${companyId}`);
+        // Deduplicate by EAN (bol.com may return same EAN across pages)
+        const seenEans = new Set<string>();
+        const dedupedInventory = allInventory.filter(item => {
+          if (seenEans.has(item.ean)) return false;
+          seenEans.add(item.ean);
+          return true;
+        });
 
-        if (allInventory.length === 0) {
+        console.log(`[bolcom-api] importProducts: found ${allInventory.length} inventory items (${dedupedInventory.length} unique) for company ${companyId}`);
+
+        if (dedupedInventory.length === 0) {
           result = { success: true, data: { imported: 0, updated: 0, errors: 0, total: 0, message: "No inventory found on bol.com" } };
           break;
         }
@@ -1412,195 +1421,156 @@ serve(async (req) => {
         let imported = 0;
         let updated = 0;
         let errors = 0;
-        const details: Array<{ ean: string; status: string; name?: string }> = [];
 
-        for (const invItem of allInventory) {
-          const { ean, bsku, regularStock, gradedStock } = invItem;
-          try {
-            // Check if product with this EAN already exists for this company
-            const { data: existingProduct } = await supabase
-              .from("products")
-              .select("id, name")
-              .eq("company_id", companyId)
-              .eq("ean", ean)
-              .maybeSingle();
+        // 2. Fetch ALL existing products for this company (chunked to avoid query limits)
+        const allEans = dedupedInventory.map(i => i.ean);
+        const existingMap = new Map<string, { id: string; name: string; ean: string }>();
+        const CHUNK = 500;
+        for (let i = 0; i < allEans.length; i += CHUNK) {
+          const chunk = allEans.slice(i, i + CHUNK);
+          const { data: existingProducts } = await supabase
+            .from("products")
+            .select("id, name, ean")
+            .eq("company_id", companyId)
+            .in("ean", chunk);
+          for (const p of (existingProducts || []) as Array<{ id: string; name: string; ean: string }>) {
+            existingMap.set(p.ean, p);
+          }
+        }
+        console.log(`[bolcom-api] Found ${existingMap.size} existing products`);
 
-            if (existingProduct) {
-              // Update stock in offer_mapping
-              await supabase
-                .from("bolcom_offer_mappings")
-                .upsert({
-                  company_id: companyId,
-                  ean,
-                  product_id: existingProduct.id,
-                  bolcom_stock_amount: regularStock + gradedStock,
-                  is_active: true,
-                  updated_at: new Date().toISOString(),
-                }, { onConflict: "company_id,ean" });
+        // 3. Split into new vs existing
+        const toInsert: Array<{ ean: string; bsku: string; regularStock: number; gradedStock: number; title: string }> = [];
+        const toUpdate: Array<{ ean: string; bsku: string; regularStock: number; gradedStock: number; title: string; productId: string }> = [];
 
-              // Update physical_products inventory
-              await supabase
-                .from("physical_products")
-                .update({
-                  inventory: {
-                    regular_stock: regularStock,
-                    graded_stock: gradedStock,
-                    total: regularStock + gradedStock,
-                  },
-                  updated_at: new Date().toISOString(),
-                })
-                .eq("product_id", existingProduct.id);
-
-              updated++;
-              details.push({ ean, status: "updated", name: existingProduct.name });
-              continue;
-            }
-
-            // New product — fetch catalog data for title
-            let productName = `Product ${ean}`;
-            let featuredImage: { url: string; width: number; height: number } | null = null;
-            const gallery: Array<{ url: string; width: number; height: number }> = [];
-            let category: string | null = null;
-            const tags: string[] = [];
-
-            // Fetch catalog-products for title
-            try {
-              const catalog = await bolFetch<{ products?: Array<{ attributes?: Array<{ id: string; values: Array<{ value: string }> }> }> }>(
-                tokenResult.token, `/catalog-products/${ean}`, "GET",
-                undefined, undefined, 2, nlHeaders
-              );
-              if (catalog.products && catalog.products[0]?.attributes) {
-                const titleAttr = catalog.products[0].attributes.find(
-                  (a: { id: string }) => a.id === "Title" || a.id === "title" || a.id.toLowerCase().includes("title")
-                );
-                if (titleAttr?.values?.[0]?.value) {
-                  productName = titleAttr.values[0].value;
-                }
-              }
-            } catch { /* skip — use default name */ }
-
-            await new Promise(r => setTimeout(r, 200));
-
-            // Fetch assets (PRIMARY + ADDITIONAL)
-            try {
-              for (const usage of ["PRIMARY", "ADDITIONAL"]) {
-                try {
-                  const assets = await bolFetch<{ assets?: Array<{ url: string; usage: string; order?: number; variants?: Array<{ url: string; width: number; height: number; size: string }> }> }>(
-                    tokenResult.token, `/products/${ean}/assets?usage=${usage}`, "GET",
-                    undefined, undefined, 1, nlHeaders
-                  );
-                  if (assets.assets) {
-                    for (const asset of assets.assets) {
-                      if (asset.usage === "PRIMARY" && asset.variants?.length) {
-                        const largest = asset.variants.reduce((a, b) => (a.width > b.width ? a : b));
-                        featuredImage = { url: largest.url, width: largest.width, height: largest.height };
-                      } else if (asset.usage === "ADDITIONAL" && asset.variants?.length) {
-                        const medium = asset.variants.find(v => v.size === "medium") || asset.variants[0];
-                        if (medium) gallery.push({ url: medium.url, width: medium.width, height: medium.height });
-                      }
-                    }
-                  }
-                } catch { /* skip */ }
-              }
-            } catch { /* skip */ }
-
-            await new Promise(r => setTimeout(r, 200));
-
-            // Fetch placement (category)
-            try {
-              const placement = await bolFetch<{ categories?: Array<{ categoryName: string; subcategories?: unknown[] }> }>(
-                tokenResult.token, `/products/${ean}/placement`, "GET",
-                undefined, undefined, 1, nlHeaders
-              );
-              if (placement.categories?.[0]) {
-                const topCat = placement.categories[0];
-                let catName = topCat.categoryName;
-                let sub = topCat.subcategories as Array<{ name?: string; categoryName?: string; subcategories?: unknown[] }> | undefined;
-                while (sub && sub.length > 0) {
-                  const child = sub[0];
-                  catName = child.name || child.categoryName || catName;
-                  sub = child.subcategories as typeof sub;
-                }
-                category = catName;
-
-                // Extract tags from category hierarchy
-                const extractTags = (cats: unknown[]) => {
-                  for (const cat of cats) {
-                    const c = cat as { name?: string; categoryName?: string; subcategories?: unknown[] };
-                    const name = c.name || c.categoryName;
-                    if (name) tags.push(name);
-                    if (c.subcategories) extractTags(c.subcategories as unknown[]);
-                  }
-                };
-                extractTags(placement.categories);
-              }
-            } catch { /* skip */ }
-
-            await new Promise(r => setTimeout(r, 200));
-
-            // Generate slug
-            const slug = `bol-${ean}`;
-
-            // Insert into products
-            const { data: newProduct, error: insertErr } = await supabase
-              .from("products")
-              .insert({
-                company_id: companyId,
-                name: productName,
-                ean,
-                type: "physical",
-                status: "published",
-                slug,
-                featured_image: featuredImage,
-                gallery: gallery.length > 0 ? gallery : null,
-                category,
-                tags: tags.length > 0 ? tags : null,
-                seo_og_image: featuredImage?.url || null,
-              })
-              .select("id")
-              .single();
-
-            if (insertErr) {
-              errors++;
-              details.push({ ean, status: `product_insert_error: ${insertErr.message}` });
-              continue;
-            }
-
-            // Insert into physical_products
-            await supabase
-              .from("physical_products")
-              .upsert({
-                product_id: newProduct.id,
-                sku: bsku || ean,
-                barcode: ean,
-                inventory: {
-                  regular_stock: regularStock,
-                  graded_stock: gradedStock,
-                  total: regularStock + gradedStock,
-                },
-              }, { onConflict: "product_id" });
-
-            // Insert into bolcom_offer_mappings
-            await supabase
-              .from("bolcom_offer_mappings")
-              .upsert({
-                company_id: companyId,
-                ean,
-                product_id: newProduct.id,
-                bolcom_stock_amount: regularStock + gradedStock,
-                is_active: true,
-              }, { onConflict: "company_id,ean" });
-
-            imported++;
-            details.push({ ean, status: "imported", name: productName });
-
-          } catch (e) {
-            errors++;
-            details.push({ ean, status: `error: ${e instanceof Error ? e.message : "unknown"}` });
+        for (const invItem of dedupedInventory) {
+          const productName = invItem.title || `Product ${invItem.ean}`;
+          const existing = existingMap.get(invItem.ean);
+          if (existing) {
+            toUpdate.push({ ...invItem, title: productName, productId: existing.id });
+          } else {
+            toInsert.push({ ...invItem, title: productName });
           }
         }
 
-        console.log(`[bolcom-api] importProducts complete: ${imported} imported, ${updated} updated, ${errors} errors out of ${allInventory.length} total`);
+        console.log(`[bolcom-api] importProducts: ${toInsert.length} new, ${toUpdate.length} existing`);
+
+        // 4. Batch update existing products — fix names + stock
+        // Use batch upserts and parallel operations for speed
+        const BATCH_SIZE = 200;
+        for (let i = 0; i < toUpdate.length; i += BATCH_SIZE) {
+          const batch = toUpdate.slice(i, i + BATCH_SIZE);
+          const now = new Date().toISOString();
+          const promises: Promise<unknown>[] = [];
+
+          // a) Name updates — only for fallback "Product ..." names, in parallel
+          const nameUpdates = batch.filter(item => {
+            const existing = existingMap.get(item.ean);
+            return existing && existing.name.startsWith("Product ") && item.title !== existing.name;
+          });
+          if (nameUpdates.length > 0) {
+            promises.push(Promise.all(nameUpdates.map(item =>
+              supabase.from("products").update({ name: item.title, updated_at: now }).eq("id", item.productId)
+            )));
+          }
+
+          // b) Batch upsert offer_mappings
+          const mappingRows = batch.map(item => ({
+            company_id: companyId,
+            ean: item.ean,
+            product_id: item.productId,
+            bolcom_stock_amount: item.regularStock + item.gradedStock,
+            is_active: true,
+            updated_at: now,
+          }));
+          promises.push(supabase.from("bolcom_offer_mappings").upsert(mappingRows, { onConflict: "company_id,ean" }));
+
+          // c) Batch upsert physical_products (single query per batch instead of N individual updates)
+          const physRows = batch.map(item => ({
+            product_id: item.productId,
+            sku: item.bsku || item.ean,
+            barcode: item.ean,
+            inventory: {
+              regular_stock: item.regularStock,
+              graded_stock: item.gradedStock,
+              total: item.regularStock + item.gradedStock,
+            },
+            updated_at: now,
+          }));
+          promises.push(supabase.from("physical_products").upsert(physRows, { onConflict: "product_id" }));
+
+          await Promise.all(promises);
+          updated += batch.length;
+        }
+
+        // 5. Batch insert new products
+        for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
+          const batch = toInsert.slice(i, i + BATCH_SIZE);
+
+          // Insert products in batch
+          const productRows = batch.map(item => ({
+            company_id: companyId,
+            name: item.title,
+            ean: item.ean,
+            type: "physical",
+            status: "published",
+            slug: `bol-${item.ean}`,
+          }));
+
+          const { data: insertedProducts, error: insertErr } = await supabase
+            .from("products")
+            .insert(productRows)
+            .select("id, ean");
+
+          if (insertErr) {
+            console.error(`[bolcom-api] Batch insert error: ${insertErr.message}`);
+            errors += batch.length;
+            continue;
+          }
+
+          if (!insertedProducts) continue;
+
+          // Build map of inserted product IDs
+          const insertedMap = new Map(insertedProducts.map((p: { id: string; ean: string }) => [p.ean, p.id]));
+
+          // Batch insert physical_products + offer_mappings in parallel
+          const physRows = batch
+            .filter(item => insertedMap.has(item.ean))
+            .map(item => ({
+              product_id: insertedMap.get(item.ean)!,
+              sku: item.bsku || item.ean,
+              barcode: item.ean,
+              inventory: {
+                regular_stock: item.regularStock,
+                graded_stock: item.gradedStock,
+                total: item.regularStock + item.gradedStock,
+              },
+            }));
+          const mapRows = batch
+            .filter(item => insertedMap.has(item.ean))
+            .map(item => ({
+              company_id: companyId,
+              ean: item.ean,
+              product_id: insertedMap.get(item.ean)!,
+              bolcom_stock_amount: item.regularStock + item.gradedStock,
+              is_active: true,
+            }));
+
+          const insertPromises: Promise<unknown>[] = [];
+          if (physRows.length > 0) {
+            insertPromises.push(supabase.from("physical_products").upsert(physRows, { onConflict: "product_id" }));
+          }
+          if (mapRows.length > 0) {
+            insertPromises.push(supabase.from("bolcom_offer_mappings").upsert(mapRows, { onConflict: "company_id,ean" }));
+          }
+          if (insertPromises.length > 0) {
+            await Promise.all(insertPromises);
+          }
+
+          imported += insertedProducts.length;
+        }
+
+        console.log(`[bolcom-api] importProducts complete: ${imported} imported, ${updated} updated, ${errors} errors out of ${dedupedInventory.length} unique items`);
 
         result = {
           success: true,
@@ -1608,8 +1578,142 @@ serve(async (req) => {
             imported,
             updated,
             errors,
-            total: allInventory.length,
-            details,
+            total: dedupedInventory.length,
+          },
+        };
+        break;
+      }
+
+      case "fetchPricing": {
+        const pToken = await getBolToken(supabase, companyId);
+        if ("error" in pToken) { result = { success: false, error: pToken.error }; break; }
+
+        console.log(`[bolcom-api] fetchPricing: fetching pricing via /products/{ean}/offers for company ${companyId}`);
+
+        // 1. Get all products with EANs for this company
+        const allProducts: Array<{ id: string; ean: string }> = [];
+        for (let i = 0; ; i += 500) {
+          const { data } = await supabase.from("products").select("id, ean")
+            .eq("company_id", companyId).not("ean", "is", null)
+            .range(i, i + 499);
+          if (!data || data.length === 0) break;
+          allProducts.push(...(data as Array<{ id: string; ean: string }>));
+          if (data.length < 500) break;
+        }
+
+        console.log(`[bolcom-api] fetchPricing: found ${allProducts.length} products with EANs`);
+
+        if (allProducts.length === 0) {
+          result = { success: true, data: { offersFound: 0, pricesUpdated: 0, offersLinked: 0, totalProducts: 0 } };
+          break;
+        }
+
+        // 2. Fetch offers for each product with concurrency (10 at a time to respect rate limits)
+        interface OfferInfo { ean: string; productId: string; offerId: string; price: number; fulfilment: string; condition: string }
+        const offerResults: OfferInfo[] = [];
+        let fetchErrors = 0;
+        const CONCURRENCY = 10;
+        const nlHeaders = { "Accept-Language": "nl" };
+
+        for (let i = 0; i < allProducts.length; i += CONCURRENCY) {
+          const batch = allProducts.slice(i, i + CONCURRENCY);
+          const batchResults = await Promise.allSettled(
+            batch.map(async (prod) => {
+              try {
+                const offersResp = await bolFetch<{ offers?: Array<{ offerId: string; retailerId: string; bestOffer: boolean; price: number; fulfilmentMethod: string; condition: string }> }>(
+                  pToken.token, `/products/${prod.ean}/offers`, "GET",
+                  undefined, undefined, 1, nlHeaders
+                );
+                if (offersResp.offers && offersResp.offers.length > 0) {
+                  // Pick the best offer (likely the seller's own offer or the Buy Box winner)
+                  const bestOffer = offersResp.offers.find(o => o.bestOffer) || offersResp.offers[0];
+                  return {
+                    ean: prod.ean,
+                    productId: prod.id,
+                    offerId: bestOffer.offerId,
+                    price: bestOffer.price,
+                    fulfilment: bestOffer.fulfilmentMethod || "",
+                    condition: bestOffer.condition || "NEW",
+                  } as OfferInfo;
+                }
+                return null;
+              } catch {
+                return null;
+              }
+            })
+          );
+
+          for (const r of batchResults) {
+            if (r.status === "fulfilled" && r.value) {
+              offerResults.push(r.value);
+            } else {
+              fetchErrors++;
+            }
+          }
+
+          // Small delay between batches to respect rate limits
+          if (i + CONCURRENCY < allProducts.length) {
+            await new Promise(r => setTimeout(r, 200));
+          }
+        }
+
+        console.log(`[bolcom-api] fetchPricing: fetched ${offerResults.length} offers, ${fetchErrors} errors`);
+
+        // 3. Batch update pricing + offer IDs
+        let pricesUpdated = 0;
+        let offersLinked = 0;
+        const now = new Date().toISOString();
+
+        // Update offer_mappings in bulk batches of 200
+        for (let i = 0; i < offerResults.length; i += 200) {
+          const batch = offerResults.slice(i, i + 200);
+          const mapRows = batch.map(o => ({
+            company_id: companyId,
+            ean: o.ean,
+            product_id: o.productId,
+            bolcom_offer_id: o.offerId || null,
+            is_active: true,
+            updated_at: now,
+          }));
+          await supabase.from("bolcom_offer_mappings").upsert(mapRows, { onConflict: "company_id,ean" });
+          offersLinked += mapRows.filter(r => r.bolcom_offer_id).length;
+        }
+
+        // Update physical_products pricing via upsert
+        const pricingUpdates = offerResults.filter(o => o.price > 0);
+        console.log(`[bolcom-api] fetchPricing: updating pricing for ${pricingUpdates.length} products`);
+
+        let pricingError = "";
+        // Batch upsert pricing — 200 at a time, only product_id + pricing
+        for (let i = 0; i < pricingUpdates.length; i += 200) {
+          const batch = pricingUpdates.slice(i, i + 200);
+          const rows = batch.map(o => ({
+            product_id: o.productId,
+            pricing: { price: o.price, currency: "EUR", fulfilment_method: o.fulfilment, condition: o.condition },
+          }));
+          const { error: upsertErr } = await supabase
+            .from("physical_products")
+            .upsert(rows, { onConflict: "product_id" });
+          if (upsertErr) {
+            pricingError = upsertErr.message;
+            console.error(`[bolcom-api] pricing upsert error: ${upsertErr.message} (code: ${upsertErr.code}, details: ${upsertErr.details})`);
+          } else {
+            pricesUpdated += batch.length;
+          }
+        }
+        console.log(`[bolcom-api] fetchPricing: ${pricesUpdated} prices stored`);
+
+        console.log(`[bolcom-api] fetchPricing complete: ${pricesUpdated} prices updated, ${offersLinked} offers linked`);
+
+        result = {
+          success: true,
+          data: {
+            offersFound: offerResults.length,
+            pricesUpdated,
+            offersLinked,
+            totalProducts: allProducts.length,
+            fetchErrors,
+            ...(pricingError ? { pricingError } : {}),
           },
         };
         break;
