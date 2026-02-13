@@ -771,7 +771,7 @@ function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location, visibl
   );
 }
 
-// Mobile Secondary Navigation Component
+// Mobile Secondary Navigation Component (inside Sheet drawer)
 function MobileSecondaryNav({ config, location }) {
   if (!config) return null;
 
@@ -786,31 +786,7 @@ function MobileSecondaryNav({ config, location }) {
       </div>
       <div className="space-y-0.5 px-1">
         {config.items.map((item) => {
-          // Parse URLs for proper comparison
-          const itemUrl = new URL(item.path, 'http://localhost');
-          const currentUrl = new URL(location.pathname + location.search, 'http://localhost');
-
-          let isActive = false;
-
-          // Check pathname match first
-          if (currentUrl.pathname.toLowerCase() === itemUrl.pathname.toLowerCase()) {
-            // If item has a 'type' query param, it must match
-            const itemType = itemUrl.searchParams.get('type');
-            const currentType = currentUrl.searchParams.get('type');
-
-            if (itemType) {
-              // Item specifies a type, must match exactly
-              isActive = itemType === currentType;
-            } else {
-              // No specific type required, pathname match is enough
-              isActive = true;
-            }
-          } else {
-            // Check if current path starts with item path (for nested routes)
-            const basePath = itemUrl.pathname.toLowerCase();
-            isActive = currentUrl.pathname.toLowerCase().startsWith(basePath + '/');
-          }
-
+          const isActive = isSubmenuItemActive(item, location);
           const Icon = item.icon;
 
           return (
@@ -829,6 +805,73 @@ function MobileSecondaryNav({ config, location }) {
               <span className="text-sm font-medium">{item.label}</span>
               {item.badge > 0 && (
                 <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-medium ${colors.bg} ${colors.text} border ${colors.border}`}>
+                  {item.badge}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Shared helper: check if a submenu item is active
+function isSubmenuItemActive(item, location) {
+  const itemUrl = new URL(item.path, 'http://localhost');
+  const currentUrl = new URL(location.pathname + location.search, 'http://localhost');
+
+  if (currentUrl.pathname.toLowerCase() === itemUrl.pathname.toLowerCase()) {
+    const itemType = itemUrl.searchParams.get('type');
+    const currentType = currentUrl.searchParams.get('type');
+    if (itemType) return itemType === currentType;
+    return true;
+  }
+  const basePath = itemUrl.pathname.toLowerCase();
+  return currentUrl.pathname.toLowerCase().startsWith(basePath + '/');
+}
+
+// Mobile Sub-Nav Strip — persistent bar below mobile header showing current section's pages
+function MobileSubNavStrip({ config, location }) {
+  if (!config) return null;
+  const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
+  const scrollRef = React.useRef(null);
+
+  // Auto-scroll active item into view
+  React.useEffect(() => {
+    if (!scrollRef.current) return;
+    const active = scrollRef.current.querySelector('[data-active="true"]');
+    if (active) {
+      active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, [location.pathname, location.search]);
+
+  return (
+    <div className="md:hidden fixed top-14 sm:top-16 left-0 right-0 z-40 bg-black/90 backdrop-blur-md border-b border-white/5">
+      <div
+        ref={scrollRef}
+        className="flex items-center gap-1 px-3 py-1.5 overflow-x-auto scrollbar-hide"
+      >
+        {config.items.map((item) => {
+          const isActive = isSubmenuItemActive(item, location);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.label}
+              to={item.path}
+              data-active={isActive}
+              className={`
+                flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors shrink-0 min-h-[32px]
+                ${isActive
+                  ? `${colors.text} ${colors.bg} border ${colors.border}`
+                  : 'text-zinc-500 hover:text-zinc-300 border border-transparent'
+                }
+              `}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {item.label}
+              {item.badge > 0 && (
+                <span className={`text-[9px] px-1 py-0.5 rounded-full font-bold ${colors.bg} ${colors.text}`}>
                   {item.badge}
                 </span>
               )}
@@ -946,6 +989,12 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     <div className="flex flex-col h-full relative overflow-visible">
       {/* Navigation - Mobile optimized with larger touch targets */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-1 scrollbar-hide scroll-smooth-ios">
+        {/* Mobile: user greeting */}
+        {isMobile && me && (
+          <div className="px-4 pb-3 mb-1 border-b border-white/5">
+            <p className="text-[11px] uppercase tracking-widest text-zinc-500 font-medium">Navigation</p>
+          </div>
+        )}
         {/* SYNC Avatar - top of sidebar: click = chat, double-click = voice */}
         <SyncAvatarSidebarButton
           onSingleClick={() => navigate(createPageUrl("SyncAgent"))}
@@ -1060,6 +1109,13 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         </div>
 
         <div className="h-px bg-white/5 mx-2 my-2" />
+
+        {/* Mobile: Engines section label */}
+        {isMobile && engineItems.length > 0 && (
+          <div className="px-4 pt-1 pb-1">
+            <p className="text-[10px] uppercase tracking-widest text-zinc-600 font-medium">Apps</p>
+          </div>
+        )}
 
         {/* Engine Apps - Dynamic based on user config - Mobile optimized */}
         <div className="space-y-1">
@@ -1192,8 +1248,8 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
 
       {/* Bottom Section */}
       <div className={`p-4 space-y-1 bg-gradient-to-t from-black via-black to-transparent ${isMobile ? 'pb-6' : ''}`}>
-        {/* Notifications bell */}
-        <NotificationsDropdown sidebarMode={!isMobile} />
+        {/* Notifications bell — desktop sidebar only (mobile has it in the header bar) */}
+        {!isMobile && <NotificationsDropdown sidebarMode={true} />}
 
         {/* Settings and Admin - at the bottom */}
         {filteredBottomNavItems.map((item) => {
@@ -3337,9 +3393,32 @@ export default function Layout({ children, currentPageName }) {
           </div>
 
           {/* Mobile Header - Only on phones (below 768px) */}
-          <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-gray-800 pt-safe">
+          <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-white/5 pt-safe">
             <div className="flex items-center justify-between px-3 sm:px-4 h-14 sm:h-16">
-              <div className="flex items-center">
+              <div className="flex items-center gap-2">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-gray-300 min-w-[40px] min-h-[40px] flex items-center justify-center hover:bg-white/10 active:bg-white/20 transition-colors rounded-xl -ml-1"
+                      aria-label="Open menu"
+                    >
+                      <Menu className="w-5 h-5" />
+                      <span className="sr-only">Open menu</span>
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-[85vw] max-w-[320px] p-0 border-gray-800 bg-black pt-safe pb-safe overflow-y-auto">
+                    <SidebarContent
+                      currentPageName={currentPageName}
+                      isMobile={true}
+                      secondaryNavConfig={secondaryNavConfig}
+                      enabledApps={enabledApps}
+                      onOpenAppsManager={() => setAppsManagerOpen(true)}
+                      inboxUnreadCount={inboxUnreadCount}
+                    />
+                  </SheetContent>
+                </Sheet>
                 <span className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent">
                   iSyncSo
                 </span>
@@ -3351,41 +3430,51 @@ export default function Layout({ children, currentPageName }) {
                 </div>
               )}
               <div className="flex items-center gap-1">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/10 active:bg-white/20 transition-colors rounded-xl"
-                    aria-label="Open menu"
-                  >
-                    <Menu className="w-6 h-6" />
-                    <span className="sr-only">Open menu</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[85vw] max-w-[320px] p-0 border-gray-800 bg-black pt-safe pb-safe overflow-y-auto">
-                  <SidebarContent
-                    currentPageName={currentPageName}
-                    isMobile={true}
-                    secondaryNavConfig={secondaryNavConfig}
-                    enabledApps={enabledApps}
-                    onOpenAppsManager={() => setAppsManagerOpen(true)}
-                    inboxUnreadCount={inboxUnreadCount}
-                  />
-                </SheetContent>
-              </Sheet>
+                <NotificationsDropdown sidebarMode={false} />
               </div>
             </div>
           </div>
 
-          {/* Desktop Top Bar removed - notifications moved to sidebar */}
+          {/* Mobile Sub-Navigation Strip — persistent below header */}
+          <MobileSubNavStrip config={secondaryNavConfig} location={location} />
 
           {/* Main Content - Mobile optimized with safe areas */}
           <main
             id="main-content"
-            className="relative flex-1 md:pt-0 pt-14 sm:pt-16 overflow-auto transition-all duration-300 pb-safe scroll-smooth-ios"
+            className={`relative flex-1 md:pt-0 overflow-auto transition-all duration-300 pb-safe scroll-smooth-ios ${
+              secondaryNavConfig ? 'pt-[calc(3.5rem+2.5rem)] sm:pt-[calc(4rem+2.5rem)]' : 'pt-14 sm:pt-16'
+            }`}
             role="main"
           >
+            {/* SYNC environment top tabs — bordered pill style (desktop only, mobile uses MobileSubNavStrip) */}
+            {secondaryNavConfig?.title === 'SYNC' && (
+              <div className="hidden md:block px-4 lg:px-6 pt-4">
+                <div className="inline-flex items-center gap-1 bg-zinc-900/60 border border-zinc-800/60 rounded-lg p-1.5 overflow-x-auto scrollbar-hide">
+                  {secondaryNavConfig.items.map((item) => {
+                    const Icon = item.icon;
+                    const fullUrl = location.pathname + location.search;
+                    const itemBase = item.path?.split('?')[0];
+                    const isActive = item.path?.includes('?')
+                      ? fullUrl === item.path || (fullUrl === itemBase && item.matchPath)
+                      : location.pathname === item.path;
+                    return (
+                      <Link
+                        key={item.label}
+                        to={item.path}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
+                          isActive
+                            ? 'bg-zinc-800/80 text-cyan-300/90'
+                            : 'text-zinc-500 hover:text-zinc-300'
+                        }`}
+                      >
+                        {Icon && <Icon className="w-4 h-4" />}
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {/* TALENT quick action buttons moved to TalentDashboard PageHeader */}
             <div className="min-h-full">
               {children}
