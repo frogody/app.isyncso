@@ -18,7 +18,7 @@ export default function PrivacyAIAct() {
 
   return (
     <div className="min-h-screen bg-black">
-      <div className="max-w-4xl mx-auto px-4 lg:px-6 py-8 space-y-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
         {/* Hero */}
         <motion.div
@@ -32,7 +32,7 @@ export default function PrivacyAIAct() {
           <h1 className="text-3xl lg:text-4xl font-bold text-white mb-3">
             Your Data. Your Eyes Only.
           </h1>
-          <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
+          <p className="text-lg text-zinc-400 max-w-3xl mx-auto">
             iSyncSO is built to empower you, not to surveil you. Your activity data is private by design and protected by law.
           </p>
         </motion.div>
