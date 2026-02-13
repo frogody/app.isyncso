@@ -968,29 +968,15 @@ export default function DesktopActivity() {
                     const sortedCats = Object.entries(catMins).sort(([,a], [,b]) => b - a);
                     const topCategory = sortedCats[0]?.[0] || 'Other';
 
-                    // Build smart activity description
-                    let activityDesc = '';
-                    const catDescParts = sortedCats
-                      .filter(([cat]) => cat !== 'Other' && cat !== 'System')
-                      .slice(0, 3)
-                      .map(([cat, mins]) => `${cat} (${mins}m)`);
-
-                    if (catDescParts.length > 0) {
-                      activityDesc = catDescParts.join(', ');
-                    } else if (topAppName) {
-                      activityDesc = `${topAppName} (${topApp?.minutes || 0}m)`;
-                    }
-
                     // Extract meaningful context from OCR if available
                     let contextHint = '';
                     if (log.ocr_text) {
-                      // Try to extract project/file names, URLs, email subjects from OCR
                       const ocrText = log.ocr_text;
                       const patterns = [
-                        /(?:src|lib|components|pages|services)\/[\w/.-]+/i,  // file paths
-                        /(?:pull request|PR|issue|commit)\s*#?\d*/i,         // git activity
-                        /(?:Subject|Re):\s*[^\n]{5,60}/i,                   // email subjects
-                        /(?:meeting|standup|sync|call|huddle)\b/i,          // meetings
+                        /(?:src|lib|components|pages|services)\/[\w/.-]+/i,
+                        /(?:pull request|PR|issue|commit)\s*#?\d*/i,
+                        /(?:Subject|Re):\s*[^\n]{5,60}/i,
+                        /(?:meeting|standup|sync|call|huddle)\b/i,
                       ];
                       for (const pattern of patterns) {
                         const match = ocrText.match(pattern);
@@ -1001,39 +987,26 @@ export default function DesktopActivity() {
                       }
                     }
 
-                    // Parse semantic_category if it's a JSON breakdown
-                    let semanticLabel = null;
-                    if (log.semantic_category && log.semantic_category !== 'other') {
-                      try {
-                        const parsed = JSON.parse(log.semantic_category);
-                        if (typeof parsed === 'object' && parsed !== null) {
-                          const entries = Object.entries(parsed).sort(([,a], [,b]) => b - a);
-                          semanticLabel = entries.slice(0, 2).map(([cat, mins]) => `${cat} ${mins}m`).join(', ');
-                        } else {
-                          semanticLabel = log.semantic_category;
-                        }
-                      } catch {
-                        semanticLabel = log.semantic_category;
-                      }
-                    }
-
-                    // Build the top-line summary
+                    // Build the top-line summary (case-insensitive category matching)
                     const primaryApps = apps.slice(0, 3).map(a => a.appName || a.app).filter(Boolean);
                     let summaryLine = '';
-                    if (topCategory === 'Development' && primaryApps.length > 0) {
-                      summaryLine = `Coding in ${primaryApps.join(', ')}`;
+                    const lowerTopCat = (topCategory || '').toLowerCase();
+                    if (lowerTopCat.includes('development') || lowerTopCat === 'coding') {
+                      summaryLine = `Development work in ${primaryApps.join(', ')}`;
                       if (contextHint) summaryLine += ` — ${contextHint}`;
-                    } else if (topCategory === 'Communication') {
+                    } else if (lowerTopCat.includes('communication') || lowerTopCat === 'chatting') {
                       summaryLine = `Communication via ${primaryApps.join(', ')}`;
-                    } else if (topCategory === 'Meetings') {
+                    } else if (lowerTopCat.includes('meeting')) {
                       summaryLine = `In meetings (${primaryApps.join(', ')})`;
-                    } else if (topCategory === 'Browsing') {
+                    } else if (lowerTopCat.includes('browsing')) {
                       summaryLine = `Browsing and research`;
                       if (contextHint) summaryLine += ` — ${contextHint}`;
-                    } else if (topCategory === 'Design') {
+                    } else if (lowerTopCat.includes('design')) {
                       summaryLine = `Design work in ${primaryApps.join(', ')}`;
-                    } else if (topCategory === 'Productivity') {
+                    } else if (lowerTopCat.includes('productivity')) {
                       summaryLine = `Productivity tasks in ${primaryApps.join(', ')}`;
+                    } else if (lowerTopCat.includes('entertainment')) {
+                      summaryLine = `Entertainment and media`;
                     } else if (primaryApps.length > 0) {
                       summaryLine = `Working in ${primaryApps.join(', ')}`;
                     }
@@ -1291,8 +1264,55 @@ export default function DesktopActivity() {
                 <div className="space-y-4">
                   {activityLogs.slice(0, 10).map((log, i) => {
                     const apps = Array.isArray(log.app_breakdown)
-                      ? log.app_breakdown
+                      ? log.app_breakdown.sort((a, b) => (b.minutes || 0) - (a.minutes || 0))
                       : Object.entries(log.app_breakdown || {}).map(([appName, minutes]) => ({ appName, minutes }));
+
+                    // Derive categories
+                    const ctxCatMins = {};
+                    apps.forEach(item => {
+                      const cat = item.category || 'Other';
+                      ctxCatMins[cat] = (ctxCatMins[cat] || 0) + (item.minutes || 0);
+                    });
+                    const ctxSortedCats = Object.entries(ctxCatMins).sort(([,a], [,b]) => b - a);
+                    const ctxTopCat = ctxSortedCats.find(([c]) => c !== 'Other' && c !== 'System')?.[0] || ctxSortedCats[0]?.[0];
+
+                    // Build activity summary
+                    const ctxPrimaryApps = apps.slice(0, 3).map(a => a.appName || a.app).filter(Boolean);
+                    let ctxSummary = '';
+                    const lowerCat = (ctxTopCat || '').toLowerCase();
+                    if (lowerCat.includes('development') || lowerCat === 'coding') {
+                      ctxSummary = `Development work in ${ctxPrimaryApps.join(', ')}`;
+                    } else if (lowerCat.includes('communication') || lowerCat === 'chatting') {
+                      ctxSummary = `Communication via ${ctxPrimaryApps.join(', ')}`;
+                    } else if (lowerCat.includes('meeting')) {
+                      ctxSummary = `In meetings (${ctxPrimaryApps.join(', ')})`;
+                    } else if (lowerCat.includes('browsing')) {
+                      ctxSummary = `Browsing and research`;
+                    } else if (lowerCat.includes('design')) {
+                      ctxSummary = `Design work in ${ctxPrimaryApps.join(', ')}`;
+                    } else if (lowerCat.includes('productivity')) {
+                      ctxSummary = `Productivity tasks in ${ctxPrimaryApps.join(', ')}`;
+                    } else if (ctxPrimaryApps.length > 0) {
+                      ctxSummary = `Working in ${ctxPrimaryApps.join(', ')}`;
+                    }
+
+                    // Parse semantic_category properly
+                    let parsedCategories = null;
+                    if (log.semantic_category && log.semantic_category !== 'other') {
+                      try {
+                        const parsed = JSON.parse(log.semantic_category);
+                        if (typeof parsed === 'object' && parsed !== null) {
+                          parsedCategories = Object.entries(parsed).sort(([,a], [,b]) => b - a);
+                        }
+                      } catch {
+                        // Plain string
+                        if (log.semantic_category !== 'other') {
+                          parsedCategories = [[log.semantic_category, log.total_minutes || 1]];
+                        }
+                      }
+                    }
+
+                    const commitments = parseCommitments(log.commitments);
 
                     return (
                       <motion.div
@@ -1302,7 +1322,7 @@ export default function DesktopActivity() {
                         transition={{ delay: i * 0.05 }}
                         className="p-4 rounded-xl bg-zinc-800/40 border border-zinc-700/40 hover:border-cyan-700/40 transition-all group"
                       >
-                        <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-start justify-between mb-2">
                           <div>
                             <div className="text-sm font-medium text-white">
                               {new Date(log.hour_start).toLocaleString('en-US', {
@@ -1312,83 +1332,70 @@ export default function DesktopActivity() {
                                 hour: 'numeric',
                               })}
                             </div>
-                            <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
                               <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">
                                 {formatDuration(log.total_minutes)}
                               </Badge>
                               <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">
                                 {Math.round((log.focus_score || 0) * 100)}% focus
                               </Badge>
+                              {ctxTopCat && ctxTopCat !== 'Other' && (
+                                <Badge className="bg-cyan-500/10 text-cyan-300 border-cyan-500/30 text-xs">
+                                  {ctxTopCat}
+                                </Badge>
+                              )}
                             </div>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity text-cyan-300 hover:text-cyan-200"
-                          >
-                            <BookOpen className="w-4 h-4 mr-1" />
-                            View Details
-                          </Button>
                         </div>
 
-                        {/* App breakdown */}
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {apps.slice(0, 5).map((app, j) => (
-                            <div key={j} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-700/30 border border-zinc-600/30">
-                              <Monitor className="w-3 h-3 text-zinc-400" />
-                              <span className="text-xs text-zinc-300">{app.appName || 'Unknown'}</span>
-                              <span className="text-xs text-zinc-500">{app.minutes || app}m</span>
+                        {/* Activity summary */}
+                        {ctxSummary && (
+                          <p className="text-sm text-zinc-300 mb-3">{ctxSummary}</p>
+                        )}
+
+                        {/* Category breakdown (from app_breakdown or semantic_category) */}
+                        {ctxSortedCats.length > 1 && (
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {ctxSortedCats.slice(0, 4).map(([cat, mins]) => (
+                              <Badge key={cat} className="bg-zinc-700/50 text-zinc-400 border-zinc-600/50 text-xs">
+                                {cat}: {mins}m
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Commitments / action items */}
+                        {commitments && commitments.length > 0 && (
+                          <div className="mb-3 p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                            <div className="text-xs text-amber-300/70 mb-1.5 flex items-center gap-1">
+                              <Target className="w-3 h-3" />
+                              Commitments
                             </div>
-                          ))}
-                        </div>
-
-                        {/* Context preview (will show OCR/semantic data when available) */}
-                        {log.semantic_category && (
-                          <div className="mt-3 pt-3 border-t border-zinc-700/40">
-                            <div className="flex items-center gap-2 text-sm text-zinc-400">
-                              <Brain className="w-4 h-4 text-cyan-400" />
-                              <span>Category: <span className="text-cyan-300">{log.semantic_category}</span></span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {commitments.map((c, ci) => (
+                                <Badge key={ci} className="bg-amber-500/10 text-amber-200/90 border-amber-500/20 text-xs">
+                                  {c.description || c.title || c.text || (typeof c === 'string' ? c : 'Commitment detected')}
+                                </Badge>
+                              ))}
                             </div>
                           </div>
                         )}
 
+                        {/* Screen content (hidden by default) */}
                         {log.ocr_text && (
                           <button
                             onClick={() => toggleOcrExpand(`ctx-${log.id}`)}
-                            className="w-full text-left mt-2 p-3 rounded-lg bg-zinc-900/60 border border-zinc-700/30 hover:border-zinc-600/50 transition-colors"
+                            className="mt-1 text-[11px] text-zinc-500 hover:text-cyan-400 transition-colors flex items-center gap-1"
                           >
-                            <div className="text-xs text-zinc-500 mb-1 flex items-center gap-1">
-                              <FileText className="w-3 h-3" />
-                              <span>Screen Content</span>
-                              <span className="text-[10px] text-cyan-400 ml-auto">
-                                {expandedOcr.has(`ctx-${log.id}`) ? 'collapse' : 'expand'}
-                              </span>
-                            </div>
-                            <p className={`text-sm text-zinc-400 ${expandedOcr.has(`ctx-${log.id}`) ? 'whitespace-pre-wrap' : 'line-clamp-2'}`}>
-                              {log.ocr_text}
-                            </p>
+                            <FileText className="w-3 h-3" />
+                            {expandedOcr.has(`ctx-${log.id}`) ? 'Hide screen content' : 'Show screen content'}
                           </button>
                         )}
-
-                        {(() => {
-                          const commitments = parseCommitments(log.commitments);
-                          if (!commitments || commitments.length === 0) return null;
-                          return (
-                            <div className="mt-2 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
-                              <div className="text-xs text-amber-300/70 mb-1.5 flex items-center gap-1">
-                                <Target className="w-3 h-3" />
-                                Commitments
-                              </div>
-                              <div className="flex flex-wrap gap-1.5">
-                                {commitments.map((c, ci) => (
-                                  <Badge key={ci} className="bg-amber-500/10 text-amber-200/90 border-amber-500/20 text-xs">
-                                    {c.description || c.title || c.text || (typeof c === 'string' ? c : JSON.stringify(c))}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })()}
+                        {log.ocr_text && expandedOcr.has(`ctx-${log.id}`) && (
+                          <div className="mt-1.5 p-2.5 rounded-lg bg-zinc-900/60 border border-zinc-700/30">
+                            <p className="text-xs text-zinc-400 whitespace-pre-wrap">{log.ocr_text}</p>
+                          </div>
+                        )}
 
                         {log.screen_captures && (
                           <div className="mt-2 flex items-center gap-1.5">

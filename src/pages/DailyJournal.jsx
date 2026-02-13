@@ -35,7 +35,7 @@ export default function DailyJournal() {
     const fetchDayLogs = async () => {
       try {
         const { data: logs } = await db.from('desktop_activity_logs')
-          .select('commitments, semantic_category, total_minutes')
+          .select('commitments, semantic_category, total_minutes, app_breakdown')
           .eq('user_id', user.id)
           .gte('hour_start', `${selectedJournal.journal_date}T00:00:00`)
           .lt('hour_start', `${selectedJournal.journal_date}T23:59:59`);
@@ -54,8 +54,8 @@ export default function DailyJournal() {
             const parsed = typeof log.commitments === 'string' ? JSON.parse(log.commitments) : log.commitments;
             const items = Array.isArray(parsed) ? parsed : [parsed];
             items.forEach(c => {
-              const key = c.description || c.title || c.text || (typeof c === 'string' ? c : JSON.stringify(c));
-              if (!seen.has(key)) {
+              const key = c.description || c.title || c.text || (typeof c === 'string' ? c : '');
+              if (key && !seen.has(key)) {
                 seen.add(key);
                 allCommitments.push({ ...c, _display: key });
               }
@@ -63,11 +63,30 @@ export default function DailyJournal() {
           } catch {}
         });
 
-        // Aggregate semantic categories
+        // Derive categories from app_breakdown (most reliable), fallback to semantic_category
         const categories = {};
         logs.forEach(log => {
-          if (log.semantic_category) {
-            categories[log.semantic_category] = (categories[log.semantic_category] || 0) + (log.total_minutes || 1);
+          if (log.app_breakdown && Array.isArray(log.app_breakdown) && log.app_breakdown.length > 0) {
+            log.app_breakdown.forEach(item => {
+              const cat = item.category || 'Other';
+              const mins = item.minutes || 0;
+              if (mins > 0) {
+                categories[cat] = (categories[cat] || 0) + mins;
+              }
+            });
+          } else if (log.semantic_category && log.semantic_category !== 'other') {
+            try {
+              const parsed = JSON.parse(log.semantic_category);
+              if (typeof parsed === 'object' && parsed !== null) {
+                Object.entries(parsed).forEach(([cat, mins]) => {
+                  categories[cat] = (categories[cat] || 0) + (mins || 0);
+                });
+              } else {
+                categories[log.semantic_category] = (categories[log.semantic_category] || 0) + (log.total_minutes || 1);
+              }
+            } catch {
+              categories[log.semantic_category] = (categories[log.semantic_category] || 0) + (log.total_minutes || 1);
+            }
           }
         });
 
@@ -513,11 +532,18 @@ export default function DailyJournal() {
                     <div className="flex flex-wrap gap-1.5">
                       {Object.entries(dayLogs.categories)
                         .sort(([,a], [,b]) => b - a)
-                        .map(([category, mins]) => (
-                          <Badge key={category} className="bg-cyan-500/10 text-cyan-300 border-cyan-500/30 text-xs">
-                            {category} ({Math.round(mins)}m)
-                          </Badge>
-                        ))}
+                        .filter(([cat]) => cat !== 'other')
+                        .map(([category, mins]) => {
+                          const label = category.charAt(0).toUpperCase() + category.slice(1);
+                          const h = Math.floor(mins / 60);
+                          const m = Math.round(mins % 60);
+                          const dur = h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+                          return (
+                            <Badge key={category} className="bg-cyan-500/10 text-cyan-300 border-cyan-500/30 text-xs">
+                              {label} ({dur})
+                            </Badge>
+                          );
+                        })}
                     </div>
                   </div>
                 )}
