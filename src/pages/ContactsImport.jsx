@@ -297,6 +297,7 @@ export default function ContactsImport() {
           // Create contact
           const contactData = {
             owner_id: user.id,
+            organization_id: user.organization_id,
             first_name: firstName,
             last_name: lastName,
             email: data.email || null,
