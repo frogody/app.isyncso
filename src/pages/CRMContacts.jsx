@@ -16,6 +16,7 @@ import { prefersReducedMotion } from "@/lib/animations";
 const CONTACT_TYPES = [
   { id: 'all', label: 'All Contacts' },
   { id: 'contact', label: 'Contacts' },
+  { id: 'company', label: 'Companies' },
   { id: 'lead', label: 'Leads' },
   { id: 'prospect', label: 'Prospects' },
   { id: 'customer', label: 'Customers' },

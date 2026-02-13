@@ -32,6 +32,7 @@ const STEPS = [
 // Contact types for selection
 const CONTACT_TYPES = [
   { id: 'contact', label: 'Contacts', icon: Contact, description: 'General contacts — sort into a category later', color: 'cyan' },
+  { id: 'company', label: 'Companies', icon: Building2, description: 'Companies and organizations — not tied to a specific person', color: 'indigo' },
   { id: 'lead', label: 'Leads', icon: Target, description: 'Unqualified contacts for initial outreach', color: 'zinc' },
   { id: 'prospect', label: 'Prospects', icon: TrendingUp, description: 'Qualified leads in sales pipeline', color: 'blue' },
   { id: 'customer', label: 'Customers', icon: UserCheck, description: 'Paying customers with active relationships', color: 'green' },
