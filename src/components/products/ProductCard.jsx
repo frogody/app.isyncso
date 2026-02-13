@@ -64,6 +64,7 @@ export function ProductGridCard({
   productType = 'digital',
   details,
   salesChannels,
+  channelInventory,
   onEdit,
   onDuplicate,
   onArchive,
@@ -168,6 +169,21 @@ export function ProductGridCard({
               )}
             </div>
 
+            {/* Cross-channel stock breakdown (SH-18) */}
+            {isPhysical && channelInventory && salesChannels?.length >= 2 && (
+              <div className={`flex items-center gap-2 flex-wrap text-xs mt-1 ${t('text-slate-500', 'text-zinc-500')}`}>
+                <span>Internal: {channelInventory.quantity_available ?? channelInventory.quantity_on_hand ?? '—'}</span>
+                {salesChannels.includes('bolcom') && (
+                  <><span className={t('text-slate-300', 'text-zinc-600')}>|</span>
+                  <span>bol.com: {channelInventory.quantity_external_bolcom ?? '—'}</span></>
+                )}
+                {salesChannels.includes('shopify') && (
+                  <><span className={t('text-slate-300', 'text-zinc-600')}>|</span>
+                  <span>Shopify: {channelInventory.quantity_external_shopify ?? '—'}</span></>
+                )}
+              </div>
+            )}
+
             <div className={`flex items-center justify-between mt-4 pt-3 border-t ${t('border-slate-200', 'border-white/5')}`}>
               <div className="flex items-center gap-2">
                 {(isDigital || isService) && pricingModel && (
@@ -252,6 +268,7 @@ export function ProductListRow({
   productType = 'digital',
   details,
   salesChannels,
+  channelInventory,
   onEdit,
   onDuplicate,
   onArchive,
@@ -355,6 +372,20 @@ export function ProductListRow({
             <p className={`text-sm ${t('text-slate-500', 'text-zinc-500')} mt-0.5 truncate`}>
               {product.tagline || product.short_description || 'No description'}
             </p>
+            {/* Cross-channel stock breakdown (SH-18) */}
+            {isPhysical && channelInventory && salesChannels?.length >= 2 && (
+              <div className={`flex items-center gap-2 text-xs mt-0.5 ${t('text-slate-400', 'text-zinc-500')}`}>
+                <span>Internal: {channelInventory.quantity_available ?? channelInventory.quantity_on_hand ?? '—'}</span>
+                {salesChannels.includes('bolcom') && (
+                  <><span className={t('text-slate-300', 'text-zinc-600')}>|</span>
+                  <span>bol.com: {channelInventory.quantity_external_bolcom ?? '—'}</span></>
+                )}
+                {salesChannels.includes('shopify') && (
+                  <><span className={t('text-slate-300', 'text-zinc-600')}>|</span>
+                  <span>Shopify: {channelInventory.quantity_external_shopify ?? '—'}</span></>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Pricing / Info */}

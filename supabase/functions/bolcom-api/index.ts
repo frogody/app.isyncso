@@ -84,7 +84,8 @@ type BolcomAction =
   | "batchEnrichProducts"
   | "batchEnrichByEan"
   | "importProducts"
-  | "fetchPricing";
+  | "fetchPricing"
+  | "fetchImages";
 
 interface BolcomRequest {
   action: BolcomAction;
@@ -1689,7 +1690,7 @@ serve(async (req) => {
           const batch = pricingUpdates.slice(i, i + 200);
           const rows = batch.map(o => ({
             product_id: o.productId,
-            pricing: { price: o.price, currency: "EUR", fulfilment_method: o.fulfilment, condition: o.condition },
+            pricing: { base_price: o.price, price: o.price, currency: "EUR", fulfilment_method: o.fulfilment, condition: o.condition },
           }));
           const { error: upsertErr } = await supabase
             .from("physical_products")
@@ -1714,6 +1715,162 @@ serve(async (req) => {
             totalProducts: allProducts.length,
             fetchErrors,
             ...(pricingError ? { pricingError } : {}),
+          },
+        };
+        break;
+      }
+
+      case "fetchImages": {
+        const imgToken = await getBolToken(supabase, companyId);
+        if ("error" in imgToken) { result = { success: false, error: imgToken.error }; break; }
+
+        // Accept optional batchLimit (default 100 per call to stay within 150s timeout)
+        const imgBatchLimit = body.batchLimit ?? 100;
+        console.log(`[bolcom-api] fetchImages: fetching images for company ${companyId} (limit: ${imgBatchLimit})`);
+        const nlHeaders = { "Accept-Language": "nl" };
+
+        // 1. Get products that need images (no featured_image set), limited to batchLimit
+        const productsToEnrich: Array<{ id: string; ean: string }> = [];
+        for (let i = 0; productsToEnrich.length < imgBatchLimit; i += 1000) {
+          const { data } = await supabase.from("products")
+            .select("id, ean, featured_image")
+            .eq("company_id", companyId)
+            .not("ean", "is", null)
+            .range(i, i + 999);
+          if (!data || data.length === 0) break;
+          for (const p of data as Array<{ id: string; ean: string; featured_image: { url?: string } | null }>) {
+            if (!p.featured_image?.url && productsToEnrich.length < imgBatchLimit) {
+              productsToEnrich.push({ id: p.id, ean: p.ean });
+            }
+          }
+          if (data.length < 1000) break;
+        }
+
+        // Count total remaining (for progress display)
+        let totalRemaining = productsToEnrich.length;
+        if (productsToEnrich.length === imgBatchLimit) {
+          // There may be more — do a quick count
+          const { count: totalNoImage } = await supabase.from("products")
+            .select("id", { count: "exact", head: true })
+            .eq("company_id", companyId)
+            .not("ean", "is", null)
+            .is("featured_image", null);
+          // Also count products with empty featured_image (no url)
+          totalRemaining = totalNoImage ?? productsToEnrich.length;
+        }
+
+        console.log(`[bolcom-api] fetchImages: ${productsToEnrich.length} products to process this batch, ~${totalRemaining} total remaining`);
+
+        if (productsToEnrich.length === 0) {
+          result = { success: true, data: { productsProcessed: 0, imagesFound: 0, imagesUpdated: 0, fetchErrors: 0, remaining: 0 } };
+          break;
+        }
+
+        // 2. Fetch PRIMARY assets only (1 API call per product) with concurrency
+        interface ImageResult { productId: string; featuredUrl: string; width: number; height: number }
+        const imageResults: ImageResult[] = [];
+        const confirmedNoAsset: string[] = []; // Products where API returned 200 but no assets
+        let imgFetchErrors = 0;
+        // bol.com rate limit: ~20 req/10s = 2 req/s. Use 3 concurrent + 1.5s delay = ~2 req/s
+        const IMG_CONCURRENCY = 3;
+        let rateLimited = false;
+
+        for (let i = 0; i < productsToEnrich.length; i += IMG_CONCURRENCY) {
+          // If we got rate limited, wait longer before continuing
+          if (rateLimited) {
+            await new Promise(r => setTimeout(r, 10000));
+            rateLimited = false;
+          }
+
+          const batch = productsToEnrich.slice(i, i + IMG_CONCURRENCY);
+          const batchResults = await Promise.allSettled(
+            batch.map(async (prod): Promise<{ type: "image"; data: ImageResult } | { type: "no_asset"; productId: string } | { type: "error" }> => {
+              try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                const url = `${BOL_API_BASE}/products/${prod.ean}/assets?usage=PRIMARY`;
+                const resp = await fetch(url, {
+                  method: "GET",
+                  headers: {
+                    "Authorization": `Bearer ${imgToken.token}`,
+                    "Content-Type": "application/vnd.retailer.v10+json",
+                    "Accept": "application/vnd.retailer.v10+json",
+                    "Accept-Language": "nl",
+                  },
+                  signal: controller.signal,
+                });
+                clearTimeout(timeoutId);
+                if (resp.status === 404) return { type: "no_asset", productId: prod.id };
+                if (resp.status === 429) { rateLimited = true; return { type: "error" }; }
+                if (!resp.ok) return { type: "error" };
+                const data = await resp.json() as { assets?: Array<{ variants?: Array<{ url: string; width: number; height: number; size: string }> }> };
+                if (data.assets?.[0]?.variants?.length) {
+                  const largest = data.assets[0].variants.reduce((a: { width: number }, b: { width: number }) => (a.width > b.width ? a : b));
+                  return { type: "image", data: { productId: prod.id, featuredUrl: largest.url, width: largest.width, height: largest.height } };
+                }
+                return { type: "no_asset", productId: prod.id };
+              } catch {
+                return { type: "error" };
+              }
+            })
+          );
+
+          for (const r of batchResults) {
+            if (r.status === "fulfilled") {
+              if (r.value.type === "image") imageResults.push(r.value.data);
+              else if (r.value.type === "no_asset") confirmedNoAsset.push(r.value.productId);
+              else imgFetchErrors++;
+            } else {
+              imgFetchErrors++;
+            }
+          }
+
+          // 1.5s delay between batches: 3 concurrent / 1.5s = 2 req/s (within bol.com limits)
+          if (i + IMG_CONCURRENCY < productsToEnrich.length) {
+            await new Promise(r => setTimeout(r, 1500));
+          }
+        }
+
+        console.log(`[bolcom-api] fetchImages: ${imageResults.length} images found, ${confirmedNoAsset.length} confirmed no assets, ${imgFetchErrors} errors`);
+
+        // 3. Batch update products with featured_image (100 concurrent updates)
+        let imagesUpdated = 0;
+        for (let i = 0; i < imageResults.length; i += 100) {
+          const batch = imageResults.slice(i, i + 100);
+          await Promise.all(batch.map(img =>
+            supabase.from("products").update({
+              featured_image: { url: img.featuredUrl, width: img.width, height: img.height },
+              seo_og_image: img.featuredUrl,
+              updated_at: new Date().toISOString(),
+            }).eq("id", img.productId)
+          ));
+          imagesUpdated += batch.length;
+        }
+
+        // Only mark products as no_image when we got a confirmed 404 or 200-with-no-assets
+        if (confirmedNoAsset.length > 0) {
+          for (let i = 0; i < confirmedNoAsset.length; i += 100) {
+            const batch = confirmedNoAsset.slice(i, i + 100);
+            await Promise.all(batch.map(pid =>
+              supabase.from("products").update({
+                featured_image: { url: null, no_image: true },
+                updated_at: new Date().toISOString(),
+              }).eq("id", pid)
+            ));
+          }
+        }
+
+        const remaining = totalRemaining - productsToEnrich.length;
+        console.log(`[bolcom-api] fetchImages complete: ${imagesUpdated} products updated, ~${remaining} remaining`);
+
+        result = {
+          success: true,
+          data: {
+            productsProcessed: productsToEnrich.length,
+            imagesFound: imageResults.length,
+            imagesUpdated,
+            fetchErrors: imgFetchErrors,
+            remaining: Math.max(0, remaining),
           },
         };
         break;

@@ -61,6 +61,7 @@ export default function ProductsPhysical() {
   const [products, setProducts] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [physicalProducts, setPhysicalProducts] = useState({});
+  const [inventoryData, setInventoryData] = useState({});
   const [categories, setCategories] = useState([]);
   const [suppliers, setSuppliers] = useState({});
   const [loading, setLoading] = useState(true);
@@ -335,9 +336,22 @@ export default function ProductsPhysical() {
           chMap[ch.product_id].push(ch.channel);
         });
         setChannelsMap(chMap);
+
+        // Fetch cross-channel inventory data (SH-18)
+        const { data: invData } = await supabase
+          .from('inventory')
+          .select('product_id, quantity_on_hand, quantity_available, quantity_external_shopify')
+          .in('product_id', productIds)
+          .eq('company_id', user?.company_id);
+        const invMap = {};
+        (invData || []).forEach(inv => {
+          invMap[inv.product_id] = inv;
+        });
+        setInventoryData(invMap);
       } else {
         setPhysicalProducts({});
         setChannelsMap({});
+        setInventoryData({});
       }
     } catch (error) {
       console.error('Failed to load physical products:', error);
@@ -578,6 +592,7 @@ export default function ProductsPhysical() {
                       productType="physical"
                       details={physicalProducts[product.id]}
                       salesChannels={channelsMap[product.id]}
+                      channelInventory={inventoryData[product.id]}
                       index={index}
                       onEdit={handleEditProduct}
                       onArchive={handleArchiveProduct}
@@ -618,6 +633,7 @@ export default function ProductsPhysical() {
                       productType="physical"
                       details={physicalProducts[product.id]}
                       salesChannels={channelsMap[product.id]}
+                      channelInventory={inventoryData[product.id]}
                       index={index}
                       onEdit={handleEditProduct}
                       onArchive={handleArchiveProduct}

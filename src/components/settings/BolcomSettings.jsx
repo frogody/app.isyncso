@@ -64,6 +64,10 @@ export default function BolcomSettings() {
   const [fetchingPricing, setFetchingPricing] = useState(false);
   const [pricingResult, setPricingResult] = useState(null);
 
+  // Fetch images
+  const [fetchingImages, setFetchingImages] = useState(false);
+  const [imagesResult, setImagesResult] = useState(null);
+
   // Offer mappings
   const [mappings, setMappings] = useState([]);
   const [loadingMappings, setLoadingMappings] = useState(false);
@@ -200,6 +204,40 @@ export default function BolcomSettings() {
       setPricingResult({ error: err.message });
     } finally {
       setFetchingPricing(false);
+    }
+  };
+
+  // Fetch images from bol.com (auto-loops in batches of 500 until all done)
+  const handleFetchImages = async () => {
+    if (!companyId) { toast.error("No company linked to your account."); return; }
+    setFetchingImages(true);
+    setImagesResult(null);
+    let totalFound = 0;
+    let totalUpdated = 0;
+    let totalErrors = 0;
+    let totalProcessed = 0;
+    let batchNum = 0;
+    try {
+      while (true) {
+        batchNum++;
+        setImagesResult({ inProgress: true, batch: batchNum, imagesUpdated: totalUpdated, totalProcessed });
+        const result = await callBolcomApi("fetchImages", { companyId, batchLimit: 60 });
+        if (!result.success) throw new Error(result.error);
+        totalFound += result.data.imagesFound || 0;
+        totalUpdated += result.data.imagesUpdated || 0;
+        totalErrors += result.data.fetchErrors || 0;
+        totalProcessed += result.data.productsProcessed || 0;
+        // If no more products to process, we're done
+        if ((result.data.remaining || 0) === 0 || result.data.productsProcessed === 0) break;
+        toast.info(`Batch ${batchNum} done: ${totalUpdated} images so far, ${result.data.remaining} remaining...`);
+      }
+      setImagesResult({ imagesFound: totalFound, imagesUpdated: totalUpdated, fetchErrors: totalErrors, totalProcessed });
+      toast.success(`Updated images for ${totalUpdated} products (${totalProcessed} processed)`);
+    } catch (err) {
+      toast.error(err.message || "Failed to fetch images");
+      setImagesResult({ error: err.message, imagesUpdated: totalUpdated, totalProcessed });
+    } finally {
+      setFetchingImages(false);
     }
   };
 
@@ -357,7 +395,7 @@ export default function BolcomSettings() {
           <div className="flex items-center gap-2">
             <Button
               onClick={handleImportProducts}
-              disabled={importing || fetchingPricing}
+              disabled={importing || fetchingPricing || fetchingImages}
               size="sm"
               className="bg-cyan-600 hover:bg-cyan-700 text-white gap-1"
             >
@@ -366,13 +404,23 @@ export default function BolcomSettings() {
             </Button>
             <Button
               onClick={handleFetchPricing}
-              disabled={fetchingPricing || importing}
+              disabled={fetchingPricing || importing || fetchingImages}
               size="sm"
               variant="outline"
               className="gap-1 border-cyan-600/40 text-cyan-400 hover:bg-cyan-600/10"
             >
               {fetchingPricing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
               {fetchingPricing ? "Fetching Pricing..." : "Fetch Pricing"}
+            </Button>
+            <Button
+              onClick={handleFetchImages}
+              disabled={fetchingImages || importing || fetchingPricing}
+              size="sm"
+              variant="outline"
+              className="gap-1 border-cyan-600/40 text-cyan-400 hover:bg-cyan-600/10"
+            >
+              {fetchingImages ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+              {fetchingImages ? "Fetching Images..." : "Fetch Images"}
             </Button>
           </div>
 
@@ -455,6 +503,46 @@ export default function BolcomSettings() {
               <p className="text-sm text-red-400 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" />
                 {pricingResult.error}
+              </p>
+            </div>
+          )}
+
+          {fetchingImages && (
+            <div className={`mt-4 flex items-center gap-2 p-3 rounded-lg ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+              <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+              <span className={`text-sm ${mutedClass}`}>
+                {imagesResult?.inProgress
+                  ? `Batch ${imagesResult.batch}: ${imagesResult.imagesUpdated} images updated, ${imagesResult.totalProcessed} processed so far...`
+                  : "Fetching product images from bol.com..."}
+              </span>
+            </div>
+          )}
+
+          {imagesResult && !imagesResult.error && !imagesResult.inProgress && (
+            <div className="mt-4 space-y-3">
+              <p className={`text-sm font-medium ${t("text-gray-900", "text-white")}`}>Image Fetch Results</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className="text-2xl font-bold text-cyan-400">{imagesResult.imagesFound}</p>
+                  <p className={`text-xs ${mutedClass}`}>Images Found</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{imagesResult.imagesUpdated}</p>
+                  <p className={`text-xs ${mutedClass}`}>Products Updated</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{imagesResult.totalProcessed}</p>
+                  <p className={`text-xs ${mutedClass}`}>Processed</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {imagesResult?.error && (
+            <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+              <p className="text-sm text-red-400 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                {imagesResult.error}
               </p>
             </div>
           )}

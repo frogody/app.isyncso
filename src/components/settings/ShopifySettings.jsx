@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/api/supabaseClient";
+import ShopifyProductMapper from "./ShopifyProductMapper";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -79,6 +80,10 @@ export default function ShopifySettings() {
   const [autoSyncOrders, setAutoSyncOrders] = useState(false);
   const [autoFulfill, setAutoFulfill] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
+
+  // Product mapper (SH-16)
+  const [unmappedProducts, setUnmappedProducts] = useState([]);
+  const [showMapper, setShowMapper] = useState(false);
 
   // Webhooks
   const [showWebhooks, setShowWebhooks] = useState(false);
@@ -223,6 +228,15 @@ export default function ShopifySettings() {
       if (!result.success) throw new Error(result.error);
       toast.success(`Synced: ${result.data.mapped || 0} mapped, ${result.data.unmapped || 0} unmapped`);
       loadMappings();
+
+      // Show product mapper if there are unmapped products
+      if (result.data.unmapped > 0 && result.data.unmappedProducts?.length > 0) {
+        setUnmappedProducts(result.data.unmappedProducts);
+        setShowMapper(true);
+      } else {
+        setUnmappedProducts([]);
+        setShowMapper(false);
+      }
     } catch (err) {
       toast.error(err.message || "Failed to sync products");
     } finally {
@@ -500,6 +514,22 @@ export default function ShopifySettings() {
               </div>
             )}
           </div>
+
+          {/* 2b. Product Mapper (SH-16) — shown after sync with unmapped results */}
+          {showMapper && unmappedProducts.length > 0 && (
+            <ShopifyProductMapper
+              unmappedProducts={unmappedProducts}
+              companyId={companyId}
+              onClose={() => {
+                setShowMapper(false);
+                setUnmappedProducts([]);
+              }}
+              onComplete={() => {
+                loadMappings();
+                toast.success("All unmapped products resolved");
+              }}
+            />
+          )}
 
           {/* 3. Inventory Comparison */}
           <div className={cardClass}>
