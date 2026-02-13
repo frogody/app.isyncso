@@ -56,6 +56,10 @@ export default function BolcomSettings() {
   const [savingCreds, setSavingCreds] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
 
+  // Import products
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+
   // Offer mappings
   const [mappings, setMappings] = useState([]);
   const [loadingMappings, setLoadingMappings] = useState(false);
@@ -149,6 +153,25 @@ export default function BolcomSettings() {
       toast.error(err.message || "Connection failed");
     } finally {
       setTestingConnection(false);
+    }
+  };
+
+  // Import products from bol.com
+  const handleImportProducts = async () => {
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const result = await callBolcomApi("importProducts", { companyId });
+      if (!result.success) throw new Error(result.error);
+      setImportResult(result.data);
+      toast.success(`Imported ${result.data.imported} products, updated ${result.data.updated}`);
+      // Refresh mappings table
+      loadMappings();
+    } catch (err) {
+      toast.error(err.message || "Failed to import products");
+      setImportResult({ error: err.message });
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -292,7 +315,94 @@ export default function BolcomSettings() {
         </div>
       </div>
 
-      {/* 2. EAN Mappings */}
+      {/* 2. Import Products */}
+      {hasCreds && connectionStatus === "connected" && (
+        <div className={cardClass}>
+          <h3 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${t("text-gray-900", "text-white")}`}>
+            <Download className="w-4 h-4 text-cyan-400" />
+            Import Products from bol.com
+          </h3>
+          <p className={`text-sm mb-4 ${mutedClass}`}>
+            Pull your entire bol.com catalog into SYNC. This will fetch product titles, images, categories, stock levels, and EAN codes.
+          </p>
+
+          <Button
+            onClick={handleImportProducts}
+            disabled={importing}
+            size="sm"
+            className="bg-cyan-600 hover:bg-cyan-700 text-white gap-1"
+          >
+            {importing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+            {importing ? "Importing..." : "Import Products"}
+          </Button>
+
+          {importing && (
+            <div className={`mt-4 flex items-center gap-2 p-3 rounded-lg ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+              <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+              <span className={`text-sm ${mutedClass}`}>
+                Fetching inventory and enriching products from bol.com... This may take a few moments depending on catalog size.
+              </span>
+            </div>
+          )}
+
+          {importResult && !importResult.error && (
+            <div className="mt-4 space-y-3">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold text-cyan-400`}>{importResult.imported}</p>
+                  <p className={`text-xs ${mutedClass}`}>Imported</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{importResult.updated}</p>
+                  <p className={`text-xs ${mutedClass}`}>Updated</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${importResult.errors > 0 ? "bg-red-500/10" : t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${importResult.errors > 0 ? "text-red-400" : t("text-gray-900", "text-white")}`}>{importResult.errors}</p>
+                  <p className={`text-xs ${mutedClass}`}>Errors</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{importResult.total}</p>
+                  <p className={`text-xs ${mutedClass}`}>Total</p>
+                </div>
+              </div>
+
+              {importResult.details && importResult.details.length > 0 && (
+                <details className={`text-xs ${mutedClass}`}>
+                  <summary className="cursor-pointer hover:text-cyan-400 transition-colors">
+                    View import details ({importResult.details.length} items)
+                  </summary>
+                  <div className={`mt-2 max-h-48 overflow-y-auto rounded-lg border p-2 space-y-1 ${t("border-gray-200 bg-gray-50", "border-zinc-800 bg-zinc-900/50")}`}>
+                    {importResult.details.map((d, i) => (
+                      <div key={i} className="flex items-center justify-between gap-2">
+                        <span className="font-mono">{d.ean}</span>
+                        <span className={d.name ? t("text-gray-700", "text-zinc-300") : ""}>{d.name || ""}</span>
+                        <Badge variant="outline" className={`text-[10px] shrink-0 ${
+                          d.status === "imported" ? "border-cyan-500/30 text-cyan-400"
+                            : d.status === "updated" ? "border-blue-500/30 text-blue-400"
+                              : "border-red-500/30 text-red-400"
+                        }`}>
+                          {d.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </div>
+          )}
+
+          {importResult?.error && (
+            <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+              <p className="text-sm text-red-400 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                {importResult.error}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3. EAN Mappings */}
       <div className={cardClass}>
         <div className="flex items-center justify-between mb-4">
           <h3 className={`text-sm font-semibold flex items-center gap-2 ${t("text-gray-900", "text-white")}`}>

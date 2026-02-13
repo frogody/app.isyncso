@@ -81,7 +81,8 @@ type BolcomAction =
   | "handleReturn"
   | "enrichProduct"
   | "batchEnrichProducts"
-  | "batchEnrichByEan";
+  | "batchEnrichByEan"
+  | "importProducts";
 
 interface BolcomRequest {
   action: BolcomAction;
@@ -1369,6 +1370,246 @@ serve(async (req) => {
         result = {
           success: true,
           data: { enriched, noData, errors, total: products.length, offset, nextOffset: offset + products.length, done: products.length < batchSize, details },
+        };
+        break;
+      }
+
+      // ==================================================
+      // IMPORT PRODUCTS
+      // ==================================================
+
+      case "importProducts": {
+        const tokenResult = await getBolToken(supabase, companyId);
+        if ("error" in tokenResult) { result = { success: false, error: tokenResult.error }; break; }
+
+        const nlHeaders = { "Accept-Language": "nl" };
+
+        // 1. Paginate through all inventory
+        const allInventory: Array<{ ean: string; bsku: string; regularStock: number; gradedStock: number }> = [];
+        let invPage = 1;
+        let hasMore = true;
+        while (hasMore) {
+          const pageData = await bolFetch<{ inventory: typeof allInventory }>(
+            tokenResult.token, `/inventory?page=${invPage}`, "GET"
+          );
+          if (pageData.inventory && pageData.inventory.length > 0) {
+            allInventory.push(...pageData.inventory);
+            invPage++;
+          } else {
+            hasMore = false;
+          }
+          if (invPage > 100) break; // safety limit
+        }
+
+        console.log(`[bolcom-api] importProducts: found ${allInventory.length} inventory items for company ${companyId}`);
+
+        if (allInventory.length === 0) {
+          result = { success: true, data: { imported: 0, updated: 0, errors: 0, total: 0, message: "No inventory found on bol.com" } };
+          break;
+        }
+
+        let imported = 0;
+        let updated = 0;
+        let errors = 0;
+        const details: Array<{ ean: string; status: string; name?: string }> = [];
+
+        for (const invItem of allInventory) {
+          const { ean, bsku, regularStock, gradedStock } = invItem;
+          try {
+            // Check if product with this EAN already exists for this company
+            const { data: existingProduct } = await supabase
+              .from("products")
+              .select("id, name")
+              .eq("company_id", companyId)
+              .eq("ean", ean)
+              .maybeSingle();
+
+            if (existingProduct) {
+              // Update stock in offer_mapping
+              await supabase
+                .from("bolcom_offer_mappings")
+                .upsert({
+                  company_id: companyId,
+                  ean,
+                  product_id: existingProduct.id,
+                  bolcom_stock_amount: regularStock + gradedStock,
+                  is_active: true,
+                  updated_at: new Date().toISOString(),
+                }, { onConflict: "company_id,ean" });
+
+              // Update physical_products inventory
+              await supabase
+                .from("physical_products")
+                .update({
+                  inventory: {
+                    regular_stock: regularStock,
+                    graded_stock: gradedStock,
+                    total: regularStock + gradedStock,
+                  },
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("product_id", existingProduct.id);
+
+              updated++;
+              details.push({ ean, status: "updated", name: existingProduct.name });
+              continue;
+            }
+
+            // New product — fetch catalog data for title
+            let productName = `Product ${ean}`;
+            let featuredImage: { url: string; width: number; height: number } | null = null;
+            const gallery: Array<{ url: string; width: number; height: number }> = [];
+            let category: string | null = null;
+            const tags: string[] = [];
+
+            // Fetch catalog-products for title
+            try {
+              const catalog = await bolFetch<{ products?: Array<{ attributes?: Array<{ id: string; values: Array<{ value: string }> }> }> }>(
+                tokenResult.token, `/catalog-products/${ean}`, "GET",
+                undefined, undefined, 2, nlHeaders
+              );
+              if (catalog.products && catalog.products[0]?.attributes) {
+                const titleAttr = catalog.products[0].attributes.find(
+                  (a: { id: string }) => a.id === "Title" || a.id === "title" || a.id.toLowerCase().includes("title")
+                );
+                if (titleAttr?.values?.[0]?.value) {
+                  productName = titleAttr.values[0].value;
+                }
+              }
+            } catch { /* skip — use default name */ }
+
+            await new Promise(r => setTimeout(r, 200));
+
+            // Fetch assets (PRIMARY + ADDITIONAL)
+            try {
+              for (const usage of ["PRIMARY", "ADDITIONAL"]) {
+                try {
+                  const assets = await bolFetch<{ assets?: Array<{ url: string; usage: string; order?: number; variants?: Array<{ url: string; width: number; height: number; size: string }> }> }>(
+                    tokenResult.token, `/products/${ean}/assets?usage=${usage}`, "GET",
+                    undefined, undefined, 1, nlHeaders
+                  );
+                  if (assets.assets) {
+                    for (const asset of assets.assets) {
+                      if (asset.usage === "PRIMARY" && asset.variants?.length) {
+                        const largest = asset.variants.reduce((a, b) => (a.width > b.width ? a : b));
+                        featuredImage = { url: largest.url, width: largest.width, height: largest.height };
+                      } else if (asset.usage === "ADDITIONAL" && asset.variants?.length) {
+                        const medium = asset.variants.find(v => v.size === "medium") || asset.variants[0];
+                        if (medium) gallery.push({ url: medium.url, width: medium.width, height: medium.height });
+                      }
+                    }
+                  }
+                } catch { /* skip */ }
+              }
+            } catch { /* skip */ }
+
+            await new Promise(r => setTimeout(r, 200));
+
+            // Fetch placement (category)
+            try {
+              const placement = await bolFetch<{ categories?: Array<{ categoryName: string; subcategories?: unknown[] }> }>(
+                tokenResult.token, `/products/${ean}/placement`, "GET",
+                undefined, undefined, 1, nlHeaders
+              );
+              if (placement.categories?.[0]) {
+                const topCat = placement.categories[0];
+                let catName = topCat.categoryName;
+                let sub = topCat.subcategories as Array<{ name?: string; categoryName?: string; subcategories?: unknown[] }> | undefined;
+                while (sub && sub.length > 0) {
+                  const child = sub[0];
+                  catName = child.name || child.categoryName || catName;
+                  sub = child.subcategories as typeof sub;
+                }
+                category = catName;
+
+                // Extract tags from category hierarchy
+                const extractTags = (cats: unknown[]) => {
+                  for (const cat of cats) {
+                    const c = cat as { name?: string; categoryName?: string; subcategories?: unknown[] };
+                    const name = c.name || c.categoryName;
+                    if (name) tags.push(name);
+                    if (c.subcategories) extractTags(c.subcategories as unknown[]);
+                  }
+                };
+                extractTags(placement.categories);
+              }
+            } catch { /* skip */ }
+
+            await new Promise(r => setTimeout(r, 200));
+
+            // Generate slug
+            const slug = `bol-${ean}`;
+
+            // Insert into products
+            const { data: newProduct, error: insertErr } = await supabase
+              .from("products")
+              .insert({
+                company_id: companyId,
+                name: productName,
+                ean,
+                type: "physical",
+                status: "published",
+                slug,
+                featured_image: featuredImage,
+                gallery: gallery.length > 0 ? gallery : null,
+                category,
+                tags: tags.length > 0 ? tags : null,
+                seo_og_image: featuredImage?.url || null,
+              })
+              .select("id")
+              .single();
+
+            if (insertErr) {
+              errors++;
+              details.push({ ean, status: `product_insert_error: ${insertErr.message}` });
+              continue;
+            }
+
+            // Insert into physical_products
+            await supabase
+              .from("physical_products")
+              .upsert({
+                product_id: newProduct.id,
+                sku: bsku || ean,
+                barcode: ean,
+                inventory: {
+                  regular_stock: regularStock,
+                  graded_stock: gradedStock,
+                  total: regularStock + gradedStock,
+                },
+              }, { onConflict: "product_id" });
+
+            // Insert into bolcom_offer_mappings
+            await supabase
+              .from("bolcom_offer_mappings")
+              .upsert({
+                company_id: companyId,
+                ean,
+                product_id: newProduct.id,
+                bolcom_stock_amount: regularStock + gradedStock,
+                is_active: true,
+              }, { onConflict: "company_id,ean" });
+
+            imported++;
+            details.push({ ean, status: "imported", name: productName });
+
+          } catch (e) {
+            errors++;
+            details.push({ ean, status: `error: ${e instanceof Error ? e.message : "unknown"}` });
+          }
+        }
+
+        console.log(`[bolcom-api] importProducts complete: ${imported} imported, ${updated} updated, ${errors} errors out of ${allInventory.length} total`);
+
+        result = {
+          success: true,
+          data: {
+            imported,
+            updated,
+            errors,
+            total: allInventory.length,
+            details,
+          },
         };
         break;
       }
