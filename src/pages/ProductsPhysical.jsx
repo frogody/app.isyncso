@@ -5,7 +5,7 @@ import {
   Box, Plus, Search, Filter, Grid3X3, List, Table2, Tag, Eye, Edit2,
   Barcode, Package, Truck, Building2, Euro, AlertTriangle,
   ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal, Archive, Trash2, Copy, CheckCircle, XCircle,
-  Sun, Moon, Pencil, Save, X
+  Pencil, Save, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,7 +57,7 @@ function getStockStatus(inventory) {
 
 export default function ProductsPhysical() {
   const { user } = useUser();
-  const { theme, toggleTheme, t } = useTheme();
+  const { theme, t } = useTheme();
   const [products, setProducts] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [physicalProducts, setPhysicalProducts] = useState({});
@@ -415,14 +415,6 @@ export default function ProductsPhysical() {
             <p className={`text-xs ${t('text-slate-500', 'text-zinc-400')}`}>Manage your physical inventory</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className={`rounded-full ${t('text-slate-600 hover:bg-slate-200', 'text-zinc-400 hover:bg-zinc-800')}`}
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
             <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
               <Plus className="w-4 h-4 mr-2" /> New Physical Product
             </Button>

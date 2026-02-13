@@ -17,7 +17,6 @@ import { SentinelButton } from '@/components/sentinel/ui/SentinelButton';
 import { SentinelBadge } from '@/components/sentinel/ui/SentinelBadge';
 import { SentinelEmptyState } from '@/components/sentinel/ui/SentinelErrorBoundary';
 import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
-import { ThemeToggle } from '@/components/sentinel/ThemeToggle';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { cn } from '@/lib/utils';
 
@@ -347,7 +346,6 @@ export default function ComplianceRoadmap() {
             </div>
           </div>
           <div className="flex items-center gap-2 relative">
-            <ThemeToggle />
             {!aiPlan ? (
               <SentinelButton
                 size="sm"
