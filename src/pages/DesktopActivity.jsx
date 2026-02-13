@@ -979,11 +979,29 @@ export default function DesktopActivity() {
                           <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">
                             {Math.round((log.focus_score || 0) * 100)}% focus
                           </Badge>
-                          {log.semantic_category && (
-                            <Badge className="bg-cyan-500/10 text-cyan-300 border-cyan-500/30 text-xs">
-                              {log.semantic_category}
-                            </Badge>
-                          )}
+                          {(() => {
+                            // Derive top category from app_breakdown, fallback to semantic_category
+                            let topCategory = null;
+                            if (log.app_breakdown && Array.isArray(log.app_breakdown) && log.app_breakdown.length > 0) {
+                              const catMins = {};
+                              log.app_breakdown.forEach(item => {
+                                const cat = item.category || 'Other';
+                                catMins[cat] = (catMins[cat] || 0) + (item.minutes || 0);
+                              });
+                              const sorted = Object.entries(catMins).sort(([,a], [,b]) => b - a);
+                              if (sorted.length > 0 && sorted[0][0] !== 'Other') topCategory = sorted[0][0];
+                              else if (sorted.length > 1) topCategory = sorted[1]?.[0] || sorted[0][0];
+                              else if (sorted.length > 0) topCategory = sorted[0][0];
+                            }
+                            if (!topCategory && log.semantic_category && log.semantic_category !== 'other') {
+                              topCategory = log.semantic_category;
+                            }
+                            return topCategory ? (
+                              <Badge className="bg-cyan-500/10 text-cyan-300 border-cyan-500/30 text-xs">
+                                {topCategory}
+                              </Badge>
+                            ) : null;
+                          })()}
                         </div>
                         {log.app_breakdown && (Array.isArray(log.app_breakdown) ? log.app_breakdown.length > 0 : Object.keys(log.app_breakdown).length > 0) && (
                           <div className="flex flex-wrap gap-1.5 mt-2">
@@ -1121,7 +1139,30 @@ export default function DesktopActivity() {
                     const categoryCounts = {};
                     let totalWithCategory = 0;
                     activityLogs.forEach(log => {
+                      // Primary: derive from app_breakdown categories (most reliable)
+                      if (log.app_breakdown && Array.isArray(log.app_breakdown) && log.app_breakdown.length > 0) {
+                        log.app_breakdown.forEach(item => {
+                          const cat = item.category || 'Other';
+                          const mins = item.minutes || 0;
+                          if (mins > 0) {
+                            categoryCounts[cat] = (categoryCounts[cat] || 0) + mins;
+                            totalWithCategory += mins;
+                          }
+                        });
+                        return;
+                      }
+                      // Fallback: try semantic_category as JSON breakdown, then plain string
                       if (log.semantic_category) {
+                        try {
+                          const parsed = JSON.parse(log.semantic_category);
+                          if (typeof parsed === 'object' && parsed !== null) {
+                            Object.entries(parsed).forEach(([cat, mins]) => {
+                              categoryCounts[cat] = (categoryCounts[cat] || 0) + (mins || 0);
+                              totalWithCategory += (mins || 0);
+                            });
+                            return;
+                          }
+                        } catch {}
                         categoryCounts[log.semantic_category] = (categoryCounts[log.semantic_category] || 0) + (log.total_minutes || 1);
                         totalWithCategory += (log.total_minutes || 1);
                       }
