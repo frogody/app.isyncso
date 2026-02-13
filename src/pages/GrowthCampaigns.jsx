@@ -369,7 +369,7 @@ export default function GrowthCampaigns() {
       <div className={`min-h-screen ${gt("bg-slate-50", "bg-black")} p-4`}>
         <div className="space-y-4">
           <Skeleton className={`h-20 w-full ${gt("bg-slate-200", "bg-zinc-800")} rounded-xl`} />
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[1,2,3,4].map(i => <Skeleton key={i} className={`h-16 ${gt("bg-slate-200", "bg-zinc-800")} rounded-xl`} />)}
           </div>
           <div className="space-y-3">

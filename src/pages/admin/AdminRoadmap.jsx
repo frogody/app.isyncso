@@ -1240,7 +1240,7 @@ export default function AdminRoadmap() {
       <>
 
       {/* Stats */}
-      <div className="grid grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {[
           { label: 'Total', value: stats.total, color: 'text-white' },
           { label: 'Requested', value: stats.requested, color: 'text-zinc-400' },

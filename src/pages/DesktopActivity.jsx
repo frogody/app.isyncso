@@ -668,8 +668,8 @@ export default function DesktopActivity() {
                 ) : (
                   <div className="space-y-3">
                     {stats.dailyBreakdown.slice(-7).map((day, i) => (
-                      <div key={day.date} className="flex items-center gap-4">
-                        <div className="w-20 text-xs text-zinc-500 text-right">
+                      <div key={day.date} className="flex items-center gap-2 sm:gap-4">
+                        <div className="w-14 sm:w-20 text-[11px] sm:text-xs text-zinc-500 text-right">
                           {formatDate(day.date)}
                         </div>
                         <div className="flex-1 h-8 bg-zinc-800/50 rounded-lg overflow-hidden relative">
@@ -799,9 +799,9 @@ export default function DesktopActivity() {
           <TabsContent value="journals" className="mt-5">
             <div className="space-y-4">
               {/* Quick Actions Header */}
-              <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-800/60">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-800/60 flex-shrink-0">
                     <Sparkles className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div>
@@ -809,7 +809,7 @@ export default function DesktopActivity() {
                     <p className="text-xs text-zinc-500">AI-generated daily activity reports</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <Button
                     onClick={() => generateJournal(new Date())}
                     disabled={generatingJournal}
@@ -1032,13 +1032,13 @@ export default function DesktopActivity() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.02 }}
-                      className="flex items-start gap-4 p-4 rounded-xl bg-zinc-800/30 hover:bg-zinc-800/50 transition-all border border-zinc-700/30"
+                      className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-zinc-800/30 hover:bg-zinc-800/50 transition-all border border-zinc-700/30"
                     >
                       <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center flex-shrink-0">
                         <Clock className="w-5 h-5 text-cyan-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
                           <span className="text-sm font-medium text-white">
                             {new Date(log.hour_start).toLocaleString('en-US', {
                               weekday: 'short',
