@@ -31,6 +31,7 @@ import {
 import { Copy, Check, ExternalLink } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { SyncViewSelector } from '@/components/sync/ui';
 
 // App icon mapping
 const APP_ICONS = {
@@ -399,48 +400,48 @@ export default function DesktopActivity() {
   const maxDailyMinutes = Math.max(...stats.dailyBreakdown.map(d => d.minutes), 1);
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="w-full px-4 lg:px-6 py-4 space-y-5">
-        {/* Header */}
-        <PageHeader
-          title="Activity"
-          subtitle="Track your productivity across all devices"
-          color="cyan"
-          actions={
-            <>
-              <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="w-32 bg-zinc-800/50 border-zinc-700/60 text-zinc-200">
-                  <SelectValue placeholder="Date range" />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-800 border-zinc-700">
-                  <SelectItem value="1d">Today</SelectItem>
-                  <SelectItem value="7d">Last 7 days</SelectItem>
-                  <SelectItem value="30d">Last 30 days</SelectItem>
-                  <SelectItem value="90d">Last 90 days</SelectItem>
-                  <SelectItem value="all">All time</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button
-                onClick={handleDownload}
-                variant="outline"
-                className="border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:text-cyan-200"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Get Desktop App
-              </Button>
-
-              <Button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                variant="outline"
-                className="border-zinc-700/60 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-200"
-              >
-                {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              </Button>
-            </>
-          }
-        />
+    <div className="bg-black">
+      <div className="w-full px-4 lg:px-6 py-3 space-y-4">
+        {/* Header row */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-base font-bold text-white">Activity</h1>
+              <p className="text-xs text-zinc-400">Track your productivity across all devices</p>
+            </div>
+            <Select value={dateRange} onValueChange={setDateRange}>
+              <SelectTrigger className="w-28 h-8 text-xs bg-zinc-800/50 border-zinc-700/60 text-zinc-200">
+                <SelectValue placeholder="Date range" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700">
+                <SelectItem value="1d">Today</SelectItem>
+                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="90d">Last 90 days</SelectItem>
+                <SelectItem value="all">All time</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={handleDownload}
+              variant="outline"
+              size="sm"
+              className="border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:text-cyan-200 text-xs h-8"
+            >
+              <Download className="w-3.5 h-3.5 mr-1.5" />
+              Desktop App
+            </Button>
+            <Button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              variant="outline"
+              size="sm"
+              className="border-zinc-700/60 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-200 h-8 w-8 p-0"
+            >
+              {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            </Button>
+          </div>
+          <SyncViewSelector />
+        </div>
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>

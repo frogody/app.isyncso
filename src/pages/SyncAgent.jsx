@@ -9,7 +9,7 @@ import ReactMarkdown from 'react-markdown';
 import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus, Download, ExternalLink, Image as ImageIcon, FileText, Sun, Moon, Mic } from 'lucide-react';
 import SyncVoiceMode from '@/components/sync/SyncVoiceMode';
 import { useTheme } from '@/contexts/GlobalThemeContext';
-import { SyncPageTransition } from '@/components/sync/ui';
+import { SyncPageTransition, SyncViewSelector } from '@/components/sync/ui';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
@@ -2011,7 +2011,9 @@ export default function SyncAgent() {
     <div ref={pageRef} className={`h-[calc(100dvh-3.5rem)] flex flex-col ${syt('bg-slate-50', 'bg-black')} ${syt('text-slate-900', 'text-white')} overflow-hidden`}>
       {/* Top bar */}
       <div className="shrink-0 z-20">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-end gap-1.5 px-4 lg:px-6 py-2">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-1.5 px-4 lg:px-6 py-2">
+          {/* Left: action buttons */}
+          <div className="flex items-center gap-1.5">
           <button
             className={cn(
               'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200',
@@ -2107,6 +2109,9 @@ export default function SyncAgent() {
               </div>
             </SheetContent>
           </Sheet>
+          </div>
+          {/* Right: view selector */}
+          <SyncViewSelector />
         </div>
       </div>
 

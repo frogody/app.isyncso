@@ -3386,35 +3386,6 @@ export default function Layout({ children, currentPageName }) {
             className="relative flex-1 md:pt-0 pt-14 sm:pt-16 overflow-auto transition-all duration-300 pb-safe scroll-smooth-ios"
             role="main"
           >
-            {/* SYNC environment top tabs — bordered pill style */}
-            {secondaryNavConfig?.title === 'SYNC' && (
-              <div className="px-4 lg:px-6 pt-4">
-                <div className="inline-flex items-center gap-1 bg-zinc-900/60 border border-zinc-800/60 rounded-lg p-1.5 overflow-x-auto scrollbar-hide">
-                  {secondaryNavConfig.items.map((item) => {
-                    const Icon = item.icon;
-                    const fullUrl = location.pathname + location.search;
-                    const itemBase = item.path?.split('?')[0];
-                    const isActive = item.path?.includes('?')
-                      ? fullUrl === item.path || (fullUrl === itemBase && item.matchPath)
-                      : location.pathname === item.path;
-                    return (
-                      <Link
-                        key={item.label}
-                        to={item.path}
-                        className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
-                          isActive
-                            ? 'bg-zinc-800/80 text-cyan-300/90'
-                            : 'text-zinc-500 hover:text-zinc-300'
-                        }`}
-                      >
-                        {Icon && <Icon className="w-4 h-4" />}
-                        {item.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
             {/* TALENT quick action buttons moved to TalentDashboard PageHeader */}
             <div className="min-h-full">
               {children}

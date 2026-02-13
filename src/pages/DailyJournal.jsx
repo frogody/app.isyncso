@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { SyncViewSelector } from '@/components/sync/ui';
 
 export default function DailyJournal() {
   const [user, setUser] = useState(null);
@@ -158,12 +159,12 @@ export default function DailyJournal() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-4">
+      <div className="h-[calc(100dvh-3.5rem)] bg-black p-4">
         <div className="max-w-7xl mx-auto space-y-4">
-          <Skeleton className="h-16 w-full bg-zinc-800 rounded-xl" />
+          <Skeleton className="h-12 w-full bg-zinc-800 rounded-xl" />
           <div className="flex gap-4">
-            <Skeleton className="h-[600px] w-64 bg-zinc-800 rounded-xl" />
-            <Skeleton className="h-[600px] flex-1 bg-zinc-800 rounded-xl" />
+            <Skeleton className="h-[400px] w-64 bg-zinc-800 rounded-xl" />
+            <Skeleton className="h-[400px] flex-1 bg-zinc-800 rounded-xl" />
           </div>
         </div>
       </div>
@@ -171,30 +172,31 @@ export default function DailyJournal() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <div className="h-[calc(100dvh-3.5rem)] bg-black relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-900/5 rounded-full blur-3xl" />
         <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-900/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 h-screen flex flex-col p-4">
+      <div className="relative z-10 h-[calc(100dvh-3.5rem)] flex flex-col px-4 lg:px-6 py-3">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-4"
+          className="mb-3 shrink-0"
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
-                <BookOpen className="w-5 h-5 text-cyan-400" />
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
+                <BookOpen className="w-4 h-4 text-cyan-400" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-white">Daily Journals</h1>
-                <p className="text-zinc-500 mt-1">AI-powered reflections on your productivity</p>
+                <h1 className="text-base font-bold text-white">Daily Journals</h1>
+                <p className="text-zinc-500 text-xs">AI-powered reflections on your productivity</p>
               </div>
             </div>
+            <SyncViewSelector />
           </div>
         </motion.div>
 

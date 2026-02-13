@@ -37,6 +37,7 @@ import {
   CircleDot
 } from 'lucide-react';
 
+import { SyncViewSelector } from '@/components/sync/ui';
 import IntegrationCard from '@/components/actions/IntegrationCard';
 import ConnectIntegrationModal from '@/components/actions/ConnectIntegrationModal';
 import ExecuteActionModal from '@/components/actions/ExecuteActionModal';
@@ -238,6 +239,10 @@ export default function Actions() {
       </div>
 
       <div className="relative z-10 w-full px-4 lg:px-6 py-3 space-y-3">
+        {/* Top row with view selector */}
+        <div className="flex items-center justify-end">
+          <SyncViewSelector />
+        </div>
         {/* Premium Header */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-xl bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/60 px-4 py-3">
           <div className="relative z-10 flex items-center justify-between gap-3">
