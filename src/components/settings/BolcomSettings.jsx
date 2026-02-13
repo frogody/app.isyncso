@@ -120,6 +120,10 @@ export default function BolcomSettings() {
 
   // Save credentials
   const handleSaveCredentials = async () => {
+    if (!companyId) {
+      toast.error("No company linked to your account. Please contact support.");
+      return;
+    }
     if (!clientId.trim() || !clientSecret.trim()) {
       toast.error("Both Client ID and Client Secret are required");
       return;
@@ -141,6 +145,7 @@ export default function BolcomSettings() {
 
   // Test connection
   const handleTestConnection = async () => {
+    if (!companyId) { toast.error("No company linked to your account."); return; }
     setTestingConnection(true);
     setConnectionError("");
     try {
@@ -158,6 +163,7 @@ export default function BolcomSettings() {
 
   // Import products from bol.com
   const handleImportProducts = async () => {
+    if (!companyId) { toast.error("No company linked to your account."); return; }
     setImporting(true);
     setImportResult(null);
     try {
