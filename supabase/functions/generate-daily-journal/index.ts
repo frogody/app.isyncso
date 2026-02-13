@@ -37,6 +37,7 @@ interface HourlySummary {
   ocr_text?: string;
   semantic_category?: string;
   commitments?: any;
+  activities_summary?: string;
   screen_captures?: any[];
 }
 
@@ -250,7 +251,8 @@ async function generateAIContent(
     .sort((a, b) => a.hour - b.hour)
     .map(h => {
       let line = `${formatHour(h.hour)}: ${h.minutes}m active, ${Math.round(h.focusScore * 100)}% focus`;
-      if (h.semanticCategory) line += ` [${h.semanticCategory}]`;
+      if (h.activitiesSummary) line += ` — ${h.activitiesSummary}`;
+      else if (h.semanticCategory) line += ` [${h.semanticCategory}]`;
       if (h.ocrSnippet) line += ` — "${h.ocrSnippet.slice(0, 100)}..."`;
       return line;
     })
@@ -310,9 +312,9 @@ async function generateAIContent(
     .filter(h => h.minutes > 0)
     .sort((a, b) => a.hour - b.hour)
     .map(h => {
-      const topAppsStr = topApps.slice(0, 3).map(a => a.name).join(', ');
       let line = `${formatHour(h.hour)}: ${h.minutes}m`;
-      if (h.semanticCategory) line += ` [${h.semanticCategory}]`;
+      if (h.activitiesSummary) line += ` — ${h.activitiesSummary}`;
+      else if (h.semanticCategory) line += ` [${h.semanticCategory}]`;
       if (h.ocrSnippet) line += ` "${h.ocrSnippet.slice(0, 150)}"`;
       return line;
     })
@@ -428,7 +430,7 @@ function computeJournal(summaries: HourlySummary[], date: Date) {
   let totalFocusScore = 0;
   const appMinutes = new Map<string, { minutes: number; category: string }>();
   const categoryMinutes = new Map<string, { minutes: number; apps: Set<string> }>();
-  const hourlyData: { hour: number; minutes: number; focusScore: number; semanticCategory?: string; ocrSnippet?: string }[] = [];
+  const hourlyData: { hour: number; minutes: number; focusScore: number; semanticCategory?: string; ocrSnippet?: string; activitiesSummary?: string }[] = [];
 
   // Deep context aggregation
   const ocrTexts: { hour: number; text: string }[] = [];
@@ -446,6 +448,7 @@ function computeJournal(summaries: HourlySummary[], date: Date) {
       focusScore: summary.focus_score,
       semanticCategory: summary.semantic_category || undefined,
       ocrSnippet: summary.ocr_text ? summary.ocr_text.slice(0, 200) : undefined,
+      activitiesSummary: summary.activities_summary || undefined,
     });
 
     // Collect deep context data

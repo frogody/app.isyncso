@@ -987,28 +987,30 @@ export default function DesktopActivity() {
                       }
                     }
 
-                    // Build the top-line summary (case-insensitive category matching)
-                    const primaryApps = apps.slice(0, 3).map(a => a.appName || a.app).filter(Boolean);
-                    let summaryLine = '';
-                    const lowerTopCat = (topCategory || '').toLowerCase();
-                    if (lowerTopCat.includes('development') || lowerTopCat === 'coding') {
-                      summaryLine = `Development work in ${primaryApps.join(', ')}`;
-                      if (contextHint) summaryLine += ` — ${contextHint}`;
-                    } else if (lowerTopCat.includes('communication') || lowerTopCat === 'chatting') {
-                      summaryLine = `Communication via ${primaryApps.join(', ')}`;
-                    } else if (lowerTopCat.includes('meeting')) {
-                      summaryLine = `In meetings (${primaryApps.join(', ')})`;
-                    } else if (lowerTopCat.includes('browsing')) {
-                      summaryLine = `Browsing and research`;
-                      if (contextHint) summaryLine += ` — ${contextHint}`;
-                    } else if (lowerTopCat.includes('design')) {
-                      summaryLine = `Design work in ${primaryApps.join(', ')}`;
-                    } else if (lowerTopCat.includes('productivity')) {
-                      summaryLine = `Productivity tasks in ${primaryApps.join(', ')}`;
-                    } else if (lowerTopCat.includes('entertainment')) {
-                      summaryLine = `Entertainment and media`;
-                    } else if (primaryApps.length > 0) {
-                      summaryLine = `Working in ${primaryApps.join(', ')}`;
+                    // Use rich activities_summary from desktop if available, else build from categories
+                    let summaryLine = log.activities_summary || '';
+                    if (!summaryLine) {
+                      const primaryApps = apps.slice(0, 3).map(a => a.appName || a.app).filter(Boolean);
+                      const lowerTopCat = (topCategory || '').toLowerCase();
+                      if (lowerTopCat.includes('development') || lowerTopCat === 'coding') {
+                        summaryLine = `Development work in ${primaryApps.join(', ')}`;
+                        if (contextHint) summaryLine += ` — ${contextHint}`;
+                      } else if (lowerTopCat.includes('communication') || lowerTopCat === 'chatting') {
+                        summaryLine = `Communication via ${primaryApps.join(', ')}`;
+                      } else if (lowerTopCat.includes('meeting')) {
+                        summaryLine = `In meetings (${primaryApps.join(', ')})`;
+                      } else if (lowerTopCat.includes('browsing')) {
+                        summaryLine = `Browsing and research`;
+                        if (contextHint) summaryLine += ` — ${contextHint}`;
+                      } else if (lowerTopCat.includes('design')) {
+                        summaryLine = `Design work in ${primaryApps.join(', ')}`;
+                      } else if (lowerTopCat.includes('productivity')) {
+                        summaryLine = `Productivity tasks in ${primaryApps.join(', ')}`;
+                      } else if (lowerTopCat.includes('entertainment')) {
+                        summaryLine = `Entertainment and media`;
+                      } else if (primaryApps.length > 0) {
+                        summaryLine = `Working in ${primaryApps.join(', ')}`;
+                      }
                     }
 
                     const commitments = parseCommitments(log.commitments);
@@ -1058,7 +1060,7 @@ export default function DesktopActivity() {
                           <div className="flex flex-wrap gap-1.5 mt-2">
                             {sortedCats.slice(0, 4).map(([cat, mins]) => (
                               <Badge key={cat} className="bg-zinc-700/50 text-zinc-400 border-zinc-600/50 text-xs">
-                                {cat}: {mins}m
+                                {cat}: {Math.round(mins * 10) / 10}m
                               </Badge>
                             ))}
                           </div>
@@ -1276,24 +1278,26 @@ export default function DesktopActivity() {
                     const ctxSortedCats = Object.entries(ctxCatMins).sort(([,a], [,b]) => b - a);
                     const ctxTopCat = ctxSortedCats.find(([c]) => c !== 'Other' && c !== 'System')?.[0] || ctxSortedCats[0]?.[0];
 
-                    // Build activity summary
-                    const ctxPrimaryApps = apps.slice(0, 3).map(a => a.appName || a.app).filter(Boolean);
-                    let ctxSummary = '';
-                    const lowerCat = (ctxTopCat || '').toLowerCase();
-                    if (lowerCat.includes('development') || lowerCat === 'coding') {
-                      ctxSummary = `Development work in ${ctxPrimaryApps.join(', ')}`;
-                    } else if (lowerCat.includes('communication') || lowerCat === 'chatting') {
-                      ctxSummary = `Communication via ${ctxPrimaryApps.join(', ')}`;
-                    } else if (lowerCat.includes('meeting')) {
-                      ctxSummary = `In meetings (${ctxPrimaryApps.join(', ')})`;
-                    } else if (lowerCat.includes('browsing')) {
-                      ctxSummary = `Browsing and research`;
-                    } else if (lowerCat.includes('design')) {
-                      ctxSummary = `Design work in ${ctxPrimaryApps.join(', ')}`;
-                    } else if (lowerCat.includes('productivity')) {
-                      ctxSummary = `Productivity tasks in ${ctxPrimaryApps.join(', ')}`;
-                    } else if (ctxPrimaryApps.length > 0) {
-                      ctxSummary = `Working in ${ctxPrimaryApps.join(', ')}`;
+                    // Use rich activities_summary from desktop if available, else build from categories
+                    let ctxSummary = log.activities_summary || '';
+                    if (!ctxSummary) {
+                      const ctxPrimaryApps = apps.slice(0, 3).map(a => a.appName || a.app).filter(Boolean);
+                      const lowerCat = (ctxTopCat || '').toLowerCase();
+                      if (lowerCat.includes('development') || lowerCat === 'coding') {
+                        ctxSummary = `Development work in ${ctxPrimaryApps.join(', ')}`;
+                      } else if (lowerCat.includes('communication') || lowerCat === 'chatting') {
+                        ctxSummary = `Communication via ${ctxPrimaryApps.join(', ')}`;
+                      } else if (lowerCat.includes('meeting')) {
+                        ctxSummary = `In meetings (${ctxPrimaryApps.join(', ')})`;
+                      } else if (lowerCat.includes('browsing')) {
+                        ctxSummary = `Browsing and research`;
+                      } else if (lowerCat.includes('design')) {
+                        ctxSummary = `Design work in ${ctxPrimaryApps.join(', ')}`;
+                      } else if (lowerCat.includes('productivity')) {
+                        ctxSummary = `Productivity tasks in ${ctxPrimaryApps.join(', ')}`;
+                      } else if (ctxPrimaryApps.length > 0) {
+                        ctxSummary = `Working in ${ctxPrimaryApps.join(', ')}`;
+                      }
                     }
 
                     // Parse semantic_category properly
@@ -1358,7 +1362,7 @@ export default function DesktopActivity() {
                           <div className="flex flex-wrap gap-1.5 mb-3">
                             {ctxSortedCats.slice(0, 4).map(([cat, mins]) => (
                               <Badge key={cat} className="bg-zinc-700/50 text-zinc-400 border-zinc-600/50 text-xs">
-                                {cat}: {mins}m
+                                {cat}: {Math.round(mins * 10) / 10}m
                               </Badge>
                             ))}
                           </div>
