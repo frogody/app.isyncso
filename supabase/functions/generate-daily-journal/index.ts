@@ -34,6 +34,10 @@ interface HourlySummary {
   app_breakdown: AppBreakdown[];
   total_minutes: number;
   focus_score: number;
+  ocr_text?: string;
+  semantic_category?: string;
+  commitments?: any;
+  screen_captures?: any[];
 }
 
 interface DayHighlight {
@@ -213,17 +217,23 @@ async function generateAIContent(
   topApps: { name: string; minutes: number }[],
   focusAreas: FocusArea[],
   highlights: DayHighlight[],
-  hourlyData: { hour: number; minutes: number; focusScore: number }[],
-  weeklyJournals: WeeklyJournal[]
+  hourlyData: { hour: number; minutes: number; focusScore: number; semanticCategory?: string; ocrSnippet?: string }[],
+  weeklyJournals: WeeklyJournal[],
+  deepContext?: {
+    ocrTexts: { hour: number; text: string }[];
+    semanticCategories: { hour: number; category: string }[];
+    commitments: any[];
+  }
 ): Promise<AIGeneratedContent | null> {
   if (!TOGETHER_API_KEY) {
     console.log('[generate-daily-journal] No TOGETHER_API_KEY, skipping AI generation');
     return null;
   }
 
-  // Skip AI generation if less than 30 minutes tracked
-  if (totalMinutes < 30) {
-    console.log('[generate-daily-journal] Less than 30 minutes tracked, skipping AI generation');
+  // Lower threshold when deep context is available
+  const minMinutes = deepContext?.ocrTexts?.length ? 5 : 30;
+  if (totalMinutes < minMinutes) {
+    console.log(`[generate-daily-journal] Less than ${minMinutes} minutes tracked, skipping AI generation`);
     return null;
   }
 
@@ -232,11 +242,16 @@ async function generateAIContent(
   const hours = Math.round(totalMinutes / 60 * 10) / 10;
   const focusPercent = Math.round(avgFocusScore * 100);
 
-  // Build hourly breakdown for timeline
+  // Build hourly breakdown for timeline (now with semantic categories)
   const hourlyBreakdown = hourlyData
     .filter(h => h.minutes > 5)
     .sort((a, b) => a.hour - b.hour)
-    .map(h => `${formatHour(h.hour)}: ${h.minutes}m active, ${Math.round(h.focusScore * 100)}% focus`)
+    .map(h => {
+      let line = `${formatHour(h.hour)}: ${h.minutes}m active, ${Math.round(h.focusScore * 100)}% focus`;
+      if (h.semanticCategory) line += ` [${h.semanticCategory}]`;
+      if (h.ocrSnippet) line += ` — "${h.ocrSnippet.slice(0, 100)}..."`;
+      return line;
+    })
     .join('\n');
 
   // Build weekly context
@@ -248,7 +263,51 @@ async function generateAIContent(
     weeklyContext = `This week's average: ${Math.round(avgWeeklyMinutes)} minutes/day, ${Math.round(avgWeeklyScore * 100)}% productivity. Today was ${comparison} average.`;
   }
 
-  const systemPrompt = `You are a personal productivity assistant writing a daily journal entry. Write in first person as if you are the user reflecting on their day. Be warm, insightful, and encouraging. Focus on patterns and achievements rather than just listing activities. Keep responses concise but meaningful.
+  // Build deep context section for prompt
+  let deepContextSection = '';
+  if (deepContext) {
+    // OCR captured text (what the user was actually reading/writing)
+    if (deepContext.ocrTexts.length > 0) {
+      const ocrSummary = deepContext.ocrTexts
+        .sort((a, b) => a.hour - b.hour)
+        .map(o => {
+          // Truncate to keep prompt reasonable
+          const snippet = o.text.length > 300 ? o.text.slice(0, 300) + '...' : o.text;
+          return `  ${formatHour(o.hour)}: "${snippet}"`;
+        })
+        .join('\n');
+      deepContextSection += `\nScreen Content Captured (what was on screen):\n${ocrSummary}\n`;
+    }
+
+    // Semantic categories per hour (what type of work)
+    if (deepContext.semanticCategories.length > 0) {
+      const catSummary = deepContext.semanticCategories
+        .sort((a, b) => a.hour - b.hour)
+        .map(c => `  ${formatHour(c.hour)}: ${c.category}`)
+        .join('\n');
+      deepContextSection += `\nWork Types by Hour:\n${catSummary}\n`;
+    }
+
+    // Commitments detected during the day
+    if (deepContext.commitments.length > 0) {
+      const commitmentLines = deepContext.commitments
+        .map(c => {
+          if (typeof c === 'string') return `  - ${c}`;
+          const desc = c.description || c.text || c.content || JSON.stringify(c);
+          const status = c.status ? ` (${c.status})` : '';
+          const due = c.dueDate || c.due_date ? ` — due: ${c.dueDate || c.due_date}` : '';
+          return `  - ${desc}${status}${due}`;
+        })
+        .join('\n');
+      deepContextSection += `\nCommitments Detected Today:\n${commitmentLines}\n`;
+    }
+  }
+
+  const hasDeepContext = deepContextSection.length > 0;
+
+  const systemPrompt = `You are a personal productivity assistant writing a daily journal entry. Write in first person as if you are the user reflecting on their day. Be warm, insightful, and encouraging. Focus on patterns and achievements rather than just listing applications.
+
+${hasDeepContext ? 'You have access to deep context data — actual screen content, work types, and commitments detected during the day. Use this to write a rich, specific journal that describes WHAT the user was actually doing, not just which apps they used. Reference specific tasks, documents, topics, and conversations when the data supports it.' : 'Focus on patterns and achievements based on the app usage data available.'}
 
 Important: Do NOT use markdown formatting, bullet points with *, or headers with #. Write in plain prose.`;
 
@@ -263,15 +322,15 @@ Activity Data:
 
 Hourly Activity:
 ${hourlyBreakdown || 'No detailed hourly data'}
-
+${deepContextSection}
 ${weeklyContext ? `Weekly Context: ${weeklyContext}` : ''}
 
 Generate the following sections in JSON format:
 {
-  "overview": "A 2-3 sentence narrative summary of my day, written warmly in first person. Focus on the story of the day, not just stats.",
-  "summaryPoints": ["4-6 bullet points capturing key activities, achievements, and observations. Each should be a complete sentence."],
-  "timelineNarrative": "A chronological narrative of my day with approximate timestamps. Write it as flowing prose, not a list. Example: 'My morning started around 9 AM with...'",
-  "personalNotes": "2-3 sentences of personal insights, observations about patterns, or gentle encouragement for tomorrow."
+  "overview": "A 2-3 sentence narrative summary of my day, written warmly in first person. ${hasDeepContext ? 'Reference specific tasks, topics, or documents I worked on based on the screen content data.' : 'Focus on the story of the day.'}",
+  "summaryPoints": ["5-8 bullet points capturing key activities, achievements, and observations. Each should be a complete sentence. ${hasDeepContext ? 'Include specific details from screen captures — mention document names, email subjects, code projects, websites visited, etc.' : ''}"],
+  "timelineNarrative": "A chronological narrative of my day with approximate timestamps. Write it as flowing prose, not a list. ${hasDeepContext ? 'Use the screen content and work type data to describe what I was actually doing each hour, not just which app was open.' : ''} Example: 'My morning started around 9 AM with...'",
+  "personalNotes": "2-3 sentences of personal insights, observations about patterns, or gentle encouragement for tomorrow.${hasDeepContext && deepContext?.commitments?.length ? ' Also mention any commitments I made today that I should follow up on.' : ''}"
 }
 
 Respond ONLY with valid JSON, no additional text.`;
@@ -344,7 +403,12 @@ function computeJournal(summaries: HourlySummary[], date: Date) {
   let totalFocusScore = 0;
   const appMinutes = new Map<string, { minutes: number; category: string }>();
   const categoryMinutes = new Map<string, { minutes: number; apps: Set<string> }>();
-  const hourlyData: { hour: number; minutes: number; focusScore: number }[] = [];
+  const hourlyData: { hour: number; minutes: number; focusScore: number; semanticCategory?: string; ocrSnippet?: string }[] = [];
+
+  // Deep context aggregation
+  const ocrTexts: { hour: number; text: string }[] = [];
+  const semanticCategories: { hour: number; category: string }[] = [];
+  const allCommitments: any[] = [];
 
   for (const summary of summaries) {
     totalMinutes += summary.total_minutes;
@@ -355,7 +419,27 @@ function computeJournal(summaries: HourlySummary[], date: Date) {
       hour,
       minutes: summary.total_minutes,
       focusScore: summary.focus_score,
+      semanticCategory: summary.semantic_category || undefined,
+      ocrSnippet: summary.ocr_text ? summary.ocr_text.slice(0, 200) : undefined,
     });
+
+    // Collect deep context data
+    if (summary.ocr_text) {
+      ocrTexts.push({ hour, text: summary.ocr_text });
+    }
+    if (summary.semantic_category) {
+      semanticCategories.push({ hour, category: summary.semantic_category });
+    }
+    if (summary.commitments) {
+      const commitments = typeof summary.commitments === 'string'
+        ? JSON.parse(summary.commitments)
+        : summary.commitments;
+      if (Array.isArray(commitments)) {
+        allCommitments.push(...commitments);
+      } else if (commitments && typeof commitments === 'object') {
+        allCommitments.push(commitments);
+      }
+    }
 
     // Handle both array and legacy object formats
     const breakdown: AppBreakdown[] = Array.isArray(summary.app_breakdown)
@@ -438,6 +522,11 @@ function computeJournal(summaries: HourlySummary[], date: Date) {
     most_used_app: mostUsedApp,
     top_apps: topApps,
     hourly_data: hourlyData,
+    // Deep context aggregations
+    ocr_texts: ocrTexts,
+    semantic_categories: semanticCategories,
+    commitments_detected: allCommitments,
+    has_deep_context: ocrTexts.length > 0 || allCommitments.length > 0,
   };
 }
 
@@ -518,7 +607,9 @@ serve(async (req) => {
     let aiContent: AIGeneratedContent | null = null;
     let weeklyContext = '';
 
-    if (TOGETHER_API_KEY && journalData.total_active_minutes >= 30) {
+    // Lower minimum threshold when deep context data is available
+    const minMinutes = journalData.has_deep_context ? 5 : 30;
+    if (TOGETHER_API_KEY && journalData.total_active_minutes >= minMinutes) {
       // Build weekly context string
       if (weeklyJournals && weeklyJournals.length > 0) {
         const avgWeeklyMinutes = weeklyJournals.reduce((sum, j) => sum + j.total_active_minutes, 0) / weeklyJournals.length;
@@ -535,7 +626,12 @@ serve(async (req) => {
         journalData.focus_areas,
         journalData.highlights,
         journalData.hourly_data,
-        (weeklyJournals || []) as WeeklyJournal[]
+        (weeklyJournals || []) as WeeklyJournal[],
+        journalData.has_deep_context ? {
+          ocrTexts: journalData.ocr_texts,
+          semanticCategories: journalData.semantic_categories,
+          commitments: journalData.commitments_detected,
+        } : undefined
       );
     }
 
