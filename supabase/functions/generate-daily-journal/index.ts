@@ -52,6 +52,8 @@ interface AIGeneratedContent {
   summaryPoints: string[];
   timelineNarrative: string;
   personalNotes: string;
+  communications: string;
+  actionItems: string;
 }
 
 interface WeeklyJournal {
@@ -303,15 +305,34 @@ async function generateAIContent(
     }
   }
 
+  // Also generate per-hour activity summaries for the timeline view
+  const hourlyActivities = hourlyData
+    .filter(h => h.minutes > 0)
+    .sort((a, b) => a.hour - b.hour)
+    .map(h => {
+      const topAppsStr = topApps.slice(0, 3).map(a => a.name).join(', ');
+      let line = `${formatHour(h.hour)}: ${h.minutes}m`;
+      if (h.semanticCategory) line += ` [${h.semanticCategory}]`;
+      if (h.ocrSnippet) line += ` "${h.ocrSnippet.slice(0, 150)}"`;
+      return line;
+    })
+    .join('\n');
+
   const hasDeepContext = deepContextSection.length > 0;
 
-  const systemPrompt = `You are a personal productivity assistant writing a daily journal entry. Write in first person as if you are the user reflecting on their day. Be warm, insightful, and encouraging. Focus on patterns and achievements rather than just listing applications.
+  const systemPrompt = `You are a workplace activity report generator for a business productivity platform. Your job is to produce factual, concise daily activity reports in third person. Write like a professional executive assistant summarizing what an employee did during the day.
 
-${hasDeepContext ? 'You have access to deep context data — actual screen content, work types, and commitments detected during the day. Use this to write a rich, specific journal that describes WHAT the user was actually doing, not just which apps they used. Reference specific tasks, documents, topics, and conversations when the data supports it.' : 'Focus on patterns and achievements based on the app usage data available.'}
+Rules:
+- Be factual and specific. State what was done, when, and for how long.
+- Use third person ("The user worked on..." or "Spent 2 hours in...").
+- Never use flowery language, metaphors, or creative writing.
+- Never write "like a campfire" or any poetic comparisons.
+- Do NOT use markdown formatting, bullet points with *, or headers with #.
+- If screen content or OCR data is available, reference specific projects, documents, emails, meetings, and conversations by name.
+- If communication apps were used (Slack, Teams, Zoom, Google Meet, Mail, etc.), note who was communicated with if detectable from screen content.
+- Keep it professional and to the point. This is a business tool, not a personal diary.`;
 
-Important: Do NOT use markdown formatting, bullet points with *, or headers with #. Write in plain prose.`;
-
-  const userPrompt = `Write a daily productivity journal for ${dayName}, ${dateStr}.
+  const userPrompt = `Generate a daily activity report for ${dayName}, ${dateStr}.
 
 Activity Data:
 - Total active time: ${hours} hours (${totalMinutes} minutes)
@@ -327,10 +348,12 @@ ${weeklyContext ? `Weekly Context: ${weeklyContext}` : ''}
 
 Generate the following sections in JSON format:
 {
-  "overview": "A 2-3 sentence narrative summary of my day, written warmly in first person. ${hasDeepContext ? 'Reference specific tasks, topics, or documents I worked on based on the screen content data.' : 'Focus on the story of the day.'}",
-  "summaryPoints": ["5-8 bullet points capturing key activities, achievements, and observations. Each should be a complete sentence. ${hasDeepContext ? 'Include specific details from screen captures — mention document names, email subjects, code projects, websites visited, etc.' : ''}"],
-  "timelineNarrative": "A chronological narrative of my day with approximate timestamps. Write it as flowing prose, not a list. ${hasDeepContext ? 'Use the screen content and work type data to describe what I was actually doing each hour, not just which app was open.' : ''} Example: 'My morning started around 9 AM with...'",
-  "personalNotes": "2-3 sentences of personal insights, observations about patterns, or gentle encouragement for tomorrow.${hasDeepContext && deepContext?.commitments?.length ? ' Also mention any commitments I made today that I should follow up on.' : ''}"
+  "overview": "2-3 factual sentences summarizing the day: total active hours, primary focus areas, and key accomplishments. Example: 'Active for 6.2 hours with 72% focus. Primarily worked on development (3.5h) and communication (1.2h). Peak productivity between 10am-12pm.'",
+  "summaryPoints": ["5-8 factual bullet points of key activities and tasks completed. Each should state WHAT was done and for HOW LONG. ${hasDeepContext ? 'Reference specific project names, document titles, email threads, code repos, and websites from the screen content data.' : 'Reference the applications and categories used.'} Example: 'Worked in VS Code for 3 hours on the sync-desktop project.' or 'Attended a 45-minute Zoom meeting from 2pm-2:45pm.'"],
+  "timelineNarrative": "A chronological hour-by-hour activity log. For each active hour, state the time range, what apps were used, what category of work it was, and what specifically was being done if known from screen content. Write as compact paragraphs grouped by time blocks, not as a list. Example: '9:00-10:00: Started the day in Terminal and VS Code working on the scheduler service. Focus score 85%. 10:00-11:30: Switched to Chrome for research, then back to VS Code for implementation.'",
+  "communications": "Summary of all detected communications: emails sent/read, Slack/Teams messages, video calls, meetings. Include who was communicated with if detectable from screen content, and what topics were discussed. If no communication detected, state 'No communication activity detected.'",
+  "actionItems": "List any commitments, follow-ups, or action items detected during the day.${hasDeepContext && deepContext?.commitments?.length ? ' Include the commitments detected from screen content.' : ''} If none detected, state 'No action items detected.'",
+  "personalNotes": "1-2 factual observations about work patterns. Example: 'Focus score dropped after 3pm — consider scheduling deep work in the morning.' or 'Spent 40% of the day in meetings, higher than this week\\'s average of 25%.'"
 }
 
 Respond ONLY with valid JSON, no additional text.`;
@@ -350,8 +373,8 @@ Respond ONLY with valid JSON, no additional text.`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.7,
-        max_tokens: 1500,
+        temperature: 0.3,
+        max_tokens: 2000,
       }),
     });
 
@@ -391,6 +414,8 @@ Respond ONLY with valid JSON, no additional text.`;
       summaryPoints: Array.isArray(parsed.summaryPoints) ? parsed.summaryPoints : [],
       timelineNarrative: parsed.timelineNarrative || '',
       personalNotes: parsed.personalNotes || '',
+      communications: parsed.communications || '',
+      actionItems: parsed.actionItems || '',
     };
   } catch (error: any) {
     console.error('[generate-daily-journal] AI generation error:', error.message);
@@ -650,6 +675,8 @@ serve(async (req) => {
       summary_points: aiContent?.summaryPoints || [],
       timeline_narrative: aiContent?.timelineNarrative || null,
       personal_notes: aiContent?.personalNotes || null,
+      communications: aiContent?.communications || null,
+      action_items: aiContent?.actionItems || null,
       weekly_context: weeklyContext || null,
       ai_generated: !!aiContent,
     };

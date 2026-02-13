@@ -795,7 +795,7 @@ export default function DesktopActivity() {
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-white">Daily Journals</h3>
-                    <p className="text-xs text-zinc-500">AI-powered productivity reflections</p>
+                    <p className="text-xs text-zinc-500">AI-generated daily activity reports</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -951,7 +951,96 @@ export default function DesktopActivity() {
                 </div>
               ) : (
                 <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                  {activityLogs.slice(0, 50).map((log, i) => (
+                  {activityLogs.slice(0, 50).map((log, i) => {
+                    // Generate a meaningful activity summary from the data
+                    const apps = Array.isArray(log.app_breakdown)
+                      ? log.app_breakdown.sort((a, b) => (b.minutes || 0) - (a.minutes || 0))
+                      : [];
+                    const topApp = apps[0];
+                    const topAppName = topApp?.appName || topApp?.app || '';
+
+                    // Derive categories with time
+                    const catMins = {};
+                    apps.forEach(item => {
+                      const cat = item.category || 'Other';
+                      catMins[cat] = (catMins[cat] || 0) + (item.minutes || 0);
+                    });
+                    const sortedCats = Object.entries(catMins).sort(([,a], [,b]) => b - a);
+                    const topCategory = sortedCats[0]?.[0] || 'Other';
+
+                    // Build smart activity description
+                    let activityDesc = '';
+                    const catDescParts = sortedCats
+                      .filter(([cat]) => cat !== 'Other' && cat !== 'System')
+                      .slice(0, 3)
+                      .map(([cat, mins]) => `${cat} (${mins}m)`);
+
+                    if (catDescParts.length > 0) {
+                      activityDesc = catDescParts.join(', ');
+                    } else if (topAppName) {
+                      activityDesc = `${topAppName} (${topApp?.minutes || 0}m)`;
+                    }
+
+                    // Extract meaningful context from OCR if available
+                    let contextHint = '';
+                    if (log.ocr_text) {
+                      // Try to extract project/file names, URLs, email subjects from OCR
+                      const ocrText = log.ocr_text;
+                      const patterns = [
+                        /(?:src|lib|components|pages|services)\/[\w/.-]+/i,  // file paths
+                        /(?:pull request|PR|issue|commit)\s*#?\d*/i,         // git activity
+                        /(?:Subject|Re):\s*[^\n]{5,60}/i,                   // email subjects
+                        /(?:meeting|standup|sync|call|huddle)\b/i,          // meetings
+                      ];
+                      for (const pattern of patterns) {
+                        const match = ocrText.match(pattern);
+                        if (match) {
+                          contextHint = match[0].trim().slice(0, 80);
+                          break;
+                        }
+                      }
+                    }
+
+                    // Parse semantic_category if it's a JSON breakdown
+                    let semanticLabel = null;
+                    if (log.semantic_category && log.semantic_category !== 'other') {
+                      try {
+                        const parsed = JSON.parse(log.semantic_category);
+                        if (typeof parsed === 'object' && parsed !== null) {
+                          const entries = Object.entries(parsed).sort(([,a], [,b]) => b - a);
+                          semanticLabel = entries.slice(0, 2).map(([cat, mins]) => `${cat} ${mins}m`).join(', ');
+                        } else {
+                          semanticLabel = log.semantic_category;
+                        }
+                      } catch {
+                        semanticLabel = log.semantic_category;
+                      }
+                    }
+
+                    // Build the top-line summary
+                    const primaryApps = apps.slice(0, 3).map(a => a.appName || a.app).filter(Boolean);
+                    let summaryLine = '';
+                    if (topCategory === 'Development' && primaryApps.length > 0) {
+                      summaryLine = `Coding in ${primaryApps.join(', ')}`;
+                      if (contextHint) summaryLine += ` — ${contextHint}`;
+                    } else if (topCategory === 'Communication') {
+                      summaryLine = `Communication via ${primaryApps.join(', ')}`;
+                    } else if (topCategory === 'Meetings') {
+                      summaryLine = `In meetings (${primaryApps.join(', ')})`;
+                    } else if (topCategory === 'Browsing') {
+                      summaryLine = `Browsing and research`;
+                      if (contextHint) summaryLine += ` — ${contextHint}`;
+                    } else if (topCategory === 'Design') {
+                      summaryLine = `Design work in ${primaryApps.join(', ')}`;
+                    } else if (topCategory === 'Productivity') {
+                      summaryLine = `Productivity tasks in ${primaryApps.join(', ')}`;
+                    } else if (primaryApps.length > 0) {
+                      summaryLine = `Working in ${primaryApps.join(', ')}`;
+                    }
+
+                    const commitments = parseCommitments(log.commitments);
+
+                    return (
                     <motion.div
                       key={log.id}
                       initial={{ opacity: 0, x: -20 }}
@@ -963,7 +1052,7 @@ export default function DesktopActivity() {
                         <Clock className="w-5 h-5 text-cyan-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="text-sm font-medium text-white">
                             {new Date(log.hour_start).toLocaleString('en-US', {
                               weekday: 'short',
@@ -979,86 +1068,59 @@ export default function DesktopActivity() {
                           <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">
                             {Math.round((log.focus_score || 0) * 100)}% focus
                           </Badge>
-                          {(() => {
-                            // Derive top category from app_breakdown, fallback to semantic_category
-                            let topCategory = null;
-                            if (log.app_breakdown && Array.isArray(log.app_breakdown) && log.app_breakdown.length > 0) {
-                              const catMins = {};
-                              log.app_breakdown.forEach(item => {
-                                const cat = item.category || 'Other';
-                                catMins[cat] = (catMins[cat] || 0) + (item.minutes || 0);
-                              });
-                              const sorted = Object.entries(catMins).sort(([,a], [,b]) => b - a);
-                              if (sorted.length > 0 && sorted[0][0] !== 'Other') topCategory = sorted[0][0];
-                              else if (sorted.length > 1) topCategory = sorted[1]?.[0] || sorted[0][0];
-                              else if (sorted.length > 0) topCategory = sorted[0][0];
-                            }
-                            if (!topCategory && log.semantic_category && log.semantic_category !== 'other') {
-                              topCategory = log.semantic_category;
-                            }
-                            return topCategory ? (
-                              <Badge className="bg-cyan-500/10 text-cyan-300 border-cyan-500/30 text-xs">
-                                {topCategory}
-                              </Badge>
-                            ) : null;
-                          })()}
+                          {topCategory && topCategory !== 'Other' && (
+                            <Badge className="bg-cyan-500/10 text-cyan-300 border-cyan-500/30 text-xs">
+                              {topCategory}
+                            </Badge>
+                          )}
                         </div>
-                        {log.app_breakdown && (Array.isArray(log.app_breakdown) ? log.app_breakdown.length > 0 : Object.keys(log.app_breakdown).length > 0) && (
+
+                        {/* Activity summary line */}
+                        {summaryLine && (
+                          <p className="text-sm text-zinc-300 mt-1.5">{summaryLine}</p>
+                        )}
+
+                        {/* Category breakdown */}
+                        {sortedCats.length > 1 && (
                           <div className="flex flex-wrap gap-1.5 mt-2">
-                            {(Array.isArray(log.app_breakdown)
-                              ? log.app_breakdown
-                                  .sort((a, b) => (b.minutes || 0) - (a.minutes || 0))
-                                  .slice(0, 5)
-                                  .map(item => ({ app: item.appName || item.app, mins: item.minutes || 0 }))
-                              : Object.entries(log.app_breakdown)
-                                  .sort(([,a], [,b]) => b - a)
-                                  .slice(0, 5)
-                                  .map(([app, mins]) => ({ app, mins }))
-                            ).map(({ app, mins }) => (
-                                <Badge
-                                  key={app}
-                                  className="bg-zinc-700/50 text-zinc-400 border-zinc-600/50 text-xs"
-                                >
-                                  {app}: {mins}m
-                                </Badge>
-                              ))}
+                            {sortedCats.slice(0, 4).map(([cat, mins]) => (
+                              <Badge key={cat} className="bg-zinc-700/50 text-zinc-400 border-zinc-600/50 text-xs">
+                                {cat}: {mins}m
+                              </Badge>
+                            ))}
                           </div>
                         )}
+
+                        {/* Commitments / action items */}
+                        {commitments && commitments.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {commitments.map((c, ci) => (
+                              <Badge key={ci} className="bg-amber-500/10 text-amber-200/90 border-amber-500/20 text-xs">
+                                {c.description || c.title || c.text || (typeof c === 'string' ? c : JSON.stringify(c))}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Screen content (collapsed by default, no raw dump) */}
                         {log.ocr_text && (
-                          <div className="mt-2">
-                            <button
-                              onClick={() => toggleOcrExpand(log.id)}
-                              className="w-full text-left p-2.5 rounded-lg bg-zinc-900/60 border border-zinc-700/30 hover:border-zinc-600/50 transition-colors"
-                            >
-                              <div className="flex items-center gap-1.5 mb-1">
-                                <FileText className="w-3 h-3 text-zinc-500" />
-                                <span className="text-[10px] text-zinc-500">Screen Content</span>
-                                <span className="text-[10px] text-cyan-400 ml-auto">
-                                  {expandedOcr.has(log.id) ? 'collapse' : 'expand'}
-                                </span>
-                              </div>
-                              <p className={`text-xs text-zinc-400 ${expandedOcr.has(log.id) ? 'whitespace-pre-wrap' : 'line-clamp-2'}`}>
-                                {log.ocr_text}
-                              </p>
-                            </button>
+                          <button
+                            onClick={() => toggleOcrExpand(log.id)}
+                            className="mt-2 text-[11px] text-zinc-500 hover:text-cyan-400 transition-colors flex items-center gap-1"
+                          >
+                            <FileText className="w-3 h-3" />
+                            {expandedOcr.has(log.id) ? 'Hide screen content' : 'Show screen content'}
+                          </button>
+                        )}
+                        {log.ocr_text && expandedOcr.has(log.id) && (
+                          <div className="mt-1.5 p-2.5 rounded-lg bg-zinc-900/60 border border-zinc-700/30">
+                            <p className="text-xs text-zinc-400 whitespace-pre-wrap">{log.ocr_text}</p>
                           </div>
                         )}
-                        {(() => {
-                          const commitments = parseCommitments(log.commitments);
-                          if (!commitments || commitments.length === 0) return null;
-                          return (
-                            <div className="flex flex-wrap gap-1.5 mt-2">
-                              {commitments.map((c, ci) => (
-                                <Badge key={ci} className="bg-amber-500/10 text-amber-200/90 border-amber-500/20 text-xs">
-                                  {c.description || c.title || c.text || (typeof c === 'string' ? c : JSON.stringify(c))}
-                                </Badge>
-                              ))}
-                            </div>
-                          );
-                        })()}
                       </div>
                     </motion.div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </GlassCard>

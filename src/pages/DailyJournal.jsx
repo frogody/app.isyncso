@@ -247,7 +247,7 @@ export default function DailyJournal() {
               </div>
               <div>
                 <h1 className="text-base font-bold text-white">Daily Journals</h1>
-                <p className="text-zinc-500 text-xs">AI-powered reflections on your productivity</p>
+                <p className="text-zinc-500 text-xs">AI-generated daily activity reports</p>
               </div>
             </div>
             <SyncViewSelector />
@@ -426,15 +426,45 @@ export default function DailyJournal() {
                   </div>
                 )}
 
-                {/* Personal Notes */}
+                {/* Communications */}
+                {selectedJournal.communications && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-zinc-200 mb-3 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-blue-400" />
+                      Communications
+                    </h3>
+                    <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                      <p className="text-xs text-blue-200/90 leading-relaxed whitespace-pre-wrap">
+                        {selectedJournal.communications}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Items */}
+                {selectedJournal.action_items && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-zinc-200 mb-3 flex items-center gap-2">
+                      <Target className="w-4 h-4 text-amber-400" />
+                      Action Items & Follow-ups
+                    </h3>
+                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <p className="text-xs text-amber-200/90 leading-relaxed whitespace-pre-wrap">
+                        {selectedJournal.action_items}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Observations */}
                 {selectedJournal.personal_notes && (
                   <div className="mb-6">
                     <h3 className="text-sm font-semibold text-zinc-200 mb-3 flex items-center gap-2">
-                      <LightbulbIcon className="w-4 h-4 text-amber-400" />
-                      Personal Notes
+                      <LightbulbIcon className="w-4 h-4 text-zinc-400" />
+                      Observations
                     </h3>
-                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                      <p className="text-xs text-amber-200/90 leading-relaxed">
+                    <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50">
+                      <p className="text-xs text-zinc-300 leading-relaxed">
                         {selectedJournal.personal_notes}
                       </p>
                     </div>
