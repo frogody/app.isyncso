@@ -367,6 +367,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       title: 'CRM',
       color: 'cyan',
       items: [
+        { label: 'Contacts', path: createPageUrl('CRMContacts') + '?type=contact', icon: Contact },
         { label: 'Leads', path: createPageUrl('CRMContacts') + '?type=lead', icon: Target, badge: stats.contacts },
         { label: 'Prospects', path: createPageUrl('CRMContacts') + '?type=prospect', icon: TrendingUp },
         { label: 'Customers', path: createPageUrl('CRMContacts') + '?type=customer', icon: UserCheck },

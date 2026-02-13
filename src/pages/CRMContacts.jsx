@@ -15,6 +15,7 @@ import { prefersReducedMotion } from "@/lib/animations";
 // Contact type definitions
 const CONTACT_TYPES = [
   { id: 'all', label: 'All Contacts' },
+  { id: 'contact', label: 'Contacts' },
   { id: 'lead', label: 'Leads' },
   { id: 'prospect', label: 'Prospects' },
   { id: 'customer', label: 'Customers' },
@@ -1352,7 +1353,7 @@ export default function CRMContacts() {
 
           <Button onClick={() => {
             setEditingContact(null);
-            const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'lead';
+            const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'contact';
             setFormData({ ...emptyContact, contact_type: preselectedType });
             setShowModal(true);
           }} className="bg-cyan-600/80 hover:bg-cyan-600 text-white">
@@ -1536,7 +1537,7 @@ export default function CRMContacts() {
                 <p className={`${crt('text-slate-400', 'text-zinc-500')} mb-6`}>Try adjusting your filters or add a new contact</p>
                 <Button onClick={() => {
                   setEditingContact(null);
-                  const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'lead';
+                  const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'contact';
                   setFormData({ ...emptyContact, contact_type: preselectedType });
                   setShowModal(true);
                 }} className="bg-cyan-600/80 hover:bg-cyan-600 text-white">
