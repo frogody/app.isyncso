@@ -28,10 +28,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Copy, Check, ExternalLink } from 'lucide-react';
+import { Copy, Check, ExternalLink, Shield } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SyncViewSelector } from '@/components/sync/ui';
+import InfoCard from '@/components/shared/InfoCard';
 
 // App icon mapping
 const APP_ICONS = {
@@ -462,6 +463,16 @@ export default function DesktopActivity() {
           </div>
           <SyncViewSelector />
         </div>
+
+        {/* Privacy Notice */}
+        <InfoCard
+          title="Your activity is private"
+          icon={Shield}
+          learnMoreUrl={createPageUrl('PrivacyAIAct')}
+          className="bg-emerald-500/10 border-emerald-500/20"
+        >
+          Your employer cannot see your activity data. This is your personal productivity tool, protected by design and by law.
+        </InfoCard>
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>

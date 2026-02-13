@@ -5,14 +5,17 @@ import { ActivitySession } from "@/api/entities";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Activity, 
-  Clock, 
-  TrendingUp, 
+import InfoCard from '@/components/shared/InfoCard';
+import { createPageUrl } from "@/utils";
+import {
+  Activity,
+  Clock,
+  TrendingUp,
   Zap,
   Code,
   Layers,
-  Wrench
+  Wrench,
+  Shield
 } from "lucide-react";
 
 export default function ActivityTimeline() {
@@ -115,6 +118,16 @@ export default function ActivityTimeline() {
           <h1 className="text-4xl font-bold text-white mb-2">Activity Timeline</h1>
           <p className="text-gray-400">Your tracked work sessions and activities</p>
         </div>
+
+        {/* Privacy Notice */}
+        <InfoCard
+          title="Your activity is private"
+          icon={Shield}
+          learnMoreUrl={createPageUrl('PrivacyAIAct')}
+          className="bg-emerald-500/10 border-emerald-500/20"
+        >
+          Your employer cannot see your activity data. This is your personal productivity tool, protected by design and by law.
+        </InfoCard>
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

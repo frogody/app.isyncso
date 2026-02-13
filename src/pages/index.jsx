@@ -65,6 +65,8 @@ import DesktopActivity from "./DesktopActivity";
 
 import DailyJournal from "./DailyJournal";
 
+import PrivacyAIAct from "./PrivacyAIAct";
+
 import DocumentGenerator from "./DocumentGenerator";
 
 import DownloadApp from "./DownloadApp";
@@ -895,6 +897,8 @@ function PagesContent() {
                 <Route path="/DesktopActivity" element={<DesktopActivity />} />
 
                 <Route path="/DailyJournal" element={<DailyJournal />} />
+
+                <Route path="/PrivacyAIAct" element={<PrivacyAIAct />} />
 
                 <Route path="/DownloadApp" element={<DownloadApp />} />
                 

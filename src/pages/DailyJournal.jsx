@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Calendar, Clock, Zap, Target, Monitor, TrendingUp,
   RefreshCw, Loader2, Sparkles, ChevronRight, Activity, Brain,
-  FileText, CheckCircle2, LightbulbIcon, CalendarDays
+  FileText, CheckCircle2, LightbulbIcon, CalendarDays, Shield
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { db } from "@/api/supabaseClient";
@@ -13,6 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SyncViewSelector } from '@/components/sync/ui';
+import InfoCard from '@/components/shared/InfoCard';
+import { createPageUrl } from "@/utils";
 
 export default function DailyJournal() {
   const [user, setUser] = useState(null);
@@ -272,6 +274,18 @@ export default function DailyJournal() {
             <SyncViewSelector />
           </div>
         </motion.div>
+
+        {/* Privacy Notice */}
+        <div className="shrink-0">
+          <InfoCard
+            title="Your activity is private"
+            icon={Shield}
+            learnMoreUrl={createPageUrl('PrivacyAIAct')}
+            className="bg-emerald-500/10 border-emerald-500/20"
+          >
+            Your employer cannot see your activity data. This is your personal productivity tool, protected by design and by law.
+          </InfoCard>
+        </div>
 
         {/* Main Content */}
         <div className="flex-1 flex gap-4 min-h-0">
