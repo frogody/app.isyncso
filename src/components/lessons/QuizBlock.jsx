@@ -92,7 +92,7 @@ export default function QuizBlock({ quiz = [], onScored = () => {} }) {
             Your score: <span className={`font-semibold ${scorePct >= 70 ? "text-emerald-300" : "text-yellow-300"}`}>{scorePct}%</span>
           </div>
         ) : <div />}
-        <Button onClick={check} disabled={checked} className="emerald-gradient emerald-gradient-hover">
+        <Button onClick={check} disabled={checked} className="bg-teal-600 hover:bg-teal-500 text-white disabled:opacity-50">
           {checked ? "Checked" : "Check answers"}
         </Button>
       </div>

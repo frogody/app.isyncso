@@ -140,7 +140,7 @@ function AchievementToast({ achievement, onDismiss }) {
   );
 }
 
-function AchievementToastContainer({ queue }) {
+function AchievementToastContainer({ queue, onDismiss }) {
   return (
     <div className="fixed top-20 right-6 z-[60] flex flex-col gap-3 pointer-events-none">
       <AnimatePresence>
@@ -148,7 +148,7 @@ function AchievementToastContainer({ queue }) {
           <div key={achievement.id} className="pointer-events-auto">
             <AchievementToast
               achievement={achievement}
-              onDismiss={() => {}}
+              onDismiss={() => onDismiss(achievement.id)}
             />
           </div>
         ))}
@@ -164,19 +164,14 @@ export function AchievementProvider({ children }) {
     setQueue(prev => [...prev, { ...achievement, id: Date.now() + Math.random() }]);
   };
 
-  useEffect(() => {
-    if (queue.length > 0) {
-      const timer = setTimeout(() => {
-        setQueue(prev => prev.slice(1));
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [queue]);
+  const dismissAchievement = React.useCallback((id) => {
+    setQueue(prev => prev.filter(a => a.id !== id));
+  }, []);
 
   return (
     <AchievementContext.Provider value={{ showAchievement }}>
       {children}
-      <AchievementToastContainer queue={queue} />
+      <AchievementToastContainer queue={queue} onDismiss={dismissAchievement} />
     </AchievementContext.Provider>
   );
 }

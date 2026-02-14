@@ -89,6 +89,8 @@ import {
   Camera,
   Images,
   History,
+  Route,
+  Swords,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -219,7 +221,7 @@ const navigationItems = [
   },
   {
     title: "CRM",
-    url: createPageUrl("CRMContacts") + "?type=lead",
+    url: createPageUrl("CRMDashboard"),
     icon: Contact,
     permission: null, // Always visible - base environment
     matchPatterns: ["/crm", "/contacts-import"], // For active state matching
@@ -279,7 +281,7 @@ const ENGINE_ITEMS_CONFIG = {
     icon: GraduationCap,
     id: 'learn',
     permission: "courses.view", // Learning features
-    matchPatterns: ["/learn", "/course", "/lesson", "/certificate", "/skill", "/leaderboard"],
+    matchPatterns: ["/learn", "/course", "/lesson", "/certificate", "/skill", "/leaderboard", "/practice", "/teamlearn"],
   },
   talent: {
     title: "Talent",
@@ -367,16 +369,10 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       title: 'CRM',
       color: 'cyan',
       items: [
-        { label: 'Contacts', path: createPageUrl('CRMContacts') + '?type=contact', icon: Contact },
-        { label: 'Companies', path: createPageUrl('CRMContacts') + '?type=company', icon: Building2 },
-        { label: 'Leads', path: createPageUrl('CRMContacts') + '?type=lead', icon: Target, badge: stats.contacts },
-        { label: 'Prospects', path: createPageUrl('CRMContacts') + '?type=prospect', icon: TrendingUp },
-        { label: 'Customers', path: createPageUrl('CRMContacts') + '?type=customer', icon: UserCheck },
-        { label: 'Suppliers', path: createPageUrl('CRMContacts') + '?type=supplier', icon: Truck },
-        { label: 'Partners', path: createPageUrl('CRMContacts') + '?type=partner', icon: Handshake },
-        { label: 'Candidates', path: createPageUrl('CRMContacts') + '?type=candidate', icon: UserPlus },
-        { label: 'Targets', path: createPageUrl('CRMContacts') + '?type=target', icon: Crosshair },
-        { label: 'All Contacts', path: createPageUrl('CRMContacts'), icon: Users },
+        { label: 'Dashboard', path: createPageUrl('CRMDashboard'), icon: LayoutDashboard },
+        { label: 'Contacts', path: createPageUrl('CRMContacts'), icon: Users, badge: stats.contacts },
+        { label: 'Pipeline', path: createPageUrl('CRMPipeline'), icon: Kanban },
+        { label: 'Campaigns', path: createPageUrl('CRMCampaigns'), icon: Megaphone },
         { label: 'Import', path: createPageUrl('ContactsImport'), icon: FileSpreadsheet },
       ]
     };
@@ -494,7 +490,8 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
 
   // LEARN routes
   if (path.startsWith('/learn') || path.startsWith('/course') || path.startsWith('/lesson') ||
-      path.startsWith('/certificate') || path.startsWith('/skill') || path.startsWith('/leaderboard')) {
+      path.startsWith('/certificate') || path.startsWith('/skill') || path.startsWith('/leaderboard') ||
+      path.startsWith('/practice') || path.startsWith('/teamlearn')) {
     return {
       title: 'LEARN',
       color: 'teal',
@@ -502,7 +499,10 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       items: [
         { label: 'Dashboard', path: createPageUrl('LearnDashboard'), icon: LayoutDashboard },
         { label: 'My Courses', path: createPageUrl('Learn'), icon: BookOpen },
+        { label: 'Learning Paths', path: createPageUrl('LearningPaths'), icon: Route },
+        { label: 'Practice', path: createPageUrl('PracticeChallenges'), icon: Swords },
         { label: 'Skills', path: createPageUrl('SkillMap'), icon: Target, badge: stats.skills },
+        { label: 'Team', path: createPageUrl('TeamLearningDashboard'), icon: Users },
         { label: 'Course Builder', path: createPageUrl('ManageCourses'), icon: Library },
         { label: 'AI Tools', path: createPageUrl('LearnAITools'), icon: Sparkles },
       ]

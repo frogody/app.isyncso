@@ -33,6 +33,12 @@ import CRMCompanyProfile from "./CRMCompanyProfile";
 
 import CRMContactProfile from "./CRMContactProfile";
 
+import CRMDashboard from "./CRMDashboard";
+
+import CRMPipeline from "./CRMPipeline";
+
+import CRMCampaigns from "./CRMCampaigns";
+
 import Certificates from "./Certificates";
 
 import CompanyDashboard from "./CompanyDashboard";
@@ -49,7 +55,7 @@ import ComponentShowcase from "./ComponentShowcase";
 
 import ComposioIntegrations from "./ComposioIntegrations";
 
-import Contacts from "./Contacts";
+// Contacts.jsx deprecated - redirects to CRMContacts
 
 import CourseDetail from "./CourseDetail";
 
@@ -59,7 +65,7 @@ import Courses from "./Courses";
 
 import Dashboard from "./Dashboard";
 
-import Deals from "./Deals";
+// Deals.jsx deprecated - redirects to CRMPipeline
 
 import DesktopActivity from "./DesktopActivity";
 
@@ -127,7 +133,7 @@ import Insights from "./Insights";
 
 import Leaderboard from "./Leaderboard";
 
-import Leads from "./Leads";
+// Leads.jsx deprecated - redirects to CRMContacts?tab=lead
 
 import Learn from "./Learn";
 
@@ -137,7 +143,13 @@ import LearnAssistant from "./LearnAssistant";
 
 import LearnDashboard from "./LearnDashboard";
 
+import LearningPaths from "./LearningPaths";
+
 import LessonViewer from "./LessonViewer";
+
+import PracticeChallenges from "./PracticeChallenges";
+
+import TeamLearningDashboard from "./TeamLearningDashboard";
 
 // Marketplace pages
 import NestsMarketplace from "./marketplace/NestsMarketplace";
@@ -420,6 +432,12 @@ const PAGES = {
 
     CRMContactProfile: CRMContactProfile,
 
+    CRMDashboard: CRMDashboard,
+
+    CRMPipeline: CRMPipeline,
+
+    CRMCampaigns: CRMCampaigns,
+
     Certificates: Certificates,
     
     CompanyDashboard: CompanyDashboard,
@@ -436,8 +454,6 @@ const PAGES = {
 
     ComposioIntegrations: ComposioIntegrations,
 
-    Contacts: Contacts,
-    
     CourseDetail: CourseDetail,
     
     CourseUpgrader: CourseUpgrader,
@@ -445,9 +461,6 @@ const PAGES = {
     Courses: Courses,
     
     Dashboard: Dashboard,
-    
-    Deals: Deals,
-
     DailyJournal: DailyJournal,
 
     DocumentGenerator: DocumentGenerator,
@@ -506,9 +519,7 @@ const PAGES = {
     Insights: Insights,
     
     Leaderboard: Leaderboard,
-    
-    Leads: Leads,
-    
+
     Learn: Learn,
     
     LearnAITools: LearnAITools,
@@ -516,10 +527,16 @@ const PAGES = {
     LearnAssistant: LearnAssistant,
 
     LearnDashboard: LearnDashboard,
-    
+
+    LearningPaths: LearningPaths,
+
     LessonViewer: LessonViewer,
-    
+
+    PracticeChallenges: PracticeChallenges,
+
     ManageCourses: ManageCourses,
+
+    TeamLearningDashboard: TeamLearningDashboard,
     
     ManagerDashboard: ManagerDashboard,
     
@@ -857,7 +874,13 @@ function PagesContent() {
                 
                 <Route path="/BackendStatus" element={<BackendStatus />} />
                 
+                <Route path="/CRMDashboard" element={<CRMDashboard />} />
+
                 <Route path="/CRMContacts" element={<CRMContacts />} />
+
+                <Route path="/CRMPipeline" element={<CRMPipeline />} />
+
+                <Route path="/CRMCampaigns" element={<CRMCampaigns />} />
 
                 <Route path="/CRMCompanyProfile" element={<CRMCompanyProfile />} />
 
@@ -880,7 +903,7 @@ function PagesContent() {
                 <Route path="/ComposioIntegrations" element={<Navigate to="/Integrations" replace />} />
                 <Route path="/settings/integrations" element={<Navigate to="/Integrations" replace />} />
 
-                <Route path="/Contacts" element={<Contacts />} />
+                <Route path="/Contacts" element={<Navigate to="/CRMContacts" replace />} />
                 
                 <Route path="/CourseDetail" element={<CourseDetail />} />
                 
@@ -890,7 +913,7 @@ function PagesContent() {
                 
                 <Route path="/Dashboard" element={<Dashboard />} />
                 
-                <Route path="/Deals" element={<Navigate to="/GrowthPipeline" replace />} />
+                <Route path="/Deals" element={<Navigate to="/CRMPipeline" replace />} />
                 
                 <Route path="/DocumentGenerator" element={<DocumentGenerator />} />
 
@@ -981,7 +1004,7 @@ function PagesContent() {
                 
                 <Route path="/Leaderboard" element={<Leaderboard />} />
                 
-                <Route path="/Leads" element={<Leads />} />
+                <Route path="/Leads" element={<Navigate to="/CRMContacts?tab=lead" replace />} />
                 
                 <Route path="/Learn" element={<Learn />} />
                 

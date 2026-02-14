@@ -20,6 +20,7 @@ import {
 import YellowOrbitIcon from "@/components/icons/YellowOrbitIcon";
 import { useUser } from "@/components/context/UserContext";
 import { LearningAnalytics } from "@/components/learn/LearningAnalytics";
+import CourseRatings from "@/components/learn/CourseRatings";
 
 export default function CourseDetail() {
   const [searchParams] = useSearchParams();
@@ -333,6 +334,9 @@ export default function CourseDetail() {
         {!course.is_template && userProgress && (
           <LearningAnalytics courseId={course.id} userId={user?.id} />
         )}
+
+        {/* Course Ratings */}
+        <CourseRatings courseId={course.id} userId={user?.id} />
 
         {/* Course Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

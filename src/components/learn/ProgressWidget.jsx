@@ -35,15 +35,12 @@ export function ProgressWidget({ userId, compact = false }) {
     let isMounted = true;
     if (!userId) return;
 
-    const doLoad = async () => {
-      await loadGamification();
-    };
-    doLoad();
+    loadGamification();
 
-    // Refresh every 30s to catch updates
+    // Only poll when tab is visible
     const interval = setInterval(() => {
-      if (isMounted) loadGamification();
-    }, 30000);
+      if (isMounted && document.visibilityState === 'visible') loadGamification();
+    }, 60000);
 
     return () => {
       isMounted = false;
@@ -51,7 +48,18 @@ export function ProgressWidget({ userId, compact = false }) {
     };
   }, [userId, loadGamification]);
 
-  if (loading || !gamification) return null;
+  if (loading) return null;
+
+  if (!gamification) {
+    return compact ? null : (
+      <Card className="bg-gradient-to-br from-gray-900/80 to-black/80 border-gray-800">
+        <CardContent className="p-4 text-center">
+          <TrendingUp className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+          <p className="text-sm text-gray-500">Start learning to earn XP</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const levelProgress = getLevelProgress(gamification.total_points);
 
