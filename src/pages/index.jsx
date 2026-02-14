@@ -49,6 +49,14 @@ import CompanyProfile from "./CompanyProfile";
 
 import ComplianceCenter from "./ComplianceCenter";
 
+import ComplianceControls from "./ComplianceControls";
+
+import ComplianceEvidence from "./ComplianceEvidence";
+
+import ComplianceFrameworks from "./ComplianceFrameworks";
+
+import CompliancePolicies from "./CompliancePolicies";
+
 import ComplianceRoadmap from "./ComplianceRoadmap";
 
 import ComponentShowcase from "./ComponentShowcase";
@@ -170,6 +178,10 @@ import RiskAssessment from "./RiskAssessment";
 import Sentinel from "./Sentinel";
 
 import SentinelDashboard from "./SentinelDashboard";
+
+import TrustCenter from "./TrustCenter";
+
+import VendorRisk from "./VendorRisk";
 
 import Sequences from "./Sequences";
 
@@ -447,7 +459,15 @@ const PAGES = {
     CompanyProfile: CompanyProfile,
     
     ComplianceCenter: ComplianceCenter,
-    
+
+    ComplianceControls: ComplianceControls,
+
+    ComplianceEvidence: ComplianceEvidence,
+
+    ComplianceFrameworks: ComplianceFrameworks,
+
+    CompliancePolicies: CompliancePolicies,
+
     ComplianceRoadmap: ComplianceRoadmap,
     
     ComponentShowcase: ComponentShowcase,
@@ -551,7 +571,11 @@ const PAGES = {
     Sentinel: Sentinel,
     
     SentinelDashboard: SentinelDashboard,
-    
+
+    TrustCenter: TrustCenter,
+
+    VendorRisk: VendorRisk,
+
     Sequences: Sequences,
     
     Settings: Settings,
@@ -895,7 +919,15 @@ function PagesContent() {
                 <Route path="/CompanyProfile" element={<CompanyProfile />} />
                 
                 <Route path="/ComplianceCenter" element={<ComplianceCenter />} />
-                
+
+                <Route path="/ComplianceControls" element={<ComplianceControls />} />
+
+                <Route path="/ComplianceEvidence" element={<ComplianceEvidence />} />
+
+                <Route path="/ComplianceFrameworks" element={<ComplianceFrameworks />} />
+
+                <Route path="/CompliancePolicies" element={<CompliancePolicies />} />
+
                 <Route path="/ComplianceRoadmap" element={<ComplianceRoadmap />} />
                 
                 <Route path="/ComponentShowcase" element={<ComponentShowcase />} />
@@ -1036,6 +1068,10 @@ function PagesContent() {
                 <Route path="/Sentinel" element={<Sentinel />} />
                 
                 <Route path="/SentinelDashboard" element={<SentinelDashboard />} />
+
+                <Route path="/TrustCenter" element={<TrustCenter />} />
+
+                <Route path="/VendorRisk" element={<VendorRisk />} />
                 
                 <Route path="/Sequences" element={<Sequences />} />
                 

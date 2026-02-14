@@ -91,6 +91,10 @@ import {
   History,
   Route,
   Swords,
+  CheckSquare,
+  FileCheck,
+  ShieldAlert,
+  Globe,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -379,7 +383,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   }
 
   // SENTINEL routes
-  if (path.startsWith('/sentinel') || path.startsWith('/aisystem') || path.startsWith('/compliance') || path.startsWith('/document') || path.startsWith('/riskassessment')) {
+  if (path.startsWith('/sentinel') || path.startsWith('/aisystem') || path.startsWith('/compliance') || path.startsWith('/document') || path.startsWith('/riskassessment') || path.startsWith('/vendorrisk') || path.startsWith('/trustcenter')) {
     return {
       title: 'SENTINEL',
       color: 'sage',
@@ -387,6 +391,12 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       items: [
         { label: 'Dashboard', path: createPageUrl('SentinelDashboard'), icon: LayoutDashboard },
         { label: 'AI Systems', path: createPageUrl('AISystemInventory'), icon: Cpu, badge: stats.systems },
+        { label: 'Frameworks', path: createPageUrl('ComplianceFrameworks'), icon: Shield },
+        { label: 'Controls', path: createPageUrl('ComplianceControls'), icon: CheckSquare },
+        { label: 'Evidence', path: createPageUrl('ComplianceEvidence'), icon: FileCheck },
+        { label: 'Policies', path: createPageUrl('CompliancePolicies'), icon: BookOpen },
+        { label: 'Vendor Risk', path: createPageUrl('VendorRisk'), icon: ShieldAlert },
+        { label: 'Trust Center', path: createPageUrl('TrustCenter'), icon: Globe },
         { label: 'Roadmap', path: createPageUrl('ComplianceRoadmap'), icon: Map, badge: stats.tasks },
         { label: 'Documents', path: createPageUrl('DocumentGenerator'), icon: FileText },
       ]
