@@ -11,6 +11,12 @@ import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 import { createVideoProvider } from './VideoProvider';
 
+// Force re-render helper for stream updates
+function useForceUpdate() {
+  const [, setTick] = useState(0);
+  return useCallback(() => setTick(t => t + 1), []);
+}
+
 // ---------------------------------------------------------------------------
 // Join code generator  (format: SYN-XXX-XXX)
 // ---------------------------------------------------------------------------
@@ -34,17 +40,33 @@ export function useVideoCall(userId, companyId) {
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Provider ref (mock for now)
+  // Provider ref (real browser media)
   const providerRef = useRef(null);
   const subscriptionRef = useRef(null);
+  const updateParticipantRef = useRef(null);
+  const forceUpdate = useForceUpdate();
 
   // Lazily initialize provider
   const getProvider = useCallback(() => {
     if (!providerRef.current) {
-      providerRef.current = createVideoProvider('mock');
+      providerRef.current = createVideoProvider();
+
+      // Listen for browser "Stop sharing" event
+      providerRef.current.on('screenShareEnded', () => {
+        setIsScreenSharing(false);
+        if (updateParticipantRef.current) {
+          updateParticipantRef.current({ is_screen_sharing: false }).catch(() => {});
+        }
+        forceUpdate();
+      });
+
+      // Force re-render when tracks change so consumers get fresh streams
+      providerRef.current.on('trackToggled', () => forceUpdate());
+      providerRef.current.on('connected', () => forceUpdate());
+      providerRef.current.on('disconnected', () => forceUpdate());
     }
     return providerRef.current;
-  }, []);
+  }, [forceUpdate]);
 
   // ------------------------------------------------------------------
   // Real-time subscription for call_participants changes
@@ -363,6 +385,9 @@ export function useVideoCall(userId, companyId) {
       .is('left_at', null);
   }, [currentCall, userId]);
 
+  // Keep ref in sync so event listeners always have the latest
+  updateParticipantRef.current = _updateMyParticipant;
+
   const toggleMute = useCallback(async () => {
     const newState = !isMuted;
     setIsMuted(newState);
@@ -380,11 +405,21 @@ export function useVideoCall(userId, companyId) {
   }, [isCameraOff, getProvider, _updateMyParticipant]);
 
   const toggleScreenShare = useCallback(async () => {
-    const newState = !isScreenSharing;
-    setIsScreenSharing(newState);
     const provider = getProvider();
-    await provider.toggleScreen(newState);
-    await _updateMyParticipant({ is_screen_sharing: newState });
+    if (!isScreenSharing) {
+      // Start screen share — user might cancel the picker
+      const started = await provider.toggleScreen(true);
+      if (started) {
+        setIsScreenSharing(true);
+        await _updateMyParticipant({ is_screen_sharing: true });
+      }
+      // If user cancelled, started === false, do nothing
+    } else {
+      // Stop screen share
+      await provider.toggleScreen(false);
+      setIsScreenSharing(false);
+      await _updateMyParticipant({ is_screen_sharing: false });
+    }
   }, [isScreenSharing, getProvider, _updateMyParticipant]);
 
   // ------------------------------------------------------------------
@@ -437,6 +472,10 @@ export function useVideoCall(userId, companyId) {
     };
   }, []);
 
+  // Expose real MediaStreams from the provider
+  const localStream = providerRef.current?.localStream || null;
+  const screenStream = providerRef.current?.screenStream || null;
+
   return {
     // State
     currentCall,
@@ -446,6 +485,10 @@ export function useVideoCall(userId, companyId) {
     isCameraOff,
     isScreenSharing,
     loading,
+
+    // Media streams
+    localStream,
+    screenStream,
 
     // Actions
     createCall,

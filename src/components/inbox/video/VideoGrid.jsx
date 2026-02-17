@@ -11,7 +11,7 @@
  * Uses Framer Motion LayoutGroup for smooth reflow animations.
  */
 
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
 import ParticipantTile from './ParticipantTile';
 
@@ -33,6 +33,8 @@ function getGridClasses(count) {
 const VideoGrid = memo(function VideoGrid({
   participants = [],
   currentUserId,
+  localStream = null,
+  screenStream = null,
 }) {
   // Determine if anyone is screen sharing
   const screenSharer = useMemo(
@@ -40,11 +42,15 @@ const VideoGrid = memo(function VideoGrid({
     [participants]
   );
 
-  // Split participants: screen sharer vs others
-  const otherParticipants = useMemo(
-    () => (screenSharer ? participants.filter((p) => p.id !== screenSharer.id) : participants),
-    [participants, screenSharer]
-  );
+  // Helper: get the stream for a participant
+  const getStreamForParticipant = useCallback((p, isScreen = false) => {
+    if (p.user_id === currentUserId) {
+      return isScreen ? screenStream : localStream;
+    }
+    // Remote participants would get their stream from WebRTC peer connections
+    // For now, only local user has a stream (single-device browser calls)
+    return null;
+  }, [currentUserId, localStream, screenStream]);
 
   // Screen share mode layout
   if (screenSharer) {
@@ -59,6 +65,7 @@ const VideoGrid = memo(function VideoGrid({
                 participant={screenSharer}
                 isLocal={screenSharer.user_id === currentUserId}
                 isScreenShare
+                stream={getStreamForParticipant(screenSharer, true)}
               />
             </AnimatePresence>
           </div>
@@ -71,6 +78,7 @@ const VideoGrid = memo(function VideoGrid({
                   key={p.id}
                   participant={p}
                   isLocal={p.user_id === currentUserId}
+                  stream={getStreamForParticipant(p)}
                 />
               ))}
             </AnimatePresence>
@@ -95,6 +103,7 @@ const VideoGrid = memo(function VideoGrid({
               key={p.id}
               participant={p}
               isLocal={p.user_id === currentUserId}
+              stream={getStreamForParticipant(p)}
             />
           ))}
         </AnimatePresence>

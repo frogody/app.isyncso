@@ -1,34 +1,18 @@
 /**
- * VideoProvider - Video call provider abstraction layer
+ * VideoProvider - Real browser media provider
  *
- * Abstract interface for video call providers (LiveKit, Daily.co, etc.).
- * Ships with a mock provider for development; real integrations plug in later.
+ * Uses getUserMedia / getDisplayMedia for actual mic, camera, and screen sharing.
+ * No external dependency (LiveKit/Daily) needed — works peer-to-peer via browser APIs.
+ * Tracks are exposed as MediaStream objects for <video> elements.
  */
 
-// ---------------------------------------------------------------------------
-// Abstract provider interface (documented for future implementors)
-// ---------------------------------------------------------------------------
-// Every provider must expose:
-//   connect(roomId, token)   → Promise<void>
-//   disconnect()             → Promise<void>
-//   getLocalTracks()         → { audio, video, screen }
-//   getRemoteTracks()        → Map<participantId, { audio, video, screen }>
-//   toggleAudio(enabled)     → void
-//   toggleVideo(enabled)     → void
-//   toggleScreen(enabled)    → Promise<void>
-//   on(event, handler)       → void
-//   off(event, handler)      → void
-//   isConnected              → boolean
-
-// ---------------------------------------------------------------------------
-// Mock provider — simulates connection lifecycle for Phase 2.1
-// ---------------------------------------------------------------------------
-class MockVideoProvider {
+class BrowserMediaProvider {
   constructor() {
     this._connected = false;
-    this._audioEnabled = true;
-    this._videoEnabled = true;
-    this._screenEnabled = false;
+    this._audioTrack = null;
+    this._videoTrack = null;
+    this._screenStream = null;
+    this._localStream = null;
     this._listeners = {};
     this._roomId = null;
   }
@@ -37,81 +21,148 @@ class MockVideoProvider {
     return this._connected;
   }
 
+  /** The local camera+mic MediaStream (or null) */
+  get localStream() {
+    return this._localStream;
+  }
+
+  /** The screen share MediaStream (or null) */
+  get screenStream() {
+    return this._screenStream;
+  }
+
   /**
-   * Simulate connecting to a room.
-   * @param {string} roomId
-   * @param {string} token - provider-specific auth token (ignored in mock)
+   * Connect to a "room" — requests mic+camera permissions.
+   * Falls back gracefully if user denies permissions.
    */
-  async connect(roomId, token) {
+  async connect(roomId) {
     if (this._connected) return;
     this._roomId = roomId;
 
-    // Simulate network handshake delay
-    await _delay(600);
+    try {
+      this._localStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: true,
+      });
+      this._audioTrack = this._localStream.getAudioTracks()[0] || null;
+      this._videoTrack = this._localStream.getVideoTracks()[0] || null;
+    } catch (err) {
+      console.warn('[BrowserMediaProvider] getUserMedia failed, trying audio-only:', err.name);
+      try {
+        this._localStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: false,
+        });
+        this._audioTrack = this._localStream.getAudioTracks()[0] || null;
+        this._videoTrack = null;
+      } catch (audioErr) {
+        console.warn('[BrowserMediaProvider] Audio-only also failed:', audioErr.name);
+        this._localStream = null;
+        this._audioTrack = null;
+        this._videoTrack = null;
+      }
+    }
 
     this._connected = true;
-    this._audioEnabled = true;
-    this._videoEnabled = true;
-    this._screenEnabled = false;
     this._emit('connected', { roomId });
   }
 
   /**
-   * Simulate disconnecting from the room.
+   * Disconnect — stop all tracks and release media.
    */
   async disconnect() {
     if (!this._connected) return;
 
-    await _delay(200);
+    // Stop all local tracks
+    if (this._localStream) {
+      this._localStream.getTracks().forEach(t => t.stop());
+      this._localStream = null;
+    }
+    if (this._screenStream) {
+      this._screenStream.getTracks().forEach(t => t.stop());
+      this._screenStream = null;
+    }
 
+    this._audioTrack = null;
+    this._videoTrack = null;
     this._connected = false;
-    this._screenEnabled = false;
+
     const roomId = this._roomId;
     this._roomId = null;
     this._emit('disconnected', { roomId });
   }
 
   /**
-   * Return local media track references (empty in mock).
-   */
-  getLocalTracks() {
-    return {
-      audio: this._audioEnabled ? { kind: 'audio', enabled: true, mock: true } : null,
-      video: this._videoEnabled ? { kind: 'video', enabled: true, mock: true } : null,
-      screen: this._screenEnabled ? { kind: 'screen', enabled: true, mock: true } : null,
-    };
-  }
-
-  /**
-   * Return remote participant tracks (empty Map in mock).
-   */
-  getRemoteTracks() {
-    return new Map();
-  }
-
-  /**
-   * Toggle local audio track.
+   * Toggle local audio track enabled/disabled.
    */
   toggleAudio(enabled) {
-    this._audioEnabled = enabled;
+    if (this._audioTrack) {
+      this._audioTrack.enabled = enabled;
+    }
     this._emit('trackToggled', { kind: 'audio', enabled });
   }
 
   /**
-   * Toggle local video track.
+   * Toggle local video track enabled/disabled.
    */
   toggleVideo(enabled) {
-    this._videoEnabled = enabled;
+    if (this._videoTrack) {
+      this._videoTrack.enabled = enabled;
+    }
     this._emit('trackToggled', { kind: 'video', enabled });
   }
 
   /**
-   * Toggle screen sharing.
+   * Toggle screen sharing via getDisplayMedia.
+   * Returns true if screen share started, false if stopped/cancelled.
    */
   async toggleScreen(enabled) {
-    await _delay(300);
-    this._screenEnabled = enabled;
-    this._emit('trackToggled', { kind: 'screen', enabled });
+    if (enabled) {
+      try {
+        this._screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: { cursor: 'always' },
+          audio: false,
+        });
+
+        // Listen for user clicking "Stop sharing" in browser chrome
+        const videoTrack = this._screenStream.getVideoTracks()[0];
+        if (videoTrack) {
+          videoTrack.addEventListener('ended', () => {
+            this._screenStream = null;
+            this._emit('screenShareEnded');
+            this._emit('trackToggled', { kind: 'screen', enabled: false });
+          });
+        }
+
+        this._emit('trackToggled', { kind: 'screen', enabled: true });
+        return true;
+      } catch (err) {
+        // User cancelled the screen picker
+        console.warn('[BrowserMediaProvider] getDisplayMedia cancelled:', err.name);
+        this._screenStream = null;
+        this._emit('trackToggled', { kind: 'screen', enabled: false });
+        return false;
+      }
+    } else {
+      // Stop screen share
+      if (this._screenStream) {
+        this._screenStream.getTracks().forEach(t => t.stop());
+        this._screenStream = null;
+      }
+      this._emit('trackToggled', { kind: 'screen', enabled: false });
+      return false;
+    }
+  }
+
+  /**
+   * Get local tracks info.
+   */
+  getLocalTracks() {
+    return {
+      audio: this._audioTrack ? { kind: 'audio', enabled: this._audioTrack.enabled, track: this._audioTrack } : null,
+      video: this._videoTrack ? { kind: 'video', enabled: this._videoTrack.enabled, track: this._videoTrack } : null,
+      screen: this._screenStream ? { kind: 'screen', enabled: true, stream: this._screenStream } : null,
+    };
   }
 
   // ---- Event bus ----
@@ -128,18 +179,8 @@ class MockVideoProvider {
 
   _emit(event, payload) {
     (this._listeners[event] || []).forEach(h => {
-      try { h(payload); } catch (e) { console.error(`[MockVideoProvider] listener error (${event}):`, e); }
+      try { h(payload); } catch (e) { console.error(`[BrowserMediaProvider] listener error (${event}):`, e); }
     });
-  }
-}
-
-// ---------------------------------------------------------------------------
-// LiveKit stub — placeholder for Phase 2.2
-// ---------------------------------------------------------------------------
-class LiveKitProvider extends MockVideoProvider {
-  constructor() {
-    super();
-    console.info('[LiveKitProvider] Using mock implementation — real LiveKit integration coming in Phase 2.2');
   }
 }
 
@@ -149,25 +190,11 @@ class LiveKitProvider extends MockVideoProvider {
 
 /**
  * Create a video provider instance.
- * @param {'mock' | 'livekit'} type
- * @returns {MockVideoProvider}
+ * @returns {BrowserMediaProvider}
  */
-export function createVideoProvider(type = 'mock') {
-  switch (type) {
-    case 'livekit':
-      return new LiveKitProvider();
-    case 'mock':
-    default:
-      return new MockVideoProvider();
-  }
+export function createVideoProvider() {
+  return new BrowserMediaProvider();
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-function _delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-export { MockVideoProvider, LiveKitProvider };
+export { BrowserMediaProvider };
 export default createVideoProvider;

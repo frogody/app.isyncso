@@ -113,11 +113,12 @@ const RoomControls = memo(function RoomControls({
       exit={{ y: 30, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className="
-        absolute bottom-6 left-1/2 -translate-x-1/2 z-30
-        flex items-center gap-2 px-5 py-3
+        z-30
+        flex items-center justify-center gap-2 px-5 py-3 mx-auto mb-4
         bg-zinc-900/95 backdrop-blur-xl
         border border-zinc-700/50 rounded-2xl
         shadow-2xl shadow-black/50
+        w-fit
       "
     >
       {/* Mic toggle */}
@@ -215,6 +216,8 @@ const VideoCallRoom = memo(function VideoCallRoom({
   isMuted = false,
   isCameraOff = false,
   isScreenSharing = false,
+  localStream = null,
+  screenStream = null,
   onToggleMute,
   onToggleCamera,
   onToggleScreenShare,
@@ -268,11 +271,13 @@ const VideoCallRoom = memo(function VideoCallRoom({
         />
 
         {/* Video grid + chat panel */}
-        <div className="flex-1 pt-14 pb-24 relative flex">
+        <div className="flex-1 pt-14 pb-2 relative flex overflow-hidden">
           <div className={`flex-1 relative ${showChat ? 'mr-80' : ''} transition-all duration-300`}>
             <VideoGrid
               participants={participants}
               currentUserId={userId}
+              localStream={localStream}
+              screenStream={screenStream}
             />
 
             {/* Reactions overlay */}

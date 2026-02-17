@@ -5,7 +5,7 @@
  * connection quality dots, and screen share badge.
  */
 
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MicOff, Monitor, Wifi } from 'lucide-react';
 
@@ -80,10 +80,41 @@ const InitialsAvatar = memo(function InitialsAvatar({ name }) {
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Video element that syncs srcObject from a MediaStream
+// ---------------------------------------------------------------------------
+const VideoElement = memo(function VideoElement({ stream, muted = false, mirror = false }) {
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    if (stream) {
+      el.srcObject = stream;
+    } else {
+      el.srcObject = null;
+    }
+  }, [stream]);
+
+  return (
+    <video
+      ref={videoRef}
+      autoPlay
+      playsInline
+      muted={muted}
+      className={`w-full h-full object-cover ${mirror ? 'scale-x-[-1]' : ''}`}
+    />
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 const ParticipantTile = memo(function ParticipantTile({
   participant,
   isLocal = false,
   isScreenShare = false,
+  stream = null,
 }) {
   const name = participant?.display_name || (isLocal ? 'You' : 'Participant');
   const isMuted = participant?.is_muted ?? false;
@@ -91,10 +122,14 @@ const ParticipantTile = memo(function ParticipantTile({
   const isSharing = participant?.is_screen_sharing ?? false;
   const quality = participant?.connection_quality || 'good';
 
+  // Determine if we have a live video stream to show
+  const hasVideo = !!stream && !isCameraOff && !isScreenShare;
+  const hasScreenStream = !!stream && isScreenShare;
+
   return (
     <motion.div
       layout
-      layoutId={`tile-${participant?.id || 'local'}`}
+      layoutId={`tile-${participant?.id || 'local'}${isScreenShare ? '-screen' : ''}`}
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
@@ -109,25 +144,18 @@ const ParticipantTile = memo(function ParticipantTile({
         min-h-[120px]
       `}
     >
-      {/* Video feed area or camera-off state */}
-      {isCameraOff && !isScreenShare ? (
+      {/* Real video feed, screen share, or camera-off fallback */}
+      {hasVideo ? (
+        <VideoElement stream={stream} muted={isLocal} mirror={isLocal} />
+      ) : hasScreenStream ? (
+        <VideoElement stream={stream} muted />
+      ) : isCameraOff || !stream ? (
         <div className="flex items-center justify-center w-full h-full bg-zinc-950">
           <InitialsAvatar name={name} />
         </div>
       ) : (
-        <div className="flex items-center justify-center w-full h-full bg-zinc-950/60">
-          {isScreenShare ? (
-            <div className="flex flex-col items-center gap-2 text-zinc-500">
-              <Monitor className="w-10 h-10" />
-              <span className="text-xs font-medium">Screen Share</span>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2 text-zinc-600">
-              <div className="w-20 h-20 rounded-full bg-zinc-800 flex items-center justify-center">
-                <InitialsAvatar name={name} />
-              </div>
-            </div>
-          )}
+        <div className="flex items-center justify-center w-full h-full bg-zinc-950">
+          <InitialsAvatar name={name} />
         </div>
       )}
 
