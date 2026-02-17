@@ -167,7 +167,7 @@ function IntelBar({ data }) {
             transition={{ duration: 0.8, ease: "easeOut" }} className={`h-full ${l.color}`} />
         ))}
       </div>
-      <div className="grid grid-cols-4 gap-1">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
         {levels.map(l => (
           <div key={l.key} className="text-center">
             <div className="text-sm font-semibold text-white">
@@ -410,7 +410,7 @@ export default function TalentDashboard() {
       <div className="min-h-screen bg-black">
         <div className="w-full px-4 lg:px-6 py-4 space-y-4">
           <Skeleton className="h-8 w-48" />
-          <div className="grid grid-cols-4 lg:grid-cols-8 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
             {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
           </div>
           <div className="grid grid-cols-3 gap-4">

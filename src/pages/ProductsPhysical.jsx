@@ -5,7 +5,7 @@ import {
   Box, Plus, Search, Filter, Grid3X3, List, Table2, Tag, Eye, Edit2,
   Barcode, Package, Truck, Building2, Euro, AlertTriangle,
   ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal, Archive, Trash2, Copy, CheckCircle, XCircle,
-  Sun, Moon, Pencil, Save, X
+  Pencil, Save, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,10 +57,11 @@ function getStockStatus(inventory) {
 
 export default function ProductsPhysical() {
   const { user } = useUser();
-  const { theme, toggleTheme, t } = useTheme();
+  const { theme, t } = useTheme();
   const [products, setProducts] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [physicalProducts, setPhysicalProducts] = useState({});
+  const [inventoryData, setInventoryData] = useState({});
   const [categories, setCategories] = useState([]);
   const [suppliers, setSuppliers] = useState({});
   const [loading, setLoading] = useState(true);
@@ -71,7 +72,7 @@ export default function ProductsPhysical() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
   const [channelFilter, setChannelFilter] = useState('all');
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState('table');
   const [channelsMap, setChannelsMap] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -335,9 +336,22 @@ export default function ProductsPhysical() {
           chMap[ch.product_id].push(ch.channel);
         });
         setChannelsMap(chMap);
+
+        // Fetch cross-channel inventory data (SH-18)
+        const { data: invData } = await supabase
+          .from('inventory')
+          .select('product_id, quantity_on_hand, quantity_available, quantity_external_shopify')
+          .in('product_id', productIds)
+          .eq('company_id', user?.company_id);
+        const invMap = {};
+        (invData || []).forEach(inv => {
+          invMap[inv.product_id] = inv;
+        });
+        setInventoryData(invMap);
       } else {
         setPhysicalProducts({});
         setChannelsMap({});
+        setInventoryData({});
       }
     } catch (error) {
       console.error('Failed to load physical products:', error);
@@ -401,14 +415,6 @@ export default function ProductsPhysical() {
             <p className={`text-xs ${t('text-slate-500', 'text-zinc-400')}`}>Manage your physical inventory</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className={`rounded-full ${t('text-slate-600 hover:bg-slate-200', 'text-zinc-400 hover:bg-zinc-800')}`}
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
             <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
               <Plus className="w-4 h-4 mr-2" /> New Physical Product
             </Button>
@@ -578,6 +584,7 @@ export default function ProductsPhysical() {
                       productType="physical"
                       details={physicalProducts[product.id]}
                       salesChannels={channelsMap[product.id]}
+                      channelInventory={inventoryData[product.id]}
                       index={index}
                       onEdit={handleEditProduct}
                       onArchive={handleArchiveProduct}
@@ -618,6 +625,7 @@ export default function ProductsPhysical() {
                       productType="physical"
                       details={physicalProducts[product.id]}
                       salesChannels={channelsMap[product.id]}
+                      channelInventory={inventoryData[product.id]}
                       index={index}
                       onEdit={handleEditProduct}
                       onArchive={handleArchiveProduct}

@@ -40,14 +40,14 @@ function StatCard({ title, value, change, changeType, icon: Icon, color }) {
             {change && (
               <div className="flex items-center gap-1 mt-1">
                 {changeType === 'increase' ? (
-                  <TrendingUp className="w-3 h-3 text-green-400" />
+                  <TrendingUp className="w-3 h-3 text-cyan-400" />
                 ) : (
                   <TrendingDown className="w-3 h-3 text-red-400" />
                 )}
                 <span
                   className={cn(
                     'text-[10px]',
-                    changeType === 'increase' ? 'text-green-400' : 'text-red-400'
+                    changeType === 'increase' ? 'text-cyan-400' : 'text-red-400'
                   )}
                 >
                   {change}
@@ -73,7 +73,7 @@ function StatCard({ title, value, change, changeType, icon: Icon, color }) {
 function RecentActivity({ activities, isLoading }) {
   const getActivityIcon = (action) => {
     if (action.includes('create') || action.includes('insert')) {
-      return <CheckCircle className="w-3 h-3 text-green-400" />;
+      return <CheckCircle className="w-3 h-3 text-cyan-400" />;
     }
     if (action.includes('delete') || action.includes('remove')) {
       return <AlertCircle className="w-3 h-3 text-red-400" />;
@@ -88,7 +88,7 @@ function RecentActivity({ activities, isLoading }) {
     <Card className="bg-zinc-900/50 border-zinc-800">
       <CardHeader className="border-b border-zinc-800 py-2 px-3">
         <CardTitle className="text-white flex items-center gap-1.5 text-sm">
-          <Clock className="w-4 h-4 text-red-400" />
+          <Clock className="w-4 h-4 text-cyan-400" />
           Recent Activity
         </CardTitle>
       </CardHeader>
@@ -157,9 +157,9 @@ function QuickActions() {
               <motion.div
 
                 whileTap={{ scale: 0.98 }}
-                className="flex items-center gap-2 p-2 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700/50 hover:border-red-500/30 transition-all"
+                className="flex items-center gap-2 p-2 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700/50 hover:border-cyan-500/30 transition-all"
               >
-                <action.icon className="w-3.5 h-3.5 text-red-400" />
+                <action.icon className="w-3.5 h-3.5 text-cyan-400" />
                 <span className="text-xs text-white">{action.label}</span>
                 <ArrowUpRight className="w-3 h-3 text-zinc-500 ml-auto" />
               </motion.div>
@@ -290,7 +290,7 @@ export default function AdminDashboard() {
           change={changes.organizations}
           changeType={getChangeType(changes.organizations)}
           icon={Building2}
-          color="purple"
+          color="cyan"
         />
         <StatCard
           title="Active Users"
@@ -298,7 +298,7 @@ export default function AdminDashboard() {
           change={changes.activeUsers}
           changeType={getChangeType(changes.activeUsers)}
           icon={Activity}
-          color="green"
+          color="cyan"
         />
         <StatCard
           title="Monthly Revenue"
@@ -306,7 +306,7 @@ export default function AdminDashboard() {
           change={changes.revenue}
           changeType={getChangeType(changes.revenue)}
           icon={Euro}
-          color="orange"
+          color="blue"
         />
       </div>
 
@@ -325,20 +325,20 @@ export default function AdminDashboard() {
           <Card className="bg-zinc-900/50 border-zinc-800 mt-3">
             <CardHeader className="border-b border-zinc-800 py-2 px-3">
               <CardTitle className="text-white flex items-center gap-1.5 text-sm">
-                <Shield className="w-4 h-4 text-red-400" />
+                <Shield className="w-4 h-4 text-cyan-400" />
                 Your Admin Profile
               </CardTitle>
             </CardHeader>
             <CardContent className="p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-zinc-400">Role</span>
-                <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px] px-1.5 py-px">
+                <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-[10px] px-1.5 py-px">
                   {adminRole?.replace('_', ' ')}
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-zinc-400">Status</span>
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px] px-1.5 py-px">
+                <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-[10px] px-1.5 py-px">
                   Active
                 </Badge>
               </div>

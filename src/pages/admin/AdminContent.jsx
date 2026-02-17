@@ -315,7 +315,7 @@ export default function AdminContent() {
     const icons = {
       info: <Info className="w-3 h-3 text-blue-400" />,
       warning: <AlertTriangle className="w-3 h-3 text-yellow-400" />,
-      success: <CheckCircle className="w-3 h-3 text-green-400" />,
+      success: <CheckCircle className="w-3 h-3 text-cyan-400" />,
       error: <AlertCircle className="w-3 h-3 text-red-400" />,
     };
     return icons[type] || icons.info;
@@ -324,7 +324,7 @@ export default function AdminContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <RefreshCw className="w-8 h-8 text-red-500 animate-spin" />
+        <RefreshCw className="w-8 h-8 text-cyan-500 animate-spin" />
       </div>
     );
   }
@@ -372,8 +372,8 @@ export default function AdminContent() {
                 <p className="text-[10px] text-zinc-500 mb-0.5">Published Posts</p>
                 <p className="text-lg font-bold text-white">{stats?.published_posts || 0}</p>
               </div>
-              <div className="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
-                <Newspaper className="w-4 h-4 text-purple-400" />
+              <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+                <Newspaper className="w-4 h-4 text-blue-400" />
               </div>
             </div>
           </CardContent>
@@ -386,8 +386,8 @@ export default function AdminContent() {
                 <p className="text-[10px] text-zinc-500 mb-0.5">Help Articles</p>
                 <p className="text-lg font-bold text-white">{stats?.total_help_articles || 0}</p>
               </div>
-              <div className="w-8 h-8 rounded-lg bg-green-500/20 border border-green-500/30 flex items-center justify-center">
-                <HelpCircle className="w-4 h-4 text-green-400" />
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                <HelpCircle className="w-4 h-4 text-cyan-400" />
               </div>
             </div>
           </CardContent>
@@ -400,8 +400,8 @@ export default function AdminContent() {
                 <p className="text-[10px] text-zinc-500 mb-0.5">Active Announcements</p>
                 <p className="text-lg font-bold text-white">{stats?.active_announcements || 0}</p>
               </div>
-              <div className="w-8 h-8 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
-                <Megaphone className="w-4 h-4 text-orange-400" />
+              <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+                <Megaphone className="w-4 h-4 text-blue-400" />
               </div>
             </div>
           </CardContent>
@@ -439,7 +439,7 @@ export default function AdminContent() {
             <CardHeader className="border-b border-zinc-800 py-3 px-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white text-sm">Pages</CardTitle>
-                <Button size="sm" className="bg-red-500 hover:bg-red-600 h-7 text-xs" onClick={() => openModal('page')}>
+                <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700 h-7 text-xs" onClick={() => openModal('page')}>
                   <Plus className="w-3 h-3 mr-1.5" />
                   New Page
                 </Button>
@@ -539,7 +539,7 @@ export default function AdminContent() {
             <CardHeader className="border-b border-zinc-800 py-3 px-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white text-sm">Blog Posts</CardTitle>
-                <Button size="sm" className="bg-red-500 hover:bg-red-600 h-7 text-xs" onClick={() => openModal('post')}>
+                <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700 h-7 text-xs" onClick={() => openModal('post')}>
                   <Plus className="w-3 h-3 mr-1.5" />
                   New Post
                 </Button>
@@ -646,7 +646,7 @@ export default function AdminContent() {
             <CardHeader className="border-b border-zinc-800 py-3 px-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white text-sm">Help Articles</CardTitle>
-                <Button size="sm" className="bg-red-500 hover:bg-red-600 h-7 text-xs" onClick={() => openModal('article')}>
+                <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700 h-7 text-xs" onClick={() => openModal('article')}>
                   <Plus className="w-3 h-3 mr-1.5" />
                   New Article
                 </Button>
@@ -702,7 +702,7 @@ export default function AdminContent() {
                       <td className="py-1.5 px-3 text-xs text-zinc-400">{article.views || 0}</td>
                       <td className="py-1.5 px-3">
                         <div className="flex items-center gap-1 text-xs">
-                          <span className="text-green-400">{article.helpful_yes || 0}</span>
+                          <span className="text-cyan-400">{article.helpful_yes || 0}</span>
                           <span className="text-zinc-600">/</span>
                           <span className="text-red-400">{article.helpful_no || 0}</span>
                         </div>
@@ -750,7 +750,7 @@ export default function AdminContent() {
             <CardHeader className="border-b border-zinc-800 py-3 px-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white text-sm">Announcements</CardTitle>
-                <Button size="sm" className="bg-red-500 hover:bg-red-600 h-7 text-xs" onClick={() => openModal('announcement')}>
+                <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700 h-7 text-xs" onClick={() => openModal('announcement')}>
                   <Plus className="w-3 h-3 mr-1.5" />
                   New Announcement
                 </Button>
@@ -800,7 +800,7 @@ export default function AdminContent() {
                           <Badge className={cn(
                             'text-[10px] px-1.5 py-px',
                             isActive
-                              ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                              ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
                               : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
                           )}>
                             {isActive ? 'Active' : 'Inactive'}
@@ -873,7 +873,7 @@ export default function AdminContent() {
                         <Badge className={cn(
                           'text-[10px] px-1.5 py-px',
                           template.is_active
-                            ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                            ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
                             : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
                         )}>
                           {template.is_active ? 'Active' : 'Inactive'}
@@ -960,6 +960,7 @@ function ContentEditorModal({ open, onClose, type, item, categories, onSave, sav
       <DialogContent className="bg-zinc-900 border-zinc-800 max-w-xl max-h-[90vh] overflow-y-auto p-4">
         <DialogHeader className="pb-2">
           <DialogTitle className="text-white text-sm">{getTitle()}</DialogTitle>
+
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -1239,7 +1240,7 @@ function ContentEditorModal({ open, onClose, type, item, categories, onSave, sav
                 <Label className="text-zinc-400 text-xs">Available Variables</Label>
                 <div className="flex flex-wrap gap-1 p-2 bg-zinc-800 rounded-lg">
                   {(formData.variables || []).map((v) => (
-                    <code key={v} className="text-[10px] bg-zinc-700 px-1.5 py-0.5 rounded text-green-400">
+                    <code key={v} className="text-[10px] bg-zinc-700 px-1.5 py-0.5 rounded text-cyan-400">
                       {`{{${v}}}`}
                     </code>
                   ))}
@@ -1260,7 +1261,7 @@ function ContentEditorModal({ open, onClose, type, item, categories, onSave, sav
             <Button type="button" variant="outline" onClick={onClose} className="border-zinc-700 h-7 text-xs">
               Cancel
             </Button>
-            <Button type="submit" className="bg-red-500 hover:bg-red-600 h-7 text-xs" disabled={saving}>
+            <Button type="submit" className="bg-cyan-600 hover:bg-cyan-700 h-7 text-xs" disabled={saving}>
               {saving ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>

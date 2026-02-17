@@ -508,7 +508,7 @@ export default function TalentClients() {
       <div className="min-h-screen bg-black relative">
         <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
           <Skeleton className="h-24 w-full bg-zinc-800 rounded-xl" />
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[1,2,3,4].map(i => <Skeleton key={i} className="h-20 bg-zinc-800 rounded-lg" />)}
           </div>
           <Skeleton className="h-[300px] w-full bg-zinc-800 rounded-xl" />

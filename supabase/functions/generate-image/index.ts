@@ -10,25 +10,26 @@ const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Model configurations with pricing (per megapixel)
+// ─── Model configurations ────────────────────────────────────────────
+// Steps cranked up for quality: pro=40, dev/kontext=32, schnell stays 4
 const MODELS: Record<string, { id: string; requiresImage: boolean; costPerMp: number; steps: number }> = {
   'flux-kontext': {
     id: 'black-forest-labs/FLUX.1-Kontext-dev',
     requiresImage: true,
     costPerMp: 0.025,
-    steps: 28
+    steps: 32
   },
   'flux-kontext-pro': {
     id: 'black-forest-labs/FLUX.1-Kontext-pro',
     requiresImage: true,
     costPerMp: 0.04,
-    steps: 28
+    steps: 40
   },
   'flux-dev': {
     id: 'black-forest-labs/FLUX.1-dev',
     requiresImage: false,
     costPerMp: 0.025,
-    steps: 28
+    steps: 32
   },
   'flux-schnell': {
     id: 'black-forest-labs/FLUX.1-schnell',
@@ -40,21 +41,26 @@ const MODELS: Record<string, { id: string; requiresImage: boolean; costPerMp: nu
     id: 'black-forest-labs/FLUX.1.1-pro',
     requiresImage: false,
     costPerMp: 0.04,
-    steps: 28
+    steps: 40
   }
 };
 
+// ─── Use-case → model routing ────────────────────────────────────────
+// Default quality: flux-pro everywhere except quick_draft
 const USE_CASE_MODELS: Record<string, string> = {
-  'product_variation': 'flux-kontext-pro',  // Changed: use pro for better quality
+  'product_variation': 'flux-kontext-pro',
   'product_scene': 'flux-kontext-pro',
-  'marketing_creative': 'flux-pro',          // Changed: use pro for marketing
+  'marketing_creative': 'flux-pro',
   'quick_draft': 'flux-schnell',
   'premium_quality': 'flux-pro',
-  'product_quick': 'flux-kontext',           // New: budget option with reference
-  'draft': 'flux-dev'                        // New: budget option without reference
+  'product_quick': 'flux-kontext',
+  'draft': 'flux-dev'
 };
 
-// Helper: Direct Supabase REST API call
+// ─── Quality prefix injected into EVERY prompt ───────────────────────
+const QUALITY_PREFIX = 'Ultra high resolution professional photograph, 8K detail, sharp focus throughout, masterful lighting, commercial quality output';
+
+// ─── Supabase helpers ────────────────────────────────────────────────
 async function supabaseInsert(table: string, data: Record<string, unknown>): Promise<void> {
   const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
     method: 'POST',
@@ -72,7 +78,6 @@ async function supabaseInsert(table: string, data: Record<string, unknown>): Pro
   }
 }
 
-// Helper: Upload to Supabase Storage
 async function uploadToStorage(
   bucket: string,
   fileName: string,
@@ -99,7 +104,8 @@ async function uploadToStorage(
   return { publicUrl };
 }
 
-function detectProductCategory(productContext: any, prompt: string): 'jewelry' | 'luxury' | 'glass' | 'standard' {
+// ─── Product category detection ──────────────────────────────────────
+function detectProductCategory(productContext: any, prompt: string): 'jewelry' | 'luxury' | 'glass' | 'food' | 'textile' | 'standard' {
   const signals = [
     productContext?.name, productContext?.description, productContext?.short_description,
     productContext?.tags?.join(' '), productContext?.category, prompt
@@ -108,76 +114,95 @@ function detectProductCategory(productContext: any, prompt: string): 'jewelry' |
   if (/\b(ring|necklace|bracelet|earring|pendant|brooch|diamond|gold|silver|platinum|gemstone|sapphire|ruby|emerald|pearl|18k|14k|925|sterling|carat|karat|jewel)\b/.test(signals)) return 'jewelry';
   if (/\b(watch|timepiece|luxury|premium|haute|couture|designer|handcrafted|crystal|swarovski)\b/.test(signals)) return 'luxury';
   if (/\b(glass|crystal|bottle|perfume|fragrance|vase|transparent|translucent)\b/.test(signals)) return 'glass';
+  if (/\b(food|chocolate|cake|coffee|tea|wine|cheese|bread|organic|gourmet|culinary)\b/.test(signals)) return 'food';
+  if (/\b(fabric|textile|clothing|dress|shirt|cotton|silk|linen|wool|leather|suede)\b/.test(signals)) return 'textile';
   return 'standard';
 }
 
-function buildEnhancedPrompt(
+// ─── Build the final generation prompt ───────────────────────────────
+// This is the FALLBACK when enhance-prompt was already called upstream.
+// It takes whatever prompt came in and wraps it with quality directives.
+function buildFinalPrompt(
   userPrompt: string,
   brandContext: any,
   productContext: any,
-  style?: string
+  style?: string,
+  negativePrompt?: string
 ): string {
-  let enhanced = userPrompt || '';
+  const parts: string[] = [QUALITY_PREFIX];
 
+  // Core user prompt
+  parts.push(userPrompt);
+
+  // Brand context
   if (brandContext?.colors?.primary) {
-    enhanced += ` Brand colors: ${brandContext.colors.primary}`;
-    if (brandContext.colors.secondary) {
-      enhanced += `, ${brandContext.colors.secondary}`;
-    }
-    enhanced += '.';
+    parts.push(`Brand palette: ${brandContext.colors.primary}${brandContext.colors.secondary ? ', ' + brandContext.colors.secondary : ''}`);
   }
-
   if (brandContext?.visual_style?.mood) {
-    enhanced += ` Style: ${brandContext.visual_style.mood}.`;
+    parts.push(`Brand aesthetic: ${brandContext.visual_style.mood}`);
   }
 
+  // Product context
   if (productContext) {
-    const productName = productContext.name || productContext.product_name || 'the product';
-    enhanced += ` Product: ${productName}.`;
-    if (productContext.description) {
-      enhanced += ` ${productContext.description}`;
+    const productName = productContext.name || productContext.product_name || '';
+    if (productName && !userPrompt.toLowerCase().includes(productName.toLowerCase())) {
+      parts.push(`Product: ${productName}`);
     }
   }
 
-  // User-provided size scale
+  // Size scale
   if (productContext?.product_size_scale) {
     const s = productContext.product_size_scale;
-    enhanced += ` Product shown at realistic ${s.label.toLowerCase()} scale (${s.cm}), ${s.desc}.`;
+    parts.push(`Shown at realistic ${s.label.toLowerCase()} scale (${s.cm}), ${s.desc}`);
   }
 
-  // Apply category-specific photography suffixes — respect style choice
+  // Category-specific photography technique
   const category = detectProductCategory(productContext, userPrompt);
-  const isLuxuryStyle = style === 'luxury' || !style;
-  // Detect jewelry sub-type for size-specific prompting
-  const jewelrySignals = [userPrompt, productContext?.name, productContext?.description, productContext?.tags?.join(' ')].filter(Boolean).join(' ').toLowerCase();
-  let jewelrySizeHint = ' Realistic jewelry scale and proportions, true-to-life size.';
-  if (/\bearring/i.test(jewelrySignals)) {
-    jewelrySizeHint = ' Small delicate earring at realistic 1-3cm scale proportional to a human ear, not oversized.';
-  } else if (/\bring\b/i.test(jewelrySignals)) {
-    jewelrySizeHint = ' Ring at realistic finger-sized scale, not oversized.';
-  } else if (/\bnecklace|pendant|chain\b/i.test(jewelrySignals)) {
-    jewelrySizeHint = ' Necklace at realistic scale proportional to human neck, pendant 1-4cm, not oversized.';
-  } else if (/\bbracelet|bangle|cuff\b/i.test(jewelrySignals)) {
-    jewelrySizeHint = ' Bracelet at realistic wrist-sized scale, not oversized.';
+  const categoryDirectives: Record<string, string> = {
+    jewelry: 'Jewelry product photography: controlled specular highlights on metal, macro detail with focus stacking, gradient lighting, dark background, no color cast on metals, realistic jewelry proportions and scale',
+    luxury: 'Premium luxury photography: dramatic controlled lighting, rich shadows, elegant negative space, aspirational aesthetic, ultra-sharp detail',
+    glass: 'Transparent product photography: rim lighting defining edges, gradient background, backlit material clarity, caustic light patterns',
+    food: 'Food photography: appetizing warm tones, shallow depth of field, natural light feel, fresh ingredients visible, steam or texture detail',
+    textile: 'Textile photography: fabric texture visible, natural draping, accurate color reproduction, soft directional lighting showing weave',
+    standard: 'Professional product photography: clean lighting, accurate colors, sharp detail throughout'
+  };
+  parts.push(categoryDirectives[category]);
+
+  // Style application
+  if (style && style !== 'photorealistic') {
+    const styleMap: Record<string, string> = {
+      cinematic: 'Cinematic film still look, dramatic lighting, shallow depth of field, color graded',
+      illustration: 'Artistic illustration style, clean lines, stylized rendering',
+      '3d_render': '3D rendered with physically-based materials, global illumination, ray traced reflections',
+      minimalist: 'Clean minimalist composition, maximum negative space, single focal point',
+      vintage: 'Vintage film aesthetic, warm muted tones, subtle grain, nostalgic atmosphere',
+      luxury: 'Dark sophisticated backdrop, controlled reflections, dramatic lighting, aspirational premium aesthetic'
+    };
+    if (styleMap[style]) parts.push(styleMap[style]);
   }
 
-  const fullSuffixes: Record<string, string> = {
-    jewelry: ` Jewelry product photography, controlled reflections on metal, macro detail, gradient lighting shaping specular highlights, dark background, focus stacking, no color cast on metals.${jewelrySizeHint} Never oversized or disproportionate.`,
-    luxury: ' Premium luxury presentation, aspirational aesthetic, dramatic controlled lighting, rich shadows, elegant negative space.',
-    glass: ' Transparent product photography, rim lighting defining edges, gradient background, backlit material clarity.',
-    standard: ''
-  };
-  const lightSuffixes: Record<string, string> = {
-    jewelry: ` Controlled reflections on metal, sharp macro detail, no color cast on metals.${jewelrySizeHint} Never oversized or disproportionate.`,
-    luxury: ' Controlled reflections, ultra-sharp commercial quality.',
-    glass: ' Rim lighting on edges, backlit clarity.',
-    standard: ''
-  };
-  enhanced += isLuxuryStyle ? fullSuffixes[category] : lightSuffixes[category];
+  // Incorporate negative prompt as avoidance directives (FLUX doesn't have negative_prompt param)
+  const negatives = negativePrompt || getDefaultNegatives(category);
+  if (negatives) {
+    parts.push(`Absolutely avoid: ${negatives}`);
+  }
 
-  return enhanced;
+  return parts.join('. ') + '.';
 }
 
+function getDefaultNegatives(category: string): string {
+  const categoryNegatives: Record<string, string> = {
+    jewelry: 'blurry, low quality, oversized jewelry, unrealistic proportions, fingerprints, dust, color cast on metals, blown-out highlights, flat lighting, distorted, watermark',
+    luxury: 'blurry, low quality, cheap appearance, flat lighting, cluttered background, distorted, watermark',
+    glass: 'blurry, low quality, fingerprints, smudges, flat lighting, distorted, watermark',
+    food: 'blurry, low quality, unappetizing colors, artificial looking, distorted, watermark',
+    textile: 'blurry, low quality, wrinkled messily, inaccurate colors, distorted, watermark',
+    standard: 'blurry, low quality, distorted, deformed, watermark, text overlay, amateur lighting, noisy, grainy'
+  };
+  return categoryNegatives[category] || categoryNegatives.standard;
+}
+
+// ─── Together.ai image generation ────────────────────────────────────
 async function generateWithTogether(
   modelConfig: { id: string; requiresImage: boolean; costPerMp: number; steps: number },
   prompt: string | null,
@@ -214,7 +239,7 @@ async function generateWithTogether(
       requestBody.prompt = prompt;
     }
 
-    console.log(`Generating with ${modelConfig.id}...`);
+    console.log(`Generating with ${modelConfig.id} (${modelConfig.steps} steps)...`);
 
     const response = await fetch('https://api.together.xyz/v1/images/generations', {
       method: 'POST',
@@ -247,6 +272,7 @@ async function generateWithTogether(
   }
 }
 
+// ─── Gemini fallback ─────────────────────────────────────────────────
 async function tryGemini(prompt: string): Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }> {
   if (!GOOGLE_API_KEY) return { success: false, error: 'No Google API key' };
 
@@ -291,6 +317,7 @@ async function tryGemini(prompt: string): Promise<{ success: boolean; data?: str
   }
 }
 
+// ─── Main handler ────────────────────────────────────────────────────
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -309,13 +336,14 @@ serve(async (req) => {
       product_context,
       product_images,
       is_physical_product,
+      negative_prompt,
       width = 1024,
       height = 1024,
       company_id,
       user_id,
     } = await req.json();
 
-    // Determine which model to use
+    // ── Model selection ──────────────────────────────────────────────
     let selectedModelKey = model_key;
 
     if (use_case && USE_CASE_MODELS[use_case]) {
@@ -324,11 +352,12 @@ serve(async (req) => {
 
     const hasProductImages = product_images?.length > 0 || reference_image_url;
     if (!selectedModelKey && (is_physical_product || product_context?.type === 'physical') && hasProductImages) {
-      selectedModelKey = 'flux-kontext';
+      selectedModelKey = 'flux-kontext-pro'; // Upgraded: was flux-kontext
     }
 
+    // Default model: flux-pro (was flux-dev — the #1 quality killer)
     if (!selectedModelKey) {
-      selectedModelKey = 'flux-dev';
+      selectedModelKey = 'flux-pro';
     }
 
     const modelConfig = MODELS[selectedModelKey];
@@ -352,20 +381,27 @@ serve(async (req) => {
       );
     }
 
-    let enhancedPrompt = prompt;
+    // ── Prompt construction ──────────────────────────────────────────
+    let finalPrompt = prompt;
+
     if (!modelConfig.requiresImage) {
-      enhancedPrompt = buildEnhancedPrompt(prompt, brand_context, product_context, style);
-      if (style && style !== 'photorealistic') {
-        enhancedPrompt += ` Style: ${style}.`;
+      // For text-to-image: wrap prompt with quality directives
+      finalPrompt = buildFinalPrompt(prompt, brand_context, product_context, style, negative_prompt);
+    } else {
+      // For Kontext (image-to-image): keep prompt focused but add quality hint
+      // Kontext prompts describe the EDIT, not the full scene
+      if (prompt) {
+        finalPrompt = `${prompt}. Ultra high quality, sharp detail, professional lighting, commercial grade output.`;
       }
     }
 
-    // Generate image
-    let imageResult = await generateWithTogether(modelConfig, enhancedPrompt, refImageUrl, width, height);
+    // ── Generate ─────────────────────────────────────────────────────
+    let imageResult = await generateWithTogether(modelConfig, finalPrompt, refImageUrl, width, height);
 
+    // Fallback to Gemini for text-to-image only
     if (!imageResult.success && !modelConfig.requiresImage && GOOGLE_API_KEY) {
       console.log('Together.ai failed, trying Gemini fallback...');
-      imageResult = await tryGemini(enhancedPrompt);
+      imageResult = await tryGemini(finalPrompt);
     }
 
     if (!imageResult.success) {
@@ -379,7 +415,7 @@ serve(async (req) => {
       );
     }
 
-    // Upload to Supabase Storage
+    // ── Upload to storage ────────────────────────────────────────────
     const ext = imageResult.mimeType?.includes('jpeg') ? 'jpg' : 'png';
     const fileName = `generated-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
     const imageData = Uint8Array.from(atob(imageResult.data!), c => c.charCodeAt(0));
@@ -391,17 +427,16 @@ serve(async (req) => {
       imageResult.mimeType || 'image/png'
     );
 
-    // Calculate cost
+    // ── Usage tracking ───────────────────────────────────────────────
     const megapixels = (width * height) / 1000000;
     const costUsd = megapixels * modelConfig.costPerMp;
 
-    // Track usage if company_id provided (using new ai_usage_logs table)
     if (company_id) {
       try {
         await supabaseInsert('ai_usage_logs', {
           organization_id: company_id,
           user_id: user_id || null,
-          model_id: null, // Will be looked up by admin dashboard using model name in metadata
+          model_id: null,
           prompt_tokens: 0,
           completion_tokens: 0,
           total_tokens: 0,
@@ -414,6 +449,7 @@ serve(async (req) => {
             use_case: use_case || null,
             dimensions: { width, height },
             megapixels,
+            steps: modelConfig.steps,
             has_reference_image: !!refImageUrl
           }
         });
@@ -428,7 +464,8 @@ serve(async (req) => {
         model: selectedModelKey,
         model_id: modelConfig.id,
         cost_usd: costUsd,
-        prompt: enhancedPrompt,
+        steps: modelConfig.steps,
+        prompt: finalPrompt,
         original_prompt: original_prompt || prompt,
         dimensions: { width, height },
         product_preserved: modelConfig.requiresImage,

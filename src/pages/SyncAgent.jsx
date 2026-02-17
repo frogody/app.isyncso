@@ -2012,8 +2012,18 @@ export default function SyncAgent() {
       {/* Top bar */}
       <div className="shrink-0 z-20">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-1.5 px-4 lg:px-6 py-2">
-          {/* Left: action buttons */}
-          <div className="flex items-center gap-1.5">
+          {/* Left: title + action buttons */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
+              <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center border', syt('bg-slate-100 border-slate-200', 'bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border-cyan-500/20'))}>
+                <Brain className={cn('w-4 h-4', syt('text-slate-600', 'text-cyan-400'))} />
+              </div>
+              <div>
+                <h1 className={cn('text-base font-bold', syt('text-slate-900', 'text-white'))}>SYNC Agent</h1>
+                <p className={cn('text-xs', syt('text-slate-500', 'text-zinc-500'))}>Your AI assistant</p>
+              </div>
+            </div>
+            <div className={cn('w-px h-6', syt('bg-slate-200', 'bg-zinc-800'))} />
           <button
             className={cn(
               'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200',

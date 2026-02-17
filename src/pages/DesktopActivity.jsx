@@ -28,10 +28,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Copy, Check, ExternalLink } from 'lucide-react';
+import { Copy, Check, ExternalLink, Shield } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SyncViewSelector } from '@/components/sync/ui';
+import InfoCard from '@/components/shared/InfoCard';
 
 // App icon mapping
 const APP_ICONS = {
@@ -107,9 +108,9 @@ export default function DesktopActivity() {
   const [copiedCommand, setCopiedCommand] = useState(false);
   const [expandedOcr, setExpandedOcr] = useState(new Set());
 
-  const DOWNLOAD_URL_ARM64 = "https://github.com/frogody/sync.desktop/releases/download/v2.0.2/SYNC.Desktop-2.0.2-arm64.dmg";
-  const DOWNLOAD_URL_INTEL = "https://github.com/frogody/sync.desktop/releases/download/v2.0.2/SYNC.Desktop-2.0.2-x64.dmg";
-  const INSTALL_SCRIPT_URL = "https://github.com/frogody/sync.desktop/releases/download/v2.0.2/install-macos.command";
+  const DOWNLOAD_URL_ARM64 = "https://github.com/frogody/sync.desktop/releases/download/v2.1.0/SYNC.Desktop-2.1.0-arm64.dmg";
+  const DOWNLOAD_URL_INTEL = "https://github.com/frogody/sync.desktop/releases/download/v2.1.0/SYNC.Desktop-2.1.0-x64.dmg";
+  const INSTALL_SCRIPT_URL = "https://github.com/frogody/sync.desktop/releases/download/v2.1.0/install-macos.command";
   const INSTALL_COMMAND = `curl -fsSL ${INSTALL_SCRIPT_URL} | bash`;
 
   const handleDownload = () => {
@@ -463,6 +464,16 @@ export default function DesktopActivity() {
           <SyncViewSelector />
         </div>
 
+        {/* Privacy Notice */}
+        <InfoCard
+          title="Your activity is private"
+          icon={Shield}
+          learnMoreUrl={createPageUrl('PrivacyAIAct')}
+          className="bg-emerald-500/10 border-emerald-500/20"
+        >
+          Your employer cannot see your activity data. This is your personal productivity tool, protected by design and by law.
+        </InfoCard>
+
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="bg-zinc-900/60 border border-zinc-800/50 p-0.5 rounded-lg">
@@ -657,8 +668,8 @@ export default function DesktopActivity() {
                 ) : (
                   <div className="space-y-3">
                     {stats.dailyBreakdown.slice(-7).map((day, i) => (
-                      <div key={day.date} className="flex items-center gap-4">
-                        <div className="w-20 text-xs text-zinc-500 text-right">
+                      <div key={day.date} className="flex items-center gap-2 sm:gap-4">
+                        <div className="w-14 sm:w-20 text-[11px] sm:text-xs text-zinc-500 text-right">
                           {formatDate(day.date)}
                         </div>
                         <div className="flex-1 h-8 bg-zinc-800/50 rounded-lg overflow-hidden relative">
@@ -788,9 +799,9 @@ export default function DesktopActivity() {
           <TabsContent value="journals" className="mt-5">
             <div className="space-y-4">
               {/* Quick Actions Header */}
-              <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-800/60">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-800/60 flex-shrink-0">
                     <Sparkles className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div>
@@ -798,7 +809,7 @@ export default function DesktopActivity() {
                     <p className="text-xs text-zinc-500">AI-generated daily activity reports</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <Button
                     onClick={() => generateJournal(new Date())}
                     disabled={generatingJournal}
@@ -1021,13 +1032,13 @@ export default function DesktopActivity() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.02 }}
-                      className="flex items-start gap-4 p-4 rounded-xl bg-zinc-800/30 hover:bg-zinc-800/50 transition-all border border-zinc-700/30"
+                      className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-zinc-800/30 hover:bg-zinc-800/50 transition-all border border-zinc-700/30"
                     >
                       <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center flex-shrink-0">
                         <Clock className="w-5 h-5 text-cyan-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
                           <span className="text-sm font-medium text-white">
                             {new Date(log.hour_start).toLocaleString('en-US', {
                               weekday: 'short',

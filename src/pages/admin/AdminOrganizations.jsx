@@ -230,7 +230,7 @@ function OrganizationDetailModal({ org, open, onClose, onUpdate, adminRole }) {
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="w-12 h-12">
               <AvatarImage src={org.logo_url} />
-              <AvatarFallback className="bg-purple-500/20 text-purple-400">
+              <AvatarFallback className="bg-blue-500/20 text-blue-400">
                 {getInitials(org.name)}
               </AvatarFallback>
             </Avatar>
@@ -325,7 +325,7 @@ function OrganizationDetailModal({ org, open, onClose, onUpdate, adminRole }) {
                 <div className="flex items-center gap-3">
                   <Avatar className="w-10 h-10">
                     <AvatarImage src={org.owner.avatar_url} />
-                    <AvatarFallback className="bg-red-500/20 text-red-400">
+                    <AvatarFallback className="bg-cyan-500/20 text-cyan-400">
                       {org.owner.name?.[0]?.toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
@@ -444,7 +444,7 @@ function OrganizationDetailModal({ org, open, onClose, onUpdate, adminRole }) {
                     <div className="flex items-center gap-3">
                       <Avatar className="w-9 h-9">
                         <AvatarImage src={user.avatar_url} />
-                        <AvatarFallback className="bg-red-500/20 text-red-400 text-sm">
+                        <AvatarFallback className="bg-cyan-500/20 text-cyan-400 text-sm">
                           {(user.full_name || user.name || user.email)?.[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -460,7 +460,7 @@ function OrganizationDetailModal({ org, open, onClose, onUpdate, adminRole }) {
                         {user.role || 'user'}
                       </Badge>
                       {user.is_active ? (
-                        <span className="w-2 h-2 rounded-full bg-green-500" title="Active" />
+                        <span className="w-2 h-2 rounded-full bg-cyan-500" title="Active" />
                       ) : (
                         <span className="w-2 h-2 rounded-full bg-zinc-500" title="Inactive" />
                       )}
@@ -661,7 +661,7 @@ function EditOrganizationModal({ org, open, onClose, onSave }) {
           <Button
             onClick={handleSave}
             disabled={isSaving}
-            className="bg-red-500 hover:bg-red-600 text-white"
+            className="bg-cyan-600 hover:bg-cyan-700 text-white"
           >
             {isSaving ? (
               <>
@@ -723,7 +723,7 @@ function CreateOrganizationModal({ open, onClose, onCreated }) {
       <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-purple-400" />
+            <Building2 className="w-5 h-5 text-blue-400" />
             Create Organization
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
@@ -845,7 +845,7 @@ function CreateOrganizationModal({ open, onClose, onCreated }) {
           <Button
             onClick={handleCreate}
             disabled={isCreating || !form.name.trim()}
-            className="bg-red-500 hover:bg-red-600 text-white"
+            className="bg-cyan-600 hover:bg-cyan-700 text-white"
           >
             {isCreating ? (
               <>
@@ -1029,7 +1029,7 @@ export default function AdminOrganizations() {
           <Button
             onClick={() => setIsCreateModalOpen(true)}
             size="sm"
-            className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
+            className="bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs"
           >
             <Plus className="w-3 h-3 mr-1.5" />
             Create Organization
@@ -1052,14 +1052,14 @@ export default function AdminOrganizations() {
           title="Total Organizations"
           value={stats.total_organizations?.toLocaleString()}
           icon={Building2}
-          color="purple"
+          color="cyan"
           isLoading={isStatsLoading}
         />
         <StatCard
           title="Active Organizations"
           value={stats.active_organizations?.toLocaleString()}
           icon={CheckCircle}
-          color="green"
+          color="cyan"
           isLoading={isStatsLoading}
         />
         <StatCard
@@ -1148,7 +1148,7 @@ export default function AdminOrganizations() {
         <CardHeader className="border-b border-zinc-800 py-2 px-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-white flex items-center gap-1.5 text-sm">
-              <Building2 className="w-4 h-4 text-purple-400" />
+              <Building2 className="w-4 h-4 text-cyan-400" />
               Organizations ({totalCount})
             </CardTitle>
           </div>
@@ -1196,7 +1196,7 @@ export default function AdminOrganizations() {
                             <div className="flex items-center gap-1.5">
                               <Avatar className="w-6 h-6">
                                 <AvatarImage src={org.logo_url} />
-                                <AvatarFallback className="bg-purple-500/20 text-purple-400 text-[9px]">
+                                <AvatarFallback className="bg-blue-500/20 text-blue-400 text-[9px]">
                                   {getInitials(org.name)}
                                 </AvatarFallback>
                               </Avatar>
@@ -1227,7 +1227,7 @@ export default function AdminOrganizations() {
                               <Users className="w-3 h-3 text-zinc-500" />
                               <span className="text-zinc-300 text-xs">{org.total_users || 0}</span>
                               {org.active_users > 0 && (
-                                <span className="text-[10px] text-green-500">
+                                <span className="text-[10px] text-cyan-500">
                                   ({org.active_users})
                                 </span>
                               )}

@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 const STATUS_COLORS = {
-  pass: 'text-green-400 bg-green-500/10 border-green-500/30',
+  pass: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30',
   fail: 'text-red-400 bg-red-500/10 border-red-500/30',
   pending: 'text-zinc-400 bg-zinc-800/50 border-zinc-700',
   running: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30',
@@ -35,19 +35,19 @@ const TEST_TYPE_ICONS = {
 };
 
 const CATEGORY_COLORS = {
-  platform: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  crm: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  finance: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-  products: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  platform: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  crm: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  finance: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  products: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   'sync-agent': 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  talent: 'bg-red-500/20 text-red-400 border-red-500/30',
-  growth: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
-  marketplace: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
-  admin: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  sentinel: 'bg-teal-500/20 text-teal-400 border-teal-500/30',
-  integrations: 'bg-violet-500/20 text-violet-400 border-violet-500/30',
+  talent: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  growth: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  marketplace: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  admin: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  sentinel: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  integrations: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   infrastructure: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-  learn: 'bg-sky-500/20 text-sky-400 border-sky-500/30',
+  learn: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
 };
 
 // ============================================================
@@ -207,7 +207,7 @@ function FeatureCard({ item, results, isExpanded, onToggle, isRunning }) {
   return (
     <div className={`rounded-xl border transition-all ${
       hasFails ? 'border-red-500/30 bg-red-500/5' :
-      allPassed ? 'border-green-500/20 bg-green-500/5' :
+      allPassed ? 'border-cyan-500/20 bg-cyan-500/5' :
       'border-zinc-800 bg-zinc-900/50'
     }`}>
       <button
@@ -216,7 +216,7 @@ function FeatureCard({ item, results, isExpanded, onToggle, isRunning }) {
       >
         <div className="shrink-0">
           {allPassed ? (
-            <ShieldCheck className="w-5 h-5 text-green-400" />
+            <ShieldCheck className="w-5 h-5 text-cyan-400" />
           ) : hasFails ? (
             <ShieldAlert className="w-5 h-5 text-red-400" />
           ) : isRunning ? (
@@ -447,7 +447,7 @@ export default function AdminStructuralTests() {
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
-        <Loader2 className="w-8 h-8 text-red-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
       </div>
     );
   }
@@ -458,7 +458,7 @@ export default function AdminStructuralTests() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <ShieldCheck className="w-7 h-7 text-red-400" />
+            <ShieldCheck className="w-7 h-7 text-cyan-400" />
             Structural Tests
           </h1>
           <p className="text-zinc-400 text-sm mt-1">
@@ -474,7 +474,7 @@ export default function AdminStructuralTests() {
           <button
             onClick={runAllTests}
             disabled={running}
-            className="flex items-center gap-2 px-4 py-2.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl font-medium hover:bg-red-500/30 transition-all disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded-xl font-medium hover:bg-cyan-500/30 transition-all disabled:opacity-50"
           >
             {running ? (
               <>
@@ -509,7 +509,7 @@ export default function AdminStructuralTests() {
           label="Passing"
           value={stats.passCount}
           icon={CheckCircle2}
-          color="text-green-400 bg-green-500/10 border-green-500/30"
+          color="text-cyan-400 bg-cyan-500/10 border-cyan-500/30"
         />
         <StatCard
           label="Failing"
@@ -527,7 +527,7 @@ export default function AdminStructuralTests() {
           label="Coverage"
           value={`${stats.coverage}%`}
           icon={ShieldCheck}
-          color={stats.coverage === 100 ? 'text-green-400 bg-green-500/10 border-green-500/30' :
+          color={stats.coverage === 100 ? 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30' :
                  stats.coverage > 50 ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30' :
                  'text-zinc-400 bg-zinc-800/50 border-zinc-700'}
         />
@@ -545,7 +545,7 @@ export default function AdminStructuralTests() {
           <div className="w-full h-3 bg-zinc-800 rounded-full overflow-hidden flex">
             {stats.passCount > 0 && (
               <div
-                className="h-full bg-green-500 transition-all duration-500"
+                className="h-full bg-cyan-500 transition-all duration-500"
                 style={{ width: `${(stats.passCount / stats.totalTests) * 100}%` }}
               />
             )}
@@ -568,14 +568,14 @@ export default function AdminStructuralTests() {
             placeholder="Search features..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-lg text-white text-sm placeholder:text-zinc-600 focus:border-red-500/50 focus:outline-none"
+            className="w-full pl-9 pr-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-lg text-white text-sm placeholder:text-zinc-600 focus:border-cyan-500/50 focus:outline-none"
           />
         </div>
 
         <select
           value={filterCategory}
           onChange={e => setFilterCategory(e.target.value)}
-          className="px-3 py-2 bg-zinc-900/50 border border-zinc-800 rounded-lg text-sm text-zinc-300 focus:border-red-500/50 focus:outline-none"
+          className="px-3 py-2 bg-zinc-900/50 border border-zinc-800 rounded-lg text-sm text-zinc-300 focus:border-cyan-500/50 focus:outline-none"
         >
           <option value="all">All Categories</option>
           {categories.map(c => (
@@ -586,7 +586,7 @@ export default function AdminStructuralTests() {
         <select
           value={filterStatus}
           onChange={e => setFilterStatus(e.target.value)}
-          className="px-3 py-2 bg-zinc-900/50 border border-zinc-800 rounded-lg text-sm text-zinc-300 focus:border-red-500/50 focus:outline-none"
+          className="px-3 py-2 bg-zinc-900/50 border border-zinc-800 rounded-lg text-sm text-zinc-300 focus:border-cyan-500/50 focus:outline-none"
         >
           <option value="all">All Results</option>
           <option value="pass">Passing</option>

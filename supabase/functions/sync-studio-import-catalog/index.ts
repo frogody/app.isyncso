@@ -71,6 +71,17 @@ serve(async (req) => {
           .eq("user_id", userId)
           .in("status", ["importing", "planning"]);
 
+        // Clean up previous session data so dashboard only shows current selection
+        await supabase
+          .from("sync_studio_shoot_plans")
+          .delete()
+          .eq("user_id", userId);
+
+        await supabase
+          .from("sync_studio_products")
+          .delete()
+          .eq("user_id", userId);
+
         // Fetch selected products
         const { data: products, error: fetchErr } = await supabase
           .from("products")

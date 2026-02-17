@@ -27,7 +27,6 @@ import { StatCard } from '@/components/sentinel/ui/StatCard';
 import RiskClassificationBadge from '@/components/sentinel/RiskClassificationBadge';
 import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
 import type { AISystemRecord, RiskClassification, ComplianceStatus } from '@/tokens/sentinel';
-import { ThemeToggle } from '@/components/sentinel/ThemeToggle';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { cn } from '@/lib/utils';
 
@@ -259,7 +258,6 @@ export default function AISystemInventory() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <SentinelButton
             onClick={() => { setEditingSystem(null); setShowModal(true); }}
             icon={<Plus className="w-4 h-4" />}

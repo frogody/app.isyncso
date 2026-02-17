@@ -56,6 +56,22 @@ export default function BolcomSettings() {
   const [savingCreds, setSavingCreds] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
 
+  // Import products
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+
+  // Fetch pricing
+  const [fetchingPricing, setFetchingPricing] = useState(false);
+  const [pricingResult, setPricingResult] = useState(null);
+
+  // Fetch images
+  const [fetchingImages, setFetchingImages] = useState(false);
+  const [imagesResult, setImagesResult] = useState(null);
+
+  // Sync stock
+  const [syncingStock, setSyncingStock] = useState(false);
+  const [stockResult, setStockResult] = useState(null);
+
   // Offer mappings
   const [mappings, setMappings] = useState([]);
   const [loadingMappings, setLoadingMappings] = useState(false);
@@ -116,6 +132,10 @@ export default function BolcomSettings() {
 
   // Save credentials
   const handleSaveCredentials = async () => {
+    if (!companyId) {
+      toast.error("No company linked to your account. Please contact support.");
+      return;
+    }
     if (!clientId.trim() || !clientSecret.trim()) {
       toast.error("Both Client ID and Client Secret are required");
       return;
@@ -137,6 +157,7 @@ export default function BolcomSettings() {
 
   // Test connection
   const handleTestConnection = async () => {
+    if (!companyId) { toast.error("No company linked to your account."); return; }
     setTestingConnection(true);
     setConnectionError("");
     try {
@@ -149,6 +170,96 @@ export default function BolcomSettings() {
       toast.error(err.message || "Connection failed");
     } finally {
       setTestingConnection(false);
+    }
+  };
+
+  // Import products from bol.com
+  const handleImportProducts = async () => {
+    if (!companyId) { toast.error("No company linked to your account."); return; }
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const result = await callBolcomApi("importProducts", { companyId });
+      if (!result.success) throw new Error(result.error);
+      setImportResult(result.data);
+      toast.success(`Imported ${result.data.imported} products, updated ${result.data.updated}`);
+      // Refresh mappings table
+      loadMappings();
+    } catch (err) {
+      toast.error(err.message || "Failed to import products");
+      setImportResult({ error: err.message });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  // Fetch pricing from bol.com offers export
+  const handleFetchPricing = async () => {
+    if (!companyId) { toast.error("No company linked to your account."); return; }
+    setFetchingPricing(true);
+    setPricingResult(null);
+    try {
+      const result = await callBolcomApi("fetchPricing", { companyId });
+      if (!result.success) throw new Error(result.error);
+      setPricingResult(result.data);
+      toast.success(`Updated pricing for ${result.data.pricesUpdated} products`);
+    } catch (err) {
+      toast.error(err.message || "Failed to fetch pricing");
+      setPricingResult({ error: err.message });
+    } finally {
+      setFetchingPricing(false);
+    }
+  };
+
+  // Fetch images from bol.com (auto-loops in batches of 500 until all done)
+  const handleFetchImages = async () => {
+    if (!companyId) { toast.error("No company linked to your account."); return; }
+    setFetchingImages(true);
+    setImagesResult(null);
+    let totalFound = 0;
+    let totalUpdated = 0;
+    let totalErrors = 0;
+    let totalProcessed = 0;
+    let batchNum = 0;
+    try {
+      while (true) {
+        batchNum++;
+        setImagesResult({ inProgress: true, batch: batchNum, imagesUpdated: totalUpdated, totalProcessed });
+        const result = await callBolcomApi("fetchImages", { companyId, batchLimit: 60 });
+        if (!result.success) throw new Error(result.error);
+        totalFound += result.data.imagesFound || 0;
+        totalUpdated += result.data.imagesUpdated || 0;
+        totalErrors += result.data.fetchErrors || 0;
+        totalProcessed += result.data.productsProcessed || 0;
+        // If no more products to process, we're done
+        if ((result.data.remaining || 0) === 0 || result.data.productsProcessed === 0) break;
+        toast.info(`Batch ${batchNum} done: ${totalUpdated} images so far, ${result.data.remaining} remaining...`);
+      }
+      setImagesResult({ imagesFound: totalFound, imagesUpdated: totalUpdated, fetchErrors: totalErrors, totalProcessed });
+      toast.success(`Updated images for ${totalUpdated} products (${totalProcessed} processed)`);
+    } catch (err) {
+      toast.error(err.message || "Failed to fetch images");
+      setImagesResult({ error: err.message, imagesUpdated: totalUpdated, totalProcessed });
+    } finally {
+      setFetchingImages(false);
+    }
+  };
+
+  // Sync stock from bol.com inventory
+  const handleSyncStock = async () => {
+    if (!companyId) { toast.error("No company linked to your account."); return; }
+    setSyncingStock(true);
+    setStockResult(null);
+    try {
+      const result = await callBolcomApi("fetchStock", { companyId });
+      if (!result.success) throw new Error(result.error);
+      setStockResult(result.data);
+      toast.success(`Synced stock for ${result.data.synced} products (${result.data.withStock} with stock)`);
+    } catch (err) {
+      toast.error(err.message || "Failed to sync stock");
+      setStockResult({ error: err.message });
+    } finally {
+      setSyncingStock(false);
     }
   };
 
@@ -292,7 +403,227 @@ export default function BolcomSettings() {
         </div>
       </div>
 
-      {/* 2. EAN Mappings */}
+      {/* 2. Import Products */}
+      {hasCreds && connectionStatus === "connected" && (
+        <div className={cardClass}>
+          <h3 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${t("text-gray-900", "text-white")}`}>
+            <Download className="w-4 h-4 text-cyan-400" />
+            Import Products from bol.com
+          </h3>
+          <p className={`text-sm mb-4 ${mutedClass}`}>
+            Pull your entire bol.com catalog into SYNC. This will fetch product titles, images, categories, stock levels, and EAN codes.
+          </p>
+
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleImportProducts}
+              disabled={importing || fetchingPricing || fetchingImages || syncingStock}
+              size="sm"
+              className="bg-cyan-600 hover:bg-cyan-700 text-white gap-1"
+            >
+              {importing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+              {importing ? "Importing..." : "Import Products"}
+            </Button>
+            <Button
+              onClick={handleFetchPricing}
+              disabled={fetchingPricing || importing || fetchingImages || syncingStock}
+              size="sm"
+              variant="outline"
+              className="gap-1 border-cyan-600/40 text-cyan-400 hover:bg-cyan-600/10"
+            >
+              {fetchingPricing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              {fetchingPricing ? "Fetching Pricing..." : "Fetch Pricing"}
+            </Button>
+            <Button
+              onClick={handleFetchImages}
+              disabled={fetchingImages || importing || fetchingPricing || syncingStock}
+              size="sm"
+              variant="outline"
+              className="gap-1 border-cyan-600/40 text-cyan-400 hover:bg-cyan-600/10"
+            >
+              {fetchingImages ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+              {fetchingImages ? "Fetching Images..." : "Fetch Images"}
+            </Button>
+            <Button
+              onClick={handleSyncStock}
+              disabled={syncingStock || importing || fetchingPricing || fetchingImages}
+              size="sm"
+              variant="outline"
+              className="gap-1 border-orange-500/40 text-orange-400 hover:bg-orange-500/10"
+            >
+              {syncingStock ? <Loader2 className="w-3 h-3 animate-spin" /> : <Truck className="w-3 h-3" />}
+              {syncingStock ? "Syncing Stock..." : "Sync Stock"}
+            </Button>
+          </div>
+
+          {importing && (
+            <div className={`mt-4 flex items-center gap-2 p-3 rounded-lg ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+              <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+              <span className={`text-sm ${mutedClass}`}>
+                Fetching inventory and enriching products from bol.com... This may take a few moments depending on catalog size.
+              </span>
+            </div>
+          )}
+
+          {importResult && !importResult.error && (
+            <div className="mt-4 space-y-3">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold text-cyan-400`}>{importResult.imported}</p>
+                  <p className={`text-xs ${mutedClass}`}>Imported</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{importResult.updated}</p>
+                  <p className={`text-xs ${mutedClass}`}>Updated</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${importResult.errors > 0 ? "bg-red-500/10" : t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${importResult.errors > 0 ? "text-red-400" : t("text-gray-900", "text-white")}`}>{importResult.errors}</p>
+                  <p className={`text-xs ${mutedClass}`}>Errors</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{importResult.total}</p>
+                  <p className={`text-xs ${mutedClass}`}>Total</p>
+                </div>
+              </div>
+
+              {importResult.message && (
+                <p className={`text-sm ${mutedClass}`}>{importResult.message}</p>
+              )}
+            </div>
+          )}
+
+          {importResult?.error && (
+            <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+              <p className="text-sm text-red-400 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                {importResult.error}
+              </p>
+            </div>
+          )}
+
+          {fetchingPricing && (
+            <div className={`mt-4 flex items-center gap-2 p-3 rounded-lg ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+              <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+              <span className={`text-sm ${mutedClass}`}>
+                Exporting offers from bol.com and fetching pricing data... This may take up to 90 seconds.
+              </span>
+            </div>
+          )}
+
+          {pricingResult && !pricingResult.error && (
+            <div className="mt-4 space-y-3">
+              <p className={`text-sm font-medium ${t("text-gray-900", "text-white")}`}>Pricing Update Results</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className="text-2xl font-bold text-cyan-400">{pricingResult.offersFound}</p>
+                  <p className={`text-xs ${mutedClass}`}>Offers Found</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{pricingResult.pricesUpdated}</p>
+                  <p className={`text-xs ${mutedClass}`}>Prices Updated</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{pricingResult.offersLinked}</p>
+                  <p className={`text-xs ${mutedClass}`}>Offers Linked</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {pricingResult?.error && (
+            <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+              <p className="text-sm text-red-400 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                {pricingResult.error}
+              </p>
+            </div>
+          )}
+
+          {fetchingImages && (
+            <div className={`mt-4 flex items-center gap-2 p-3 rounded-lg ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+              <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+              <span className={`text-sm ${mutedClass}`}>
+                {imagesResult?.inProgress
+                  ? `Batch ${imagesResult.batch}: ${imagesResult.imagesUpdated} images updated, ${imagesResult.totalProcessed} processed so far...`
+                  : "Fetching product images from bol.com..."}
+              </span>
+            </div>
+          )}
+
+          {imagesResult && !imagesResult.error && !imagesResult.inProgress && (
+            <div className="mt-4 space-y-3">
+              <p className={`text-sm font-medium ${t("text-gray-900", "text-white")}`}>Image Fetch Results</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className="text-2xl font-bold text-cyan-400">{imagesResult.imagesFound}</p>
+                  <p className={`text-xs ${mutedClass}`}>Images Found</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{imagesResult.imagesUpdated}</p>
+                  <p className={`text-xs ${mutedClass}`}>Products Updated</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{imagesResult.totalProcessed}</p>
+                  <p className={`text-xs ${mutedClass}`}>Processed</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {imagesResult?.error && (
+            <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+              <p className="text-sm text-red-400 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                {imagesResult.error}
+              </p>
+            </div>
+          )}
+
+          {syncingStock && (
+            <div className={`mt-4 flex items-center gap-2 p-3 rounded-lg ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+              <Loader2 className="w-4 h-4 animate-spin text-orange-400" />
+              <span className={`text-sm ${mutedClass}`}>
+                Syncing stock levels from bol.com inventory...
+              </span>
+            </div>
+          )}
+
+          {stockResult && !stockResult.error && (
+            <div className="mt-4 space-y-3">
+              <p className={`text-sm font-medium ${t("text-gray-900", "text-white")}`}>Stock Sync Results</p>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className="text-2xl font-bold text-cyan-400">{stockResult.synced}</p>
+                  <p className={`text-xs ${mutedClass}`}>Products Synced</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{stockResult.withStock}</p>
+                  <p className={`text-xs ${mutedClass}`}>With Stock</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center bg-orange-500/10`}>
+                  <p className="text-2xl font-bold text-orange-400">{stockResult.fbb}</p>
+                  <p className={`text-xs ${mutedClass}`}>FBB (bol.com Warehouse)</p>
+                </div>
+                <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                  <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{stockResult.fbr}</p>
+                  <p className={`text-xs ${mutedClass}`}>FBR (Own Warehouse)</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {stockResult?.error && (
+            <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+              <p className="text-sm text-red-400 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                {stockResult.error}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3. EAN Mappings */}
       <div className={cardClass}>
         <div className="flex items-center justify-between mb-4">
           <h3 className={`text-sm font-semibold flex items-center gap-2 ${t("text-gray-900", "text-white")}`}>

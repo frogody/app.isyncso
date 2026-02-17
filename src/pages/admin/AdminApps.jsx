@@ -81,8 +81,8 @@ function StatCard({ title, value, change, icon: Icon, color, subtitle }) {
             {subtitle && <p className="text-[10px] text-zinc-500 mt-0.5">{subtitle}</p>}
             {change && (
               <div className="flex items-center gap-1 mt-1">
-                <TrendingUp className="w-3 h-3 text-green-400" />
-                <span className="text-[10px] text-green-400">{change}</span>
+                <TrendingUp className="w-3 h-3 text-cyan-400" />
+                <span className="text-[10px] text-cyan-400">{change}</span>
               </div>
             )}
           </div>
@@ -103,10 +103,10 @@ function StatCard({ title, value, change, icon: Icon, color, subtitle }) {
 // App Card Component
 function AppCard({ app, onEdit, onDelete, onViewLicenses }) {
   const pricingColors = {
-    free: 'bg-green-500/20 text-green-400',
+    free: 'bg-cyan-500/20 text-cyan-400',
     freemium: 'bg-blue-500/20 text-blue-400',
-    paid: 'bg-purple-500/20 text-purple-400',
-    enterprise: 'bg-orange-500/20 text-orange-400',
+    paid: 'bg-blue-500/20 text-blue-400',
+    enterprise: 'bg-blue-500/20 text-blue-400',
   };
 
   // Map database fields to display values
@@ -128,7 +128,7 @@ function AppCard({ app, onEdit, onDelete, onViewLicenses }) {
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500/20 to-orange-500/20 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
             <AppIcon className="w-4 h-4 text-white" />
           </div>
           <div>
@@ -586,7 +586,7 @@ export default function AdminApps() {
   if (isLoading && !stats) {
     return (
       <div className="flex items-center justify-center h-96">
-        <RefreshCw className="w-8 h-8 text-red-500 animate-spin" />
+        <RefreshCw className="w-8 h-8 text-cyan-500 animate-spin" />
       </div>
     );
   }
@@ -620,7 +620,7 @@ export default function AdminApps() {
               setShowAppModal(true);
             }}
             size="sm"
-            className="bg-red-500 hover:bg-red-600 h-7 text-xs"
+            className="bg-cyan-600 hover:bg-cyan-700 h-7 text-xs"
           >
             <Plus className="w-3 h-3 mr-1.5" />
             Add App
@@ -778,7 +778,7 @@ export default function AdminApps() {
                     setShowAppModal(true);
                   }}
                   size="sm"
-                  className="bg-red-500 hover:bg-red-600 h-7 text-xs"
+                  className="bg-cyan-600 hover:bg-cyan-700 h-7 text-xs"
                 >
                   <Plus className="w-3 h-3 mr-1.5" />
                   Add App
@@ -836,7 +836,7 @@ export default function AdminApps() {
                       setShowLicenseModal(true);
                     }}
                     size="sm"
-                    className="bg-red-500 hover:bg-red-600 h-7 text-xs"
+                    className="bg-cyan-600 hover:bg-cyan-700 h-7 text-xs"
                   >
                     <Plus className="w-3 h-3 mr-1.5" />
                     Grant License
@@ -994,7 +994,7 @@ export default function AdminApps() {
             </Button>
             <Button
               onClick={handleSaveApp}
-              className="bg-red-500 hover:bg-red-600 h-7 text-xs"
+              className="bg-cyan-600 hover:bg-cyan-700 h-7 text-xs"
             >
               {editingApp ? 'Update App' : 'Create App'}
             </Button>
@@ -1167,7 +1167,7 @@ export default function AdminApps() {
             </Button>
             <Button
               onClick={handleSaveLicense}
-              className="bg-red-500 hover:bg-red-600 h-7 text-xs"
+              className="bg-cyan-600 hover:bg-cyan-700 h-7 text-xs"
             >
               {editingLicense ? 'Update License' : 'Grant License'}
             </Button>

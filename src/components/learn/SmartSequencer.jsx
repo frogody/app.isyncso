@@ -15,41 +15,6 @@ export function SmartSequencer({ lesson, nextLesson, onProceed, onSkip, userId, 
   const [recommendation, setRecommendation] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const analyzePerformance = React.useCallback(async () => {
-    if (!userId || !nextLesson) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // Get user's interactions for this lesson
-      const interactions = await db.entities.LessonInteraction.filter({
-        user_id: userId,
-        lesson_id: lesson.id
-      });
-
-      // Get quiz/assessment results if any
-      const assessments = await db.entities.UserResult.filter({
-        user_id: userId
-      });
-
-      // Calculate mastery score
-      const masteryScore = calculateMastery(interactions, assessments);
-
-      // Get recommendation
-      const rec = getRecommendation(masteryScore, nextLesson);
-      setRecommendation(rec);
-    } catch (error) {
-      console.error('[SmartSequencer] Analysis failed:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [lesson.id, userId, nextLesson]);
-
-  useEffect(() => {
-    analyzePerformance();
-  }, [analyzePerformance]);
-
   const calculateMastery = (interactions, assessments) => {
     let score = 50; // Base score
 
@@ -71,7 +36,7 @@ export function SmartSequencer({ lesson, nextLesson, onProceed, onSkip, userId, 
     return Math.min(score, 100);
   };
 
-  const getRecommendation = (score, nextLesson) => {
+  const getRecommendation = (score, next) => {
     if (score >= 85) {
       return {
         type: 'skip_offered',
@@ -103,6 +68,36 @@ export function SmartSequencer({ lesson, nextLesson, onProceed, onSkip, userId, 
       canSkip: false
     };
   };
+
+  const analyzePerformance = React.useCallback(async () => {
+    if (!userId || !nextLesson) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const interactions = await db.entities.LessonInteraction.filter({
+        user_id: userId,
+        lesson_id: lesson.id
+      });
+
+      const assessments = await db.entities.UserResult.filter({
+        user_id: userId
+      });
+
+      const masteryScore = calculateMastery(interactions, assessments);
+      const rec = getRecommendation(masteryScore, nextLesson);
+      setRecommendation(rec);
+    } catch (error) {
+      console.error('[SmartSequencer] Analysis failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [lesson.id, userId, nextLesson]);
+
+  useEffect(() => {
+    analyzePerformance();
+  }, [analyzePerformance]);
 
   if (loading) {
     return (

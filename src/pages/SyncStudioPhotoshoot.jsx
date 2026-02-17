@@ -320,7 +320,7 @@ export default function SyncStudioPhotoshoot() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8 max-w-md w-full text-center"
+          className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4 sm:p-8 max-w-md w-full text-center"
         >
           <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center mx-auto mb-5">
             <Camera className="w-7 h-7 text-zinc-500" />
@@ -351,7 +351,7 @@ export default function SyncStudioPhotoshoot() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4 }}
-          className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8 max-w-lg w-full text-center"
+          className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4 sm:p-8 max-w-lg w-full text-center"
         >
           {/* Celebration icon */}
           <motion.div
@@ -426,7 +426,7 @@ export default function SyncStudioPhotoshoot() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4 }}
-          className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8 max-w-lg w-full text-center"
+          className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4 sm:p-8 max-w-lg w-full text-center"
         >
           <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center mx-auto mb-5">
             <Square className="w-7 h-7 text-zinc-400" />
@@ -485,7 +485,7 @@ export default function SyncStudioPhotoshoot() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
-          className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8 max-w-lg w-full text-center"
+          className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4 sm:p-8 max-w-lg w-full text-center"
         >
           <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-5">
             <XCircle className="w-7 h-7 text-red-400" />

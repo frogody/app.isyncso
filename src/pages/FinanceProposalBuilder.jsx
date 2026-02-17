@@ -847,6 +847,7 @@ export default function FinanceProposalBuilder() {
           onClose={() => setShowProductSelector(false)}
           onSelect={handleAddProduct}
           currency={proposal.currency}
+          context="proposal"
         />
 
         {/* Preview Modal */}
@@ -859,89 +860,92 @@ export default function FinanceProposalBuilder() {
               </DialogTitle>
             </DialogHeader>
 
-            <div className="bg-white text-zinc-900 rounded-lg p-6 space-y-4">
+            <div
+              className="rounded-lg p-6 space-y-4"
+              style={{ backgroundColor: '#ffffff', color: '#18181b' }}
+            >
               {/* Header */}
-              <div className="border-b border-zinc-200 pb-4">
-                <h1 className="text-2xl font-bold">{proposal.title || 'Untitled Proposal'}</h1>
+              <div style={{ borderBottom: '1px solid #d4d4d8', paddingBottom: '1rem' }}>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#18181b' }}>{proposal.title || 'Untitled Proposal'}</h1>
                 {proposal.proposal_number && (
-                  <p className="text-sm text-zinc-500 font-mono mt-1">{proposal.proposal_number}</p>
+                  <p style={{ fontSize: '0.875rem', color: '#71717a', fontFamily: 'monospace', marginTop: '0.25rem' }}>{proposal.proposal_number}</p>
                 )}
               </div>
 
               {/* Client Info */}
-              <div className="bg-zinc-50 rounded-lg p-3">
-                <p className="text-xs text-zinc-500 uppercase tracking-wide mb-2">Prepared For</p>
-                <p className="font-semibold">{proposal.client_company || 'Client Company'}</p>
-                <p className="text-sm text-zinc-600">{proposal.client_name}</p>
-                <p className="text-sm text-zinc-600">{proposal.client_email}</p>
+              <div style={{ backgroundColor: '#f4f4f5', borderRadius: '0.5rem', padding: '0.75rem' }}>
+                <p style={{ fontSize: '0.75rem', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Prepared For</p>
+                <p style={{ fontWeight: 600, color: '#18181b' }}>{proposal.client_company || 'Client Company'}</p>
+                <p style={{ fontSize: '0.875rem', color: '#3f3f46' }}>{proposal.client_name}</p>
+                <p style={{ fontSize: '0.875rem', color: '#3f3f46' }}>{proposal.client_email}</p>
               </div>
 
               {/* Introduction */}
               {proposal.introduction && (
                 <div>
-                  <p className="text-zinc-700 whitespace-pre-wrap">{proposal.introduction}</p>
+                  <p style={{ color: '#3f3f46', whiteSpace: 'pre-wrap' }}>{proposal.introduction}</p>
                 </div>
               )}
 
               {/* Sections */}
               {proposal.sections.map((section, idx) => (
-                <div key={idx} className="border-t border-zinc-200 pt-3">
-                  <h3 className="font-semibold text-lg mb-2">{section.title || 'Section'}</h3>
-                  <p className="text-zinc-700 whitespace-pre-wrap">{section.content}</p>
+                <div key={idx} style={{ borderTop: '1px solid #d4d4d8', paddingTop: '0.75rem' }}>
+                  <h3 style={{ fontWeight: 600, fontSize: '1.125rem', color: '#18181b', marginBottom: '0.5rem' }}>{section.title || 'Section'}</h3>
+                  <p style={{ color: '#3f3f46', whiteSpace: 'pre-wrap' }}>{section.content}</p>
                 </div>
               ))}
 
               {/* Line Items */}
               {proposal.line_items.length > 0 && (
-                <div className="border-t border-zinc-200 pt-3">
-                  <h3 className="font-semibold text-lg mb-4">Pricing</h3>
-                  <table className="w-full text-sm">
+                <div style={{ borderTop: '1px solid #d4d4d8', paddingTop: '0.75rem' }}>
+                  <h3 style={{ fontWeight: 600, fontSize: '1.125rem', color: '#18181b', marginBottom: '1rem' }}>Pricing</h3>
+                  <table style={{ width: '100%', fontSize: '0.875rem', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr className="border-b border-zinc-200">
-                        <th className="text-left py-2">Item</th>
-                        <th className="text-right py-2">Qty</th>
-                        <th className="text-right py-2">Price</th>
-                        <th className="text-right py-2">Total</th>
+                      <tr style={{ borderBottom: '2px solid #d4d4d8' }}>
+                        <th style={{ textAlign: 'left', padding: '0.5rem 0', color: '#3f3f46', fontWeight: 600 }}>Item</th>
+                        <th style={{ textAlign: 'right', padding: '0.5rem 0', color: '#3f3f46', fontWeight: 600 }}>Qty</th>
+                        <th style={{ textAlign: 'right', padding: '0.5rem 0', color: '#3f3f46', fontWeight: 600 }}>Price</th>
+                        <th style={{ textAlign: 'right', padding: '0.5rem 0', color: '#3f3f46', fontWeight: 600 }}>Total</th>
                       </tr>
                     </thead>
                     <tbody>
                       {proposal.line_items.map((item, idx) => (
-                        <tr key={idx} className="border-b border-zinc-100">
-                          <td className="py-2">
+                        <tr key={idx} style={{ borderBottom: '1px solid #e4e4e7' }}>
+                          <td style={{ padding: '0.5rem 0', color: '#18181b' }}>
                             {item.name || item.description}
                             {item.is_subscription && (
-                              <span className="text-xs text-blue-600 ml-2">({item.billing_cycle})</span>
+                              <span style={{ fontSize: '0.75rem', color: '#2563eb', marginLeft: '0.5rem' }}>({item.billing_cycle})</span>
                             )}
                           </td>
-                          <td className="text-right py-2">{item.quantity || 1}</td>
-                          <td className="text-right py-2">&euro;{parseFloat(item.unit_price || 0).toLocaleString()}</td>
-                          <td className="text-right py-2">&euro;{((item.quantity || 1) * parseFloat(item.unit_price || 0)).toLocaleString()}</td>
+                          <td style={{ textAlign: 'right', padding: '0.5rem 0', color: '#18181b' }}>{item.quantity || 1}</td>
+                          <td style={{ textAlign: 'right', padding: '0.5rem 0', color: '#18181b' }}>&euro;{parseFloat(item.unit_price || 0).toLocaleString()}</td>
+                          <td style={{ textAlign: 'right', padding: '0.5rem 0', color: '#18181b', fontWeight: 500 }}>&euro;{((item.quantity || 1) * parseFloat(item.unit_price || 0)).toLocaleString()}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
 
                   {/* Totals */}
-                  <div className="mt-3 space-y-2 text-right">
-                    <div className="flex justify-end gap-4">
-                      <span className="text-zinc-500">Subtotal:</span>
-                      <span className="w-24">&euro;{pricing.subtotal.toLocaleString()}</span>
+                  <div style={{ marginTop: '0.75rem', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginBottom: '0.25rem' }}>
+                      <span style={{ color: '#52525b' }}>Subtotal:</span>
+                      <span style={{ width: '6rem', color: '#18181b' }}>&euro;{pricing.subtotal.toLocaleString()}</span>
                     </div>
                     {pricing.discountAmount > 0 && (
-                      <div className="flex justify-end gap-4 text-blue-600">
-                        <span>Discount:</span>
-                        <span className="w-24">-&euro;{pricing.discountAmount.toLocaleString()}</span>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginBottom: '0.25rem' }}>
+                        <span style={{ color: '#2563eb' }}>Discount:</span>
+                        <span style={{ width: '6rem', color: '#2563eb' }}>-&euro;{pricing.discountAmount.toLocaleString()}</span>
                       </div>
                     )}
                     {pricing.taxAmount > 0 && (
-                      <div className="flex justify-end gap-4">
-                        <span className="text-zinc-500">Tax ({proposal.tax_percent}%):</span>
-                        <span className="w-24">&euro;{pricing.taxAmount.toLocaleString()}</span>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginBottom: '0.25rem' }}>
+                        <span style={{ color: '#52525b' }}>Tax ({proposal.tax_percent}%):</span>
+                        <span style={{ width: '6rem', color: '#18181b' }}>&euro;{pricing.taxAmount.toLocaleString()}</span>
                       </div>
                     )}
-                    <div className="flex justify-end gap-4 text-base font-bold border-t border-zinc-200 pt-2">
-                      <span>Total:</span>
-                      <span className="w-24 text-blue-600">&euro;{pricing.total.toLocaleString()}</span>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', borderTop: '2px solid #d4d4d8', paddingTop: '0.5rem', marginTop: '0.25rem', fontWeight: 700, fontSize: '1rem' }}>
+                      <span style={{ color: '#18181b' }}>Total:</span>
+                      <span style={{ width: '6rem', color: '#2563eb' }}>&euro;{pricing.total.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -949,15 +953,15 @@ export default function FinanceProposalBuilder() {
 
               {/* Terms */}
               {proposal.terms_and_conditions && (
-                <div className="border-t border-zinc-200 pt-3 text-sm">
-                  <h3 className="font-semibold mb-2">Terms & Conditions</h3>
-                  <p className="text-zinc-600 whitespace-pre-wrap">{proposal.terms_and_conditions}</p>
+                <div style={{ borderTop: '1px solid #d4d4d8', paddingTop: '0.75rem', fontSize: '0.875rem' }}>
+                  <h3 style={{ fontWeight: 600, color: '#18181b', marginBottom: '0.5rem' }}>Terms & Conditions</h3>
+                  <p style={{ color: '#52525b', whiteSpace: 'pre-wrap' }}>{proposal.terms_and_conditions}</p>
                 </div>
               )}
 
               {/* Valid until */}
               {proposal.valid_until && (
-                <div className="text-center pt-3 text-xs text-zinc-500">
+                <div style={{ textAlign: 'center', paddingTop: '0.75rem', fontSize: '0.75rem', color: '#71717a' }}>
                   Valid until: {new Date(proposal.valid_until).toLocaleDateString()}
                 </div>
               )}

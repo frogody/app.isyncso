@@ -1,0 +1,263 @@
+/**
+ * useRealtimeTranscription - Real-time audio transcription during calls.
+ *
+ * Captures audio from local + remote streams via MediaRecorder,
+ * sends 10-second chunks to the transcribe-audio edge function (Groq Whisper),
+ * accumulates a running transcript, and optionally runs live analysis.
+ */
+
+import { useState, useCallback, useRef, useEffect } from 'react';
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const CHUNK_INTERVAL_MS = 10_000; // 10 seconds per chunk
+
+export default function useRealtimeTranscription() {
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState([]);
+  const [analysis, setAnalysis] = useState(null);
+  const [error, setError] = useState(null);
+
+  const recorderRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const mixedStreamRef = useRef(null);
+  const chunksRef = useRef([]);
+  const intervalRef = useRef(null);
+  const fullTranscriptRef = useRef('');
+  const isListeningRef = useRef(false);
+
+  /**
+   * Mix local + remote audio streams into a single stream for recording.
+   */
+  const createMixedStream = useCallback((localStream, remoteStreams = []) => {
+    const ctx = new AudioContext();
+    audioContextRef.current = ctx;
+    const destination = ctx.createMediaStreamDestination();
+
+    // Add local audio tracks
+    if (localStream) {
+      const audioTracks = localStream.getAudioTracks();
+      if (audioTracks.length > 0) {
+        const localSource = ctx.createMediaStreamSource(
+          new MediaStream(audioTracks)
+        );
+        localSource.connect(destination);
+      }
+    }
+
+    // Add remote audio tracks
+    remoteStreams.forEach((stream) => {
+      if (stream) {
+        const audioTracks = stream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          const remoteSource = ctx.createMediaStreamSource(
+            new MediaStream(audioTracks)
+          );
+          remoteSource.connect(destination);
+        }
+      }
+    });
+
+    mixedStreamRef.current = destination.stream;
+    return destination.stream;
+  }, []);
+
+  /**
+   * Send accumulated audio chunk to the transcription API.
+   */
+  const sendChunk = useCallback(async (audioBlob) => {
+    if (!audioBlob || audioBlob.size < 1000) return; // Skip tiny chunks
+
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'audio.webm');
+      formData.append('mode', 'transcribe_and_analyze');
+      formData.append('transcript_so_far', fullTranscriptRef.current);
+      formData.append('language', 'en');
+
+      const response = await fetch(
+        `${SUPABASE_URL}/functions/v1/transcribe-audio`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error('[transcription] API error:', errText);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.text && data.text.trim()) {
+        const newSegment = {
+          id: Date.now(),
+          text: data.text.trim(),
+          timestamp: new Date().toISOString(),
+          duration: data.duration || 0,
+        };
+
+        fullTranscriptRef.current += (fullTranscriptRef.current ? '\n' : '') + data.text.trim();
+
+        setTranscript((prev) => [...prev, newSegment]);
+
+        if (data.analysis) {
+          setAnalysis(data.analysis);
+        }
+      }
+    } catch (err) {
+      console.error('[transcription] Failed to send chunk:', err);
+    }
+  }, []);
+
+  /**
+   * Process buffered audio chunks and send for transcription.
+   */
+  const processChunks = useCallback(() => {
+    if (chunksRef.current.length === 0) return;
+
+    const blob = new Blob(chunksRef.current, { type: 'audio/webm;codecs=opus' });
+    chunksRef.current = [];
+    sendChunk(blob);
+  }, [sendChunk]);
+
+  /**
+   * Start recording and transcribing audio from the call.
+   */
+  const startListening = useCallback(
+    (localStream, remoteStreams = []) => {
+      if (isListeningRef.current) return;
+
+      try {
+        setError(null);
+        setTranscript([]);
+        setAnalysis(null);
+        fullTranscriptRef.current = '';
+
+        const mixedStream = createMixedStream(localStream, remoteStreams);
+
+        // Check we have audio tracks
+        if (mixedStream.getAudioTracks().length === 0) {
+          setError('No audio tracks available');
+          return;
+        }
+
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'audio/webm';
+
+        const recorder = new MediaRecorder(mixedStream, {
+          mimeType,
+          audioBitsPerSecond: 64000,
+        });
+
+        recorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) {
+            chunksRef.current.push(e.data);
+          }
+        };
+
+        recorder.onerror = (e) => {
+          console.error('[transcription] Recorder error:', e);
+          setError('Recording error');
+        };
+
+        // Start recording — request data every second for responsive chunks
+        recorder.start(1000);
+        recorderRef.current = recorder;
+
+        // Process and send chunks every CHUNK_INTERVAL_MS
+        intervalRef.current = setInterval(processChunks, CHUNK_INTERVAL_MS);
+
+        isListeningRef.current = true;
+        setIsListening(true);
+      } catch (err) {
+        console.error('[transcription] Failed to start:', err);
+        setError(err.message || 'Failed to start transcription');
+      }
+    },
+    [createMixedStream, processChunks]
+  );
+
+  /**
+   * Stop recording and process any remaining audio.
+   */
+  const stopListening = useCallback(() => {
+    if (!isListeningRef.current) return;
+
+    // Stop the interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    // Stop the recorder
+    if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+      recorderRef.current.stop();
+      recorderRef.current = null;
+    }
+
+    // Process remaining chunks
+    if (chunksRef.current.length > 0) {
+      processChunks();
+    }
+
+    // Close audio context
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
+    }
+
+    mixedStreamRef.current = null;
+    isListeningRef.current = false;
+    setIsListening(false);
+  }, [processChunks]);
+
+  /**
+   * Get the full accumulated transcript as a single string.
+   */
+  const getFullTranscript = useCallback(() => {
+    return fullTranscriptRef.current;
+  }, []);
+
+  /**
+   * Clear the transcript and analysis state.
+   */
+  const clearTranscript = useCallback(() => {
+    setTranscript([]);
+    setAnalysis(null);
+    fullTranscriptRef.current = '';
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (isListeningRef.current) {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+          recorderRef.current.stop();
+        }
+        if (audioContextRef.current) {
+          audioContextRef.current.close().catch(() => {});
+        }
+      }
+    };
+  }, []);
+
+  return {
+    isListening,
+    transcript,
+    analysis,
+    error,
+    startListening,
+    stopListening,
+    getFullTranscript,
+    clearTranscript,
+  };
+}

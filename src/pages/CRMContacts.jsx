@@ -15,6 +15,8 @@ import { prefersReducedMotion } from "@/lib/animations";
 // Contact type definitions
 const CONTACT_TYPES = [
   { id: 'all', label: 'All Contacts' },
+  { id: 'contact', label: 'Contacts' },
+  { id: 'company', label: 'Companies' },
   { id: 'lead', label: 'Leads' },
   { id: 'prospect', label: 'Prospects' },
   { id: 'customer', label: 'Customers' },
@@ -23,6 +25,17 @@ const CONTACT_TYPES = [
   { id: 'candidate', label: 'Candidates' },
   { id: 'target', label: 'Targets' },
   { id: 'recruitment_client', label: 'Recruitment Clients' },
+];
+
+// Tab bar items for in-page type filtering (Products pattern)
+const CRM_TABS = [
+  { id: 'all', label: 'All', icon: Layers },
+  { id: 'lead', label: 'Leads', icon: Target },
+  { id: 'prospect', label: 'Prospects', icon: TrendingUp },
+  { id: 'customer', label: 'Customers', icon: UserCheck },
+  { id: 'company', label: 'Companies', icon: Building2 },
+  { id: 'supplier', label: 'Suppliers', icon: Truck },
+  { id: 'partner', label: 'Partners', icon: Handshake },
 ];
 import {
   Plus, Search, Filter, Mail, Phone, Building, Building2, MapPin, MoreVertical, X,
@@ -33,7 +46,8 @@ import {
   ArrowDownRight, Minus, PieChart, LineChart, Send, PhoneCall, Video,
   UserPlus, Settings2, Zap, Sparkles, Award, AlertCircle, ArrowRight,
   Table2, RefreshCw, Copy, Link2, Linkedin, Twitter, SlidersHorizontal,
-  ChevronLeft, Home, Layers, GripVertical, Hash, Loader2, Sun, Moon
+  ChevronLeft, Home, Layers, GripVertical, Hash, Loader2, Sun, Moon,
+  UserCheck, Truck, Handshake
 } from "lucide-react";
 import { enrichContact, mapEnrichedDataToContact } from "@/components/integrations/ExploriumAPI";
 import { QuickAddContactModal } from "@/components/crm/QuickAddContactModal";
@@ -740,8 +754,8 @@ export default function CRMContacts() {
   const { user } = useUser();
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const selectedContactType = searchParams.get('type') || 'all';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedContactType = searchParams.get('tab') || searchParams.get('type') || 'all';
 
   // Permission checks
   const canCreate = hasPermission('users.create');
@@ -1286,13 +1300,17 @@ export default function CRMContacts() {
   // Get current type label for display
   const currentTypeLabel = CONTACT_TYPES.find(t => t.id === selectedContactType)?.label || 'Contacts';
 
+  const handleTabChange = (tabId) => {
+    setSearchParams(tabId === 'all' ? {} : { tab: tabId }, { replace: true });
+  };
+
   return (
     <CRMPageTransition>
     <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4 sm:mb-6">
         <div>
-          <h1 className={`text-lg font-bold ${crt('text-slate-900', 'text-white')}`}>{currentTypeLabel}</h1>
+          <h1 className={`text-lg font-bold ${crt('text-slate-900', 'text-white')}`}>Contacts</h1>
           <p className={`text-xs ${crt('text-slate-500', 'text-zinc-400')}`}>
             {filteredContacts.length} {selectedContactType === 'all' ? 'contacts' : currentTypeLabel.toLowerCase()} in pipeline
           </p>
@@ -1352,13 +1370,35 @@ export default function CRMContacts() {
 
           <Button onClick={() => {
             setEditingContact(null);
-            const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'lead';
+            const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'contact';
             setFormData({ ...emptyContact, contact_type: preselectedType });
             setShowModal(true);
           }} className="bg-cyan-600/80 hover:bg-cyan-600 text-white">
             <Plus className="w-4 h-4 mr-1" /> Add Contact
           </Button>
         </div>
+      </div>
+
+      {/* Contact Type Tab Bar */}
+      <div className={`flex items-center gap-1 p-1 rounded-xl mb-4 sm:mb-6 overflow-x-auto ${crt('bg-slate-100 border border-slate-200', 'bg-zinc-900/60 border border-zinc-800/60')}`}>
+        {CRM_TABS.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = selectedContactType === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex-1 justify-center whitespace-nowrap ${
+                isActive
+                  ? crt('bg-white text-slate-900 shadow-sm', 'bg-zinc-800 text-white shadow-sm')
+                  : crt('text-slate-500 hover:text-slate-700 hover:bg-slate-50', 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50')
+              }`}
+            >
+              <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-500' : ''}`} />
+              <span className="hidden sm:inline">{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
         {/* Analytics Dashboard */}
@@ -1536,7 +1576,7 @@ export default function CRMContacts() {
                 <p className={`${crt('text-slate-400', 'text-zinc-500')} mb-6`}>Try adjusting your filters or add a new contact</p>
                 <Button onClick={() => {
                   setEditingContact(null);
-                  const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'lead';
+                  const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'contact';
                   setFormData({ ...emptyContact, contact_type: preselectedType });
                   setShowModal(true);
                 }} className="bg-cyan-600/80 hover:bg-cyan-600 text-white">

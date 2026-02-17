@@ -181,14 +181,14 @@ export const CATEGORY_COLOR_MAP = {
 // =============================================================================
 
 export const BUTTON_STYLES = {
-  primary: 'bg-red-500 hover:bg-red-600 text-white',
+  primary: 'bg-cyan-600 hover:bg-cyan-700 text-white',
   secondary: 'bg-zinc-700 hover:bg-zinc-600 text-white',
   outline: 'border border-zinc-700 hover:bg-zinc-800 text-white',
   danger: 'bg-red-600 hover:bg-red-700 text-white',
   success: 'bg-green-600 hover:bg-green-700 text-white',
   warning: 'bg-orange-600 hover:bg-orange-700 text-white',
   ghost: 'hover:bg-zinc-800 text-zinc-400 hover:text-white',
-  link: 'text-red-400 hover:text-red-300 underline-offset-4 hover:underline',
+  link: 'text-cyan-400 hover:text-cyan-300 underline-offset-4 hover:underline',
 };
 
 // =============================================================================
@@ -198,7 +198,7 @@ export const BUTTON_STYLES = {
 export const CARD_STYLES = {
   card: 'bg-zinc-900/50 border border-zinc-800 rounded-lg',
   cardHover: 'bg-zinc-900/50 border border-zinc-800 rounded-lg hover:border-zinc-700 transition-colors',
-  cardActive: 'bg-zinc-900/50 border border-red-500/50 rounded-lg',
+  cardActive: 'bg-zinc-900/50 border border-cyan-500/50 rounded-lg',
   modal: 'bg-zinc-900 border-zinc-800',
   dropdown: 'bg-zinc-900 border-zinc-800',
   popover: 'bg-zinc-900 border-zinc-800',
@@ -218,7 +218,7 @@ export const TEXT_COLORS = {
   success: 'text-green-400',
   warning: 'text-orange-400',
   info: 'text-blue-400',
-  link: 'text-red-400 hover:text-red-300',
+  link: 'text-cyan-400 hover:text-cyan-300',
 };
 
 // =============================================================================
@@ -226,7 +226,7 @@ export const TEXT_COLORS = {
 // =============================================================================
 
 export const INPUT_STYLES = {
-  default: 'bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500 focus:border-red-500 focus:ring-red-500/20',
+  default: 'bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500 focus:border-cyan-500 focus:ring-cyan-500/20',
   error: 'bg-zinc-800 border-red-500 text-white placeholder-zinc-500 focus:border-red-500 focus:ring-red-500/20',
   disabled: 'bg-zinc-800/50 border-zinc-700 text-zinc-500 cursor-not-allowed',
 };
@@ -249,7 +249,7 @@ export const TABLE_STYLES = {
 
 export const TAB_STYLES = {
   list: 'bg-zinc-900 border border-zinc-800',
-  trigger: 'data-[state=active]:bg-red-600 data-[state=active]:text-white text-zinc-400',
+  trigger: 'data-[state=active]:bg-cyan-600 data-[state=active]:text-white text-zinc-400',
   content: 'mt-6',
 };
 

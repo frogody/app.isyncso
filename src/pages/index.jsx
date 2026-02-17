@@ -1,4 +1,5 @@
 import Layout from "./Layout.jsx";
+import { CalendarBookingPage } from "@/components/inbox/booking";
 
 import AIAssistant from "./AIAssistant";
 
@@ -33,9 +34,17 @@ import CRMCompanyProfile from "./CRMCompanyProfile";
 
 import CRMContactProfile from "./CRMContactProfile";
 
+import CRMDashboard from "./CRMDashboard";
+
+import CRMPipeline from "./CRMPipeline";
+
+import CRMCampaigns from "./CRMCampaigns";
+
 import Certificates from "./Certificates";
 
 import CompanyDashboard from "./CompanyDashboard";
+
+import Credits from "./Credits";
 
 import CompanyInvite from "./CompanyInvite";
 
@@ -43,13 +52,21 @@ import CompanyProfile from "./CompanyProfile";
 
 import ComplianceCenter from "./ComplianceCenter";
 
+import ComplianceControls from "./ComplianceControls";
+
+import ComplianceEvidence from "./ComplianceEvidence";
+
+import ComplianceFrameworks from "./ComplianceFrameworks";
+
+import CompliancePolicies from "./CompliancePolicies";
+
 import ComplianceRoadmap from "./ComplianceRoadmap";
 
 import ComponentShowcase from "./ComponentShowcase";
 
 import ComposioIntegrations from "./ComposioIntegrations";
 
-import Contacts from "./Contacts";
+// Contacts.jsx deprecated - redirects to CRMContacts
 
 import CourseDetail from "./CourseDetail";
 
@@ -59,11 +76,13 @@ import Courses from "./Courses";
 
 import Dashboard from "./Dashboard";
 
-import Deals from "./Deals";
+// Deals.jsx deprecated - redirects to CRMPipeline
 
 import DesktopActivity from "./DesktopActivity";
 
 import DailyJournal from "./DailyJournal";
+
+import PrivacyAIAct from "./PrivacyAIAct";
 
 import DocumentGenerator from "./DocumentGenerator";
 
@@ -125,7 +144,7 @@ import Insights from "./Insights";
 
 import Leaderboard from "./Leaderboard";
 
-import Leads from "./Leads";
+// Leads.jsx deprecated - redirects to CRMContacts?tab=lead
 
 import Learn from "./Learn";
 
@@ -135,7 +154,13 @@ import LearnAssistant from "./LearnAssistant";
 
 import LearnDashboard from "./LearnDashboard";
 
+import LearningPaths from "./LearningPaths";
+
 import LessonViewer from "./LessonViewer";
+
+import PracticeChallenges from "./PracticeChallenges";
+
+import TeamLearningDashboard from "./TeamLearningDashboard";
 
 // Marketplace pages
 import NestsMarketplace from "./marketplace/NestsMarketplace";
@@ -156,6 +181,10 @@ import RiskAssessment from "./RiskAssessment";
 import Sentinel from "./Sentinel";
 
 import SentinelDashboard from "./SentinelDashboard";
+
+import TrustCenter from "./TrustCenter";
+
+import VendorRisk from "./VendorRisk";
 
 import Sequences from "./Sequences";
 
@@ -304,6 +333,8 @@ import EmailPoolSettings from "./EmailPoolSettings";
 
 import SyncAgent from "./SyncAgent";
 
+import SyncPhone from "./SyncPhone";
+
 import InventoryImport from "./InventoryImport";
 
 import ContactsImport from "./ContactsImport";
@@ -418,6 +449,12 @@ const PAGES = {
 
     CRMContactProfile: CRMContactProfile,
 
+    CRMDashboard: CRMDashboard,
+
+    CRMPipeline: CRMPipeline,
+
+    CRMCampaigns: CRMCampaigns,
+
     Certificates: Certificates,
     
     CompanyDashboard: CompanyDashboard,
@@ -427,15 +464,21 @@ const PAGES = {
     CompanyProfile: CompanyProfile,
     
     ComplianceCenter: ComplianceCenter,
-    
+
+    ComplianceControls: ComplianceControls,
+
+    ComplianceEvidence: ComplianceEvidence,
+
+    ComplianceFrameworks: ComplianceFrameworks,
+
+    CompliancePolicies: CompliancePolicies,
+
     ComplianceRoadmap: ComplianceRoadmap,
     
     ComponentShowcase: ComponentShowcase,
 
     ComposioIntegrations: ComposioIntegrations,
 
-    Contacts: Contacts,
-    
     CourseDetail: CourseDetail,
     
     CourseUpgrader: CourseUpgrader,
@@ -443,9 +486,6 @@ const PAGES = {
     Courses: Courses,
     
     Dashboard: Dashboard,
-    
-    Deals: Deals,
-
     DailyJournal: DailyJournal,
 
     DocumentGenerator: DocumentGenerator,
@@ -504,9 +544,7 @@ const PAGES = {
     Insights: Insights,
     
     Leaderboard: Leaderboard,
-    
-    Leads: Leads,
-    
+
     Learn: Learn,
     
     LearnAITools: LearnAITools,
@@ -514,10 +552,16 @@ const PAGES = {
     LearnAssistant: LearnAssistant,
 
     LearnDashboard: LearnDashboard,
-    
+
+    LearningPaths: LearningPaths,
+
     LessonViewer: LessonViewer,
-    
+
+    PracticeChallenges: PracticeChallenges,
+
     ManageCourses: ManageCourses,
+
+    TeamLearningDashboard: TeamLearningDashboard,
     
     ManagerDashboard: ManagerDashboard,
     
@@ -532,7 +576,11 @@ const PAGES = {
     Sentinel: Sentinel,
     
     SentinelDashboard: SentinelDashboard,
-    
+
+    TrustCenter: TrustCenter,
+
+    VendorRisk: VendorRisk,
+
     Sequences: Sequences,
     
     Settings: Settings,
@@ -680,6 +728,7 @@ const PAGES = {
     EmailPoolSettings: EmailPoolSettings,
 
     SyncAgent: SyncAgent,
+    SyncPhone: SyncPhone,
 
     InventoryImport: InventoryImport,
 
@@ -748,6 +797,16 @@ function PagesContent() {
             <Routes>
                 <Route path="/demo" element={<DemoExperience />} />
                 <Route path="/request-demo" element={<RequestDemo />} />
+            </Routes>
+        );
+    }
+
+    // Public booking page - Calendly-style, no auth required
+    const isBookingRoute = location.pathname.startsWith('/book');
+    if (isBookingRoute) {
+        return (
+            <Routes>
+                <Route path="/book/:username" element={<CalendarBookingPage />} />
             </Routes>
         );
     }
@@ -855,14 +914,22 @@ function PagesContent() {
                 
                 <Route path="/BackendStatus" element={<BackendStatus />} />
                 
+                <Route path="/CRMDashboard" element={<CRMDashboard />} />
+
                 <Route path="/CRMContacts" element={<CRMContacts />} />
+
+                <Route path="/CRMPipeline" element={<CRMPipeline />} />
+
+                <Route path="/CRMCampaigns" element={<CRMCampaigns />} />
 
                 <Route path="/CRMCompanyProfile" element={<CRMCompanyProfile />} />
 
                 <Route path="/CRMContactProfile" element={<CRMContactProfile />} />
 
                 <Route path="/Certificates" element={<Certificates />} />
-                
+
+                <Route path="/Credits" element={<Credits />} />
+
                 <Route path="/CompanyDashboard" element={<CompanyDashboard />} />
                 
                 <Route path="/CompanyInvite" element={<CompanyInvite />} />
@@ -870,7 +937,15 @@ function PagesContent() {
                 <Route path="/CompanyProfile" element={<CompanyProfile />} />
                 
                 <Route path="/ComplianceCenter" element={<ComplianceCenter />} />
-                
+
+                <Route path="/ComplianceControls" element={<ComplianceControls />} />
+
+                <Route path="/ComplianceEvidence" element={<ComplianceEvidence />} />
+
+                <Route path="/ComplianceFrameworks" element={<ComplianceFrameworks />} />
+
+                <Route path="/CompliancePolicies" element={<CompliancePolicies />} />
+
                 <Route path="/ComplianceRoadmap" element={<ComplianceRoadmap />} />
                 
                 <Route path="/ComponentShowcase" element={<ComponentShowcase />} />
@@ -878,7 +953,7 @@ function PagesContent() {
                 <Route path="/ComposioIntegrations" element={<Navigate to="/Integrations" replace />} />
                 <Route path="/settings/integrations" element={<Navigate to="/Integrations" replace />} />
 
-                <Route path="/Contacts" element={<Contacts />} />
+                <Route path="/Contacts" element={<Navigate to="/CRMContacts" replace />} />
                 
                 <Route path="/CourseDetail" element={<CourseDetail />} />
                 
@@ -888,13 +963,15 @@ function PagesContent() {
                 
                 <Route path="/Dashboard" element={<Dashboard />} />
                 
-                <Route path="/Deals" element={<Navigate to="/GrowthPipeline" replace />} />
+                <Route path="/Deals" element={<Navigate to="/CRMPipeline" replace />} />
                 
                 <Route path="/DocumentGenerator" element={<DocumentGenerator />} />
 
                 <Route path="/DesktopActivity" element={<DesktopActivity />} />
 
                 <Route path="/DailyJournal" element={<DailyJournal />} />
+
+                <Route path="/PrivacyAIAct" element={<PrivacyAIAct />} />
 
                 <Route path="/DownloadApp" element={<DownloadApp />} />
                 
@@ -977,7 +1054,7 @@ function PagesContent() {
                 
                 <Route path="/Leaderboard" element={<Leaderboard />} />
                 
-                <Route path="/Leads" element={<Leads />} />
+                <Route path="/Leads" element={<Navigate to="/CRMContacts?tab=lead" replace />} />
                 
                 <Route path="/Learn" element={<Learn />} />
                 
@@ -1009,6 +1086,10 @@ function PagesContent() {
                 <Route path="/Sentinel" element={<Sentinel />} />
                 
                 <Route path="/SentinelDashboard" element={<SentinelDashboard />} />
+
+                <Route path="/TrustCenter" element={<TrustCenter />} />
+
+                <Route path="/VendorRisk" element={<VendorRisk />} />
                 
                 <Route path="/Sequences" element={<Sequences />} />
                 
@@ -1148,6 +1229,7 @@ function PagesContent() {
                 <Route path="/EmailPoolSettings" element={<Navigate to="/Settings?tab=email-pool" replace />} />
 
                 <Route path="/SyncAgent" element={<SyncAgent />} />
+                <Route path="/SyncPhone" element={<SyncPhone />} />
 
                 <Route path="/InventoryReturns" element={<InventoryReturns />} />
 

@@ -8,7 +8,8 @@ import {
   AlertTriangle, Image as ImageIcon, Video, HelpCircle, Share2, Copy,
   Heart, ShoppingCart, Info, Layers, Ruler, Weight, MapPin, Save,
   LayoutGrid, Settings, History, FolderOpen, TrendingUp, Boxes,
-  ChevronDown, MoreHorizontal, Eye, Percent, Calculator, Briefcase, ClipboardList, Plus
+  ChevronDown, MoreHorizontal, Eye, Percent, Calculator, Briefcase, ClipboardList, Plus,
+  Megaphone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +55,7 @@ import {
 } from '@/lib/db/queries';
 import { supabase } from '@/api/supabaseClient';
 import { calculateDiffs, logProductActivity } from '@/lib/audit';
+import { ProductListingBuilder } from '@/components/products/listing';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -93,6 +95,7 @@ const NAV_ITEMS = [
   { id: 'deliverables', label: 'Deliverables', icon: ClipboardList, serviceOnly: true },
   { id: 'documents', label: 'Documents', icon: FolderOpen },
   { id: 'activity', label: 'Activity', icon: History },
+  { id: 'listing', label: 'Product Listing', icon: Megaphone, physicalOnly: true },
 ];
 
 // ============= HELPERS =============
@@ -2024,24 +2027,37 @@ export default function ProductDetail() {
 
   // Handle details update
   const handleDetailsUpdate = async (updates) => {
-    if (!details) return;
-
     setSaving(true);
     try {
-      // digital_products and physical_products use product_id as primary key, not id
-      const detailsId = details.product_id || details.id;
-
-      if (type === 'digital') {
-        await DigitalProduct.update(detailsId, updates);
-      } else if (type === 'service') {
-        await ServiceProduct.update(detailsId, updates);
+      if (!details && type === 'service') {
+        // No service_products row exists yet — create one
+        const newRow = await ServiceProduct.create({
+          product_id: product.id,
+          company_id: user?.company_id,
+          ...updates,
+        });
+        setDetails(newRow);
+      } else if (!details) {
+        toast.error('Product details not loaded');
+        setSaving(false);
+        return;
       } else {
-        await PhysicalProduct.update(detailsId, updates);
+        // Existing row — update as normal
+        const detailsId = details.product_id || details.id;
+
+        if (type === 'digital') {
+          await DigitalProduct.update(detailsId, updates);
+        } else if (type === 'service') {
+          await ServiceProduct.update(detailsId, updates);
+        } else {
+          await PhysicalProduct.update(detailsId, updates);
+        }
+        setDetails(prev => ({ ...prev, ...updates }));
       }
-      setDetails(prev => ({ ...prev, ...updates }));
+
       // Log detail-level changes to the product activity feed
       if (product?.id && user?.id) {
-        const changes = calculateDiffs(details, updates);
+        const changes = calculateDiffs(details || {}, updates);
         if (changes) {
           await logProductActivity({
             productId: product.id,
@@ -2273,6 +2289,14 @@ export default function ProductDetail() {
               <ActivitySectionWrapper
                 product={product}
                 details={details}
+              />
+            )}
+
+            {activeSection === 'listing' && isPhysical && (
+              <ProductListingBuilder
+                product={product}
+                details={details}
+                onDetailsUpdate={handleDetailsUpdate}
               />
             )}
         </div>

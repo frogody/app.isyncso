@@ -1,246 +1,200 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import * as Progress from '@radix-ui/react-progress';
 import {
+  Search,
   Package,
   Camera,
-  FolderOpen,
-  Image,
+  Check,
+  X,
   Loader2,
-  CheckCircle2,
   ArrowRight,
-  AlertTriangle,
-  Palette,
-  Clock,
   ArrowLeft,
-  Square,
+  Image as ImageIcon,
+  Images,
+  Filter,
+  AlertTriangle,
+  Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  Grid3X3,
+  LayoutGrid,
+  Tag,
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
-import { SyncStudioNav } from '@/components/sync-studio';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxfntqleig.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
-
 const EDGE_FUNCTION = 'sync-studio-import-catalog';
 const PLAN_EDGE_FUNCTION = 'sync-studio-generate-plans';
-const POLL_INTERVAL_MS = 2000;
-const COMPLETE_REDIRECT_DELAY_MS = 2000;
+const MAX_SELECTION = 30;
+const PAGE_SIZE = 50;
 
-// --- Animated Counter ---
-function AnimatedCounter({ value, duration = 600 }) {
-  const [displayed, setDisplayed] = useState(0);
-  const prevRef = useRef(0);
-  const rafRef = useRef(null);
-
-  useEffect(() => {
-    const start = prevRef.current;
-    const end = value;
-    if (start === end) return;
-
-    const startTime = performance.now();
-
-    const tick = (now) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      // Ease-out quad
-      const eased = 1 - (1 - progress) * (1 - progress);
-      const current = Math.round(start + (end - start) * eased);
-      setDisplayed(current);
-
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(tick);
-      } else {
-        prevRef.current = end;
-      }
-    };
-
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, [value, duration]);
-
-  return <>{displayed.toLocaleString()}</>;
-}
-
-// --- Stat Pill ---
-function StatPill({ icon: Icon, label, value, suffix = '' }) {
+// --- Skeleton card ---
+function SkeletonCard() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex items-center gap-2 bg-zinc-800/60 border border-zinc-700/50 rounded-xl px-3.5 py-2"
-    >
-      <Icon className="w-4 h-4 text-yellow-400 shrink-0" />
-      <span className="text-sm text-zinc-400">{label}</span>
-      <span className="text-sm font-semibold text-white tabular-nums">
-        <AnimatedCounter value={value} />
-        {suffix}
-      </span>
-    </motion.div>
-  );
-}
-
-// --- Step Indicator ---
-const STEPS = [
-  { key: 'importing', label: 'Import', icon: Package },
-  { key: 'planning', label: 'Plan', icon: Palette },
-  { key: 'complete', label: 'Done', icon: CheckCircle2 },
-];
-
-function StepIndicator({ currentStage }) {
-  const stageIndex = STEPS.findIndex((s) => s.key === currentStage);
-
-  return (
-    <div className="flex items-center justify-center gap-1 mb-6">
-      {STEPS.map((step, i) => {
-        const Icon = step.icon;
-        const isActive = i === stageIndex;
-        const isDone = i < stageIndex || currentStage === 'complete';
-
-        return (
-          <React.Fragment key={step.key}>
-            {i > 0 && (
-              <div
-                className={`w-8 h-px transition-colors duration-500 ${
-                  isDone ? 'bg-yellow-500/60' : 'bg-zinc-700/50'
-                }`}
-              />
-            )}
-            <div className="flex items-center gap-1.5">
-              <div
-                className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-500 ${
-                  isDone
-                    ? 'bg-yellow-500/20 border border-yellow-500/30'
-                    : isActive
-                    ? 'bg-yellow-500/10 border border-yellow-500/20'
-                    : 'bg-zinc-800/40 border border-zinc-700/30'
-                }`}
-              >
-                <Icon
-                  className={`w-3 h-3 transition-colors duration-500 ${
-                    isDone || isActive ? 'text-yellow-400' : 'text-zinc-600'
-                  }`}
-                />
-              </div>
-              <span
-                className={`text-[11px] font-medium transition-colors duration-500 ${
-                  isDone || isActive ? 'text-zinc-300' : 'text-zinc-600'
-                }`}
-              >
-                {step.label}
-              </span>
-            </div>
-          </React.Fragment>
-        );
-      })}
-    </div>
-  );
-}
-
-// --- Elapsed Timer ---
-function ElapsedTimer({ startTime }) {
-  const [elapsed, setElapsed] = useState(0);
-
-  useEffect(() => {
-    if (!startTime) return;
-    const tick = () => setElapsed(Math.floor((Date.now() - startTime) / 1000));
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [startTime]);
-
-  const m = Math.floor(elapsed / 60);
-  const s = elapsed % 60;
-  const display = m > 0 ? `${m}m ${s.toString().padStart(2, '0')}s` : `${s}s`;
-
-  return (
-    <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-      <Clock className="w-3 h-3" />
-      <span className="tabular-nums">{display}</span>
-    </div>
-  );
-}
-
-// --- Progress Bar ---
-function ImportProgressBar({ current, total }) {
-  const percentage = total > 0 ? Math.min(Math.round((current / total) * 100), 100) : 0;
-
-  return (
-    <div className="space-y-2">
-      <Progress.Root
-        className="relative h-2.5 w-full overflow-hidden rounded-full bg-zinc-800"
-        value={percentage}
-      >
-        <Progress.Indicator
-          className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400 transition-all duration-500 ease-out"
-          style={{ width: `${percentage}%` }}
-        />
-      </Progress.Root>
-      <div className="flex items-center justify-between text-xs text-zinc-500">
-        <span>
-          <span className="text-zinc-300 font-medium tabular-nums">
-            <AnimatedCounter value={current} />
-          </span>
-          {' '}of ~
-          <span className="tabular-nums">
-            <AnimatedCounter value={total} />
-          </span>
-        </span>
-        <span className="tabular-nums text-yellow-400/80 font-medium">{percentage}%</span>
+    <div className="rounded-xl overflow-hidden bg-zinc-900/50 border border-zinc-800/40 animate-pulse">
+      <div className="aspect-square bg-zinc-800/40" />
+      <div className="p-2.5 space-y-2">
+        <div className="h-3 bg-zinc-800/60 rounded w-4/5" />
+        <div className="h-2.5 bg-zinc-800/40 rounded w-1/2" />
       </div>
     </div>
   );
 }
 
+// --- Debounce hook ---
+function useDebouncedValue(value, delay = 350) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
+
+// --- Image count helper ---
+function getImageCount(product) {
+  let count = 0;
+  if (product.featured_image?.url) count++;
+  if (Array.isArray(product.gallery)) count += product.gallery.filter(g => g?.url).length;
+  return count;
+}
+
+// --- Planning steps ---
+const PLANNING_STEPS = [
+  { key: 'starting', label: 'Importing products', desc: 'Copying selected products into your session' },
+  { key: 'planning', label: 'Creating shoot plans', desc: 'AI is designing optimal shots for each product' },
+  { key: 'done', label: 'Ready', desc: 'Opening your shoot planner' },
+];
+
 export default function SyncStudioImport() {
   const navigate = useNavigate();
   const { user } = useUser();
 
-  // Import state
-  const [stage, setStage] = useState('loading'); // loading | importing | planning | complete | error
-  const [importJobId, setImportJobId] = useState(null);
-  const [nextPage, setNextPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  // Product browsing state
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState('');
+  const debouncedSearch = useDebouncedValue(searchInput);
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [selected, setSelected] = useState(new Set());
+  const [selectedProducts, setSelectedProducts] = useState(new Map()); // id -> {name, thumb}
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [gridSize, setGridSize] = useState('normal'); // normal | compact
 
-  // Import stats
-  const [totalProducts, setTotalProducts] = useState(0);
-  const [estimatedTotal, setEstimatedTotal] = useState(0);
-  const [categories, setCategories] = useState(0);
-  const [brands, setBrands] = useState(0);
-  const [images, setImages] = useState(0);
-  const [currentProduct, setCurrentProduct] = useState('');
-
-  // Planning stats
-  const [plannedProducts, setPlannedProducts] = useState(0);
-  const [totalShotsPlanned, setTotalShotsPlanned] = useState(0);
-  const [planningPage, setPlanningPage] = useState(null);
-
-  // Error
+  // Session state
+  const [stage, setStage] = useState('picking'); // picking | starting | planning | done | error
   const [error, setError] = useState(null);
+  const [planningProgress, setPlanningProgress] = useState({ current: 0, total: 0 });
 
-  // Cancel
-  const [cancelling, setCancelling] = useState(false);
+  // -- Load products --
+  useEffect(() => {
+    if (!user?.company_id) return;
+    const load = async () => {
+      setLoading(true);
+      try {
+        let query = supabase
+          .from('products')
+          .select('id, name, category, ean, price, featured_image, gallery, tags', { count: 'exact' })
+          .eq('company_id', user.company_id)
+          .order('name', { ascending: true })
+          .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-  // Timing
-  const [startTime] = useState(() => Date.now());
+        if (debouncedSearch.trim()) {
+          query = query.ilike('name', `%${debouncedSearch.trim()}%`);
+        }
+        if (categoryFilter !== 'all') {
+          query = query.eq('category', categoryFilter);
+        }
 
-  // Refs for cleanup
-  const pollingRef = useRef(null);
-  const planPollingRef = useRef(null);
-  const mountedRef = useRef(true);
-  const continueInFlightRef = useRef(false);
-  const planInFlightRef = useRef(false);
+        const { data, count, error: err } = await query;
+        if (err) throw err;
+        setProducts(data || []);
+        setTotalCount(count || 0);
+      } catch (err) {
+        console.error('[SyncStudioImport] load error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [user?.company_id, debouncedSearch, categoryFilter, page]);
+
+  // -- Extract unique categories --
+  const [categories, setCategories] = useState([]);
+  useEffect(() => {
+    if (!user?.company_id) return;
+    const loadCats = async () => {
+      const { data } = await supabase
+        .from('products')
+        .select('category')
+        .eq('company_id', user.company_id)
+        .not('category', 'is', null);
+      if (data) {
+        const unique = [...new Set(data.map((d) => d.category).filter(Boolean))].sort();
+        setCategories(unique);
+      }
+    };
+    loadCats();
+  }, [user?.company_id]);
+
+  // -- Toggle selection --
+  const toggleProduct = useCallback(
+    (product) => {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        if (next.has(product.id)) {
+          next.delete(product.id);
+          setSelectedProducts((sp) => { const m = new Map(sp); m.delete(product.id); return m; });
+        } else if (next.size < MAX_SELECTION) {
+          next.add(product.id);
+          setSelectedProducts((sp) => {
+            const m = new Map(sp);
+            m.set(product.id, { name: product.name, thumb: product.featured_image?.url || null });
+            return m;
+          });
+        }
+        return next;
+      });
+    },
+    []
+  );
+
+  const selectAll = useCallback(() => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const p of products) {
+        if (next.size >= MAX_SELECTION) break;
+        if (!next.has(p.id)) {
+          next.add(p.id);
+          setSelectedProducts((sp) => {
+            const m = new Map(sp);
+            m.set(p.id, { name: p.name, thumb: p.featured_image?.url || null });
+            return m;
+          });
+        }
+      }
+      return next;
+    });
+  }, [products]);
+
+  const clearSelection = useCallback(() => {
+    setSelected(new Set());
+    setSelectedProducts(new Map());
+  }, []);
+
+  const removeFromSelection = useCallback((productId) => {
+    setSelected((prev) => { const next = new Set(prev); next.delete(productId); return next; });
+    setSelectedProducts((sp) => { const m = new Map(sp); m.delete(productId); return m; });
+  }, []);
 
   // -- Edge function caller --
   const callEdgeFunction = useCallback(async (body, fnName = EDGE_FUNCTION) => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      throw new Error('Not authenticated. Please log in again.');
-    }
-
+    if (!session?.access_token) throw new Error('Not authenticated');
     const response = await fetch(`${SUPABASE_URL}/functions/v1/${fnName}`, {
       method: 'POST',
       headers: {
@@ -250,558 +204,616 @@ export default function SyncStudioImport() {
       },
       body: JSON.stringify(body),
     });
-
     if (!response.ok) {
       const text = await response.text();
       let msg;
-      try {
-        const parsed = JSON.parse(text);
-        msg = parsed.error || parsed.message || `HTTP ${response.status}`;
-      } catch {
-        msg = text || `HTTP ${response.status}`;
-      }
+      try { msg = JSON.parse(text).error || `HTTP ${response.status}`; } catch { msg = text; }
       throw new Error(msg);
     }
-
     return response.json();
   }, []);
 
-  // -- Update stats from response --
-  const updateStats = useCallback((data) => {
-    if (data.totalProducts != null) setTotalProducts(data.totalProducts);
-    if (data.estimatedTotal != null) setEstimatedTotal(data.estimatedTotal);
-    if (data.categories != null) setCategories(data.categories);
-    if (data.brands != null) setBrands(data.brands);
-    if (data.images != null) setImages(data.images);
-    if (data.currentProduct) setCurrentProduct(data.currentProduct);
-    if (data.importJobId) setImportJobId(data.importJobId);
-    if (data.nextPage != null) setNextPage(data.nextPage);
-    if (data.hasMore != null) setHasMore(data.hasMore);
-  }, []);
+  // -- Start session with selected products --
+  const startSession = useCallback(async () => {
+    if (selected.size === 0) return;
+    setStage('starting');
+    setError(null);
+    setPlanningProgress({ current: 0, total: selected.size });
 
-  // -- Handle full completion (after planning) --
-  const handleAllDone = useCallback(() => {
-    if (!mountedRef.current) return;
-    setStage('complete');
-    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
-    if (planPollingRef.current) { clearInterval(planPollingRef.current); planPollingRef.current = null; }
-    setTimeout(() => {
-      if (mountedRef.current) navigate('/SyncStudioDashboard');
-    }, COMPLETE_REDIRECT_DELAY_MS);
-  }, [navigate]);
-
-  // -- Planning: continue next chunk --
-  const continuePlanning = useCallback(async (jobId, page) => {
-    if (!mountedRef.current || planInFlightRef.current) return;
-    planInFlightRef.current = true;
     try {
-      const data = await callEdgeFunction({
-        action: 'continue',
+      // 1. Import selected products
+      const importResult = await callEdgeFunction({
+        action: 'start',
         userId: user?.id,
         companyId: user?.company_id,
-        importJobId: jobId,
-        page,
-      }, PLAN_EDGE_FUNCTION);
-      if (!mountedRef.current) return;
-      if (data.totalPlanned != null) setPlannedProducts(data.totalPlanned);
-      if (data.totalShots != null) setTotalShotsPlanned(data.totalShots);
-      if (data.nextPage != null) setPlanningPage(data.nextPage);
-      if (data.status === 'completed' || !data.hasMore) {
-        handleAllDone();
-      }
-    } catch (err) {
-      if (mountedRef.current) { setError(err.message); setStage('error'); }
-    } finally {
-      planInFlightRef.current = false;
-    }
-  }, [callEdgeFunction, user, handleAllDone]);
+        productIds: [...selected],
+      });
 
-  // -- Planning: poll + continue loop --
-  const startPlanPolling = useCallback((jobId, initialPage) => {
-    if (planPollingRef.current) clearInterval(planPollingRef.current);
-    let currentPage = initialPage;
-    planPollingRef.current = setInterval(async () => {
-      if (!mountedRef.current) { clearInterval(planPollingRef.current); return; }
-      if (planInFlightRef.current) return;
-      try {
-        const statusData = await callEdgeFunction({
-          action: 'status',
-          userId: user?.id,
-          companyId: user?.company_id,
-          importJobId: jobId,
-        }, PLAN_EDGE_FUNCTION);
-        if (!mountedRef.current) return;
-        if (statusData.planned_products != null) setPlannedProducts(statusData.planned_products);
-        if (statusData.total_shots_planned != null) setTotalShotsPlanned(statusData.total_shots_planned);
-        if (statusData.status === 'completed') { handleAllDone(); return; }
-        // Continue next chunk
-        if (currentPage) {
-          await continuePlanning(jobId, currentPage);
-          currentPage = null; // will be set by continuePlanning via setPlanningPage
-        }
-      } catch (err) {
-        // Transient errors ok, don't crash
-      }
-    }, POLL_INTERVAL_MS);
-  }, [callEdgeFunction, user, handleAllDone, continuePlanning]);
+      if (importResult.error) throw new Error(importResult.error);
 
-  // -- Start planning phase --
-  const startPlanning = useCallback(async (jobId) => {
-    if (!mountedRef.current) return;
-    setStage('planning');
-    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
-    try {
-      const data = await callEdgeFunction({
+      const jobId = importResult.importJobId;
+      if (!jobId) throw new Error('No import job created');
+
+      // 2. Start planning
+      setStage('planning');
+      const planResult = await callEdgeFunction({
         action: 'start',
         userId: user?.id,
         companyId: user?.company_id,
         importJobId: jobId,
       }, PLAN_EDGE_FUNCTION);
-      if (!mountedRef.current) return;
-      if (data.totalPlanned != null) setPlannedProducts(data.totalPlanned);
-      if (data.totalShots != null) setTotalShotsPlanned(data.totalShots);
-      if (data.status === 'completed' || !data.hasMore) {
-        handleAllDone();
-      } else {
-        startPlanPolling(jobId, data.nextPage);
+
+      setPlanningProgress({ current: planResult.planned || 0, total: selected.size });
+
+      // 3. If planning needs continuation, poll
+      if (planResult.hasMore && planResult.status !== 'completed') {
+        let nextPage = planResult.nextPage;
+        while (nextPage) {
+          const chunk = await callEdgeFunction({
+            action: 'continue',
+            userId: user?.id,
+            companyId: user?.company_id,
+            importJobId: jobId,
+            page: nextPage,
+          }, PLAN_EDGE_FUNCTION);
+          setPlanningProgress({ current: chunk.totalPlanned || 0, total: selected.size });
+          if (!chunk.hasMore || chunk.status === 'completed') break;
+          nextPage = chunk.nextPage;
+        }
       }
+
+      // 4. Brief "done" state then navigate
+      setStage('done');
+      setTimeout(() => navigate('/SyncStudioDashboard'), 600);
     } catch (err) {
-      if (mountedRef.current) { setError(err.message); setStage('error'); }
+      console.error('[SyncStudioImport] session error:', err);
+      setError(err.message);
+      setStage('error');
     }
-  }, [callEdgeFunction, user, handleAllDone, startPlanPolling]);
+  }, [selected, user, callEdgeFunction, navigate]);
 
-  // -- Handle import completion (transitions to planning) --
-  const handleComplete = useCallback((jobId) => {
-    if (!mountedRef.current) return;
-    const jid = jobId || importJobId;
-    if (jid) {
-      startPlanning(jid);
-    } else {
-      handleAllDone();
-    }
-  }, [importJobId, startPlanning, handleAllDone]);
+  // -- Pagination --
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-  // -- Continue import (fetch next page) --
-  const continueImport = useCallback(async (jobId, page) => {
-    if (!mountedRef.current || continueInFlightRef.current) return;
-    continueInFlightRef.current = true;
+  // -- Get image URL from product --
+  const getThumb = (p) => p.featured_image?.url || null;
 
-    try {
-      const data = await callEdgeFunction({
-        action: 'continue',
-        userId: user?.id,
-        companyId: user?.company_id,
-        importJobId: jobId,
-        page,
-      });
+  // -- Selection percentage for ring --
+  const selectionPct = Math.round((selected.size / MAX_SELECTION) * 100);
 
-      if (!mountedRef.current) return;
-      updateStats(data);
+  // ============================================
+  // LOADING / PLANNING STATE
+  // ============================================
+  if (stage !== 'picking' && stage !== 'error') {
+    const currentStepIdx = stage === 'starting' ? 0 : stage === 'planning' ? 1 : 2;
+    const progressPct = planningProgress.total > 0
+      ? Math.round((planningProgress.current / planningProgress.total) * 100)
+      : 0;
 
-      if (!data.hasMore || data.status === 'planning' || data.status === 'complete') {
-        handleComplete(data.importJobId || jobId);
-      }
-    } catch (err) {
-      if (mountedRef.current) {
-        console.error('[SyncStudioImport] continue error:', err);
-        setError(err.message);
-        setStage('error');
-      }
-    } finally {
-      continueInFlightRef.current = false;
-    }
-  }, [callEdgeFunction, user, updateStats, handleComplete]);
-
-  // -- Poll for progress / trigger next page --
-  const startPolling = useCallback((jobId, initialPage) => {
-    if (pollingRef.current) clearInterval(pollingRef.current);
-
-    let currentPage = initialPage;
-    let currentJobId = jobId;
-
-    pollingRef.current = setInterval(async () => {
-      if (!mountedRef.current) {
-        clearInterval(pollingRef.current);
-        return;
-      }
-
-      // If a continue is in flight, skip this tick
-      if (continueInFlightRef.current) return;
-
-      try {
-        // Check status first
-        const statusData = await callEdgeFunction({
-          action: 'status',
-          userId: user?.id,
-          companyId: user?.company_id,
-        });
-
-        if (!mountedRef.current) return;
-        updateStats(statusData);
-
-        // Import is done — transition to planning
-        if (statusData.status === 'planning' || statusData.status === 'complete' || !statusData.hasMore) {
-          handleComplete(statusData.importJobId || currentJobId);
-          return;
-        }
-
-        // There are more pages -- trigger continue
-        if (statusData.hasMore && statusData.nextPage != null) {
-          currentPage = statusData.nextPage;
-          currentJobId = statusData.importJobId || currentJobId;
-          await continueImport(currentJobId, currentPage);
-        }
-      } catch (err) {
-        if (mountedRef.current) {
-          console.error('[SyncStudioImport] poll error:', err);
-          // Don't set error on transient failures, only after repeated issues
-        }
-      }
-    }, POLL_INTERVAL_MS);
-  }, [callEdgeFunction, user, updateStats, handleComplete, continueImport]);
-
-  // -- Init: check for existing job or start new one --
-  useEffect(() => {
-    if (!user?.id) return;
-
-    mountedRef.current = true;
-
-    const init = async () => {
-      try {
-        // 1) Check for active import
-        const statusData = await callEdgeFunction({
-          action: 'status',
-          userId: user.id,
-          companyId: user.company_id,
-        });
-
-        if (!mountedRef.current) return;
-        updateStats(statusData);
-
-        // Already fully completed — go to dashboard
-        if (statusData.status === 'completed' || statusData.status === 'complete') {
-          handleAllDone();
-          return;
-        }
-
-        // In planning phase — resume planning
-        if (statusData.status === 'planning' && statusData.importJobId) {
-          handleComplete(statusData.importJobId);
-          return;
-        }
-
-        // Active import found — resume
-        if (statusData.status === 'importing' && statusData.importJobId) {
-          setStage('importing');
-          startPolling(statusData.importJobId, statusData.nextPage || 1);
-          return;
-        }
-
-        // 2) No active import — redirect to home instead of auto-starting
-        //    (auto-starting costs credits and can happen accidentally)
-        if (mountedRef.current) {
-          navigate('/SyncStudioHome', { replace: true });
-        }
-        return;
-      } catch (err) {
-        if (mountedRef.current) {
-          console.error('[SyncStudioImport] init error:', err);
-          setError(err.message);
-          setStage('error');
-        }
-      }
-    };
-
-    init();
-
-    return () => {
-      mountedRef.current = false;
-      if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
-      if (planPollingRef.current) { clearInterval(planPollingRef.current); planPollingRef.current = null; }
-    };
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // -- Cancel handler --
-  const handleCancel = useCallback(() => {
-    if (cancelling) return;
-    const confirmed = window.confirm(
-      'Are you sure you want to cancel? You can resume later from the dashboard.',
-    );
-    if (!confirmed) return;
-
-    setCancelling(true);
-    // Stop all polling
-    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
-    if (planPollingRef.current) { clearInterval(planPollingRef.current); planPollingRef.current = null; }
-    mountedRef.current = false;
-    navigate('/SyncStudioDashboard');
-  }, [cancelling, navigate]);
-
-  // -- Retry handler --
-  const handleRetry = () => {
-    setError(null);
-    setStage('loading');
-    setTotalProducts(0);
-    setEstimatedTotal(0);
-    setCategories(0);
-    setBrands(0);
-    setImages(0);
-    setCurrentProduct('');
-    setImportJobId(null);
-    setNextPage(1);
-    setHasMore(true);
-    // Re-trigger init by forcing remount-like effect
-    window.location.reload();
-  };
-
-  return (
-    <div className="min-h-screen bg-black flex flex-col items-center p-4 relative overflow-hidden">
-      {/* Ambient background */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-yellow-500/[0.03] rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] bg-yellow-600/[0.02] rounded-full blur-[100px]" />
-      </div>
-
-      {/* Studio Nav */}
-      <div className="relative z-10 mt-2 shrink-0">
-        <SyncStudioNav />
-      </div>
-
-      {/* Back button */}
-      {stage !== 'complete' && (
-        <button
-          onClick={() => navigate('/SyncStudioHome')}
-          className="absolute top-6 left-6 z-10 flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 text-sm transition-colors"
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-lg w-full"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
-      )}
-
-      <div className="relative z-10 max-w-lg w-full my-auto">
-        {/* Step indicator (hidden during loading) */}
-        {stage !== 'loading' && <StepIndicator currentStage={stage} />}
-
-        <AnimatePresence mode="wait">
-          {/* ----- LOADING ----- */}
-          {stage === 'loading' && (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
-              className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8 w-full text-center"
-            >
-              <Loader2 className="w-10 h-10 text-yellow-400 animate-spin mx-auto mb-4" />
-              <p className="text-zinc-400 text-sm">Connecting to Bol.com...</p>
-            </motion.div>
-          )}
-
-        {/* ----- IMPORTING ----- */}
-        {stage === 'importing' && (
-          <motion.div
-            key="importing"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.4 }}
-            className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8 w-full"
-          >
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
-                <Package className="w-5 h-5 text-yellow-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-lg font-semibold text-white">Importing your catalog...</h2>
-                <p className="text-sm text-zinc-500">Fetching products from Bol.com</p>
-              </div>
-              <ElapsedTimer startTime={startTime} />
+          {/* Main card */}
+          <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-2xl p-8">
+            {/* Icon */}
+            <div className="w-16 h-16 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mx-auto mb-6">
+              <Sparkles className="w-8 h-8 text-yellow-400" />
             </div>
 
-            {/* Progress Bar */}
-            <div className="mb-6">
-              <ImportProgressBar
-                current={totalProducts}
-                total={estimatedTotal || totalProducts + 100}
-              />
-            </div>
-
-            {/* Live Stats */}
-            <div className="mb-5">
-              <p className="text-xs text-zinc-600 uppercase tracking-wider font-medium mb-3">
-                Found so far
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <StatPill icon={FolderOpen} label="categories" value={categories} />
-                <StatPill icon={Camera} label="brands" value={brands} />
-                <StatPill icon={Image} label="images" value={images} suffix="+" />
-              </div>
-            </div>
-
-            {/* Current product ticker */}
-            <AnimatePresence mode="wait">
-              {currentProduct && (
-                <motion.div
-                  key={currentProduct}
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex items-center gap-2 text-xs text-zinc-600 truncate"
-                >
-                  <Loader2 className="w-3 h-3 animate-spin shrink-0 text-zinc-600" />
-                  <span className="truncate">{currentProduct}</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Cancel button */}
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={handleCancel}
-                disabled={cancelling}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/50 text-zinc-400 hover:text-zinc-300 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
-              >
-                {cancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />}
-                {cancelling ? 'Cancelling...' : 'Cancel Import'}
-              </button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* ----- PLANNING ----- */}
-        {stage === 'planning' && (
-          <motion.div
-            key="planning"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.4 }}
-            className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8 w-full"
-          >
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
-                <Palette className="w-5 h-5 text-yellow-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-lg font-semibold text-white">Creating shoot plans...</h2>
-                <p className="text-sm text-zinc-500">Preparing photoshoot briefs for each product</p>
-              </div>
-              <ElapsedTimer startTime={startTime} />
-            </div>
-
-            {/* Progress Bar */}
-            <div className="mb-6">
-              <ImportProgressBar
-                current={plannedProducts}
-                total={totalProducts || plannedProducts + 10}
-              />
-            </div>
-
-            {/* Planning Stats */}
-            <div className="mb-5">
-              <p className="text-xs text-zinc-600 uppercase tracking-wider font-medium mb-3">
-                Plans generated
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <StatPill icon={Package} label="products" value={plannedProducts} />
-                <StatPill icon={Camera} label="total shots" value={totalShotsPlanned} />
-              </div>
-            </div>
-
-            {/* Spinner */}
-            <div className="flex items-center gap-2 text-xs text-zinc-600">
-              <Loader2 className="w-3 h-3 animate-spin shrink-0 text-yellow-400" />
-              <span>Analyzing categories, prices & existing images...</span>
-            </div>
-
-            {/* Cancel button */}
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={handleCancel}
-                disabled={cancelling}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/50 text-zinc-400 hover:text-zinc-300 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
-              >
-                {cancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />}
-                {cancelling ? 'Cancelling...' : 'Cancel Planning'}
-              </button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* ----- COMPLETE ----- */}
-        {stage === 'complete' && (
-          <motion.div
-            key="complete"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.4 }}
-            className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8 w-full text-center"
-          >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
-              className="w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mx-auto mb-5"
-            >
-              <CheckCircle2 className="w-7 h-7 text-yellow-400" />
-            </motion.div>
-
-            <h2 className="text-xl font-semibold text-white mb-2">Studio ready!</h2>
-
-            <p className="text-sm text-zinc-400 mb-6">
-              <span className="text-white font-medium tabular-nums">
-                <AnimatedCounter value={totalProducts} />
-              </span>
-              {' products'}
-              <span className="text-zinc-600 mx-1">&middot;</span>
-              <span className="text-white font-medium tabular-nums">
-                <AnimatedCounter value={totalShotsPlanned} />
-              </span>
-              {' shots planned'}
+            <h2 className="text-xl font-semibold text-white text-center mb-1">
+              Preparing your photoshoot
+            </h2>
+            <p className="text-sm text-zinc-500 text-center mb-8">
+              {selected.size} product{selected.size !== 1 ? 's' : ''} selected
             </p>
 
-            <div className="flex items-center justify-center gap-2 text-sm text-zinc-500">
-              <Loader2 className="w-4 h-4 animate-spin text-yellow-400" />
-              <span>Redirecting to dashboard...</span>
-              <ArrowRight className="w-4 h-4 text-yellow-400" />
+            {/* Steps */}
+            <div className="space-y-4 mb-8">
+              {PLANNING_STEPS.map((step, i) => {
+                const isActive = i === currentStepIdx;
+                const isDone = i < currentStepIdx;
+                return (
+                  <div key={step.key} className="flex items-start gap-3">
+                    {/* Step indicator */}
+                    <div className={`
+                      w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-300
+                      ${isDone ? 'bg-yellow-400 text-black' : isActive ? 'bg-yellow-500/20 border-2 border-yellow-400' : 'bg-zinc-800/60 border border-zinc-700/40'}
+                    `}>
+                      {isDone ? (
+                        <Check className="w-4 h-4" strokeWidth={3} />
+                      ) : isActive ? (
+                        <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />
+                      ) : (
+                        <span className="text-xs text-zinc-600 font-medium">{i + 1}</span>
+                      )}
+                    </div>
+                    <div className="pt-1">
+                      <p className={`text-sm font-medium ${isDone || isActive ? 'text-white' : 'text-zinc-600'}`}>
+                        {step.label}
+                      </p>
+                      <p className={`text-xs mt-0.5 ${isActive ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                        {step.desc}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </motion.div>
-        )}
 
-        {/* ----- ERROR ----- */}
-        {stage === 'error' && (
-          <motion.div
-            key="error"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3 }}
-            className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8 w-full text-center"
-          >
-            <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-5">
-              <AlertTriangle className="w-7 h-7 text-red-400" />
-            </div>
+            {/* Progress bar for planning */}
+            {stage === 'planning' && planningProgress.total > 0 && (
+              <div>
+                <div className="flex justify-between text-xs text-zinc-500 mb-1.5">
+                  <span>Generating plans...</span>
+                  <span className="tabular-nums">{planningProgress.current}/{planningProgress.total}</span>
+                </div>
+                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-yellow-500 to-yellow-400 rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progressPct}%` }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
-            <h2 className="text-xl font-semibold text-white mb-2">Import failed</h2>
-            <p className="text-sm text-zinc-400 mb-6 break-words">
-              {error || 'An unexpected error occurred.'}
-            </p>
+          {/* Selected product thumbnails */}
+          <div className="flex items-center justify-center gap-1 mt-6 flex-wrap px-4">
+            {[...selectedProducts.entries()].slice(0, 12).map(([id, { thumb }]) => (
+              <div
+                key={id}
+                className="w-8 h-8 rounded-lg bg-zinc-800/60 border border-zinc-700/30 overflow-hidden shrink-0"
+              >
+                {thumb ? (
+                  <img src={thumb} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Package className="w-3 h-3 text-zinc-700" />
+                  </div>
+                )}
+              </div>
+            ))}
+            {selectedProducts.size > 12 && (
+              <span className="text-[10px] text-zinc-600 ml-1">+{selectedProducts.size - 12}</span>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
+  // ============================================
+  // ERROR STATE
+  // ============================================
+  if (stage === 'error') {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-zinc-900/60 border border-zinc-800/60 rounded-2xl p-8 max-w-md w-full text-center"
+        >
+          <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-5">
+            <AlertTriangle className="w-7 h-7 text-red-400" />
+          </div>
+          <h2 className="text-xl font-semibold text-white mb-2">Something went wrong</h2>
+          <p className="text-sm text-zinc-400 mb-6 break-words max-w-sm mx-auto">{error}</p>
+          <div className="flex items-center justify-center gap-3">
             <button
-              onClick={handleRetry}
+              onClick={() => navigate('/SyncStudioHome')}
+              className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+            >
+              Back to Studio
+            </button>
+            <button
+              onClick={() => { setStage('picking'); setError(null); }}
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 text-sm font-medium rounded-xl transition-colors"
             >
               Try again
             </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // MAIN: PRODUCT PICKER
+  // ============================================
+  const gridCols = gridSize === 'compact'
+    ? 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8'
+    : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
+
+  return (
+    <div className="min-h-screen bg-black pb-28">
+      {/* ============================================ */}
+      {/* HEADER                                       */}
+      {/* ============================================ */}
+      <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+          {/* Top row */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/SyncStudioHome')}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-zinc-800/60 transition-colors shrink-0"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-semibold text-white">Select Products</h1>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                Choose up to {MAX_SELECTION} products for this photoshoot session
+              </p>
+            </div>
+
+            {/* Grid toggle */}
+            <div className="hidden sm:flex items-center bg-zinc-900/60 border border-zinc-800/50 rounded-lg p-0.5">
+              <button
+                onClick={() => setGridSize('normal')}
+                className={`p-1.5 rounded-md transition-colors ${gridSize === 'normal' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setGridSize('compact')}
+                className={`p-1.5 rounded-md transition-colors ${gridSize === 'compact' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+              >
+                <Grid3X3 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Search + Filters row */}
+          <div className="flex items-center gap-2 mt-3">
+            {/* Search */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => { setSearchInput(e.target.value); setPage(0); }}
+                placeholder="Search products..."
+                className="w-full pl-9 pr-8 py-2 bg-zinc-900/50 border border-zinc-800/60 rounded-xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-500/40 transition-colors"
+              />
+              {searchInput && (
+                <button
+                  onClick={() => { setSearchInput(''); setPage(0); }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Category filter */}
+            <div className="relative">
+              <Tag className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500 pointer-events-none" />
+              <select
+                value={categoryFilter}
+                onChange={(e) => { setCategoryFilter(e.target.value); setPage(0); }}
+                className="pl-7 pr-6 py-2 bg-zinc-900/50 border border-zinc-800/60 rounded-xl text-xs text-zinc-300 appearance-none focus:outline-none focus:border-yellow-500/40 cursor-pointer"
+              >
+                <option value="all">All categories</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Selection controls */}
+            <div className="flex items-center gap-1.5 ml-auto">
+              {selected.size > 0 && (
+                <button
+                  onClick={clearSelection}
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] text-zinc-400 hover:text-red-400 rounded-lg hover:bg-red-500/5 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                  Clear
+                </button>
+              )}
+              <button
+                onClick={selectAll}
+                disabled={selected.size >= MAX_SELECTION}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800/60 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <Check className="w-3 h-3" />
+                Select page
+              </button>
+            </div>
+          </div>
+
+          {/* Result count */}
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-[11px] text-zinc-600">
+              {loading ? 'Loading...' : `${totalCount.toLocaleString()} products`}
+              {categoryFilter !== 'all' && ` in ${categoryFilter}`}
+              {debouncedSearch.trim() && ` matching "${debouncedSearch}"`}
+            </p>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setPage(Math.max(0, page - 1))}
+                  disabled={page === 0}
+                  className="p-1 text-zinc-500 hover:text-white disabled:opacity-20 transition-colors"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-[11px] text-zinc-500 tabular-nums px-1">
+                  {page + 1}/{totalPages}
+                </span>
+                <button
+                  onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                  disabled={page >= totalPages - 1}
+                  className="p-1 text-zinc-500 hover:text-white disabled:opacity-20 transition-colors"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================ */}
+      {/* PRODUCT GRID                                 */}
+      {/* ============================================ */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+        {loading ? (
+          <div className={`grid ${gridCols} gap-2.5`}>
+            {Array.from({ length: 18 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : products.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-24"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-zinc-800/40 border border-zinc-700/30 flex items-center justify-center mx-auto mb-4">
+              <Package className="w-8 h-8 text-zinc-600" />
+            </div>
+            <p className="text-zinc-400 text-sm font-medium mb-1">No products found</p>
+            <p className="text-zinc-600 text-xs">
+              {debouncedSearch.trim()
+                ? `No results for "${debouncedSearch}"`
+                : 'Your product catalog is empty'}
+            </p>
+          </motion.div>
+        ) : (
+          <div className={`grid ${gridCols} gap-2.5`}>
+            {products.map((product, idx) => {
+              const isSelected = selected.has(product.id);
+              const thumb = getThumb(product);
+              const atLimit = selected.size >= MAX_SELECTION && !isSelected;
+              const imgCount = getImageCount(product);
+
+              return (
+                <motion.button
+                  key={product.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: Math.min(idx * 0.02, 0.3) }}
+                  onClick={() => toggleProduct(product)}
+                  disabled={atLimit}
+                  className={`
+                    group relative rounded-xl overflow-hidden text-left transition-all duration-150
+                    ${isSelected
+                      ? 'ring-2 ring-yellow-400/80 bg-yellow-500/5 border border-yellow-500/20 scale-[0.98]'
+                      : atLimit
+                        ? 'opacity-30 cursor-not-allowed bg-zinc-900/40 border border-zinc-800/30'
+                        : 'bg-zinc-900/40 border border-zinc-800/40 hover:border-zinc-700/60 hover:bg-zinc-800/30'
+                    }
+                  `}
+                >
+                  {/* Image */}
+                  <div className="aspect-square bg-zinc-800/20 relative overflow-hidden">
+                    {thumb ? (
+                      <img
+                        src={thumb}
+                        alt={product.name}
+                        className={`w-full h-full object-contain p-1.5 transition-transform duration-200 ${
+                          isSelected ? '' : 'group-hover:scale-105'
+                        }`}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="w-7 h-7 text-zinc-800" />
+                      </div>
+                    )}
+
+                    {/* Selection check */}
+                    <AnimatePresence>
+                      {isSelected ? (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          exit={{ scale: 0 }}
+                          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-yellow-400 text-black flex items-center justify-center shadow-lg shadow-yellow-400/30"
+                        >
+                          <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                        </motion.div>
+                      ) : !atLimit ? (
+                        <div className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 text-white/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Check className="w-3 h-3" />
+                        </div>
+                      ) : null}
+                    </AnimatePresence>
+
+                    {/* Image count badge */}
+                    {imgCount > 0 && (
+                      <div className="absolute bottom-1.5 left-1.5 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[9px] text-zinc-300 font-medium">
+                        <Images className="w-2.5 h-2.5" />
+                        {imgCount}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="p-2">
+                    <p className={`text-[11px] font-medium line-clamp-2 leading-tight ${
+                      isSelected ? 'text-yellow-300' : 'text-zinc-200'
+                    }`}>
+                      {product.name}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      {product.price && (
+                        <span className="text-[10px] text-yellow-400/70 font-medium tabular-nums">
+                          €{parseFloat(product.price).toFixed(2)}
+                        </span>
+                      )}
+                      {product.ean && (
+                        <span className="text-[9px] text-zinc-700 truncate">{product.ean}</span>
+                      )}
+                    </div>
+                  </div>
+                </motion.button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Bottom pagination (visible on long pages) */}
+        {!loading && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-6">
+            <button
+              onClick={() => setPage(Math.max(0, page - 1))}
+              disabled={page === 0}
+              className="px-3 py-1.5 text-xs text-zinc-400 bg-zinc-900/50 border border-zinc-800/60 rounded-lg hover:text-white disabled:opacity-20 transition-colors"
+            >
+              Previous
+            </button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(totalPages, 7) }).map((_, i) => {
+                let pageNum;
+                if (totalPages <= 7) {
+                  pageNum = i;
+                } else if (page < 3) {
+                  pageNum = i;
+                } else if (page > totalPages - 4) {
+                  pageNum = totalPages - 7 + i;
+                } else {
+                  pageNum = page - 3 + i;
+                }
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setPage(pageNum)}
+                    className={`w-7 h-7 rounded-md text-xs font-medium transition-colors ${
+                      pageNum === page
+                        ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
+                        : 'text-zinc-500 hover:text-white hover:bg-zinc-800/60'
+                    }`}
+                  >
+                    {pageNum + 1}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+              disabled={page >= totalPages - 1}
+              className="px-3 py-1.5 text-xs text-zinc-400 bg-zinc-900/50 border border-zinc-800/60 rounded-lg hover:text-white disabled:opacity-20 transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ============================================ */}
+      {/* FLOATING BOTTOM BAR                          */}
+      {/* ============================================ */}
+      <AnimatePresence>
+        {selected.size > 0 && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="fixed bottom-0 inset-x-0 z-40"
+          >
+            <div className="bg-zinc-950/90 backdrop-blur-2xl border-t border-zinc-800/60">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+                <div className="flex items-center gap-4">
+                  {/* Selected thumbnails */}
+                  <div className="flex items-center gap-1 flex-1 min-w-0 overflow-hidden">
+                    <div className="flex items-center -space-x-1.5 shrink-0">
+                      {[...selectedProducts.entries()].slice(0, 8).map(([id, { thumb }], i) => (
+                        <motion.div
+                          key={id}
+                          initial={{ scale: 0, x: -10 }}
+                          animate={{ scale: 1, x: 0 }}
+                          transition={{ delay: i * 0.03 }}
+                          className="w-9 h-9 rounded-lg bg-zinc-800 border-2 border-zinc-950 overflow-hidden shrink-0 relative group/thumb"
+                        >
+                          {thumb ? (
+                            <img src={thumb} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-zinc-800">
+                              <Package className="w-3 h-3 text-zinc-600" />
+                            </div>
+                          )}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); removeFromSelection(id); }}
+                            className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3 h-3 text-white" />
+                          </button>
+                        </motion.div>
+                      ))}
+                    </div>
+                    {selectedProducts.size > 8 && (
+                      <span className="text-xs text-zinc-500 ml-2 shrink-0">
+                        +{selectedProducts.size - 8} more
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Selection counter ring */}
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="relative w-10 h-10">
+                      <svg className="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
+                        <circle
+                          cx="18" cy="18" r="15"
+                          fill="none" stroke="rgb(39,39,42)" strokeWidth="2.5"
+                        />
+                        <circle
+                          cx="18" cy="18" r="15"
+                          fill="none" stroke="rgb(234,179,8)" strokeWidth="2.5"
+                          strokeDasharray={`${selectionPct * 0.942} 100`}
+                          strokeLinecap="round"
+                          className="transition-all duration-300"
+                        />
+                      </svg>
+                      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white tabular-nums">
+                        {selected.size}
+                      </span>
+                    </div>
+
+                    {/* Start button */}
+                    <button
+                      onClick={startSession}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-yellow-500 hover:bg-yellow-400 text-black shadow-lg shadow-yellow-500/20 transition-all active:scale-95"
+                    >
+                      <Camera className="w-4 h-4" />
+                      Start Session
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </motion.div>
         )}
-        </AnimatePresence>
-      </div>
+      </AnimatePresence>
     </div>
   );
 }

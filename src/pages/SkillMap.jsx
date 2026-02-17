@@ -6,14 +6,17 @@ import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
   Target, TrendingUp, BookOpen, Star, Sparkles, Award, ChevronDown, ChevronUp,
-  ArrowRight, Zap, Trophy, GraduationCap
+  ArrowRight, Zap, Trophy, GraduationCap, AlertTriangle, Clock, Shield, History,
+  CheckCircle
 } from "lucide-react";
 import { useUser } from "@/components/context/UserContext";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 const LEVEL_CONFIG = {
   expert: { 
@@ -63,7 +66,27 @@ const LEVEL_CONFIG = {
   }
 };
 
+function getDecayStatus(skill) {
+  if (!skill.last_activity_date) return null;
+  const daysSince = Math.floor((Date.now() - new Date(skill.last_activity_date).getTime()) / (1000 * 60 * 60 * 24));
+  if (daysSince > 90) return { level: 'critical', label: 'Decaying', days: daysSince, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30' };
+  if (daysSince > 60) return { level: 'warning', label: 'At risk', days: daysSince, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/30' };
+  if (daysSince > 30) return { level: 'notice', label: 'Inactive', days: daysSince, color: 'text-zinc-400', bg: 'bg-zinc-500/10', border: 'border-zinc-500/30' };
+  return null;
+}
+
+function getMasteryLabel(score) {
+  if (score >= 90) return { label: 'Verified', icon: Shield, color: 'text-yellow-400' };
+  if (score >= 75) return { label: 'Proficient', icon: CheckCircle, color: 'text-teal-400' };
+  if (score >= 50) return { label: 'Developing', icon: TrendingUp, color: 'text-blue-400' };
+  return { label: 'Learning', icon: BookOpen, color: 'text-zinc-400' };
+}
+
 function SkillCard({ skill, config, index, isExpanded, onToggle }) {
+  const decay = getDecayStatus(skill);
+  const mastery = getMasteryLabel(skill.proficiency_score);
+  const MasteryIcon = mastery.icon;
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -72,20 +95,25 @@ function SkillCard({ skill, config, index, isExpanded, onToggle }) {
     >
       <div
         onClick={onToggle}
-        className={`relative bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800/60 hover:border-teal-800/50 transition-all duration-200 cursor-pointer overflow-hidden`}
+        className={`relative bg-zinc-900/50 backdrop-blur-sm rounded-xl border ${decay?.level === 'critical' ? 'border-red-500/30' : 'border-zinc-800/60'} hover:border-teal-800/50 transition-all duration-200 cursor-pointer overflow-hidden`}
       >
-        {/* Top gradient bar */}
         <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${config.gradient} opacity-40`} />
-        
+
         <div className="p-5">
           <div className="flex items-center gap-4">
             <div className={`w-14 h-14 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center text-2xl flex-shrink-0`}>
               {config.icon}
             </div>
-            
+
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-base font-semibold text-zinc-100">{skill.skill_name}</h4>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-base font-semibold text-zinc-100">{skill.skill_name}</h4>
+                  <span className={`flex items-center gap-1 text-xs ${mastery.color}`}>
+                    <MasteryIcon className="w-3 h-3" />
+                    {mastery.label}
+                  </span>
+                </div>
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold text-zinc-100">{skill.proficiency_score}%</span>
                   {isExpanded ? (
@@ -95,7 +123,14 @@ function SkillCard({ skill, config, index, isExpanded, onToggle }) {
                   )}
                 </div>
               </div>
-              
+
+              {decay && (
+                <div className={`flex items-center gap-1.5 mb-2 text-xs ${decay.color}`}>
+                  <AlertTriangle className="w-3 h-3" />
+                  <span>{decay.label} - {decay.days}d since last activity</span>
+                </div>
+              )}
+
               <div className="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
@@ -104,42 +139,72 @@ function SkillCard({ skill, config, index, isExpanded, onToggle }) {
                   className={`h-full rounded-full bg-gradient-to-r ${config.gradient}`}
                 />
               </div>
-              
+
               <div className="flex items-center gap-4 mt-3 text-xs text-zinc-600">
                 <span className="flex items-center gap-1">
                   <BookOpen className="w-3 h-3" />
-                  {skill.course_count} course{skill.course_count !== 1 ? 's' : ''}
+                  {skill.course_count || 0} course{(skill.course_count || 0) !== 1 ? 's' : ''}
                 </span>
-                {skill.assessments_passed > 0 && (
+                {(skill.assessments_passed || 0) > 0 && (
                   <span className="flex items-center gap-1">
                     <Star className="w-3 h-3 text-teal-400/60" />
                     {skill.assessments_passed} assessment{skill.assessments_passed !== 1 ? 's' : ''} passed
+                  </span>
+                )}
+                {skill.last_activity_date && (
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    Last active {new Date(skill.last_activity_date).toLocaleDateString()}
                   </span>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Expanded Details */}
           <AnimatePresence>
-            {isExpanded && skill.courses_contributing && (
+            {isExpanded && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 className="mt-5 pt-5 border-t border-zinc-800 overflow-hidden"
               >
-                <h5 className="text-xs font-semibold text-zinc-400 uppercase mb-3">Contributing Courses</h5>
-                <div className="space-y-2">
-                  {skill.courses_contributing.map((course, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors">
-                      <span className="text-sm text-white">{course.course_title}</span>
-                      <Badge className={`${config.bg} ${config.color} ${config.border} border text-xs`}>
-                        +{course.contribution_score}%
-                      </Badge>
-                    </div>
-                  ))}
+                {/* Mastery Progress */}
+                <div className="mb-4 p-3 rounded-lg bg-zinc-800/30">
+                  <h5 className="text-xs font-semibold text-zinc-400 uppercase mb-3">Mastery Progression</h5>
+                  <div className="flex items-center gap-2">
+                    {['Learning', 'Developing', 'Proficient', 'Verified'].map((stage, idx) => {
+                      const thresholds = [0, 50, 75, 90];
+                      const isActive = skill.proficiency_score >= thresholds[idx];
+                      return (
+                        <React.Fragment key={stage}>
+                          <div className={`flex-1 text-center p-2 rounded-lg ${isActive ? 'bg-teal-500/10 border border-teal-500/30' : 'bg-zinc-800/50 border border-zinc-700/30'}`}>
+                            <div className={`text-xs font-medium ${isActive ? 'text-teal-400' : 'text-zinc-600'}`}>{stage}</div>
+                            <div className={`text-[10px] ${isActive ? 'text-teal-500/70' : 'text-zinc-700'}`}>{thresholds[idx]}%+</div>
+                          </div>
+                          {idx < 3 && <ArrowRight className={`w-3 h-3 flex-shrink-0 ${isActive ? 'text-teal-500/50' : 'text-zinc-700'}`} />}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
                 </div>
+
+                {/* Contributing Courses */}
+                {skill.courses_contributing && skill.courses_contributing.length > 0 && (
+                  <>
+                    <h5 className="text-xs font-semibold text-zinc-400 uppercase mb-3">Contributing Courses</h5>
+                    <div className="space-y-2">
+                      {skill.courses_contributing.map((course, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors">
+                          <span className="text-sm text-white">{course.course_title}</span>
+                          <Badge className={`${config.bg} ${config.color} ${config.border} border text-xs`}>
+                            +{course.contribution_score}%
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -202,12 +267,22 @@ export default function SkillMap() {
   const [skillData, setSkillData] = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [expandedSkill, setExpandedSkill] = useState(null);
+  const [activeTab, setActiveTab] = useState('skills');
+  const [skillHistory, setSkillHistory] = useState([]);
 
   const loadSkillMap = React.useCallback(async () => {
     if (!user) return;
     try {
       const response = await db.functions.invoke('getUserSkillMap', { user_id: user.id });
       setSkillData(response.data);
+
+      // Load skill history for progress tracking
+      const history = await db.entities.UserSkillProgress?.list?.({
+        filters: { user_id: user.id },
+        orderBy: '-created_date',
+        limit: 50
+      }).catch(() => []);
+      setSkillHistory(history || []);
     } catch (error) {
       console.error("Failed to load skill map:", error);
     } finally {
@@ -222,12 +297,18 @@ export default function SkillMap() {
   const loading = userLoading || dataLoading;
 
   const stats = useMemo(() => {
-    if (!skillData?.skills) return { total: 0, expert: 0, advanced: 0, growthAreas: 0 };
+    if (!skillData?.skills) return { total: 0, expert: 0, advanced: 0, growthAreas: 0, decaying: 0, verified: 0 };
+    const decaying = skillData.skills.filter(s => {
+      const d = getDecayStatus(s);
+      return d && (d.level === 'critical' || d.level === 'warning');
+    }).length;
     return {
       total: skillData.skills.length,
       expert: skillData.skills.filter(s => s.proficiency_level === 'expert').length,
       advanced: skillData.skills.filter(s => s.proficiency_level === 'advanced').length,
-      growthAreas: skillData.skill_gaps?.length || 0
+      growthAreas: skillData.skill_gaps?.length || 0,
+      decaying,
+      verified: skillData.skills.filter(s => s.proficiency_score >= 90).length
     };
   }, [skillData]);
 
@@ -284,7 +365,7 @@ export default function SkillMap() {
         />
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
             <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
               <div className="flex items-center justify-between">
@@ -340,7 +421,55 @@ export default function SkillMap() {
               </div>
             </div>
           </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-zinc-500 text-sm">Verified</p>
+                  <p className="text-2xl font-bold text-zinc-100 mt-1">{stats.verified}</p>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-yellow-400/70" />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {stats.decaying > 0 && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+              <div className="p-5 rounded-2xl bg-zinc-900/50 border border-red-500/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-red-400/70 text-sm">Decaying</p>
+                    <p className="text-2xl font-bold text-red-400 mt-1">{stats.decaying}</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                    <AlertTriangle className="w-6 h-6 text-red-400/70" />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
         </div>
+
+        {/* Decay Warning Banner */}
+        {stats.decaying > 0 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20 flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm text-red-300">{stats.decaying} skill{stats.decaying !== 1 ? 's are' : ' is'} at risk of decay due to inactivity.</p>
+                <p className="text-xs text-red-400/60 mt-1">Practice or take a course to maintain your proficiency.</p>
+              </div>
+              <Link to={createPageUrl('PracticeChallenges')}>
+                <Button size="sm" className="bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/30">
+                  Practice Now
+                </Button>
+              </Link>
+            </div>
+          </motion.div>
+        )}
 
         {/* Skills by Level */}
         {Object.entries(groupedSkills).map(([level, skills]) => {

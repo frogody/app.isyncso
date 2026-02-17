@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { StudioNav } from '@/components/studio';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { useUser } from '@/components/context/UserContext';
 import {
   Mic,
   Sparkles,
@@ -32,6 +33,9 @@ import {
   SkipBack,
   SkipForward,
 } from 'lucide-react';
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -92,84 +96,6 @@ const DEFAULT_SPEAKERS = [
   { id: '1', name: 'Alex', role: 'host', voiceId: 'leo' },
   { id: '2', name: 'Sarah', role: 'guest', voiceId: 'tara' },
 ];
-
-// ---------------------------------------------------------------------------
-// Mock data generators
-// ---------------------------------------------------------------------------
-
-function generateMockScript(topic, style, tone, duration, speakers) {
-  const speakerNames = speakers.map((s) => s.name);
-  const lineCount = Math.max(6, duration * 3);
-  const lines = [];
-
-  const openers = {
-    interview: [
-      `Welcome to the show! Today we're diving into a topic that's been generating a lot of buzz: ${topic}.`,
-      `Thanks for having me! I'm really excited to share my perspective on this.`,
-    ],
-    solo: [
-      `Hey everyone, welcome back. Today I want to talk about something that's been on my mind: ${topic}.`,
-      `Let me break this down for you and share some insights that I think will really change how you think about this.`,
-    ],
-    panel: [
-      `Welcome everyone. We've got an amazing panel today and we're discussing: ${topic}.`,
-      `Great to be here. I think there are so many angles to explore on this.`,
-    ],
-    debate: [
-      `Welcome to today's debate. The topic: ${topic}. Let's hear from both sides.`,
-      `I have a strong position on this, and I think the evidence speaks for itself.`,
-    ],
-    storytelling: [
-      `Let me tell you a story. It starts with something you might not expect: ${topic}.`,
-      `Picture this. It's early morning, and everything is about to change.`,
-    ],
-    product_review: [
-      `Today we're reviewing something special. Let's talk about ${topic}.`,
-      `I've been testing this for weeks now, and I have a lot of thoughts to share.`,
-    ],
-  };
-
-  const midSegments = [
-    `That's a really interesting point. What I've found is that the key differentiator comes down to quality and user experience.`,
-    `Absolutely. And when you look at the data, the numbers tell a compelling story.`,
-    `I want to push back on that a little. From what I've seen, there's more nuance here.`,
-    `Right, and that ties into the broader trend we're seeing across the industry.`,
-    `One thing people often overlook is the long-term impact this has on customer retention.`,
-    `Let me share a specific example. When we implemented this approach, the results were immediate.`,
-    `That reminds me of something. The feedback we've been getting has been overwhelmingly positive.`,
-    `Here's where it gets really interesting though. The technology behind this is genuinely innovative.`,
-    `I think the market is shifting. Early adopters are already seeing significant returns.`,
-    `What sets this apart is the attention to detail. Every aspect has been carefully considered.`,
-  ];
-
-  const closers = [
-    `Well, that's all we have time for today. Thanks for tuning in, and we'll see you next time!`,
-    `This has been an incredible conversation. I hope everyone found this as insightful as I did.`,
-  ];
-
-  const styleOpeners = openers[style] || openers.interview;
-
-  // Opening
-  lines.push({ speaker: speakerNames[0], text: styleOpeners[0] });
-  if (speakerNames.length > 1) {
-    lines.push({ speaker: speakerNames[1], text: styleOpeners[1] });
-  }
-
-  // Middle segments
-  for (let i = 0; i < lineCount - 4; i++) {
-    const speakerIdx = i % speakerNames.length;
-    const segmentIdx = i % midSegments.length;
-    lines.push({ speaker: speakerNames[speakerIdx], text: midSegments[segmentIdx] });
-  }
-
-  // Closing
-  lines.push({ speaker: speakerNames[0], text: closers[0] });
-  if (speakerNames.length > 1) {
-    lines.push({ speaker: speakerNames[speakerNames.length - 1], text: closers[1] });
-  }
-
-  return lines;
-}
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -313,12 +239,41 @@ function SpeakerCard({ speaker, index, onUpdate, onRemove, canRemove }) {
   const selectedVoice = VOICE_PRESETS.find((v) => v.id === speaker.voiceId);
   const [previewing, setPreviewing] = useState(false);
 
-  const handlePreviewVoice = () => {
+  const handlePreviewVoice = async () => {
     setPreviewing(true);
-    setTimeout(() => {
+    try {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/sync-voice`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          ttsOnly: true,
+          ttsText: `Hi, I'm ${selectedVoice?.name || 'your speaker'}. This is how I sound when reading your podcast.`,
+          voice: speaker.voiceId,
+        }),
+      });
+      const data = await response.json();
+      if (data.audio) {
+        const audioBytes = Uint8Array.from(atob(data.audio), c => c.charCodeAt(0));
+        const blob = new Blob([audioBytes], { type: 'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          setPreviewing(false);
+        };
+        audio.play();
+      } else {
+        toast.error('Voice preview unavailable');
+        setPreviewing(false);
+      }
+    } catch (err) {
+      console.error('[StudioPodcast] Voice preview error:', err);
+      toast.error('Failed to preview voice');
       setPreviewing(false);
-      toast.success(`Previewed ${selectedVoice?.name || 'voice'}`);
-    }, 1500);
+    }
   };
 
   return (
@@ -451,26 +406,57 @@ function WaveformVisualizer({ isPlaying }) {
 
 // ---------------------------------------------------------------------------
 
-function AudioPlayer({ duration }) {
+function AudioPlayer({ audioUrl, duration }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const totalSeconds = duration * 60;
-  const intervalRef = useRef(null);
+  const [totalDuration, setTotalDuration] = useState(duration * 60);
+  const audioRef = useRef(null);
 
   useEffect(() => {
+    if (!audioUrl) return;
+    const audio = new Audio(audioUrl);
+    audioRef.current = audio;
+
+    audio.addEventListener('loadedmetadata', () => {
+      if (audio.duration && isFinite(audio.duration)) {
+        setTotalDuration(audio.duration);
+      }
+    });
+    audio.addEventListener('timeupdate', () => {
+      setCurrentTime(audio.currentTime);
+    });
+    audio.addEventListener('ended', () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    });
+
+    return () => {
+      audio.pause();
+      audio.src = '';
+    };
+  }, [audioUrl]);
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
     if (isPlaying) {
-      intervalRef.current = setInterval(() => {
-        setCurrentTime((prev) => {
-          if (prev >= totalSeconds) {
-            setIsPlaying(false);
-            return 0;
-          }
-          return prev + 1;
-        });
-      }, 1000);
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
     }
-    return () => clearInterval(intervalRef.current);
-  }, [isPlaying, totalSeconds]);
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleSeek = (e) => {
+    if (!audioRef.current) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audioRef.current.currentTime = pct * totalDuration;
+  };
+
+  const skip = (seconds) => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = Math.max(0, Math.min(totalDuration, audioRef.current.currentTime + seconds));
+  };
 
   const formatTime = (s) => {
     const mins = Math.floor(s / 60);
@@ -478,13 +464,7 @@ function AudioPlayer({ duration }) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const progress = totalSeconds > 0 ? (currentTime / totalSeconds) * 100 : 0;
-
-  const handleSeek = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    setCurrentTime(Math.floor(pct * totalSeconds));
-  };
+  const progress = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0;
 
   return (
     <div className="space-y-4">
@@ -504,26 +484,26 @@ function AudioPlayer({ duration }) {
         </div>
         <div className="flex justify-between mt-1.5">
           <span className="text-[11px] text-zinc-500 font-mono">{formatTime(currentTime)}</span>
-          <span className="text-[11px] text-zinc-500 font-mono">{formatTime(totalSeconds)}</span>
+          <span className="text-[11px] text-zinc-500 font-mono">{formatTime(totalDuration)}</span>
         </div>
       </div>
 
       {/* Controls */}
       <div className="flex items-center justify-center gap-3">
         <button
-          onClick={() => setCurrentTime(Math.max(0, currentTime - 15))}
+          onClick={() => skip(-15)}
           className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-all"
         >
           <SkipBack className="w-5 h-5" />
         </button>
         <button
-          onClick={() => setIsPlaying(!isPlaying)}
+          onClick={togglePlay}
           className="w-12 h-12 rounded-full bg-orange-500 hover:bg-orange-400 text-black flex items-center justify-center shadow-lg shadow-orange-500/30 transition-all hover:scale-105 active:scale-95"
         >
           {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
         </button>
         <button
-          onClick={() => setCurrentTime(Math.min(totalSeconds, currentTime + 15))}
+          onClick={() => skip(15)}
           className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-all"
         >
           <SkipForward className="w-5 h-5" />
@@ -650,12 +630,34 @@ function Step1TopicScript({
     }
     setGenerating(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      const mockScript = generateMockScript(topic, style, tone, duration, speakers);
-      setScript(mockScript);
-      toast.success('Script generated successfully');
-    } catch {
-      toast.error('Failed to generate script');
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-podcast`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          generateScript: true,
+          topic,
+          style,
+          tone,
+          duration,
+          speakers: speakers.map(s => ({ name: s.name, role: s.role, voiceId: s.voiceId })),
+        }),
+      });
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+
+      if (data.script && data.script.length > 0) {
+        setScript(data.script);
+        toast.success('Script generated successfully');
+      } else {
+        throw new Error('No script returned');
+      }
+    } catch (err) {
+      console.error('[StudioPodcast] Script generation error:', err);
+      toast.error(err.message || 'Failed to generate script');
     } finally {
       setGenerating(false);
     }
@@ -833,47 +835,114 @@ function Step2SpeakersVoices({ speakers, setSpeakers }) {
 
 // ---------------------------------------------------------------------------
 
-function Step3GeneratePreview({ topic, style, tone, duration, speakers, script, onRegenerate: _onRegenerate }) {
+function Step3GeneratePreview({ topic, style, tone, duration, speakers, script, user }) {
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [audioBlob, setAudioBlob] = useState(null);
 
   const handleGenerate = async () => {
     setGenerating(true);
     setProgress(0);
 
-    // Simulate progress
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        // Accelerating progress curve
-        const increment = prev < 40 ? 3 : prev < 70 ? 2 : prev < 90 ? 1.5 : 0.8;
-        return Math.min(100, prev + increment);
+    // Start progress animation
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + (90 - prev) * 0.03;
       });
-    }, 100);
+    }, 200);
 
-    await new Promise((resolve) => setTimeout(resolve, 3500));
-    clearInterval(interval);
-    setProgress(100);
+    try {
+      // Map script to include voiceId from speakers
+      const scriptWithVoices = script.map(line => {
+        const speaker = speakers.find(s => s.name === line.speaker);
+        return {
+          speaker: line.speaker,
+          text: line.text,
+          voiceId: speaker?.voiceId || 'tara',
+        };
+      });
 
-    setTimeout(() => {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-podcast`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          script: scriptWithVoices,
+          topic,
+          userId: user?.id,
+          companyId: user?.company_id,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+
+      clearInterval(progressInterval);
+      setProgress(100);
+
+      // Build audio blob from segments
+      if (data.segments && data.segments.length > 0) {
+        const audioChunks = data.segments.map(seg => {
+          const bytes = Uint8Array.from(atob(seg.audio), c => c.charCodeAt(0));
+          return bytes;
+        });
+        const totalLength = audioChunks.reduce((sum, chunk) => sum + chunk.length, 0);
+        const combined = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const chunk of audioChunks) {
+          combined.set(chunk, offset);
+          offset += chunk.length;
+        }
+        const blob = new Blob([combined], { type: 'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url);
+        setAudioBlob(blob);
+      } else if (data.audio_url) {
+        setAudioUrl(data.audio_url);
+      }
+
+      setTimeout(() => {
+        setGenerating(false);
+        setGenerated(true);
+        toast.success('Podcast generated successfully!');
+      }, 500);
+    } catch (err) {
+      console.error('[StudioPodcast] Generation error:', err);
+      clearInterval(progressInterval);
       setGenerating(false);
-      setGenerated(true);
-      toast.success('Podcast generated successfully!');
-    }, 500);
+      setProgress(0);
+      toast.error(err.message || 'Failed to generate podcast');
+    }
   };
 
   const handleRegenerate = () => {
+    if (audioUrl && audioUrl.startsWith('blob:')) URL.revokeObjectURL(audioUrl);
     setGenerated(false);
+    setAudioUrl(null);
+    setAudioBlob(null);
     setProgress(0);
     handleGenerate();
   };
 
   const handleDownload = () => {
-    toast.success('Download started (mock)');
+    if (audioBlob) {
+      const url = URL.createObjectURL(audioBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `podcast-${topic.slice(0, 30).replace(/[^a-zA-Z0-9]/g, '-')}.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('Download started');
+    } else if (audioUrl) {
+      window.open(audioUrl, '_blank');
+    }
   };
 
   const styleLabel = PODCAST_STYLES.find((s) => s.value === style)?.label || style;
@@ -980,7 +1049,7 @@ function Step3GeneratePreview({ topic, style, tone, duration, speakers, script, 
                 </button>
               </div>
             </div>
-            <AudioPlayer duration={duration} />
+            <AudioPlayer audioUrl={audioUrl} duration={duration} />
           </div>
 
           {/* Transcript */}
@@ -1002,6 +1071,7 @@ function Step3GeneratePreview({ topic, style, tone, duration, speakers, script, 
 // ---------------------------------------------------------------------------
 
 export default function StudioPodcast() {
+  const { user } = useUser();
   const [currentStep, setCurrentStep] = useState(1);
 
   // Step 1 state
@@ -1102,7 +1172,7 @@ export default function StudioPodcast() {
                   duration={duration}
                   speakers={speakers}
                   script={script}
-                  onRegenerate={() => {}}
+                  user={user}
                 />
               </motion.div>
             )}

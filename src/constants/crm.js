@@ -27,6 +27,8 @@ export const STAGES_WITH_STYLE = [
 
 // Contact types for CRM
 export const CONTACT_TYPES = [
+  { id: 'contact', label: 'Contact', icon: 'Contact', description: 'General contacts — sort into a category later' },
+  { id: 'company', label: 'Company', icon: 'Building2', description: 'Companies and organizations — not tied to a specific person' },
   { id: 'lead', label: 'Lead', icon: 'UserPlus', description: 'Unqualified contacts for initial outreach' },
   { id: 'prospect', label: 'Prospect', icon: 'Target', description: 'Qualified leads in sales pipeline' },
   { id: 'customer', label: 'Customer', icon: 'UserCheck', description: 'Paying customers with active relationships' },
@@ -56,6 +58,8 @@ export const STAGE_COLORS = {
 
 // Contact type colors
 export const CONTACT_TYPE_COLORS = {
+  contact: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  company: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
   lead: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
   prospect: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   customer: 'bg-green-500/20 text-green-400 border-green-500/30',

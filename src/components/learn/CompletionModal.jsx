@@ -12,16 +12,16 @@ export default function CompletionModal({
   onDashboard 
 }) {
   const handleShare = () => {
-    const text = `I just completed "${course.title}" and earned a certificate! 🎉`;
-    const url = certificate ? `${window.location.origin}/verify/${certificate.verification_code}` : '';
-    
-    // LinkedIn share URL
+    const text = `I just completed "${course?.title}" and earned a certificate! 🎉`;
+    const verificationCode = certificate?.verification_code;
+    const url = verificationCode ? `${window.location.origin}/verify/${verificationCode}` : '';
+
     const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}&summary=${encodeURIComponent(text)}`;
     window.open(linkedInUrl, '_blank');
   };
 
   const handleVerify = () => {
-    if (certificate) {
+    if (certificate?.verification_code) {
       window.open(`/verify/${certificate.verification_code}`, '_blank');
     }
   };

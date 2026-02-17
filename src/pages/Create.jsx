@@ -22,6 +22,7 @@ const TOOLS = [
     gradient: 'from-blue-500/20 to-cyan-500/10',
     color: 'text-blue-400',
     borderColor: 'group-hover:border-blue-500/30',
+    status: 'live',
   },
   {
     key: 'video',
@@ -32,6 +33,7 @@ const TOOLS = [
     gradient: 'from-purple-500/20 to-violet-500/10',
     color: 'text-purple-400',
     borderColor: 'group-hover:border-purple-500/30',
+    status: 'live',
   },
   {
     key: 'photoshoot',
@@ -42,6 +44,7 @@ const TOOLS = [
     gradient: 'from-yellow-500/20 to-amber-500/10',
     color: 'text-yellow-400',
     borderColor: 'group-hover:border-yellow-500/30',
+    status: 'live',
   },
   {
     key: 'clipshoot',
@@ -52,6 +55,7 @@ const TOOLS = [
     gradient: 'from-emerald-500/20 to-green-500/10',
     color: 'text-emerald-400',
     borderColor: 'group-hover:border-emerald-500/30',
+    status: 'live',
   },
   {
     key: 'podcast',
@@ -62,6 +66,7 @@ const TOOLS = [
     gradient: 'from-orange-500/20 to-red-500/10',
     color: 'text-orange-400',
     borderColor: 'group-hover:border-orange-500/30',
+    status: 'live',
   },
   {
     key: 'voiceclone',
@@ -72,6 +77,7 @@ const TOOLS = [
     gradient: 'from-pink-500/20 to-rose-500/10',
     color: 'text-pink-400',
     borderColor: 'group-hover:border-pink-500/30',
+    status: 'live',
   },
   {
     key: 'avatar',
@@ -82,6 +88,7 @@ const TOOLS = [
     gradient: 'from-violet-500/20 to-purple-500/10',
     color: 'text-violet-400',
     borderColor: 'group-hover:border-violet-500/30',
+    status: 'soon',
   },
 ];
 
@@ -233,8 +240,11 @@ export default function Create() {
                   </div>
                   <div className="flex items-center gap-1.5 mb-1">
                     <h3 className="text-sm font-semibold text-white">{tool.title}</h3>
-                    {tool.soon && (
-                      <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-zinc-800 text-zinc-500 border border-zinc-700/50">Soon</span>
+                    {tool.status === 'soon' && (
+                      <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">Soon</span>
+                    )}
+                    {tool.status === 'live' && (
+                      <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Live</span>
                     )}
                   </div>
                   <p className="text-[11px] text-zinc-500 leading-relaxed line-clamp-2">{tool.description}</p>

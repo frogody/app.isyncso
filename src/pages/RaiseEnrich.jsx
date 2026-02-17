@@ -4143,8 +4143,8 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 26, stiffness: 300 }}
               className={rt(
-                'fixed top-0 right-0 h-full w-[450px] z-50 border-l border-gray-200 bg-white shadow-xl flex flex-col',
-                'fixed top-0 right-0 h-full w-[450px] z-50 border-l border-zinc-800 bg-zinc-950 shadow-xl flex flex-col'
+                'fixed top-0 right-0 h-full w-full sm:w-[450px] z-50 border-l border-gray-200 bg-white shadow-xl flex flex-col',
+                'fixed top-0 right-0 h-full w-full sm:w-[450px] z-50 border-l border-zinc-800 bg-zinc-950 shadow-xl flex flex-col'
               )}
             >
               {/* Header */}
@@ -4173,7 +4173,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               {/* Type selector */}
               <div>
                 <Label className={rt('text-gray-700', 'text-zinc-300')}>Type</Label>
-                <div className="grid grid-cols-3 gap-2 mt-1.5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1.5">
                   {COLUMN_TYPES.map(ct => {
                     const CTIcon = ct.icon;
                     return (
@@ -4215,7 +4215,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   </div>
                   <div>
                     <Label className={rt('text-gray-700', 'text-zinc-300')}>Data Type</Label>
-                    <div className="grid grid-cols-4 gap-1.5 mt-1.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-1.5">
                       {FIELD_DATA_TYPES.map(dt => {
                         const DTIcon = dt.icon;
                         const selected = (colConfig.data_type || 'text') === dt.value;
@@ -5358,7 +5358,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-              className={`fixed top-0 right-0 h-full w-[420px] z-40 flex flex-col shadow-2xl ${rt('bg-white border-l border-gray-200', 'bg-zinc-950 border-l border-zinc-800')}`}
+              className={`fixed top-0 right-0 h-full w-full sm:w-[420px] z-40 flex flex-col shadow-2xl ${rt('bg-white border-l border-gray-200', 'bg-zinc-950 border-l border-zinc-800')}`}
             >
               {/* Header */}
               <div className={`flex items-center justify-between px-4 py-3 border-b ${rt('border-gray-200', 'border-zinc-800')}`}>

@@ -261,7 +261,7 @@ export default function AIAssistant() {
               </div>
 
               {/* Quick stats */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-3 rounded-xl bg-zinc-900/50 border border-white/5">
                   <div className="text-lg font-bold text-white">{SPECIALIZED_AGENTS.filter(a => a.status === 'active').length}</div>
                   <div className="text-xs text-zinc-500">Active Agents</div>

@@ -89,6 +89,13 @@ import {
   Camera,
   Images,
   History,
+  Route,
+  Swords,
+  CheckSquare,
+  FileCheck,
+  ShieldAlert,
+  Globe,
+  Phone,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -219,7 +226,7 @@ const navigationItems = [
   },
   {
     title: "CRM",
-    url: createPageUrl("CRMContacts") + "?type=lead",
+    url: createPageUrl("CRMDashboard"),
     icon: Contact,
     permission: null, // Always visible - base environment
     matchPatterns: ["/crm", "/contacts-import"], // For active state matching
@@ -279,7 +286,7 @@ const ENGINE_ITEMS_CONFIG = {
     icon: GraduationCap,
     id: 'learn',
     permission: "courses.view", // Learning features
-    matchPatterns: ["/learn", "/course", "/lesson", "/certificate", "/skill", "/leaderboard"],
+    matchPatterns: ["/learn", "/course", "/lesson", "/certificate", "/skill", "/leaderboard", "/practice", "/teamlearn"],
   },
   talent: {
     title: "Talent",
@@ -367,21 +374,17 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       title: 'CRM',
       color: 'cyan',
       items: [
-        { label: 'Leads', path: createPageUrl('CRMContacts') + '?type=lead', icon: Target, badge: stats.contacts },
-        { label: 'Prospects', path: createPageUrl('CRMContacts') + '?type=prospect', icon: TrendingUp },
-        { label: 'Customers', path: createPageUrl('CRMContacts') + '?type=customer', icon: UserCheck },
-        { label: 'Suppliers', path: createPageUrl('CRMContacts') + '?type=supplier', icon: Truck },
-        { label: 'Partners', path: createPageUrl('CRMContacts') + '?type=partner', icon: Handshake },
-        { label: 'Candidates', path: createPageUrl('CRMContacts') + '?type=candidate', icon: UserPlus },
-        { label: 'Targets', path: createPageUrl('CRMContacts') + '?type=target', icon: Crosshair },
-        { label: 'All Contacts', path: createPageUrl('CRMContacts'), icon: Users },
+        { label: 'Dashboard', path: createPageUrl('CRMDashboard'), icon: LayoutDashboard },
+        { label: 'Contacts', path: createPageUrl('CRMContacts'), icon: Users, badge: stats.contacts },
+        { label: 'Pipeline', path: createPageUrl('CRMPipeline'), icon: Kanban },
+        { label: 'Campaigns', path: createPageUrl('CRMCampaigns'), icon: Megaphone },
         { label: 'Import', path: createPageUrl('ContactsImport'), icon: FileSpreadsheet },
       ]
     };
   }
 
   // SENTINEL routes
-  if (path.startsWith('/sentinel') || path.startsWith('/aisystem') || path.startsWith('/compliance') || path.startsWith('/document') || path.startsWith('/riskassessment')) {
+  if (path.startsWith('/sentinel') || path.startsWith('/aisystem') || path.startsWith('/compliance') || path.startsWith('/document') || path.startsWith('/riskassessment') || path.startsWith('/vendorrisk') || path.startsWith('/trustcenter')) {
     return {
       title: 'SENTINEL',
       color: 'sage',
@@ -389,6 +392,12 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       items: [
         { label: 'Dashboard', path: createPageUrl('SentinelDashboard'), icon: LayoutDashboard },
         { label: 'AI Systems', path: createPageUrl('AISystemInventory'), icon: Cpu, badge: stats.systems },
+        { label: 'Frameworks', path: createPageUrl('ComplianceFrameworks'), icon: Shield },
+        { label: 'Controls', path: createPageUrl('ComplianceControls'), icon: CheckSquare },
+        { label: 'Evidence', path: createPageUrl('ComplianceEvidence'), icon: FileCheck },
+        { label: 'Policies', path: createPageUrl('CompliancePolicies'), icon: BookOpen },
+        { label: 'Vendor Risk', path: createPageUrl('VendorRisk'), icon: ShieldAlert },
+        { label: 'Trust Center', path: createPageUrl('TrustCenter'), icon: Globe },
         { label: 'Roadmap', path: createPageUrl('ComplianceRoadmap'), icon: Map, badge: stats.tasks },
         { label: 'Documents', path: createPageUrl('DocumentGenerator'), icon: FileText },
       ]
@@ -492,7 +501,8 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
 
   // LEARN routes
   if (path.startsWith('/learn') || path.startsWith('/course') || path.startsWith('/lesson') ||
-      path.startsWith('/certificate') || path.startsWith('/skill') || path.startsWith('/leaderboard')) {
+      path.startsWith('/certificate') || path.startsWith('/skill') || path.startsWith('/leaderboard') ||
+      path.startsWith('/practice') || path.startsWith('/teamlearn')) {
     return {
       title: 'LEARN',
       color: 'teal',
@@ -500,7 +510,10 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       items: [
         { label: 'Dashboard', path: createPageUrl('LearnDashboard'), icon: LayoutDashboard },
         { label: 'My Courses', path: createPageUrl('Learn'), icon: BookOpen },
+        { label: 'Learning Paths', path: createPageUrl('LearningPaths'), icon: Route },
+        { label: 'Practice', path: createPageUrl('PracticeChallenges'), icon: Swords },
         { label: 'Skills', path: createPageUrl('SkillMap'), icon: Target, badge: stats.skills },
+        { label: 'Team', path: createPageUrl('TeamLearningDashboard'), icon: Users },
         { label: 'Course Builder', path: createPageUrl('ManageCourses'), icon: Library },
         { label: 'AI Tools', path: createPageUrl('LearnAITools'), icon: Sparkles },
       ]
@@ -512,6 +525,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       path.startsWith('/activity') || path.startsWith('/desktop') || path.startsWith('/dailyjournal')) {
     const activityItems = [
       { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
+      { label: 'Phone', path: createPageUrl('SyncPhone'), icon: Phone },
       { label: 'Actions', path: createPageUrl('Actions'), icon: Zap },
       { label: 'Activity', path: createPageUrl('DesktopActivity') + '?tab=overview', icon: BarChart3, matchPath: '/desktopactivity' },
       { label: 'Daily Journals', path: createPageUrl('DailyJournal'), icon: BookOpen },
@@ -771,7 +785,7 @@ function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location, visibl
   );
 }
 
-// Mobile Secondary Navigation Component
+// Mobile Secondary Navigation Component (inside Sheet drawer)
 function MobileSecondaryNav({ config, location }) {
   if (!config) return null;
 
@@ -786,31 +800,7 @@ function MobileSecondaryNav({ config, location }) {
       </div>
       <div className="space-y-0.5 px-1">
         {config.items.map((item) => {
-          // Parse URLs for proper comparison
-          const itemUrl = new URL(item.path, 'http://localhost');
-          const currentUrl = new URL(location.pathname + location.search, 'http://localhost');
-
-          let isActive = false;
-
-          // Check pathname match first
-          if (currentUrl.pathname.toLowerCase() === itemUrl.pathname.toLowerCase()) {
-            // If item has a 'type' query param, it must match
-            const itemType = itemUrl.searchParams.get('type');
-            const currentType = currentUrl.searchParams.get('type');
-
-            if (itemType) {
-              // Item specifies a type, must match exactly
-              isActive = itemType === currentType;
-            } else {
-              // No specific type required, pathname match is enough
-              isActive = true;
-            }
-          } else {
-            // Check if current path starts with item path (for nested routes)
-            const basePath = itemUrl.pathname.toLowerCase();
-            isActive = currentUrl.pathname.toLowerCase().startsWith(basePath + '/');
-          }
-
+          const isActive = isSubmenuItemActive(item, location);
           const Icon = item.icon;
 
           return (
@@ -829,6 +819,73 @@ function MobileSecondaryNav({ config, location }) {
               <span className="text-sm font-medium">{item.label}</span>
               {item.badge > 0 && (
                 <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-medium ${colors.bg} ${colors.text} border ${colors.border}`}>
+                  {item.badge}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Shared helper: check if a submenu item is active
+function isSubmenuItemActive(item, location) {
+  const itemUrl = new URL(item.path, 'http://localhost');
+  const currentUrl = new URL(location.pathname + location.search, 'http://localhost');
+
+  if (currentUrl.pathname.toLowerCase() === itemUrl.pathname.toLowerCase()) {
+    const itemType = itemUrl.searchParams.get('type');
+    const currentType = currentUrl.searchParams.get('type');
+    if (itemType) return itemType === currentType;
+    return true;
+  }
+  const basePath = itemUrl.pathname.toLowerCase();
+  return currentUrl.pathname.toLowerCase().startsWith(basePath + '/');
+}
+
+// Mobile Sub-Nav Strip — persistent bar below mobile header showing current section's pages
+function MobileSubNavStrip({ config, location }) {
+  if (!config) return null;
+  const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
+  const scrollRef = React.useRef(null);
+
+  // Auto-scroll active item into view
+  React.useEffect(() => {
+    if (!scrollRef.current) return;
+    const active = scrollRef.current.querySelector('[data-active="true"]');
+    if (active) {
+      active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, [location.pathname, location.search]);
+
+  return (
+    <div className="md:hidden fixed top-14 sm:top-16 left-0 right-0 z-40 bg-black/90 backdrop-blur-md border-b border-white/5">
+      <div
+        ref={scrollRef}
+        className="flex items-center gap-1 px-3 py-1.5 overflow-x-auto scrollbar-hide"
+      >
+        {config.items.map((item) => {
+          const isActive = isSubmenuItemActive(item, location);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.label}
+              to={item.path}
+              data-active={isActive}
+              className={`
+                flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors shrink-0 min-h-[32px]
+                ${isActive
+                  ? `${colors.text} ${colors.bg} border ${colors.border}`
+                  : 'text-zinc-500 hover:text-zinc-300 border border-transparent'
+                }
+              `}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {item.label}
+              {item.badge > 0 && (
+                <span className={`text-[9px] px-1 py-0.5 rounded-full font-bold ${colors.bg} ${colors.text}`}>
                   {item.badge}
                 </span>
               )}
@@ -946,6 +1003,12 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     <div className="flex flex-col h-full relative overflow-visible">
       {/* Navigation - Mobile optimized with larger touch targets */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-1 scrollbar-hide scroll-smooth-ios">
+        {/* Mobile: user greeting */}
+        {isMobile && me && (
+          <div className="px-4 pb-3 mb-1 border-b border-white/5">
+            <p className="text-[11px] uppercase tracking-widest text-zinc-500 font-medium">Navigation</p>
+          </div>
+        )}
         {/* SYNC Avatar - top of sidebar: click = chat, double-click = voice */}
         <SyncAvatarSidebarButton
           onSingleClick={() => navigate(createPageUrl("SyncAgent"))}
@@ -1060,6 +1123,13 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         </div>
 
         <div className="h-px bg-white/5 mx-2 my-2" />
+
+        {/* Mobile: Engines section label */}
+        {isMobile && engineItems.length > 0 && (
+          <div className="px-4 pt-1 pb-1">
+            <p className="text-[10px] uppercase tracking-widest text-zinc-600 font-medium">Apps</p>
+          </div>
+        )}
 
         {/* Engine Apps - Dynamic based on user config - Mobile optimized */}
         <div className="space-y-1">
@@ -1192,8 +1262,8 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
 
       {/* Bottom Section */}
       <div className={`p-4 space-y-1 bg-gradient-to-t from-black via-black to-transparent ${isMobile ? 'pb-6' : ''}`}>
-        {/* Notifications bell */}
-        <NotificationsDropdown sidebarMode={!isMobile} />
+        {/* Notifications bell — desktop sidebar only (mobile has it in the header bar) */}
+        {!isMobile && <NotificationsDropdown sidebarMode={true} />}
 
         {/* Settings and Admin - at the bottom */}
         {filteredBottomNavItems.map((item) => {
@@ -1258,12 +1328,11 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         {/* Credits / CTA */}
         {me ? (
         <Link
-          to="#"
-          className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 cursor-not-allowed opacity-70`}
-          title="Top up coming soon"
-          onClick={(e) => e.preventDefault()}
+          to="/credits"
+          className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group text-gray-400 hover:text-cyan-400 hover:bg-white/5 active:bg-white/10`}
+          title={`${me.credits || 0} credits`}
         >
-          <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 group-hover:border-cyan-400/60 flex items-center justify-center flex-shrink-0 transition-colors">
              <span className="text-[10px] font-bold text-cyan-400">{me.credits || 0}</span>
           </div>
           {isMobile && <span className="text-sm font-medium">Credits</span>}
@@ -3310,7 +3379,7 @@ export default function Layout({ children, currentPageName }) {
           html:not(.dark) .bg-gradient-to-l.text-white { color: #FFFFFF !important; }
           `}</style>
 
-        <div className="flex h-screen">
+        <div className="flex h-screen overflow-x-hidden">
           {/* Desktop/Tablet Sidebar with Flyout Submenu */}
           <div className="hidden md:flex flex-col sidebar-shell w-[72px] lg:w-[80px] overflow-visible relative z-20">
             <SidebarContent
@@ -3337,55 +3406,63 @@ export default function Layout({ children, currentPageName }) {
           </div>
 
           {/* Mobile Header - Only on phones (below 768px) */}
-          <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-gray-800 pt-safe">
+          <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-white/5 pt-safe">
             <div className="flex items-center justify-between px-3 sm:px-4 h-14 sm:h-16">
-              <div className="flex items-center">
-                <span className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent">
-                  iSyncSo
-                </span>
+              <div className="flex items-center gap-2">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-gray-300 min-w-[40px] min-h-[40px] flex items-center justify-center hover:bg-white/10 active:bg-white/20 transition-colors rounded-xl -ml-1"
+                      aria-label="Open menu"
+                    >
+                      <Menu className="w-5 h-5" />
+                      <span className="sr-only">Open menu</span>
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-[85vw] max-w-[320px] p-0 border-gray-800 bg-black pt-safe pb-safe overflow-y-auto">
+                    <SidebarContent
+                      currentPageName={currentPageName}
+                      isMobile={true}
+                      secondaryNavConfig={secondaryNavConfig}
+                      enabledApps={enabledApps}
+                      onOpenAppsManager={() => setAppsManagerOpen(true)}
+                      inboxUnreadCount={inboxUnreadCount}
+                    />
+                  </SheetContent>
+                </Sheet>
               </div>
-              {/* Show current section badge on mobile */}
-              {secondaryNavConfig && (
-                <div className={`px-2.5 py-1 rounded-lg text-xs font-medium ${COLOR_CLASSES[secondaryNavConfig.color]?.bg || 'bg-cyan-500/10'} ${COLOR_CLASSES[secondaryNavConfig.color]?.text || 'text-cyan-400'}`}>
-                  {secondaryNavConfig.title}
-                </div>
-              )}
+              {/* Show current page / section title */}
+              <div className="flex items-center gap-2 min-w-0 flex-1 justify-center">
+                {secondaryNavConfig ? (
+                  <span className={`text-sm font-semibold truncate ${COLOR_CLASSES[secondaryNavConfig.color]?.text || 'text-cyan-400'}`}>
+                    {secondaryNavConfig.title}
+                  </span>
+                ) : (
+                  <span className="text-sm font-semibold text-zinc-200 truncate">
+                    {currentPageName?.replace(/([A-Z])/g, ' $1').trim() || 'Dashboard'}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-1">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/10 active:bg-white/20 transition-colors rounded-xl"
-                    aria-label="Open menu"
-                  >
-                    <Menu className="w-6 h-6" />
-                    <span className="sr-only">Open menu</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[85vw] max-w-[320px] p-0 border-gray-800 bg-black pt-safe pb-safe overflow-y-auto">
-                  <SidebarContent
-                    currentPageName={currentPageName}
-                    isMobile={true}
-                    secondaryNavConfig={secondaryNavConfig}
-                    enabledApps={enabledApps}
-                    onOpenAppsManager={() => setAppsManagerOpen(true)}
-                    inboxUnreadCount={inboxUnreadCount}
-                  />
-                </SheetContent>
-              </Sheet>
+                <NotificationsDropdown sidebarMode={false} />
               </div>
             </div>
           </div>
 
-          {/* Desktop Top Bar removed - notifications moved to sidebar */}
+          {/* Mobile Sub-Navigation Strip — persistent below header */}
+          <MobileSubNavStrip config={secondaryNavConfig} location={location} />
 
           {/* Main Content - Mobile optimized with safe areas */}
           <main
             id="main-content"
-            className="relative flex-1 md:pt-0 pt-14 sm:pt-16 overflow-auto transition-all duration-300 pb-safe scroll-smooth-ios"
+            className={`relative flex-1 md:pt-0 overflow-y-auto overflow-x-hidden transition-all duration-300 pb-safe scroll-smooth-ios ${
+              secondaryNavConfig ? 'pt-[calc(3.5rem+2.5rem)] sm:pt-[calc(4rem+2.5rem)]' : 'pt-14 sm:pt-16'
+            }`}
             role="main"
           >
+            {/* SYNC environment top tabs removed — each Sync page renders its own SyncViewSelector on the right */}
             {/* TALENT quick action buttons moved to TalentDashboard PageHeader */}
             <div className="min-h-full">
               {children}

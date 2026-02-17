@@ -17,7 +17,6 @@ import { SentinelButton } from '@/components/sentinel/ui/SentinelButton';
 import { SentinelBadge } from '@/components/sentinel/ui/SentinelBadge';
 import { SentinelEmptyState } from '@/components/sentinel/ui/SentinelErrorBoundary';
 import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
-import { ThemeToggle } from '@/components/sentinel/ThemeToggle';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { cn } from '@/lib/utils';
 
@@ -309,11 +308,11 @@ export default function ComplianceRoadmap() {
   // Loading skeleton
   if (loading) {
     return (
-      <div className={cn('min-h-screen p-6', st('bg-slate-50', 'bg-black'))}>
+      <div className={cn('min-h-screen p-4 sm:p-6', st('bg-slate-50', 'bg-black'))}>
         <div className="max-w-4xl mx-auto space-y-4">
           <SentinelCardSkeleton className="h-20" />
           <SentinelCardSkeleton className="h-14" />
-          <div className="space-y-3 mt-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
             {[1, 2, 3, 4].map(i => <SentinelCardSkeleton key={i} className="h-24" />)}
           </div>
         </div>
@@ -347,7 +346,6 @@ export default function ComplianceRoadmap() {
             </div>
           </div>
           <div className="flex items-center gap-2 relative">
-            <ThemeToggle />
             {!aiPlan ? (
               <SentinelButton
                 size="sm"

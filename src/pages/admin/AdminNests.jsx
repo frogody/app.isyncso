@@ -83,9 +83,9 @@ const NEST_TYPE_LABELS = {
 };
 
 const NEST_TYPE_COLORS = {
-  candidates: 'text-blue-400 bg-blue-500/20',
-  prospects: 'text-green-400 bg-green-500/20',
-  investors: 'text-purple-400 bg-purple-500/20',
+  candidates: 'text-cyan-400 bg-cyan-500/20',
+  prospects: 'text-cyan-400 bg-cyan-500/20',
+  investors: 'text-blue-400 bg-blue-500/20',
   companies: 'text-cyan-400 bg-cyan-500/20',
 };
 
@@ -506,8 +506,8 @@ export default function AdminNests() {
                 <p className="text-zinc-400 text-[10px]">Active Nests</p>
                 <p className="text-lg font-semibold text-white">{stats.active_nests}</p>
               </div>
-              <div className="p-2 bg-green-500/20 rounded-lg">
-                <CheckCircle className="w-4 h-4 text-green-400" />
+              <div className="p-2 bg-cyan-500/20 rounded-lg">
+                <CheckCircle className="w-4 h-4 text-cyan-400" />
               </div>
             </div>
           </CardContent>
@@ -520,8 +520,8 @@ export default function AdminNests() {
                 <p className="text-zinc-400 text-[10px]">Total Items</p>
                 <p className="text-lg font-semibold text-white">{stats.total_items.toLocaleString()}</p>
               </div>
-              <div className="p-2 bg-purple-500/20 rounded-lg">
-                <Users className="w-4 h-4 text-purple-400" />
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <Users className="w-4 h-4 text-blue-400" />
               </div>
             </div>
           </CardContent>
@@ -534,8 +534,8 @@ export default function AdminNests() {
                 <p className="text-zinc-400 text-[10px]">Purchases</p>
                 <p className="text-lg font-semibold text-white">{stats.total_purchases}</p>
               </div>
-              <div className="p-2 bg-orange-500/20 rounded-lg">
-                <TrendingUp className="w-4 h-4 text-orange-400" />
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <TrendingUp className="w-4 h-4 text-blue-400" />
               </div>
             </div>
           </CardContent>
@@ -665,7 +665,7 @@ export default function AdminNests() {
                           </TableCell>
                           <TableCell className="py-1.5 px-2 text-center">
                             <Badge size="xs" className={nest.is_active
-                              ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                              ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
                               : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
                             }>
                               {nest.is_active ? 'Active' : 'Draft'}

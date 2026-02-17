@@ -515,7 +515,7 @@ export default function AdminMarketplace() {
           <Button
             onClick={handleCreateProduct}
             size="sm"
-            className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
+            className="bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs"
           >
             <Plus className="w-3 h-3 mr-1.5" />
             Add Product
@@ -571,8 +571,8 @@ export default function AdminMarketplace() {
                   {stats?.total_purchases || 0} purchases
                 </p>
               </div>
-              <div className="w-8 h-8 rounded-lg bg-green-500/20 border border-green-500/30 flex items-center justify-center">
-                <Euro className="w-4 h-4 text-green-400" />
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                <Euro className="w-4 h-4 text-cyan-400" />
               </div>
             </div>
           </CardContent>
@@ -590,8 +590,8 @@ export default function AdminMarketplace() {
                   Across all products
                 </p>
               </div>
-              <div className="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
-                <Download className="w-4 h-4 text-purple-400" />
+              <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+                <Download className="w-4 h-4 text-blue-400" />
               </div>
             </div>
           </CardContent>
@@ -620,11 +620,11 @@ export default function AdminMarketplace() {
       {/* Main Content Tabs */}
       <Tabs defaultValue="products" className="space-y-3">
         <TabsList className="bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="products" className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400 text-xs">
+          <TabsTrigger value="products" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 text-xs">
             <Package className="w-3 h-3 mr-1.5" />
             Products
           </TabsTrigger>
-          <TabsTrigger value="categories" className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400 text-xs">
+          <TabsTrigger value="categories" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 text-xs">
             <Tag className="w-3 h-3 mr-1.5" />
             Categories
           </TabsTrigger>
@@ -683,7 +683,7 @@ export default function AdminMarketplace() {
             <CardContent className="p-0">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-5 h-5 text-red-400 animate-spin" />
+                  <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
                 </div>
               ) : products.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-zinc-400">
@@ -692,7 +692,7 @@ export default function AdminMarketplace() {
                   <Button
                     variant="link"
                     onClick={handleCreateProduct}
-                    className="text-red-400 text-xs mt-1"
+                    className="text-cyan-400 text-xs mt-1"
                   >
                     Create your first product
                   </Button>
@@ -810,7 +810,7 @@ export default function AdminMarketplace() {
                                 {product.status !== 'published' && (
                                   <DropdownMenuItem
                                     onClick={() => handleUpdateStatus(product, 'published')}
-                                    className="text-green-400 focus:bg-green-500/10 focus:text-green-400 text-xs"
+                                    className="text-cyan-400 focus:bg-cyan-500/10 focus:text-cyan-400 text-xs"
                                   >
                                     <CheckCircle className="w-3 h-3 mr-2" />
                                     Publish
@@ -819,7 +819,7 @@ export default function AdminMarketplace() {
                                 {product.status !== 'archived' && (
                                   <DropdownMenuItem
                                     onClick={() => handleUpdateStatus(product, 'archived')}
-                                    className="text-orange-400 focus:bg-orange-500/10 focus:text-orange-400 text-xs"
+                                    className="text-blue-400 focus:bg-blue-500/10 focus:text-blue-400 text-xs"
                                   >
                                     <Archive className="w-3 h-3 mr-2" />
                                     Archive
@@ -882,7 +882,7 @@ export default function AdminMarketplace() {
         {/* Categories Tab */}
         <TabsContent value="categories" className="space-y-3">
           <div className="flex justify-end">
-            <Button onClick={handleCreateCategory} size="sm" className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs">
+            <Button onClick={handleCreateCategory} size="sm" className="bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs">
               <Plus className="w-3 h-3 mr-1.5" />
               Add Category
             </Button>
@@ -934,7 +934,7 @@ export default function AdminMarketplace() {
                           </TableCell>
                           <TableCell className="py-1.5 px-3 text-center">
                             <Badge className={`text-[10px] px-1.5 py-px ${category.is_active
-                              ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                              ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
                               : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
                             }`}>
                               {category.is_active ? 'Active' : 'Inactive'}
@@ -1216,7 +1216,7 @@ export default function AdminMarketplace() {
             <Button
               onClick={handleSaveProduct}
               disabled={isSaving || !productForm.name || !productForm.slug}
-              className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
+              className="bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs"
             >
               {isSaving && <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />}
               {isEditing ? 'Save Changes' : 'Create Product'}
@@ -1362,7 +1362,7 @@ export default function AdminMarketplace() {
                 setShowDetailModal(false);
                 handleEditProduct(selectedProduct);
               }}
-              className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
+              className="bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs"
             >
               <Edit className="w-3 h-3 mr-1.5" />
               Edit Product
@@ -1462,7 +1462,7 @@ export default function AdminMarketplace() {
             <Button
               onClick={handleSaveCategory}
               disabled={isSaving || !categoryForm.name || !categoryForm.slug}
-              className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
+              className="bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs"
             >
               {isSaving && <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />}
               {selectedCategory ? 'Save Changes' : 'Create Category'}

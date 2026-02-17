@@ -59,15 +59,15 @@ const STATUS_CONFIG = {
   requested:   { label: 'Requested',   icon: Circle,      color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',   dot: 'bg-zinc-400',   node: '#71717a', glow: '#71717a40' },
   planned:     { label: 'Planned',     icon: Clock,       color: 'bg-blue-500/20 text-blue-400 border-blue-500/30',   dot: 'bg-blue-400',   node: '#60a5fa', glow: '#60a5fa40' },
   in_progress: { label: 'In Progress', icon: Loader2,     color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', dot: 'bg-yellow-400', node: '#facc15', glow: '#facc1550' },
-  review:      { label: 'Review',      icon: Eye,         color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', dot: 'bg-purple-400', node: '#a78bfa', glow: '#a78bfa40' },
-  done:        { label: 'Done',        icon: CheckCircle, color: 'bg-green-500/20 text-green-400 border-green-500/30', dot: 'bg-green-400',  node: '#4ade80', glow: '#4ade8050' },
+  review:      { label: 'Review',      icon: Eye,         color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', dot: 'bg-blue-400', node: '#60a5fa', glow: '#60a5fa40' },
+  done:        { label: 'Done',        icon: CheckCircle, color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30', dot: 'bg-cyan-400',  node: '#22d3ee', glow: '#22d3ee50' },
   cancelled:   { label: 'Cancelled',   icon: XCircle,     color: 'bg-red-500/20 text-red-400 border-red-500/30',      dot: 'bg-red-400',    node: '#f87171', glow: '#f8717140' },
 };
 
 const PRIORITY_CONFIG = {
   low:      { label: 'Low',      color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30', order: 3 },
   medium:   { label: 'Medium',   color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', order: 2 },
-  high:     { label: 'High',     color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', order: 1 },
+  high:     { label: 'High',     color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', order: 1 },
   critical: { label: 'Critical', color: 'bg-red-500/20 text-red-400 border-red-500/30', order: 0 },
 };
 
@@ -135,7 +135,7 @@ function Md({ children }) {
       p: ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
       a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">{children}</a>,
       code: ({ inline, children }) => inline
-        ? <code className="bg-zinc-800 px-1 py-0.5 rounded text-[11px] text-red-400">{children}</code>
+        ? <code className="bg-zinc-800 px-1 py-0.5 rounded text-[11px] text-cyan-400">{children}</code>
         : <pre className="bg-zinc-800 rounded p-2 text-[11px] text-zinc-300 overflow-x-auto my-1"><code>{children}</code></pre>,
       ul: ({ children }) => <ul className="list-disc list-inside ml-2 my-1">{children}</ul>,
       ol: ({ children }) => <ol className="list-decimal list-inside ml-2 my-1">{children}</ol>,
@@ -208,10 +208,10 @@ function CommentThread({ itemId, comments, onAddComment }) {
         <div className="space-y-2 mb-2 pr-2">
           {comments.map((c, i) => (
             <div key={i} className={cn('flex gap-2 text-xs', c.author === 'claude' ? 'flex-row' : 'flex-row-reverse')}>
-              <div className={cn('w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5', c.author === 'claude' ? 'bg-purple-500/20' : 'bg-red-500/20')}>
-                {c.author === 'claude' ? <Bot className="w-3 h-3 text-purple-400" /> : <User className="w-3 h-3 text-red-400" />}
+              <div className={cn('w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5', c.author === 'claude' ? 'bg-blue-500/20' : 'bg-cyan-500/20')}>
+                {c.author === 'claude' ? <Bot className="w-3 h-3 text-blue-400" /> : <User className="w-3 h-3 text-cyan-400" />}
               </div>
-              <div className={cn('rounded-lg px-3 py-2 max-w-[80%]', c.author === 'claude' ? 'bg-purple-500/10 border border-purple-500/20 text-zinc-300' : 'bg-red-500/10 border border-red-500/20 text-zinc-300')}>
+              <div className={cn('rounded-lg px-3 py-2 max-w-[80%]', c.author === 'claude' ? 'bg-blue-500/10 border border-blue-500/20 text-zinc-300' : 'bg-cyan-500/10 border border-cyan-500/20 text-zinc-300')}>
                 <div className="whitespace-pre-wrap"><Md>{c.content}</Md></div>
                 <span className="text-[10px] text-zinc-500 mt-1 block">{c.author === 'claude' ? 'Claude Code' : 'You'} · {new Date(c.created_at).toLocaleString()}</span>
               </div>
@@ -225,7 +225,7 @@ function CommentThread({ itemId, comments, onAddComment }) {
           className="bg-zinc-800/50 border-zinc-700 text-sm text-white min-h-[36px] max-h-24"
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} />
         <Button size="sm" onClick={handleSend} disabled={!newComment.trim() || sending}
-          className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 self-end"><Send className="w-3.5 h-3.5" /></Button>
+          className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/30 self-end"><Send className="w-3.5 h-3.5" /></Button>
       </div>
     </div>
   );
@@ -239,12 +239,12 @@ function SubtaskList({ subtasks, onToggle, onAdd, onRemove }) {
     <div className="mt-3 border-t border-zinc-800 pt-3">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2"><CheckSquare className="w-3.5 h-3.5 text-zinc-500" /><span className="text-xs font-medium text-zinc-400">Subtasks ({done}/{subtasks.length})</span></div>
-        {subtasks.length > 0 && (<div className="w-20 h-1.5 bg-zinc-800 rounded-full overflow-hidden"><div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${subtasks.length ? (done / subtasks.length * 100) : 0}%` }} /></div>)}
+        {subtasks.length > 0 && (<div className="w-20 h-1.5 bg-zinc-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-500 rounded-full transition-all" style={{ width: `${subtasks.length ? (done / subtasks.length * 100) : 0}%` }} /></div>)}
       </div>
       <div className="space-y-1 mb-2">
         {subtasks.map((st, i) => (
           <div key={i} className="flex items-center gap-2 group">
-            <Checkbox checked={st.done} onCheckedChange={() => onToggle(i)} className="border-zinc-600 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500" />
+            <Checkbox checked={st.done} onCheckedChange={() => onToggle(i)} className="border-zinc-600 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500" />
             <span className={cn('text-xs flex-1', st.done ? 'text-zinc-500 line-through' : 'text-zinc-300')}>{st.text}</span>
             <button onClick={() => onRemove(i)} className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-red-400 transition-opacity"><XCircle className="w-3 h-3" /></button>
           </div>
@@ -437,7 +437,7 @@ function RoadmapItemModal({ open, onClose, onSave, editItem, allItems, preselect
               <div>{!editItem && <Button variant="ghost" size="sm" onClick={() => setStep('priority')} className="text-zinc-500 text-xs">← Back</Button>}</div>
               <div className="flex gap-2">
                 <Button variant="ghost" onClick={onClose} className="text-zinc-400">Cancel</Button>
-                <Button onClick={handleSave} disabled={saving} className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30">
+                <Button onClick={handleSave} disabled={saving} className="bg-cyan-600 hover:bg-cyan-700 text-white">
                   {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                   {form.auto_queued ? 'Create & Queue' : (editItem ? 'Update' : 'Create')}
                 </Button>
@@ -1172,16 +1172,16 @@ export default function AdminRoadmap() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center"><Map className="w-5 h-5 text-red-400" /></div>
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center"><Map className="w-5 h-5 text-cyan-400" /></div>
             Roadmap
           </h1>
           <p className="text-sm text-zinc-400 mt-1">
-            Your build journey. <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-xs text-red-400">roadmap mode</code> and Claude builds.
+            Your build journey. <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-xs text-cyan-400">roadmap mode</code> and Claude builds.
           </p>
         </div>
         <div className="flex items-center gap-2">
           {activeTab === 'roadmap' && stats.queued > 0 && <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 animate-pulse"><Bot className="w-3 h-3 mr-1" />{stats.queued} queued for auto-build</Badge>}
-          {activeTab === 'roadmap' && stats.unread > 0 && <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 animate-pulse"><Bot className="w-3 h-3 mr-1" />{stats.unread} awaiting reply</Badge>}
+          {activeTab === 'roadmap' && stats.unread > 0 && <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 animate-pulse"><Bot className="w-3 h-3 mr-1" />{stats.unread} awaiting reply</Badge>}
           {activeTab === 'roadmap' && (
             <>
               <div className="flex bg-zinc-800/50 rounded-lg p-0.5 border border-zinc-700">
@@ -1195,7 +1195,7 @@ export default function AdminRoadmap() {
                 <SelectContent><SelectItem value="csv">Export CSV</SelectItem><SelectItem value="json">Export JSON</SelectItem></SelectContent>
               </Select>
               <Button variant="ghost" size="sm" onClick={fetchItems} className="text-zinc-400 hover:text-white"><RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} /></Button>
-              <Button onClick={() => { setEditItem(null); setPreselectedCategory(null); setModalOpen(true); }} className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"><Plus className="w-4 h-4 mr-2" />New Feature</Button>
+              <Button onClick={() => { setEditItem(null); setPreselectedCategory(null); setModalOpen(true); }} className="bg-cyan-600 hover:bg-cyan-700 text-white"><Plus className="w-4 h-4 mr-2" />New Feature</Button>
             </>
           )}
         </div>
@@ -1240,7 +1240,7 @@ export default function AdminRoadmap() {
       <>
 
       {/* Stats */}
-      <div className="grid grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {[
           { label: 'Total', value: stats.total, color: 'text-white' },
           { label: 'Requested', value: stats.requested, color: 'text-zinc-400' },
