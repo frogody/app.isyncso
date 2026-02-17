@@ -588,16 +588,21 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
 
 function ServicePricingSelector({ product, details, currency, onConfirm, onCancel, ft }) {
   const pricingConfig = details?.pricing_config || {};
-  const pricingModel = details?.pricing_model || 'project';
+  const pricingModel = details?.pricing_model || null;
+  const hasPricingConfig = pricingModel && Object.keys(pricingConfig).length > 0;
 
-  const [selectedModel, setSelectedModel] = useState(pricingModel);
+  const [selectedModel, setSelectedModel] = useState(pricingModel || 'manual');
   const [hours, setHours] = useState(1);
+  const [manualPrice, setManualPrice] = useState(product.price || 0);
+  const [manualDescription, setManualDescription] = useState('');
   const [selectedProjectItems, setSelectedProjectItems] = useState([]);
   const [selectedMilestones, setSelectedMilestones] = useState([]);
 
   // Determine which pricing models are available
   const availableModels = [];
-  if (pricingModel === 'hybrid') {
+  if (!hasPricingConfig) {
+    availableModels.push('manual');
+  } else if (pricingModel === 'hybrid') {
     if (pricingConfig.hourly?.enabled) availableModels.push('hourly');
     if (pricingConfig.retainer?.enabled) availableModels.push('retainer');
     if (pricingConfig.project?.enabled) availableModels.push('project');
@@ -668,6 +673,10 @@ function ServicePricingSelector({ product, details, currency, onConfirm, onCance
         ? `+ ${pricingConfig.success_fee.success_percentage}% success fee`
         : 'base fee';
       break;
+    case 'manual':
+      previewPrice = parseFloat(manualPrice) || 0;
+      previewLabel = '';
+      break;
   }
 
   const handleConfirm = () => {
@@ -711,6 +720,13 @@ function ServicePricingSelector({ product, details, currency, onConfirm, onCance
         servicePricing.quantity = 1;
         servicePricing.description = `${product.name} - Success Fee (${pricingConfig.success_fee?.success_percentage || 0}%)`;
         break;
+      case 'manual':
+        servicePricing.unit_price = parseFloat(manualPrice) || 0;
+        servicePricing.quantity = 1;
+        servicePricing.description = manualDescription
+          ? `${product.name} - ${manualDescription}`
+          : product.name;
+        break;
     }
 
     const lineItem = createLineItem(product, details, { servicePricing });
@@ -734,18 +750,20 @@ function ServicePricingSelector({ product, details, currency, onConfirm, onCance
         </div>
         <div className="flex-1">
           <h3 className={`font-medium ${ft('text-slate-900', 'text-white')}`}>{product.name}</h3>
-          <div className="flex items-center gap-2 mt-1">
-            {details.service_type && (
-              <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
-                {details.service_type.charAt(0).toUpperCase() + details.service_type.slice(1)}
-              </Badge>
-            )}
-            {details.pricing_model && (
-              <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/30">
-                {SERVICE_PRICING_LABELS[details.pricing_model] || details.pricing_model}
-              </Badge>
-            )}
-          </div>
+          {(details?.service_type || details?.pricing_model) && (
+            <div className="flex items-center gap-2 mt-1">
+              {details.service_type && (
+                <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+                  {details.service_type.charAt(0).toUpperCase() + details.service_type.slice(1)}
+                </Badge>
+              )}
+              {details.pricing_model && (
+                <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/30">
+                  {SERVICE_PRICING_LABELS[details.pricing_model] || details.pricing_model}
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -930,6 +948,39 @@ function ServicePricingSelector({ product, details, currency, onConfirm, onCance
         </div>
       )}
 
+      {/* Manual Price Entry (fallback when no pricing config) */}
+      {selectedModel === 'manual' && (
+        <div className="space-y-3">
+          <div>
+            <label className={`text-sm ${ft('text-slate-500', 'text-zinc-400')} mb-2 block`}>Price</label>
+            <div className="relative">
+              <Euro className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${ft('text-slate-400', 'text-zinc-500')}`} />
+              <Input
+                type="number"
+                min={0}
+                step="0.01"
+                value={manualPrice}
+                onChange={(e) => setManualPrice(e.target.value)}
+                placeholder="0.00"
+                className={`pl-9 ${ft('bg-slate-100 border-slate-200', 'bg-zinc-800 border-white/10')}`}
+              />
+            </div>
+          </div>
+          <div>
+            <label className={`text-sm ${ft('text-slate-500', 'text-zinc-400')} mb-2 block`}>Description (optional)</label>
+            <Input
+              value={manualDescription}
+              onChange={(e) => setManualDescription(e.target.value)}
+              placeholder="e.g. 10 hours consulting"
+              className={ft('bg-slate-100 border-slate-200', 'bg-zinc-800 border-white/10')}
+            />
+          </div>
+          <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
+            Tip: Configure pricing in Products to enable hourly, retainer, project, and milestone pricing.
+          </p>
+        </div>
+      )}
+
       {/* Price Summary */}
       <div className="p-4 rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-600/5 border border-blue-500/20">
         <div className="flex items-center justify-between">
@@ -969,7 +1020,8 @@ export default function ProductSelector({
   onClose,
   onSelect,
   currency = 'EUR',
-  excludeIds = []
+  excludeIds = [],
+  context = 'invoice'
 }) {
   const { ft } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
@@ -1086,10 +1138,10 @@ export default function ProductSelector({
       }
     }
 
-    // If service product with pricing config, show service selector
-    if (product.type === 'service' && details?.pricing_config) {
+    // If service product, always show service pricing selector
+    if (product.type === 'service') {
       setSelectedProduct(product);
-      setSelectedDetails(details);
+      setSelectedDetails(details || {});
       return;
     }
 
@@ -1156,7 +1208,7 @@ export default function ProductSelector({
         <DialogHeader>
           <DialogTitle className={`${ft('text-slate-900', 'text-white')} flex items-center gap-2`}>
             <Package className="w-5 h-5 text-cyan-400" />
-            Add Product to Invoice
+            Add Product to {context === 'proposal' ? 'Proposal' : 'Invoice'}
           </DialogTitle>
         </DialogHeader>
 

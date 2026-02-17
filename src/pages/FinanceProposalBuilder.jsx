@@ -847,6 +847,7 @@ export default function FinanceProposalBuilder() {
           onClose={() => setShowProductSelector(false)}
           onSelect={handleAddProduct}
           currency={proposal.currency}
+          context="proposal"
         />
 
         {/* Preview Modal */}

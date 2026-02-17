@@ -6,7 +6,7 @@ import {
   Receipt, Plus, Search, Filter, Download, Send, Check, Clock, AlertCircle,
   FileText, MoreVertical, Eye, Edit2, Trash2, Mail, X, ChevronDown,
   ArrowUpDown, Calendar, Euro, Building2, User, Package, RefreshCw, Zap,
-  FileDown, Printer, Sun, Moon
+  FileDown, Printer, Sun, Moon, Briefcase
 } from 'lucide-react';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
@@ -753,8 +753,12 @@ export default function FinanceInvoices() {
                           <div className={`w-8 h-8 rounded flex items-center justify-center ${ft('bg-slate-200', 'bg-zinc-700/50')}`}>
                             {item.is_subscription ? (
                               <RefreshCw className="w-4 h-4 text-blue-400" />
+                            ) : item.product_type === 'service' ? (
+                              <Briefcase className="w-4 h-4 text-blue-400" />
+                            ) : item.product_type === 'digital' ? (
+                              <Zap className="w-4 h-4 text-cyan-400" />
                             ) : item.product_id ? (
-                              <Zap className="w-4 h-4 text-blue-400" />
+                              <Package className="w-4 h-4 text-blue-400" />
                             ) : (
                               <Package className={`w-4 h-4 ${ft('text-slate-400', 'text-zinc-400')}`} />
                             )}
