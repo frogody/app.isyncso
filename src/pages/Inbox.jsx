@@ -4,7 +4,8 @@ import {
   Hash, Lock, Users, Pin, Search, Info,
   Loader2, MessageSquare, Inbox as InboxIcon, Keyboard,
   RefreshCw, AtSign, Bookmark, Wifi, WifiOff, Bell, BellOff,
-  Menu, ArrowLeft, Video, UserPlus, BarChart3, Sparkles
+  Menu, ArrowLeft, Video, UserPlus, BarChart3, Sparkles,
+  MoreHorizontal
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { db, supabase } from '@/api/supabaseClient';
@@ -251,6 +252,9 @@ export default function InboxPage() {
   // Sentiment panel state
   const [showSentimentPanel, setShowSentimentPanel] = useState(false);
   const [sentimentTimeRange, setSentimentTimeRange] = useState('7d');
+
+  // Header overflow menu
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
 
   // Mobile UI State
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -941,15 +945,19 @@ export default function InboxPage() {
     return null;
   }, [realtimeMessages, user?.id]);
 
-  const headerActions = useMemo(() => [
-    { icon: Video, action: handleStartCall, title: 'Start Call' },
+  // Primary: always visible in header. Overflow: behind "more" menu.
+  const primaryActions = useMemo(() => [
+    { icon: Search, panel: 'search', title: 'Search' },
     { icon: Users, panel: 'members', title: 'Members' },
+    { icon: Video, action: handleStartCall, title: 'Start Call' },
+  ], [handleStartCall]);
+
+  const overflowActions = useMemo(() => [
     { icon: Pin, panel: 'pinned', title: 'Pinned Messages', highlight: pinnedMessages.length > 0 },
     { icon: Bookmark, panel: 'bookmarks', title: 'Saved Items' },
-    { icon: Search, panel: 'search', title: 'Search' },
     { icon: UserPlus, action: () => setShowGuestInvite(true), title: 'Invite Guest' },
     { icon: Info, panel: 'details', title: 'Channel Details' },
-  ], [pinnedMessages.length, handleStartCall]);
+  ], [pinnedMessages.length]);
 
   // Loading state
   if (channelsLoading) {
@@ -1061,8 +1069,8 @@ export default function InboxPage() {
         ) : selectedChannel ? (
           <>
             {/* Channel Header */}
-            <header className="h-11 sm:h-12 border-b border-zinc-800/60 px-3 sm:px-5 flex items-center justify-between bg-zinc-900/50">
-              <div className="flex items-center gap-2 sm:gap-3">
+            <header className="h-14 border-b border-zinc-800/60 px-4 sm:px-5 flex items-center justify-between bg-zinc-900/50">
+              <div className="flex items-center gap-3 min-w-0">
                 {/* Mobile Menu Button */}
                 <button
                   onClick={() => setMobileMenuOpen(true)}
@@ -1073,38 +1081,38 @@ export default function InboxPage() {
                 </button>
 
                 {selectedChannel.type === 'special' ? (
-                  <div className="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center flex-shrink-0">
                     {selectedChannel.id === 'threads' ? (
-                      <MessageSquare className="w-3.5 h-3.5 text-zinc-400" />
+                      <MessageSquare className="w-4 h-4 text-zinc-400" />
                     ) : selectedChannel.id === 'mentions' ? (
-                      <AtSign className="w-3.5 h-3.5 text-zinc-400" />
+                      <AtSign className="w-4 h-4 text-zinc-400" />
                     ) : (
-                      <Bookmark className="w-3.5 h-3.5 text-zinc-400" />
+                      <Bookmark className="w-4 h-4 text-zinc-400" />
                     )}
                   </div>
                 ) : selectedChannel.type === 'dm' ? (
-                  <div className="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-300 flex-shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-sm font-bold text-zinc-300 flex-shrink-0">
                     {selectedChannel.name?.charAt(0)?.toUpperCase()}
                   </div>
                 ) : selectedChannel.type === 'private' ? (
-                  <div className="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center flex-shrink-0">
-                    <Lock className="w-3.5 h-3.5 text-zinc-400" />
+                  <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                    <Lock className="w-4 h-4 text-zinc-400" />
                   </div>
                 ) : (
-                  <div className="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center flex-shrink-0">
-                    <Hash className="w-3.5 h-3.5 text-zinc-400" />
+                  <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                    <Hash className="w-4 h-4 text-zinc-400" />
                   </div>
                 )}
                 <div className="min-w-0">
-                  <h2 className="font-medium text-white text-sm truncate">{selectedChannelDisplayName}</h2>
+                  <h2 className="font-semibold text-white text-sm truncate">{selectedChannelDisplayName}</h2>
                   {selectedChannel.description && (
-                    <p className="text-[11px] text-zinc-500 max-w-[150px] sm:max-w-md truncate hidden sm:block">{selectedChannel.description}</p>
+                    <p className="text-[11px] text-zinc-500 max-w-[200px] sm:max-w-md truncate">{selectedChannel.description}</p>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-0.5 sm:gap-1">
-                {/* Sentiment indicator */}
+              <div className="flex items-center gap-1.5">
+                {/* Sentiment indicator - subtle */}
                 {selectedChannel.type !== 'special' && sentimentData?.sentiment && (
                   <SentimentIndicator
                     sentiment={sentimentData.sentiment}
@@ -1121,68 +1129,107 @@ export default function InboxPage() {
                   />
                 )}
 
-                {selectedChannel.type !== 'special' && headerActions.map((item, index) => (
+                {/* Primary actions — always visible */}
+                {selectedChannel.type !== 'special' && primaryActions.map((item) => (
                   <button
                     key={item.panel || item.title}
                     onClick={() => item.action ? item.action() : togglePanel(item.panel)}
-                    className={`p-1.5 rounded-md transition-all ${
+                    className={`p-2 rounded-lg transition-all ${
                       item.panel && activePanel === item.panel
-                        ? 'bg-zinc-800 text-zinc-200'
+                        ? 'bg-zinc-800 text-white'
                         : 'text-zinc-500 hover:bg-zinc-800/80 hover:text-zinc-300'
-                    } ${index >= 3 ? 'hidden sm:block' : ''}`}
+                    }`}
                     title={item.title}
                   >
                     <item.icon className="w-4 h-4" />
                   </button>
                 ))}
 
-                <div className="w-px h-4 bg-zinc-800 mx-1 hidden sm:block" />
+                {/* Overflow menu — secondary actions */}
+                {selectedChannel.type !== 'special' && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowHeaderMenu(prev => !prev)}
+                      className={`p-2 rounded-lg transition-all ${
+                        showHeaderMenu
+                          ? 'bg-zinc-800 text-white'
+                          : 'text-zinc-500 hover:bg-zinc-800/80 hover:text-zinc-300'
+                      }`}
+                      title="More actions"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                    <AnimatePresence>
+                      {showHeaderMenu && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setShowHeaderMenu(false)} />
+                          <motion.div
+                            initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                            transition={{ duration: 0.12 }}
+                            className="absolute right-0 top-full mt-1 z-50 w-56 rounded-xl bg-zinc-900 border border-zinc-800/80 shadow-2xl py-1.5 overflow-hidden"
+                          >
+                            {overflowActions.map((item) => (
+                              <button
+                                key={item.panel || item.title}
+                                onClick={() => {
+                                  item.action ? item.action() : togglePanel(item.panel);
+                                  setShowHeaderMenu(false);
+                                }}
+                                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                                  item.panel && activePanel === item.panel
+                                    ? 'text-white bg-zinc-800/60'
+                                    : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
+                                }`}
+                              >
+                                <item.icon className="w-4 h-4 flex-shrink-0" />
+                                <span>{item.title}</span>
+                                {item.highlight && (
+                                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                                )}
+                              </button>
+                            ))}
 
-                {/* Notification toggle */}
-                {notificationsSupported && (
-                  <button
-                    onClick={async () => {
-                      if (notificationPermission === 'granted') {
-                        toast.info('Notifications are enabled');
-                      } else if (notificationPermission === 'denied') {
-                        toast.error('Notifications are blocked. Please enable them in browser settings.');
-                      } else {
-                        const granted = await requestNotificationPermission();
-                        if (granted) {
-                          toast.success('Notifications enabled!');
-                        }
-                      }
-                    }}
-                    className={`p-1.5 rounded-md transition-all ${
-                      notificationPermission === 'granted'
-                        ? 'text-cyan-400 hover:bg-zinc-800/80'
-                        : notificationPermission === 'denied'
-                        ? 'text-red-400/60 hover:bg-zinc-800/80'
-                        : 'text-zinc-500 hover:bg-zinc-800/80 hover:text-zinc-300'
-                    }`}
-                    title={
-                      notificationPermission === 'granted'
-                        ? 'Notifications enabled'
-                        : notificationPermission === 'denied'
-                        ? 'Notifications blocked'
-                        : 'Enable notifications'
-                    }
-                  >
-                    {notificationPermission === 'granted' ? (
-                      <Bell className="w-4 h-4" />
-                    ) : (
-                      <BellOff className="w-4 h-4" />
-                    )}
-                  </button>
+                            <div className="h-px bg-zinc-800/60 my-1" />
+
+                            {/* Notification toggle */}
+                            {notificationsSupported && (
+                              <button
+                                onClick={async () => {
+                                  if (notificationPermission !== 'granted' && notificationPermission !== 'denied') {
+                                    const granted = await requestNotificationPermission();
+                                    if (granted) toast.success('Notifications enabled!');
+                                  }
+                                  setShowHeaderMenu(false);
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200 transition-colors"
+                              >
+                                {notificationPermission === 'granted' ? (
+                                  <Bell className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                                ) : (
+                                  <BellOff className="w-4 h-4 flex-shrink-0" />
+                                )}
+                                <span>{notificationPermission === 'granted' ? 'Notifications on' : 'Enable notifications'}</span>
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => {
+                                setShowKeyboardShortcuts(true);
+                                setShowHeaderMenu(false);
+                              }}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200 transition-colors"
+                            >
+                              <Keyboard className="w-4 h-4 flex-shrink-0" />
+                              <span>Keyboard shortcuts</span>
+                            </button>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 )}
-
-                <button
-                  onClick={() => setShowKeyboardShortcuts(true)}
-                  className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-800/80 hover:text-zinc-300 transition-all hidden sm:block"
-                  title="Keyboard shortcuts (⌘/)"
-                >
-                  <Keyboard className="w-4 h-4" />
-                </button>
               </div>
             </header>
 
