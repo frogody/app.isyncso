@@ -8,6 +8,15 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { db, supabase } from '@/api/supabaseClient';
+import {
+  TabBar,
+  CalendarSidebarContent,
+  CallsSidebarContent,
+  PhoneSidebarContent,
+  CalendarMainContent,
+  CallsMainContent,
+  PhoneMainContent,
+} from '@/components/inbox/InboxHub';
 import { useUser } from '@/components/context/UserContext';
 import { usePermissions } from '@/components/context/PermissionContext';
 import {
@@ -42,10 +51,16 @@ import KeyboardShortcutsModal from '@/components/inbox/KeyboardShortcutsModal';
 import DeleteChannelDialog from '@/components/inbox/DeleteChannelDialog';
 import ForwardMessageModal from '@/components/inbox/ForwardMessageModal';
 import BookmarksPanel from '@/components/inbox/BookmarksPanel';
+import ChannelSettingsPanel from '@/components/inbox/ChannelSettingsPanel';
 
 export default function InboxPage() {
   const { user } = useUser();
   const { isAdmin } = usePermissions();
+
+  // ========================================
+  // COMMUNICATION HUB TAB STATE
+  // ========================================
+  const [activeHubTab, setActiveHubTab] = useState('chat');
 
   // ========================================
   // REALTIME HOOKS (replacing polling)
@@ -196,6 +211,10 @@ export default function InboxPage() {
   const [channelToDelete, setChannelToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Channel settings panel state
+  const [channelSettingsOpen, setChannelSettingsOpen] = useState(false);
+  const [settingsChannel, setSettingsChannel] = useState(null);
+
   // Mobile UI State
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -230,6 +249,8 @@ export default function InboxPage() {
         setShowKeyboardShortcuts(false);
         setActiveThread(null);
         setMobileMenuOpen(false);
+        setChannelSettingsOpen(false);
+        setSettingsChannel(null);
       }
     };
 
@@ -686,6 +707,12 @@ export default function InboxPage() {
     }
   }, [selectedChannel, rtUpdateChannel]);
 
+  // Open channel settings panel
+  const handleOpenChannelSettings = useCallback((channel) => {
+    setSettingsChannel(channel);
+    setChannelSettingsOpen(true);
+  }, []);
+
   // Helpers
   const getChannelMembers = useCallback(() => {
     if (!selectedChannel) return [];
@@ -741,36 +768,84 @@ export default function InboxPage() {
         )}
       </AnimatePresence>
 
-      {/* Channel Sidebar - Desktop always visible, mobile as drawer */}
+      {/* Communication Hub Sidebar - Desktop always visible, mobile as drawer */}
       <div
         className={`
           fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto
           transform transition-transform duration-300 ease-out
+          flex flex-col
           ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
-        <ChannelSidebar
-          channels={realtimeChannels}
-          directMessages={resolvedDMs}
-          supportChannels={resolvedSupportChannels}
-          selectedChannel={selectedChannel}
-          onSelectChannel={handleSelectChannel}
-          onCreateChannel={() => setShowCreateChannel(true)}
-          onCreateDM={() => setShowNewDM(true)}
-          user={user}
-          unreadCounts={unreadCounts}
-          onArchiveChannel={handleArchiveChannel}
-          onDeleteChannel={handleDeleteChannelClick}
-          onOpenSettings={() => setShowWorkspaceSettings(true)}
-          isConnected={isConnected}
-          onClose={() => setMobileMenuOpen(false)}
-          isAdmin={isAdmin}
-        />
+        {/* Tab Bar - sits above sidebar content */}
+        <div className="w-[280px] lg:w-[280px] bg-zinc-900/95 border-r border-zinc-800/60">
+          <TabBar
+            activeTab={activeHubTab}
+            onTabChange={(tab) => {
+              setActiveHubTab(tab);
+              if (tab !== 'chat') setMobileMenuOpen(false);
+            }}
+          />
+        </div>
+
+        {/* Sidebar content switches based on tab */}
+        {activeHubTab === 'chat' ? (
+          <ChannelSidebar
+            channels={realtimeChannels}
+            directMessages={resolvedDMs}
+            supportChannels={resolvedSupportChannels}
+            selectedChannel={selectedChannel}
+            onSelectChannel={handleSelectChannel}
+            onCreateChannel={() => setShowCreateChannel(true)}
+            onCreateDM={() => setShowNewDM(true)}
+            user={user}
+            unreadCounts={unreadCounts}
+            onArchiveChannel={handleArchiveChannel}
+            onDeleteChannel={handleDeleteChannelClick}
+            onOpenSettings={() => setShowWorkspaceSettings(true)}
+            onOpenChannelSettings={handleOpenChannelSettings}
+            isConnected={isConnected}
+            onClose={() => setMobileMenuOpen(false)}
+            isAdmin={isAdmin}
+          />
+        ) : (
+          <div className="w-[280px] lg:w-[280px] h-full bg-zinc-900/95 border-r border-zinc-800/60 flex flex-col overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeHubTab}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.15 }}
+                className="flex-1 overflow-hidden flex flex-col"
+              >
+                {activeHubTab === 'calendar' && <CalendarSidebarContent />}
+                {activeHubTab === 'calls' && <CallsSidebarContent />}
+                {activeHubTab === 'phone' && <PhoneSidebarContent />}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 bg-black">
-        {selectedChannel ? (
+        {activeHubTab !== 'chat' ? (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeHubTab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 flex flex-col"
+            >
+              {activeHubTab === 'calendar' && <CalendarMainContent />}
+              {activeHubTab === 'calls' && <CallsMainContent />}
+              {activeHubTab === 'phone' && <PhoneMainContent />}
+            </motion.div>
+          </AnimatePresence>
+        ) : selectedChannel ? (
           <>
             {/* Channel Header */}
             <header className="h-11 sm:h-12 border-b border-zinc-800/60 px-3 sm:px-5 flex items-center justify-between bg-zinc-900/50">
@@ -1059,6 +1134,25 @@ export default function InboxPage() {
               setActivePanel(null);
             }}
             onDeleteChannel={handleDeleteChannelClick}
+          />
+        )}
+
+        {channelSettingsOpen && settingsChannel && (
+          <ChannelSettingsPanel
+            channel={settingsChannel}
+            onClose={() => {
+              setChannelSettingsOpen(false);
+              setSettingsChannel(null);
+            }}
+            onUpdateChannel={(updates) => {
+              handleUpdateChannel(updates);
+              // Also update the settings channel locally
+              setSettingsChannel(prev => ({ ...prev, ...updates }));
+            }}
+            onArchiveChannel={handleArchiveChannel}
+            onDeleteChannel={handleDeleteChannelClick}
+            user={user}
+            teamMembers={teamMembers}
           />
         )}
       </AnimatePresence>

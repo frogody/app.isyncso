@@ -3,7 +3,7 @@ import {
   Hash, Lock, Plus, ChevronDown, MessageSquare,
   Search, Settings, BellOff, Bell, Star, StarOff, MoreHorizontal,
   Archive, Trash2, UserPlus, Bookmark, AtSign,
-  Circle, Clock, MinusCircle, Moon, X, Headset
+  Circle, Clock, MinusCircle, Moon, X, Headset, SlidersHorizontal
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import ChannelCategoryManager, { CategoryDot, filterChannelsByCategory } from './ChannelCategoryManager';
 
 // Status options
 const STATUS_OPTIONS = [
@@ -59,6 +60,7 @@ const ChannelItem = memo(function ChannelItem({
   onToggleMute,
   onArchiveChannel,
   onDeleteChannel,
+  onOpenChannelSettings,
   user
 }) {
   const Icon = isDM ? MessageSquare : channel.type === 'support' ? Headset : channel.type === 'private' ? Lock : Hash;
@@ -92,9 +94,12 @@ const ChannelItem = memo(function ChannelItem({
           <div className="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-zinc-500 border border-zinc-950" />
         </div>
       ) : (
-        <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${
-          isSelected ? 'text-zinc-300' : 'text-zinc-500'
-        }`} />
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <Icon className={`w-3.5 h-3.5 ${
+            isSelected ? 'text-zinc-300' : 'text-zinc-500'
+          }`} />
+          <CategoryDot category={channel.category} />
+        </div>
       )}
 
       {/* Channel Name */}
@@ -121,6 +126,20 @@ const ChannelItem = memo(function ChannelItem({
           <span className="min-w-[16px] h-[16px] px-1 text-[9px] font-bold bg-cyan-600/80 text-white rounded-full flex items-center justify-center">
             {unread > 99 ? '99+' : unread}
           </span>
+        )}
+
+        {/* Settings Gear */}
+        {!isDM && onOpenChannelSettings && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenChannelSettings(channel);
+            }}
+            className="p-1 opacity-0 group-hover:opacity-100 hover:bg-zinc-700/50 rounded-lg transition-all"
+            title="Channel settings"
+          >
+            <SlidersHorizontal className="w-3 h-3" />
+          </button>
         )}
 
         {/* Context Menu */}
@@ -201,6 +220,7 @@ export default function ChannelSidebar({
   onArchiveChannel,
   onDeleteChannel,
   onOpenSettings,
+  onOpenChannelSettings,
   onClose,
   isAdmin = false,
 }) {
@@ -208,6 +228,7 @@ export default function ChannelSidebar({
   const [dmsExpanded, setDmsExpanded] = useState(true);
   const [supportExpanded, setSupportExpanded] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [starredChannels, setStarredChannels] = useState(() => {
     try {
       const stored = localStorage.getItem('inbox_starred_channels');
@@ -269,14 +290,26 @@ export default function ChannelSidebar({
     [channels]
   );
 
+  // All non-DM, non-support channels for category counting
+  const allRegularChannels = useMemo(() =>
+    channels.filter(c => !c.is_archived),
+    [channels]
+  );
+
   const filteredPublicChannels = useMemo(() =>
-    publicChannels.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase())),
-    [publicChannels, searchTerm]
+    filterChannelsByCategory(
+      publicChannels.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase())),
+      selectedCategory
+    ),
+    [publicChannels, searchTerm, selectedCategory]
   );
 
   const filteredPrivateChannels = useMemo(() =>
-    privateChannels.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase())),
-    [privateChannels, searchTerm]
+    filterChannelsByCategory(
+      privateChannels.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase())),
+      selectedCategory
+    ),
+    [privateChannels, searchTerm, selectedCategory]
   );
 
   const filteredDMs = useMemo(() =>
@@ -343,9 +376,10 @@ export default function ChannelSidebar({
       onToggleMute={toggleMute}
       onArchiveChannel={onArchiveChannel}
       onDeleteChannel={onDeleteChannel}
+      onOpenChannelSettings={onOpenChannelSettings}
       user={user}
     />
-  ), [selectedChannel?.id, unreadCounts, starredChannels, mutedChannels, onSelectChannel, toggleStar, toggleMute, onArchiveChannel, onDeleteChannel, user]);
+  ), [selectedChannel?.id, unreadCounts, starredChannels, mutedChannels, onSelectChannel, toggleStar, toggleMute, onArchiveChannel, onDeleteChannel, onOpenChannelSettings, user]);
 
   return (
     <div className="w-72 bg-zinc-950 border-r border-zinc-800/60 flex flex-col h-full">
@@ -411,6 +445,13 @@ export default function ChannelSidebar({
             <span>Saved</span>
           </button>
         </div>
+
+        {/* Category Filter Pills */}
+        <ChannelCategoryManager
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          channels={allRegularChannels}
+        />
       </div>
 
       {/* Channels List */}
