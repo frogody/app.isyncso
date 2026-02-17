@@ -22,12 +22,14 @@ import {
   Copy,
   MessageSquare,
   X,
+  Brain,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import VideoGrid from './VideoGrid';
 import CallHeader from './CallHeader';
 import ReactionsOverlay from './ReactionsOverlay';
+import SyncCallAssistant from './SyncCallAssistant';
 
 // ---------------------------------------------------------------------------
 // Control button (reused from CallControls pattern)
@@ -86,6 +88,7 @@ const RoomControls = memo(function RoomControls({
   isScreenSharing,
   showReactions,
   showChat,
+  showSync,
   participantCount,
   joinCode,
   onToggleMute,
@@ -93,6 +96,7 @@ const RoomControls = memo(function RoomControls({
   onToggleScreenShare,
   onToggleReactions,
   onToggleChat,
+  onToggleSync,
   onEndCall,
   onLeave,
   isHost,
@@ -166,6 +170,14 @@ const RoomControls = memo(function RoomControls({
         onClick={onToggleChat}
       />
 
+      {/* SYNC AI toggle */}
+      <ControlButton
+        icon={Brain}
+        isActive={showSync}
+        label={showSync ? 'Hide SYNC' : 'SYNC Assistant'}
+        onClick={onToggleSync}
+      />
+
       {/* Participant count */}
       <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.05]">
         <Users className="w-4 h-4 text-zinc-400" />
@@ -226,6 +238,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
 }) {
   const [showReactions, setShowReactions] = useState(true);
   const [showChat, setShowChat] = useState(false);
+  const [showSync, setShowSync] = useState(true);
 
   const callId = call?.id;
   const userId = user?.id;
@@ -246,6 +259,10 @@ const VideoCallRoom = memo(function VideoCallRoom({
 
   const toggleChat = useCallback(() => {
     setShowChat((prev) => !prev);
+  }, []);
+
+  const toggleSync = useCallback(() => {
+    setShowSync((prev) => !prev);
   }, []);
 
   return (
@@ -270,9 +287,21 @@ const VideoCallRoom = memo(function VideoCallRoom({
           isRecording={isRecording}
         />
 
-        {/* Video grid + chat panel */}
+        {/* Video grid + side panels */}
         <div className="flex-1 pt-14 pb-2 relative flex overflow-hidden">
-          <div className={`flex-1 relative ${showChat ? 'mr-80' : ''} transition-all duration-300`}>
+          {/* SYNC Assistant panel (left side) */}
+          <AnimatePresence>
+            {showSync && (
+              <SyncCallAssistant
+                localStream={localStream}
+                callId={callId}
+                isVisible={showSync}
+                onClose={toggleSync}
+              />
+            )}
+          </AnimatePresence>
+
+          <div className={`flex-1 relative ${showSync ? 'ml-[340px]' : ''} ${showChat ? 'mr-80' : ''} transition-all duration-300`}>
             <VideoGrid
               participants={participants}
               currentUserId={userId}
@@ -332,6 +361,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
           isScreenSharing={isScreenSharing}
           showReactions={showReactions}
           showChat={showChat}
+          showSync={showSync}
           participantCount={participants.length}
           joinCode={joinCode}
           onToggleMute={onToggleMute}
@@ -339,6 +369,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
           onToggleScreenShare={onToggleScreenShare}
           onToggleReactions={toggleReactions}
           onToggleChat={toggleChat}
+          onToggleSync={toggleSync}
           onEndCall={onEndCall}
           onLeave={onLeave}
           isHost={isHost}
