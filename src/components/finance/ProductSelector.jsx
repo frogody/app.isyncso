@@ -129,30 +129,33 @@ const SERVICE_PRICING_LABELS = {
 function getServiceBasePrice(details) {
   if (!details?.pricing_config) return 0;
   const config = details.pricing_config;
-  const model = details.pricing_model;
 
-  if (model === 'hourly' && config.hourly?.rate) return config.hourly.rate;
-  if (model === 'retainer' && config.retainer?.monthly_fee) return config.retainer.monthly_fee;
-  if (model === 'project' && config.project?.items?.length > 0) {
+  // Use first enabled pricing model from pricing_config
+  if (config.hourly?.enabled && config.hourly?.rate) return config.hourly.rate;
+  if (config.retainer?.enabled && config.retainer?.monthly_fee) return config.retainer.monthly_fee;
+  if (config.project?.enabled && config.project?.items?.length > 0) {
     return config.project.items.reduce((sum, item) => sum + (item.price || 0), 0);
   }
-  if (model === 'milestone' && config.milestones?.items?.length > 0) {
+  if (config.milestones?.enabled && config.milestones?.items?.length > 0) {
     return config.milestones.items.reduce((sum, item) => sum + (item.amount || 0), 0);
   }
-  if (model === 'success_fee') return config.success_fee?.base_fee || 0;
-  // hybrid: use first enabled model
-  if (model === 'hybrid') {
-    if (config.hourly?.enabled && config.hourly?.rate) return config.hourly.rate;
-    if (config.retainer?.enabled && config.retainer?.monthly_fee) return config.retainer.monthly_fee;
-    if (config.project?.enabled && config.project?.items?.length > 0) {
-      return config.project.items.reduce((sum, item) => sum + (item.price || 0), 0);
-    }
-  }
+  if (config.success_fee?.enabled) return config.success_fee?.base_fee || 0;
   return 0;
 }
 
+function getFirstEnabledModel(details) {
+  if (!details?.pricing_config) return null;
+  const config = details.pricing_config;
+  if (config.hourly?.enabled) return 'hourly';
+  if (config.retainer?.enabled) return 'retainer';
+  if (config.project?.enabled) return 'project';
+  if (config.milestones?.enabled) return 'milestone';
+  if (config.success_fee?.enabled) return 'success_fee';
+  return null;
+}
+
 function getServicePriceLabel(details) {
-  const model = details?.pricing_model;
+  const model = getFirstEnabledModel(details);
   if (model === 'hourly') return '/hr';
   if (model === 'retainer') return '/mo';
   if (model === 'project') return 'total';
@@ -250,12 +253,18 @@ function ProductCard({ product, details, currency, onSelect, isSelected, ft }) {
           {/* Pricing badges for service products */}
           {isService && details && (
             <div className="flex items-center gap-2 mt-2">
-              {details.pricing_model && (
-                <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/30">
-                  <Clock className="w-3 h-3 mr-1" />
-                  {SERVICE_PRICING_LABELS[details.pricing_model] || details.pricing_model}
-                </Badge>
-              )}
+              {(() => {
+                const config = details.pricing_config || {};
+                const enabled = Object.entries(config)
+                  .filter(([, v]) => v?.enabled)
+                  .map(([k]) => k);
+                return enabled.length > 0 ? enabled.map(model => (
+                  <Badge key={model} variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/30">
+                    <Clock className="w-3 h-3 mr-1" />
+                    {SERVICE_PRICING_LABELS[model] || model}
+                  </Badge>
+                )) : null;
+              })()}
               {details.service_type && (
                 <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
                   {details.service_type.charAt(0).toUpperCase() + details.service_type.slice(1)}
@@ -588,29 +597,23 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
 
 function ServicePricingSelector({ product, details, currency, onConfirm, onCancel, ft }) {
   const pricingConfig = details?.pricing_config || {};
-  const pricingModel = details?.pricing_model || null;
-  const hasPricingConfig = pricingModel && Object.keys(pricingConfig).length > 0;
 
-  const [selectedModel, setSelectedModel] = useState(pricingModel || 'manual');
+  // Derive available models directly from pricing_config enabled sections
+  const enabledModels = [];
+  if (pricingConfig.hourly?.enabled) enabledModels.push('hourly');
+  if (pricingConfig.retainer?.enabled) enabledModels.push('retainer');
+  if (pricingConfig.project?.enabled) enabledModels.push('project');
+  if (pricingConfig.milestones?.enabled) enabledModels.push('milestone');
+  if (pricingConfig.success_fee?.enabled) enabledModels.push('success_fee');
+
+  const availableModels = enabledModels.length > 0 ? enabledModels : ['manual'];
+
+  const [selectedModel, setSelectedModel] = useState(availableModels[0]);
   const [hours, setHours] = useState(1);
   const [manualPrice, setManualPrice] = useState(product.price || 0);
   const [manualDescription, setManualDescription] = useState('');
   const [selectedProjectItems, setSelectedProjectItems] = useState([]);
   const [selectedMilestones, setSelectedMilestones] = useState([]);
-
-  // Determine which pricing models are available
-  const availableModels = [];
-  if (!hasPricingConfig) {
-    availableModels.push('manual');
-  } else if (pricingModel === 'hybrid') {
-    if (pricingConfig.hourly?.enabled) availableModels.push('hourly');
-    if (pricingConfig.retainer?.enabled) availableModels.push('retainer');
-    if (pricingConfig.project?.enabled) availableModels.push('project');
-    if (pricingConfig.milestones?.enabled) availableModels.push('milestone');
-    if (pricingConfig.success_fee?.enabled) availableModels.push('success_fee');
-  } else {
-    availableModels.push(pricingModel);
-  }
 
   useEffect(() => {
     if (availableModels.length > 0 && !availableModels.includes(selectedModel)) {
@@ -750,18 +753,18 @@ function ServicePricingSelector({ product, details, currency, onConfirm, onCance
         </div>
         <div className="flex-1">
           <h3 className={`font-medium ${ft('text-slate-900', 'text-white')}`}>{product.name}</h3>
-          {(details?.service_type || details?.pricing_model) && (
+          {(details?.service_type || enabledModels.length > 0) && (
             <div className="flex items-center gap-2 mt-1">
-              {details.service_type && (
+              {details?.service_type && (
                 <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
                   {details.service_type.charAt(0).toUpperCase() + details.service_type.slice(1)}
                 </Badge>
               )}
-              {details.pricing_model && (
-                <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/30">
-                  {SERVICE_PRICING_LABELS[details.pricing_model] || details.pricing_model}
+              {enabledModels.map(model => (
+                <Badge key={model} variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/30">
+                  {SERVICE_PRICING_LABELS[model] || model}
                 </Badge>
-              )}
+              ))}
             </div>
           )}
         </div>
