@@ -122,9 +122,12 @@ export function useVideoCall(userId, companyId) {
         .insert({
           company_id: companyId,
           channel_id: channelId || null,
+          creator_id: userId,
           initiated_by: userId,
           title: title || 'Video Call',
           join_code: joinCode,
+          room_id: joinCode,
+          join_url: `${window.location.origin}/call/${joinCode}`,
           provider: 'livekit',
           status: 'waiting',
           settings: {},

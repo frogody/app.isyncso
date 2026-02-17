@@ -17,7 +17,7 @@ const PriorityToggle = memo(function PriorityToggle({ isPriority = false, onTogg
   return (
     <button
       onClick={onToggle}
-      className={`relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+      className={`relative shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
         isPriority
           ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
           : 'bg-zinc-800/50 text-zinc-500 border border-zinc-700/50 hover:text-zinc-300 hover:border-zinc-600/50'

@@ -276,45 +276,37 @@ export default function Actions() {
       </div>
 
       <div className="relative z-10 w-full px-4 lg:px-6 py-3 space-y-3">
-        {/* Top row with view selector */}
-        <div className="flex items-center justify-end">
-          <SyncViewSelector />
-        </div>
-        {/* Premium Header */}
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-xl bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/60 px-4 py-3">
-          <div className="relative z-10 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center">
-                <Zap className="w-4 h-4 text-cyan-400/80" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-base font-bold text-white">SYNC Actions</h1>
-                  {approvalActions.length > 0 && (
-                    <Badge className="bg-amber-950/40 text-amber-300/80 border-amber-800/30 text-[10px]">
-                      {approvalActions.length} Needs Approval
-                    </Badge>
-                  )}
-                  <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-[10px]">
-                    {syncActions.length} SYNC Actions
-                  </Badge>
-                </div>
-                <p className="text-zinc-500 text-xs">Actions taken by SYNC on your behalf and pending approvals</p>
-              </div>
+        {/* Header row with title + view selector */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
+              <Zap className="w-4 h-4 text-cyan-400" />
             </div>
-
-            <div className="flex items-center gap-2">
-              <Button onClick={() => setConnectModalOpen(true)} className="border border-zinc-700/60 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 text-xs px-3 py-1.5 h-auto">
-                <Plug className="w-3 h-3 mr-1.5" />
-                Connect
-              </Button>
-              <Button onClick={() => setCreateActionModalOpen(true)} className="bg-cyan-600/80 hover:bg-cyan-600 text-white font-medium text-xs px-3 py-1.5 h-auto">
-                <Plus className="w-3 h-3 mr-1.5" />
-                New Action
-              </Button>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-bold text-white">SYNC Actions</h1>
+                {approvalActions.length > 0 && (
+                  <Badge className="bg-amber-950/40 text-amber-300/80 border-amber-800/30 text-[10px]">
+                    {approvalActions.length} Needs Approval
+                  </Badge>
+                )}
+              </div>
+              <p className="text-zinc-500 text-xs">Actions taken by SYNC on your behalf</p>
             </div>
           </div>
-        </motion.div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setConnectModalOpen(true)} className="border border-zinc-700/60 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 text-xs px-3 py-1.5 h-auto">
+            <Plug className="w-3 h-3 mr-1.5" />
+            Connect
+          </Button>
+          <Button onClick={() => setCreateActionModalOpen(true)} className="bg-cyan-600/80 hover:bg-cyan-600 text-white font-medium text-xs px-3 py-1.5 h-auto">
+            <Plus className="w-3 h-3 mr-1.5" />
+            New Action
+          </Button>
+        </div>
 
         {/* Stats Row */}
         <div className="grid grid-cols-5 gap-2">

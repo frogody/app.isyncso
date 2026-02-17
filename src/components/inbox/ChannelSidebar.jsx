@@ -441,27 +441,27 @@ export default function ChannelSidebar({
         </div>
 
         {/* Quick Access + Priority Toggle */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 overflow-hidden">
           <button
             onClick={() => onSelectChannel({ id: 'threads', name: 'All Threads', type: 'special' })}
-            className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60 transition-all text-[11px]"
+            className="flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60 transition-all text-[11px]"
           >
-            <MessageSquare className="w-3 h-3" />
-            <span>Threads</span>
+            <MessageSquare className="w-3 h-3 shrink-0" />
+            <span className="truncate">Threads</span>
           </button>
           <button
             onClick={() => onSelectChannel({ id: 'mentions', name: 'Mentions & Reactions', type: 'special' })}
-            className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60 transition-all text-[11px]"
+            className="flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60 transition-all text-[11px]"
           >
-            <AtSign className="w-3 h-3" />
-            <span>Mentions</span>
+            <AtSign className="w-3 h-3 shrink-0" />
+            <span className="truncate">Mentions</span>
           </button>
           <button
             onClick={() => onSelectChannel({ id: 'saved', name: 'Saved Items', type: 'special' })}
-            className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60 transition-all text-[11px]"
+            className="flex-1 min-w-0 flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60 transition-all text-[11px]"
           >
-            <Bookmark className="w-3 h-3" />
-            <span>Saved</span>
+            <Bookmark className="w-3 h-3 shrink-0" />
+            <span className="truncate">Saved</span>
           </button>
           <PriorityToggle
             isPriority={isPriorityView}
