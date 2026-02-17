@@ -860,63 +860,63 @@ export default function FinanceProposalBuilder() {
               </DialogTitle>
             </DialogHeader>
 
-            <div className="bg-white text-zinc-900 rounded-lg p-6 space-y-4">
+            <div className="bg-white rounded-lg p-6 space-y-4 [&_*]:!text-zinc-900">
               {/* Header */}
-              <div className="border-b border-zinc-200 pb-4">
-                <h1 className="text-2xl font-bold">{proposal.title || 'Untitled Proposal'}</h1>
+              <div className="border-b border-zinc-300 pb-4">
+                <h1 className="!text-2xl !font-bold !text-zinc-900">{proposal.title || 'Untitled Proposal'}</h1>
                 {proposal.proposal_number && (
-                  <p className="text-sm text-zinc-500 font-mono mt-1">{proposal.proposal_number}</p>
+                  <p className="!text-sm !text-zinc-500 font-mono mt-1">{proposal.proposal_number}</p>
                 )}
               </div>
 
               {/* Client Info */}
-              <div className="bg-zinc-50 rounded-lg p-3">
-                <p className="text-xs text-zinc-500 uppercase tracking-wide mb-2">Prepared For</p>
-                <p className="font-semibold">{proposal.client_company || 'Client Company'}</p>
-                <p className="text-sm text-zinc-600">{proposal.client_name}</p>
-                <p className="text-sm text-zinc-600">{proposal.client_email}</p>
+              <div className="bg-zinc-100 rounded-lg p-3">
+                <p className="!text-xs !text-zinc-500 uppercase tracking-wide mb-2">Prepared For</p>
+                <p className="!font-semibold !text-zinc-900">{proposal.client_company || 'Client Company'}</p>
+                <p className="!text-sm !text-zinc-600">{proposal.client_name}</p>
+                <p className="!text-sm !text-zinc-600">{proposal.client_email}</p>
               </div>
 
               {/* Introduction */}
               {proposal.introduction && (
                 <div>
-                  <p className="text-zinc-700 whitespace-pre-wrap">{proposal.introduction}</p>
+                  <p className="!text-zinc-700 whitespace-pre-wrap">{proposal.introduction}</p>
                 </div>
               )}
 
               {/* Sections */}
               {proposal.sections.map((section, idx) => (
-                <div key={idx} className="border-t border-zinc-200 pt-3">
-                  <h3 className="font-semibold text-lg mb-2">{section.title || 'Section'}</h3>
-                  <p className="text-zinc-700 whitespace-pre-wrap">{section.content}</p>
+                <div key={idx} className="border-t border-zinc-300 pt-3">
+                  <h3 className="!font-semibold !text-lg !text-zinc-900 mb-2">{section.title || 'Section'}</h3>
+                  <p className="!text-zinc-700 whitespace-pre-wrap">{section.content}</p>
                 </div>
               ))}
 
               {/* Line Items */}
               {proposal.line_items.length > 0 && (
-                <div className="border-t border-zinc-200 pt-3">
-                  <h3 className="font-semibold text-lg mb-4">Pricing</h3>
+                <div className="border-t border-zinc-300 pt-3">
+                  <h3 className="!font-semibold !text-lg !text-zinc-900 mb-4">Pricing</h3>
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-zinc-200">
-                        <th className="text-left py-2">Item</th>
-                        <th className="text-right py-2">Qty</th>
-                        <th className="text-right py-2">Price</th>
-                        <th className="text-right py-2">Total</th>
+                      <tr className="border-b border-zinc-300">
+                        <th className="text-left py-2 !text-zinc-700 !font-semibold">Item</th>
+                        <th className="text-right py-2 !text-zinc-700 !font-semibold">Qty</th>
+                        <th className="text-right py-2 !text-zinc-700 !font-semibold">Price</th>
+                        <th className="text-right py-2 !text-zinc-700 !font-semibold">Total</th>
                       </tr>
                     </thead>
                     <tbody>
                       {proposal.line_items.map((item, idx) => (
-                        <tr key={idx} className="border-b border-zinc-100">
-                          <td className="py-2">
+                        <tr key={idx} className="border-b border-zinc-200">
+                          <td className="py-2 !text-zinc-900">
                             {item.name || item.description}
                             {item.is_subscription && (
-                              <span className="text-xs text-blue-600 ml-2">({item.billing_cycle})</span>
+                              <span className="text-xs !text-blue-600 ml-2">({item.billing_cycle})</span>
                             )}
                           </td>
-                          <td className="text-right py-2">{item.quantity || 1}</td>
-                          <td className="text-right py-2">&euro;{parseFloat(item.unit_price || 0).toLocaleString()}</td>
-                          <td className="text-right py-2">&euro;{((item.quantity || 1) * parseFloat(item.unit_price || 0)).toLocaleString()}</td>
+                          <td className="text-right py-2 !text-zinc-900">{item.quantity || 1}</td>
+                          <td className="text-right py-2 !text-zinc-900">&euro;{parseFloat(item.unit_price || 0).toLocaleString()}</td>
+                          <td className="text-right py-2 !text-zinc-900 !font-medium">&euro;{((item.quantity || 1) * parseFloat(item.unit_price || 0)).toLocaleString()}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -925,24 +925,24 @@ export default function FinanceProposalBuilder() {
                   {/* Totals */}
                   <div className="mt-3 space-y-2 text-right">
                     <div className="flex justify-end gap-4">
-                      <span className="text-zinc-500">Subtotal:</span>
-                      <span className="w-24">&euro;{pricing.subtotal.toLocaleString()}</span>
+                      <span className="!text-zinc-600">Subtotal:</span>
+                      <span className="w-24 !text-zinc-900">&euro;{pricing.subtotal.toLocaleString()}</span>
                     </div>
                     {pricing.discountAmount > 0 && (
-                      <div className="flex justify-end gap-4 text-blue-600">
-                        <span>Discount:</span>
-                        <span className="w-24">-&euro;{pricing.discountAmount.toLocaleString()}</span>
+                      <div className="flex justify-end gap-4">
+                        <span className="!text-blue-600">Discount:</span>
+                        <span className="w-24 !text-blue-600">-&euro;{pricing.discountAmount.toLocaleString()}</span>
                       </div>
                     )}
                     {pricing.taxAmount > 0 && (
                       <div className="flex justify-end gap-4">
-                        <span className="text-zinc-500">Tax ({proposal.tax_percent}%):</span>
-                        <span className="w-24">&euro;{pricing.taxAmount.toLocaleString()}</span>
+                        <span className="!text-zinc-600">Tax ({proposal.tax_percent}%):</span>
+                        <span className="w-24 !text-zinc-900">&euro;{pricing.taxAmount.toLocaleString()}</span>
                       </div>
                     )}
-                    <div className="flex justify-end gap-4 text-base font-bold border-t border-zinc-200 pt-2">
-                      <span>Total:</span>
-                      <span className="w-24 text-blue-600">&euro;{pricing.total.toLocaleString()}</span>
+                    <div className="flex justify-end gap-4 text-base !font-bold border-t border-zinc-300 pt-2">
+                      <span className="!text-zinc-900">Total:</span>
+                      <span className="w-24 !text-blue-600">&euro;{pricing.total.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -950,15 +950,15 @@ export default function FinanceProposalBuilder() {
 
               {/* Terms */}
               {proposal.terms_and_conditions && (
-                <div className="border-t border-zinc-200 pt-3 text-sm">
-                  <h3 className="font-semibold mb-2">Terms & Conditions</h3>
-                  <p className="text-zinc-600 whitespace-pre-wrap">{proposal.terms_and_conditions}</p>
+                <div className="border-t border-zinc-300 pt-3 text-sm">
+                  <h3 className="!font-semibold !text-zinc-900 mb-2">Terms & Conditions</h3>
+                  <p className="!text-zinc-600 whitespace-pre-wrap">{proposal.terms_and_conditions}</p>
                 </div>
               )}
 
               {/* Valid until */}
               {proposal.valid_until && (
-                <div className="text-center pt-3 text-xs text-zinc-500">
+                <div className="text-center pt-3 text-xs !text-zinc-500">
                   Valid until: {new Date(proposal.valid_until).toLocaleDateString()}
                 </div>
               )}
