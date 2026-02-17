@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect, useCallback, memo } from 'react';
+import React, { useMemo, useRef, useEffect, useCallback, memo, useState } from 'react';
 import { MapPin, Users } from 'lucide-react';
 import CalendarEventCard from './CalendarEventCard';
 
@@ -57,6 +57,42 @@ function formatTime(dateStr) {
   const d = new Date(dateStr);
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 }
+
+// ── Drag helpers ───────────────────────────────────────────────
+
+const SNAP_MINUTES = 15;
+
+function yToMinutes(y) {
+  const raw = (y / HOUR_HEIGHT) * 60;
+  return Math.max(0, Math.min(24 * 60, Math.round(raw / SNAP_MINUTES) * SNAP_MINUTES));
+}
+
+function minutesToTimeStr(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+// ── Drag selection overlay ─────────────────────────────────────
+
+const DragSelection = memo(function DragSelection({ startMin, endMin }) {
+  const top = Math.min(startMin, endMin);
+  const bottom = Math.max(startMin, endMin);
+  const height = Math.max(bottom - top, SNAP_MINUTES);
+
+  return (
+    <div
+      className="absolute left-0 right-0 z-15 pointer-events-none rounded-lg border-2 border-cyan-400/60 bg-cyan-500/15"
+      style={{ top, height }}
+    >
+      <div className="absolute inset-x-0 top-0 px-2 py-0.5">
+        <span className="text-[10px] font-medium text-cyan-300">
+          {minutesToTimeStr(top)} – {minutesToTimeStr(top + height)}
+        </span>
+      </div>
+    </div>
+  );
+});
 
 // ── Day event card (wider, shows more detail) ──────────────────
 
@@ -186,7 +222,7 @@ const CalendarDayView = memo(function CalendarDayView({
   }, []);
 
   // Current time
-  const [now, setNow] = React.useState(new Date());
+  const [now, setNow] = useState(new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(id);
@@ -213,15 +249,58 @@ const CalendarDayView = memo(function CalendarDayView({
 
   const groups = useMemo(() => computeOverlapGroups(timedEvents), [timedEvents]);
 
-  const handleSlotClick = useCallback(
-    (hour) => {
+  // ── Drag-to-create state ──
+  const [drag, setDrag] = useState(null); // { startMin, endMin }
+  const dragRef = useRef(null);
+
+  const handleColumnMouseDown = useCallback((e) => {
+    if (e.button !== 0) return;
+    if (e.target.closest('[data-event-card]')) return;
+
+    const col = e.currentTarget;
+    const rect = col.getBoundingClientRect();
+    const scrollTop = gridRef.current?.scrollTop || 0;
+    const y = e.clientY - rect.top + scrollTop;
+    const minute = yToMinutes(y);
+
+    const state = { startMin: minute, endMin: minute + SNAP_MINUTES };
+    dragRef.current = state;
+    setDrag(state);
+
+    const handleMouseMove = (ev) => {
+      const yNow = ev.clientY - rect.top + (gridRef.current?.scrollTop || 0);
+      const endMin = yToMinutes(yNow);
+      const updated = { ...dragRef.current, endMin };
+      dragRef.current = updated;
+      setDrag(updated);
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+
+      const final = dragRef.current;
+      dragRef.current = null;
+      setDrag(null);
+
+      if (!final) return;
+
+      const topMin = Math.min(final.startMin, final.endMin);
+      const botMin = Math.max(final.startMin, final.endMin);
+      const duration = botMin - topMin;
+
+      const effectiveEnd = duration < SNAP_MINUTES ? topMin + 60 : botMin;
+
       onCreateEvent?.({
         date: viewDate,
-        startTime: `${String(hour).padStart(2, '0')}:00`,
+        startTime: minutesToTimeStr(topMin),
+        endTime: minutesToTimeStr(Math.min(effectiveEnd, 24 * 60)),
       });
-    },
-    [onCreateEvent, viewDate],
-  );
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [onCreateEvent, viewDate]);
 
   const handleDrop = useCallback(
     (e, hour) => {
@@ -237,7 +316,7 @@ const CalendarDayView = memo(function CalendarDayView({
   );
 
   return (
-    <div className="flex flex-col h-full bg-zinc-900 rounded-xl border border-zinc-800/60 overflow-hidden">
+    <div className="flex flex-col h-full bg-zinc-900 rounded-xl border border-zinc-800/60 overflow-hidden select-none">
       {/* Header */}
       <div className="flex items-center border-b border-zinc-800/60 bg-zinc-900/80 px-4 py-3 flex-shrink-0">
         <h2
@@ -278,18 +357,22 @@ const CalendarDayView = memo(function CalendarDayView({
           <TimeColumn />
 
           {/* Event column */}
-          <div className="flex-1 relative">
+          <div className="flex-1 relative" onMouseDown={handleColumnMouseDown}>
             {/* Hour slots */}
             {HOURS.map((h) => (
               <div
                 key={h}
-                className="absolute w-full border-b border-zinc-800/40 cursor-pointer hover:bg-zinc-800/20 transition-colors"
+                className="absolute w-full border-b border-zinc-800/40 cursor-crosshair hover:bg-zinc-800/20 transition-colors"
                 style={{ top: h * HOUR_HEIGHT, height: HOUR_HEIGHT }}
-                onClick={() => handleSlotClick(h)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleDrop(e, h)}
               />
             ))}
+
+            {/* Drag selection overlay */}
+            {drag && (
+              <DragSelection startMin={drag.startMin} endMin={drag.endMin} />
+            )}
 
             {/* Current time indicator */}
             {isToday && (

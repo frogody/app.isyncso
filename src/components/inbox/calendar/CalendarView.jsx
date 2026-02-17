@@ -272,6 +272,7 @@ export default function CalendarView() {
         } : undefined}
         users={teamMembers}
         currentDate={createDefaults?.date || currentDate}
+        createDefaults={createDefaults}
       />
     </div>
   );

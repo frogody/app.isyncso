@@ -69,6 +69,7 @@ export default function CalendarEventModal({
   onSave,
   users = [],
   currentDate,
+  createDefaults = null,
 }) {
   const isEditing = !!event;
 
@@ -154,13 +155,33 @@ export default function CalendarEventModal({
         setReminders([15]);
       }
     } else {
-      // New event defaults
+      // New event defaults — use drag selection if provided
+      const hasDefaults = createDefaults?.startTime;
+      let effStart = defaultStart;
+      let effEnd = defaultEnd;
+
+      if (hasDefaults && createDefaults.date) {
+        const d = new Date(createDefaults.date);
+        const [sh, sm] = createDefaults.startTime.split(':').map(Number);
+        effStart = new Date(d);
+        effStart.setHours(sh, sm, 0, 0);
+
+        if (createDefaults.endTime) {
+          const [eh, em] = createDefaults.endTime.split(':').map(Number);
+          effEnd = new Date(d);
+          effEnd.setHours(eh, em, 0, 0);
+        } else {
+          effEnd = new Date(effStart);
+          effEnd.setHours(effEnd.getHours() + 1);
+        }
+      }
+
       setTitle('');
       setEventType('meeting');
-      setStartDate(formatDateInput(defaultStart));
-      setStartTime(formatTimeInput(defaultStart));
-      setEndDate(formatDateInput(defaultEnd));
-      setEndTime(formatTimeInput(defaultEnd));
+      setStartDate(formatDateInput(effStart));
+      setStartTime(formatTimeInput(effStart));
+      setEndDate(formatDateInput(effEnd));
+      setEndTime(formatTimeInput(effEnd));
       setAllDay(false);
       setLocation('');
       setDescription('');
@@ -173,7 +194,7 @@ export default function CalendarEventModal({
     }
     setAttendeeSearch('');
     setExternalEmail('');
-  }, [isOpen, event, defaultStart, defaultEnd]);
+  }, [isOpen, event, defaultStart, defaultEnd, createDefaults]);
 
   // Update color when event type changes (only for new events)
   useEffect(() => {

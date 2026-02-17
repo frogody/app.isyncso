@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect, useCallback, memo } from 'react';
+import React, { useMemo, useRef, useEffect, useCallback, memo, useState } from 'react';
 import CalendarEventCard from './CalendarEventCard';
 
 // ── Date helpers ──────────────────────────────────────────────
@@ -106,6 +106,42 @@ const DayHeader = memo(function DayHeader({ date, isToday }) {
   );
 });
 
+// ── Helpers for drag ────────────────────────────────────────────
+
+const SNAP_MINUTES = 15; // snap to 15-minute intervals
+
+function yToMinutes(y) {
+  const raw = (y / HOUR_HEIGHT) * 60;
+  return Math.max(0, Math.min(24 * 60, Math.round(raw / SNAP_MINUTES) * SNAP_MINUTES));
+}
+
+function minutesToTimeStr(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+// ── Drag selection overlay ─────────────────────────────────────
+
+const DragSelection = memo(function DragSelection({ startMin, endMin }) {
+  const top = Math.min(startMin, endMin);
+  const bottom = Math.max(startMin, endMin);
+  const height = Math.max(bottom - top, SNAP_MINUTES);
+
+  return (
+    <div
+      className="absolute left-0 right-0 z-15 pointer-events-none rounded-lg border-2 border-cyan-400/60 bg-cyan-500/15"
+      style={{ top, height }}
+    >
+      <div className="absolute inset-x-0 top-0 px-2 py-0.5">
+        <span className="text-[10px] font-medium text-cyan-300">
+          {minutesToTimeStr(top)} – {minutesToTimeStr(top + height)}
+        </span>
+      </div>
+    </div>
+  );
+});
+
 // ── Main component ─────────────────────────────────────────────
 
 const CalendarWeekView = memo(function CalendarWeekView({
@@ -136,7 +172,7 @@ const CalendarWeekView = memo(function CalendarWeekView({
   }, []);
 
   // Current time position
-  const [now, setNow] = React.useState(new Date());
+  const [now, setNow] = useState(new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(id);
@@ -144,6 +180,61 @@ const CalendarWeekView = memo(function CalendarWeekView({
 
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const isCurrentWeek = weekDays.some((d) => isSameDay(d, today));
+
+  // ── Drag-to-create state ──
+  const [drag, setDrag] = useState(null); // { dayIdx, startMin, endMin }
+  const dragRef = useRef(null); // non-reactive mirror for mousemove
+
+  const handleColumnMouseDown = useCallback((e, dayIdx) => {
+    // Only left click, ignore if target is an event card
+    if (e.button !== 0) return;
+    if (e.target.closest('[data-event-card]')) return;
+
+    const col = e.currentTarget;
+    const rect = col.getBoundingClientRect();
+    const scrollTop = gridRef.current?.scrollTop || 0;
+    const y = e.clientY - rect.top + scrollTop;
+    const minute = yToMinutes(y);
+
+    const state = { dayIdx, startMin: minute, endMin: minute + SNAP_MINUTES };
+    dragRef.current = state;
+    setDrag(state);
+
+    const handleMouseMove = (ev) => {
+      const yNow = ev.clientY - rect.top + (gridRef.current?.scrollTop || 0);
+      const endMin = yToMinutes(yNow);
+      const updated = { ...dragRef.current, endMin };
+      dragRef.current = updated;
+      setDrag(updated);
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+
+      const final = dragRef.current;
+      dragRef.current = null;
+      setDrag(null);
+
+      if (!final) return;
+
+      const topMin = Math.min(final.startMin, final.endMin);
+      const botMin = Math.max(final.startMin, final.endMin);
+      const duration = botMin - topMin;
+
+      // If barely dragged (< 15 min), treat as a click → default 1h event
+      const effectiveEnd = duration < SNAP_MINUTES ? topMin + 60 : botMin;
+
+      onCreateEvent?.({
+        date: weekDays[final.dayIdx],
+        startTime: minutesToTimeStr(topMin),
+        endTime: minutesToTimeStr(Math.min(effectiveEnd, 24 * 60)),
+      });
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [onCreateEvent, weekDays]);
 
   // Bucket events by day
   const { dayEvents, allDayEvents } = useMemo(() => {
@@ -178,16 +269,6 @@ const CalendarWeekView = memo(function CalendarWeekView({
     [allDayEvents],
   );
 
-  const handleSlotClick = useCallback(
-    (dayDate, hour) => {
-      onCreateEvent?.({
-        date: dayDate,
-        startTime: `${String(hour).padStart(2, '0')}:00`,
-      });
-    },
-    [onCreateEvent],
-  );
-
   const handleDrop = useCallback(
     (e, dayDate, hour) => {
       e.preventDefault();
@@ -202,7 +283,7 @@ const CalendarWeekView = memo(function CalendarWeekView({
   );
 
   return (
-    <div className="flex flex-col h-full bg-zinc-900 rounded-xl border border-zinc-800/60 overflow-hidden">
+    <div className="flex flex-col h-full bg-zinc-900 rounded-xl border border-zinc-800/60 overflow-hidden select-none">
       {/* Header row */}
       <div className="flex border-b border-zinc-800/60 bg-zinc-900/80 flex-shrink-0">
         <div className="w-14 flex-shrink-0 border-r border-zinc-800/40" />
@@ -256,18 +337,23 @@ const CalendarWeekView = memo(function CalendarWeekView({
               <div
                 key={key}
                 className="flex-1 relative border-r border-zinc-800/40 last:border-r-0"
+                onMouseDown={(e) => handleColumnMouseDown(e, dayIdx)}
               >
                 {/* Hour slot grid lines */}
                 {HOURS.map((h) => (
                   <div
                     key={h}
-                    className="absolute w-full border-b border-zinc-800/40 cursor-pointer hover:bg-zinc-800/20 transition-colors"
+                    className="absolute w-full border-b border-zinc-800/40 cursor-crosshair hover:bg-zinc-800/20 transition-colors"
                     style={{ top: h * HOUR_HEIGHT, height: HOUR_HEIGHT }}
-                    onClick={() => handleSlotClick(d, h)}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => handleDrop(e, d, h)}
                   />
                 ))}
+
+                {/* Drag selection overlay */}
+                {drag && drag.dayIdx === dayIdx && (
+                  <DragSelection startMin={drag.startMin} endMin={drag.endMin} />
+                )}
 
                 {/* Current time indicator */}
                 {showTimeLine && (
