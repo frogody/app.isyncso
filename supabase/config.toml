@@ -228,3 +228,6 @@ verify_jwt = false
 
 [functions.sync-meeting-wrapup]
 verify_jwt = false
+
+[functions.smart-compose]
+verify_jwt = false
