@@ -4,7 +4,7 @@ import {
   Hash, Lock, Users, Pin, Search, Info,
   Loader2, MessageSquare, Inbox as InboxIcon, Keyboard,
   RefreshCw, AtSign, Bookmark, Wifi, WifiOff, Bell, BellOff,
-  Menu, ArrowLeft
+  Menu, ArrowLeft, Video, UserPlus, BarChart3, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { db, supabase } from '@/api/supabaseClient';
@@ -52,6 +52,17 @@ import DeleteChannelDialog from '@/components/inbox/DeleteChannelDialog';
 import ForwardMessageModal from '@/components/inbox/ForwardMessageModal';
 import BookmarksPanel from '@/components/inbox/BookmarksPanel';
 import ChannelSettingsPanel from '@/components/inbox/ChannelSettingsPanel';
+
+// Feature components (wired from built subsystems)
+import UniversalSearch from '@/components/inbox/search/UniversalSearch';
+import { SyncBriefing } from '@/components/inbox/briefing';
+import { GuestInviteModal } from '@/components/inbox/guests';
+import { CreatePollModal } from '@/components/inbox/messages';
+import SmartReply from '@/components/inbox/smart/SmartReply';
+import { useSmartCompose } from '@/components/inbox/smart/useSmartCompose';
+import SmartCompose from '@/components/inbox/smart/SmartCompose';
+import { useVideoCall } from '@/components/inbox/video';
+import { VideoCallRoom, CallBanner } from '@/components/inbox/video';
 
 export default function InboxPage() {
   const { user } = useUser();
@@ -215,6 +226,15 @@ export default function InboxPage() {
   const [channelSettingsOpen, setChannelSettingsOpen] = useState(false);
   const [settingsChannel, setSettingsChannel] = useState(null);
 
+  // Feature modal states
+  const [showUniversalSearch, setShowUniversalSearch] = useState(false);
+  const [showGuestInvite, setShowGuestInvite] = useState(false);
+  const [showCreatePoll, setShowCreatePoll] = useState(false);
+  const [showBriefing, setShowBriefing] = useState(false);
+
+  // Video call hook
+  const videoCall = useVideoCall(user?.id, user?.company_id);
+
   // Mobile UI State
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -236,6 +256,10 @@ export default function InboxPage() {
         e.preventDefault();
         setShowKeyboardShortcuts(prev => !prev);
       }
+      if (cmdKey && e.key === 'k' && !e.shiftKey) {
+        e.preventDefault();
+        setShowUniversalSearch(true);
+      }
       if (cmdKey && e.key === 'n' && !e.shiftKey) {
         e.preventDefault();
         setShowCreateChannel(true);
@@ -247,6 +271,7 @@ export default function InboxPage() {
       if (e.key === 'Escape') {
         setActivePanel(null);
         setShowKeyboardShortcuts(false);
+        setShowUniversalSearch(false);
         setActiveThread(null);
         setMobileMenuOpen(false);
         setChannelSettingsOpen(false);
@@ -734,12 +759,67 @@ export default function InboxPage() {
     setMobileMenuOpen(false);
   }, []);
 
+  // Handle poll submission
+  const handlePollSubmit = useCallback(async (pollData) => {
+    if (!selectedChannel || !user) return;
+    try {
+      await rtSendMessage({
+        content: `📊 **Poll: ${pollData.question}**`,
+        type: 'text',
+        sender_name: user.full_name || user.email,
+        sender_avatar: user.avatar_url,
+        mentions: [],
+        metadata: {
+          message_format: 'poll',
+          poll: {
+            question: pollData.question,
+            options: pollData.options.filter(o => o.trim()).map((text, i) => ({ id: String(i), text, votes: [] })),
+            multi_select: pollData.multiSelect,
+            expires_at: pollData.deadline || null,
+          }
+        }
+      });
+      setShowCreatePoll(false);
+      toast.success('Poll created');
+    } catch (error) {
+      console.error('Failed to create poll:', error);
+      toast.error('Failed to create poll');
+    }
+  }, [selectedChannel, user, rtSendMessage]);
+
+  // Start video call for current channel
+  const handleStartCall = useCallback(async () => {
+    if (!selectedChannel || !user) return;
+    try {
+      await videoCall.createCall({
+        title: `Call in ${selectedChannel.name || 'DM'}`,
+        channelId: selectedChannel.id,
+      });
+      toast.success('Call started');
+    } catch (error) {
+      console.error('Failed to start call:', error);
+      toast.error('Failed to start call');
+    }
+  }, [selectedChannel, user, videoCall]);
+
+  // Get last message from another user (for SmartReply)
+  const lastOtherMessage = useMemo(() => {
+    if (!user?.id || !realtimeMessages.length) return null;
+    for (let i = realtimeMessages.length - 1; i >= 0; i--) {
+      if (realtimeMessages[i].sender_id !== user.id) return realtimeMessages[i];
+    }
+    return null;
+  }, [realtimeMessages, user?.id]);
+
   const headerActions = useMemo(() => [
+    { icon: Video, action: handleStartCall, title: 'Start Call' },
     { icon: Users, panel: 'members', title: 'Members' },
     { icon: Pin, panel: 'pinned', title: 'Pinned Messages', highlight: pinnedMessages.length > 0 },
+    { icon: Bookmark, panel: 'bookmarks', title: 'Saved Items' },
     { icon: Search, panel: 'search', title: 'Search' },
-    { icon: Info, panel: 'details', title: 'Channel Details' }
-  ], [pinnedMessages.length]);
+    { icon: UserPlus, action: () => setShowGuestInvite(true), title: 'Invite Guest' },
+    { icon: Info, panel: 'details', title: 'Channel Details' },
+  ], [pinnedMessages.length, handleStartCall]);
 
   // Loading state
   if (channelsLoading) {
@@ -896,13 +976,13 @@ export default function InboxPage() {
               <div className="flex items-center gap-0.5 sm:gap-1">
                 {selectedChannel.type !== 'special' && headerActions.map((item, index) => (
                   <button
-                    key={item.panel}
-                    onClick={() => togglePanel(item.panel)}
+                    key={item.panel || item.title}
+                    onClick={() => item.action ? item.action() : togglePanel(item.panel)}
                     className={`p-1.5 rounded-md transition-all ${
-                      activePanel === item.panel
+                      item.panel && activePanel === item.panel
                         ? 'bg-zinc-800 text-zinc-200'
                         : 'text-zinc-500 hover:bg-zinc-800/80 hover:text-zinc-300'
-                    } ${index >= 2 ? 'hidden sm:block' : ''}`}
+                    } ${index >= 3 ? 'hidden sm:block' : ''}`}
                     title={item.title}
                   >
                     <item.icon className="w-4 h-4" />
@@ -997,23 +1077,56 @@ export default function InboxPage() {
               isBookmarked={isBookmarked}
             />
 
-            {/* Message Input - hide for special views */}
+            {/* Smart Reply suggestions + Message Input - hide for special views */}
             {selectedChannel.type !== 'special' && (
-              <MessageInput
-                channelName={selectedChannel.type === 'dm' ? selectedChannelDisplayName : selectedChannel.name}
-                channelId={selectedChannel.id}
-                onSend={handleSendMessage}
-                members={[user, ...teamMembers].filter(Boolean)}
-                channels={realtimeChannels}
-                onTyping={startTyping}
-                onStopTyping={stopTyping}
-                typingText={getTypingText()}
-                typingUsers={typingUsers}
-                isMuted={isMuted}
-                rateLimits={rateLimits}
-                checkRateLimit={checkRateLimit}
-                slowmodeSeconds={slowmodeSeconds}
-              />
+              <div>
+                {/* Smart Reply pills */}
+                <SmartReply
+                  lastMessage={lastOtherMessage}
+                  onSelectReply={(text) => {
+                    // Insert the smart reply text into the message input
+                    // We'll use a ref-based approach or just send directly
+                    handleSendMessage({ content: text, type: 'text' });
+                  }}
+                  onDismiss={() => {}}
+                />
+
+                {/* Quick action bar: Poll + Briefing */}
+                <div className="flex items-center gap-1 px-3 sm:px-5 py-1">
+                  <button
+                    onClick={() => setShowCreatePoll(true)}
+                    className="flex items-center gap-1 px-2 py-1 text-[11px] text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800/60 rounded-md transition-colors"
+                    title="Create Poll"
+                  >
+                    <BarChart3 className="w-3 h-3" />
+                    <span className="hidden sm:inline">Poll</span>
+                  </button>
+                  <button
+                    onClick={() => setShowBriefing(true)}
+                    className="flex items-center gap-1 px-2 py-1 text-[11px] text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800/60 rounded-md transition-colors"
+                    title="Sync Briefing"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span className="hidden sm:inline">Briefing</span>
+                  </button>
+                </div>
+
+                <MessageInput
+                  channelName={selectedChannel.type === 'dm' ? selectedChannelDisplayName : selectedChannel.name}
+                  channelId={selectedChannel.id}
+                  onSend={handleSendMessage}
+                  members={[user, ...teamMembers].filter(Boolean)}
+                  channels={realtimeChannels}
+                  onTyping={startTyping}
+                  onStopTyping={stopTyping}
+                  typingText={getTypingText()}
+                  typingUsers={typingUsers}
+                  isMuted={isMuted}
+                  rateLimits={rateLimits}
+                  checkRateLimit={checkRateLimit}
+                  slowmodeSeconds={slowmodeSeconds}
+                />
+              </div>
             )}
           </>
         ) : (
@@ -1209,6 +1322,85 @@ export default function InboxPage() {
         directMessages={resolvedDMs}
         currentUser={user}
       />
+
+      {/* Universal Search (Cmd+K) */}
+      <UniversalSearch
+        open={showUniversalSearch}
+        onClose={() => setShowUniversalSearch(false)}
+        onResultSelect={(result) => {
+          setShowUniversalSearch(false);
+          // Navigate to the result's channel/message
+          if (result?.channel_id) {
+            const channel = [...realtimeChannels, ...resolvedDMs].find(c => c.id === result.channel_id);
+            if (channel) setSelectedChannel(channel);
+          }
+        }}
+      />
+
+      {/* Guest Invite Modal */}
+      <GuestInviteModal
+        open={showGuestInvite}
+        onClose={() => setShowGuestInvite(false)}
+        channel={selectedChannel}
+      />
+
+      {/* Create Poll Modal */}
+      <CreatePollModal
+        isOpen={showCreatePoll}
+        onClose={() => setShowCreatePoll(false)}
+        onSubmit={handlePollSubmit}
+      />
+
+      {/* Sync Morning Briefing Overlay */}
+      <AnimatePresence>
+        {showBriefing && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowBriefing(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl bg-zinc-900 border border-zinc-800/60 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <SyncBriefing />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Video Call Room overlay */}
+      {videoCall.isInCall && (
+        <div className="fixed inset-0 z-[70] bg-black">
+          <VideoCallRoom
+            call={videoCall.currentCall}
+            participants={videoCall.participants}
+            isMuted={videoCall.isMuted}
+            isCameraOff={videoCall.isCameraOff}
+            isScreenSharing={videoCall.isScreenSharing}
+            onToggleMute={() => videoCall.toggleMute()}
+            onToggleCamera={() => videoCall.toggleCamera()}
+            onToggleScreen={() => videoCall.toggleScreenShare()}
+            onLeave={() => videoCall.leaveCall()}
+            onEndCall={() => videoCall.endCall()}
+          />
+        </div>
+      )}
+
+      {/* Call banner (shown when active call exists in channel) */}
+      {videoCall.currentCall && !videoCall.isInCall && (
+        <CallBanner
+          title={videoCall.currentCall.title || 'Video call in progress'}
+          participantCount={videoCall.participants.length}
+          onJoin={() => videoCall.joinCall(videoCall.currentCall.id)}
+        />
+      )}
     </div>
   );
 }
