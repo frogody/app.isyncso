@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Search, Package, Zap, CreditCard, Euro, Clock,
   ChevronRight, Check, X, Plus, RefreshCw, Gift, Layers,
-  Filter, Star
+  Filter, Star, Briefcase, Flag, Trophy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,7 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useTheme } from '@/contexts/GlobalThemeContext';
-import { Product, DigitalProduct, PhysicalProduct, ProductBundle } from '@/api/entities';
+import { Product, DigitalProduct, PhysicalProduct, ServiceProduct, ProductBundle } from '@/api/entities';
 import { useUser } from '@/components/context/UserContext';
 
 function formatPrice(amount, currency = 'EUR') {
@@ -45,7 +45,10 @@ function formatPrice(amount, currency = 'EUR') {
  */
 function createLineItem(product, details, selection = {}) {
   const isDigital = product.type === 'digital';
-  const basePrice = details?.pricing?.base_price || product.price || 0;
+  const isService = product.type === 'service';
+  const basePrice = isService
+    ? getServiceBasePrice(details)
+    : (details?.pricing?.base_price || product.price || 0);
 
   // Default line item from product
   const lineItem = {
@@ -86,6 +89,21 @@ function createLineItem(product, details, selection = {}) {
     lineItem.description = `${product.name} - ${item.name}`;
   }
 
+  // Service product pricing
+  if (isService && selection.servicePricing) {
+    const sp = selection.servicePricing;
+    lineItem.unit_price = sp.unit_price || 0;
+    lineItem.quantity = sp.quantity || 1;
+    lineItem.is_subscription = sp.is_subscription || false;
+    lineItem.billing_cycle = sp.billing_cycle || null;
+    lineItem.description = sp.description || product.short_description || '';
+
+    // Store service-specific metadata
+    lineItem.service_pricing_model = sp.pricing_model;
+    if (sp.milestone_id) lineItem.milestone_id = sp.milestone_id;
+    if (sp.project_item_id) lineItem.project_item_id = sp.project_item_id;
+  }
+
   // Add-ons
   if (selection.addOns?.length > 0) {
     lineItem.add_ons = selection.addOns.map(addon => ({
@@ -99,13 +117,72 @@ function createLineItem(product, details, selection = {}) {
   return lineItem;
 }
 
+const SERVICE_PRICING_LABELS = {
+  hourly: 'Hourly',
+  retainer: 'Retainer',
+  project: 'Project',
+  milestone: 'Milestone',
+  success_fee: 'Success Fee',
+  hybrid: 'Hybrid',
+};
+
+function getServiceBasePrice(details) {
+  if (!details?.pricing_config) return 0;
+  const config = details.pricing_config;
+  const model = details.pricing_model;
+
+  if (model === 'hourly' && config.hourly?.rate) return config.hourly.rate;
+  if (model === 'retainer' && config.retainer?.monthly_fee) return config.retainer.monthly_fee;
+  if (model === 'project' && config.project?.items?.length > 0) {
+    return config.project.items.reduce((sum, item) => sum + (item.price || 0), 0);
+  }
+  if (model === 'milestone' && config.milestones?.items?.length > 0) {
+    return config.milestones.items.reduce((sum, item) => sum + (item.amount || 0), 0);
+  }
+  if (model === 'success_fee') return config.success_fee?.base_fee || 0;
+  // hybrid: use first enabled model
+  if (model === 'hybrid') {
+    if (config.hourly?.enabled && config.hourly?.rate) return config.hourly.rate;
+    if (config.retainer?.enabled && config.retainer?.monthly_fee) return config.retainer.monthly_fee;
+    if (config.project?.enabled && config.project?.items?.length > 0) {
+      return config.project.items.reduce((sum, item) => sum + (item.price || 0), 0);
+    }
+  }
+  return 0;
+}
+
+function getServicePriceLabel(details) {
+  const model = details?.pricing_model;
+  if (model === 'hourly') return '/hr';
+  if (model === 'retainer') return '/mo';
+  if (model === 'project') return 'total';
+  if (model === 'milestone') return 'total';
+  if (model === 'success_fee') return 'base';
+  return '';
+}
+
 function ProductCard({ product, details, currency, onSelect, isSelected, ft }) {
   const isDigital = product.type === 'digital';
-  const basePrice = details?.pricing?.base_price || product.price || 0;
+  const isService = product.type === 'service';
+  const basePrice = isService
+    ? getServiceBasePrice(details)
+    : (details?.pricing?.base_price || product.price || 0);
   const hasSubscription = details?.pricing_config?.subscriptions?.enabled;
   const hasOneTime = details?.pricing_config?.one_time?.enabled;
   const hasAddOns = details?.pricing_config?.add_ons?.enabled;
   const isDraft = product.status === 'draft';
+
+  const iconClass = isDigital
+    ? "bg-cyan-500/10 border border-cyan-500/30"
+    : isService
+      ? "bg-blue-500/10 border border-blue-500/30"
+      : "bg-blue-500/10 border border-blue-500/30";
+
+  const iconElement = isDigital
+    ? <Zap className="w-5 h-5 text-cyan-400" />
+    : isService
+      ? <Briefcase className="w-5 h-5 text-blue-400" />
+      : <Package className="w-5 h-5 text-blue-400" />;
 
   return (
     <div
@@ -121,15 +198,9 @@ function ProductCard({ product, details, currency, onSelect, isSelected, ft }) {
         {/* Icon */}
         <div className={cn(
           "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
-          isDigital
-            ? "bg-cyan-500/10 border border-cyan-500/30"
-            : "bg-blue-500/10 border border-blue-500/30"
+          iconClass
         )}>
-          {isDigital ? (
-            <Zap className="w-5 h-5 text-cyan-400" />
-          ) : (
-            <Package className="w-5 h-5 text-blue-400" />
-          )}
+          {iconElement}
         </div>
 
         {/* Info */}
@@ -175,6 +246,28 @@ function ProductCard({ product, details, currency, onSelect, isSelected, ft }) {
               )}
             </div>
           )}
+
+          {/* Pricing badges for service products */}
+          {isService && details && (
+            <div className="flex items-center gap-2 mt-2">
+              {details.pricing_model && (
+                <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/30">
+                  <Clock className="w-3 h-3 mr-1" />
+                  {SERVICE_PRICING_LABELS[details.pricing_model] || details.pricing_model}
+                </Badge>
+              )}
+              {details.service_type && (
+                <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+                  {details.service_type.charAt(0).toUpperCase() + details.service_type.slice(1)}
+                </Badge>
+              )}
+              {details.sla && Object.values(details.sla).some(v => v) && (
+                <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+                  SLA
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Price */}
@@ -182,9 +275,11 @@ function ProductCard({ product, details, currency, onSelect, isSelected, ft }) {
           <div className={`text-lg font-semibold ${ft('text-slate-900', 'text-white')}`}>
             {formatPrice(basePrice, currency)}
           </div>
-          {!isDigital && (
+          {isService ? (
+            <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>{getServicePriceLabel(details)}</p>
+          ) : !isDigital ? (
             <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>Base price</p>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
@@ -491,6 +586,384 @@ function DigitalPricingSelector({ product, details, currency, onConfirm, onCance
   );
 }
 
+function ServicePricingSelector({ product, details, currency, onConfirm, onCancel, ft }) {
+  const pricingConfig = details?.pricing_config || {};
+  const pricingModel = details?.pricing_model || 'project';
+
+  const [selectedModel, setSelectedModel] = useState(pricingModel);
+  const [hours, setHours] = useState(1);
+  const [selectedProjectItems, setSelectedProjectItems] = useState([]);
+  const [selectedMilestones, setSelectedMilestones] = useState([]);
+
+  // Determine which pricing models are available
+  const availableModels = [];
+  if (pricingModel === 'hybrid') {
+    if (pricingConfig.hourly?.enabled) availableModels.push('hourly');
+    if (pricingConfig.retainer?.enabled) availableModels.push('retainer');
+    if (pricingConfig.project?.enabled) availableModels.push('project');
+    if (pricingConfig.milestones?.enabled) availableModels.push('milestone');
+    if (pricingConfig.success_fee?.enabled) availableModels.push('success_fee');
+  } else {
+    availableModels.push(pricingModel);
+  }
+
+  useEffect(() => {
+    if (availableModels.length > 0 && !availableModels.includes(selectedModel)) {
+      setSelectedModel(availableModels[0]);
+    }
+  }, []);
+
+  // Toggle project item selection
+  const toggleProjectItem = (item) => {
+    setSelectedProjectItems(prev =>
+      prev.find(i => i.id === item.id)
+        ? prev.filter(i => i.id !== item.id)
+        : [...prev, item]
+    );
+  };
+
+  // Toggle milestone selection
+  const toggleMilestone = (item) => {
+    setSelectedMilestones(prev =>
+      prev.find(i => i.id === item.id)
+        ? prev.filter(i => i.id !== item.id)
+        : [...prev, item]
+    );
+  };
+
+  // Calculate preview price based on selected model
+  let previewPrice = 0;
+  let previewLabel = '';
+
+  switch (selectedModel) {
+    case 'hourly':
+      previewPrice = (pricingConfig.hourly?.rate || 0) * hours;
+      previewLabel = `${hours} hr${hours !== 1 ? 's' : ''} x ${formatPrice(pricingConfig.hourly?.rate || 0, currency)}/hr`;
+      break;
+    case 'retainer':
+      previewPrice = pricingConfig.retainer?.monthly_fee || 0;
+      previewLabel = 'per month';
+      break;
+    case 'project':
+      if (selectedProjectItems.length > 0) {
+        previewPrice = selectedProjectItems.reduce((sum, item) => sum + (item.price || 0), 0);
+        previewLabel = `${selectedProjectItems.length} deliverable${selectedProjectItems.length !== 1 ? 's' : ''}`;
+      } else {
+        previewPrice = (pricingConfig.project?.items || []).reduce((sum, item) => sum + (item.price || 0), 0);
+        previewLabel = 'full project';
+      }
+      break;
+    case 'milestone':
+      if (selectedMilestones.length > 0) {
+        previewPrice = selectedMilestones.reduce((sum, item) => sum + (item.amount || 0), 0);
+        previewLabel = `${selectedMilestones.length} milestone${selectedMilestones.length !== 1 ? 's' : ''}`;
+      } else {
+        previewPrice = (pricingConfig.milestones?.items || []).reduce((sum, item) => sum + (item.amount || 0), 0);
+        previewLabel = 'all milestones';
+      }
+      break;
+    case 'success_fee':
+      previewPrice = pricingConfig.success_fee?.base_fee || 0;
+      previewLabel = pricingConfig.success_fee?.success_percentage
+        ? `+ ${pricingConfig.success_fee.success_percentage}% success fee`
+        : 'base fee';
+      break;
+  }
+
+  const handleConfirm = () => {
+    let servicePricing = { pricing_model: selectedModel };
+
+    switch (selectedModel) {
+      case 'hourly':
+        servicePricing.unit_price = pricingConfig.hourly?.rate || 0;
+        servicePricing.quantity = hours;
+        servicePricing.description = `${product.name} - ${hours} hours @ ${formatPrice(pricingConfig.hourly?.rate || 0, currency)}/hr`;
+        break;
+      case 'retainer':
+        servicePricing.unit_price = pricingConfig.retainer?.monthly_fee || 0;
+        servicePricing.quantity = 1;
+        servicePricing.is_subscription = true;
+        servicePricing.billing_cycle = 'monthly';
+        servicePricing.description = `${product.name} - Monthly Retainer`;
+        break;
+      case 'project':
+        if (selectedProjectItems.length > 0) {
+          servicePricing.unit_price = selectedProjectItems.reduce((sum, item) => sum + (item.price || 0), 0);
+          servicePricing.description = `${product.name} - ${selectedProjectItems.map(i => i.name).join(', ')}`;
+        } else {
+          servicePricing.unit_price = (pricingConfig.project?.items || []).reduce((sum, item) => sum + (item.price || 0), 0);
+          servicePricing.description = `${product.name} - Full Project`;
+        }
+        servicePricing.quantity = 1;
+        break;
+      case 'milestone':
+        if (selectedMilestones.length > 0) {
+          servicePricing.unit_price = selectedMilestones.reduce((sum, item) => sum + (item.amount || 0), 0);
+          servicePricing.description = `${product.name} - ${selectedMilestones.map(i => i.name).join(', ')}`;
+        } else {
+          servicePricing.unit_price = (pricingConfig.milestones?.items || []).reduce((sum, item) => sum + (item.amount || 0), 0);
+          servicePricing.description = `${product.name} - All Milestones`;
+        }
+        servicePricing.quantity = 1;
+        break;
+      case 'success_fee':
+        servicePricing.unit_price = pricingConfig.success_fee?.base_fee || 0;
+        servicePricing.quantity = 1;
+        servicePricing.description = `${product.name} - Success Fee (${pricingConfig.success_fee?.success_percentage || 0}%)`;
+        break;
+    }
+
+    const lineItem = createLineItem(product, details, { servicePricing });
+    onConfirm(lineItem);
+  };
+
+  const modelIcons = {
+    hourly: <Clock className="w-4 h-4" />,
+    retainer: <RefreshCw className="w-4 h-4" />,
+    project: <Briefcase className="w-4 h-4" />,
+    milestone: <Flag className="w-4 h-4" />,
+    success_fee: <Trophy className="w-4 h-4" />,
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Product Info Header */}
+      <div className={`flex items-center gap-3 p-4 rounded-lg ${ft('bg-slate-100 border border-slate-200', 'bg-zinc-900/50 border border-white/5')}`}>
+        <div className="w-12 h-12 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center">
+          <Briefcase className="w-6 h-6 text-blue-400" />
+        </div>
+        <div className="flex-1">
+          <h3 className={`font-medium ${ft('text-slate-900', 'text-white')}`}>{product.name}</h3>
+          <div className="flex items-center gap-2 mt-1">
+            {details.service_type && (
+              <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+                {details.service_type.charAt(0).toUpperCase() + details.service_type.slice(1)}
+              </Badge>
+            )}
+            {details.pricing_model && (
+              <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/30">
+                {SERVICE_PRICING_LABELS[details.pricing_model] || details.pricing_model}
+              </Badge>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Pricing Model Selector (for hybrid / multiple models) */}
+      {availableModels.length > 1 && (
+        <div>
+          <label className={`text-sm ${ft('text-slate-500', 'text-zinc-400')} mb-2 block`}>Pricing Model</label>
+          <Tabs value={selectedModel} onValueChange={setSelectedModel}>
+            <TabsList className={ft('bg-slate-100 border border-slate-200', 'bg-zinc-900/50 border border-white/5')}>
+              {availableModels.map(model => (
+                <TabsTrigger key={model} value={model} className="text-xs data-[state=active]:bg-blue-500/20">
+                  {modelIcons[model]}
+                  <span className="ml-1.5">{SERVICE_PRICING_LABELS[model] || model}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </div>
+      )}
+
+      {/* Hourly Config */}
+      {selectedModel === 'hourly' && pricingConfig.hourly && (
+        <div className="space-y-3">
+          <div className={`p-3 rounded-lg ${ft('bg-slate-100 border border-slate-200', 'bg-zinc-900/50 border border-white/5')}`}>
+            <div className="flex items-center justify-between mb-2">
+              <span className={`text-sm ${ft('text-slate-500', 'text-zinc-400')}`}>Rate</span>
+              <span className={`font-semibold ${ft('text-slate-900', 'text-white')}`}>
+                {formatPrice(pricingConfig.hourly.rate, currency)}/hr
+              </span>
+            </div>
+            {pricingConfig.hourly.min_hours > 0 && (
+              <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
+                Minimum: {pricingConfig.hourly.min_hours} hours
+              </p>
+            )}
+          </div>
+          <div>
+            <label className={`text-sm ${ft('text-slate-500', 'text-zinc-400')} mb-2 block`}>Hours</label>
+            <Input
+              type="number"
+              min={pricingConfig.hourly.min_hours || 1}
+              value={hours}
+              onChange={(e) => setHours(Math.max(1, parseInt(e.target.value) || 1))}
+              className={ft('bg-slate-100 border-slate-200', 'bg-zinc-800 border-white/10')}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Retainer Config */}
+      {selectedModel === 'retainer' && pricingConfig.retainer && (
+        <div className={`p-3 rounded-lg ${ft('bg-slate-100 border border-slate-200', 'bg-zinc-900/50 border border-white/5')}`}>
+          <div className="flex items-center justify-between mb-2">
+            <span className={`text-sm ${ft('text-slate-500', 'text-zinc-400')}`}>Monthly Fee</span>
+            <span className={`font-semibold ${ft('text-slate-900', 'text-white')}`}>
+              {formatPrice(pricingConfig.retainer.monthly_fee, currency)}/mo
+            </span>
+          </div>
+          {pricingConfig.retainer.included_hours > 0 && (
+            <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
+              Includes {pricingConfig.retainer.included_hours} hours
+            </p>
+          )}
+          {pricingConfig.retainer.overage_rate > 0 && (
+            <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
+              Overage: {formatPrice(pricingConfig.retainer.overage_rate, currency)}/hr
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Project Items */}
+      {selectedModel === 'project' && pricingConfig.project?.items?.length > 0 && (
+        <div>
+          <label className={`text-sm ${ft('text-slate-500', 'text-zinc-400')} mb-2 block`}>Select Deliverables</label>
+          <div className="space-y-2">
+            {pricingConfig.project.items.map(item => {
+              const isItemSelected = selectedProjectItems.find(i => i.id === item.id);
+              return (
+                <div
+                  key={item.id}
+                  className={cn(
+                    "p-3 rounded-lg border cursor-pointer transition-all",
+                    isItemSelected
+                      ? "bg-blue-500/10 border-blue-500/30"
+                      : ft("bg-slate-100 border-slate-200 hover:border-slate-300", "bg-zinc-900/50 border-white/10 hover:border-white/20")
+                  )}
+                  onClick={() => toggleProjectItem(item)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        "w-5 h-5 rounded border flex items-center justify-center",
+                        isItemSelected
+                          ? "bg-blue-500 border-blue-500"
+                          : ft("border-slate-300", "border-white/20")
+                      )}>
+                        {isItemSelected && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      <span className={`font-medium ${ft('text-slate-900', 'text-white')}`}>{item.name}</span>
+                    </div>
+                    <span className={`font-semibold ${ft('text-slate-900', 'text-white')}`}>
+                      {formatPrice(item.price, currency)}
+                    </span>
+                  </div>
+                  {item.description && (
+                    <p className={`text-sm ${ft('text-slate-400', 'text-zinc-500')} mt-1 ml-7`}>{item.description}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Milestone Items */}
+      {selectedModel === 'milestone' && pricingConfig.milestones?.items?.length > 0 && (
+        <div>
+          <label className={`text-sm ${ft('text-slate-500', 'text-zinc-400')} mb-2 block`}>Select Milestones to Invoice</label>
+          <div className="space-y-2">
+            {pricingConfig.milestones.items.map(item => {
+              const isItemSelected = selectedMilestones.find(i => i.id === item.id);
+              return (
+                <div
+                  key={item.id}
+                  className={cn(
+                    "p-3 rounded-lg border cursor-pointer transition-all",
+                    isItemSelected
+                      ? "bg-blue-500/10 border-blue-500/30"
+                      : ft("bg-slate-100 border-slate-200 hover:border-slate-300", "bg-zinc-900/50 border-white/10 hover:border-white/20")
+                  )}
+                  onClick={() => toggleMilestone(item)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        "w-5 h-5 rounded border flex items-center justify-center",
+                        isItemSelected
+                          ? "bg-blue-500 border-blue-500"
+                          : ft("border-slate-300", "border-white/20")
+                      )}>
+                        {isItemSelected && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      <span className={`font-medium ${ft('text-slate-900', 'text-white')}`}>{item.name}</span>
+                    </div>
+                    <span className={`font-semibold ${ft('text-slate-900', 'text-white')}`}>
+                      {formatPrice(item.amount, currency)}
+                    </span>
+                  </div>
+                  {item.description && (
+                    <p className={`text-sm ${ft('text-slate-400', 'text-zinc-500')} mt-1 ml-7`}>{item.description}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Success Fee */}
+      {selectedModel === 'success_fee' && pricingConfig.success_fee && (
+        <div className={`p-3 rounded-lg ${ft('bg-slate-100 border border-slate-200', 'bg-zinc-900/50 border border-white/5')}`}>
+          <div className="flex items-center justify-between mb-2">
+            <span className={`text-sm ${ft('text-slate-500', 'text-zinc-400')}`}>Base Fee</span>
+            <span className={`font-semibold ${ft('text-slate-900', 'text-white')}`}>
+              {formatPrice(pricingConfig.success_fee.base_fee, currency)}
+            </span>
+          </div>
+          {pricingConfig.success_fee.success_percentage > 0 && (
+            <div className="flex items-center justify-between">
+              <span className={`text-sm ${ft('text-slate-500', 'text-zinc-400')}`}>Success Fee</span>
+              <span className={`font-semibold ${ft('text-slate-900', 'text-white')}`}>
+                {pricingConfig.success_fee.success_percentage}%
+              </span>
+            </div>
+          )}
+          {pricingConfig.success_fee.metric && (
+            <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')} mt-2`}>
+              Metric: {pricingConfig.success_fee.metric}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Price Summary */}
+      <div className="p-4 rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-600/5 border border-blue-500/20">
+        <div className="flex items-center justify-between">
+          <span className={ft('text-slate-500', 'text-zinc-400')}>Line Item Total</span>
+          <div className="text-right">
+            <span className="text-2xl font-bold text-blue-400">
+              {formatPrice(previewPrice, currency)}
+            </span>
+            {previewLabel && (
+              <span className={`text-sm ${ft('text-slate-400', 'text-zinc-500')} ml-1`}>
+                {previewLabel}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-3 pt-2">
+        <Button
+          onClick={handleConfirm}
+          className="flex-1 bg-blue-500 hover:bg-blue-600"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add to Invoice
+        </Button>
+        <Button variant="ghost" onClick={onCancel} className={ft('text-slate-500', 'text-zinc-400')}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function ProductSelector({
   open,
   onClose,
@@ -552,6 +1025,19 @@ export default function ProductSelector({
         }
       }
 
+      // Load details for service products
+      const serviceProducts = filtered.filter(p => p.type === 'service');
+      for (const product of serviceProducts) {
+        try {
+          const details = await ServiceProduct.filter({ product_id: product.id }, { limit: 1 });
+          if (details && details[0]) {
+            detailsMap[product.id] = details[0];
+          }
+        } catch (err) {
+          console.warn(`Could not load details for product ${product.id}:`, err);
+        }
+      }
+
       setProductDetails(detailsMap);
     } catch (err) {
       console.error('Failed to load products:', err);
@@ -581,7 +1067,8 @@ export default function ProductSelector({
       // Tab filter
       const matchesTab = activeTab === 'all' ||
         (activeTab === 'digital' && product.type === 'digital') ||
-        (activeTab === 'physical' && product.type === 'physical');
+        (activeTab === 'physical' && product.type === 'physical') ||
+        (activeTab === 'service' && product.type === 'service');
 
       return matchesSearch && matchesTab;
     });
@@ -599,39 +1086,65 @@ export default function ProductSelector({
       }
     }
 
+    // If service product with pricing config, show service selector
+    if (product.type === 'service' && details?.pricing_config) {
+      setSelectedProduct(product);
+      setSelectedDetails(details);
+      return;
+    }
+
     // Otherwise, add as simple line item
     const lineItem = createLineItem(product, details, {});
     onSelect(lineItem);
     onClose();
   };
 
-  const handleDigitalConfirm = (lineItem) => {
+  const handlePricingConfirm = (lineItem) => {
     onSelect(lineItem);
     onClose();
   };
 
-  // If a digital product is selected for pricing options
+  // If a product is selected for pricing options (digital or service)
   if (selectedProduct) {
+    const isServiceSelected = selectedProduct.type === 'service';
     return (
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className={`max-w-lg ${ft('bg-white border-slate-200', 'bg-zinc-900 border-white/10')}`}>
+        <DialogContent className={`max-w-lg ${ft('bg-white border-slate-200', 'bg-zinc-900 border-white/10')} max-h-[80vh] overflow-y-auto`}>
           <DialogHeader>
             <DialogTitle className={`${ft('text-slate-900', 'text-white')} flex items-center gap-2`}>
-              <CreditCard className="w-5 h-5 text-cyan-400" />
+              {isServiceSelected ? (
+                <Briefcase className="w-5 h-5 text-blue-400" />
+              ) : (
+                <CreditCard className="w-5 h-5 text-cyan-400" />
+              )}
               Select Pricing Options
             </DialogTitle>
           </DialogHeader>
-          <DigitalPricingSelector
-            product={selectedProduct}
-            details={selectedDetails}
-            currency={currency}
-            ft={ft}
-            onConfirm={handleDigitalConfirm}
-            onCancel={() => {
-              setSelectedProduct(null);
-              setSelectedDetails(null);
-            }}
-          />
+          {isServiceSelected ? (
+            <ServicePricingSelector
+              product={selectedProduct}
+              details={selectedDetails}
+              currency={currency}
+              ft={ft}
+              onConfirm={handlePricingConfirm}
+              onCancel={() => {
+                setSelectedProduct(null);
+                setSelectedDetails(null);
+              }}
+            />
+          ) : (
+            <DigitalPricingSelector
+              product={selectedProduct}
+              details={selectedDetails}
+              currency={currency}
+              ft={ft}
+              onConfirm={handlePricingConfirm}
+              onCancel={() => {
+                setSelectedProduct(null);
+                setSelectedDetails(null);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     );
@@ -664,6 +1177,7 @@ export default function ProductSelector({
                 <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
                 <TabsTrigger value="digital" className="text-xs">Digital</TabsTrigger>
                 <TabsTrigger value="physical" className="text-xs">Physical</TabsTrigger>
+                <TabsTrigger value="service" className="text-xs">Services</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
