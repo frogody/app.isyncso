@@ -59,6 +59,9 @@ import { SyncBriefing } from '@/components/inbox/briefing';
 import { GuestInviteModal } from '@/components/inbox/guests';
 import { CreatePollModal } from '@/components/inbox/messages';
 import SmartReply from '@/components/inbox/smart/SmartReply';
+import { CatchUpButton } from '@/components/inbox/digests';
+import { ChannelDigest } from '@/components/inbox/digests';
+import { SentimentBadge } from '@/components/inbox/sentiment';
 import { useVideoCall } from '@/components/inbox/video';
 import { VideoCallRoom, CallBanner } from '@/components/inbox/video';
 
@@ -229,6 +232,7 @@ export default function InboxPage() {
   const [showGuestInvite, setShowGuestInvite] = useState(false);
   const [showCreatePoll, setShowCreatePoll] = useState(false);
   const [showBriefing, setShowBriefing] = useState(false);
+  const [showDigest, setShowDigest] = useState(false);
 
   // Video call hook
   const videoCall = useVideoCall(user?.id, user?.company_id);
@@ -972,6 +976,15 @@ export default function InboxPage() {
               </div>
 
               <div className="flex items-center gap-0.5 sm:gap-1">
+                {/* Catch Up button - AI digest */}
+                {selectedChannel.type !== 'special' && (
+                  <CatchUpButton
+                    compact
+                    unreadCount={unreadCounts[selectedChannel?.id] || 0}
+                    onClick={() => setShowDigest(true)}
+                  />
+                )}
+
                 {selectedChannel.type !== 'special' && headerActions.map((item, index) => (
                   <button
                     key={item.panel || item.title}
@@ -1368,6 +1381,34 @@ export default function InboxPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <SyncBriefing />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Channel Digest / Catch Me Up overlay */}
+      <AnimatePresence>
+        {showDigest && selectedChannel && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowDigest(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl bg-zinc-900 border border-zinc-800/60 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ChannelDigest
+                channelId={selectedChannel.id}
+                channelName={selectedChannel.name}
+                onClose={() => setShowDigest(false)}
+              />
             </motion.div>
           </motion.div>
         )}
