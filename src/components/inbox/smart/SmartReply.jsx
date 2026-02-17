@@ -1,5 +1,5 @@
 /**
- * SmartReply - Quick reply suggestion pills
+ * SmartReply - AI-powered quick reply suggestion pills via Groq LLM.
  *
  * Shows 2-3 contextual quick reply suggestions above the chat input
  * after receiving a new message. Click to insert into input (not auto-send).
@@ -7,90 +7,92 @@
  * Horizontal pill buttons with Framer Motion slide-up animation.
  */
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 
-// Template categories for quick reply suggestions
-const REPLY_TEMPLATES = {
-  question: ['Yes, I can do that', 'Let me check and get back to you', 'Could you clarify?'],
-  thanks: ["You're welcome!", 'Happy to help!', 'No problem!'],
-  greeting: ['Hey! How are you?', 'Good morning!', 'Hi there!'],
-  request: ["I'll get on that", 'Sure, give me a moment', 'On it!'],
-  update: ['Thanks for the update', 'Noted!', 'Great, thanks for letting me know'],
-};
-
-// Classify the last message into a category
-function classifyMessage(text) {
-  if (!text || typeof text !== 'string') return null;
-  const lower = text.toLowerCase().trim();
-
-  // Greeting patterns
-  if (/^(hi|hey|hello|good\s*(morning|afternoon|evening)|howdy|yo)\b/i.test(lower)) {
-    return 'greeting';
-  }
-
-  // Thanks patterns
-  if (/\b(thanks|thank\s*you|thx|ty|appreciate)\b/i.test(lower)) {
-    return 'thanks';
-  }
-
-  // Question patterns
-  if (
-    lower.endsWith('?') ||
-    /^(can|could|would|do|does|is|are|will|have|has|should|what|when|where|why|how)\b/i.test(lower)
-  ) {
-    return 'question';
-  }
-
-  // Request patterns (imperative)
-  if (
-    /^(please|pls|can you|could you|would you|send|check|review|fix|update|add|create|set up)\b/i.test(lower)
-  ) {
-    return 'request';
-  }
-
-  // Update/status patterns
-  if (
-    /\b(update|fyi|heads\s*up|just\s*so\s*you\s*know|letting\s*you\s*know|done|completed|finished|ready)\b/i.test(lower)
-  ) {
-    return 'update';
-  }
-
-  return null;
-}
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 const AUTO_DISMISS_MS = 30000;
 
-export default function SmartReply({ lastMessage, onSelectReply, onDismiss }) {
+export default function SmartReply({ lastMessage, recentMessages = [], onSelectReply, onDismiss }) {
   const [visible, setVisible] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
   const lastMessageIdRef = useRef(null);
   const timerRef = useRef(null);
+  const abortRef = useRef(null);
 
-  // Determine suggestions based on the last message
-  const suggestions = useMemo(() => {
-    if (!lastMessage?.content) return [];
-    const category = classifyMessage(lastMessage.content);
-    if (!category || !REPLY_TEMPLATES[category]) return [];
-    // Return 2-3 suggestions from the matched category
-    return REPLY_TEMPLATES[category].slice(0, 3);
-  }, [lastMessage?.content]);
-
-  // Show suggestions when a new message arrives
+  // Fetch AI suggestions when a new message arrives
   useEffect(() => {
     const messageId = lastMessage?.id || lastMessage?.content;
     if (!messageId || messageId === lastMessageIdRef.current) return;
+    if (!lastMessage?.content || lastMessage.content.trim().length < 2) return;
 
     lastMessageIdRef.current = messageId;
     setDismissed(false);
+    setSuggestions([]);
+    setLoading(true);
+    setVisible(true);
 
-    if (suggestions.length > 0) {
-      setVisible(true);
-    } else {
-      setVisible(false);
-    }
-  }, [lastMessage?.id, lastMessage?.content, suggestions.length]);
+    // Abort previous request
+    if (abortRef.current) abortRef.current.abort();
+    abortRef.current = new AbortController();
+
+    (async () => {
+      try {
+        const response = await fetch(
+          `${SUPABASE_URL}/functions/v1/smart-compose`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              mode: 'smart_reply',
+              lastMessage: lastMessage.content,
+              recentMessages: (recentMessages || []).slice(-5).map(m => ({
+                sender: m.sender_name || m.user?.full_name || 'User',
+                content: m.content || '',
+              })),
+            }),
+            signal: abortRef.current.signal,
+          }
+        );
+
+        if (!response.ok) {
+          setSuggestions([]);
+          setVisible(false);
+          return;
+        }
+
+        const data = await response.json();
+        const replies = data.replies || [];
+
+        if (replies.length > 0) {
+          setSuggestions(replies.slice(0, 3));
+        } else {
+          setSuggestions([]);
+          setVisible(false);
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('[SmartReply] Error:', err);
+          setSuggestions([]);
+          setVisible(false);
+        }
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    return () => {
+      if (abortRef.current) abortRef.current.abort();
+    };
+  }, [lastMessage?.id, lastMessage?.content]);
 
   // Auto-dismiss timer
   useEffect(() => {
@@ -119,15 +121,15 @@ export default function SmartReply({ lastMessage, onSelectReply, onDismiss }) {
     setDismissed(true);
   }, [onSelectReply]);
 
-  // Method to dismiss from parent (e.g., when user starts typing)
+  // Cleanup on unmount
   useEffect(() => {
-    // Expose dismiss behavior through the visible state
-    if (dismissed) {
-      setVisible(false);
-    }
-  }, [dismissed]);
+    return () => {
+      if (abortRef.current) abortRef.current.abort();
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
-  if (!visible || dismissed || suggestions.length === 0) return null;
+  if (!visible || dismissed) return null;
 
   return (
     <AnimatePresence>
@@ -139,6 +141,13 @@ export default function SmartReply({ lastMessage, onSelectReply, onDismiss }) {
           transition={{ duration: 0.2, ease: 'easeOut' }}
           className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 flex-wrap"
         >
+          {loading && suggestions.length === 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1 text-xs text-zinc-500">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              <span>SYNC thinking...</span>
+            </div>
+          )}
+
           {suggestions.map((text, i) => (
             <motion.button
               key={`${text}-${i}`}
@@ -153,13 +162,15 @@ export default function SmartReply({ lastMessage, onSelectReply, onDismiss }) {
             </motion.button>
           ))}
 
-          <button
-            onClick={handleDismiss}
-            className="p-0.5 hover:bg-zinc-700/40 rounded-full transition-colors ml-0.5"
-            title="Dismiss suggestions"
-          >
-            <X className="w-3 h-3 text-zinc-500" />
-          </button>
+          {(suggestions.length > 0 || loading) && (
+            <button
+              onClick={handleDismiss}
+              className="p-0.5 hover:bg-zinc-700/40 rounded-full transition-colors ml-0.5"
+              title="Dismiss suggestions"
+            >
+              <X className="w-3 h-3 text-zinc-500" />
+            </button>
+          )}
         </motion.div>
       )}
     </AnimatePresence>
