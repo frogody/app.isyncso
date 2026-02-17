@@ -1,9 +1,8 @@
 /**
  * useWorkflowTriggers - Hook for managing cross-module workflow trigger rules.
  *
- * Provides CRUD operations for trigger rules stored in local state with
- * optional Supabase persistence. Each trigger has an event type, conditions,
- * actions, and an execution history log.
+ * Provides CRUD operations for trigger rules persisted to Supabase
+ * (workflow_triggers + workflow_trigger_history tables).
  *
  * Trigger templates provide quick-fill presets for common automations:
  *   - Deal closed -> celebrate + invoice + thank-you
@@ -12,7 +11,8 @@
  *   - New prospect matches ICP -> post in #growth-signals
  */
 
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { supabase } from '@/api/supabaseClient';
 
 // ---------------------------------------------------------------------------
 // Constants & Definitions
@@ -100,107 +100,233 @@ const CONDITION_OPERATORS = [
 export { CONDITION_OPERATORS };
 
 // ---------------------------------------------------------------------------
-// ID generator
-// ---------------------------------------------------------------------------
-
-let idCounter = 0;
-function generateId() {
-  idCounter += 1;
-  return `wt_${Date.now()}_${idCounter}`;
-}
-
-// ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
 
-export function useWorkflowTriggers() {
+export function useWorkflowTriggers(userId, companyId) {
   const [triggers, setTriggers] = useState([]);
   const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const historyRef = useRef(history);
-  historyRef.current = history;
+  const [loading, setLoading] = useState(true);
+  const loadedRef = useRef(false);
+
+  // ---- Load from Supabase on mount ----------------------------------------
+
+  useEffect(() => {
+    if (loadedRef.current) return;
+    loadedRef.current = true;
+
+    async function load() {
+      setLoading(true);
+      try {
+        const [triggersRes, historyRes] = await Promise.all([
+          supabase
+            .from('workflow_triggers')
+            .select('*')
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('workflow_trigger_history')
+            .select('*')
+            .order('executed_at', { ascending: false })
+            .limit(200),
+        ]);
+
+        if (triggersRes.data) {
+          setTriggers(triggersRes.data.map(normalizeRow));
+        }
+        if (historyRes.data) {
+          setHistory(historyRes.data.map(normalizeHistoryRow));
+        }
+      } catch (err) {
+        console.error('Failed to load workflow triggers:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, []);
+
+  // ---- Normalize DB rows to component shape --------------------------------
+
+  function normalizeRow(row) {
+    return {
+      id: row.id,
+      name: row.name,
+      description: row.description || '',
+      eventType: row.event_type,
+      conditions: row.conditions || [],
+      actions: row.actions || [],
+      enabled: row.enabled,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      lastTriggeredAt: row.last_triggered_at,
+      triggerCount: row.trigger_count || 0,
+    };
+  }
+
+  function normalizeHistoryRow(row) {
+    return {
+      id: row.id,
+      triggerId: row.trigger_id,
+      triggerName: row.trigger_name,
+      eventType: row.event_type,
+      eventData: row.event_data || {},
+      actionsExecuted: row.actions_executed || [],
+      status: row.status,
+      executedAt: row.executed_at,
+    };
+  }
 
   // ---- CRUD ---------------------------------------------------------------
 
-  const createTrigger = useCallback((config) => {
-    const newTrigger = {
-      id: generateId(),
+  const createTrigger = useCallback(async (config) => {
+    const row = {
+      company_id: companyId,
+      created_by: userId,
       name: config.name || 'Untitled Trigger',
       description: config.description || '',
-      eventType: config.eventType,
+      event_type: config.eventType,
       conditions: config.conditions || [],
       actions: config.actions || [],
       enabled: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastTriggeredAt: null,
-      triggerCount: 0,
     };
-    setTriggers((prev) => [newTrigger, ...prev]);
-    return newTrigger;
-  }, []);
 
-  const updateTrigger = useCallback((id, updates) => {
-    setTriggers((prev) =>
-      prev.map((t) =>
-        t.id === id ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t
-      )
-    );
-  }, []);
+    const { data, error } = await supabase
+      .from('workflow_triggers')
+      .insert(row)
+      .select()
+      .single();
 
-  const deleteTrigger = useCallback((id) => {
-    setTriggers((prev) => prev.filter((t) => t.id !== id));
-    setHistory((prev) => prev.filter((h) => h.triggerId !== id));
-  }, []);
+    if (error) {
+      console.error('Failed to create trigger:', error);
+      return null;
+    }
 
-  const toggleTrigger = useCallback((id) => {
+    const normalized = normalizeRow(data);
+    setTriggers((prev) => [normalized, ...prev]);
+    return normalized;
+  }, [companyId, userId]);
+
+  const updateTrigger = useCallback(async (id, updates) => {
+    const dbUpdates = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.eventType !== undefined) dbUpdates.event_type = updates.eventType;
+    if (updates.conditions !== undefined) dbUpdates.conditions = updates.conditions;
+    if (updates.actions !== undefined) dbUpdates.actions = updates.actions;
+    if (updates.enabled !== undefined) dbUpdates.enabled = updates.enabled;
+    dbUpdates.updated_at = new Date().toISOString();
+
+    const { error } = await supabase
+      .from('workflow_triggers')
+      .update(dbUpdates)
+      .eq('id', id);
+
+    if (error) {
+      console.error('Failed to update trigger:', error);
+      return;
+    }
+
     setTriggers((prev) =>
       prev.map((t) =>
         t.id === id
-          ? { ...t, enabled: !t.enabled, updatedAt: new Date().toISOString() }
+          ? { ...t, ...updates, updatedAt: dbUpdates.updated_at }
           : t
       )
     );
   }, []);
 
+  const deleteTrigger = useCallback(async (id) => {
+    const { error } = await supabase
+      .from('workflow_triggers')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Failed to delete trigger:', error);
+      return;
+    }
+
+    setTriggers((prev) => prev.filter((t) => t.id !== id));
+    setHistory((prev) => prev.filter((h) => h.triggerId !== id));
+  }, []);
+
+  const toggleTrigger = useCallback(async (id) => {
+    const trigger = triggers.find((t) => t.id === id);
+    if (!trigger) return;
+
+    const newEnabled = !trigger.enabled;
+    const { error } = await supabase
+      .from('workflow_triggers')
+      .update({ enabled: newEnabled, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Failed to toggle trigger:', error);
+      return;
+    }
+
+    setTriggers((prev) =>
+      prev.map((t) =>
+        t.id === id
+          ? { ...t, enabled: newEnabled, updatedAt: new Date().toISOString() }
+          : t
+      )
+    );
+  }, [triggers]);
+
   // ---- Querying -----------------------------------------------------------
 
   const getTriggersForEvent = useCallback(
-    (eventType) => {
-      return triggers.filter((t) => t.eventType === eventType && t.enabled);
-    },
+    (eventType) => triggers.filter((t) => t.eventType === eventType && t.enabled),
     [triggers]
   );
 
   const getTriggerHistory = useCallback(
-    (triggerId) => {
-      return historyRef.current.filter((h) => h.triggerId === triggerId);
-    },
-    []
+    (triggerId) => history.filter((h) => h.triggerId === triggerId),
+    [history]
   );
 
-  // ---- Execution (simulation) ---------------------------------------------
+  // ---- Execution (logs to DB) ---------------------------------------------
 
-  const executeTrigger = useCallback((triggerId, eventData = {}) => {
+  const executeTrigger = useCallback(async (triggerId, eventData = {}) => {
     const trigger = triggers.find((t) => t.id === triggerId);
     if (!trigger || !trigger.enabled) return null;
 
-    const entry = {
-      id: generateId(),
-      triggerId,
-      triggerName: trigger.name,
-      eventType: trigger.eventType,
-      eventData,
-      actionsExecuted: trigger.actions.map((a) => ({
+    const historyRow = {
+      trigger_id: triggerId,
+      company_id: companyId,
+      trigger_name: trigger.name,
+      event_type: trigger.eventType,
+      event_data: eventData,
+      actions_executed: trigger.actions.map((a) => ({
         type: a.type,
         status: 'success',
-        executedAt: new Date().toISOString(),
+        executed_at: new Date().toISOString(),
       })),
       status: 'success',
-      executedAt: new Date().toISOString(),
     };
 
-    setHistory((prev) => [entry, ...prev].slice(0, 200));
+    const { data: historyData, error: historyError } = await supabase
+      .from('workflow_trigger_history')
+      .insert(historyRow)
+      .select()
+      .single();
+
+    if (historyError) {
+      console.error('Failed to log trigger execution:', historyError);
+    } else {
+      setHistory((prev) => [normalizeHistoryRow(historyData), ...prev].slice(0, 200));
+    }
+
+    // Update trigger stats
+    await supabase
+      .from('workflow_triggers')
+      .update({
+        last_triggered_at: new Date().toISOString(),
+        trigger_count: (trigger.triggerCount || 0) + 1,
+      })
+      .eq('id', triggerId);
 
     setTriggers((prev) =>
       prev.map((t) =>
@@ -214,8 +340,8 @@ export function useWorkflowTriggers() {
       )
     );
 
-    return entry;
-  }, [triggers]);
+    return historyData ? normalizeHistoryRow(historyData) : null;
+  }, [triggers, companyId]);
 
   // ---- Template helpers ---------------------------------------------------
 

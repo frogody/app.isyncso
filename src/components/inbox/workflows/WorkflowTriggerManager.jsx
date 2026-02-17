@@ -17,6 +17,7 @@ import {
   Zap, Plus, Settings, Clock, Sparkles, LayoutList,
   History, ChevronDown, Play, Search, X, Filter
 } from 'lucide-react';
+import { useUser } from '@/components/context/UserContext';
 
 import TriggerCard from './TriggerCard';
 import TriggerEditor from './TriggerEditor';
@@ -120,6 +121,7 @@ const StatsBar = memo(function StatsBar({ totalTriggerCount, enabledCount, histo
 // ---------------------------------------------------------------------------
 
 export default function WorkflowTriggerManager() {
+  const { user } = useUser();
   const {
     triggers,
     history,
@@ -131,7 +133,7 @@ export default function WorkflowTriggerManager() {
     toggleTrigger,
     executeTrigger,
     createFromTemplate,
-  } = useWorkflowTriggers();
+  } = useWorkflowTriggers(user?.id, user?.company_id);
 
   const [activeTab, setActiveTab] = useState('triggers');
   const [editorOpen, setEditorOpen] = useState(false);

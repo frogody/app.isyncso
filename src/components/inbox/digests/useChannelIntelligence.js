@@ -1,9 +1,9 @@
 /**
  * useChannelIntelligence - Hook for channel intelligence: sentiment, topics, action items
  *
- * Provides digest generation, sentiment analysis, topic extraction, and action item detection.
- * Uses Supabase to fetch messages, then performs local mock AI analysis
- * (keyword extraction, message counting, @mention identification, question finding).
+ * Provides digest generation via Groq LLM (llama-3.3-70b-versatile) edge function.
+ * Falls back to local regex analysis if the AI service is unavailable.
+ * Uses Supabase to fetch messages, then sends them to the digest-channel edge function.
  * Caches digest results in state to avoid re-generation.
  */
 
@@ -50,9 +50,10 @@ function getEndDate(timeRange) {
   return new Date();
 }
 
-/**
- * Extract keywords from message content by frequency
- */
+// ---------------------------------------------------------------------------
+// Fallback local analysis (used when AI edge function is unavailable)
+// ---------------------------------------------------------------------------
+
 function extractKeywords(messages) {
   const stopWords = new Set([
     'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
@@ -89,10 +90,7 @@ function extractKeywords(messages) {
     .map(([word, count]) => ({ word, count }));
 }
 
-/**
- * Detect sentiment from message content (mock analysis)
- */
-function analyzeSentiment(messages) {
+function analyzeSentimentLocal(messages) {
   const positiveWords = [
     'great', 'awesome', 'excellent', 'good', 'love', 'amazing', 'wonderful',
     'fantastic', 'perfect', 'happy', 'glad', 'thanks', 'thank', 'appreciate',
@@ -134,9 +132,6 @@ function analyzeSentiment(messages) {
   return { score, label, trend, positiveCount, negativeCount };
 }
 
-/**
- * Extract @mentions from messages
- */
 function extractMentions(messages) {
   const mentions = {};
   messages.forEach((msg) => {
@@ -155,10 +150,7 @@ function extractMentions(messages) {
     .map(([name, count]) => ({ name, count }));
 }
 
-/**
- * Find questions in messages
- */
-function findQuestions(messages) {
+function findQuestionsLocal(messages) {
   return messages
     .filter((msg) => {
       const content = (msg.content || '').trim();
@@ -174,10 +166,7 @@ function findQuestions(messages) {
     }));
 }
 
-/**
- * Detect action items / implicit commitments
- */
-function detectActionItems(messages) {
+function detectActionItemsLocal(messages) {
   const actionPatterns = [
     /i('ll| will)\s+(.+?)(?:\.|$)/i,
     /let me\s+(.+?)(?:\.|$)/i,
@@ -213,10 +202,7 @@ function detectActionItems(messages) {
   return items.slice(0, 10);
 }
 
-/**
- * Detect key decisions in messages
- */
-function detectDecisions(messages) {
+function detectDecisionsLocal(messages) {
   const decisionPatterns = [
     /decided\s+(.+?)(?:\.|$)/i,
     /let's\s+go\s+with\s+(.+?)(?:\.|$)/i,
@@ -251,10 +237,7 @@ function detectDecisions(messages) {
   return decisions.slice(0, 8);
 }
 
-/**
- * Find important messages (highly reacted, pinned, or from key people)
- */
-function findImportantMessages(messages) {
+function findImportantMessagesLocal(messages) {
   return messages
     .filter((msg) => {
       const content = (msg.content || '').toLowerCase();
@@ -277,6 +260,150 @@ function findImportantMessages(messages) {
         : 'Flagged as important',
     }));
 }
+
+/**
+ * Build a digest using local regex-based analysis (fallback)
+ */
+function buildLocalDigest(messages, channelId, timeRange) {
+  const uniqueSenders = new Set(messages.map((m) => m.sender_id).filter(Boolean));
+
+  return {
+    channelId,
+    timeRange,
+    timeRangeLabel: TIME_RANGES[timeRange]?.label || timeRange,
+    messageCount: messages.length,
+    participantCount: uniqueSenders.size,
+    decisions: detectDecisionsLocal(messages),
+    actionItems: detectActionItemsLocal(messages),
+    importantMessages: findImportantMessagesLocal(messages),
+    questions: findQuestionsLocal(messages),
+    sentiment: analyzeSentimentLocal(messages),
+    topics: extractKeywords(messages),
+    mentions: extractMentions(messages),
+    generatedAt: new Date().toISOString(),
+    aiPowered: false,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// AI-powered analysis via edge function
+// ---------------------------------------------------------------------------
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+async function analyzeWithAI(messages) {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/digest-channel`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({
+      messages: messages.map((m) => ({
+        id: m.id,
+        content: m.content,
+        sender_name: m.sender_name,
+        sender_id: m.sender_id,
+        sender_avatar: m.sender_avatar,
+        created_at: m.created_at,
+        reactions: m.reactions,
+        is_pinned: m.is_pinned,
+      })),
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Digest AI error ${response.status}: ${err}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Build a digest using AI analysis from the edge function
+ */
+function buildAIDigest(aiResult, messages, channelId, timeRange) {
+  const uniqueSenders = new Set(messages.map((m) => m.sender_id).filter(Boolean));
+
+  // Map AI decisions back to message metadata
+  const decisions = (aiResult.decisions || []).map((d) => {
+    const msg = messages.find((m) => m.id === d.messageId);
+    return {
+      id: d.messageId,
+      text: d.text,
+      fullMessage: msg?.content || d.text,
+      author: d.author || msg?.sender_name || 'Unknown',
+      avatar: msg?.sender_avatar || null,
+      timestamp: d.timestamp || msg?.created_at,
+    };
+  });
+
+  const actionItems = (aiResult.actionItems || []).map((a) => {
+    const msg = messages.find((m) => m.id === a.messageId);
+    return {
+      id: a.messageId,
+      text: a.text,
+      assignee: a.assignee,
+      fullMessage: msg?.content || a.text,
+      author: a.author || msg?.sender_name || 'Unknown',
+      avatar: msg?.sender_avatar || null,
+      timestamp: a.timestamp || msg?.created_at,
+    };
+  });
+
+  const importantMessages = (aiResult.importantMessages || []).map((im) => {
+    const msg = messages.find((m) => m.id === im.messageId);
+    return {
+      id: im.messageId,
+      content: im.content || msg?.content,
+      author: im.author || msg?.sender_name || 'Unknown',
+      avatar: msg?.sender_avatar || null,
+      timestamp: im.timestamp || msg?.created_at,
+      reason: im.reason || 'AI flagged',
+    };
+  });
+
+  const questions = (aiResult.questions || []).map((q) => {
+    const msg = messages.find((m) => m.id === q.messageId);
+    return {
+      id: q.messageId,
+      content: q.content || msg?.content,
+      author: q.author || msg?.sender_name || 'Unknown',
+      avatar: msg?.sender_avatar || null,
+      timestamp: q.timestamp || msg?.created_at,
+      answered: q.answered || false,
+    };
+  });
+
+  return {
+    channelId,
+    timeRange,
+    timeRangeLabel: TIME_RANGES[timeRange]?.label || timeRange,
+    messageCount: messages.length,
+    participantCount: uniqueSenders.size,
+    summary: aiResult.summary || '',
+    decisions,
+    actionItems,
+    importantMessages,
+    questions,
+    sentiment: {
+      score: aiResult.sentiment?.score ?? 0.5,
+      label: aiResult.sentiment?.label || 'Neutral',
+      trend: aiResult.sentiment?.trend || 'stable',
+      reasoning: aiResult.sentiment?.reasoning || '',
+    },
+    topics: aiResult.topics || [],
+    mentions: extractMentions(messages),
+    generatedAt: new Date().toISOString(),
+    aiPowered: true,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
 
 export function useChannelIntelligence() {
   const [digest, setDigest] = useState(null);
@@ -335,7 +462,8 @@ export function useChannelIntelligence() {
   }, []);
 
   /**
-   * Generate a full digest for a channel in a given time range
+   * Generate a full digest for a channel in a given time range.
+   * Calls Groq LLM via edge function, falls back to local regex analysis.
    */
   const generateDigest = useCallback(async (channelId, timeRange = 'last-4h') => {
     if (!channelId) return null;
@@ -362,6 +490,7 @@ export function useChannelIntelligence() {
           timeRangeLabel: TIME_RANGES[timeRange]?.label || timeRange,
           messageCount: 0,
           participantCount: 0,
+          summary: '',
           decisions: [],
           actionItems: [],
           importantMessages: [],
@@ -370,29 +499,23 @@ export function useChannelIntelligence() {
           topics: [],
           mentions: [],
           generatedAt: new Date().toISOString(),
+          aiPowered: false,
         };
         setDigest(emptyDigest);
         cacheRef.current[cacheKey] = { data: emptyDigest, timestamp: Date.now() };
         return emptyDigest;
       }
 
-      const uniqueSenders = new Set(messages.map((m) => m.sender_id).filter(Boolean));
+      let digestData;
 
-      const digestData = {
-        channelId,
-        timeRange,
-        timeRangeLabel: TIME_RANGES[timeRange]?.label || timeRange,
-        messageCount: messages.length,
-        participantCount: uniqueSenders.size,
-        decisions: detectDecisions(messages),
-        actionItems: detectActionItems(messages),
-        importantMessages: findImportantMessages(messages),
-        questions: findQuestions(messages),
-        sentiment: analyzeSentiment(messages),
-        topics: extractKeywords(messages),
-        mentions: extractMentions(messages),
-        generatedAt: new Date().toISOString(),
-      };
+      try {
+        // Attempt AI-powered analysis
+        const aiResult = await analyzeWithAI(messages);
+        digestData = buildAIDigest(aiResult, messages, channelId, timeRange);
+      } catch (aiErr) {
+        console.warn('[useChannelIntelligence] AI analysis failed, using local fallback:', aiErr.message);
+        digestData = buildLocalDigest(messages, channelId, timeRange);
+      }
 
       setDigest(digestData);
       cacheRef.current[cacheKey] = { data: digestData, timestamp: Date.now() };
@@ -407,12 +530,12 @@ export function useChannelIntelligence() {
   }, [fetchMessages]);
 
   /**
-   * Get current sentiment score for a channel (lightweight)
+   * Get current sentiment score for a channel (lightweight — uses local fallback)
    */
   const getChannelSentiment = useCallback(async (channelId) => {
     try {
       const messages = await fetchMessages(channelId, 'today');
-      return analyzeSentiment(messages);
+      return analyzeSentimentLocal(messages);
     } catch {
       return { score: 0.5, label: 'Unknown', trend: 'stable' };
     }
@@ -436,7 +559,7 @@ export function useChannelIntelligence() {
   const getActionItems = useCallback(async (channelId) => {
     try {
       const messages = await fetchMessages(channelId, 'today');
-      return detectActionItems(messages);
+      return detectActionItemsLocal(messages);
     } catch {
       return [];
     }

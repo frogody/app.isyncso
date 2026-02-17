@@ -14,7 +14,7 @@ import {
   Sparkles, X, Clock, MessageSquare, Users,
   Lightbulb, CheckSquare, AlertTriangle, HelpCircle,
   TrendingUp, TrendingDown, Minus, Hash, AtSign,
-  RefreshCw,
+  RefreshCw, Brain,
 } from 'lucide-react';
 import { useChannelIntelligence, TIME_RANGES } from './useChannelIntelligence';
 import DigestCard, { AuthorAvatar, formatTimestamp } from './DigestCard';
@@ -242,7 +242,15 @@ export default function ChannelDigest({ channelId, channelName, onClose }) {
               <Sparkles className="w-4 h-4 text-cyan-400" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">Catch Me Up</h2>
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-sm font-bold text-white">Catch Me Up</h2>
+                {digest?.aiPowered && (
+                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-violet-500/10 border border-violet-500/20">
+                    <Brain className="w-2.5 h-2.5 text-violet-400" />
+                    <span className="text-[9px] font-medium text-violet-400">AI</span>
+                  </span>
+                )}
+              </div>
               <p className="text-[11px] text-zinc-500">
                 {channelName ? `#${channelName}` : 'Channel digest'}
               </p>
@@ -318,6 +326,26 @@ export default function ChannelDigest({ channelId, channelName, onClose }) {
           <>
             {/* Quick stats */}
             <StatsBar digest={digest} />
+
+            {/* AI Summary */}
+            {digest.summary && (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.12 }}
+                className="p-3.5 rounded-2xl bg-gradient-to-br from-violet-500/5 to-cyan-500/5 backdrop-blur-xl border border-violet-500/15"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                    <Brain className="w-3 h-3 text-violet-400" />
+                  </div>
+                  <span className="text-xs font-semibold text-zinc-200">Summary</span>
+                </div>
+                <p className="text-[12px] leading-relaxed text-zinc-300">
+                  {digest.summary}
+                </p>
+              </motion.div>
+            )}
 
             {/* Sentiment */}
             <SentimentWidget sentiment={digest.sentiment} />
