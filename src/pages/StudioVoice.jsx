@@ -403,7 +403,7 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
     setDescription('');
     setUploadedFiles([]);
 
-    toast.success(`Voice "${newVoice.name}" cloned successfully!`);
+    toast.success(`Voice "${newVoice.name}" saved locally! Custom voice cloning is in beta.`);
     onCloneSuccess(newVoice);
   }, [voiceName, description, uploadedFiles, meetsMinimum, totalDuration, onCloneSuccess]);
 
@@ -420,7 +420,7 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
           </div>
           <div>
             <h2 className="text-base font-semibold text-white">Create Voice Clone</h2>
-            <p className="text-xs text-zinc-500">Upload audio samples to clone any voice</p>
+            <p className="text-xs text-zinc-500">Upload audio samples to clone any voice <span className="text-amber-400/80">(Beta)</span></p>
           </div>
         </div>
         <div className="p-2 rounded-lg text-zinc-500 group-hover:text-zinc-300 transition-colors">
@@ -602,6 +602,7 @@ export default function StudioVoice() {
   const [playingVoiceId, setPlayingVoiceId] = useState(null);
   const [clonedVoices, setClonedVoices] = useState([]);
   const playTimerRef = useRef(null);
+  const audioRef = useRef(null);
 
   // Load cloned voices from localStorage on mount
   useEffect(() => {
@@ -638,27 +639,82 @@ export default function StudioVoice() {
   const presetCount = allVoices.filter((v) => v.type === 'preset').length;
   const customCount = allVoices.filter((v) => v.type === 'custom').length;
 
-  // Play mock audio (auto-stop after 3s)
-  const handlePlay = useCallback((voiceId) => {
+  // Play real TTS preview via sync-voice edge function
+  const handlePlay = useCallback(async (voiceId) => {
     if (playTimerRef.current) {
       clearTimeout(playTimerRef.current);
     }
+    // Stop any playing audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
     setPlayingVoiceId(voiceId);
-    playTimerRef.current = setTimeout(() => {
+
+    try {
+      const voice = allVoices.find(v => v.id === voiceId);
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+      const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/sync-voice`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          ttsOnly: true,
+          ttsText: `Hi there, I'm ${voice?.name || voiceId}. This is how I sound when I speak. Pretty natural, right?`,
+          voice: voiceId,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.audio) {
+        const audioBytes = Uint8Array.from(atob(data.audio), c => c.charCodeAt(0));
+        const blob = new Blob([audioBytes], { type: 'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audioRef.current = audio;
+
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          setPlayingVoiceId(null);
+          audioRef.current = null;
+        };
+        audio.onerror = () => {
+          URL.revokeObjectURL(url);
+          setPlayingVoiceId(null);
+          audioRef.current = null;
+        };
+        audio.play();
+      } else {
+        toast.error('Voice preview unavailable');
+        setPlayingVoiceId(null);
+      }
+    } catch (err) {
+      console.error('[StudioVoice] Preview error:', err);
+      toast.error('Failed to preview voice');
       setPlayingVoiceId(null);
-    }, 3000);
-  }, []);
+    }
+  }, [allVoices]);
 
   const handleStop = useCallback(() => {
     if (playTimerRef.current) {
       clearTimeout(playTimerRef.current);
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
     }
     setPlayingVoiceId(null);
   }, []);
 
   const handleUseInStudio = useCallback(
     (voice) => {
-      toast.success(`Voice "${voice.name}" selected! You can now use it in Video or Podcast Studio.`);
+      // Navigate to Podcast studio with voice context
+      window.location.href = `/StudioPodcast?voice=${voice.id}&voiceName=${encodeURIComponent(voice.name)}`;
     },
     []
   );
@@ -668,10 +724,14 @@ export default function StudioVoice() {
     setFilterType('all');
   }, []);
 
-  // Cleanup timer
+  // Cleanup timer and audio on unmount
   useEffect(() => {
     return () => {
       if (playTimerRef.current) clearTimeout(playTimerRef.current);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
     };
   }, []);
 

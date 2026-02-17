@@ -48,44 +48,7 @@ import {
 
 // --- Constants ---
 
-const SAMPLE_AVATARS = [
-  {
-    id: 'av-1',
-    name: 'Business Professional',
-    initials: 'BP',
-    gradient: 'from-violet-600 to-indigo-700',
-    status: 'ready',
-    style: 'Professional',
-    tagColor: 'violet',
-  },
-  {
-    id: 'av-2',
-    name: 'Casual Creator',
-    initials: 'CC',
-    gradient: 'from-cyan-500 to-blue-600',
-    status: 'ready',
-    style: 'Casual',
-    tagColor: 'cyan',
-  },
-  {
-    id: 'av-3',
-    name: 'Tech Expert',
-    initials: 'TE',
-    gradient: 'from-emerald-500 to-teal-600',
-    status: 'training',
-    style: 'Creative',
-    tagColor: 'emerald',
-  },
-  {
-    id: 'av-4',
-    name: 'Lifestyle Host',
-    initials: 'LH',
-    gradient: 'from-amber-500 to-orange-600',
-    status: 'ready',
-    style: 'Formal',
-    tagColor: 'amber',
-  },
-];
+const SAMPLE_AVATARS = [];
 
 const PHOTO_SLOTS = [
   { id: 'front', label: 'Front facing', icon: Eye, required: true },
@@ -534,31 +497,7 @@ export default function StudioAvatar() {
   }, []);
 
   const handleGenerate = useCallback(async () => {
-    setIsGenerating(true);
-    setGenerationProgress(0);
-    setGenerationComplete(false);
-
-    let cumulativeProgress = 0;
-    for (const stage of TRAINING_STAGES) {
-      setGenerationStage(stage.label);
-      const targetProgress = cumulativeProgress + (100 / TRAINING_STAGES.length);
-      const start = Date.now();
-      const increment = () => {
-        const elapsed = Date.now() - start;
-        const pct = Math.min(elapsed / stage.duration, 1);
-        setGenerationProgress(cumulativeProgress + pct * (100 / TRAINING_STAGES.length));
-        if (pct < 1) requestAnimationFrame(increment);
-      };
-      increment();
-      await new Promise((resolve) => setTimeout(resolve, stage.duration));
-      cumulativeProgress = targetProgress;
-    }
-
-    setGenerationProgress(100);
-    setGenerationStage('Complete!');
-    setIsGenerating(false);
-    setGenerationComplete(true);
-    toast.success('Avatar generated successfully!');
+    toast.info('AI Avatar generation is coming soon!');
   }, []);
 
   const resetCreator = useCallback(() => {
@@ -576,12 +515,12 @@ export default function StudioAvatar() {
     setGenerationComplete(false);
   }, []);
 
-  const handleCreateVideo = useCallback((avatar) => {
-    toast.info(`Opening video creator with ${avatar.name}...`);
+  const handleCreateVideo = useCallback(() => {
+    toast.info('AI Avatar videos are coming soon!');
   }, []);
 
-  const handleCreatePost = useCallback((avatar) => {
-    toast.info(`Opening post creator with ${avatar.name}...`);
+  const handleCreatePost = useCallback(() => {
+    toast.info('AI Avatar posts are coming soon!');
   }, []);
 
   // --- Render ---
@@ -615,15 +554,46 @@ export default function StudioAvatar() {
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {avatars.map((avatar) => (
-              <AvatarCard
-                key={avatar.id}
-                avatar={avatar}
-                onCreateVideo={handleCreateVideo}
-                onCreatePost={handleCreatePost}
-              />
-            ))}
-            <CreateNewCard onClick={() => setShowCreator(true)} />
+            {avatars.length === 0 ? (
+              <div className="col-span-full">
+                <div className="relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.05] via-transparent to-purple-500/[0.03] p-8 text-center">
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent" />
+                  <div className="flex flex-col items-center">
+                    <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-4">
+                      <UserCircle className="w-8 h-8 text-violet-400/60" />
+                    </div>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 mb-3">
+                      <Sparkles className="w-3 h-3 text-amber-400" />
+                      <span className="text-xs font-medium text-amber-300">Coming Soon</span>
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-2">AI Avatars are coming</h3>
+                    <p className="text-sm text-zinc-500 max-w-md mb-6">
+                      We're building AI-powered avatar creation that will let you generate realistic talking-head videos,
+                      product reviews, and social content with your own digital likeness.
+                    </p>
+                    <div className="flex flex-wrap gap-3 justify-center">
+                      {['UGC Videos', 'Product Reviews', 'Social Posts', 'Presentations'].map(feature => (
+                        <span key={feature} className="px-3 py-1.5 rounded-full bg-zinc-800/60 border border-zinc-700/40 text-xs text-zinc-400">
+                          {feature}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                {avatars.map((avatar) => (
+                  <AvatarCard
+                    key={avatar.id}
+                    avatar={avatar}
+                    onCreateVideo={handleCreateVideo}
+                    onCreatePost={handleCreatePost}
+                  />
+                ))}
+                <CreateNewCard onClick={() => setShowCreator(true)} />
+              </>
+            )}
           </div>
         </motion.section>
 

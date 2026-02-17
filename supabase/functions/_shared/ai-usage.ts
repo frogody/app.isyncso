@@ -46,6 +46,9 @@ export const MODEL_PRICING: Record<string, { input: number; output: number }> = 
   'llama-3.1-8b-instant': { input: 0.00005, output: 0.00008 },
   'llama-3.3-70b-versatile': { input: 0.00059, output: 0.00079 },
 
+  // TTS Models
+  'canopylabs/orpheus-3b-0.1-ft': { input: 0.001, output: 0 },
+
   // Embedding Models (input only)
   'BAAI/bge-large-en-v1.5': { input: 0.00002, output: 0 },
 
