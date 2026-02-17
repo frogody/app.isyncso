@@ -1,25 +1,27 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import {
-  Shield, Building2, AlertTriangle, CheckCircle2, Clock, Plus,
-  Search, Filter, ExternalLink, Edit3, Trash2, Eye,
-  ShieldCheck, ShieldAlert, Globe, Lock, X, Loader2,
-  AlertCircle, ChevronDown,
+  ShieldAlert, Building2, AlertTriangle, CheckCircle2, Clock, Plus,
+  Search, ExternalLink, Edit3, Trash2, Eye, Globe, Lock, X,
+  AlertCircle, ChevronDown, ChevronUp, FileText, StickyNote,
+  Shield, Loader2,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useTheme } from '@/contexts/GlobalThemeContext';
+import { cn } from '@/lib/utils';
 import { SentinelCard, SentinelCardSkeleton } from '@/components/sentinel/ui/SentinelCard';
 import { SentinelButton } from '@/components/sentinel/ui/SentinelButton';
 import { SentinelBadge } from '@/components/sentinel/ui/SentinelBadge';
-import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
 import { SentinelInput } from '@/components/sentinel/ui/SentinelInput';
+import { SentinelEmptyState } from '@/components/sentinel/ui/SentinelErrorBoundary';
 import { StatCard } from '@/components/sentinel/ui/StatCard';
-import { useTheme } from '@/contexts/GlobalThemeContext';
-import { cn } from '@/lib/utils';
+import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
+import { MOTION_VARIANTS } from '@/tokens/sentinel';
 import { supabase } from '@/api/supabaseClient';
-import { useUser } from '@/components/context/UserContext';
-import { toast } from 'sonner';
 
 // ---------------------------------------------------------------------------
-// Constants & Helpers
+// Constants
 // ---------------------------------------------------------------------------
 
 const CATEGORY_OPTIONS = [
@@ -28,6 +30,7 @@ const CATEGORY_OPTIONS = [
   { value: 'professional-services', label: 'Professional Services' },
   { value: 'data-processor', label: 'Data Processor' },
   { value: 'subprocessor', label: 'Subprocessor' },
+  { value: 'other', label: 'Other' },
 ];
 
 const CRITICALITY_OPTIONS = [
@@ -38,9 +41,10 @@ const CRITICALITY_OPTIONS = [
 ];
 
 const STATUS_OPTIONS = [
-  { value: 'approved', label: 'Approved' },
   { value: 'pending-review', label: 'Pending Review' },
-  { value: 'under-review', label: 'Under Review' },
+  { value: 'in-review', label: 'In Review' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'conditionally-approved', label: 'Conditionally Approved' },
   { value: 'rejected', label: 'Rejected' },
   { value: 'decommissioned', label: 'Decommissioned' },
 ];
@@ -49,6 +53,8 @@ const DATA_ACCESS_OPTIONS = [
   { value: 'pii', label: 'PII' },
   { value: 'phi', label: 'PHI' },
   { value: 'financial', label: 'Financial' },
+  { value: 'credentials', label: 'Credentials' },
+  { value: 'ip', label: 'IP / Trade Secrets' },
   { value: 'none', label: 'None' },
 ];
 
@@ -58,40 +64,43 @@ const CERT_STATUS_OPTIONS = [
   { value: 'none', label: 'None' },
 ];
 
-const CRITICALITY_COLORS = {
-  critical: { badge: 'error', ring: 'text-red-400', bg: 'bg-red-500/10 border-red-500/30', text: 'text-red-400' },
-  high: { badge: 'warning', ring: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/30', text: 'text-orange-400' },
-  medium: { badge: 'warning', ring: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/30', text: 'text-yellow-400' },
-  low: { badge: 'success', ring: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/30', text: 'text-emerald-400' },
+const GDPR_STATUS_OPTIONS = [
+  { value: 'compliant', label: 'Compliant' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'non-compliant', label: 'Non-Compliant' },
+];
+
+const CRITICALITY_BADGE = {
+  critical: 'error',
+  high: 'warning',
+  medium: 'neutral',
+  low: 'neutral',
 };
 
-const STATUS_BADGE_MAP = {
-  approved: 'success',
+const CRITICALITY_ACCENT = {
+  critical: 'bg-red-500',
+  high: 'bg-orange-500',
+  medium: 'bg-yellow-500',
+  low: 'bg-emerald-500',
+};
+
+const STATUS_BADGE = {
   'pending-review': 'warning',
-  'under-review': 'neutral',
+  'in-review': 'neutral',
+  approved: 'success',
+  'conditionally-approved': 'warning',
   rejected: 'error',
   decommissioned: 'neutral',
 };
 
-function calculateRiskScore(vendor) {
-  let score = 0;
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-  // Criticality base (0-40)
-  const critScores = { critical: 40, high: 30, medium: 20, low: 10 };
-  score += critScores[vendor.criticality] || 20;
-
-  // Data access types (0-30)
-  const accessTypes = vendor.data_access || [];
-  if (accessTypes.includes('phi')) score += 15;
-  if (accessTypes.includes('pii')) score += 10;
-  if (accessTypes.includes('financial')) score += 5;
-
-  // Missing certifications (0-30)
-  if (vendor.soc2_status !== 'verified') score += 10;
-  if (vendor.iso_status !== 'verified') score += 10;
-  if (vendor.gdpr_status !== 'verified') score += 10;
-
-  return Math.min(100, Math.max(0, score));
+function riskScoreColor(score) {
+  if (score > 70) return '#f87171';
+  if (score >= 40) return '#facc15';
+  return '#4ade80';
 }
 
 function isOverdue(dateStr) {
@@ -108,44 +117,53 @@ function formatDate(dateStr) {
   });
 }
 
+function labelFor(options, value) {
+  return options.find((o) => o.value === value)?.label || value || '--';
+}
+
 // ---------------------------------------------------------------------------
-// Component
+// Main Component
 // ---------------------------------------------------------------------------
 
 export default function VendorRisk() {
-  const { user } = useUser();
   const { st } = useTheme();
 
-  // State
+  // Data state
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [companyId, setCompanyId] = useState(null);
+
+  // Filter state
   const [searchQuery, setSearchQuery] = useState('');
-  const [criticalityFilter, setCriticalityFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [criticalityFilter, setCriticalityFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+
+  // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  // Form state
+  // Detail expand state
+  const [expandedId, setExpandedId] = useState(null);
+
+  // Form defaults
   const emptyForm = {
-    name: '',
-    domain: '',
-    logo_url: '',
+    vendor_name: '',
+    vendor_domain: '',
+    vendor_logo_url: '',
     category: 'saas',
     criticality: 'medium',
     status: 'pending-review',
     data_access: [],
     soc2_status: 'none',
-    iso_status: 'none',
-    gdpr_status: 'none',
+    iso27001_status: 'none',
+    gdpr_status: 'pending',
+    risk_score: 50,
     contract_url: '',
     dpa_url: '',
     notes: '',
-    risk_score: null,
-    owner: '',
-    last_assessment_date: '',
-    next_review_date: '',
   };
   const [form, setForm] = useState(emptyForm);
 
@@ -154,27 +172,40 @@ export default function VendorRisk() {
   // ---------------------------------------------------------------------------
 
   const fetchVendors = useCallback(async () => {
-    if (!user?.company_id) return;
     setLoading(true);
     setError(null);
 
     try {
-      const { data, error: fetchError } = await supabase
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: userData } = await supabase
+        .from('users')
+        .select('company_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!userData?.company_id) throw new Error('No company associated');
+      setCompanyId(userData.company_id);
+
+      const { data, error: fetchErr } = await supabase
         .from('vendor_assessments')
         .select('*')
-        .eq('company_id', user.company_id)
-        .order('risk_score', { ascending: false });
+        .eq('company_id', userData.company_id)
+        .order('created_at', { ascending: false });
 
-      if (fetchError) throw fetchError;
+      if (fetchErr) throw fetchErr;
       setVendors(data || []);
     } catch (err) {
-      console.error('Error fetching vendor assessments:', err);
+      console.error('[VendorRisk] fetch error:', err);
       setError(err.message || 'Failed to load vendors');
       toast.error('Failed to load vendor data');
     } finally {
       setLoading(false);
     }
-  }, [user?.company_id]);
+  }, []);
 
   useEffect(() => {
     fetchVendors();
@@ -186,38 +217,36 @@ export default function VendorRisk() {
 
   const filtered = useMemo(() => {
     let result = vendors;
+
+    if (statusFilter !== 'all') {
+      result = result.filter((v) => v.status === statusFilter);
+    }
     if (criticalityFilter !== 'all') {
       result = result.filter((v) => v.criticality === criticalityFilter);
     }
-    if (statusFilter !== 'all') {
-      result = result.filter((v) => v.status === statusFilter);
+    if (categoryFilter !== 'all') {
+      result = result.filter((v) => v.category === categoryFilter);
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
         (v) =>
-          v.name?.toLowerCase().includes(q) ||
-          v.domain?.toLowerCase().includes(q) ||
-          v.category?.toLowerCase().includes(q)
+          v.vendor_name?.toLowerCase().includes(q) ||
+          v.vendor_domain?.toLowerCase().includes(q)
       );
     }
     return result;
-  }, [vendors, criticalityFilter, statusFilter, searchQuery]);
+  }, [vendors, statusFilter, criticalityFilter, categoryFilter, searchQuery]);
 
   const stats = useMemo(() => {
-    const criticalHigh = vendors.filter(
+    const critical = vendors.filter(
       (v) => v.criticality === 'critical' || v.criticality === 'high'
     ).length;
     const approved = vendors.filter((v) => v.status === 'approved').length;
-    const pendingReview = vendors.filter(
-      (v) => v.status === 'pending-review' || v.status === 'under-review'
+    const pending = vendors.filter(
+      (v) => v.status === 'pending-review' || v.status === 'in-review'
     ).length;
-    return {
-      total: vendors.length,
-      criticalHigh,
-      approved,
-      pendingReview,
-    };
+    return { total: vendors.length, critical, approved, pending };
   }, [vendors]);
 
   // ---------------------------------------------------------------------------
@@ -233,79 +262,68 @@ export default function VendorRisk() {
   const openEditModal = useCallback((vendor) => {
     setEditingVendor(vendor);
     setForm({
-      name: vendor.name || '',
-      domain: vendor.domain || '',
-      logo_url: vendor.logo_url || '',
+      vendor_name: vendor.vendor_name || '',
+      vendor_domain: vendor.vendor_domain || '',
+      vendor_logo_url: vendor.vendor_logo_url || '',
       category: vendor.category || 'saas',
       criticality: vendor.criticality || 'medium',
       status: vendor.status || 'pending-review',
       data_access: vendor.data_access || [],
       soc2_status: vendor.soc2_status || 'none',
-      iso_status: vendor.iso_status || 'none',
-      gdpr_status: vendor.gdpr_status || 'none',
+      iso27001_status: vendor.iso27001_status || 'none',
+      gdpr_status: vendor.gdpr_status || 'pending',
+      risk_score: vendor.risk_score ?? 50,
       contract_url: vendor.contract_url || '',
       dpa_url: vendor.dpa_url || '',
       notes: vendor.notes || '',
-      risk_score: vendor.risk_score,
-      owner: vendor.owner || '',
-      last_assessment_date: vendor.last_assessment_date || '',
-      next_review_date: vendor.next_review_date || '',
     });
     setModalOpen(true);
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!form.name.trim()) {
+    if (!form.vendor_name.trim()) {
       toast.error('Vendor name is required');
       return;
     }
-    if (!user?.company_id) {
+    if (!companyId) {
       toast.error('No company associated with your account');
       return;
     }
 
     setSaving(true);
-
     try {
-      const computedScore =
-        form.risk_score !== null && form.risk_score !== ''
-          ? Number(form.risk_score)
-          : calculateRiskScore(form);
-
       const payload = {
-        company_id: user.company_id,
-        name: form.name.trim(),
-        domain: form.domain.trim() || null,
-        logo_url: form.logo_url.trim() || null,
+        company_id: companyId,
+        vendor_name: form.vendor_name.trim(),
+        vendor_domain: form.vendor_domain.trim() || null,
+        vendor_logo_url: form.vendor_logo_url.trim() || null,
         category: form.category,
         criticality: form.criticality,
         status: form.status,
         data_access: form.data_access,
         soc2_status: form.soc2_status,
-        iso_status: form.iso_status,
+        iso27001_status: form.iso27001_status,
         gdpr_status: form.gdpr_status,
+        risk_score: Number(form.risk_score),
         contract_url: form.contract_url.trim() || null,
         dpa_url: form.dpa_url.trim() || null,
         notes: form.notes.trim() || null,
-        risk_score: computedScore,
-        owner: form.owner.trim() || null,
-        last_assessment_date: form.last_assessment_date || null,
-        next_review_date: form.next_review_date || null,
+        updated_at: new Date().toISOString(),
       };
 
       if (editingVendor) {
-        const { error: updateError } = await supabase
+        const { error: updateErr } = await supabase
           .from('vendor_assessments')
           .update(payload)
           .eq('id', editingVendor.id);
-        if (updateError) throw updateError;
-        toast.success('Vendor updated successfully');
+        if (updateErr) throw updateErr;
+        toast.success('Vendor updated');
       } else {
-        const { error: insertError } = await supabase
+        const { error: insertErr } = await supabase
           .from('vendor_assessments')
           .insert(payload);
-        if (insertError) throw insertError;
-        toast.success('Vendor added successfully');
+        if (insertErr) throw insertErr;
+        toast.success('Vendor added');
       }
 
       setModalOpen(false);
@@ -313,27 +331,27 @@ export default function VendorRisk() {
       setForm(emptyForm);
       await fetchVendors();
     } catch (err) {
-      console.error('Error saving vendor:', err);
+      console.error('[VendorRisk] save error:', err);
       toast.error(err.message || 'Failed to save vendor');
     } finally {
       setSaving(false);
     }
-  }, [form, editingVendor, user?.company_id, fetchVendors]);
+  }, [form, editingVendor, companyId, fetchVendors]);
 
   const handleDecommission = useCallback(
     async (vendor) => {
-      if (!confirm(`Decommission "${vendor.name}"? This will mark the vendor as inactive.`)) return;
-
+      if (!confirm(`Decommission "${vendor.vendor_name}"? This marks the vendor as inactive.`))
+        return;
       try {
-        const { error: updateError } = await supabase
+        const { error: err } = await supabase
           .from('vendor_assessments')
-          .update({ status: 'decommissioned' })
+          .update({ status: 'decommissioned', updated_at: new Date().toISOString() })
           .eq('id', vendor.id);
-        if (updateError) throw updateError;
-        toast.success(`${vendor.name} decommissioned`);
+        if (err) throw err;
+        toast.success(`${vendor.vendor_name} decommissioned`);
         await fetchVendors();
       } catch (err) {
-        console.error('Error decommissioning vendor:', err);
+        console.error('[VendorRisk] decommission error:', err);
         toast.error('Failed to decommission vendor');
       }
     },
@@ -357,7 +375,7 @@ export default function VendorRisk() {
   }, []);
 
   // ---------------------------------------------------------------------------
-  // Loading State
+  // Loading
   // ---------------------------------------------------------------------------
 
   if (loading) {
@@ -381,7 +399,7 @@ export default function VendorRisk() {
   }
 
   // ---------------------------------------------------------------------------
-  // Error State
+  // Error
   // ---------------------------------------------------------------------------
 
   if (error) {
@@ -408,9 +426,7 @@ export default function VendorRisk() {
   return (
     <SentinelPageTransition className={cn('min-h-screen', st('bg-slate-50', 'bg-black'))}>
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
-        {/* ----------------------------------------------------------------- */}
-        {/* Header                                                            */}
-        {/* ----------------------------------------------------------------- */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3">
             <div
@@ -419,26 +435,23 @@ export default function VendorRisk() {
                 st('bg-emerald-100', 'bg-emerald-400/10')
               )}
             >
-              <Building2 className={cn('w-5 h-5', st('text-emerald-500', 'text-emerald-400'))} />
+              <ShieldAlert className={cn('w-5 h-5', st('text-emerald-500', 'text-emerald-400'))} />
             </div>
             <div>
               <h1 className={cn('text-xl font-semibold', st('text-slate-900', 'text-white'))}>
-                Vendor Risk
+                Vendor Risk Management
               </h1>
-              <p className={cn('text-xs', st('text-slate-400', 'text-zinc-500'))}>
-                {stats.total} vendor{stats.total !== 1 ? 's' : ''} tracked
+              <p className={cn('text-xs', st('text-slate-500', 'text-zinc-400'))}>
+                Assess and monitor third-party vendor security posture
               </p>
             </div>
           </div>
-
           <SentinelButton icon={<Plus className="w-4 h-4" />} onClick={openAddModal}>
             Add Vendor
           </SentinelButton>
         </div>
 
-        {/* ----------------------------------------------------------------- */}
-        {/* Stat Cards                                                        */}
-        {/* ----------------------------------------------------------------- */}
+        {/* Stat Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
             icon={Building2}
@@ -450,9 +463,9 @@ export default function VendorRisk() {
           />
           <StatCard
             icon={AlertTriangle}
-            label="Critical / High"
-            value={stats.criticalHigh}
-            subtitle="Require close monitoring"
+            label="Critical Risk"
+            value={stats.critical}
+            subtitle="Critical + High vendors"
             delay={0.1}
             accentColor="red"
           />
@@ -467,19 +480,16 @@ export default function VendorRisk() {
           <StatCard
             icon={Clock}
             label="Pending Review"
-            value={stats.pendingReview}
+            value={stats.pending}
             subtitle="Awaiting assessment"
             delay={0.3}
             accentColor="yellow"
           />
         </div>
 
-        {/* ----------------------------------------------------------------- */}
-        {/* Filters                                                           */}
-        {/* ----------------------------------------------------------------- */}
+        {/* Filters */}
         <SentinelCard padding="sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            {/* Search */}
             <div className="relative flex-1 w-full sm:w-auto">
               <Search
                 className={cn(
@@ -489,7 +499,7 @@ export default function VendorRisk() {
               />
               <input
                 type="text"
-                placeholder="Search vendors..."
+                placeholder="Search by name or domain..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={cn(
@@ -502,16 +512,6 @@ export default function VendorRisk() {
               />
             </div>
 
-            {/* Criticality Filter */}
-            <FilterDropdown
-              label="Criticality"
-              value={criticalityFilter}
-              options={[{ value: 'all', label: 'All' }, ...CRITICALITY_OPTIONS]}
-              onChange={setCriticalityFilter}
-              st={st}
-            />
-
-            {/* Status Filter */}
             <FilterDropdown
               label="Status"
               value={statusFilter}
@@ -519,45 +519,68 @@ export default function VendorRisk() {
               onChange={setStatusFilter}
               st={st}
             />
+            <FilterDropdown
+              label="Criticality"
+              value={criticalityFilter}
+              options={[{ value: 'all', label: 'All' }, ...CRITICALITY_OPTIONS]}
+              onChange={setCriticalityFilter}
+              st={st}
+            />
+            <FilterDropdown
+              label="Category"
+              value={categoryFilter}
+              options={[{ value: 'all', label: 'All' }, ...CATEGORY_OPTIONS]}
+              onChange={setCategoryFilter}
+              st={st}
+            />
           </div>
         </SentinelCard>
 
-        {/* ----------------------------------------------------------------- */}
-        {/* Vendor Grid                                                       */}
-        {/* ----------------------------------------------------------------- */}
+        {/* Vendor Grid */}
         {filtered.length === 0 ? (
-          <SentinelCard padding="lg" className="text-center">
-            <Building2 className={cn('w-12 h-12 mx-auto mb-3 opacity-40', st('text-slate-400', 'text-zinc-500'))} />
-            <p className={cn('text-sm', st('text-slate-500', 'text-zinc-400'))}>
-              {searchQuery || criticalityFilter !== 'all' || statusFilter !== 'all'
-                ? 'No vendors match your filters'
-                : 'No vendors tracked yet. Add your first vendor to get started.'}
-            </p>
-            {!searchQuery && criticalityFilter === 'all' && statusFilter === 'all' && (
-              <SentinelButton className="mt-4" icon={<Plus className="w-4 h-4" />} onClick={openAddModal}>
-                Add Vendor
-              </SentinelButton>
-            )}
+          <SentinelCard>
+            <SentinelEmptyState
+              icon={Building2}
+              title={
+                searchQuery || statusFilter !== 'all' || criticalityFilter !== 'all' || categoryFilter !== 'all'
+                  ? 'No vendors match your filters'
+                  : 'No vendors tracked yet'
+              }
+              message={
+                searchQuery || statusFilter !== 'all' || criticalityFilter !== 'all' || categoryFilter !== 'all'
+                  ? 'Try adjusting your search or filter criteria.'
+                  : 'Add your first vendor to begin tracking third-party risk.'
+              }
+              action={
+                !searchQuery && statusFilter === 'all' && criticalityFilter === 'all' && categoryFilter === 'all'
+                  ? { label: 'Add Vendor', onClick: openAddModal }
+                  : undefined
+              }
+            />
           </SentinelCard>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((vendor, index) => (
-              <VendorCard
-                key={vendor.id}
-                vendor={vendor}
-                index={index}
-                st={st}
-                onEdit={() => openEditModal(vendor)}
-                onDecommission={() => handleDecommission(vendor)}
-              />
-            ))}
+            <AnimatePresence mode="popLayout">
+              {filtered.map((vendor, index) => (
+                <VendorCard
+                  key={vendor.id}
+                  vendor={vendor}
+                  index={index}
+                  st={st}
+                  expanded={expandedId === vendor.id}
+                  onToggleExpand={() =>
+                    setExpandedId((prev) => (prev === vendor.id ? null : vendor.id))
+                  }
+                  onEdit={() => openEditModal(vendor)}
+                  onDecommission={() => handleDecommission(vendor)}
+                />
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
 
-      {/* ------------------------------------------------------------------- */}
-      {/* Add / Edit Modal                                                    */}
-      {/* ------------------------------------------------------------------- */}
+      {/* Add / Edit Modal */}
       <AnimatePresence>
         {modalOpen && (
           <VendorModal
@@ -621,11 +644,7 @@ function RiskScoreRing({ score, size = 48 }) {
   const radius = (size - 8) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
-
-  let strokeColor = '#4ade80'; // emerald
-  if (score >= 70) strokeColor = '#f87171'; // red
-  else if (score >= 50) strokeColor = '#fb923c'; // orange
-  else if (score >= 30) strokeColor = '#facc15'; // yellow
+  const color = riskScoreColor(score);
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
@@ -643,7 +662,7 @@ function RiskScoreRing({ score, size = 48 }) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={strokeColor}
+          stroke={color}
           strokeWidth={4}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -652,10 +671,7 @@ function RiskScoreRing({ score, size = 48 }) {
           transition={{ duration: 0.8, ease: 'easeOut' }}
         />
       </svg>
-      <span
-        className="absolute text-xs font-bold tabular-nums"
-        style={{ color: strokeColor }}
-      >
+      <span className="absolute text-xs font-bold tabular-nums" style={{ color }}>
         {score}
       </span>
     </div>
@@ -667,7 +683,7 @@ function RiskScoreRing({ score, size = 48 }) {
 // ---------------------------------------------------------------------------
 
 function CertIndicator({ label, status, st }) {
-  if (status === 'verified') {
+  if (status === 'verified' || status === 'compliant') {
     return (
       <div className="flex items-center gap-1.5">
         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
@@ -695,34 +711,36 @@ function CertIndicator({ label, status, st }) {
 // Vendor Card
 // ---------------------------------------------------------------------------
 
-function VendorCard({ vendor, index, st, onEdit, onDecommission }) {
-  const crit = CRITICALITY_COLORS[vendor.criticality] || CRITICALITY_COLORS.medium;
-  const statusVariant = STATUS_BADGE_MAP[vendor.status] || 'neutral';
-  const statusLabel =
-    STATUS_OPTIONS.find((s) => s.value === vendor.status)?.label || vendor.status;
-  const categoryLabel =
-    CATEGORY_OPTIONS.find((c) => c.value === vendor.category)?.label || vendor.category;
-  const riskScore = vendor.risk_score ?? calculateRiskScore(vendor);
-  const overdue = isOverdue(vendor.next_review_date);
+function VendorCard({ vendor, index, st, expanded, onToggleExpand, onEdit, onDecommission }) {
+  const critBadge = CRITICALITY_BADGE[vendor.criticality] || 'neutral';
+  const critAccent = CRITICALITY_ACCENT[vendor.criticality] || 'bg-zinc-500';
+  const statusVariant = STATUS_BADGE[vendor.status] || 'neutral';
+  const statusLabel = labelFor(STATUS_OPTIONS, vendor.status);
+  const categoryLabel = labelFor(CATEGORY_OPTIONS, vendor.category);
+  const riskScore = vendor.risk_score ?? 0;
+  const overdue = isOverdue(vendor.next_review_at);
+  const findings = Array.isArray(vendor.risk_findings) ? vendor.risk_findings : [];
 
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.35, delay: index * 0.04 }}
     >
       <SentinelCard padding="none" className="overflow-hidden h-full flex flex-col">
         {/* Top accent bar */}
-        <div className={cn('h-1 w-full', crit.ring === 'text-red-400' ? 'bg-red-500' : crit.ring === 'text-orange-400' ? 'bg-orange-500' : crit.ring === 'text-yellow-400' ? 'bg-yellow-500' : 'bg-emerald-500')} />
+        <div className={cn('h-1 w-full', critAccent)} />
 
         <div className="p-5 flex-1 flex flex-col space-y-3">
-          {/* Header: Name + Status */}
+          {/* Header: Logo + Name + Risk Ring */}
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                {vendor.logo_url ? (
+                {vendor.vendor_logo_url ? (
                   <img
-                    src={vendor.logo_url}
+                    src={vendor.vendor_logo_url}
                     alt=""
                     className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
                   />
@@ -738,11 +756,11 @@ function VendorCard({ vendor, index, st, onEdit, onDecommission }) {
                 )}
                 <div className="min-w-0">
                   <h3 className={cn('text-sm font-semibold truncate', st('text-slate-900', 'text-white'))}>
-                    {vendor.name}
+                    {vendor.vendor_name}
                   </h3>
-                  {vendor.domain && (
+                  {vendor.vendor_domain && (
                     <span className={cn('text-[10px] truncate block', st('text-slate-400', 'text-zinc-500'))}>
-                      {vendor.domain}
+                      {vendor.vendor_domain}
                     </span>
                   )}
                 </div>
@@ -753,11 +771,15 @@ function VendorCard({ vendor, index, st, onEdit, onDecommission }) {
 
           {/* Badges Row */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <SentinelBadge variant="neutral" size="sm">{categoryLabel}</SentinelBadge>
-            <SentinelBadge variant={crit.badge} size="sm">
+            <SentinelBadge variant="neutral" size="sm">
+              {categoryLabel}
+            </SentinelBadge>
+            <SentinelBadge variant={critBadge} size="sm">
               {vendor.criticality?.charAt(0).toUpperCase() + vendor.criticality?.slice(1)}
             </SentinelBadge>
-            <SentinelBadge variant={statusVariant} size="sm">{statusLabel}</SentinelBadge>
+            <SentinelBadge variant={statusVariant} size="sm">
+              {statusLabel}
+            </SentinelBadge>
           </div>
 
           {/* Data Access Tags */}
@@ -769,8 +791,14 @@ function VendorCard({ vendor, index, st, onEdit, onDecommission }) {
                   className={cn(
                     'px-1.5 py-0.5 rounded text-[9px] font-medium uppercase tracking-wider',
                     tag === 'pii' || tag === 'phi'
-                      ? st('bg-red-50 text-red-600 border border-red-200', 'bg-red-500/10 text-red-400 border border-red-500/20')
-                      : st('bg-slate-100 text-slate-600 border border-slate-200', 'bg-zinc-800 text-zinc-400 border border-zinc-700')
+                      ? st(
+                          'bg-red-50 text-red-600 border border-red-200',
+                          'bg-red-500/10 text-red-400 border border-red-500/20'
+                        )
+                      : st(
+                          'bg-slate-100 text-slate-600 border border-slate-200',
+                          'bg-zinc-800 text-zinc-400 border border-zinc-700'
+                        )
                   )}
                 >
                   {tag}
@@ -782,19 +810,146 @@ function VendorCard({ vendor, index, st, onEdit, onDecommission }) {
           {/* Certification Indicators */}
           <div className="flex items-center gap-3">
             <CertIndicator label="SOC 2" status={vendor.soc2_status} st={st} />
-            <CertIndicator label="ISO" status={vendor.iso_status} st={st} />
+            <CertIndicator label="ISO 27001" status={vendor.iso27001_status} st={st} />
             <CertIndicator label="GDPR" status={vendor.gdpr_status} st={st} />
           </div>
 
           {/* Dates */}
           <div className="flex-1" />
-          <div className={cn('flex items-center justify-between text-[10px]', st('text-slate-400', 'text-zinc-500'))}>
-            <span>Assessed: {formatDate(vendor.last_assessment_date)}</span>
+          <div
+            className={cn(
+              'flex items-center justify-between text-[10px]',
+              st('text-slate-400', 'text-zinc-500')
+            )}
+          >
+            <span>Assessed: {formatDate(vendor.last_assessment_at)}</span>
             <span className={overdue ? 'text-red-400 font-medium' : ''}>
               {overdue ? 'Overdue: ' : 'Next: '}
-              {formatDate(vendor.next_review_date)}
+              {formatDate(vendor.next_review_at)}
             </span>
           </div>
+
+          {/* Expanded Detail */}
+          <AnimatePresence>
+            {expanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <div
+                  className={cn(
+                    'pt-3 mt-1 border-t space-y-3',
+                    st('border-slate-100', 'border-zinc-800/60')
+                  )}
+                >
+                  {/* Risk Findings */}
+                  {findings.length > 0 && (
+                    <div>
+                      <span
+                        className={cn(
+                          'text-[10px] font-medium uppercase tracking-wider',
+                          st('text-slate-500', 'text-zinc-400')
+                        )}
+                      >
+                        Risk Findings ({findings.length})
+                      </span>
+                      <ul className="mt-1.5 space-y-1">
+                        {findings.map((f, i) => (
+                          <li
+                            key={i}
+                            className={cn(
+                              'text-xs px-2.5 py-1.5 rounded-lg',
+                              st('bg-slate-50 text-slate-700', 'bg-zinc-800/50 text-zinc-300')
+                            )}
+                          >
+                            {typeof f === 'string' ? f : f.description || f.title || JSON.stringify(f)}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  {vendor.notes && (
+                    <div>
+                      <span
+                        className={cn(
+                          'text-[10px] font-medium uppercase tracking-wider',
+                          st('text-slate-500', 'text-zinc-400')
+                        )}
+                      >
+                        Notes
+                      </span>
+                      <p
+                        className={cn(
+                          'text-xs mt-1 leading-relaxed',
+                          st('text-slate-600', 'text-zinc-400')
+                        )}
+                      >
+                        {vendor.notes}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Document Links */}
+                  {(vendor.contract_url || vendor.dpa_url) && (
+                    <div className="flex flex-wrap gap-2">
+                      {vendor.contract_url && (
+                        <a
+                          href={vendor.contract_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={cn(
+                            'inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors',
+                            st(
+                              'text-emerald-600 border-emerald-200 hover:bg-emerald-50',
+                              'text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10'
+                            )
+                          )}
+                        >
+                          <FileText className="w-3 h-3" />
+                          Contract
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                      {vendor.dpa_url && (
+                        <a
+                          href={vendor.dpa_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={cn(
+                            'inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors',
+                            st(
+                              'text-blue-600 border-blue-200 hover:bg-blue-50',
+                              'text-blue-400 border-blue-500/30 hover:bg-blue-500/10'
+                            )
+                          )}
+                        >
+                          <Lock className="w-3 h-3" />
+                          DPA
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Assessment History */}
+                  <div
+                    className={cn(
+                      'flex items-center justify-between text-[10px]',
+                      st('text-slate-400', 'text-zinc-500')
+                    )}
+                  >
+                    <span>Created: {formatDate(vendor.created_at)}</span>
+                    <span>Updated: {formatDate(vendor.updated_at)}</span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Actions */}
           <div
@@ -803,14 +958,29 @@ function VendorCard({ vendor, index, st, onEdit, onDecommission }) {
               st('border-slate-100', 'border-zinc-800/60')
             )}
           >
-            <SentinelButton size="sm" variant="ghost" icon={<Eye className="w-3.5 h-3.5" />}>
-              Review
+            <SentinelButton
+              size="sm"
+              variant="ghost"
+              icon={expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              onClick={onToggleExpand}
+            >
+              {expanded ? 'Collapse' : 'Details'}
             </SentinelButton>
-            <SentinelButton size="sm" variant="ghost" icon={<Edit3 className="w-3.5 h-3.5" />} onClick={onEdit}>
+            <SentinelButton
+              size="sm"
+              variant="ghost"
+              icon={<Edit3 className="w-3.5 h-3.5" />}
+              onClick={onEdit}
+            >
               Edit
             </SentinelButton>
             {vendor.status !== 'decommissioned' && (
-              <SentinelButton size="sm" variant="danger" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={onDecommission}>
+              <SentinelButton
+                size="sm"
+                variant="danger"
+                icon={<Trash2 className="w-3.5 h-3.5" />}
+                onClick={onDecommission}
+              >
                 Decommission
               </SentinelButton>
             )}
@@ -826,9 +996,6 @@ function VendorCard({ vendor, index, st, onEdit, onDecommission }) {
 // ---------------------------------------------------------------------------
 
 function VendorModal({ form, setForm, editing, saving, onSave, onClose, toggleDataAccess, st }) {
-  const autoScore = calculateRiskScore(form);
-  const useAutoScore = form.risk_score === null || form.risk_score === '';
-
   return (
     <>
       {/* Backdrop */}
@@ -856,7 +1023,12 @@ function VendorModal({ form, setForm, editing, saving, onSave, onClose, toggleDa
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className={cn('flex items-center justify-between p-6 border-b', st('border-slate-200', 'border-zinc-800/60'))}>
+          <div
+            className={cn(
+              'flex items-center justify-between p-6 border-b',
+              st('border-slate-200', 'border-zinc-800/60')
+            )}
+          >
             <h2 className={cn('text-lg font-semibold', st('text-slate-900', 'text-white'))}>
               {editing ? 'Edit Vendor' : 'Add Vendor'}
             </h2>
@@ -873,31 +1045,23 @@ function VendorModal({ form, setForm, editing, saving, onSave, onClose, toggleDa
 
           {/* Form */}
           <div className="p-6 space-y-5">
-            {/* Row 1: Name + Domain */}
+            {/* Name + Domain */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <SentinelInput
                 label="Vendor Name"
                 placeholder="e.g. Acme Corp"
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                value={form.vendor_name}
+                onChange={(e) => setForm((f) => ({ ...f, vendor_name: e.target.value }))}
               />
               <SentinelInput
                 label="Domain"
                 placeholder="e.g. acme.com"
-                value={form.domain}
-                onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))}
+                value={form.vendor_domain}
+                onChange={(e) => setForm((f) => ({ ...f, vendor_domain: e.target.value }))}
               />
             </div>
 
-            {/* Row 2: Logo URL */}
-            <SentinelInput
-              label="Logo URL"
-              placeholder="https://..."
-              value={form.logo_url}
-              onChange={(e) => setForm((f) => ({ ...f, logo_url: e.target.value }))}
-            />
-
-            {/* Row 3: Category + Criticality */}
+            {/* Category + Criticality */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <SelectField
                 label="Category"
@@ -915,18 +1079,14 @@ function VendorModal({ form, setForm, editing, saving, onSave, onClose, toggleDa
               />
             </div>
 
-            {/* Row 4: Status */}
-            <SelectField
-              label="Status"
-              value={form.status}
-              options={STATUS_OPTIONS}
-              onChange={(v) => setForm((f) => ({ ...f, status: v }))}
-              st={st}
-            />
-
             {/* Data Access Multi-Select */}
             <div>
-              <label className={cn('block text-xs font-medium uppercase tracking-wider mb-2', st('text-slate-500', 'text-zinc-400'))}>
+              <label
+                className={cn(
+                  'block text-xs font-medium uppercase tracking-wider mb-2',
+                  st('text-slate-500', 'text-zinc-400')
+                )}
+              >
                 Data Access
               </label>
               <div className="flex flex-wrap gap-2">
@@ -957,7 +1117,7 @@ function VendorModal({ form, setForm, editing, saving, onSave, onClose, toggleDa
               </div>
             </div>
 
-            {/* Certification Statuses */}
+            {/* Compliance Statuses */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <SelectField
                 label="SOC 2 Status"
@@ -968,21 +1128,64 @@ function VendorModal({ form, setForm, editing, saving, onSave, onClose, toggleDa
               />
               <SelectField
                 label="ISO 27001 Status"
-                value={form.iso_status}
+                value={form.iso27001_status}
                 options={CERT_STATUS_OPTIONS}
-                onChange={(v) => setForm((f) => ({ ...f, iso_status: v }))}
+                onChange={(v) => setForm((f) => ({ ...f, iso27001_status: v }))}
                 st={st}
               />
               <SelectField
                 label="GDPR Status"
                 value={form.gdpr_status}
-                options={CERT_STATUS_OPTIONS}
+                options={GDPR_STATUS_OPTIONS}
                 onChange={(v) => setForm((f) => ({ ...f, gdpr_status: v }))}
                 st={st}
               />
             </div>
 
-            {/* URLs */}
+            {/* Risk Score Slider */}
+            <div>
+              <label
+                className={cn(
+                  'block text-xs font-medium uppercase tracking-wider mb-1.5',
+                  st('text-slate-500', 'text-zinc-400')
+                )}
+              >
+                Risk Score
+              </label>
+              <div className="flex items-center gap-4">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={form.risk_score}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, risk_score: Number(e.target.value) }))
+                  }
+                  className="flex-1 accent-emerald-400"
+                />
+                <div
+                  className="w-12 h-8 rounded-lg flex items-center justify-center text-sm font-bold tabular-nums"
+                  style={{
+                    color: riskScoreColor(form.risk_score),
+                    backgroundColor: `${riskScoreColor(form.risk_score)}15`,
+                  }}
+                >
+                  {form.risk_score}
+                </div>
+              </div>
+              <div
+                className={cn(
+                  'flex justify-between text-[10px] mt-1',
+                  st('text-slate-400', 'text-zinc-500')
+                )}
+              >
+                <span>Low risk</span>
+                <span>High risk</span>
+              </div>
+            </div>
+
+            {/* Contract / DPA URLs */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <SentinelInput
                 label="Contract URL"
@@ -998,90 +1201,14 @@ function VendorModal({ form, setForm, editing, saving, onSave, onClose, toggleDa
               />
             </div>
 
-            {/* Owner + Risk Score */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <SentinelInput
-                label="Owner"
-                placeholder="e.g. security@company.com"
-                value={form.owner}
-                onChange={(e) => setForm((f) => ({ ...f, owner: e.target.value }))}
-              />
-              <div>
-                <label className={cn('block text-xs font-medium uppercase tracking-wider mb-1.5', st('text-slate-500', 'text-zinc-400'))}>
-                  Risk Score
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    placeholder={`Auto: ${autoScore}`}
-                    value={form.risk_score ?? ''}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        risk_score: e.target.value === '' ? null : Number(e.target.value),
-                      }))
-                    }
-                    className={cn(
-                      'w-full h-11 border rounded-xl px-4 text-sm transition-all duration-200',
-                      st('bg-white text-slate-900 border-slate-300 placeholder:text-slate-400', 'bg-zinc-900/40 text-white border-zinc-800/60 placeholder:text-zinc-500'),
-                      st('focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20', 'focus:outline-none focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20')
-                    )}
-                  />
-                  {!useAutoScore && (
-                    <button
-                      type="button"
-                      onClick={() => setForm((f) => ({ ...f, risk_score: null }))}
-                      className={cn('text-xs whitespace-nowrap', st('text-emerald-600', 'text-emerald-400'))}
-                    >
-                      Use auto
-                    </button>
-                  )}
-                </div>
-                <p className={cn('text-[10px] mt-1', st('text-slate-400', 'text-zinc-500'))}>
-                  Auto-calculated: {autoScore} (leave empty to use)
-                </p>
-              </div>
-            </div>
-
-            {/* Dates */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className={cn('block text-xs font-medium uppercase tracking-wider mb-1.5', st('text-slate-500', 'text-zinc-400'))}>
-                  Last Assessment Date
-                </label>
-                <input
-                  type="date"
-                  value={form.last_assessment_date}
-                  onChange={(e) => setForm((f) => ({ ...f, last_assessment_date: e.target.value }))}
-                  className={cn(
-                    'w-full h-11 border rounded-xl px-4 text-sm transition-all duration-200',
-                    st('bg-white text-slate-900 border-slate-300', 'bg-zinc-900/40 text-white border-zinc-800/60'),
-                    st('focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20', 'focus:outline-none focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20')
-                  )}
-                />
-              </div>
-              <div>
-                <label className={cn('block text-xs font-medium uppercase tracking-wider mb-1.5', st('text-slate-500', 'text-zinc-400'))}>
-                  Next Review Date
-                </label>
-                <input
-                  type="date"
-                  value={form.next_review_date}
-                  onChange={(e) => setForm((f) => ({ ...f, next_review_date: e.target.value }))}
-                  className={cn(
-                    'w-full h-11 border rounded-xl px-4 text-sm transition-all duration-200',
-                    st('bg-white text-slate-900 border-slate-300', 'bg-zinc-900/40 text-white border-zinc-800/60'),
-                    st('focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20', 'focus:outline-none focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20')
-                  )}
-                />
-              </div>
-            </div>
-
             {/* Notes */}
             <div>
-              <label className={cn('block text-xs font-medium uppercase tracking-wider mb-1.5', st('text-slate-500', 'text-zinc-400'))}>
+              <label
+                className={cn(
+                  'block text-xs font-medium uppercase tracking-wider mb-1.5',
+                  st('text-slate-500', 'text-zinc-400')
+                )}
+              >
                 Notes
               </label>
               <textarea
@@ -1091,15 +1218,26 @@ function VendorModal({ form, setForm, editing, saving, onSave, onClose, toggleDa
                 onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                 className={cn(
                   'w-full border rounded-xl px-4 py-3 text-sm resize-none transition-all duration-200',
-                  st('bg-white text-slate-900 border-slate-300 placeholder:text-slate-400', 'bg-zinc-900/40 text-white border-zinc-800/60 placeholder:text-zinc-500'),
-                  st('focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20', 'focus:outline-none focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20')
+                  st(
+                    'bg-white text-slate-900 border-slate-300 placeholder:text-slate-400',
+                    'bg-zinc-900/40 text-white border-zinc-800/60 placeholder:text-zinc-500'
+                  ),
+                  st(
+                    'focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20',
+                    'focus:outline-none focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20'
+                  )
                 )}
               />
             </div>
           </div>
 
           {/* Footer */}
-          <div className={cn('flex items-center justify-end gap-3 p-6 border-t', st('border-slate-200', 'border-zinc-800/60'))}>
+          <div
+            className={cn(
+              'flex items-center justify-end gap-3 p-6 border-t',
+              st('border-slate-200', 'border-zinc-800/60')
+            )}
+          >
             <SentinelButton variant="secondary" onClick={onClose}>
               Cancel
             </SentinelButton>
@@ -1114,13 +1252,18 @@ function VendorModal({ form, setForm, editing, saving, onSave, onClose, toggleDa
 }
 
 // ---------------------------------------------------------------------------
-// Select Field (Styled)
+// Select Field
 // ---------------------------------------------------------------------------
 
 function SelectField({ label, value, options, onChange, st }) {
   return (
     <div>
-      <label className={cn('block text-xs font-medium uppercase tracking-wider mb-1.5', st('text-slate-500', 'text-zinc-400'))}>
+      <label
+        className={cn(
+          'block text-xs font-medium uppercase tracking-wider mb-1.5',
+          st('text-slate-500', 'text-zinc-400')
+        )}
+      >
         {label}
       </label>
       <div className="relative">
@@ -1130,7 +1273,10 @@ function SelectField({ label, value, options, onChange, st }) {
           className={cn(
             'w-full h-11 border rounded-xl px-4 text-sm appearance-none cursor-pointer transition-all duration-200',
             st('bg-white text-slate-900 border-slate-300', 'bg-zinc-900/40 text-white border-zinc-800/60'),
-            st('focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20', 'focus:outline-none focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20')
+            st(
+              'focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20',
+              'focus:outline-none focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20'
+            )
           )}
         >
           {options.map((opt) => (
