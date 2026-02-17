@@ -5,7 +5,7 @@
  * Provides navigation helpers and view state for week/day/month/agenda views.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 
@@ -98,14 +98,20 @@ export function useCalendar(userId, companyId) {
     [currentDate.toISOString(), view]
   );
 
+  // Use ref to avoid fetchEvents in useEffect deps (prevents infinite loop)
+  const userIdRef = useRef(userId);
+  const companyIdRef = useRef(companyId);
+  const dateRangeRef = useRef(dateRange);
+  userIdRef.current = userId;
+  companyIdRef.current = companyId;
+  dateRangeRef.current = dateRange;
+
   // Fetch events for a given date range
   const fetchEvents = useCallback(async (startDate, endDate) => {
-    if (!userId) return;
+    if (!userIdRef.current) return;
 
     setLoading(true);
     try {
-      // Query events that overlap with the range:
-      // event starts before range ends AND event ends after range starts
       const { data, error } = await supabase
         .from('calendar_events')
         .select(`
@@ -113,14 +119,13 @@ export function useCalendar(userId, companyId) {
           calendar_attendees (*),
           calendar_reminders (*)
         `)
-        .eq('company_id', companyId)
+        .eq('company_id', companyIdRef.current)
         .lte('start_time', endDate.toISOString())
         .gte('end_time', startDate.toISOString())
         .order('start_time', { ascending: true });
 
       if (error) throw error;
 
-      // Normalize: add .start/.end aliases for components that expect them
       const normalized = (data || []).map((ev) => ({
         ...ev,
         start: ev.start_time,
@@ -131,21 +136,20 @@ export function useCalendar(userId, companyId) {
       setEvents(normalized);
     } catch (error) {
       console.error('[useCalendar] Failed to fetch events:', error);
-      toast.error('Failed to load calendar events');
     } finally {
       setLoading(false);
     }
-  }, [userId, companyId]);
+  }, []); // stable — uses refs internally
 
-  // Refetch when date range changes
+  // Refetch when date range changes (no fetchEvents in deps)
   useEffect(() => {
     fetchEvents(dateRange.start, dateRange.end);
-  }, [dateRange.start.getTime(), dateRange.end.getTime(), fetchEvents]);
+  }, [dateRange.start.getTime(), dateRange.end.getTime()]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Refetch helper
   const refetch = useCallback(() => {
-    fetchEvents(dateRange.start, dateRange.end);
-  }, [fetchEvents, dateRange]);
+    fetchEvents(dateRangeRef.current.start, dateRangeRef.current.end);
+  }, [fetchEvents]);
 
   // Create event with attendees, reminders, and optional recurrence
   const createEvent = useCallback(async ({
@@ -170,20 +174,19 @@ export function useCalendar(userId, companyId) {
     try {
       const eventData = {
         company_id: companyId,
-        created_by: userId,
+        creator_id: userId,
         title,
         description: description || null,
         event_type,
         start_time: new Date(start_time).toISOString(),
         end_time: new Date(end_time).toISOString(),
-        all_day,
+        is_all_day: all_day,
         location: location || null,
         color: color || EVENT_COLORS[event_type] || EVENT_COLORS.meeting,
         status: 'confirmed',
-        metadata: {
-          ...metadata,
-          ...(recurrence_rule ? { recurrence_rule, recurrence_end, recurrence_parent_id } : {}),
-        },
+        ...(video_call ? { video_call_id: video_call } : {}),
+        ...(recurrence_rule ? { recurrence_rule, recurrence_end, recurrence_parent_id } : {}),
+        metadata: metadata || {},
       };
 
       const { data: newEvent, error } = await supabase

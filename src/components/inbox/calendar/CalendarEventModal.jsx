@@ -278,7 +278,7 @@ export default function CalendarEventModal({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex justify-end"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -293,16 +293,16 @@ export default function CalendarEventModal({
             exit={{ opacity: 0 }}
           />
 
-          {/* Modal */}
+          {/* Sheet - slides from right */}
           <motion.div
-            className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-zinc-900/95 backdrop-blur-xl border border-zinc-700/50 rounded-2xl shadow-2xl"
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="relative w-full max-w-md h-full overflow-y-auto bg-zinc-900/95 backdrop-blur-xl border-l border-zinc-700/50 shadow-2xl"
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
           >
             {/* Header */}
-            <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-zinc-700/50 bg-zinc-900/95 backdrop-blur-xl rounded-t-2xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-zinc-700/50 bg-zinc-900/95 backdrop-blur-xl">
               <h2 className="text-lg font-semibold text-white">
                 {isEditing ? 'Edit Event' : 'New Event'}
               </h2>
