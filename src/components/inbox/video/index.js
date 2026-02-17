@@ -15,3 +15,4 @@ export { default as VideoGrid } from './VideoGrid';
 export { default as ParticipantTile } from './ParticipantTile';
 export { default as CallHeader } from './CallHeader';
 export { default as ReactionsOverlay } from './ReactionsOverlay';
+export { default as CallEndScreen } from './CallEndScreen';

@@ -6,7 +6,7 @@
  * AnimatePresence for smooth mount/unmount transitions.
  */
 
-import React, { memo, useState, useCallback, useMemo } from 'react';
+import React, { memo, useState, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mic,
@@ -239,6 +239,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
   const [showReactions, setShowReactions] = useState(true);
   const [showChat, setShowChat] = useState(false);
   const [showSync, setShowSync] = useState(true);
+  const syncAssistantRef = useRef(null);
 
   const callId = call?.id;
   const userId = user?.id;
@@ -264,6 +265,17 @@ const VideoCallRoom = memo(function VideoCallRoom({
   const toggleSync = useCallback(() => {
     setShowSync((prev) => !prev);
   }, []);
+
+  // Capture transcript and trigger end/leave with it
+  const handleLeave = useCallback(() => {
+    const transcript = syncAssistantRef.current?.getFullTranscript?.() || '';
+    if (onLeave) onLeave(transcript);
+  }, [onLeave]);
+
+  const handleEndCall = useCallback(() => {
+    const transcript = syncAssistantRef.current?.getFullTranscript?.() || '';
+    if (onEndCall) onEndCall(transcript);
+  }, [onEndCall]);
 
   return (
     <AnimatePresence>
@@ -293,6 +305,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
           <AnimatePresence>
             {showSync && (
               <SyncCallAssistant
+                ref={syncAssistantRef}
                 localStream={localStream}
                 callId={callId}
                 isVisible={showSync}
@@ -370,8 +383,8 @@ const VideoCallRoom = memo(function VideoCallRoom({
           onToggleReactions={toggleReactions}
           onToggleChat={toggleChat}
           onToggleSync={toggleSync}
-          onEndCall={onEndCall}
-          onLeave={onLeave}
+          onEndCall={handleEndCall}
+          onLeave={handleLeave}
           isHost={isHost}
         />
       </motion.div>
