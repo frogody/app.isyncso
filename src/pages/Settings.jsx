@@ -20,7 +20,7 @@ import {
   CheckCircle, Globe, Linkedin, Clock, Target, Shield, Loader2,
   ChevronRight, Award, Zap, LogOut, MapPin, Calendar, Cpu,
   Euro, Phone, Twitter, Facebook, TrendingUp, BarChart3, Plug,
-  UserCog, ExternalLink, ShoppingBag, Store, Radio
+  UserCog, ExternalLink, ShoppingBag, Store, Radio, CreditCard
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,6 +41,7 @@ import { SettingsPageTransition } from '@/components/settings/ui';
 import BolcomSettings from "@/components/settings/BolcomSettings";
 import ShopifySettings from "@/components/settings/ShopifySettings";
 import EmailPoolSettings from "@/pages/EmailPoolSettings";
+import BillingSettings from "@/pages/BillingSettings";
 
 export default function Settings() {
   const { user, company, settings: userSettings, updateUser, updateCompany, updateSettings, isLoading: userLoading } = useUser();
@@ -633,6 +634,7 @@ export default function Settings() {
     { id: 'channels', label: 'Channels', icon: Radio, color: 'cyan' },
     { id: 'email-pool', label: 'Email Pool', icon: Mail, color: 'cyan' },
     { id: 'workspace', label: 'Workspace', icon: LayoutGrid, color: 'cyan' },
+    { id: 'billing', label: 'Billing', icon: CreditCard, color: 'cyan' },
     { id: 'privacy', label: 'Privacy', icon: Lock, color: 'red' },
     ...(isSuperAdmin ? [{ id: 'admin', label: 'Admin', icon: Brain, color: 'purple' }] : [])
   ];
@@ -1531,6 +1533,18 @@ export default function Settings() {
                   exit={{ opacity: 0, y: -20 }}
                 >
                   <AppsManagerModal embedded />
+                </motion.div>
+              )}
+
+              {/* BILLING TAB */}
+              {activeTab === 'billing' && (
+                <motion.div
+                  key="billing"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                >
+                  <BillingSettings embedded />
                 </motion.div>
               )}
 

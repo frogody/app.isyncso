@@ -210,3 +210,9 @@ verify_jwt = false
 
 [functions.generate-listing-copy]
 verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.create-billing-portal]
+verify_jwt = false
