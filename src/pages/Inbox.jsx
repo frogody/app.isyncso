@@ -1650,9 +1650,10 @@ export default function InboxPage() {
             isMuted={videoCall.isMuted}
             isCameraOff={videoCall.isCameraOff}
             isScreenSharing={videoCall.isScreenSharing}
+            isLocalSpeaking={videoCall.isLocalSpeaking}
             onToggleMute={() => videoCall.toggleMute()}
             onToggleCamera={() => videoCall.toggleCamera()}
-            onToggleScreen={() => videoCall.toggleScreenShare()}
+            onToggleScreenShare={() => videoCall.toggleScreenShare()}
             onLeave={(transcript) => {
               const callData = videoCall.currentCall;
               const parts = videoCall.participants;
