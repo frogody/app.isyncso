@@ -15,6 +15,7 @@ import {
 import ChannelCategoryManager, { CategoryDot, filterChannelsByCategory } from './ChannelCategoryManager';
 import GuestChannelBadge from './guests/GuestChannelBadge';
 import PriorityToggle from './priority/PriorityToggle';
+import { SentimentBadge } from './sentiment';
 
 // Status options
 const STATUS_OPTIONS = [
@@ -63,7 +64,9 @@ const ChannelItem = memo(function ChannelItem({
   onArchiveChannel,
   onDeleteChannel,
   onOpenChannelSettings,
-  user
+  user,
+  sentimentScore,
+  sentimentTrend,
 }) {
   const Icon = isDM ? MessageSquare : channel.type === 'support' ? Headset : channel.type === 'private' ? Lock : Hash;
 
@@ -113,6 +116,11 @@ const ChannelItem = memo(function ChannelItem({
 
       {/* Indicators */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
+        {/* Sentiment */}
+        {sentimentScore != null && (
+          <SentimentBadge score={sentimentScore} trend={sentimentTrend || 'stable'} compact />
+        )}
+
         {/* Guest badge */}
         {!isDM && channel.is_guest_channel && (
           <GuestChannelBadge
