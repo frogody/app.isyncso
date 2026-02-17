@@ -1326,12 +1326,11 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         {/* Credits / CTA */}
         {me ? (
         <Link
-          to="#"
-          className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 cursor-not-allowed opacity-70`}
-          title="Top up coming soon"
-          onClick={(e) => e.preventDefault()}
+          to="/credits"
+          className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group text-gray-400 hover:text-cyan-400 hover:bg-white/5 active:bg-white/10`}
+          title={`${me.credits || 0} credits`}
         >
-          <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 group-hover:border-cyan-400/60 flex items-center justify-center flex-shrink-0 transition-colors">
              <span className="text-[10px] font-bold text-cyan-400">{me.credits || 0}</span>
           </div>
           {isMobile && <span className="text-sm font-medium">Credits</span>}

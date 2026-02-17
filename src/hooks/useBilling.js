@@ -13,6 +13,7 @@ export function useBilling() {
   const [creditPacks, setCreditPacks] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [creditBalance, setCreditBalance] = useState(0);
+  const [creditTransactions, setCreditTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchAll = useCallback(async () => {
@@ -21,7 +22,7 @@ export function useBilling() {
 
     try {
       // Fetch in parallel
-      const [plansRes, packsRes, subRes, invoicesRes, userRes] = await Promise.all([
+      const [plansRes, packsRes, subRes, invoicesRes, userRes, transactionsRes] = await Promise.all([
         supabase
           .from('subscription_plans')
           .select('*')
@@ -48,6 +49,12 @@ export function useBilling() {
           .select('credits')
           .eq('id', user.id)
           .single(),
+        supabase
+          .from('credit_transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(20),
       ]);
 
       if (plansRes.data) setPlans(plansRes.data);
@@ -55,6 +62,7 @@ export function useBilling() {
       if (subRes.data) setSubscription(subRes.data);
       if (invoicesRes.data) setInvoices(invoicesRes.data);
       if (userRes.data) setCreditBalance(userRes.data.credits || 0);
+      if (transactionsRes.data) setCreditTransactions(transactionsRes.data);
     } catch (err) {
       console.error('[useBilling] fetch error:', err);
     } finally {
@@ -128,6 +136,7 @@ export function useBilling() {
     creditPacks,
     invoices,
     creditBalance,
+    creditTransactions,
     isLoading,
     createCheckout,
     openPortal,

@@ -43,6 +43,8 @@ import Certificates from "./Certificates";
 
 import CompanyDashboard from "./CompanyDashboard";
 
+import Credits from "./Credits";
+
 import CompanyInvite from "./CompanyInvite";
 
 import CompanyProfile from "./CompanyProfile";
@@ -911,7 +913,9 @@ function PagesContent() {
                 <Route path="/CRMContactProfile" element={<CRMContactProfile />} />
 
                 <Route path="/Certificates" element={<Certificates />} />
-                
+
+                <Route path="/Credits" element={<Credits />} />
+
                 <Route path="/CompanyDashboard" element={<CompanyDashboard />} />
                 
                 <Route path="/CompanyInvite" element={<CompanyInvite />} />
