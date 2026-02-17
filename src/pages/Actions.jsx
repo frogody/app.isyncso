@@ -294,6 +294,7 @@ export default function Actions() {
               <p className="text-zinc-500 text-xs">Actions taken by SYNC on your behalf</p>
             </div>
           </div>
+          <SyncViewSelector />
         </div>
 
         {/* Action buttons */}
