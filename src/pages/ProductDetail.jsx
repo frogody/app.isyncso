@@ -8,7 +8,8 @@ import {
   AlertTriangle, Image as ImageIcon, Video, HelpCircle, Share2, Copy,
   Heart, ShoppingCart, Info, Layers, Ruler, Weight, MapPin, Save,
   LayoutGrid, Settings, History, FolderOpen, TrendingUp, Boxes,
-  ChevronDown, MoreHorizontal, Eye, Percent, Calculator, Briefcase, ClipboardList, Plus
+  ChevronDown, MoreHorizontal, Eye, Percent, Calculator, Briefcase, ClipboardList, Plus,
+  Megaphone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +55,7 @@ import {
 } from '@/lib/db/queries';
 import { supabase } from '@/api/supabaseClient';
 import { calculateDiffs, logProductActivity } from '@/lib/audit';
+import { ProductListingBuilder } from '@/components/products/listing';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -93,6 +95,7 @@ const NAV_ITEMS = [
   { id: 'deliverables', label: 'Deliverables', icon: ClipboardList, serviceOnly: true },
   { id: 'documents', label: 'Documents', icon: FolderOpen },
   { id: 'activity', label: 'Activity', icon: History },
+  { id: 'listing', label: 'Product Listing', icon: Megaphone, physicalOnly: true },
 ];
 
 // ============= HELPERS =============
@@ -2286,6 +2289,14 @@ export default function ProductDetail() {
               <ActivitySectionWrapper
                 product={product}
                 details={details}
+              />
+            )}
+
+            {activeSection === 'listing' && isPhysical && (
+              <ProductListingBuilder
+                product={product}
+                details={details}
+                onDetailsUpdate={handleDetailsUpdate}
               />
             )}
         </div>
