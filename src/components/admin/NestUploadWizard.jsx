@@ -523,8 +523,8 @@ export function NestUploadWizard({
                 <p className="text-2xl font-bold text-white">{validation.total}</p>
                 <p className="text-sm text-zinc-500">Total Rows</p>
               </div>
-              <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
-                <p className="text-2xl font-bold text-green-400">{validation.validRows.length}</p>
+              <div className="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-center">
+                <p className="text-2xl font-bold text-cyan-400">{validation.validRows.length}</p>
                 <p className="text-sm text-zinc-500">Valid</p>
               </div>
               <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
@@ -629,7 +629,7 @@ export function NestUploadWizard({
                   {importResults.error ? (
                     <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
                   ) : (
-                    <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
+                    <CheckCircle className="w-12 h-12 text-cyan-400 mx-auto mb-4" />
                   )}
                   <h3 className="text-lg font-medium text-white">
                     {importResults.error ? 'Import Failed' : 'Import Complete'}
@@ -640,16 +640,16 @@ export function NestUploadWizard({
 
             {importResults && (
               <div className="grid grid-cols-4 gap-3">
-                <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
-                  <p className="text-2xl font-bold text-green-400">{importResults.created}</p>
+                <div className="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-center">
+                  <p className="text-2xl font-bold text-cyan-400">{importResults.created}</p>
                   <p className="text-xs text-zinc-500">New</p>
                 </div>
                 <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
                   <p className="text-2xl font-bold text-blue-400">{importResults.updated || 0}</p>
                   <p className="text-xs text-zinc-500">Updated</p>
                 </div>
-                <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20 text-center">
-                  <p className="text-2xl font-bold text-purple-400">{importResults.linked || 0}</p>
+                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
+                  <p className="text-2xl font-bold text-blue-400">{importResults.linked || 0}</p>
                   <p className="text-xs text-zinc-500">Linked</p>
                 </div>
                 <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
@@ -667,7 +667,7 @@ export function NestUploadWizard({
                     <span className="block">• <span className="text-blue-400">{importResults.updated}</span> existing candidates in this nest were updated with new data</span>
                   )}
                   {importResults.linked > 0 && (
-                    <span className="block">• <span className="text-purple-400">{importResults.linked}</span> existing candidates from other nests were linked to this nest</span>
+                    <span className="block">• <span className="text-blue-400">{importResults.linked}</span> existing candidates from other nests were linked to this nest</span>
                   )}
                   {importResults.itemCount > 0 && (
                     <span className="block mt-2 text-zinc-500">Total items in nest: <span className="text-white">{importResults.itemCount}</span></span>
@@ -759,7 +759,7 @@ export function NestUploadWizard({
                 <div className={cn(
                   "flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors",
                   isActive && "bg-cyan-500/20 text-cyan-400",
-                  isCompleted && "bg-green-500/20 text-green-400",
+                  isCompleted && "bg-cyan-500/20 text-cyan-400",
                   !isActive && !isCompleted && "text-zinc-500"
                 )}>
                   {isCompleted ? (
@@ -772,7 +772,7 @@ export function NestUploadWizard({
                 {index < STEPS.length - 1 && (
                   <div className={cn(
                     "w-12 h-px mx-2",
-                    isCompleted ? "bg-green-500/50" : "bg-white/10"
+                    isCompleted ? "bg-cyan-500/50" : "bg-white/10"
                   )} />
                 )}
               </div>

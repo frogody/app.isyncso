@@ -393,7 +393,7 @@ export default function TreeRoadmap({ items = [], onSelectItem }) {
         <span className="flex items-center gap-1.5">
           <Package className="w-4 h-4" /> {totalItems} total
         </span>
-        <span className="flex items-center gap-1.5 text-green-400">
+        <span className="flex items-center gap-1.5 text-cyan-400">
           <CheckCircle2 className="w-4 h-4" /> {shippedItems} done
         </span>
         {activeItems > 0 && (

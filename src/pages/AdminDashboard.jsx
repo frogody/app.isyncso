@@ -99,7 +99,7 @@ export default function AdminDashboard() {
       <div className="min-h-screen bg-black p-6">
         <div className="max-w-7xl mx-auto space-y-8">
           {Array(4).fill(0).map((_, i) => (
-            <div key={i} className="h-32 bg-gray-800/50 animate-pulse rounded-xl"></div>
+            <div key={i} className="h-32 bg-zinc-800/50 animate-pulse rounded-xl"></div>
           ))}
         </div>
       </div>
