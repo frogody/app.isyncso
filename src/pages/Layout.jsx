@@ -95,6 +95,7 @@ import {
   FileCheck,
   ShieldAlert,
   Globe,
+  Phone,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -524,6 +525,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       path.startsWith('/activity') || path.startsWith('/desktop') || path.startsWith('/dailyjournal')) {
     const activityItems = [
       { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
+      { label: 'Phone', path: createPageUrl('SyncPhone'), icon: Phone },
       { label: 'Actions', path: createPageUrl('Actions'), icon: Zap },
       { label: 'Activity', path: createPageUrl('DesktopActivity') + '?tab=overview', icon: BarChart3, matchPath: '/desktopactivity' },
       { label: 'Daily Journals', path: createPageUrl('DailyJournal'), icon: BookOpen },
@@ -3460,35 +3462,7 @@ export default function Layout({ children, currentPageName }) {
             }`}
             role="main"
           >
-            {/* SYNC environment top tabs — bordered pill style (desktop only, mobile uses MobileSubNavStrip) */}
-            {secondaryNavConfig?.title === 'SYNC' && (
-              <div className="hidden md:block px-4 lg:px-6 pt-4">
-                <div className="inline-flex items-center gap-1 bg-zinc-900/60 border border-zinc-800/60 rounded-lg p-1.5 overflow-x-auto scrollbar-hide">
-                  {secondaryNavConfig.items.map((item) => {
-                    const Icon = item.icon;
-                    const fullUrl = location.pathname + location.search;
-                    const itemBase = item.path?.split('?')[0];
-                    const isActive = item.path?.includes('?')
-                      ? fullUrl === item.path || (fullUrl === itemBase && item.matchPath)
-                      : location.pathname === item.path;
-                    return (
-                      <Link
-                        key={item.label}
-                        to={item.path}
-                        className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
-                          isActive
-                            ? 'bg-zinc-800/80 text-cyan-300/90'
-                            : 'text-zinc-500 hover:text-zinc-300'
-                        }`}
-                      >
-                        {Icon && <Icon className="w-4 h-4" />}
-                        {item.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            {/* SYNC environment top tabs removed — each Sync page renders its own SyncViewSelector on the right */}
             {/* TALENT quick action buttons moved to TalentDashboard PageHeader */}
             <div className="min-h-full">
               {children}
