@@ -7,7 +7,6 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
-  ChevronRight,
   Clock,
   Edit3,
   Filter,
@@ -28,11 +27,15 @@ import {
   Image as ImageIcon,
   ArrowLeft,
   X,
-  Home,
+  XCircle,
+  Eye,
+  Palette,
+  Focus,
+  Layers,
+  RotateCw,
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
-import { SyncStudioNav, ShootConfigurator } from '@/components/sync-studio';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxfntqleig.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
@@ -44,15 +47,15 @@ const UPDATE_PLAN_EDGE_FUNCTION = 'sync-studio-update-plan';
 
 // --- Shot type styling map ---
 const SHOT_TYPE_STYLES = {
-  hero: { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/20' },
-  lifestyle: { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/20' },
-  detail: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
-  alternate: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/20' },
-  contextual: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
+  hero:       { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/20', dot: 'bg-yellow-400', icon: Camera },
+  lifestyle:  { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/20', dot: 'bg-orange-400', icon: Palette },
+  detail:     { bg: 'bg-amber-500/10',  text: 'text-amber-400',  border: 'border-amber-500/20',  dot: 'bg-amber-400',  icon: Focus },
+  alternate:  { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/20', dot: 'bg-purple-400', icon: RotateCw },
+  contextual: { bg: 'bg-emerald-500/10',text: 'text-emerald-400',border: 'border-emerald-500/20',dot: 'bg-emerald-400',icon: Layers },
 };
 
 function getShotStyle(type) {
-  return SHOT_TYPE_STYLES[type] || { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/20' };
+  return SHOT_TYPE_STYLES[type] || { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/20', dot: 'bg-zinc-400', icon: Camera };
 }
 
 // --- Shot type options ---
@@ -235,6 +238,25 @@ function RemoveShotConfirm({ open, onClose, onConfirm, isRemoving }) {
   );
 }
 
+// --- Shot type dots (collapsed view) ---
+function ShotTypeDots({ shots }) {
+  return (
+    <div className="flex items-center gap-1">
+      {shots.map((shot, i) => {
+        const type = shot.type || shot.shot_type || 'photo';
+        const style = getShotStyle(type);
+        return (
+          <div
+            key={i}
+            className={`w-2 h-2 rounded-full ${style.dot}`}
+            title={type}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 // --- Product Card ---
 function ProductCard({
   plan,
@@ -248,7 +270,9 @@ function ProductCard({
   onAddShot,
   onRemoveShot,
   onResetPlan,
+  onReject,
   isSaving,
+  isRejecting,
 }) {
   const [expanded, setExpanded] = useState(false);
   const [editedShots, setEditedShots] = useState([]);
@@ -257,16 +281,15 @@ function ProductCard({
   const [savingIndex, setSavingIndex] = useState(null);
   const [isAddingShot, setIsAddingShot] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
 
   const shots = Array.isArray(plan.shots) ? plan.shots : [];
   const displayShots = isEditing ? editedShots : shots;
-  const shotTypes = shots.map((s) => s.type || s.shot_type || 'photo').join(', ');
   const isApproved = plan.plan_status === 'approved';
   const thumbnail = product?.existing_image_urls?.[0] || null;
   const categoryLabel = getCategoryLabel(product?.category_path);
 
   // Sync editedShots when entering edit mode or when plan.shots changes during editing
-  // (e.g. after a save/add/remove returns updated data from the edge function)
   const shotsJson = JSON.stringify(plan.shots);
   useEffect(() => {
     if (isEditing) {
@@ -346,10 +369,14 @@ function ProductCard({
       layout
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12 }}
+      exit={{ opacity: 0, x: -30, scale: 0.95 }}
       transition={{ duration: 0.25 }}
       className={`border rounded-2xl overflow-hidden transition-colors ${
-        isEditing ? 'bg-zinc-900/70 border-yellow-500/30 ring-1 ring-yellow-500/10' : 'bg-zinc-900/50 border-zinc-800/60 hover:border-zinc-700/60'
+        isEditing
+          ? 'bg-zinc-900/70 border-yellow-500/30 ring-1 ring-yellow-500/10'
+          : isApproved
+            ? 'bg-zinc-900/50 border-emerald-500/10'
+            : 'bg-zinc-900/50 border-zinc-800/60 hover:border-zinc-700/60'
       }`}
     >
       {/* Collapsed row */}
@@ -360,7 +387,9 @@ function ProductCard({
         }}
       >
         {/* Thumbnail */}
-        <div className="w-12 h-12 rounded-xl bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center shrink-0 overflow-hidden">
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden border ${
+          isApproved ? 'bg-emerald-500/5 border-emerald-500/15' : 'bg-zinc-800/60 border-zinc-700/40'
+        }`}>
           {thumbnail ? (
             <img
               src={thumbnail}
@@ -388,21 +417,23 @@ function ProductCard({
             )}
           </div>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-[11px] text-zinc-500 tabular-nums">{plan.product_ean}</span>
-            <span className="text-zinc-700">|</span>
-            <span className="text-[11px] text-zinc-400">
-              {shots.length} shot{shots.length !== 1 ? 's' : ''}: {shotTypes}
+            <ShotTypeDots shots={shots} />
+            <span className="text-[11px] text-zinc-500 tabular-nums">
+              {shots.length} shot{shots.length !== 1 ? 's' : ''}
             </span>
+            {product?.price && (
+              <>
+                <span className="text-zinc-800">|</span>
+                <span className="text-[11px] text-yellow-500/60 tabular-nums">
+                  €{parseFloat(product.price).toFixed(2)}
+                </span>
+              </>
+            )}
           </div>
-          {plan.reasoning && (
-            <p className="text-[11px] text-zinc-500 mt-0.5 truncate max-w-md">
-              {plan.reasoning}
-            </p>
-          )}
         </div>
 
-        {/* Status + Edit + Approve + Chevron */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Status + Edit + Approve + Reject + Chevron */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <StatusBadge status={plan.plan_status} />
 
           {/* Edit button */}
@@ -412,10 +443,9 @@ function ProductCard({
                 e.stopPropagation();
                 onStartEdit(plan.plan_id);
               }}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/50 text-zinc-300 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-medium rounded-lg bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/50 text-zinc-300 transition-colors"
             >
               <Pencil className="w-3 h-3" />
-              Edit
             </button>
           )}
 
@@ -426,10 +456,9 @@ function ProductCard({
                 e.stopPropagation();
                 onCancelEdit();
               }}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/50 text-zinc-400 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-medium rounded-lg bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/50 text-zinc-400 transition-colors"
             >
               <X className="w-3 h-3" />
-              Cancel
             </button>
           )}
 
@@ -451,6 +480,21 @@ function ProductCard({
             </button>
           )}
 
+          {/* Reject button */}
+          {!isEditing && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowRejectConfirm(true);
+              }}
+              disabled={isRejecting}
+              className="inline-flex items-center p-1.5 text-xs rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/5 transition-colors disabled:opacity-50"
+              title="Remove from session"
+            >
+              {isRejecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+            </button>
+          )}
+
           {!isEditing && (
             <ChevronDown
               className={`w-4 h-4 text-zinc-500 transition-transform duration-200 ${
@@ -460,6 +504,43 @@ function ProductCard({
           )}
         </div>
       </div>
+
+      {/* Reject confirmation inline */}
+      <AnimatePresence>
+        {showRejectConfirm && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-red-500/10 bg-red-500/[0.03] px-4 py-3 flex items-center justify-between">
+              <p className="text-xs text-zinc-400">
+                Remove this product from the session?
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowRejectConfirm(false)}
+                  className="px-3 py-1 text-xs text-zinc-400 hover:text-zinc-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowRejectConfirm(false);
+                    onReject(plan.plan_id, plan.product_ean);
+                  }}
+                  disabled={isRejecting}
+                  className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 transition-colors disabled:opacity-50"
+                >
+                  {isRejecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                  Remove
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Expanded detail */}
       <AnimatePresence initial={false}>
@@ -475,16 +556,22 @@ function ProductCard({
             <div className="border-t border-zinc-800/60 px-4 pb-4 pt-3 space-y-4">
               {/* Full reasoning */}
               {plan.reasoning && (
-                <div>
-                  <p className="text-xs font-medium text-zinc-400 mb-1">AI Reasoning</p>
-                  <p className="text-sm text-zinc-300 leading-relaxed">{plan.reasoning}</p>
+                <div className="bg-zinc-800/20 rounded-xl p-3 border border-zinc-800/40">
+                  <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    AI Reasoning
+                  </p>
+                  <p className="text-xs text-zinc-400 leading-relaxed">{plan.reasoning}</p>
                 </div>
               )}
 
               {/* Existing images */}
               {product?.existing_image_urls?.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-zinc-400 mb-2">Existing Images</p>
+                  <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <ImageIcon className="w-3 h-3" />
+                    Existing Images ({product.existing_image_urls.length})
+                  </p>
                   <div className="flex gap-2 flex-wrap">
                     {product.existing_image_urls.map((url, i) => (
                       <div
@@ -511,7 +598,7 @@ function ProductCard({
               {isEditing && (
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-medium text-zinc-400">
+                    <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">
                       Edit Shots ({editedShots.length})
                     </p>
                     <div className="flex items-center gap-2">
@@ -600,25 +687,30 @@ function ProductCard({
               {/* ============================================================ */}
               {!isEditing && shots.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-zinc-400 mb-2">Planned Shots</p>
+                  <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <Camera className="w-3 h-3" />
+                    Planned Shots
+                  </p>
                   <div className="space-y-2">
                     {shots.map((shot, i) => {
                       const type = shot.type || shot.shot_type || 'photo';
                       const style = getShotStyle(type);
+                      const ShotIcon = style.icon || Camera;
                       return (
                         <div
                           key={i}
-                          className="bg-zinc-800/40 border border-zinc-700/30 rounded-xl p-3"
+                          className="bg-zinc-800/30 border border-zinc-700/20 rounded-xl p-3"
                         >
                           <div className="flex items-center gap-2 mb-1">
                             <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${style.bg} ${style.text} border ${style.border}`}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${style.bg} ${style.text} border ${style.border}`}
                             >
+                              <ShotIcon className="w-2.5 h-2.5" />
                               {type}
                             </span>
                           </div>
                           {shot.description && (
-                            <p className="text-sm text-zinc-300 mb-1.5">{shot.description}</p>
+                            <p className="text-xs text-zinc-300 mb-1.5 leading-relaxed">{shot.description}</p>
                           )}
                           <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-zinc-500">
                             {shot.mood && (
@@ -646,7 +738,7 @@ function ProductCard({
 
               {/* Approve at bottom (view mode only) */}
               {!isEditing && !isApproved && (
-                <div className="pt-1">
+                <div className="pt-1 flex items-center gap-2">
                   <button
                     onClick={() => onApprove(plan.plan_id)}
                     disabled={isApproving}
@@ -815,43 +907,6 @@ function ConfirmationModal({ open, onClose, stats, plans, onConfirm, isStarting 
   );
 }
 
-// --- Breadcrumb Navigation ---
-function StudioBreadcrumb({ current = 'dashboard' }) {
-  const navigate = useNavigate();
-  const crumbs = [
-    { key: 'home', label: 'Studio', path: '/SyncStudioHome', icon: Home },
-    { key: 'dashboard', label: 'Dashboard', path: '/SyncStudioDashboard', icon: Camera },
-  ];
-
-  return (
-    <div className="flex items-center gap-1 text-xs mb-1">
-      {crumbs.map((crumb, i) => {
-        const Icon = crumb.icon;
-        const isLast = i === crumbs.length - 1;
-        const isActive = crumb.key === current;
-
-        return (
-          <React.Fragment key={crumb.key}>
-            {i > 0 && <ChevronRight className="w-3 h-3 text-zinc-600" />}
-            <button
-              onClick={() => !isActive && navigate(crumb.path)}
-              disabled={isActive}
-              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md transition-colors ${
-                isActive
-                  ? 'text-yellow-400 cursor-default'
-                  : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              <Icon className="w-3 h-3" />
-              {crumb.label}
-            </button>
-          </React.Fragment>
-        );
-      })}
-    </div>
-  );
-}
-
 // ========================================================================
 // Main Dashboard
 // ========================================================================
@@ -878,21 +933,12 @@ export default function SyncStudioDashboard() {
   const [editingPlanId, setEditingPlanId] = useState(null);
   const [editSaving, setEditSaving] = useState(false);
 
+  // Reject state
+  const [rejectingIds, setRejectingIds] = useState(new Set());
+
   // Confirmation modal state
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
-
-  // Shoot settings
-  const [shootSettings, setShootSettings] = useState({
-    vibe: null,
-    background: 'auto',
-    lighting: 'auto',
-    aspect_ratio: '1:1',
-    width: 1024,
-    height: 1024,
-    batch_size: 3,
-    variety_mode: 'balanced',
-  });
 
   // -- Edge function caller --
   const callEdgeFunction = useCallback(async (body, fnName = APPROVE_EDGE_FUNCTION) => {
@@ -976,7 +1022,8 @@ export default function SyncStudioDashboard() {
       return sum + shots;
     }, 0);
     const percentage = total > 0 ? Math.round((approved / total) * 100) : 0;
-    return { total, approved, pending, totalShots, percentage };
+    const estimatedMinutes = Math.max(1, Math.ceil(totalShots / 12));
+    return { total, approved, pending, totalShots, percentage, estimatedMinutes };
   }, [plans]);
 
   // -- Filtered + sorted plans --
@@ -1022,6 +1069,9 @@ export default function SyncStudioDashboard() {
         const titleB = productMap[b.product_ean]?.title || b.product_ean || '';
         return titleA.localeCompare(titleB);
       });
+    } else if (sortBy === 'status') {
+      const statusOrder = { pending_approval: 0, pending: 0, user_modified: 1, approved: 2 };
+      result.sort((a, b) => (statusOrder[a.plan_status] || 0) - (statusOrder[b.plan_status] || 0));
     }
 
     return result;
@@ -1092,6 +1142,40 @@ export default function SyncStudioDashboard() {
     }
   }, [plans, callEdgeFunction, user]);
 
+  // -- Reject / remove product from session --
+  const handleReject = useCallback(async (planId, productEan) => {
+    setRejectingIds((prev) => new Set(prev).add(planId));
+    try {
+      // Delete the plan
+      await supabase
+        .from('sync_studio_shoot_plans')
+        .delete()
+        .eq('plan_id', planId)
+        .eq('user_id', user?.id);
+
+      // Delete the product from session
+      if (productEan) {
+        await supabase
+          .from('sync_studio_products')
+          .delete()
+          .eq('ean', productEan)
+          .eq('user_id', user?.id);
+      }
+
+      // Remove from local state
+      setPlans((prev) => prev.filter((p) => p.plan_id !== planId));
+      setProducts((prev) => prev.filter((p) => p.ean !== productEan));
+    } catch (err) {
+      console.error('[SyncStudioDashboard] reject error:', err);
+    } finally {
+      setRejectingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(planId);
+        return next;
+      });
+    }
+  }, [user]);
+
   // -- Refresh a single plan from the edge function response --
   const refreshPlanFromResponse = useCallback((updatedPlan) => {
     if (!updatedPlan?.plan_id) return;
@@ -1130,7 +1214,6 @@ export default function SyncStudioDashboard() {
         refreshPlanFromResponse(result);
       } catch (err) {
         console.error('[SyncStudioDashboard] update_shot error:', err);
-        // Refetch to stay in sync
         await refetchPlan(planId);
       } finally {
         setEditSaving(false);
@@ -1223,13 +1306,11 @@ export default function SyncStudioDashboard() {
           action: 'start',
           userId: user?.id,
           companyId: user?.company_id || user?.id,
-          shootSettings,
         },
         EXECUTE_EDGE_FUNCTION
       );
 
       if (result?.jobId) {
-        // Navigate to progress page with job ID
         navigate(`/SyncStudioPhotoshoot?jobId=${result.jobId}`);
       } else {
         console.error('[SyncStudioDashboard] No jobId returned from start:', result);
@@ -1238,7 +1319,7 @@ export default function SyncStudioDashboard() {
       console.error('[SyncStudioDashboard] start photoshoot error:', err);
       setIsStarting(false);
     }
-  }, [callEdgeFunction, user, navigate, shootSettings]);
+  }, [callEdgeFunction, user, navigate]);
 
   // -- Loading state --
   if (loading) {
@@ -1268,21 +1349,21 @@ export default function SyncStudioDashboard() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4 }}
-          className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8 max-w-md w-full text-center"
+          className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4 sm:p-8 max-w-md w-full text-center"
         >
           <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center mx-auto mb-5">
             <Package className="w-7 h-7 text-zinc-500" />
           </div>
           <h2 className="text-xl font-semibold text-white mb-2">No shoot plans yet</h2>
           <p className="text-sm text-zinc-400 mb-6">
-            Import your catalog first to generate AI photoshoot plans.
+            Select products to generate AI photoshoot plans.
           </p>
           <button
-            onClick={() => navigate('/SyncStudioHome')}
+            onClick={() => navigate('/SyncStudioImport')}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 text-sm font-medium rounded-xl transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Sync Studio
+            Select Products
           </button>
         </motion.div>
       </div>
@@ -1297,43 +1378,43 @@ export default function SyncStudioDashboard() {
       {/* STICKY TOP BAR                                                */}
       {/* ============================================================ */}
       <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-        <div className="w-full px-4 lg:px-8 py-3">
-          {/* Studio Nav */}
-          <div className="mb-3">
-            <SyncStudioNav />
-          </div>
-        </div>
-      </div>
-
-      {/* Shoot Style Configurator */}
-      <div className="w-full px-4 lg:px-8 pt-3 pb-1">
-        <ShootConfigurator
-          settings={shootSettings}
-          onSettingsChange={setShootSettings}
-          sampleShot={plans[0]?.shots?.[0] || null}
-          sampleProduct={productMap[plans[0]?.product_ean] || null}
-        />
-      </div>
-
-      {/* Stats bar */}
-      <div className="border-b border-zinc-800/40">
-        <div className="w-full px-4 lg:px-8 py-3">
-          {/* Stats row */}
-          <div className="flex items-center justify-between gap-3 mb-2.5 flex-wrap">
-            <div className="flex items-center gap-3 text-sm flex-wrap">
-              <span className="text-zinc-400">
-                <span className="text-white font-semibold tabular-nums">{stats.total}</span> product{stats.total !== 1 ? 's' : ''}
-                <span className="text-zinc-600 mx-1.5">&middot;</span>
-                <span className="text-white font-semibold tabular-nums">{stats.totalShots}</span> shots planned
-              </span>
-              <span className="text-zinc-700">|</span>
-              <span className="text-zinc-400">
-                <span className="text-yellow-400 font-semibold tabular-nums">{stats.approved}</span> approved
-                <span className="text-zinc-600 mx-1.5">&middot;</span>
-                <span className="text-amber-400 font-semibold tabular-nums">{stats.pending}</span> pending
-              </span>
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          {/* Title + back */}
+          <div className="flex items-center gap-3 mb-3">
+            <button
+              onClick={() => navigate('/SyncStudioImport')}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-zinc-800/60 transition-colors shrink-0"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-semibold text-white">Review Shoot Plans</h1>
+              <p className="text-xs text-zinc-500">Approve or edit AI-generated plans for each product</p>
             </div>
+          </div>
 
+          {/* Stats cards */}
+          <div className="grid grid-cols-4 gap-2 mb-3">
+            <div className="bg-zinc-800/30 border border-zinc-700/20 rounded-xl px-3 py-2 text-center">
+              <p className="text-lg font-bold text-white tabular-nums">{stats.total}</p>
+              <p className="text-[9px] text-zinc-500 uppercase tracking-wider">Products</p>
+            </div>
+            <div className="bg-zinc-800/30 border border-zinc-700/20 rounded-xl px-3 py-2 text-center">
+              <p className="text-lg font-bold text-white tabular-nums">{stats.totalShots}</p>
+              <p className="text-[9px] text-zinc-500 uppercase tracking-wider">Shots</p>
+            </div>
+            <div className="bg-zinc-800/30 border border-zinc-700/20 rounded-xl px-3 py-2 text-center">
+              <p className="text-lg font-bold text-emerald-400 tabular-nums">{stats.approved}</p>
+              <p className="text-[9px] text-zinc-500 uppercase tracking-wider">Approved</p>
+            </div>
+            <div className="bg-zinc-800/30 border border-zinc-700/20 rounded-xl px-3 py-2 text-center">
+              <p className="text-lg font-bold text-amber-400 tabular-nums">{stats.pending}</p>
+              <p className="text-[9px] text-zinc-500 uppercase tracking-wider">Pending</p>
+            </div>
+          </div>
+
+          {/* Action buttons + progress */}
+          <div className="flex items-center justify-between gap-3 mb-2">
             <div className="flex items-center gap-2">
               {stats.pending > 0 && (
                 <button
@@ -1349,27 +1430,32 @@ export default function SyncStudioDashboard() {
                   Approve All ({stats.pending})
                 </button>
               )}
-
-              <button
-                onClick={() => {
-                  if (allApproved) setShowConfirmModal(true);
-                }}
-                disabled={!allApproved}
-                className={`inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg transition-all ${
-                  allApproved
-                    ? 'bg-yellow-500 hover:bg-yellow-600 text-black shadow-lg shadow-yellow-500/25'
-                    : 'bg-zinc-800/60 text-zinc-600 border border-zinc-700/40 cursor-not-allowed'
-                }`}
-              >
-                <Play className="w-3 h-3" />
-                Start Photoshoot
-              </button>
+              {stats.total > 0 && (
+                <span className="text-[11px] text-zinc-600">
+                  ~{stats.estimatedMinutes} min estimated
+                </span>
+              )}
             </div>
+
+            <button
+              onClick={() => {
+                if (allApproved) setShowConfirmModal(true);
+              }}
+              disabled={!allApproved}
+              className={`inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg transition-all ${
+                allApproved
+                  ? 'bg-yellow-500 hover:bg-yellow-600 text-black shadow-lg shadow-yellow-500/20'
+                  : 'bg-zinc-800/60 text-zinc-600 border border-zinc-700/40 cursor-not-allowed'
+              }`}
+            >
+              <Play className="w-3 h-3" />
+              Start Photoshoot
+            </button>
           </div>
 
           {/* Progress bar */}
           <Progress.Root
-            className="relative h-2 w-full overflow-hidden rounded-full bg-zinc-800"
+            className="relative h-1.5 w-full overflow-hidden rounded-full bg-zinc-800"
             value={stats.percentage}
           >
             <Progress.Indicator
@@ -1395,22 +1481,22 @@ export default function SyncStudioDashboard() {
       {/* ============================================================ */}
       {/* FILTER / SEARCH BAR                                           */}
       {/* ============================================================ */}
-      <div className="w-full px-4 lg:px-8 pt-4 pb-2">
+      <div className="max-w-4xl mx-auto px-4 pt-3 pb-2">
         <div className="flex items-center gap-2 flex-wrap">
           {/* Filter dropdown */}
           <div className="relative">
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="appearance-none bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-8 pr-8 py-2 text-sm text-zinc-300 focus:outline-none focus:border-yellow-500/40 transition-colors cursor-pointer"
+              className="appearance-none bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-8 pr-8 py-2 text-xs text-zinc-300 focus:outline-none focus:border-yellow-500/40 transition-colors cursor-pointer"
             >
               <option value="all">All</option>
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
               <option value="modified">Modified</option>
             </select>
-            <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 pointer-events-none" />
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 pointer-events-none" />
+            <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500 pointer-events-none" />
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500 pointer-events-none" />
           </div>
 
           {/* Search input */}
@@ -1421,7 +1507,7 @@ export default function SyncStudioDashboard() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by title or EAN..."
-              className="w-full bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-9 pr-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-yellow-500/40 focus:ring-1 focus:ring-yellow-500/20 transition-colors"
+              className="w-full bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-9 pr-3 py-2 text-xs text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-yellow-500/40 focus:ring-1 focus:ring-yellow-500/20 transition-colors"
             />
           </div>
 
@@ -1430,14 +1516,15 @@ export default function SyncStudioDashboard() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="appearance-none bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-8 pr-8 py-2 text-sm text-zinc-300 focus:outline-none focus:border-yellow-500/40 transition-colors cursor-pointer"
+              className="appearance-none bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-8 pr-8 py-2 text-xs text-zinc-300 focus:outline-none focus:border-yellow-500/40 transition-colors cursor-pointer"
             >
               <option value="category">Category</option>
               <option value="shots">Shot Count</option>
               <option value="alpha">Alphabetical</option>
+              <option value="status">Status</option>
             </select>
-            <SortAsc className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 pointer-events-none" />
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 pointer-events-none" />
+            <SortAsc className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500 pointer-events-none" />
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500 pointer-events-none" />
           </div>
         </div>
 
@@ -1450,9 +1537,9 @@ export default function SyncStudioDashboard() {
       {/* ============================================================ */}
       {/* PRODUCT CARDS LIST                                            */}
       {/* ============================================================ */}
-      <div className="w-full px-4 lg:px-8 pb-8 space-y-3">
+      <div className="max-w-4xl mx-auto px-4 pb-8 space-y-2.5">
         <AnimatePresence mode="popLayout">
-          {filteredPlans.map((plan, idx) => (
+          {filteredPlans.map((plan) => (
             <ProductCard
               key={plan.plan_id}
               plan={plan}
@@ -1466,7 +1553,9 @@ export default function SyncStudioDashboard() {
               onAddShot={handleAddShot}
               onRemoveShot={handleRemoveShot}
               onResetPlan={handleResetPlan}
+              onReject={handleReject}
               isSaving={editSaving}
+              isRejecting={rejectingIds.has(plan.plan_id)}
             />
           ))}
         </AnimatePresence>
