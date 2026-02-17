@@ -2024,24 +2024,37 @@ export default function ProductDetail() {
 
   // Handle details update
   const handleDetailsUpdate = async (updates) => {
-    if (!details) return;
-
     setSaving(true);
     try {
-      // digital_products and physical_products use product_id as primary key, not id
-      const detailsId = details.product_id || details.id;
-
-      if (type === 'digital') {
-        await DigitalProduct.update(detailsId, updates);
-      } else if (type === 'service') {
-        await ServiceProduct.update(detailsId, updates);
+      if (!details && type === 'service') {
+        // No service_products row exists yet — create one
+        const newRow = await ServiceProduct.create({
+          product_id: product.id,
+          company_id: user?.company_id,
+          ...updates,
+        });
+        setDetails(newRow);
+      } else if (!details) {
+        toast.error('Product details not loaded');
+        setSaving(false);
+        return;
       } else {
-        await PhysicalProduct.update(detailsId, updates);
+        // Existing row — update as normal
+        const detailsId = details.product_id || details.id;
+
+        if (type === 'digital') {
+          await DigitalProduct.update(detailsId, updates);
+        } else if (type === 'service') {
+          await ServiceProduct.update(detailsId, updates);
+        } else {
+          await PhysicalProduct.update(detailsId, updates);
+        }
+        setDetails(prev => ({ ...prev, ...updates }));
       }
-      setDetails(prev => ({ ...prev, ...updates }));
+
       // Log detail-level changes to the product activity feed
       if (product?.id && user?.id) {
-        const changes = calculateDiffs(details, updates);
+        const changes = calculateDiffs(details || {}, updates);
         if (changes) {
           await logProductActivity({
             productId: product.id,
