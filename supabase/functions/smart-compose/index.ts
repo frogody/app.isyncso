@@ -200,6 +200,236 @@ Suggest 3 quick replies:`,
       );
     }
 
+    // ---------------------------------------------------------------
+    // MODE: sentiment — batch sentiment analysis for a channel
+    // ---------------------------------------------------------------
+    if (mode === "sentiment") {
+      const msgs = recentMessages || [];
+      if (msgs.length === 0) {
+        return new Response(
+          JSON.stringify({
+            score: 50,
+            label: "neutral",
+            topics: [],
+            action_items: [],
+            insights: [],
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Format messages for the prompt (limit to last 40 to fit context)
+      const messageBlock = msgs
+        .slice(-40)
+        .map(
+          (m: { sender?: string; content?: string; timestamp?: string }) =>
+            `[${m.sender || "User"}]: ${m.content || ""}`
+        )
+        .join("\n");
+
+      const response = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${GROQ_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+              {
+                role: "system",
+                content: `You are a team communication analyst. Analyze the following conversation messages and provide a structured sentiment report.
+
+Return valid JSON:
+{
+  "score": <0-100 where 0=very negative, 50=neutral, 100=very positive>,
+  "label": "positive" | "neutral" | "negative" | "mixed",
+  "topics": [{"topic": "topic name", "count": <mentions>}],
+  "action_items": [{"text": "action item", "type": "task"|"request"|"follow-up", "sender": "name"}],
+  "insights": ["1 sentence insight about the conversation mood/dynamics"],
+  "key_concerns": ["any concerns or issues raised"]
+}
+
+Rules:
+- Score based on overall tone, not just keywords
+- Topics: extract max 6 main discussion topics
+- Action items: extract max 8 actual commitments or requests
+- Insights: 2-3 brief observations about team dynamics/mood
+- Be accurate — don't hallucinate topics not discussed`,
+              },
+              {
+                role: "user",
+                content: `${channelName ? `Channel: #${channelName}\n` : ""}Messages:\n${messageBlock}`,
+              },
+            ],
+            temperature: 0.2,
+            max_tokens: 800,
+            response_format: { type: "json_object" },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Groq API error ${response.status}: ${errText}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+
+      let analysis = {
+        score: 50,
+        label: "neutral",
+        topics: [],
+        action_items: [],
+        insights: [],
+        key_concerns: [],
+      };
+      if (content) {
+        try {
+          analysis = { ...analysis, ...JSON.parse(content) };
+        } catch {
+          console.error("[smart-compose] Failed to parse sentiment JSON");
+        }
+      }
+
+      return new Response(JSON.stringify(analysis), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ---------------------------------------------------------------
+    // MODE: briefing — AI-powered morning briefing insights
+    // ---------------------------------------------------------------
+    if (mode === "briefing") {
+      const { schedule, tasks, priorityMessages, userName } = await req
+        .json()
+        .catch(() => ({}));
+
+      const contextParts: string[] = [];
+      if (userName) contextParts.push(`User: ${userName}`);
+
+      if (schedule?.length > 0) {
+        contextParts.push(
+          "Today's schedule:\n" +
+            schedule
+              .map(
+                (e: { title?: string; start_time?: string; attendees_count?: number }) =>
+                  `- ${e.title || "Meeting"} at ${e.start_time || "TBD"} (${e.attendees_count || 0} attendees)`
+              )
+              .join("\n")
+        );
+      }
+
+      if (tasks?.length > 0) {
+        contextParts.push(
+          "Tasks due/overdue:\n" +
+            tasks
+              .map(
+                (t: { title?: string; due_date?: string; priority?: string }) =>
+                  `- ${t.title || "Task"} (${t.priority || "normal"}, due: ${t.due_date || "TBD"})`
+              )
+              .join("\n")
+        );
+      }
+
+      if (priorityMessages?.length > 0) {
+        contextParts.push(
+          "Unread priority messages:\n" +
+            priorityMessages
+              .slice(0, 10)
+              .map(
+                (m: { sender?: string; channel?: string; content?: string }) =>
+                  `- [${m.channel || "DM"}] ${m.sender || "User"}: ${(m.content || "").slice(0, 100)}`
+              )
+              .join("\n")
+        );
+      }
+
+      if (contextParts.length === 0) {
+        return new Response(
+          JSON.stringify({
+            insights: ["No data available for today's briefing."],
+            priorities: [],
+            suggested_actions: [],
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const response = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${GROQ_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+              {
+                role: "system",
+                content: `You are SYNC, an AI personal assistant providing a morning briefing. Based on the user's schedule, tasks, and messages, generate a concise daily briefing.
+
+Return valid JSON:
+{
+  "greeting": "Good morning [name]! Here's your day...",
+  "insights": ["insight 1", "insight 2", "insight 3"],
+  "priorities": [{"text": "priority item", "urgency": "high"|"medium"|"low", "type": "meeting"|"task"|"message"}],
+  "suggested_actions": [{"text": "suggested action", "reason": "brief reason"}],
+  "day_forecast": "One sentence about how the day looks"
+}
+
+Rules:
+- Max 4 insights, 5 priorities, 3 suggested actions
+- Be specific and actionable, not generic
+- Highlight conflicts or tight scheduling
+- Flag overdue tasks prominently
+- Keep tone friendly and motivating`,
+              },
+              {
+                role: "user",
+                content: contextParts.join("\n\n"),
+              },
+            ],
+            temperature: 0.3,
+            max_tokens: 600,
+            response_format: { type: "json_object" },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Groq API error ${response.status}: ${errText}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+
+      let briefing = {
+        greeting: "Good morning!",
+        insights: [],
+        priorities: [],
+        suggested_actions: [],
+        day_forecast: "",
+      };
+      if (content) {
+        try {
+          briefing = { ...briefing, ...JSON.parse(content) };
+        } catch {
+          console.error("[smart-compose] Failed to parse briefing JSON");
+        }
+      }
+
+      return new Response(JSON.stringify(briefing), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Unknown mode
     return new Response(
       JSON.stringify({ error: `Unknown mode: ${mode}` }),
