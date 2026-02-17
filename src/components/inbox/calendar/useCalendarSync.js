@@ -18,7 +18,8 @@ import { useComposio } from '@/hooks/useComposio';
 import { toast } from 'sonner';
 
 const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
-const TOOLKIT_SLUG = 'googlecalendar';
+const GOOGLE_TOOLKIT = 'googlecalendar';
+const OUTLOOK_TOOLKIT = 'outlookcalendar';
 
 export function useCalendarSync(userId, companyId) {
   const composio = useComposio();
@@ -28,36 +29,61 @@ export function useCalendarSync(userId, companyId) {
   const [isConnected, setIsConnected] = useState(false);
   const [connection, setConnection] = useState(null);
   const [connectionLoading, setConnectionLoading] = useState(true);
+  // Outlook state
+  const [isOutlookConnected, setIsOutlookConnected] = useState(false);
+  const [outlookConnection, setOutlookConnection] = useState(null);
+  // Track which provider is active
+  const [activeProvider, setActiveProvider] = useState(null); // 'google' | 'outlook' | null
 
   const intervalRef = useRef(null);
 
-  // Check for active Google Calendar connection
+  // Check for active calendar connections (Google + Outlook)
   const checkConnection = useCallback(async () => {
     if (!userId) {
       setIsConnected(false);
       setConnection(null);
+      setIsOutlookConnected(false);
+      setOutlookConnection(null);
+      setActiveProvider(null);
       setConnectionLoading(false);
       return;
     }
 
     setConnectionLoading(true);
     try {
-      const conn = await composio.getConnection(userId, TOOLKIT_SLUG);
-      if (conn && conn.status === 'ACTIVE') {
-        setIsConnected(true);
-        setConnection(conn);
-      } else {
-        setIsConnected(false);
-        setConnection(null);
-      }
+      // Check both providers in parallel
+      const [googleConn, outlookConn] = await Promise.allSettled([
+        composio.getConnection(userId, GOOGLE_TOOLKIT),
+        composio.getConnection(userId, OUTLOOK_TOOLKIT),
+      ]);
+
+      const gConn = googleConn.status === 'fulfilled' ? googleConn.value : null;
+      const oConn = outlookConn.status === 'fulfilled' ? outlookConn.value : null;
+
+      const googleActive = gConn && gConn.status === 'ACTIVE';
+      const outlookActive = oConn && oConn.status === 'ACTIVE';
+
+      setIsConnected(googleActive);
+      setConnection(googleActive ? gConn : null);
+      setIsOutlookConnected(outlookActive);
+      setOutlookConnection(outlookActive ? oConn : null);
+
+      // Set active provider (prefer the one already active, default to google)
+      if (googleActive && !outlookActive) setActiveProvider('google');
+      else if (outlookActive && !googleActive) setActiveProvider('outlook');
+      else if (googleActive && outlookActive) setActiveProvider(activeProvider || 'google');
+      else setActiveProvider(null);
     } catch (err) {
       console.error('[useCalendarSync] Connection check failed:', err);
       setIsConnected(false);
       setConnection(null);
+      setIsOutlookConnected(false);
+      setOutlookConnection(null);
+      setActiveProvider(null);
     } finally {
       setConnectionLoading(false);
     }
-  }, [userId, composio]);
+  }, [userId, composio, activeProvider]);
 
   // Check connection on mount and when userId changes
   useEffect(() => {
@@ -66,35 +92,61 @@ export function useCalendarSync(userId, companyId) {
 
   /**
    * Initiate the Composio OAuth flow for Google Calendar.
-   * Opens a popup and polls until the connection is active.
    */
   const connectGoogleCalendar = useCallback(async () => {
     if (!userId) return;
 
     try {
-      // Get auth configs for googlecalendar
-      const configs = await composio.getAuthConfigs(TOOLKIT_SLUG);
+      const configs = await composio.getAuthConfigs(GOOGLE_TOOLKIT);
       if (!configs || configs.length === 0) {
         toast.error('No Google Calendar auth config found');
         return;
       }
 
-      // Initiate the OAuth connection
       const result = await composio.connect(userId, configs[0].id, {
         popup: true,
-        toolkitSlug: TOOLKIT_SLUG,
+        toolkitSlug: GOOGLE_TOOLKIT,
       });
 
       if (result?.connectedAccountId) {
         toast.info('Completing Google Calendar connection...');
-        // Poll until connection is active
         await composio.waitForConnection(result.connectedAccountId, userId);
         toast.success('Google Calendar connected!');
         await checkConnection();
       }
     } catch (err) {
-      console.error('[useCalendarSync] Connect failed:', err);
+      console.error('[useCalendarSync] Google connect failed:', err);
       toast.error(`Failed to connect: ${err.message}`);
+    }
+  }, [userId, composio, checkConnection]);
+
+  /**
+   * Initiate the Composio OAuth flow for Outlook Calendar.
+   */
+  const connectOutlookCalendar = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const configs = await composio.getAuthConfigs(OUTLOOK_TOOLKIT);
+      if (!configs || configs.length === 0) {
+        toast.error('No Outlook Calendar auth config found');
+        return;
+      }
+
+      const result = await composio.connect(userId, configs[0].id, {
+        popup: true,
+        toolkitSlug: OUTLOOK_TOOLKIT,
+      });
+
+      if (result?.connectedAccountId) {
+        toast.info('Completing Outlook Calendar connection...');
+        await composio.waitForConnection(result.connectedAccountId, userId);
+        toast.success('Outlook Calendar connected!');
+        await checkConnection();
+      }
+    } catch (err) {
+      console.error('[useCalendarSync] Outlook connect failed:', err);
+      toast.error(`Failed to connect Outlook: ${err.message}`);
     }
   }, [userId, composio, checkConnection]);
 
@@ -210,8 +262,100 @@ export function useCalendarSync(userId, companyId) {
   }, [userId, companyId, connection, composio]);
 
   /**
+   * Fetch events from Outlook Calendar and upsert into calendar_events.
+   */
+  const syncFromOutlook = useCallback(async () => {
+    if (!userId || !companyId || !outlookConnection) {
+      toast.error('Not connected to Outlook Calendar');
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      const result = await composio.executeTool('OUTLOOKCALENDAR_LIST_CALENDAR_EVENTS', {
+        connectedAccountId: outlookConnection.composio_connected_account_id,
+        arguments: {
+          start_date_time: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          end_date_time: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+      });
+
+      const events = Array.isArray(result)
+        ? result
+        : result?.value || result?.events || result?.data?.value || [];
+
+      if (!Array.isArray(events)) {
+        toast.info('No events found in Outlook Calendar');
+        setLastSyncAt(new Date());
+        return;
+      }
+
+      let upserted = 0;
+      let skipped = 0;
+
+      for (const oEvent of events) {
+        const outlookEventId = oEvent.id || oEvent.iCalUId;
+        if (!outlookEventId) continue;
+
+        const { data: existing } = await supabase
+          .from('calendar_events')
+          .select('id')
+          .eq('company_id', companyId)
+          .filter('metadata->>outlook_event_id', 'eq', outlookEventId)
+          .maybeSingle();
+
+        const startTime = oEvent.start?.dateTime || oEvent.startDateTime || oEvent.start;
+        const endTime = oEvent.end?.dateTime || oEvent.endDateTime || oEvent.end;
+        const isAllDay = oEvent.isAllDay || false;
+        const title = oEvent.subject || oEvent.title || 'Untitled Event';
+
+        if (!startTime) continue;
+
+        const eventData = {
+          company_id: companyId,
+          created_by: userId,
+          title,
+          description: oEvent.bodyPreview || oEvent.body?.content || null,
+          event_type: 'external',
+          start_time: new Date(startTime).toISOString(),
+          end_time: endTime ? new Date(endTime).toISOString() : new Date(new Date(startTime).getTime() + 60 * 60 * 1000).toISOString(),
+          all_day: isAllDay,
+          location: oEvent.location?.displayName || oEvent.location || null,
+          color: '#3b82f6', // Outlook = blue
+          status: oEvent.isCancelled ? 'cancelled' : 'confirmed',
+          metadata: {
+            source: 'outlook_calendar',
+            outlook_event_id: outlookEventId,
+            outlook_web_link: oEvent.webLink || null,
+            outlook_teams_link: oEvent.onlineMeeting?.joinUrl || null,
+            synced_at: new Date().toISOString(),
+          },
+        };
+
+        if (existing) {
+          await supabase
+            .from('calendar_events')
+            .update({ ...eventData, updated_at: new Date().toISOString() })
+            .eq('id', existing.id);
+          skipped++;
+        } else {
+          await supabase.from('calendar_events').insert(eventData);
+          upserted++;
+        }
+      }
+
+      setLastSyncAt(new Date());
+      toast.success(`Synced ${upserted} new, ${skipped} updated from Outlook`);
+    } catch (err) {
+      console.error('[useCalendarSync] Sync from Outlook failed:', err);
+      toast.error(`Outlook sync failed: ${err.message}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [userId, companyId, outlookConnection, composio]);
+
+  /**
    * Push a local event to Google Calendar.
-   * Updates the local event's metadata with the Google event ID.
    */
   const syncToGoogle = useCallback(async (event) => {
     if (!connection) {
@@ -235,11 +379,9 @@ export function useCalendarSync(userId, companyId) {
         },
       });
 
-      // Extract the created Google event ID from the response
       const googleEventId = result?.id || result?.eventId || result?.event_id || result?.data?.id;
 
       if (googleEventId && event.id) {
-        // Update local event metadata with Google Calendar reference
         const existingMetadata = event.metadata || {};
         await supabase
           .from('calendar_events')
@@ -265,6 +407,60 @@ export function useCalendarSync(userId, companyId) {
       setIsSyncing(false);
     }
   }, [connection, composio]);
+
+  /**
+   * Push a local event to Outlook Calendar.
+   */
+  const syncToOutlook = useCallback(async (event) => {
+    if (!outlookConnection) {
+      toast.error('Not connected to Outlook Calendar');
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      const result = await composio.executeTool('OUTLOOKCALENDAR_CREATE_CALENDAR_EVENT', {
+        connectedAccountId: outlookConnection.composio_connected_account_id,
+        arguments: {
+          subject: event.title,
+          body: event.description || '',
+          start_date_time: new Date(event.start_time).toISOString(),
+          end_date_time: new Date(event.end_time).toISOString(),
+          location: event.location || '',
+          attendees: (event.attendees || [])
+            .filter((a) => a.email)
+            .map((a) => ({ email: a.email, name: a.name || '' })),
+        },
+      });
+
+      const outlookEventId = result?.id || result?.data?.id;
+
+      if (outlookEventId && event.id) {
+        const existingMetadata = event.metadata || {};
+        await supabase
+          .from('calendar_events')
+          .update({
+            metadata: {
+              ...existingMetadata,
+              source: 'outlook_calendar',
+              outlook_event_id: outlookEventId,
+              pushed_to_outlook_at: new Date().toISOString(),
+            },
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', event.id);
+      }
+
+      toast.success('Event pushed to Outlook Calendar');
+      return result;
+    } catch (err) {
+      console.error('[useCalendarSync] Push to Outlook failed:', err);
+      toast.error(`Failed to push event: ${err.message}`);
+      throw err;
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [outlookConnection, composio]);
 
   /**
    * Start periodic auto-sync (every 5 minutes).
@@ -306,12 +502,19 @@ export function useCalendarSync(userId, companyId) {
     isConnected,
     connectionLoading,
     connection,
+    isOutlookConnected,
+    outlookConnection,
+    activeProvider,
+    setActiveProvider,
 
     // Actions
     connectGoogleCalendar,
+    connectOutlookCalendar,
     checkConnection,
     syncFromGoogle,
+    syncFromOutlook,
     syncToGoogle,
+    syncToOutlook,
     startAutoSync,
     stopAutoSync,
   };

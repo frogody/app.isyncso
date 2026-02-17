@@ -20,6 +20,8 @@ import {
   Maximize2,
   Minimize2,
   Copy,
+  MessageSquare,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -83,12 +85,14 @@ const RoomControls = memo(function RoomControls({
   isCameraOff,
   isScreenSharing,
   showReactions,
+  showChat,
   participantCount,
   joinCode,
   onToggleMute,
   onToggleCamera,
   onToggleScreenShare,
   onToggleReactions,
+  onToggleChat,
   onEndCall,
   onLeave,
   isHost,
@@ -153,6 +157,14 @@ const RoomControls = memo(function RoomControls({
         onClick={onToggleReactions}
       />
 
+      {/* Chat toggle */}
+      <ControlButton
+        icon={MessageSquare}
+        isActive={showChat}
+        label={showChat ? 'Hide chat' : 'Show chat'}
+        onClick={onToggleChat}
+      />
+
       {/* Participant count */}
       <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.05]">
         <Users className="w-4 h-4 text-zinc-400" />
@@ -210,6 +222,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
   onEndCall,
 }) {
   const [showReactions, setShowReactions] = useState(true);
+  const [showChat, setShowChat] = useState(false);
 
   const callId = call?.id;
   const userId = user?.id;
@@ -226,6 +239,10 @@ const VideoCallRoom = memo(function VideoCallRoom({
 
   const toggleReactions = useCallback(() => {
     setShowReactions((prev) => !prev);
+  }, []);
+
+  const toggleChat = useCallback(() => {
+    setShowChat((prev) => !prev);
   }, []);
 
   return (
@@ -250,19 +267,56 @@ const VideoCallRoom = memo(function VideoCallRoom({
           isRecording={isRecording}
         />
 
-        {/* Video grid - fills remaining space */}
-        <div className="flex-1 pt-14 pb-24 relative">
-          <VideoGrid
-            participants={participants}
-            currentUserId={userId}
-          />
-
-          {/* Reactions overlay */}
-          {showReactions && (
-            <ReactionsOverlay
-              callId={callId}
-              userId={userId}
+        {/* Video grid + chat panel */}
+        <div className="flex-1 pt-14 pb-24 relative flex">
+          <div className={`flex-1 relative ${showChat ? 'mr-80' : ''} transition-all duration-300`}>
+            <VideoGrid
+              participants={participants}
+              currentUserId={userId}
             />
+
+            {/* Reactions overlay */}
+            {showReactions && (
+              <ReactionsOverlay
+                callId={callId}
+                userId={userId}
+              />
+            )}
+          </div>
+
+          {/* Chat panel */}
+          {showChat && (
+            <motion.div
+              initial={{ x: 320, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 320, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="absolute right-0 top-0 bottom-0 w-80 bg-zinc-900/95 backdrop-blur-xl border-l border-zinc-700/50 flex flex-col z-20"
+            >
+              <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700/50">
+                <h3 className="text-sm font-semibold text-white">Call Chat</h3>
+                <button
+                  onClick={toggleChat}
+                  className="p-1 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex-1 flex items-center justify-center p-4">
+                <div className="text-center">
+                  <MessageSquare className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                  <p className="text-sm text-zinc-500">Chat messages will appear here</p>
+                  <p className="text-xs text-zinc-600 mt-1">Send messages to other call participants</p>
+                </div>
+              </div>
+              <div className="p-3 border-t border-zinc-700/50">
+                <input
+                  type="text"
+                  placeholder="Type a message..."
+                  className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white text-sm placeholder-zinc-500 focus:border-cyan-500 focus:outline-none transition-colors"
+                />
+              </div>
+            </motion.div>
           )}
         </div>
 
@@ -272,12 +326,14 @@ const VideoCallRoom = memo(function VideoCallRoom({
           isCameraOff={isCameraOff}
           isScreenSharing={isScreenSharing}
           showReactions={showReactions}
+          showChat={showChat}
           participantCount={participants.length}
           joinCode={joinCode}
           onToggleMute={onToggleMute}
           onToggleCamera={onToggleCamera}
           onToggleScreenShare={onToggleScreenShare}
           onToggleReactions={toggleReactions}
+          onToggleChat={toggleChat}
           onEndCall={onEndCall}
           onLeave={onLeave}
           isHost={isHost}

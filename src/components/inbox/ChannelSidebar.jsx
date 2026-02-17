@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import ChannelCategoryManager, { CategoryDot, filterChannelsByCategory } from './ChannelCategoryManager';
+import GuestChannelBadge from './guests/GuestChannelBadge';
 
 // Status options
 const STATUS_OPTIONS = [
@@ -111,6 +112,14 @@ const ChannelItem = memo(function ChannelItem({
 
       {/* Indicators */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
+        {/* Guest badge */}
+        {!isDM && channel.is_guest_channel && (
+          <GuestChannelBadge
+            guestCount={channel.guest_count || 0}
+            guestNames={channel.guest_names || []}
+          />
+        )}
+
         {/* Star */}
         {isStarred && (
           <Star className="w-3 h-3 text-amber-400 fill-amber-400" />

@@ -23,8 +23,20 @@ import {
   Search,
   Check,
   Loader2,
+  Repeat,
+  Mail,
 } from 'lucide-react';
 import { EVENT_TYPES, EVENT_COLORS, PRESET_COLORS, REMINDER_PRESETS } from './useCalendar';
+
+// Recurrence options
+const RECURRENCE_OPTIONS = [
+  { value: '', label: 'Does not repeat' },
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'biweekly', label: 'Every 2 weeks' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'yearly', label: 'Yearly' },
+];
 
 // Format a Date to YYYY-MM-DD for date inputs
 function formatDateInput(date) {
@@ -90,6 +102,9 @@ export default function CalendarEventModal({
   const [reminders, setReminders] = useState([15]);
   const [videoCall, setVideoCall] = useState(false);
   const [attendeeSearch, setAttendeeSearch] = useState('');
+  const [externalEmail, setExternalEmail] = useState('');
+  const [recurrenceRule, setRecurrenceRule] = useState('');
+  const [recurrenceEnd, setRecurrenceEnd] = useState('');
   const [saving, setSaving] = useState(false);
 
   // Initialize/reset form when modal opens or event changes
@@ -122,6 +137,10 @@ export default function CalendarEventModal({
         setSelectedAttendees([]);
       }
 
+      // Load recurrence from event metadata
+      setRecurrenceRule(event.metadata?.recurrence_rule || '');
+      setRecurrenceEnd(event.metadata?.recurrence_end ? formatDateInput(event.metadata.recurrence_end) : '');
+
       // Load reminders from event (convert remind_at to minutes before)
       if (event.calendar_reminders?.length) {
         const eventStart = new Date(event.start_time).getTime();
@@ -149,8 +168,11 @@ export default function CalendarEventModal({
       setSelectedAttendees([]);
       setReminders([15]);
       setVideoCall(false);
+      setRecurrenceRule('');
+      setRecurrenceEnd('');
     }
     setAttendeeSearch('');
+    setExternalEmail('');
   }, [isOpen, event, defaultStart, defaultEnd]);
 
   // Update color when event type changes (only for new events)
@@ -181,9 +203,23 @@ export default function CalendarEventModal({
     setAttendeeSearch('');
   };
 
+  // Add external email attendee
+  const addExternalAttendee = () => {
+    const email = externalEmail.trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+    if (selectedAttendees.some((a) => a.email === email)) return;
+    setSelectedAttendees((prev) => [
+      ...prev,
+      { user_id: null, name: email.split('@')[0], email },
+    ]);
+    setExternalEmail('');
+  };
+
   // Remove attendee
-  const removeAttendee = (userId) => {
-    setSelectedAttendees((prev) => prev.filter((a) => a.user_id !== userId));
+  const removeAttendee = (idOrEmail) => {
+    setSelectedAttendees((prev) => prev.filter((a) =>
+      a.user_id ? a.user_id !== idOrEmail : a.email !== idOrEmail
+    ));
   };
 
   // Add reminder
@@ -220,6 +256,8 @@ export default function CalendarEventModal({
         attendees: selectedAttendees,
         reminders,
         video_call: videoCall,
+        recurrence_rule: recurrenceRule || null,
+        recurrence_end: recurrenceEnd || null,
       };
 
       await onSave(eventData);
@@ -460,24 +498,33 @@ export default function CalendarEventModal({
                 {/* Selected attendees pills */}
                 {selectedAttendees.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-2">
-                    {selectedAttendees.map((att) => (
-                      <span
-                        key={att.user_id}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-xs text-cyan-300"
-                      >
-                        <span className="w-5 h-5 rounded-full bg-gradient-to-br from-cyan-500 to-indigo-500 flex items-center justify-center text-[10px] font-bold text-white">
-                          {(att.name || '?').charAt(0)}
-                        </span>
-                        {att.name || att.email}
-                        <button
-                          type="button"
-                          onClick={() => removeAttendee(att.user_id)}
-                          className="ml-0.5 text-cyan-400 hover:text-white"
+                    {selectedAttendees.map((att) => {
+                      const isExternal = !att.user_id;
+                      return (
+                        <span
+                          key={att.user_id || att.email}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs ${
+                            isExternal
+                              ? 'bg-amber-500/10 border border-amber-500/30 text-amber-300'
+                              : 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-300'
+                          }`}
                         >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
+                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${
+                            isExternal ? 'bg-gradient-to-br from-amber-500 to-orange-500' : 'bg-gradient-to-br from-cyan-500 to-indigo-500'
+                          }`}>
+                            {isExternal ? <Mail className="w-3 h-3" /> : (att.name || '?').charAt(0)}
+                          </span>
+                          {att.name || att.email}
+                          <button
+                            type="button"
+                            onClick={() => removeAttendee(att.user_id || att.email)}
+                            className={`ml-0.5 ${isExternal ? 'text-amber-400' : 'text-cyan-400'} hover:text-white`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -524,6 +571,33 @@ export default function CalendarEventModal({
                     })}
                   </div>
                 )}
+
+                {/* External email attendee */}
+                <div className="flex gap-2 mt-2">
+                  <div className="relative flex-1">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <input
+                      type="email"
+                      value={externalEmail}
+                      onChange={(e) => setExternalEmail(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addExternalAttendee();
+                        }
+                      }}
+                      placeholder="Add external email..."
+                      className="w-full pl-9 pr-4 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-xl text-white text-sm placeholder-zinc-500 focus:border-amber-500 focus:outline-none transition-colors"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addExternalAttendee}
+                    className="px-3 py-2 bg-amber-500/20 border border-amber-500/40 text-amber-300 rounded-xl text-sm hover:bg-amber-500/30 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               {/* Reminders */}
@@ -573,6 +647,37 @@ export default function CalendarEventModal({
                       </option>
                     ))}
                   </select>
+                )}
+              </div>
+
+              {/* Recurrence */}
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">
+                  <Repeat className="w-3.5 h-3.5 inline mr-1" />
+                  Recurrence
+                </label>
+                <select
+                  value={recurrenceRule}
+                  onChange={(e) => setRecurrenceRule(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-zinc-800/50 border border-zinc-700/50 rounded-xl text-white appearance-none focus:border-cyan-500 focus:outline-none transition-colors cursor-pointer"
+                >
+                  {RECURRENCE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+
+                {recurrenceRule && (
+                  <div className="mt-2">
+                    <label className="block text-xs text-zinc-500 mb-1">Repeat until</label>
+                    <input
+                      type="date"
+                      value={recurrenceEnd}
+                      onChange={(e) => setRecurrenceEnd(e.target.value)}
+                      className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-xl text-white text-sm focus:border-cyan-500 focus:outline-none transition-colors [color-scheme:dark]"
+                    />
+                  </div>
                 )}
               </div>
 

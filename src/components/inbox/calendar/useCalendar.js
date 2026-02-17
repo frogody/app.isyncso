@@ -147,7 +147,7 @@ export function useCalendar(userId, companyId) {
     fetchEvents(dateRange.start, dateRange.end);
   }, [fetchEvents, dateRange]);
 
-  // Create event with attendees and reminders
+  // Create event with attendees, reminders, and optional recurrence
   const createEvent = useCallback(async ({
     title,
     description,
@@ -160,6 +160,9 @@ export function useCalendar(userId, companyId) {
     attendees = [],
     reminders = [],
     video_call,
+    recurrence_rule = null,
+    recurrence_end = null,
+    recurrence_parent_id = null,
     metadata = {},
   }) => {
     if (!userId || !companyId) throw new Error('Not authenticated');
@@ -177,7 +180,10 @@ export function useCalendar(userId, companyId) {
         location: location || null,
         color: color || EVENT_COLORS[event_type] || EVENT_COLORS.meeting,
         status: 'confirmed',
-        metadata,
+        metadata: {
+          ...metadata,
+          ...(recurrence_rule ? { recurrence_rule, recurrence_end, recurrence_parent_id } : {}),
+        },
       };
 
       const { data: newEvent, error } = await supabase
