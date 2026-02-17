@@ -11,6 +11,8 @@ import { useCalendar } from './calendar/useCalendar';
 import { useUser } from '@/components/context/UserContext';
 import { useSyncPhone } from './phone/useSyncPhone';
 import PhoneDashboard from './phone/PhoneDashboard';
+import { useVideoCall } from './video';
+import { VideoCallRoom } from './video';
 
 // Tab definitions for Communication Hub
 const TABS = [
@@ -58,11 +60,13 @@ const TabBar = memo(function TabBar({ activeTab, onTabChange, callCount = 0, pho
 // Calendar sidebar with mini month navigation and today's events
 const CalendarSidebarContent = memo(function CalendarSidebarContent({ calendarState }) {
   const { user } = useUser();
-  // Use passed-in calendar state or create a basic one
-  const events = calendarState?.events || [];
-  const currentDate = calendarState?.currentDate || new Date();
-  const setCurrentDate = calendarState?.setCurrentDate || (() => {});
-  const setView = calendarState?.setView || (() => {});
+  // Use own calendar state when no external state is provided
+  const ownCalendar = useCalendar(user?.id, user?.company_id);
+  const calendar = calendarState || ownCalendar;
+  const events = calendar?.events || [];
+  const currentDate = calendar?.currentDate || new Date();
+  const setCurrentDate = calendar?.setCurrentDate || (() => {});
+  const setView = calendar?.setView || (() => {});
 
   const handleDateSelect = (date) => {
     setCurrentDate(date);
@@ -121,33 +125,51 @@ const CalendarSidebarContent = memo(function CalendarSidebarContent({ calendarSt
   );
 });
 
-// Placeholder content for Calls tab sidebar
+// Calls tab sidebar with live call state
 const CallsSidebarContent = memo(function CallsSidebarContent() {
+  const { user } = useUser();
+  const videoCall = useVideoCall(user?.id, user?.company_id);
+
   return (
     <div className="flex-1 overflow-y-auto px-3 py-4">
       <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">
-        Active Calls
+        Active Call
       </div>
-      <div className="p-3 rounded-xl bg-zinc-800/40 border border-zinc-700/40">
-        <div className="flex items-center gap-2 text-zinc-500">
-          <Video className="w-4 h-4 text-zinc-600" />
-          <span className="text-xs text-zinc-400">No active calls</span>
+      {videoCall.isInCall && videoCall.currentCall ? (
+        <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 mb-4">
+          <div className="text-sm font-medium text-white">{videoCall.currentCall.title || 'Ongoing Call'}</div>
+          <div className="flex items-center gap-2 mt-1.5">
+            <UsersIcon className="w-3 h-3 text-cyan-400" />
+            <span className="text-xs text-zinc-400">{videoCall.participants.length} participant{videoCall.participants.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div className="flex items-center gap-1 mt-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            <span className="text-[10px] text-cyan-400">In progress</span>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="p-3 rounded-xl bg-zinc-800/40 border border-zinc-700/40">
+          <div className="flex items-center gap-2 text-zinc-500">
+            <Video className="w-4 h-4 text-zinc-600" />
+            <span className="text-xs text-zinc-400">No active calls</span>
+          </div>
+        </div>
+      )}
 
       <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mt-6 mb-3">
-        Scheduled Today
+        Quick Actions
       </div>
-      <div className="p-3 rounded-xl bg-zinc-800/40 border border-zinc-700/40">
-        <span className="text-xs text-zinc-400">No scheduled calls</span>
-      </div>
-
-      <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mt-6 mb-3">
-        Recent
-      </div>
-      <div className="p-3 rounded-xl bg-zinc-800/40 border border-zinc-700/40">
-        <span className="text-xs text-zinc-400">No recent calls</span>
-      </div>
+      <button
+        onClick={() => videoCall.createCall({ title: 'Quick Call', channelId: null })}
+        disabled={videoCall.loading || videoCall.isInCall}
+        className="w-full flex items-center gap-2 p-3 rounded-xl bg-zinc-800/40 border border-zinc-700/40 hover:bg-zinc-800/60 hover:border-cyan-500/30 transition-all disabled:opacity-50 text-left"
+      >
+        <Video className="w-4 h-4 text-cyan-400" />
+        <div>
+          <div className="text-xs font-medium text-zinc-200">Start Quick Call</div>
+          <div className="text-[10px] text-zinc-500">Start an instant video call</div>
+        </div>
+      </button>
     </div>
   );
 });
@@ -297,6 +319,27 @@ function CalendarMainContent() {
 }
 
 function CallsMainContent() {
+  const { user } = useUser();
+  const videoCall = useVideoCall(user?.id, user?.company_id);
+
+  if (videoCall.isInCall && videoCall.currentCall) {
+    return (
+      <VideoCallRoom
+        call={videoCall.currentCall}
+        participants={videoCall.participants}
+        user={user}
+        isMuted={videoCall.isMuted}
+        isCameraOff={videoCall.isCameraOff}
+        isScreenSharing={videoCall.isScreenSharing}
+        onToggleMute={videoCall.toggleMute}
+        onToggleCamera={videoCall.toggleCamera}
+        onToggleScreenShare={videoCall.toggleScreenShare}
+        onLeave={videoCall.leaveCall}
+        onEndCall={videoCall.endCall}
+      />
+    );
+  }
+
   return (
     <div className="flex-1 flex items-center justify-center p-4">
       <div className="text-center max-w-md">
@@ -304,10 +347,26 @@ function CallsMainContent() {
           <Video className="w-8 h-8 text-cyan-400/40" />
         </div>
         <h2 className="text-xl font-semibold text-white mb-2">Video Calls</h2>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-zinc-500 mb-6">
           Start video calls with your team or external guests. Sync joins as a silent note-taker and can be activated on demand.
         </p>
-        <p className="text-xs text-zinc-600 mt-4">Coming in the next build phase.</p>
+        <button
+          onClick={() => videoCall.createCall({ title: 'New Call', channelId: null })}
+          disabled={videoCall.loading}
+          className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+        >
+          {videoCall.loading ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Starting...
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <Video className="w-4 h-4" />
+              Start a Call
+            </span>
+          )}
+        </button>
       </div>
     </div>
   );
