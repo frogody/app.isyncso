@@ -69,7 +69,7 @@ export default function Credits() {
 
   return (
     <div className={`min-h-screen ${st('bg-slate-50', 'bg-black')} p-6`}>
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="space-y-8">
         {/* Page Header */}
         <div>
           <h1 className={`text-2xl font-bold ${st('text-slate-900', 'text-white')}`}>Credits</h1>
