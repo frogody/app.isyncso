@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageSquare, Calendar, Video, Phone,
   ChevronRight, Clock, Users as UsersIcon,
-  Loader2, ArrowDownLeft, ArrowUpRight
+  Loader2, ArrowDownLeft, ArrowUpRight,
+  Link2, Copy, Check, ExternalLink, Settings, X
 } from 'lucide-react';
 import CalendarMiniMonth from './calendar/CalendarMiniMonth';
 import CalendarView from './calendar/CalendarView';
@@ -55,6 +56,90 @@ const TabBar = memo(function TabBar({ activeTab, onTabChange, callCount = 0, pho
         );
       })}
     </div>
+  );
+});
+
+// Compact booking card for the sidebar — opens full settings in a modal
+const BookingCard = memo(function BookingCard({ userId, username }) {
+  const [showModal, setShowModal] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const bookingUrl = `${window.location.origin}/book/${username || 'your-username'}`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(bookingUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <>
+      <div className="p-2.5 rounded-xl bg-zinc-800/40 border border-zinc-700/40">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Link2 className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="text-xs font-medium text-zinc-200">Booking Page</span>
+          </div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="p-1 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-700/50 transition-colors"
+            title="Booking settings"
+          >
+            <Settings className="w-3.5 h-3.5" />
+          </button>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="flex-1 min-w-0 px-2 py-1 bg-zinc-900/60 rounded-md">
+            <span className="text-[10px] text-zinc-500 truncate block">{bookingUrl}</span>
+          </div>
+          <button
+            onClick={handleCopy}
+            className="p-1 rounded-md text-zinc-500 hover:text-white transition-colors shrink-0"
+          >
+            {copied ? <Check className="w-3 h-3 text-cyan-400" /> : <Copy className="w-3 h-3" />}
+          </button>
+          <a
+            href={bookingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-1 rounded-md text-zinc-500 hover:text-white transition-colors shrink-0"
+          >
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+      </div>
+
+      {/* Full settings modal */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowModal(false)}
+          >
+            <motion.div
+              className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-zinc-900 border border-zinc-800/60 shadow-2xl p-6"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-white">Booking Settings</h2>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <BookingSettings userId={userId} username={username} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 });
 
@@ -123,9 +208,12 @@ const CalendarSidebarContent = memo(function CalendarSidebarContent({ calendarSt
         </div>
       )}
 
-      {/* Booking page settings */}
-      <div className="mt-5">
-        <BookingSettings userId={user?.id} username={user?.username || user?.email?.split('@')[0]} />
+      {/* Compact booking card — full settings in modal */}
+      <div className="mt-4">
+        <BookingCard
+          userId={user?.id}
+          username={user?.username || user?.email?.split('@')[0]}
+        />
       </div>
     </div>
   );
