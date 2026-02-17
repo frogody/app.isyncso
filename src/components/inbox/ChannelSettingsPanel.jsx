@@ -3,11 +3,12 @@ import { motion } from 'framer-motion';
 import {
   X, Settings, Hash, Lock, ChevronDown, ChevronRight,
   Link2, Sparkles, Bell, BellOff, Users, Trash2, Archive,
-  Save, Loader2, AlertTriangle, Headset
+  Save, Loader2, AlertTriangle, Headset, Zap
 } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 import { CHANNEL_CATEGORIES } from './ChannelCategoryManager';
+import WorkflowTriggerManager from './workflows/WorkflowTriggerManager';
 
 // Notification level options
 const NOTIFICATION_LEVELS = [
@@ -329,6 +330,11 @@ export default function ChannelSettingsPanel({
               <p className="text-xs text-zinc-400 leading-relaxed">{syncSummary}</p>
             </div>
           )}
+        </Section>
+
+        {/* Workflow Triggers */}
+        <Section title="Workflow Triggers" icon={Zap}>
+          <WorkflowTriggerManager channelId={channel?.id} compact />
         </Section>
 
         {/* Notifications */}

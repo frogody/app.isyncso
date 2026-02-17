@@ -1,4 +1,5 @@
 import Layout from "./Layout.jsx";
+import { CalendarBookingPage } from "@/components/inbox/booking";
 
 import AIAssistant from "./AIAssistant";
 
@@ -793,6 +794,16 @@ function PagesContent() {
             <Routes>
                 <Route path="/demo" element={<DemoExperience />} />
                 <Route path="/request-demo" element={<RequestDemo />} />
+            </Routes>
+        );
+    }
+
+    // Public booking page - Calendly-style, no auth required
+    const isBookingRoute = location.pathname.startsWith('/book');
+    if (isBookingRoute) {
+        return (
+            <Routes>
+                <Route path="/book/:username" element={<CalendarBookingPage />} />
             </Routes>
         );
     }

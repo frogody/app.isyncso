@@ -8,6 +8,7 @@ import {
 import CalendarMiniMonth from './calendar/CalendarMiniMonth';
 import CalendarView from './calendar/CalendarView';
 import { useCalendar } from './calendar/useCalendar';
+import { BookingSettings } from './booking';
 import { useUser } from '@/components/context/UserContext';
 import { useSyncPhone } from './phone/useSyncPhone';
 import PhoneDashboard from './phone/PhoneDashboard';
@@ -121,6 +122,11 @@ const CalendarSidebarContent = memo(function CalendarSidebarContent({ calendarSt
           </div>
         </div>
       )}
+
+      {/* Booking page settings */}
+      <div className="mt-5">
+        <BookingSettings userId={user?.id} username={user?.username || user?.email?.split('@')[0]} />
+      </div>
     </div>
   );
 });

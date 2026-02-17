@@ -61,7 +61,7 @@ import { CreatePollModal } from '@/components/inbox/messages';
 import SmartReply from '@/components/inbox/smart/SmartReply';
 import { CatchUpButton } from '@/components/inbox/digests';
 import { ChannelDigest } from '@/components/inbox/digests';
-import { SentimentBadge } from '@/components/inbox/sentiment';
+import { SentimentBadge, SentimentIndicator, SentimentPanel, SentimentAlert, useSentimentTracking } from '@/components/inbox/sentiment';
 import { useVideoCall } from '@/components/inbox/video';
 import { VideoCallRoom, CallBanner } from '@/components/inbox/video';
 
@@ -236,6 +236,21 @@ export default function InboxPage() {
 
   // Video call hook
   const videoCall = useVideoCall(user?.id, user?.company_id);
+
+  // Sentiment tracking for current channel
+  const sentimentMessages = useMemo(() => {
+    if (!selectedChannel?.id || !realtimeMessages?.length) return {};
+    return { [selectedChannel.id]: realtimeMessages };
+  }, [selectedChannel?.id, realtimeMessages]);
+
+  const sentimentData = useSentimentTracking({
+    messages: sentimentMessages,
+    channels: realtimeChannels,
+  });
+
+  // Sentiment panel state
+  const [showSentimentPanel, setShowSentimentPanel] = useState(false);
+  const [sentimentTimeRange, setSentimentTimeRange] = useState('7d');
 
   // Mobile UI State
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -789,6 +804,119 @@ export default function InboxPage() {
     }
   }, [selectedChannel, user, rtSendMessage]);
 
+  // Poll vote handler - updates message metadata
+  const handlePollVote = useCallback(async (messageId, optionId) => {
+    if (!user?.id) return;
+    try {
+      const msg = realtimeMessages.find(m => m.id === messageId);
+      if (!msg?.metadata?.poll) return;
+      const poll = { ...msg.metadata.poll };
+      poll.options = poll.options.map(opt => {
+        const votes = [...(opt.votes || [])];
+        const idx = votes.indexOf(user.id);
+        if (opt.id === optionId) {
+          if (idx === -1) votes.push(user.id);
+          else votes.splice(idx, 1);
+        } else if (!poll.multi_select && idx !== -1) {
+          votes.splice(idx, 1);
+        }
+        return { ...opt, votes };
+      });
+      await supabase.from('messages').update({
+        metadata: { ...msg.metadata, poll }
+      }).eq('id', messageId);
+      setMessages(prev => prev.map(m => m.id === messageId
+        ? { ...m, metadata: { ...m.metadata, poll } }
+        : m
+      ));
+    } catch (e) {
+      console.error('Vote failed:', e);
+    }
+  }, [user?.id, realtimeMessages, setMessages]);
+
+  // Decision support handler
+  const handleDecisionSupport = useCallback(async (messageId, optionId) => {
+    if (!user?.id) return;
+    try {
+      const msg = realtimeMessages.find(m => m.id === messageId);
+      if (!msg?.metadata?.decision) return;
+      const decision = { ...msg.metadata.decision };
+      decision.options = decision.options.map(opt => {
+        const supporters = [...(opt.supporters || [])];
+        if (opt.id === optionId) {
+          const idx = supporters.indexOf(user.id);
+          if (idx === -1) supporters.push(user.id);
+          else supporters.splice(idx, 1);
+        }
+        return { ...opt, supporters };
+      });
+      await supabase.from('messages').update({
+        metadata: { ...msg.metadata, decision }
+      }).eq('id', messageId);
+      setMessages(prev => prev.map(m => m.id === messageId
+        ? { ...m, metadata: { ...m.metadata, decision } }
+        : m
+      ));
+    } catch (e) {
+      console.error('Support failed:', e);
+    }
+  }, [user?.id, realtimeMessages, setMessages]);
+
+  // Decision finalize handler
+  const handleDecisionDecide = useCallback(async (messageId, optionId) => {
+    try {
+      const msg = realtimeMessages.find(m => m.id === messageId);
+      if (!msg?.metadata?.decision) return;
+      const decision = { ...msg.metadata.decision, status: 'decided', selected_option: optionId };
+      await supabase.from('messages').update({
+        metadata: { ...msg.metadata, decision }
+      }).eq('id', messageId);
+      setMessages(prev => prev.map(m => m.id === messageId
+        ? { ...m, metadata: { ...m.metadata, decision } }
+        : m
+      ));
+    } catch (e) {
+      console.error('Decide failed:', e);
+    }
+  }, [realtimeMessages, setMessages]);
+
+  // Action item toggle complete handler
+  const handleToggleComplete = useCallback(async (messageId) => {
+    try {
+      const msg = realtimeMessages.find(m => m.id === messageId);
+      if (!msg?.metadata?.action_item) return;
+      const action_item = { ...msg.metadata.action_item };
+      action_item.status = action_item.status === 'done' ? 'pending' : 'done';
+      await supabase.from('messages').update({
+        metadata: { ...msg.metadata, action_item }
+      }).eq('id', messageId);
+      setMessages(prev => prev.map(m => m.id === messageId
+        ? { ...m, metadata: { ...m.metadata, action_item } }
+        : m
+      ));
+    } catch (e) {
+      console.error('Toggle complete failed:', e);
+    }
+  }, [realtimeMessages, setMessages]);
+
+  // Action item assign handler
+  const handleAssignActionItem = useCallback(async (messageId, assigneeId) => {
+    try {
+      const msg = realtimeMessages.find(m => m.id === messageId);
+      if (!msg?.metadata?.action_item) return;
+      const action_item = { ...msg.metadata.action_item, assignee: assigneeId };
+      await supabase.from('messages').update({
+        metadata: { ...msg.metadata, action_item }
+      }).eq('id', messageId);
+      setMessages(prev => prev.map(m => m.id === messageId
+        ? { ...m, metadata: { ...m.metadata, action_item } }
+        : m
+      ));
+    } catch (e) {
+      console.error('Assign failed:', e);
+    }
+  }, [realtimeMessages, setMessages]);
+
   // Start video call for current channel
   const handleStartCall = useCallback(async () => {
     if (!selectedChannel || !user) return;
@@ -976,6 +1104,14 @@ export default function InboxPage() {
               </div>
 
               <div className="flex items-center gap-0.5 sm:gap-1">
+                {/* Sentiment indicator */}
+                {selectedChannel.type !== 'special' && sentimentData?.sentiment && (
+                  <SentimentIndicator
+                    sentiment={sentimentData.sentiment}
+                    onExpand={() => setShowSentimentPanel(true)}
+                  />
+                )}
+
                 {/* Catch Up button - AI digest */}
                 {selectedChannel.type !== 'special' && (
                   <CatchUpButton
@@ -1086,7 +1222,21 @@ export default function InboxPage() {
                 setShowForwardModal(true);
               }}
               isBookmarked={isBookmarked}
+              onVote={handlePollVote}
+              onDecide={handleDecisionDecide}
+              onSupport={handleDecisionSupport}
+              onToggleComplete={handleToggleComplete}
+              onAssign={handleAssignActionItem}
             />
+
+            {/* Sentiment alert banner */}
+            {sentimentData?.alerts?.length > 0 && selectedChannel?.type !== 'special' && (
+              <SentimentAlert
+                alert={sentimentData.alerts[0]}
+                onDismiss={() => {}}
+                onViewDetails={() => setShowSentimentPanel(true)}
+              />
+            )}
 
             {/* Smart Reply suggestions + Message Input - hide for special views */}
             {selectedChannel.type !== 'special' && (
@@ -1408,6 +1558,34 @@ export default function InboxPage() {
                 channelId={selectedChannel.id}
                 channelName={selectedChannel.name}
                 onClose={() => setShowDigest(false)}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sentiment Panel overlay */}
+      <AnimatePresence>
+        {showSentimentPanel && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowSentimentPanel(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl bg-zinc-900 border border-zinc-800/60 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <SentimentPanel
+                data={sentimentData?.trend || []}
+                onClose={() => setShowSentimentPanel(false)}
+                timeRange={sentimentTimeRange}
               />
             </motion.div>
           </motion.div>

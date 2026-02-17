@@ -8,6 +8,7 @@ import {
 import FilePreview from './FilePreview';
 import { format, isToday, isYesterday } from 'date-fns';
 import { AVAILABLE_AGENTS } from './AgentMentionHandler';
+import { PollMessage, DecisionMessage, ActionItemMessage, VoiceNote, EntityCard } from './messages';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,7 +83,12 @@ function MessageBubble({
   readStatusText,
   onBookmark,
   onForward,
-  isBookmarked = false
+  isBookmarked = false,
+  onVote,
+  onDecide,
+  onSupport,
+  onToggleComplete,
+  onAssign,
 }) {
   const [showActions, setShowActions] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -323,6 +329,56 @@ function MessageBubble({
                 </p>
               ) : null}
               {renderAttachment()}
+
+              {/* Special message formats */}
+              {message.metadata?.message_format === 'poll' && message.metadata?.poll && (
+                <div className="mt-2">
+                  <PollMessage
+                    messageId={message.id}
+                    poll={message.metadata.poll}
+                    currentUserId={currentUserId}
+                    onVote={onVote}
+                  />
+                </div>
+              )}
+              {message.metadata?.message_format === 'decision' && message.metadata?.decision && (
+                <div className="mt-2">
+                  <DecisionMessage
+                    messageId={message.id}
+                    decision={message.metadata.decision}
+                    currentUserId={currentUserId}
+                    onSupport={onSupport}
+                    onDecide={onDecide}
+                  />
+                </div>
+              )}
+              {message.metadata?.message_format === 'action_item' && message.metadata?.action_item && (
+                <div className="mt-2">
+                  <ActionItemMessage
+                    messageId={message.id}
+                    actionItem={message.metadata.action_item}
+                    onToggleComplete={onToggleComplete}
+                    onAssign={onAssign}
+                  />
+                </div>
+              )}
+              {message.metadata?.message_format === 'voice' && message.metadata?.voice && (
+                <div className="mt-2">
+                  <VoiceNote
+                    audioUrl={message.metadata.voice.audioUrl || message.file_url}
+                    duration={message.metadata.voice.duration}
+                    transcript={message.metadata.voice.transcript}
+                    senderName={message.sender_name}
+                  />
+                </div>
+              )}
+              {message.metadata?.entities?.length > 0 && (
+                <div className="mt-2 space-y-1.5">
+                  {message.metadata.entities.map((entity, i) => (
+                    <EntityCard key={entity.id || i} entity={entity} />
+                  ))}
+                </div>
+              )}
             </div>
           );
         })()}
@@ -609,7 +665,12 @@ export default function MessageList({
   getReadStatusText,
   onBookmark,
   onForward,
-  isBookmarked
+  isBookmarked,
+  onVote,
+  onDecide,
+  onSupport,
+  onToggleComplete,
+  onAssign,
 }) {
   const userMap = React.useMemo(() => {
     const map = {};
@@ -787,6 +848,11 @@ export default function MessageList({
                   onBookmark={onBookmark}
                   onForward={onForward}
                   isBookmarked={isBookmarked?.(message.id)}
+                  onVote={onVote}
+                  onDecide={onDecide}
+                  onSupport={onSupport}
+                  onToggleComplete={onToggleComplete}
+                  onAssign={onAssign}
                 />
               );
             })}
