@@ -1,43 +1,17 @@
 /**
- * useSmartCompose - AI-powered inline compose suggestions
+ * useSmartCompose - AI-powered inline compose suggestions via Groq LLM.
  *
- * Provides ghost-text autocomplete suggestions based on local pattern matching.
- * Debounced to avoid excessive processing (500ms after typing stops, min 10 chars).
+ * Provides ghost-text autocomplete suggestions based on conversation context.
+ * Debounced to 800ms after typing stops, minimum 10 chars.
  * Tab key accepts the suggestion.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-// Pattern-based completions: maps trailing phrase fragments to suggested completions
-const COMPOSE_PATTERNS = [
-  { trigger: /can you\s*$/i, completion: 'please help me with...' },
-  { trigger: /could you\s*$/i, completion: 'please take a look at...' },
-  { trigger: /i think we should\s*$/i, completion: 'schedule a meeting to discuss...' },
-  { trigger: /i think we need\s*$/i, completion: 'to review this before proceeding.' },
-  { trigger: /thanks for\s*$/i, completion: 'getting back to me...' },
-  { trigger: /thank you for\s*$/i, completion: 'your help with this.' },
-  { trigger: /let me know\s*$/i, completion: 'if you have any questions.' },
-  { trigger: /please let me\s*$/i, completion: 'know if you need anything else.' },
-  { trigger: /i'll follow up\s*$/i, completion: 'with more details shortly.' },
-  { trigger: /i'll get back\s*$/i, completion: 'to you on this.' },
-  { trigger: /just wanted to\s*$/i, completion: 'check in on the status of...' },
-  { trigger: /wanted to\s*$/i, completion: 'follow up on our conversation.' },
-  { trigger: /do you have\s*$/i, completion: 'time to discuss this?' },
-  { trigger: /are you available\s*$/i, completion: 'for a quick call?' },
-  { trigger: /looking forward\s*$/i, completion: 'to hearing from you.' },
-  { trigger: /sounds good\s*$/i, completion: "I'll get started on that." },
-  { trigger: /happy to\s*$/i, completion: 'help with that!' },
-  { trigger: /i was wondering\s*$/i, completion: 'if you could help me with...' },
-  { trigger: /would it be\s*$/i, completion: 'possible to...' },
-  { trigger: /when would\s*$/i, completion: 'be a good time to connect?' },
-  { trigger: /as discussed\s*$/i, completion: "here's the update on..." },
-  { trigger: /per our\s*$/i, completion: 'conversation, I wanted to...' },
-  { trigger: /following up\s*$/i, completion: 'on our earlier discussion.' },
-  { trigger: /quick question\s*$/i, completion: 'about the project...' },
-  { trigger: /i have a\s*$/i, completion: 'question about...' },
-];
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-const DEBOUNCE_MS = 500;
+const DEBOUNCE_MS = 800;
 const MIN_CHARS = 10;
 
 export function useSmartCompose({ channelId, userId, messageText, recentMessages } = {}) {
@@ -45,29 +19,67 @@ export function useSmartCompose({ channelId, userId, messageText, recentMessages
   const [loading, setLoading] = useState(false);
   const debounceTimerRef = useRef(null);
   const lastTextRef = useRef('');
+  const abortControllerRef = useRef(null);
 
-  // Generate a suggestion from local pattern matching
-  const generateSuggestion = useCallback((text) => {
+  // Generate a suggestion from the AI edge function
+  const generateSuggestion = useCallback(async (text) => {
     if (!text || text.length < MIN_CHARS) {
       setSuggestion(null);
       return;
     }
 
-    // Check each pattern against the end of the input text
-    for (const pattern of COMPOSE_PATTERNS) {
-      if (pattern.trigger.test(text)) {
-        setSuggestion(pattern.completion);
+    // Abort any in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `${SUPABASE_URL}/functions/v1/smart-compose`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            mode: 'autocomplete',
+            text,
+            recentMessages: (recentMessages || []).slice(-5).map(m => ({
+              sender: m.sender_name || m.user?.full_name || 'User',
+              content: m.content || '',
+            })),
+          }),
+          signal: abortControllerRef.current.signal,
+        }
+      );
+
+      if (!response.ok) {
+        setSuggestion(null);
         return;
       }
-    }
 
-    // No pattern matched
-    setSuggestion(null);
-  }, []);
+      const data = await response.json();
+      if (data.suggestion) {
+        setSuggestion(data.suggestion);
+      } else {
+        setSuggestion(null);
+      }
+    } catch (err) {
+      // Ignore abort errors
+      if (err.name !== 'AbortError') {
+        console.error('[useSmartCompose] Error:', err);
+        setSuggestion(null);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [recentMessages]);
 
   // Debounced watcher on messageText changes
   useEffect(() => {
-    // Clear previous timer
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
@@ -82,11 +94,9 @@ export function useSmartCompose({ channelId, userId, messageText, recentMessages
     }
 
     lastTextRef.current = text;
-    setLoading(true);
 
     debounceTimerRef.current = setTimeout(() => {
       generateSuggestion(text);
-      setLoading(false);
     }, DEBOUNCE_MS);
 
     return () => {
@@ -100,6 +110,15 @@ export function useSmartCompose({ channelId, userId, messageText, recentMessages
   useEffect(() => {
     setSuggestion(null);
   }, [channelId]);
+
+  // Cleanup abort controller on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // Accept the current suggestion (append to message text)
   const acceptSuggestion = useCallback(() => {
