@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import {
   Mail, Users, Calendar, Ticket, Building2, FileText, MessageSquare,
   CheckCircle, XCircle, Clock, Loader2, Play, Pause, RotateCcw, Trash2,
-  ChevronRight, Sparkles, Bot, Zap, ArrowRight
+  ChevronRight, Sparkles, Bot, Zap, ArrowRight, ShieldCheck, ThumbsUp, ThumbsDown
 } from 'lucide-react';
 import { formatTimeAgo, formatTimestamp } from '@/utils/dateUtils';
 
@@ -58,12 +58,26 @@ const STATUS_CONFIG = {
     border: 'border-red-500/30',
     label: 'Failed'
   },
-  cancelled: { 
-    icon: XCircle, 
-    color: 'text-zinc-400', 
-    bg: 'bg-zinc-500/10', 
+  cancelled: {
+    icon: XCircle,
+    color: 'text-zinc-400',
+    bg: 'bg-zinc-500/10',
     border: 'border-zinc-500/30',
     label: 'Cancelled'
+  },
+  pending_approval: {
+    icon: ShieldCheck,
+    color: 'text-amber-400',
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    label: 'Needs Approval'
+  },
+  rejected: {
+    icon: ThumbsDown,
+    color: 'text-zinc-400',
+    bg: 'bg-zinc-500/10',
+    border: 'border-zinc-500/30',
+    label: 'Rejected'
   }
 };
 
@@ -82,14 +96,16 @@ const SOURCE_CONFIG = {
   sync: { icon: Zap, label: 'Sync' }
 };
 
-export default function ActionQueueCard({ 
-  action, 
-  onExecute, 
-  onCancel, 
-  onRetry, 
+export default function ActionQueueCard({
+  action,
+  onExecute,
+  onCancel,
+  onRetry,
   onDelete,
+  onApprove,
+  onReject,
   index = 0,
-  compact = false 
+  compact = false
 }) {
   const statusConfig = STATUS_CONFIG[action.status] || STATUS_CONFIG.queued;
   const priorityConfig = PRIORITY_CONFIG[action.priority] || PRIORITY_CONFIG.normal;
@@ -100,6 +116,7 @@ export default function ActionQueueCard({
 
   // Using centralized formatTimeAgo from @/utils/dateUtils
 
+  const canApprove = action.status === 'pending_approval';
   const canExecute = action.status === 'queued';
   const canRetry = action.status === 'failed';
   const canCancel = action.status === 'queued' || action.status === 'in_progress';
@@ -218,6 +235,16 @@ export default function ActionQueueCard({
       {/* Actions */}
       <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
         <div className="flex items-center gap-2">
+          {canApprove && onApprove && (
+            <Button size="sm" onClick={() => onApprove(action)} className="bg-cyan-600 hover:bg-cyan-500 text-white h-8 px-3">
+              <ThumbsUp className="w-3 h-3 mr-1" /> Approve
+            </Button>
+          )}
+          {canApprove && onReject && (
+            <Button size="sm" variant="outline" onClick={() => onReject(action)} className="border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-red-400 h-8 px-3">
+              <ThumbsDown className="w-3 h-3 mr-1" /> Reject
+            </Button>
+          )}
           {canExecute && onExecute && (
             <Button size="sm" onClick={() => onExecute(action)} className="bg-cyan-600 hover:bg-cyan-500 text-white h-8 px-3">
               <Play className="w-3 h-3 mr-1" /> Execute Now
@@ -234,7 +261,7 @@ export default function ActionQueueCard({
             </Button>
           )}
         </div>
-        
+
         {onDelete && action.status !== 'in_progress' && (
           <Button size="sm" variant="ghost" onClick={() => onDelete(action)} className="text-zinc-500 hover:text-red-400 h-8 px-2">
             <Trash2 className="w-4 h-4" />

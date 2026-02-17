@@ -13,10 +13,8 @@ import {
   TabBar,
   CalendarSidebarContent,
   CallsSidebarContent,
-  PhoneSidebarContent,
   CalendarMainContent,
   CallsMainContent,
-  PhoneMainContent,
 } from '@/components/inbox/InboxHub';
 import { useUser } from '@/components/context/UserContext';
 import { usePermissions } from '@/components/context/PermissionContext';
@@ -1042,7 +1040,6 @@ export default function InboxPage() {
               >
                 {activeHubTab === 'calendar' && <CalendarSidebarContent />}
                 {activeHubTab === 'calls' && <CallsSidebarContent />}
-                {activeHubTab === 'phone' && <PhoneSidebarContent />}
               </motion.div>
             </AnimatePresence>
           </div>
@@ -1063,7 +1060,6 @@ export default function InboxPage() {
             >
               {activeHubTab === 'calendar' && <CalendarMainContent />}
               {activeHubTab === 'calls' && <CallsMainContent />}
-              {activeHubTab === 'phone' && <PhoneMainContent />}
             </motion.div>
           </AnimatePresence>
         ) : selectedChannel ? (

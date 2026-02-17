@@ -34,7 +34,9 @@ import {
   ListTodo,
   Play,
   Loader2,
-  CircleDot
+  CircleDot,
+  ShieldCheck,
+  Bot
 } from 'lucide-react';
 
 import { SyncViewSelector } from '@/components/sync/ui';
@@ -209,7 +211,42 @@ export default function Actions() {
     }
   };
 
+  const handleApproveAction = async (action) => {
+    setExecutingAction(action.id);
+    try {
+      await db.entities.ActionLog.update(action.id, {
+        status: 'in_progress',
+        executed_at: new Date().toISOString()
+      });
+      toast.success(`Approved: "${action.title}"`);
+      // Execute the action (same flow as handleExecuteAction)
+      setTimeout(async () => {
+        await db.entities.ActionLog.update(action.id, { status: 'success' });
+        toast.success(`Action "${action.title}" completed!`);
+        loadActionLogs();
+        setExecutingAction(null);
+      }, 1500);
+    } catch (error) {
+      toast.error('Failed to approve action');
+      setExecutingAction(null);
+    }
+  };
+
+  const handleRejectAction = async (action) => {
+    try {
+      await db.entities.ActionLog.update(action.id, { status: 'rejected' });
+      toast.success('Action rejected');
+      loadActionLogs();
+    } catch (error) {
+      toast.error('Failed to reject action');
+    }
+  };
+
   const activeCount = integrations.length;
+  const SYNC_SOURCES = ['ai_agent', 'sync', 'automation', 'workflow'];
+  const approvalActions = actionLogs.filter(a => a.status === 'pending_approval');
+  const syncActions = actionLogs.filter(a => SYNC_SOURCES.includes(a.source));
+  const recentSyncActions = syncActions.filter(a => a.status === 'success' || a.status === 'in_progress').slice(0, 10);
   const queuedActions = actionLogs.filter(a => a.status === 'queued');
   const inProgressActions = actionLogs.filter(a => a.status === 'in_progress');
   const successfulActions = actionLogs.filter(a => a.status === 'success').length;
@@ -252,12 +289,17 @@ export default function Actions() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-base font-bold text-white">Actions Hub</h1>
+                  <h1 className="text-base font-bold text-white">SYNC Actions</h1>
+                  {approvalActions.length > 0 && (
+                    <Badge className="bg-amber-950/40 text-amber-300/80 border-amber-800/30 text-[10px]">
+                      {approvalActions.length} Needs Approval
+                    </Badge>
+                  )}
                   <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-[10px]">
-                    {activeCount} Connected
+                    {syncActions.length} SYNC Actions
                   </Badge>
                 </div>
-                <p className="text-zinc-500 text-xs">Execute actions across your connected integrations</p>
+                <p className="text-zinc-500 text-xs">Actions taken by SYNC on your behalf and pending approvals</p>
               </div>
             </div>
 
@@ -275,7 +317,16 @@ export default function Actions() {
         </motion.div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-5 gap-2">
+          <div className={`px-3 py-2 rounded-xl flex items-center gap-3 ${approvalActions.length > 0 ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-zinc-900/50 border border-zinc-800/60'}`}>
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${approvalActions.length > 0 ? 'bg-amber-500/20 border border-amber-500/30' : 'bg-zinc-800/80 border border-zinc-700/40'}`}>
+              <ShieldCheck className={`w-3.5 h-3.5 ${approvalActions.length > 0 ? 'text-amber-400' : 'text-zinc-500'}`} />
+            </div>
+            <div>
+              <div className={`text-sm font-bold ${approvalActions.length > 0 ? 'text-amber-300' : 'text-zinc-100'}`}>{approvalActions.length}</div>
+              <div className="text-[10px] text-zinc-500">Approval</div>
+            </div>
+          </div>
           <div className="px-3 py-2 rounded-xl bg-zinc-900/50 border border-zinc-800/60 flex items-center gap-3">
             <div className="w-7 h-7 rounded-lg bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center shrink-0">
               <Clock className="w-3.5 h-3.5 text-cyan-400/70" />
@@ -357,55 +408,106 @@ export default function Actions() {
           </TabsContent>
 
           {/* Queue Tab */}
-          <TabsContent value="queue" className="mt-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Queued & In Progress */}
-              <div className="lg:col-span-2 space-y-3">
+          <TabsContent value="queue" className="mt-4 space-y-4">
+            {/* Needs Approval Section */}
+            {approvalActions.length > 0 && (
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-cyan-400/70" />
-                    Pending Actions
+                  <h3 className="text-sm font-semibold text-amber-300 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-amber-400" />
+                    Needs Your Approval
+                    <Badge className="bg-amber-950/40 text-amber-300/80 border-amber-800/30 text-[10px] px-1.5">{approvalActions.length}</Badge>
                   </h3>
-                  <Button size="sm" onClick={loadActionLogs} className="border border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-white text-xs px-2 py-1 h-auto">
-                    <RefreshCw className="w-3 h-3 mr-1" />Refresh
-                  </Button>
                 </div>
-                
-                {logsLoading ? (
+                <div className="space-y-2">
+                  {approvalActions.map((action, i) => (
+                    <ActionQueueCard
+                      key={action.id}
+                      action={action}
+                      index={i}
+                      onApprove={handleApproveAction}
+                      onReject={handleRejectAction}
+                      onDelete={handleDeleteAction}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* SYNC Activity + Queued Actions */}
+              <div className="lg:col-span-2 space-y-4">
+                {/* SYNC Activity Feed */}
+                {recentSyncActions.length > 0 && (
                   <div className="space-y-3">
-                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 bg-zinc-800 rounded-xl" />)}
-                  </div>
-                ) : [...inProgressActions, ...queuedActions].length === 0 ? (
-                  <GlassCard hover={false} className="p-6">
-                    <div className="text-center">
-                      <div className="w-12 h-12 rounded-xl bg-zinc-800/50 flex items-center justify-center mx-auto mb-3">
-                        <ListTodo className="w-6 h-6 text-zinc-600" />
-                      </div>
-                      <h4 className="text-sm font-semibold text-white mb-1">No Pending Actions</h4>
-                      <p className="text-zinc-500 text-xs mb-4">Create an action to get started</p>
-                      <Button onClick={() => setCreateActionModalOpen(true)} className="bg-cyan-600/80 hover:bg-cyan-600 text-white text-xs px-3 py-1.5 h-auto">
-                        <Plus className="w-3 h-3 mr-1" />Create Action
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+                        <Bot className="w-4 h-4 text-cyan-400/70" />
+                        SYNC Activity
+                        <span className="text-[10px] text-zinc-500 font-normal">Actions taken on your behalf</span>
+                      </h3>
+                      <Button size="sm" onClick={loadActionLogs} className="border border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-white text-xs px-2 py-1 h-auto">
+                        <RefreshCw className="w-3 h-3 mr-1" />Refresh
                       </Button>
                     </div>
-                  </GlassCard>
-                ) : (
-                  <div className="space-y-2">
-                    {[...inProgressActions, ...queuedActions].map((action, i) => (
-                      <ActionQueueCard
-                        key={action.id}
-                        action={action}
-                        index={i}
-                        onExecute={handleExecuteAction}
-                        onCancel={handleCancelAction}
-                        onRetry={handleRetryAction}
-                        onDelete={handleDeleteAction}
-                      />
-                    ))}
+                    <GlassCard hover={false} className="p-3 space-y-1">
+                      {recentSyncActions.map((action, i) => (
+                        <ActionQueueCard key={action.id} action={action} index={i} compact />
+                      ))}
+                    </GlassCard>
                   </div>
                 )}
+
+                {/* Pending Manual Actions */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-cyan-400/70" />
+                      Pending Actions
+                    </h3>
+                    {recentSyncActions.length === 0 && (
+                      <Button size="sm" onClick={loadActionLogs} className="border border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-white text-xs px-2 py-1 h-auto">
+                        <RefreshCw className="w-3 h-3 mr-1" />Refresh
+                      </Button>
+                    )}
+                  </div>
+
+                  {logsLoading ? (
+                    <div className="space-y-3">
+                      {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 bg-zinc-800 rounded-xl" />)}
+                    </div>
+                  ) : [...inProgressActions, ...queuedActions].length === 0 ? (
+                    <GlassCard hover={false} className="p-6">
+                      <div className="text-center">
+                        <div className="w-12 h-12 rounded-xl bg-zinc-800/50 flex items-center justify-center mx-auto mb-3">
+                          <ListTodo className="w-6 h-6 text-zinc-600" />
+                        </div>
+                        <h4 className="text-sm font-semibold text-white mb-1">No Pending Actions</h4>
+                        <p className="text-zinc-500 text-xs mb-4">SYNC will queue actions here when they need your approval</p>
+                        <Button onClick={() => setCreateActionModalOpen(true)} className="bg-cyan-600/80 hover:bg-cyan-600 text-white text-xs px-3 py-1.5 h-auto">
+                          <Plus className="w-3 h-3 mr-1" />Create Action
+                        </Button>
+                      </div>
+                    </GlassCard>
+                  ) : (
+                    <div className="space-y-2">
+                      {[...inProgressActions, ...queuedActions].map((action, i) => (
+                        <ActionQueueCard
+                          key={action.id}
+                          action={action}
+                          index={i}
+                          onExecute={handleExecuteAction}
+                          onCancel={handleCancelAction}
+                          onRetry={handleRetryAction}
+                          onDelete={handleDeleteAction}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Recent Completed */}
+              {/* Sidebar: Recently Completed */}
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-cyan-400/70" />

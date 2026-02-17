@@ -236,7 +236,13 @@ function CallsList({ calls, loading }) {
                         </div>
                       )}
                       {call.recording_url && (
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 rounded-lg text-xs text-zinc-300 hover:bg-zinc-700 transition-colors">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(call.recording_url, '_blank');
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 rounded-lg text-xs text-zinc-300 hover:bg-zinc-700 transition-colors"
+                        >
                           <Play className="w-3 h-3" />
                           Play Recording
                         </button>
@@ -403,7 +409,14 @@ function VoicemailList({ calls }) {
                 <span className="text-xs text-zinc-500">{formatDuration(vm.duration)}</span>
               )}
               {vm.voicemail_url && (
-                <button className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(vm.voicemail_url, '_blank');
+                  }}
+                  className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors"
+                  title="Play voicemail"
+                >
                   <Play className="w-3.5 h-3.5" />
                 </button>
               )}

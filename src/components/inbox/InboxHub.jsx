@@ -1,9 +1,8 @@
-import React, { useState, memo, useMemo } from 'react';
+import React, { useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  MessageSquare, Calendar, Video, Phone,
-  ChevronRight, Clock, Users as UsersIcon,
-  Loader2, ArrowDownLeft, ArrowUpRight,
+  MessageSquare, Calendar, Video,
+  Users as UsersIcon, Loader2,
   Link2, Copy, Check, ExternalLink, Settings, X
 } from 'lucide-react';
 import CalendarMiniMonth from './calendar/CalendarMiniMonth';
@@ -11,27 +10,24 @@ import CalendarView from './calendar/CalendarView';
 import { useCalendar } from './calendar/useCalendar';
 import { BookingSettings } from './booking';
 import { useUser } from '@/components/context/UserContext';
-import { useSyncPhone } from './phone/useSyncPhone';
-import PhoneDashboard from './phone/PhoneDashboard';
 import { useVideoCall } from './video';
 import { VideoCallRoom } from './video';
 
-// Tab definitions for Communication Hub
+// Tab definitions for Communication Hub (Phone/PA features live on the Sync page)
 const TABS = [
   { id: 'chat', label: 'Chat', icon: MessageSquare },
   { id: 'calendar', label: 'Calendar', icon: Calendar },
   { id: 'calls', label: 'Calls', icon: Video },
-  { id: 'phone', label: 'Phone', icon: Phone },
 ];
 
 // Full-width view switcher (matches CRM contacts tab bar pattern)
-const TabBar = memo(function TabBar({ activeTab, onTabChange, callCount = 0, phoneCount = 0 }) {
+const TabBar = memo(function TabBar({ activeTab, onTabChange, callCount = 0 }) {
   return (
     <div className="flex items-center gap-1 p-1 rounded-xl bg-zinc-900/60 border border-zinc-800/60 overflow-x-auto">
       {TABS.map((tab) => {
         const isActive = activeTab === tab.id;
         const Icon = tab.icon;
-        const badge = tab.id === 'calls' ? callCount : tab.id === 'phone' ? phoneCount : 0;
+        const badge = tab.id === 'calls' ? callCount : 0;
 
         return (
           <button
@@ -268,266 +264,7 @@ const CallsSidebarContent = memo(function CallsSidebarContent() {
   );
 });
 
-// Dialpad for the phone sidebar
-const DIALPAD_KEYS = [
-  ['1', '2', '3'],
-  ['4', '5', '6'],
-  ['7', '8', '9'],
-  ['*', '0', '#'],
-];
-
-const DialpadMini = memo(function DialpadMini({ onDial }) {
-  const [number, setNumber] = useState('');
-
-  const handleKey = (key) => setNumber(prev => prev + key);
-  const handleBackspace = () => setNumber(prev => prev.slice(0, -1));
-  const handleCall = () => {
-    if (number.length >= 3 && onDial) onDial(number);
-  };
-
-  return (
-    <div className="space-y-3">
-      {/* Number display */}
-      <div className="relative">
-        <input
-          type="tel"
-          value={number}
-          onChange={(e) => setNumber(e.target.value.replace(/[^\d+*#]/g, ''))}
-          placeholder="Enter number"
-          className="w-full text-center text-lg font-mono font-semibold text-white bg-zinc-800/50 border border-zinc-700/40 rounded-xl py-3 px-4 placeholder-zinc-600 focus:outline-none focus:border-cyan-500/50"
-        />
-        {number && (
-          <button
-            onClick={handleBackspace}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors text-xs"
-          >
-            DEL
-          </button>
-        )}
-      </div>
-
-      {/* Dialpad grid */}
-      <div className="grid grid-cols-3 gap-1.5">
-        {DIALPAD_KEYS.flat().map((key) => (
-          <button
-            key={key}
-            onClick={() => handleKey(key)}
-            className="h-11 rounded-lg bg-zinc-800/50 border border-zinc-700/30 text-white font-medium text-base hover:bg-zinc-700/60 active:bg-zinc-700 transition-colors"
-          >
-            {key}
-          </button>
-        ))}
-      </div>
-
-      {/* Call button */}
-      <button
-        onClick={handleCall}
-        disabled={number.length < 3}
-        className="w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white font-medium text-sm transition-colors flex items-center justify-center gap-2"
-      >
-        <Phone className="w-4 h-4" />
-        Call
-      </button>
-    </div>
-  );
-});
-
-// Real Phone tab sidebar with live data
-const PhoneSidebarContent = memo(function PhoneSidebarContent() {
-  const { phoneNumber, loading, callHistory, smsHistory, requestPhoneNumber, provisioning } = useSyncPhone();
-  const [sidebarView, setSidebarView] = useState('overview'); // 'overview' | 'dialpad' | 'sms'
-
-  const todayStart = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }, []);
-
-  const callsToday = callHistory.filter(
-    (c) => new Date(c.started_at || c.created_at) >= todayStart
-  ).length;
-
-  const smsToday = smsHistory.filter(
-    (s) => new Date(s.last_message_at || s.created_at) >= todayStart
-  ).length;
-
-  if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
-      </div>
-    );
-  }
-
-  // No phone number yet — setup prompt
-  if (!phoneNumber) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center mb-5">
-          <Phone className="w-8 h-8 text-cyan-400" />
-        </div>
-        <h3 className="text-base font-semibold text-white mb-2">Set Up Sync Phone</h3>
-        <p className="text-xs text-zinc-500 mb-5 leading-relaxed">
-          Get a dedicated phone number. Sync answers calls, takes messages, and handles SMS for you.
-        </p>
-        <button
-          onClick={() => requestPhoneNumber()}
-          disabled={provisioning}
-          className="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white text-sm font-medium rounded-xl transition-colors flex items-center gap-2"
-        >
-          {provisioning ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> Setting up...</>
-          ) : (
-            <><Phone className="w-4 h-4" /> Get Phone Number</>
-          )}
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex-1 overflow-y-auto flex flex-col">
-      {/* Hero: Phone Number Card */}
-      <div className="px-4 pt-4 pb-3">
-        <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            <span className="text-[10px] font-medium text-cyan-400 uppercase tracking-wider">Active</span>
-          </div>
-          <div className="text-xl font-bold font-mono text-white tracking-wide">
-            {phoneNumber.phone_number?.replace(/(\+\d)(\d{3})(\d{3})(\d{4})/, '$1 ($2) $3-$4') || phoneNumber.phone_number}
-          </div>
-          <div className="flex items-center gap-4 mt-3">
-            <div className="text-center">
-              <div className="text-sm font-bold text-white">{callsToday}</div>
-              <div className="text-[9px] text-zinc-500">Calls</div>
-            </div>
-            <div className="w-px h-6 bg-zinc-700/50" />
-            <div className="text-center">
-              <div className="text-sm font-bold text-white">{smsToday}</div>
-              <div className="text-[9px] text-zinc-500">SMS</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Mini tab bar */}
-      <div className="flex items-center gap-1 px-4 mb-3">
-        {[
-          { id: 'overview', label: 'Overview' },
-          { id: 'dialpad', label: 'Dialpad' },
-          { id: 'sms', label: 'SMS' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setSidebarView(tab.id)}
-            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-              sidebarView === tab.id
-                ? 'bg-zinc-800 text-white'
-                : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
-        {sidebarView === 'overview' && (
-          <div className="space-y-4">
-            {/* Recent Calls */}
-            <div>
-              <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">
-                Recent Calls
-              </div>
-              {callHistory.length > 0 ? (
-                <div className="space-y-1">
-                  {callHistory.slice(0, 5).map((call) => (
-                    <div
-                      key={call.id}
-                      className="p-2 rounded-lg bg-zinc-800/40 border border-zinc-700/30 flex items-center gap-2"
-                    >
-                      {call.direction === 'inbound' ? (
-                        <ArrowDownLeft className="w-3 h-3 text-cyan-400 flex-shrink-0" />
-                      ) : (
-                        <ArrowUpRight className="w-3 h-3 text-blue-400 flex-shrink-0" />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <span className="text-xs text-zinc-300 truncate block">
-                          {call.direction === 'inbound' ? call.caller_number : call.callee_number}
-                        </span>
-                      </div>
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded ${
-                        call.status === 'completed' ? 'bg-cyan-500/10 text-cyan-400' :
-                        call.status === 'missed' ? 'bg-red-500/10 text-red-400' :
-                        'bg-zinc-800 text-zinc-500'
-                      }`}>
-                        {call.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-3 rounded-xl bg-zinc-800/30 border border-zinc-700/30 text-center">
-                  <span className="text-xs text-zinc-500">No calls yet</span>
-                </div>
-              )}
-            </div>
-
-            {/* SMS Preview */}
-            <div>
-              <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">
-                SMS Conversations
-              </div>
-              {smsHistory.length > 0 ? (
-                <div className="space-y-1">
-                  {smsHistory.slice(0, 3).map((conv) => {
-                    const lastMsg = conv.messages?.[conv.messages.length - 1];
-                    return (
-                      <div key={conv.id} className="p-2 rounded-lg bg-zinc-800/40 border border-zinc-700/30">
-                        <div className="text-xs text-zinc-300 truncate">{conv.phone_number}</div>
-                        <div className="text-[10px] text-zinc-500 truncate mt-0.5">
-                          {lastMsg?.content || 'No messages'}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="p-3 rounded-xl bg-zinc-800/30 border border-zinc-700/30 text-center">
-                  <span className="text-xs text-zinc-500">No messages yet</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {sidebarView === 'dialpad' && (
-          <DialpadMini onDial={(num) => console.log('Dial:', num)} />
-        )}
-
-        {sidebarView === 'sms' && (
-          <div className="space-y-3">
-            <input
-              type="tel"
-              placeholder="Phone number"
-              className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700/40 rounded-xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-cyan-500/50"
-            />
-            <textarea
-              placeholder="Type your message..."
-              rows={3}
-              className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700/40 rounded-xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-cyan-500/50 resize-none"
-            />
-            <button className="w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-sm transition-colors flex items-center justify-center gap-2">
-              <MessageSquare className="w-4 h-4" />
-              Send SMS
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-});
+// Phone sidebar and dialpad removed — Phone/PA features live on the Sync page
 
 // Real calendar main content
 function CalendarMainContent() {
@@ -588,34 +325,13 @@ function CallsMainContent() {
   );
 }
 
-function PhoneMainContent() {
-  const syncPhone = useSyncPhone();
-
-  return (
-    <PhoneDashboard
-      phoneNumber={syncPhone.phoneNumber}
-      loading={syncPhone.loading}
-      provisioning={syncPhone.provisioning}
-      callHistory={syncPhone.callHistory}
-      smsHistory={syncPhone.smsHistory}
-      callsLoading={syncPhone.callsLoading}
-      smsLoading={syncPhone.smsLoading}
-      requestPhoneNumber={syncPhone.requestPhoneNumber}
-      updateSettings={syncPhone.updateSettings}
-      refetch={syncPhone.refetch}
-    />
-  );
-}
-
 export {
   TABS,
   TabBar,
   CalendarSidebarContent,
   CallsSidebarContent,
-  PhoneSidebarContent,
   CalendarMainContent,
   CallsMainContent,
-  PhoneMainContent,
 };
 
 export default function InboxHub({ children }) {

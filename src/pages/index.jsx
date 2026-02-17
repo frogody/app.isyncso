@@ -333,6 +333,8 @@ import EmailPoolSettings from "./EmailPoolSettings";
 
 import SyncAgent from "./SyncAgent";
 
+import SyncPhone from "./SyncPhone";
+
 import InventoryImport from "./InventoryImport";
 
 import ContactsImport from "./ContactsImport";
@@ -726,6 +728,7 @@ const PAGES = {
     EmailPoolSettings: EmailPoolSettings,
 
     SyncAgent: SyncAgent,
+    SyncPhone: SyncPhone,
 
     InventoryImport: InventoryImport,
 
@@ -1226,6 +1229,7 @@ function PagesContent() {
                 <Route path="/EmailPoolSettings" element={<Navigate to="/Settings?tab=email-pool" replace />} />
 
                 <Route path="/SyncAgent" element={<SyncAgent />} />
+                <Route path="/SyncPhone" element={<SyncPhone />} />
 
                 <Route path="/InventoryReturns" element={<InventoryReturns />} />
 
