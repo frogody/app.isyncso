@@ -208,6 +208,12 @@ verify_jwt = false
 [functions.generate-social-post]
 verify_jwt = false
 
+[functions.digest-channel]
+verify_jwt = false
+
+[functions.transcribe-audio]
+verify_jwt = false
+
 [functions.generate-listing-copy]
 verify_jwt = false
 
