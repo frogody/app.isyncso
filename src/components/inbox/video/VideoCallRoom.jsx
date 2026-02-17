@@ -2,7 +2,8 @@
  * VideoCallRoom - Full-screen video call experience
  *
  * Full viewport overlay with dark background, frosted glass controls,
- * participant video grid, call header, and floating reactions.
+ * participant video grid (supports up to 100 people), call header,
+ * floating reactions, SYNC AI assistant with collapsible edge notch.
  * AnimatePresence for smooth mount/unmount transitions.
  */
 
@@ -17,8 +18,6 @@ import {
   PhoneOff,
   Users,
   Smile,
-  Maximize2,
-  Minimize2,
   Copy,
   MessageSquare,
   X,
@@ -228,6 +227,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
   isMuted = false,
   isCameraOff = false,
   isScreenSharing = false,
+  isLocalSpeaking = false,
   localStream = null,
   screenStream = null,
   onToggleMute,
@@ -239,6 +239,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
   const [showReactions, setShowReactions] = useState(true);
   const [showChat, setShowChat] = useState(false);
   const [showSync, setShowSync] = useState(true);
+  const [syncCollapsed, setSyncCollapsed] = useState(false);
   const syncAssistantRef = useRef(null);
 
   const callId = call?.id;
@@ -254,6 +255,13 @@ const VideoCallRoom = memo(function VideoCallRoom({
     [call, userId]
   );
 
+  // Determine active speaker (local user for now; in real WebRTC this would come from remote audio levels)
+  const activeSpeakerId = useMemo(() => {
+    if (isLocalSpeaking) return userId;
+    // In a full implementation, we'd track active speaker from remote participants too
+    return null;
+  }, [isLocalSpeaking, userId]);
+
   const toggleReactions = useCallback(() => {
     setShowReactions((prev) => !prev);
   }, []);
@@ -264,6 +272,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
 
   const toggleSync = useCallback(() => {
     setShowSync((prev) => !prev);
+    setSyncCollapsed(false);
   }, []);
 
   // Capture transcript and trigger end/leave with it
@@ -301,25 +310,26 @@ const VideoCallRoom = memo(function VideoCallRoom({
 
         {/* Video grid + side panels */}
         <div className="flex-1 pt-14 pb-2 relative flex overflow-hidden">
-          {/* SYNC Assistant panel (left side) */}
-          <AnimatePresence>
-            {showSync && (
-              <SyncCallAssistant
-                ref={syncAssistantRef}
-                localStream={localStream}
-                callId={callId}
-                isVisible={showSync}
-                onClose={toggleSync}
-              />
-            )}
-          </AnimatePresence>
+          {/* SYNC Assistant panel (left side) — uses flex layout, not absolute */}
+          {showSync && (
+            <SyncCallAssistant
+              ref={syncAssistantRef}
+              localStream={localStream}
+              callId={callId}
+              isVisible={showSync}
+              onClose={toggleSync}
+              onCollapsedChange={setSyncCollapsed}
+            />
+          )}
 
-          <div className={`flex-1 relative ${showSync ? 'ml-[340px]' : ''} ${showChat ? 'mr-80' : ''} transition-all duration-300`}>
+          {/* Main video area */}
+          <div className={`flex-1 relative transition-all duration-300 ${showChat ? 'mr-80' : ''}`}>
             <VideoGrid
               participants={participants}
               currentUserId={userId}
               localStream={localStream}
               screenStream={screenStream}
+              activeSpeakerId={activeSpeakerId}
             />
 
             {/* Reactions overlay */}
@@ -332,39 +342,41 @@ const VideoCallRoom = memo(function VideoCallRoom({
           </div>
 
           {/* Chat panel */}
-          {showChat && (
-            <motion.div
-              initial={{ x: 320, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 320, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="absolute right-0 top-0 bottom-0 w-80 bg-zinc-900/95 backdrop-blur-xl border-l border-zinc-700/50 flex flex-col z-20"
-            >
-              <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700/50">
-                <h3 className="text-sm font-semibold text-white">Call Chat</h3>
-                <button
-                  onClick={toggleChat}
-                  className="p-1 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="flex-1 flex items-center justify-center p-4">
-                <div className="text-center">
-                  <MessageSquare className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                  <p className="text-sm text-zinc-500">Chat messages will appear here</p>
-                  <p className="text-xs text-zinc-600 mt-1">Send messages to other call participants</p>
+          <AnimatePresence>
+            {showChat && (
+              <motion.div
+                initial={{ x: 320, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 320, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className="absolute right-0 top-0 bottom-0 w-80 bg-zinc-900/95 backdrop-blur-xl border-l border-zinc-700/50 flex flex-col z-20"
+              >
+                <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700/50">
+                  <h3 className="text-sm font-semibold text-white">Call Chat</h3>
+                  <button
+                    onClick={toggleChat}
+                    className="p-1 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-              </div>
-              <div className="p-3 border-t border-zinc-700/50">
-                <input
-                  type="text"
-                  placeholder="Type a message..."
-                  className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white text-sm placeholder-zinc-500 focus:border-cyan-500 focus:outline-none transition-colors"
-                />
-              </div>
-            </motion.div>
-          )}
+                <div className="flex-1 flex items-center justify-center p-4">
+                  <div className="text-center">
+                    <MessageSquare className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                    <p className="text-sm text-zinc-500">Chat messages will appear here</p>
+                    <p className="text-xs text-zinc-600 mt-1">Send messages to other call participants</p>
+                  </div>
+                </div>
+                <div className="p-3 border-t border-zinc-700/50">
+                  <input
+                    type="text"
+                    placeholder="Type a message..."
+                    className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white text-sm placeholder-zinc-500 focus:border-cyan-500 focus:outline-none transition-colors"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Extended controls */}

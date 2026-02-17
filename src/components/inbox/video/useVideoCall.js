@@ -17,6 +17,23 @@ function useForceUpdate() {
   return useCallback(() => setTick(t => t + 1), []);
 }
 
+// Synthetic self-participant (fallback when DB query returns empty)
+function createSelfParticipant(userId, call, displayName) {
+  return {
+    id: `self-${userId}`,
+    call_id: call?.id,
+    user_id: userId,
+    display_name: displayName || 'You',
+    role: call?.initiated_by === userId ? 'host' : 'participant',
+    joined_at: new Date().toISOString(),
+    left_at: null,
+    is_muted: false,
+    is_camera_off: false,
+    is_screen_sharing: false,
+    connection_quality: 'good',
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Join code generator  (format: SYN-XXX-XXX)
 // ---------------------------------------------------------------------------
@@ -46,6 +63,9 @@ export function useVideoCall(userId, companyId) {
   const updateParticipantRef = useRef(null);
   const forceUpdate = useForceUpdate();
 
+  // Track local speaker state
+  const [isLocalSpeaking, setIsLocalSpeaking] = useState(false);
+
   // Lazily initialize provider
   const getProvider = useCallback(() => {
     if (!providerRef.current) {
@@ -62,8 +82,29 @@ export function useVideoCall(userId, companyId) {
 
       // Force re-render when tracks change so consumers get fresh streams
       providerRef.current.on('trackToggled', () => forceUpdate());
-      providerRef.current.on('connected', () => forceUpdate());
+      providerRef.current.on('connected', (info) => {
+        // Show warnings for missing permissions
+        if (!info.hasAudio) {
+          toast.warning('Microphone access denied — others won\'t hear you');
+        }
+        if (!info.hasVideo) {
+          toast.warning('Camera access denied — showing avatar instead');
+        }
+        forceUpdate();
+      });
       providerRef.current.on('disconnected', () => forceUpdate());
+
+      // Permission error handler
+      providerRef.current.on('permissionError', ({ kind, error }) => {
+        if (error?.name === 'NotAllowedError') {
+          toast.error(`${kind === 'audio' ? 'Microphone' : 'Camera'} permission denied. Check browser settings.`);
+        }
+      });
+
+      // Active speaker detection
+      providerRef.current.on('speakingChanged', ({ isSpeaking }) => {
+        setIsLocalSpeaking(isSpeaking);
+      });
     }
     return providerRef.current;
   }, [forceUpdate]);
@@ -452,11 +493,16 @@ export function useVideoCall(userId, companyId) {
 
   // ------------------------------------------------------------------
   // Active participant count (only those still in the call)
+  // Guarantees the local user always appears even if DB query returned empty
   // ------------------------------------------------------------------
-  const activeParticipants = useMemo(
-    () => participants.filter(p => !p.left_at),
-    [participants]
-  );
+  const activeParticipants = useMemo(() => {
+    const active = participants.filter(p => !p.left_at);
+    // If we're in a call but the local user isn't in the list, add a synthetic one
+    if (isInCall && userId && !active.some(p => p.user_id === userId)) {
+      active.unshift(createSelfParticipant(userId, currentCall, 'You'));
+    }
+    return active;
+  }, [participants, isInCall, userId, currentCall]);
 
   // ------------------------------------------------------------------
   // Cleanup on unmount
@@ -484,6 +530,7 @@ export function useVideoCall(userId, companyId) {
     isMuted,
     isCameraOff,
     isScreenSharing,
+    isLocalSpeaking,
     loading,
 
     // Media streams
