@@ -20,10 +20,10 @@ const TABS = [
   { id: 'phone', label: 'Phone', icon: Phone },
 ];
 
-// Tab bar component for left sidebar
+// Full-width view switcher (matches CRM contacts tab bar pattern)
 const TabBar = memo(function TabBar({ activeTab, onTabChange, callCount = 0, phoneCount = 0 }) {
   return (
-    <div className="flex items-center border-b border-zinc-800/60 bg-zinc-900/80 px-1">
+    <div className="flex items-center gap-1 p-1 rounded-xl bg-zinc-900/60 border border-zinc-800/60 overflow-x-auto">
       {TABS.map((tab) => {
         const isActive = activeTab === tab.id;
         const Icon = tab.icon;
@@ -33,28 +33,21 @@ const TabBar = memo(function TabBar({ activeTab, onTabChange, callCount = 0, pho
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`relative flex-1 flex flex-col items-center gap-0.5 py-2 px-1 text-[10px] font-medium transition-all duration-200 ${
+            className={`relative flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap cursor-pointer ${
               isActive
-                ? 'text-cyan-400'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'bg-zinc-800 text-white shadow-sm'
+                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
             }`}
           >
             <div className="relative">
-              <Icon className="w-4 h-4" />
+              <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-400' : ''}`} />
               {badge > 0 && (
-                <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] flex items-center justify-center text-[9px] font-bold bg-cyan-500 text-white rounded-full px-0.5">
+                <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] flex items-center justify-center text-[9px] font-bold bg-cyan-500 text-white rounded-full px-0.5">
                   {badge}
                 </span>
               )}
             </div>
             <span>{tab.label}</span>
-            {isActive && (
-              <motion.div
-                layoutId="tab-indicator"
-                className="absolute bottom-0 left-1 right-1 h-0.5 bg-cyan-500 rounded-full"
-                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-              />
-            )}
           </button>
         );
       })}

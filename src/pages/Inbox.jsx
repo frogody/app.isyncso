@@ -754,43 +754,46 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="h-screen bg-black flex overflow-hidden relative">
-      {/* Mobile Overlay */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-        )}
-      </AnimatePresence>
+    <div className="h-screen bg-black flex flex-col overflow-hidden relative">
+      {/* Communication Hub View Switcher - full width at top */}
+      <div className="shrink-0 px-3 sm:px-4 pt-3 pb-2 bg-black border-b border-zinc-800/40">
+        <TabBar
+          activeTab={activeHubTab}
+          onTabChange={(tab) => {
+            setActiveHubTab(tab);
+            if (tab !== 'chat') setMobileMenuOpen(false);
+          }}
+        />
+      </div>
 
-      {/* Communication Hub Sidebar - Desktop always visible, mobile as drawer */}
-      <div
-        className={`
-          fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto
-          transform transition-transform duration-300 ease-out
-          flex flex-col
-          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        `}
-      >
-        {/* Tab Bar - sits above sidebar content */}
-        <div className="w-[280px] lg:w-[280px] bg-zinc-900/95 border-r border-zinc-800/60">
-          <TabBar
-            activeTab={activeHubTab}
-            onTabChange={(tab) => {
-              setActiveHubTab(tab);
-              if (tab !== 'chat') setMobileMenuOpen(false);
-            }}
-          />
-        </div>
+      {/* Content area: sidebar + main */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Mobile Overlay */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+          )}
+        </AnimatePresence>
 
-        {/* Sidebar content switches based on tab */}
-        {activeHubTab === 'chat' ? (
-          <ChannelSidebar
+        {/* Communication Hub Sidebar - Desktop always visible, mobile as drawer */}
+        <div
+          className={`
+            fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto
+            transform transition-transform duration-300 ease-out
+            flex flex-col
+            ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          `}
+          style={{ top: mobileMenuOpen ? 0 : undefined }}
+        >
+          {/* Sidebar content switches based on tab */}
+          {activeHubTab === 'chat' ? (
+            <ChannelSidebar
             channels={realtimeChannels}
             directMessages={resolvedDMs}
             supportChannels={resolvedSupportChannels}
@@ -1156,6 +1159,7 @@ export default function InboxPage() {
           />
         )}
       </AnimatePresence>
+      </div>
 
       {/* Modals */}
       <CreateChannelModal
