@@ -54,6 +54,7 @@ export async function generateImage(
     // Build product context if product name provided
     let productContext = null;
     let productImages: string[] = [];
+    let physicalSpecs: any = null;
     if (data.product_name) {
       const { data: products } = await ctx.supabase
         .from('products')
@@ -75,21 +76,74 @@ export async function generateImage(
             }
           }
         }
+
+        // Fetch physical product details for richer context
+        if (productContext.type === 'physical') {
+          const { data: physicalData } = await ctx.supabase
+            .from('physical_products')
+            .select('specifications, attributes, shipping')
+            .eq('product_id', productContext.id)
+            .limit(1)
+            .single();
+
+          if (physicalData) {
+            physicalSpecs = physicalData;
+            // Merge specs into product context for material detection
+            productContext.specifications = physicalData.specifications || [];
+            productContext.attributes = physicalData.attributes || [];
+          }
+        }
       }
     }
 
-    // Call the generate-image edge function
+    // Call edge functions
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
     // Determine use case - smart model selection based on context
     let useCase = data.use_case || 'marketing_creative';
     if (productImages.length > 0 && !data.use_case) {
-      // Use product_scene (flux-kontext-pro) for high quality product images with reference
-      // This preserves product appearance AND delivers professional quality
       useCase = 'product_scene';
     }
 
+    // Step 1: Call enhance-prompt for AI-powered prompt optimization with product context
+    let enhancedPrompt = data.prompt;
+    let physicalProfile = null;
+    try {
+      const enhanceResponse = await fetch(`${supabaseUrl}/functions/v1/enhance-prompt`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${serviceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: data.prompt,
+          use_case: useCase,
+          style: data.style || 'photorealistic',
+          product_name: productContext?.name,
+          product_type: productContext?.type,
+          product_description: productContext?.description || productContext?.short_description,
+          product_tags: productContext?.tags,
+          product_category: productContext?.category,
+          has_reference_image: productImages.length > 0,
+          product_specifications: physicalSpecs?.specifications || null,
+          product_attributes: physicalSpecs?.attributes || null,
+          product_shipping: physicalSpecs?.shipping || null,
+        }),
+      });
+
+      if (enhanceResponse.ok) {
+        const enhanceData = await enhanceResponse.json();
+        if (enhanceData?.enhanced_prompt) {
+          enhancedPrompt = enhanceData.enhanced_prompt;
+          physicalProfile = enhanceData.physical_profile || null;
+        }
+      }
+    } catch (enhanceErr) {
+      console.error('Prompt enhancement failed, using original:', enhanceErr);
+    }
+
+    // Step 2: Call generate-image with the enhanced prompt
     const response = await fetch(`${supabaseUrl}/functions/v1/generate-image`, {
       method: 'POST',
       headers: {
@@ -97,7 +151,8 @@ export async function generateImage(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        prompt: data.prompt,
+        prompt: enhancedPrompt,
+        original_prompt: data.prompt,
         style: data.style || 'photorealistic',
         use_case: useCase,
         model_key: data.model,
@@ -105,8 +160,9 @@ export async function generateImage(
         height: data.height || 1024,
         brand_context: brandContext,
         product_context: productContext,
-        product_images: productImages, // Pass product images as reference
+        product_images: productImages,
         is_physical_product: productContext?.type === 'physical',
+        physical_profile: physicalProfile,
         company_id: ctx.companyId,
         user_id: ctx.userId,
       }),

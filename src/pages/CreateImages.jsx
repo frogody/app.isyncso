@@ -254,15 +254,20 @@ export default function CreateImages({ embedded = false }) {
     }
   };
 
+  // Physical product details (specs, attributes, shipping) for richer prompt context
+  const [physicalDetails, setPhysicalDetails] = useState(null);
+
   const loadProductImages = async (product) => {
     if (!product || product.type !== 'physical') {
       setProductImages([]);
+      setPhysicalDetails(null);
       return;
     }
     setLoadingProductImages(true);
     try {
       const physicalProducts = await PhysicalProduct.filter({ product_id: product.id });
-      const physicalDetails = physicalProducts?.[0];
+      const physDetails = physicalProducts?.[0] || null;
+      setPhysicalDetails(physDetails);
       const images = [];
       if (product.featured_image?.url) {
         images.push(product.featured_image.url);
@@ -272,8 +277,8 @@ export default function CreateImages({ embedded = false }) {
           if (img.url && !images.includes(img.url)) images.push(img.url);
         });
       }
-      if (physicalDetails?.images && Array.isArray(physicalDetails.images)) {
-        physicalDetails.images.forEach(img => {
+      if (physDetails?.images && Array.isArray(physDetails.images)) {
+        physDetails.images.forEach(img => {
           const url = typeof img === 'string' ? img : img.url;
           if (url && !images.includes(url)) images.push(url);
         });
@@ -284,39 +289,123 @@ export default function CreateImages({ embedded = false }) {
       console.error('Error loading product images:', error);
       setProductImages([]);
       setSelectedReferenceImage(null);
+      setPhysicalDetails(null);
     } finally {
       setLoadingProductImages(false);
     }
+  };
+
+  // Extract material-specific info from product data for smart analysis
+  const detectProductMaterial = (product, physDetails) => {
+    const signals = [
+      product.name, product.description, product.short_description,
+      product.tags?.join(' '), product.category,
+      physDetails?.specifications?.map(s => `${s.name} ${s.value}`).join(' '),
+      physDetails?.attributes?.map(a => `${a.key} ${a.value}`).join(' ')
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    if (/\b(ring|necklace|bracelet|earring|pendant|brooch|gold|silver|platinum|18k|14k|925|sterling|jewel)/i.test(signals)) return 'jewelry';
+    if (/\b(diamond|sapphire|ruby|emerald|pearl|gemstone)/i.test(signals)) return 'gemstone';
+    if (/\b(leather|suede|calfskin)/i.test(signals)) return 'leather';
+    if (/\b(cotton|silk|wool|linen|cashmere|denim|fabric|textile)/i.test(signals)) return 'textile';
+    if (/\b(ceramic|porcelain|pottery)/i.test(signals)) return 'ceramic';
+    if (/\b(wood|bamboo|oak|walnut|maple|teak)/i.test(signals)) return 'wood';
+    if (/\b(glass|crystal|bottle|perfume|transparent)/i.test(signals)) return 'glass';
+    if (/\b(phone|laptop|tablet|screen|electronic|headphone|speaker)/i.test(signals)) return 'electronics';
+    if (/\b(food|chocolate|coffee|wine|cheese|cake|gourmet)/i.test(signals)) return 'food';
+    if (/\b(steel|iron|aluminum|copper|brass|chrome|metal)/i.test(signals)) return 'metal';
+    if (/\b(watch|luxury|premium|designer|handcrafted)/i.test(signals)) return 'luxury';
+    return 'standard';
   };
 
   const analyzeProduct = async (product) => {
     setIsAnalyzingProduct(true);
     setProductAnalysis(null);
     try {
-      await new Promise(resolve => setTimeout(resolve, 300));
       const isPhysical = product.type === 'physical';
+      const material = isPhysical ? detectProductMaterial(product, physicalDetails) : 'digital';
+
+      // Material-specific style and prompt recommendations
+      const materialStyles = {
+        jewelry: { styles: ['luxury', 'photorealistic', 'minimalist'], bg: 'dark velvet', lighting: 'macro with focus stacking' },
+        gemstone: { styles: ['luxury', 'photorealistic', 'cinematic'], bg: 'deep black', lighting: 'backlit for fire' },
+        leather: { styles: ['photorealistic', 'vintage', 'luxury'], bg: 'warm dark', lighting: 'warm side light' },
+        textile: { styles: ['photorealistic', 'minimalist', 'vintage'], bg: 'clean', lighting: 'soft diffused' },
+        wood: { styles: ['photorealistic', 'vintage', 'minimalist'], bg: 'warm natural', lighting: 'warm side-raking' },
+        glass: { styles: ['photorealistic', 'minimalist', 'luxury'], bg: 'gradient', lighting: 'rim + backlight' },
+        electronics: { styles: ['photorealistic', 'minimalist', '3d_render'], bg: 'clean dark', lighting: 'polarized soft box' },
+        food: { styles: ['photorealistic', 'vintage', 'cinematic'], bg: 'rustic/natural', lighting: 'window light' },
+        ceramic: { styles: ['photorealistic', 'minimalist', 'vintage'], bg: 'clean neutral', lighting: 'soft box overhead' },
+        metal: { styles: ['photorealistic', 'luxury', 'cinematic'], bg: 'dark gradient', lighting: 'tent with gradient panels' },
+        luxury: { styles: ['luxury', 'photorealistic', 'cinematic'], bg: 'dark sophisticated', lighting: 'dramatic key light' },
+        standard: { styles: ['photorealistic', 'minimalist', 'cinematic'], bg: 'clean studio', lighting: 'three-point setup' },
+      };
+
+      const matConfig = materialStyles[material] || materialStyles.standard;
+
+      const materialPrompts = {
+        jewelry: [
+          `${product.name} on black velvet with dramatic macro lighting`,
+          `${product.name} lifestyle shot on elegant hand/surface`,
+          `${product.name} editorial close-up with focus stacking detail`,
+        ],
+        glass: [
+          `${product.name} with rim lighting on gradient background`,
+          `${product.name} backlit showing transparency and clarity`,
+          `${product.name} on reflective surface with caustic light patterns`,
+        ],
+        electronics: [
+          `${product.name} hero shot on clean dark surface with edge lighting`,
+          `${product.name} lifestyle shot in modern workspace`,
+          `${product.name} floating product shot with subtle shadow`,
+        ],
+        food: [
+          `${product.name} appetizing close-up with warm side lighting`,
+          `${product.name} styled on rustic wooden surface`,
+          `${product.name} overhead flat-lay with ingredients`,
+        ],
+        leather: [
+          `${product.name} close-up showing grain texture detail`,
+          `${product.name} lifestyle shot with warm amber lighting`,
+          `${product.name} on dark surface with dramatic shadows`,
+        ],
+        textile: [
+          `${product.name} draped naturally showing fabric quality`,
+          `${product.name} flat-lay with lifestyle accessories`,
+          `${product.name} close-up showing weave texture`,
+        ],
+      };
+
+      const suggestedPrompts = materialPrompts[material] || [
+        `${product.name} on clean ${matConfig.bg} background`,
+        `${product.name} in a lifestyle scene with ${matConfig.lighting}`,
+        `${product.name} with dramatic studio lighting`,
+      ];
+
+      // Build material description for display
+      const specs = physicalDetails?.specifications || [];
+      const attrs = physicalDetails?.attributes || [];
+      const materialInfo = specs.filter(s =>
+        /material|finish|surface|color|weight|dimension/i.test(s.name)
+      ).map(s => `${s.name}: ${s.value}${s.unit ? ' ' + s.unit : ''}`);
+
       const analysis = {
         type: isPhysical ? 'physical' : 'digital',
+        material: material,
         summary: isPhysical
-          ? `${product.name} is a physical product — best results with reference image editing and studio-style prompts.`
-          : `${product.name} is a digital product/service — best results with abstract visuals, UI mockups, and conceptual imagery.`,
-        suggestedStyles: isPhysical
-          ? ['photorealistic', 'luxury', 'minimalist']
-          : ['minimalist', '3d_render', 'cinematic'],
-        suggestedPrompts: isPhysical
-          ? [
-              `${product.name} on a clean white marble surface`,
-              `${product.name} in a lifestyle flat-lay scene`,
-              `${product.name} with dramatic studio lighting`,
-            ]
-          : [
-              `Abstract visualization representing ${product.name}`,
-              `Modern marketing banner for ${product.name}`,
-              `Conceptual digital art showcasing ${product.name}`,
-            ],
+          ? `${product.name} — ${material !== 'standard' ? material + ' product' : 'physical product'}. Best with ${matConfig.lighting} on ${matConfig.bg} background.`
+          : `${product.name} is a digital product/service — best results with abstract visuals and conceptual imagery.`,
+        suggestedStyles: isPhysical ? matConfig.styles : ['minimalist', '3d_render', 'cinematic'],
+        suggestedPrompts: isPhysical ? suggestedPrompts : [
+          `Abstract visualization representing ${product.name}`,
+          `Modern marketing banner for ${product.name}`,
+          `Conceptual digital art showcasing ${product.name}`,
+        ],
         productTraits: isPhysical
-          ? ['tangible', 'photographable', 'reference-image-ready']
+          ? [material !== 'standard' ? material : 'tangible', 'photographable', 'reference-image-ready']
           : ['conceptual', 'abstract-visual', 'text-to-image-optimized'],
+        materialInfo: materialInfo.length > 0 ? materialInfo : null,
+        lightingTip: isPhysical ? matConfig.lighting : null,
       };
       setProductAnalysis(analysis);
     } catch (err) {
@@ -336,11 +425,14 @@ export default function CreateImages({ embedded = false }) {
       } else {
         setSelectedUseCase('marketing_creative');
       }
-      analyzeProduct(product);
+      // analyzeProduct is called after loadProductImages so physicalDetails is set
+      // Use a small delay so state update propagates
+      setTimeout(() => analyzeProduct(product), 50);
     } else {
       setProductImages([]);
       setSelectedReferenceImage(null);
       setProductAnalysis(null);
+      setPhysicalDetails(null);
     }
   };
 
@@ -490,6 +582,33 @@ export default function CreateImages({ embedded = false }) {
       let enhancementData = null;
       try {
         toast.info('AI is enhancing your prompt...', { duration: 2000 });
+
+        // Extract materials text from specifications/attributes for richer context
+        const extractMaterialsText = () => {
+          if (!physicalDetails) return null;
+          const matSpecs = (physicalDetails.specifications || [])
+            .filter(s => /material|finish|surface|fabric|metal|stone|wood|color/i.test(s.name))
+            .map(s => `${s.name}: ${s.value}${s.unit ? ' ' + s.unit : ''}`);
+          const matAttrs = (physicalDetails.attributes || [])
+            .filter(a => /material|finish|surface|fabric|metal|stone|wood|color/i.test(a.key))
+            .map(a => `${a.key}: ${a.value}`);
+          const all = [...matSpecs, ...matAttrs];
+          return all.length > 0 ? all.join(', ') : null;
+        };
+
+        // Extract product colors from various sources
+        const extractProductColors = () => {
+          if (!physicalDetails) return null;
+          const colorSpecs = (physicalDetails.specifications || [])
+            .filter(s => /color|colour|shade/i.test(s.name))
+            .map(s => s.value);
+          const colorAttrs = (physicalDetails.attributes || [])
+            .filter(a => /color|colour|shade/i.test(a.key))
+            .map(a => a.value);
+          const all = [...colorSpecs, ...colorAttrs];
+          return all.length > 0 ? all.join(', ') : null;
+        };
+
         const { data: enhanceData, error: enhanceError } = await supabase.functions.invoke('enhance-prompt', {
           body: {
             prompt: prompt,
@@ -503,6 +622,12 @@ export default function CreateImages({ embedded = false }) {
             brand_mood: brandAssets?.visual_style?.mood,
             has_reference_image: !!selectedReferenceImage,
             product_size_scale: selectedProduct ? SIZE_SCALE[productSizeScale - 1] : null,
+            // NEW: rich physical product data
+            product_specifications: physicalDetails?.specifications || null,
+            product_attributes: physicalDetails?.attributes || null,
+            product_shipping: physicalDetails?.shipping || null,
+            product_colors: extractProductColors(),
+            product_materials_text: extractMaterialsText(),
           }
         });
         if (!enhanceError && enhanceData?.enhanced_prompt) {
@@ -530,11 +655,20 @@ export default function CreateImages({ embedded = false }) {
           width: aspectConfig?.width || 1024,
           height: aspectConfig?.height || 1024,
           brand_context: useBrandContext ? brandAssets : null,
-          product_context: selectedProduct ? { ...selectedProduct, type: selectedProduct.type, product_size_scale: SIZE_SCALE[productSizeScale - 1] } : null,
+          product_context: selectedProduct ? {
+            ...selectedProduct,
+            type: selectedProduct.type,
+            product_size_scale: SIZE_SCALE[productSizeScale - 1],
+            // Include physical specs for server-side material detection
+            specifications: physicalDetails?.specifications || [],
+            attributes: physicalDetails?.attributes || [],
+          } : null,
           product_images: isPhysicalProduct ? productImages : [],
           is_physical_product: isPhysicalProduct,
           company_id: user.company_id,
           user_id: user.id,
+          // Pass physical profile from enhance-prompt response for smarter routing
+          physical_profile: enhancementData?.physical_profile || null,
         }
       });
       if (error) throw error;
@@ -1179,7 +1313,7 @@ export default function CreateImages({ embedded = false }) {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-zinc-800/40 border border-zinc-700/30 rounded-xl p-4 space-y-3"
+              className={`${ct('bg-slate-50 border-slate-200', 'bg-zinc-800/40 border-zinc-700/30')} border rounded-xl p-4 space-y-3`}
             >
               {/* Type indicator with icon */}
               <div className="flex items-center gap-2">
@@ -1193,13 +1327,27 @@ export default function CreateImages({ embedded = false }) {
                     : <Monitor className="w-3.5 h-3.5 text-purple-400" />
                   }
                 </div>
-                <p className="text-xs font-medium text-zinc-300">{productAnalysis.summary}</p>
+                <p className={`text-xs font-medium ${ct('text-slate-700', 'text-zinc-300')}`}>{productAnalysis.summary}</p>
               </div>
+
+              {/* Material info + lighting tip */}
+              {(productAnalysis.materialInfo || productAnalysis.lightingTip) && (
+                <div className={`flex flex-wrap gap-2 text-[10px] ${ct('text-slate-500', 'text-zinc-500')}`}>
+                  {productAnalysis.materialInfo?.map((info, i) => (
+                    <span key={i} className={`px-2 py-0.5 rounded-full ${ct('bg-slate-100 border-slate-200', 'bg-zinc-700/40 border-zinc-600/30')} border`}>{info}</span>
+                  ))}
+                  {productAnalysis.lightingTip && (
+                    <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-500">
+                      Lighting: {productAnalysis.lightingTip}
+                    </span>
+                  )}
+                </div>
+              )}
 
               {/* Recommended Styles */}
               {productAnalysis.suggestedStyles?.length > 0 && (
                 <div>
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1.5">Recommended Styles</p>
+                  <p className={`text-[10px] ${ct('text-slate-400', 'text-zinc-500')} uppercase tracking-wider mb-1.5`}>Recommended Styles</p>
                   <div className="flex gap-1.5 flex-wrap">
                     {productAnalysis.suggestedStyles.map(styleId => {
                       const style = STYLE_PRESETS.find(s => s.id === styleId);
@@ -1211,7 +1359,7 @@ export default function CreateImages({ embedded = false }) {
                           className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all ${
                             selectedStyle === styleId
                               ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
-                              : 'bg-zinc-700/40 text-zinc-400 border border-zinc-600/30 hover:border-zinc-500'
+                              : ct('bg-slate-100 text-slate-500 border border-slate-200 hover:border-slate-400', 'bg-zinc-700/40 text-zinc-400 border border-zinc-600/30 hover:border-zinc-500')
                           }`}
                         >
                           {style.label}
@@ -1225,13 +1373,13 @@ export default function CreateImages({ embedded = false }) {
               {/* Quick Prompts */}
               {productAnalysis.suggestedPrompts?.length > 0 && (
                 <div>
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1.5">Quick Prompts</p>
+                  <p className={`text-[10px] ${ct('text-slate-400', 'text-zinc-500')} uppercase tracking-wider mb-1.5`}>Quick Prompts</p>
                   <div className="flex gap-1.5 flex-wrap">
                     {productAnalysis.suggestedPrompts.slice(0, 3).map((suggestion, i) => (
                       <button
                         key={i}
                         onClick={() => setPrompt(suggestion)}
-                        className="px-2.5 py-1 rounded-lg text-[11px] text-zinc-400 bg-zinc-700/30 border border-zinc-600/20 hover:border-zinc-500 hover:text-zinc-300 transition-all truncate max-w-[200px]"
+                        className={`px-2.5 py-1 rounded-lg text-[11px] ${ct('text-slate-500 bg-slate-100 border-slate-200 hover:border-slate-400 hover:text-slate-700', 'text-zinc-400 bg-zinc-700/30 border border-zinc-600/20 hover:border-zinc-500 hover:text-zinc-300')} transition-all truncate max-w-[240px]`}
                       >
                         {suggestion}
                       </button>
