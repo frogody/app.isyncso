@@ -295,7 +295,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="w-12 h-12">
               <AvatarImage src={user.avatar_url} />
-              <AvatarFallback className="bg-red-500/20 text-red-400">
+              <AvatarFallback className="bg-cyan-500/20 text-cyan-400">
                 {(user.full_name || user.name || user.email)?.[0]?.toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -328,7 +328,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
               <RoleBadge role={user.role} />
               <StatusBadge isActive={user.is_active_recently} isPlatformAdmin={user.is_platform_admin} />
               {user.platform_admin_role && (
-                <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
+                <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs">
                   {user.platform_admin_role.replace('_', ' ')}
                 </Badge>
               )}
@@ -402,7 +402,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
                 <Label className="text-zinc-400 text-xs mb-2 block">RBAC Roles</Label>
                 <div className="flex flex-wrap gap-2">
                   {user.rbac_roles.map((role, idx) => (
-                    <Badge key={idx} className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                    <Badge key={idx} className="bg-blue-500/20 text-blue-400 border-blue-500/30">
                       {role.role_name || role.role_id}
                     </Badge>
                   ))}
@@ -424,7 +424,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
                         key={app.slug}
                         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-800/30"
                       >
-                        <CheckCircle className="w-3 h-3 text-green-400" />
+                        <CheckCircle className="w-3 h-3 text-cyan-400" />
                         <span className="text-white text-xs">{app.name}</span>
                       </div>
                     ))}
@@ -462,7 +462,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
                         key={app.slug}
                         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-800/30"
                       >
-                        <CheckCircle className="w-3 h-3 text-green-400" />
+                        <CheckCircle className="w-3 h-3 text-cyan-400" />
                         <span className="text-white text-xs">{app.name}</span>
                       </div>
                     ))}
@@ -576,7 +576,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
                             className={cn(
                               'text-[10px] px-1.5 py-px',
                               license.status === 'active'
-                                ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                                ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
                                 : license.status === 'expired'
                                 ? 'bg-red-500/20 text-red-400 border-red-500/30'
                                 : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
@@ -673,7 +673,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
                 <Button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="bg-red-500 hover:bg-red-600 text-white"
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white"
                 >
                   {isSaving ? (
                     <>
@@ -880,14 +880,14 @@ export default function AdminUsers() {
           title="Active (30 days)"
           value={stats.active_users_30d?.toLocaleString()}
           icon={UserCheck}
-          color="green"
+          color="cyan"
           isLoading={isStatsLoading}
         />
         <StatCard
           title="New This Month"
           value={stats.new_users_month?.toLocaleString()}
           icon={UserPlus}
-          color="purple"
+          color="cyan"
           isLoading={isStatsLoading}
         />
         <StatCard
@@ -984,7 +984,7 @@ export default function AdminUsers() {
         <CardHeader className="border-b border-zinc-800 py-2 px-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-white flex items-center gap-1.5 text-sm">
-              <Users className="w-4 h-4 text-red-400" />
+              <Users className="w-4 h-4 text-cyan-400" />
               Users ({totalCount})
             </CardTitle>
           </div>
@@ -1033,7 +1033,7 @@ export default function AdminUsers() {
                             <div className="flex items-center gap-1.5">
                               <Avatar className="w-6 h-6">
                                 <AvatarImage src={user.avatar_url} />
-                                <AvatarFallback className="bg-red-500/20 text-red-400 text-[9px]">
+                                <AvatarFallback className="bg-cyan-500/20 text-cyan-400 text-[9px]">
                                   {(user.full_name || user.name || user.email)?.[0]?.toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>

@@ -73,7 +73,7 @@ import { NestUploadWizard } from '@/components/admin/NestUploadWizard';
 const BADGE_COLORS = {
   popular: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   new: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  best_value: 'bg-green-500/20 text-green-400 border-green-500/30',
+  best_value: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
 };
 
 // Format currency
@@ -109,7 +109,7 @@ const StatCard = ({ icon: Icon, label, value, trend }) => (
     <div className="flex items-center justify-between mb-2">
       <Icon className="w-5 h-5 text-cyan-400" />
       {trend && (
-        <Badge className="bg-green-500/20 text-green-400 text-xs">
+        <Badge className="bg-cyan-500/20 text-cyan-400 text-xs">
           <TrendingUp className="w-3 h-3 mr-1" />
           {trend}
         </Badge>

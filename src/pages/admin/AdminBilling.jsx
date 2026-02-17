@@ -72,7 +72,7 @@ function StatCard({ title, value, icon: Icon, color = 'blue', subtitle, trend })
           {subtitle && <p className="text-[10px] text-zinc-500">{subtitle}</p>}
         </div>
         {trend && (
-          <div className={`flex items-center gap-1 text-xs ${trend > 0 ? 'text-green-400' : 'text-red-400'}`}>
+          <div className={`flex items-center gap-1 text-xs ${trend > 0 ? 'text-cyan-400' : 'text-red-400'}`}>
             <TrendingUp className={`w-3 h-3 ${trend < 0 ? 'rotate-180' : ''}`} />
             {Math.abs(trend)}%
           </div>
@@ -625,7 +625,7 @@ export default function AdminBilling() {
           title="MRR"
           value={formatCurrency(overview?.mrr)}
           icon={Euro}
-          color="green"
+          color="cyan"
           subtitle="Monthly Recurring Revenue"
         />
         <StatCard
@@ -639,7 +639,7 @@ export default function AdminBilling() {
           title="Active Subscriptions"
           value={overview?.active_subscriptions || 0}
           icon={Users}
-          color="purple"
+          color="blue"
           subtitle={`${overview?.trialing || 0} trialing`}
         />
         <StatCard
@@ -669,7 +669,7 @@ export default function AdminBilling() {
                 labelFormatter={(label) => new Date(label).toLocaleDateString()}
               />
               <Legend />
-              <Line type="monotone" dataKey="revenue" stroke="#10B981" strokeWidth={2} dot={false} name="Revenue" />
+              <Line type="monotone" dataKey="revenue" stroke="#22d3ee" strokeWidth={2} dot={false} name="Revenue" />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -797,7 +797,7 @@ export default function AdminBilling() {
                     <ul className="mt-2 space-y-1">
                       {plan.features?.slice(0, 4).map((feature, i) => (
                         <li key={i} className="flex items-center gap-1.5 text-[10px] text-zinc-300">
-                          <CheckCircle2 className="w-3 h-3 text-green-400 flex-shrink-0" />
+                          <CheckCircle2 className="w-3 h-3 text-cyan-400 flex-shrink-0" />
                           {feature}
                         </li>
                       ))}
@@ -981,7 +981,7 @@ export default function AdminBilling() {
                           <span className="px-1.5 py-0.5 bg-zinc-800 rounded font-mono text-white">{coupon.code}</span>
                         </td>
                         <td className="py-1.5 px-2 text-white">{coupon.name}</td>
-                        <td className="py-1.5 px-2 font-medium text-green-400">
+                        <td className="py-1.5 px-2 font-medium text-cyan-400">
                           {coupon.discount_type === 'percentage' ? (
                             <span className="flex items-center gap-1">
                               <Percent className="w-2.5 h-2.5" />

@@ -81,10 +81,10 @@ function CategoryBadge({ category }) {
 function StatCard({ title, value, icon: Icon, color = 'blue', subtitle }) {
   const colors = {
     blue: 'bg-blue-500/20 text-blue-400',
-    green: 'bg-green-500/20 text-green-400',
+    green: 'bg-cyan-500/20 text-cyan-400',
     red: 'bg-red-500/20 text-red-400',
     yellow: 'bg-yellow-500/20 text-yellow-400',
-    purple: 'bg-purple-500/20 text-purple-400',
+    purple: 'bg-blue-500/20 text-blue-400',
   };
 
   return (
@@ -443,7 +443,7 @@ function DeliveriesModal({ webhook, onClose }) {
                     <td className="px-2 py-1.5"><StatusBadge status={delivery.status} /></td>
                     <td className="px-2 py-1.5 text-xs text-zinc-400">
                       {delivery.status_code ? (
-                        <span className={delivery.status_code >= 200 && delivery.status_code < 300 ? 'text-green-400' : 'text-red-400'}>
+                        <span className={delivery.status_code >= 200 && delivery.status_code < 300 ? 'text-cyan-400' : 'text-red-400'}>
                           {delivery.status_code}
                         </span>
                       ) : '-'}
@@ -635,7 +635,7 @@ export default function AdminIntegrations() {
           title="Active Connections"
           value={overview?.total_connections || 0}
           icon={Link2}
-          color="green"
+          color="blue"
           subtitle="Connected companies"
         />
         <StatCard
@@ -649,7 +649,7 @@ export default function AdminIntegrations() {
           title="Active Webhooks"
           value={overview?.total_webhooks || 0}
           icon={Webhook}
-          color="purple"
+          color="blue"
           subtitle="Webhook endpoints"
         />
       </div>
@@ -928,7 +928,7 @@ export default function AdminIntegrations() {
                         <StatusBadge status={webhook.is_active ? 'connected' : 'disabled'} />
                       </td>
                       <td className="py-1.5 px-2 text-xs">
-                        <span className="text-green-400">{webhook.successful_deliveries}</span>
+                        <span className="text-cyan-400">{webhook.successful_deliveries}</span>
                         {' / '}
                         <span className="text-red-400">{webhook.failed_deliveries}</span>
                         <span className="text-zinc-500 text-[10px] ml-1">
@@ -939,7 +939,7 @@ export default function AdminIntegrations() {
                         <div className="flex items-center justify-end gap-0.5">
                           <button
                             onClick={() => handleTestWebhook(webhook)}
-                            className="p-1 text-zinc-400 hover:text-green-400 hover:bg-green-500/20 rounded"
+                            className="p-1 text-zinc-400 hover:text-cyan-400 hover:bg-cyan-500/20 rounded"
                             title="Test Webhook"
                           >
                             <Play className="w-3 h-3" />

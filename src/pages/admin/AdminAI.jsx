@@ -307,8 +307,8 @@ export default function AdminAI() {
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
-                <Bot className="w-4 h-4 text-purple-400" />
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                <Bot className="w-4 h-4 text-cyan-400" />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-white">AI & Automation</h1>
@@ -360,7 +360,7 @@ export default function AdminAI() {
                       Today: {formatCost(stats?.total_cost_today)}
                     </p>
                   </div>
-                  <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${getIconColor('green')}`}>
+                  <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${getIconColor('cyan')}`}>
                     <TrendingUp className="w-4 h-4" />
                   </div>
                 </div>
@@ -379,7 +379,7 @@ export default function AdminAI() {
                       {stats?.total_models || 0} total configured
                     </p>
                   </div>
-                  <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${getIconColor('purple')}`}>
+                  <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${getIconColor('blue')}`}>
                     <Brain className="w-4 h-4" />
                   </div>
                 </div>
@@ -398,7 +398,7 @@ export default function AdminAI() {
                       {stats?.workflow_runs_today || 0} runs today
                     </p>
                   </div>
-                  <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${getIconColor('orange')}`}>
+                  <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${getIconColor('blue')}`}>
                     <Workflow className="w-4 h-4" />
                   </div>
                 </div>
@@ -409,23 +409,23 @@ export default function AdminAI() {
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-zinc-900 border border-zinc-800 mb-4">
-              <TabsTrigger value="models" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 text-xs">
+              <TabsTrigger value="models" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 text-xs">
                 <Brain className="w-3 h-3 mr-1.5" />
                 AI Models
               </TabsTrigger>
-              <TabsTrigger value="usage" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 text-xs">
+              <TabsTrigger value="usage" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 text-xs">
                 <BarChart3 className="w-3 h-3 mr-1.5" />
                 Usage Analytics
               </TabsTrigger>
-              <TabsTrigger value="prompts" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 text-xs">
+              <TabsTrigger value="prompts" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 text-xs">
                 <Sparkles className="w-3 h-3 mr-1.5" />
                 Prompt Library
               </TabsTrigger>
-              <TabsTrigger value="workflows" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 text-xs">
+              <TabsTrigger value="workflows" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 text-xs">
                 <Workflow className="w-3 h-3 mr-1.5" />
                 Workflows
               </TabsTrigger>
-              <TabsTrigger value="scheduled" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 text-xs">
+              <TabsTrigger value="scheduled" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 text-xs">
                 <Clock className="w-3 h-3 mr-1.5" />
                 Scheduled Tasks
               </TabsTrigger>
@@ -438,7 +438,7 @@ export default function AdminAI() {
                 <Button
                   onClick={() => { setSelectedItem(null); setShowModelModal(true); }}
                   size="sm"
-                  className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs"
                 >
                   <Plus className="w-3 h-3 mr-1.5" />
                   Add Model
@@ -453,14 +453,14 @@ export default function AdminAI() {
                         <div className="flex items-center gap-2">
                           <div className={cn(
                             "w-6 h-6 rounded-lg flex items-center justify-center",
-                            model.provider === 'openai' && "bg-green-500/20",
-                            model.provider === 'anthropic' && "bg-orange-500/20",
+                            model.provider === 'openai' && "bg-cyan-500/20",
+                            model.provider === 'anthropic' && "bg-blue-500/20",
                             model.provider === 'google' && "bg-blue-500/20"
                           )}>
                             <Brain className={cn(
                               "w-3 h-3",
-                              model.provider === 'openai' && "text-green-400",
-                              model.provider === 'anthropic' && "text-orange-400",
+                              model.provider === 'openai' && "text-cyan-400",
+                              model.provider === 'anthropic' && "text-blue-400",
                               model.provider === 'google' && "text-blue-400"
                             )} />
                           </div>
@@ -474,7 +474,7 @@ export default function AdminAI() {
                             <p className="text-[10px] text-zinc-500">{model.provider}</p>
                           </div>
                         </div>
-                        <Badge className={cn("text-[10px] px-1.5 py-px", model.is_active ? "bg-green-500/20 text-green-400" : "bg-zinc-700 text-zinc-400")}>
+                        <Badge className={cn("text-[10px] px-1.5 py-px", model.is_active ? "bg-cyan-500/20 text-cyan-400" : "bg-zinc-700 text-zinc-400")}>
                           {model.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
@@ -533,7 +533,7 @@ export default function AdminAI() {
                           <div className="flex-1">
                             <div className="h-4 bg-zinc-800 rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-gradient-to-r from-purple-600 to-purple-400 rounded-full"
+                                className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 rounded-full"
                                 style={{
                                   width: `${Math.min(100, (item.tokens / (stats?.total_tokens_30d || 1)) * 100)}%`
                                 }}
@@ -607,7 +607,7 @@ export default function AdminAI() {
                 <Button
                   onClick={() => { setSelectedItem(null); setShowPromptModal(true); }}
                   size="sm"
-                  className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs"
                 >
                   <Plus className="w-3 h-3 mr-1.5" />
                   Create Prompt
@@ -622,10 +622,10 @@ export default function AdminAI() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1.5">
                             <h3 className="text-xs font-semibold text-white">{prompt.name}</h3>
-                            <Badge className="bg-purple-500/20 text-purple-400 text-[10px] px-1.5 py-px">
+                            <Badge className="bg-blue-500/20 text-blue-400 text-[10px] px-1.5 py-px">
                               {prompt.category}
                             </Badge>
-                            <Badge className={cn("text-[10px] px-1.5 py-px", prompt.is_active ? "bg-green-500/20 text-green-400" : "bg-zinc-700 text-zinc-400")}>
+                            <Badge className={cn("text-[10px] px-1.5 py-px", prompt.is_active ? "bg-cyan-500/20 text-cyan-400" : "bg-zinc-700 text-zinc-400")}>
                               {prompt.is_active ? 'Active' : 'Inactive'}
                             </Badge>
                           </div>
@@ -676,7 +676,7 @@ export default function AdminAI() {
                       <Button
                         onClick={() => setShowPromptModal(true)}
                         size="sm"
-                        className="mt-3 bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
+                        className="mt-3 bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs"
                       >
                         Create First Prompt
                       </Button>
@@ -693,7 +693,7 @@ export default function AdminAI() {
                 <Button
                   onClick={() => { setSelectedItem(null); setShowWorkflowModal(true); }}
                   size="sm"
-                  className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs"
                 >
                   <Plus className="w-3 h-3 mr-1.5" />
                   Create Workflow
@@ -711,7 +711,7 @@ export default function AdminAI() {
                             <Badge className="bg-blue-500/20 text-blue-400 text-[10px] px-1.5 py-px">
                               {workflow.trigger_type}
                             </Badge>
-                            <Badge className={cn("text-[10px] px-1.5 py-px", workflow.is_active ? "bg-green-500/20 text-green-400" : "bg-zinc-700 text-zinc-400")}>
+                            <Badge className={cn("text-[10px] px-1.5 py-px", workflow.is_active ? "bg-cyan-500/20 text-cyan-400" : "bg-zinc-700 text-zinc-400")}>
                               {workflow.is_active ? 'Active' : 'Inactive'}
                             </Badge>
                           </div>
@@ -776,7 +776,7 @@ export default function AdminAI() {
                       <Button
                         onClick={() => setShowWorkflowModal(true)}
                         size="sm"
-                        className="mt-3 bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
+                        className="mt-3 bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs"
                       >
                         Create First Workflow
                       </Button>
@@ -800,10 +800,10 @@ export default function AdminAI() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1.5">
                             <h3 className="text-xs font-semibold text-white">{task.name}</h3>
-                            <Badge className="bg-purple-500/20 text-purple-400 text-[10px] px-1.5 py-px">
+                            <Badge className="bg-blue-500/20 text-blue-400 text-[10px] px-1.5 py-px">
                               {task.task_type}
                             </Badge>
-                            <Badge className={cn("text-[10px] px-1.5 py-px", task.is_active ? "bg-green-500/20 text-green-400" : "bg-zinc-700 text-zinc-400")}>
+                            <Badge className={cn("text-[10px] px-1.5 py-px", task.is_active ? "bg-cyan-500/20 text-cyan-400" : "bg-zinc-700 text-zinc-400")}>
                               {task.is_active ? 'Active' : 'Inactive'}
                             </Badge>
                           </div>
@@ -1070,7 +1070,7 @@ function ModelModal({ open, onClose, model, onSave }) {
             <Button type="button" variant="outline" onClick={onClose} className="border-zinc-700 h-7 text-xs">
               Cancel
             </Button>
-            <Button type="submit" className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs">
+            <Button type="submit" className="bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs">
               {model ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>
@@ -1261,7 +1261,7 @@ function PromptModal({ open, onClose, prompt, models, onSave }) {
             <Button type="button" variant="outline" onClick={onClose} className="border-zinc-700 h-7 text-xs">
               Cancel
             </Button>
-            <Button type="submit" className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs">
+            <Button type="submit" className="bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs">
               {prompt ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>
@@ -1378,7 +1378,7 @@ function WorkflowModal({ open, onClose, workflow, onSave }) {
             <Button type="button" variant="outline" onClick={onClose} className="border-zinc-700 h-7 text-xs">
               Cancel
             </Button>
-            <Button type="submit" className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs">
+            <Button type="submit" className="bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs">
               {workflow ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>

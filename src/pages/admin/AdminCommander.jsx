@@ -69,7 +69,7 @@ function MdMessage({ children }) {
         ),
         code: ({ inline, children }) =>
           inline ? (
-            <code className="bg-zinc-700/50 px-1.5 py-0.5 rounded text-[12px] text-red-400 font-mono">{children}</code>
+            <code className="bg-zinc-700/50 px-1.5 py-0.5 rounded text-[12px] text-cyan-400 font-mono">{children}</code>
           ) : (
             <pre className="bg-zinc-800/80 rounded-lg p-3 text-[12px] text-zinc-300 overflow-x-auto my-2 font-mono border border-zinc-700/50">
               <code>{children}</code>
@@ -135,13 +135,13 @@ function MessageBubble({ message, isLast }) {
           'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
           isUser
             ? 'bg-cyan-500/20 border border-cyan-500/30'
-            : 'bg-red-500/20 border border-red-500/30'
+            : 'bg-cyan-500/20 border border-cyan-500/30'
         )}
       >
         {isUser ? (
           <User className="w-4 h-4 text-cyan-400" />
         ) : (
-          <Bot className="w-4 h-4 text-red-400" />
+          <Bot className="w-4 h-4 text-cyan-400" />
         )}
       </div>
       <div
@@ -158,7 +158,7 @@ function MessageBubble({ message, isLast }) {
           <div className="text-sm text-zinc-200 leading-relaxed">
             <MdMessage>{message.content}</MdMessage>
             {isLast && message.streaming && (
-              <span className="inline-block w-2 h-4 bg-red-400 ml-1 animate-pulse" />
+              <span className="inline-block w-2 h-4 bg-cyan-400 ml-1 animate-pulse" />
             )}
           </div>
         )}

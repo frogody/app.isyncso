@@ -335,7 +335,7 @@ export default function AdminSupport() {
       spam: 'bg-yellow-500/20 text-yellow-400',
       harassment: 'bg-red-500/20 text-red-400',
       inappropriate: 'bg-orange-500/20 text-orange-400',
-      fake: 'bg-purple-500/20 text-purple-400',
+      fake: 'bg-blue-500/20 text-blue-400',
       copyright: 'bg-blue-500/20 text-blue-400',
       other: 'bg-zinc-500/20 text-zinc-400',
     };
@@ -345,7 +345,7 @@ export default function AdminSupport() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <RefreshCw className="w-8 h-8 text-red-500 animate-spin" />
+        <RefreshCw className="w-8 h-8 text-cyan-500 animate-spin" />
       </div>
     );
   }
@@ -395,8 +395,8 @@ export default function AdminSupport() {
                   {stats?.avg_response_hours ? `${Math.round(stats.avg_response_hours)}h` : '-'}
                 </p>
               </div>
-              <div className="w-8 h-8 rounded-lg bg-green-500/20 border border-green-500/30 flex items-center justify-center">
-                <Clock className="w-4 h-4 text-green-400" />
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-cyan-400" />
               </div>
             </div>
           </CardContent>
@@ -409,8 +409,8 @@ export default function AdminSupport() {
                 <p className="text-[10px] text-zinc-500 mb-0.5">Pending Reports</p>
                 <p className="text-lg font-bold text-white">{stats?.pending_reports || 0}</p>
               </div>
-              <div className="w-8 h-8 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
-                <AlertTriangle className="w-4 h-4 text-orange-400" />
+              <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-blue-400" />
               </div>
             </div>
           </CardContent>
@@ -611,7 +611,7 @@ export default function AdminSupport() {
                           <div className="flex gap-2">
                             <Button
                               size="sm"
-                              className="bg-red-500 hover:bg-red-600 h-7 text-xs"
+                              className="bg-cyan-600 hover:bg-cyan-700 h-7 text-xs"
                               onClick={() => setShowReplyModal(true)}
                             >
                               <Send className="w-3 h-3 mr-1.5" />
@@ -767,7 +767,7 @@ export default function AdminSupport() {
                       <td className="py-1.5 px-3">
                         <Badge className={cn(
                           'text-[10px] px-1.5 py-px',
-                          flag.flag_type === 'vip' ? 'bg-purple-500/20 text-purple-400' :
+                          flag.flag_type === 'vip' ? 'bg-blue-500/20 text-blue-400' :
                           flag.flag_type === 'fraud' ? 'bg-red-500/20 text-red-400' :
                           'bg-yellow-500/20 text-yellow-400'
                         )}>
@@ -778,7 +778,7 @@ export default function AdminSupport() {
                       <td className="py-1.5 px-3 text-xs text-zinc-400">{flag.flagged_by_name || 'System'}</td>
                       <td className="py-1.5 px-3">
                         {flag.resolved_at ? (
-                          <Badge className="bg-green-500/20 text-green-400 text-[10px] px-1.5 py-px">Resolved</Badge>
+                          <Badge className="bg-cyan-500/20 text-cyan-400 text-[10px] px-1.5 py-px">Resolved</Badge>
                         ) : (
                           <Badge className="bg-yellow-500/20 text-yellow-400 text-[10px] px-1.5 py-px">Active</Badge>
                         )}
@@ -823,7 +823,7 @@ export default function AdminSupport() {
                     {response.variables?.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {response.variables.map((v) => (
-                          <code key={v} className="text-[10px] bg-zinc-700 px-1.5 py-0.5 rounded text-green-400">
+                          <code key={v} className="text-[10px] bg-zinc-700 px-1.5 py-0.5 rounded text-cyan-400">
                             {`{{${v}}}`}
                           </code>
                         ))}
@@ -882,7 +882,7 @@ export default function AdminSupport() {
             <Button variant="outline" onClick={() => setShowReplyModal(false)} className="border-zinc-700 h-7 text-xs">
               Cancel
             </Button>
-            <Button className="bg-red-500 hover:bg-red-600 h-7 text-xs" onClick={handleSendReply} disabled={saving}>
+            <Button className="bg-cyan-600 hover:bg-cyan-700 h-7 text-xs" onClick={handleSendReply} disabled={saving}>
               {saving ? 'Sending...' : isInternalNote ? 'Add Note' : 'Send Reply'}
             </Button>
           </DialogFooter>
@@ -926,7 +926,7 @@ export default function AdminSupport() {
             <Button variant="outline" onClick={() => setShowResolveModal(false)} className="border-zinc-700 h-7 text-xs">
               Cancel
             </Button>
-            <Button className="bg-red-500 hover:bg-red-600 h-7 text-xs" onClick={handleResolveReport} disabled={saving}>
+            <Button className="bg-cyan-600 hover:bg-cyan-700 h-7 text-xs" onClick={handleResolveReport} disabled={saving}>
               {saving ? 'Resolving...' : 'Resolve Report'}
             </Button>
           </DialogFooter>

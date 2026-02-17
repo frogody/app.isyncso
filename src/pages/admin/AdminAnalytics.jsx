@@ -176,7 +176,7 @@ function UserGrowthChart({ data }) {
           type="monotone"
           dataKey="new_users"
           name="New Users"
-          stroke="#ef4444"
+          stroke="#06b6d4"
           strokeWidth={2}
           dot={false}
         />
@@ -219,8 +219,8 @@ function DAUChart({ data }) {
           type="monotone"
           dataKey="dau"
           name="Daily Active Users"
-          stroke="#10b981"
-          fill="#10b981"
+          stroke="#06b6d4"
+          fill="#06b6d4"
           fillOpacity={0.2}
         />
       </AreaChart>
@@ -251,8 +251,8 @@ function RevenueChart({ data }) {
         <YAxis stroke="#71717a" fontSize={12} tickFormatter={(value) => `€${value}`} />
         <Tooltip content={<CustomTooltip valueFormatter={(v) => `€${v.toLocaleString()}`} />} />
         <Legend />
-        <Bar dataKey="data_revenue" name="Data Products" fill="#8b5cf6" stackId="revenue" />
-        <Bar dataKey="license_revenue" name="App Licenses" fill="#f59e0b" stackId="revenue" />
+        <Bar dataKey="data_revenue" name="Data Products" fill="#3b82f6" stackId="revenue" />
+        <Bar dataKey="license_revenue" name="App Licenses" fill="#06b6d4" stackId="revenue" />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -282,7 +282,7 @@ function AppUsageChart({ data }) {
         <YAxis dataKey="name" type="category" stroke="#71717a" fontSize={12} width={120} />
         <Tooltip content={<CustomTooltip />} />
         <Legend />
-        <Bar dataKey="licenses" name="Active Licenses" fill="#ef4444" />
+        <Bar dataKey="licenses" name="Active Licenses" fill="#06b6d4" />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -336,7 +336,7 @@ function TopUsersTable({ users }) {
               </td>
               <td className="py-1.5 px-3">
                 <div className="flex items-center gap-1.5 text-zinc-300 text-xs">
-                  <Activity className="w-3 h-3 text-green-400" />
+                  <Activity className="w-3 h-3 text-cyan-400" />
                   {user.event_count || 0}
                 </div>
               </td>
@@ -375,14 +375,14 @@ function OrganizationsTable({ organizations }) {
             >
               <td className="py-1.5 px-3">
                 <div className="flex items-center gap-2">
-                  <Building2 className="w-3 h-3 text-purple-400" />
+                  <Building2 className="w-3 h-3 text-blue-400" />
                   <span className="text-white text-xs font-medium">{org.name}</span>
                 </div>
               </td>
               <td className="py-1.5 px-3 text-zinc-300 text-xs">{org.industry || '-'}</td>
               <td className="py-1.5 px-3 text-zinc-300 text-xs">{org.user_count || 0}</td>
               <td className="py-1.5 px-3 text-xs">
-                <span className="text-green-400">{org.active_users || 0}</span>
+                <span className="text-cyan-400">{org.active_users || 0}</span>
                 <span className="text-zinc-500"> / {org.user_count || 0}</span>
               </td>
               <td className="py-1.5 px-3 text-zinc-300 text-xs">{org.app_licenses || 0}</td>
@@ -433,10 +433,10 @@ function AppPerformanceTable({ apps }) {
               <td className="py-1.5 px-3">
                 <Badge className={cn(
                   'text-[10px] px-1.5 py-px',
-                  app.pricing_type === 'free' && 'bg-green-500/20 text-green-400',
+                  app.pricing_type === 'free' && 'bg-cyan-500/20 text-cyan-400',
                   app.pricing_type === 'freemium' && 'bg-blue-500/20 text-blue-400',
-                  app.pricing_type === 'paid' && 'bg-purple-500/20 text-purple-400',
-                  app.pricing_type === 'enterprise' && 'bg-orange-500/20 text-orange-400'
+                  app.pricing_type === 'paid' && 'bg-blue-500/20 text-blue-400',
+                  app.pricing_type === 'enterprise' && 'bg-blue-500/20 text-blue-400'
                 )}>
                   {app.pricing_type || 'free'}
                 </Badge>
@@ -587,7 +587,7 @@ export default function AdminAnalytics() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-lg font-bold text-white flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-red-400" />
+              <BarChart3 className="w-5 h-5 text-cyan-400" />
               Analytics & Insights
             </h1>
             <p className="text-zinc-400 text-xs mt-0.5">
@@ -654,7 +654,7 @@ export default function AdminAnalytics() {
             changeType={parseFloat(stats.activeUsersChange) >= 0 ? 'increase' : 'decrease'}
             subtitle="Users with activity"
             icon={Activity}
-            color="green"
+            color="cyan"
           />
           <StatCard
             title="Organizations"
@@ -663,7 +663,7 @@ export default function AdminAnalytics() {
             changeType={parseFloat(stats.newOrgsChange) >= 0 ? 'increase' : 'decrease'}
             subtitle={`${stats.newOrgs} new this period`}
             icon={Building2}
-            color="purple"
+            color="blue"
           />
           <StatCard
             title="Revenue"
@@ -672,7 +672,7 @@ export default function AdminAnalytics() {
             changeType={parseFloat(stats.revenueChange) >= 0 ? 'increase' : 'decrease'}
             subtitle={`${stats.appLicenses} active licenses`}
             icon={Euro}
-            color="orange"
+            color="cyan"
           />
         </div>
       )}
@@ -685,7 +685,7 @@ export default function AdminAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-white text-sm flex items-center gap-2">
-                  <LineChart className="w-4 h-4 text-red-400" />
+                  <LineChart className="w-4 h-4 text-cyan-400" />
                   User Growth
                 </CardTitle>
                 <CardDescription className="text-zinc-500 text-[10px] mt-0.5">
@@ -719,7 +719,7 @@ export default function AdminAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-white text-sm flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-green-400" />
+                  <BarChart3 className="w-4 h-4 text-cyan-400" />
                   Daily Active Users
                 </CardTitle>
                 <CardDescription className="text-zinc-500 text-[10px] mt-0.5">
@@ -753,7 +753,7 @@ export default function AdminAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-white text-sm flex items-center gap-2">
-                  <Euro className="w-4 h-4 text-orange-400" />
+                  <Euro className="w-4 h-4 text-blue-400" />
                   Revenue Breakdown
                 </CardTitle>
                 <CardDescription className="text-zinc-500 text-[10px] mt-0.5">
@@ -787,7 +787,7 @@ export default function AdminAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-white text-sm flex items-center gap-2">
-                  <Package className="w-4 h-4 text-purple-400" />
+                  <Package className="w-4 h-4 text-blue-400" />
                   App Performance
                 </CardTitle>
                 <CardDescription className="text-zinc-500 text-[10px] mt-0.5">
@@ -819,13 +819,13 @@ export default function AdminAnalytics() {
       {/* Tables Section */}
       <Tabs defaultValue="users" className="space-y-3">
         <TabsList className="bg-zinc-900 border border-zinc-800 h-8">
-          <TabsTrigger value="users" className="text-xs data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400">
+          <TabsTrigger value="users" className="text-xs data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
             Top Users
           </TabsTrigger>
-          <TabsTrigger value="organizations" className="text-xs data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400">
+          <TabsTrigger value="organizations" className="text-xs data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
             Organizations
           </TabsTrigger>
-          <TabsTrigger value="apps" className="text-xs data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400">
+          <TabsTrigger value="apps" className="text-xs data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
             App Performance
           </TabsTrigger>
         </TabsList>
