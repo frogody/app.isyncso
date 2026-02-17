@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send, Plus, Smile, Code, Bold, Italic,
@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/popover';
 import AutocompletePopup, { EMOJI_SHORTCODES } from './AutocompletePopup';
 import { AVAILABLE_AGENTS } from './AgentMentionHandler';
+import { useSmartCompose } from './smart/useSmartCompose';
+import SmartCompose from './smart/SmartCompose';
 
 const EMOJI_CATEGORIES = {
   'Smileys': ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘'],
@@ -57,6 +59,21 @@ export default function MessageInput({
     selectedIndex: 0,
     triggerPos: 0
   });
+
+  // Smart Compose - AI ghost-text suggestions
+  const smartCompose = useSmartCompose({
+    channelId,
+    userId: null,
+    messageText: message,
+    recentMessages: [],
+  });
+
+  const handleAcceptSuggestion = useCallback(() => {
+    const accepted = smartCompose.acceptSuggestion();
+    if (accepted) {
+      setMessage(prev => prev + accepted);
+    }
+  }, [smartCompose]);
 
   // Draft auto-save
   const channelIdRef = useRef(channelId);
@@ -614,6 +631,16 @@ export default function MessageInput({
                   />
                 )}
               </AnimatePresence>
+
+              {/* Smart Compose ghost-text overlay */}
+              <SmartCompose
+                suggestion={smartCompose.suggestion}
+                messageText={message}
+                onAccept={handleAcceptSuggestion}
+                onDismiss={smartCompose.dismissSuggestion}
+                textareaRef={textareaRef}
+                showToneAdjuster={false}
+              />
 
               <textarea
                 ref={textareaRef}

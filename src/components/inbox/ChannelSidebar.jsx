@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import ChannelCategoryManager, { CategoryDot, filterChannelsByCategory } from './ChannelCategoryManager';
 import GuestChannelBadge from './guests/GuestChannelBadge';
+import PriorityToggle from './priority/PriorityToggle';
 
 // Status options
 const STATUS_OPTIONS = [
@@ -263,6 +264,7 @@ export default function ChannelSidebar({
       return 'active';
     }
   });
+  const [isPriorityView, setIsPriorityView] = useState(false);
 
   const searchInputRef = useRef(null);
 
@@ -430,7 +432,7 @@ export default function ChannelSidebar({
           />
         </div>
 
-        {/* Quick Access */}
+        {/* Quick Access + Priority Toggle */}
         <div className="flex items-center gap-1">
           <button
             onClick={() => onSelectChannel({ id: 'threads', name: 'All Threads', type: 'special' })}
@@ -453,6 +455,11 @@ export default function ChannelSidebar({
             <Bookmark className="w-3 h-3" />
             <span>Saved</span>
           </button>
+          <PriorityToggle
+            isPriority={isPriorityView}
+            onToggle={() => setIsPriorityView(prev => !prev)}
+            urgentCount={Object.values(unreadCounts).filter(c => c >= 5).length}
+          />
         </div>
 
         {/* Category Filter Pills */}

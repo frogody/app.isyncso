@@ -59,8 +59,6 @@ import { SyncBriefing } from '@/components/inbox/briefing';
 import { GuestInviteModal } from '@/components/inbox/guests';
 import { CreatePollModal } from '@/components/inbox/messages';
 import SmartReply from '@/components/inbox/smart/SmartReply';
-import { useSmartCompose } from '@/components/inbox/smart/useSmartCompose';
-import SmartCompose from '@/components/inbox/smart/SmartCompose';
 import { useVideoCall } from '@/components/inbox/video';
 import { VideoCallRoom, CallBanner } from '@/components/inbox/video';
 
