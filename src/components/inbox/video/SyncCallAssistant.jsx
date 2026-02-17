@@ -10,7 +10,7 @@
  * Dark theme, glass morphism, slides in from the left.
  */
 
-import React, { memo, useState, useCallback, useEffect, useRef } from 'react';
+import React, { memo, useState, useCallback, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Brain,
@@ -150,13 +150,13 @@ const SyncAvatar = memo(function SyncAvatar({ isListening }) {
 // ---------------------------------------------------------------------------
 // Main Component
 // ---------------------------------------------------------------------------
-export default function SyncCallAssistant({
+const SyncCallAssistant = forwardRef(function SyncCallAssistant({
   localStream,
   remoteStreams = [],
   callId,
   isVisible = true,
   onClose,
-}) {
+}, ref) {
   const {
     isListening,
     transcript,
@@ -166,6 +166,11 @@ export default function SyncCallAssistant({
     stopListening,
     getFullTranscript,
   } = useRealtimeTranscription();
+
+  // Expose getFullTranscript to parent via ref
+  useImperativeHandle(ref, () => ({
+    getFullTranscript,
+  }), [getFullTranscript]);
 
   const [activeTab, setActiveTab] = useState('transcript');
   const transcriptEndRef = useRef(null);
@@ -412,4 +417,6 @@ export default function SyncCallAssistant({
       </div>
     </motion.div>
   );
-}
+});
+
+export default SyncCallAssistant;

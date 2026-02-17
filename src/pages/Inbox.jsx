@@ -62,7 +62,7 @@ import { CatchUpButton } from '@/components/inbox/digests';
 import { ChannelDigest } from '@/components/inbox/digests';
 import { SentimentBadge, SentimentIndicator, SentimentPanel, SentimentAlert, useSentimentTracking } from '@/components/inbox/sentiment';
 import { useVideoCall } from '@/components/inbox/video';
-import { VideoCallRoom, CallBanner } from '@/components/inbox/video';
+import { VideoCallRoom, CallBanner, CallEndScreen } from '@/components/inbox/video';
 
 export default function InboxPage() {
   const { user } = useUser();
@@ -235,6 +235,9 @@ export default function InboxPage() {
 
   // Video call hook
   const videoCall = useVideoCall(user?.id, user?.company_id);
+
+  // Post-call wrap-up state
+  const [callEndData, setCallEndData] = useState(null);
 
   // Sentiment tracking for current channel
   const sentimentMessages = useMemo(() => {
@@ -1641,6 +1644,7 @@ export default function InboxPage() {
           <VideoCallRoom
             call={videoCall.currentCall}
             participants={videoCall.participants}
+            user={user}
             localStream={videoCall.localStream}
             screenStream={videoCall.screenStream}
             isMuted={videoCall.isMuted}
@@ -1649,11 +1653,55 @@ export default function InboxPage() {
             onToggleMute={() => videoCall.toggleMute()}
             onToggleCamera={() => videoCall.toggleCamera()}
             onToggleScreen={() => videoCall.toggleScreenShare()}
-            onLeave={() => videoCall.leaveCall()}
-            onEndCall={() => videoCall.endCall()}
+            onLeave={(transcript) => {
+              const callData = videoCall.currentCall;
+              const parts = videoCall.participants;
+              videoCall.leaveCall();
+              if (transcript && transcript.trim().length > 20) {
+                setCallEndData({
+                  callTitle: callData?.title,
+                  callDuration: callData?.started_at
+                    ? `${Math.round((Date.now() - new Date(callData.started_at).getTime()) / 60000)} min`
+                    : null,
+                  participants: parts.map(p => ({ name: p.display_name || p.user_id, role: 'participant' })),
+                  transcript,
+                  callId: callData?.id,
+                });
+              }
+            }}
+            onEndCall={(transcript) => {
+              const callData = videoCall.currentCall;
+              const parts = videoCall.participants;
+              videoCall.endCall();
+              if (transcript && transcript.trim().length > 20) {
+                setCallEndData({
+                  callTitle: callData?.title,
+                  callDuration: callData?.started_at
+                    ? `${Math.round((Date.now() - new Date(callData.started_at).getTime()) / 60000)} min`
+                    : null,
+                  participants: parts.map(p => ({ name: p.display_name || p.user_id, role: 'participant' })),
+                  transcript,
+                  callId: callData?.id,
+                });
+              }
+            }}
           />
         </div>
       )}
+
+      {/* Post-call wrap-up screen */}
+      <AnimatePresence>
+        {callEndData && (
+          <CallEndScreen
+            callTitle={callEndData.callTitle}
+            callDuration={callEndData.callDuration}
+            participants={callEndData.participants}
+            transcript={callEndData.transcript}
+            callId={callEndData.callId}
+            onDismiss={() => setCallEndData(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Call banner (shown when active call exists in channel) */}
       {videoCall.currentCall && !videoCall.isInCall && (
