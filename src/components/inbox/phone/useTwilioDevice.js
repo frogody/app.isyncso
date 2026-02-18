@@ -148,6 +148,12 @@ export function useTwilioDevice(userId) {
       return null;
     }
 
+    // Prevent duplicate calls if one is already active or connecting
+    if (activeCall || callStatus !== 'idle') {
+      console.warn('[Twilio] Call already active, ignoring duplicate connect');
+      return null;
+    }
+
     try {
       setCallStatus('connecting');
 
@@ -196,7 +202,7 @@ export function useTwilioDevice(userId) {
       resetCallState();
       return null;
     }
-  }, [userId, isReady, startTimer, resetCallState]);
+  }, [userId, isReady, activeCall, callStatus, startTimer, resetCallState]);
 
   // Accept incoming call
   const acceptCall = useCallback(() => {

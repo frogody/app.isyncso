@@ -208,14 +208,14 @@ serve(async (req) => {
     const callSid = payload.CallSid || "";
     const direction = payload.Direction || "";
 
+    // "Call Sync" from browser: To is "sync-ai" — must check BEFORE generic outbound
+    if (to === "sync-ai" || to === "client:sync-ai") {
+      return await handleCallSync(payload, callSid, from);
+    }
+
     // Outbound from browser: To is a phone number, Direction is "outbound" or From starts with "client:"
     if (from.startsWith("client:") || direction === "outbound-api") {
       return await handleOutbound(payload, callSid);
-    }
-
-    // "Call Sync" from browser: To is "sync-ai"
-    if (to === "sync-ai" || to === "client:sync-ai") {
-      return await handleCallSync(payload, callSid, from);
     }
 
     // Inbound call from external phone
@@ -230,10 +230,19 @@ serve(async (req) => {
 // ─── Outbound Call (Browser → Phone) ────────────────────────────────────────
 
 async function handleOutbound(payload: Record<string, string>, callSid: string): Promise<Response> {
-  const to = payload.To || "";
+  let to = payload.To || "";
   const from = payload.From || "";
   // The actual caller number is passed as a custom param
   const callerNumber = payload.CallerNumber || payload.FromNumber || "";
+
+  // Normalize number to E.164: convert 00 prefix to +, or prepend + for bare digits
+  if (to.startsWith("00") && to.length > 6) {
+    to = "+" + to.slice(2);
+  } else if (/^\d{10}$/.test(to)) {
+    to = "+1" + to; // Assume US for 10-digit
+  } else if (/^\d{11,}$/.test(to) && !to.startsWith("+")) {
+    to = "+" + to;
+  }
 
   // If To looks like a phone number, dial it
   if (to.startsWith("+") || /^\d{10,}$/.test(to)) {

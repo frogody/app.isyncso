@@ -189,8 +189,17 @@ function Dialer({ makeCall, callSync, isDeviceReady, phoneNumber, callHistory })
   const handleDial = useCallback(() => {
     if (!dialNumber.trim()) return;
     let number = dialNumber.trim();
-    if (!number.startsWith('+') && number.length === 10) {
+    // Convert international 00 prefix to +
+    if (number.startsWith('00') && number.length > 6) {
+      number = '+' + number.slice(2);
+    }
+    // Assume US for bare 10-digit numbers
+    if (!number.startsWith('+') && /^\d{10}$/.test(number)) {
       number = '+1' + number;
+    }
+    // Ensure + prefix for any remaining all-digit international numbers
+    if (!number.startsWith('+') && /^\d{11,}$/.test(number)) {
+      number = '+' + number;
     }
     makeCall(number);
   }, [dialNumber, makeCall]);
@@ -215,14 +224,19 @@ function Dialer({ makeCall, callSync, isDeviceReady, phoneNumber, callHistory })
 
   return (
     <div className="flex flex-col items-center py-6 px-4 max-w-sm mx-auto">
-      {/* Number display */}
+      {/* Number display — editable input for keyboard typing */}
       <div className="w-full mb-6">
         <div className="text-center min-h-[48px] flex items-center justify-center">
-          <span className={`font-mono tracking-wider ${
-            dialNumber.length > 12 ? 'text-lg' : dialNumber.length > 0 ? 'text-2xl' : 'text-lg'
-          } ${dialNumber ? 'text-white' : 'text-zinc-600'}`}>
-            {dialNumber ? formatPhoneDisplay(dialNumber) : 'Enter number'}
-          </span>
+          <input
+            type="tel"
+            value={dialNumber}
+            onChange={(e) => setDialNumber(e.target.value.replace(/[^0-9+*#]/g, ''))}
+            placeholder="Enter number"
+            className={`bg-transparent text-center w-full font-mono tracking-wider outline-none placeholder-zinc-600 ${
+              dialNumber.length > 12 ? 'text-lg' : dialNumber.length > 0 ? 'text-2xl' : 'text-lg'
+            } ${dialNumber ? 'text-white' : 'text-zinc-600'}`}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleDial(); }}
+          />
         </div>
         {phoneNumber?.phone_number && (
           <p className="text-center text-[10px] text-zinc-600 mt-1">
