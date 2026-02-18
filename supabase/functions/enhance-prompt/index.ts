@@ -20,6 +20,7 @@ CORE RULES:
 6. Be concise but packed with visual detail (max 150 words for the enhanced prompt)
 7. Never mention brand names unless the user did
 8. Output ONLY valid JSON, absolutely no markdown or explanation
+9. TEXT & LOGO PRESERVATION (critical for product photography): When a reference image is involved, ALWAYS include in the enhanced prompt: "Preserve all text, logos, brand markings, icons, buttons, and printed labels on the product exactly as they appear — correct spelling, correct font, correct placement." This is the single most important quality signal for e-commerce product photography.
 
 LIGHTING RECIPES (use these specific setups, not vague descriptions):
 - Hero product: Key light 45° camera-left with softbox, fill card camera-right, rim light from behind
@@ -191,6 +192,7 @@ serve(async (req) => {
 
     if (has_reference_image) {
       context.push('NOTE: A reference image will be provided to the model. Focus the prompt on the desired SCENE, ENVIRONMENT, and LIGHTING — the product appearance is already locked in by the reference image.');
+      context.push('CRITICAL TEXT/LOGO PRESERVATION: The reference image contains brand logos, text, icons, and printed markings on the product. Your enhanced prompt MUST include an explicit instruction to preserve ALL text, logos, brand names, and printed details from the reference image exactly as they appear — correct spelling, font, placement, and size. Never blur, distort, or hallucinate any text or logo. This is the #1 priority for product photography.');
     }
 
     if (product_size_scale) {

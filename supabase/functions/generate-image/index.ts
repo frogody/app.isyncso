@@ -386,10 +386,10 @@ serve(async (req) => {
     let finalPrompt = prompt;
 
     if (modelConfig.requiresImage) {
-      // For Kontext (image-to-image): keep prompt focused but add quality hint
+      // For Kontext (image-to-image): keep prompt focused but add quality + preservation hints
       // Kontext prompts describe the EDIT, not the full scene
       if (prompt) {
-        finalPrompt = `${prompt}. Ultra high quality, sharp detail, professional lighting, commercial grade output.`;
+        finalPrompt = `${prompt}. CRITICAL: Preserve ALL text, logos, brand names, icons, buttons, labels, and printed markings on the product EXACTLY as they appear in the reference image — correct spelling, correct font, correct placement, correct size. Do not alter, blur, distort, or hallucinate any text or logo. Ultra high quality, sharp detail, professional lighting, commercial grade output.`;
       }
     } else if (prompt_enhanced) {
       // Prompt was already enhanced by enhance-prompt — use as-is to avoid bloat
