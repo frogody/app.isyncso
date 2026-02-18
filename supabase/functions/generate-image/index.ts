@@ -287,93 +287,84 @@ async function generateWithTogether(
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// FASHION BOOTH PIPELINE v3 — Gemini 3 Pro Image (Nano Banana 2 Pro)
-// Primary: Single-call via Together.ai chat completions with multi-image
-// Fallback: FASHN V1.6 → Face Swap → CodeFormer
+// FASHION BOOTH — Nano Banana Pro (Google Gemini 3 Pro Image)
+// Direct Google Generative AI API with native multi-image input.
+// Model: nano-banana-pro-preview
+// Supports up to 14 reference images with coherent character identity.
 // ═══════════════════════════════════════════════════════════════════════
 
-// ─── Gemini 3 Pro Image (Together.ai chat completions) ──────────────
-// Accepts multiple reference images via OpenAI-compatible multimodal format.
-// Native character consistency + state-of-the-art text rendering.
-// $0.134/image at 2K resolution.
-async function generateWithGemini3ProImage(
+// ─── Nano Banana Pro via Google's native Gemini API ─────────────────
+// Downloads reference images, converts to base64, sends as inlineData.
+// Returns base64 image data directly.
+async function generateWithNanoBanana(
   imageUrls: string[],
   textPrompt: string,
-): Promise<{ success: boolean; data?: string; imageUrl?: string; mimeType?: string; error?: string }> {
-  if (!TOGETHER_API_KEY) return { success: false, error: 'No Together API key configured' };
+): Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }> {
+  if (!GOOGLE_API_KEY) return { success: false, error: 'No Google API key configured' };
   try {
-    console.log(`Gemini 3 Pro Image: ${imageUrls.length} reference images...`);
+    console.log(`Nano Banana Pro: ${imageUrls.length} reference images...`);
 
-    // Build multimodal content: text prompt + all reference images
-    const content: any[] = [{ type: 'text', text: textPrompt }];
+    // Build parts: text prompt first, then all reference images as inlineData
+    const parts: any[] = [{ text: textPrompt }];
+
     for (const url of imageUrls) {
-      content.push({ type: 'image_url', image_url: { url } });
+      const imgResp = await fetch(url);
+      if (!imgResp.ok) {
+        console.warn(`Failed to download image: ${url} (${imgResp.status})`);
+        continue;
+      }
+      const arrayBuffer = await imgResp.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      // Convert to base64
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const b64 = btoa(binary);
+      const contentType = imgResp.headers.get('content-type') || 'image/jpeg';
+      parts.push({ inlineData: { mimeType: contentType, data: b64 } });
     }
 
-    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${TOGETHER_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-3-pro-image',
-        messages: [{ role: 'user', content }],
-        max_tokens: 4096,
-      }),
-    });
+    if (parts.length < 2) {
+      return { success: false, error: 'No reference images could be loaded' };
+    }
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/nano-banana-pro-preview:generateContent?key=${GOOGLE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts }],
+          generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error('Gemini 3 Pro Image error:', errText);
-      return { success: false, error: `Gemini 3 Pro Image error: ${errText}` };
+      console.error('Nano Banana error:', errText);
+      return { success: false, error: `Nano Banana error: ${errText}` };
     }
 
     const result = await response.json();
-    const choice = result.choices?.[0]?.message;
-    if (!choice) return { success: false, error: 'No response from Gemini 3' };
-
-    // Parse response — image can come in multiple formats
-    // Format 1: content is array of blocks (multimodal response)
-    if (Array.isArray(choice.content)) {
-      for (const block of choice.content) {
-        // image_url block with data URI
-        if (block.type === 'image_url' && block.image_url?.url) {
-          const dataUrl = block.image_url.url;
-          if (dataUrl.startsWith('data:')) {
-            const match = dataUrl.match(/^data:(image\/[^;]+);base64,(.+)$/);
-            if (match) return { success: true, data: match[2], mimeType: match[1] };
-          }
-          return { success: true, imageUrl: dataUrl };
+    const candidate = result.candidates?.[0];
+    if (candidate?.content?.parts) {
+      for (const part of candidate.content.parts) {
+        if (part.inlineData?.mimeType?.startsWith('image/')) {
+          return {
+            success: true,
+            data: part.inlineData.data,
+            mimeType: part.inlineData.mimeType,
+          };
         }
-        // inline image block
-        if (block.type === 'image' && block.image) {
-          if (block.image.data) return { success: true, data: block.image.data, mimeType: block.image.mime_type || 'image/png' };
-          if (block.image.url) return { success: true, imageUrl: block.image.url };
-        }
-        // b64_json block
-        if (block.b64_json) return { success: true, data: block.b64_json, mimeType: 'image/png' };
-        // url block
-        if (block.url) return { success: true, imageUrl: block.url };
       }
     }
 
-    // Format 2: content is a string (might be a data URI or URL)
-    if (typeof choice.content === 'string') {
-      const text = choice.content;
-      if (text.startsWith('data:image')) {
-        const match = text.match(/^data:(image\/[^;]+);base64,(.+)$/);
-        if (match) return { success: true, data: match[2], mimeType: match[1] };
-      }
-      if (text.startsWith('http')) {
-        return { success: true, imageUrl: text };
-      }
-    }
-
-    console.error('Gemini 3 response format not recognized:', JSON.stringify(result).substring(0, 500));
-    return { success: false, error: 'No image found in Gemini 3 response' };
+    console.error('Nano Banana: no image in response');
+    return { success: false, error: 'No image in Nano Banana response' };
   } catch (e: any) {
-    console.error('Gemini 3 Pro Image exception:', e.message);
+    console.error('Nano Banana exception:', e.message);
     return { success: false, error: e.message };
   }
 }
@@ -633,6 +624,97 @@ async function tryGemini(prompt: string): Promise<{ success: boolean; data?: str
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// OUTFIT EXTRACTOR — Reverse Fashion Booth
+// Analyzes a photo of a person, identifies garment pieces, generates
+// individual flat-lay product shots of each piece + one combined image.
+// Uses Nano Banana Pro for generation, Gemini for garment identification.
+// ═══════════════════════════════════════════════════════════════════════
+
+async function identifyGarments(
+  imageUrl: string
+): Promise<{ garments: string[]; descriptions: Record<string, string> }> {
+  if (!GOOGLE_API_KEY) throw new Error('No Google API key configured');
+
+  // Download image and convert to base64
+  const imgResp = await fetch(imageUrl);
+  if (!imgResp.ok) throw new Error(`Failed to download image: ${imgResp.status}`);
+  const arrayBuffer = await imgResp.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const b64 = btoa(binary);
+  const contentType = imgResp.headers.get('content-type') || 'image/jpeg';
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            {
+              text: `Analyze this fashion photo. Identify each distinct garment piece or accessory the person is wearing. For each item, provide a detailed description of EXACTLY what that garment looks like (color, fabric, style, pattern, details).
+
+Respond ONLY with valid JSON, no markdown, no code fences. Use this exact format:
+{"garments":["top","bottom","shoes"],"descriptions":{"top":"White cotton button-down blouse with pointed collar...","bottom":"Black high-waisted A-line skirt...","shoes":"Black leather ankle boots with low heel..."}}
+
+Rules:
+- Use simple lowercase labels: "top", "bottom", "jacket", "blazer", "shirt", "shoes", "boots", "hat", "scarf", "belt", "bag", "dress", "coat", "vest", "skirt", "pants", "shorts", "sweater"
+- Only include items that are clearly visible
+- Be very specific about colors, patterns, fabric texture, and design details
+- Typically 2-6 pieces per outfit`
+            },
+            { inlineData: { mimeType: contentType, data: b64 } }
+          ]
+        }],
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Gemini analysis error: ${errText}`);
+  }
+
+  const result = await response.json();
+  const textPart = result.candidates?.[0]?.content?.parts?.find((p: any) => p.text);
+  if (!textPart?.text) throw new Error('No text response from Gemini analysis');
+
+  // Parse JSON from response, strip code fences if present
+  let jsonStr = textPart.text.trim();
+  if (jsonStr.startsWith('```')) {
+    jsonStr = jsonStr.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+  }
+
+  const parsed = JSON.parse(jsonStr);
+  return {
+    garments: parsed.garments || [],
+    descriptions: parsed.descriptions || {},
+  };
+}
+
+async function extractGarmentPiece(
+  sourceImageUrl: string,
+  garmentLabel: string,
+  garmentDescription: string,
+): Promise<{ success: boolean; data?: string; mimeType?: string; label: string; error?: string }> {
+  const prompt = [
+    `Generate a professional flat-lay product photo of ONLY the ${garmentLabel} from this image.`,
+    `The garment is: ${garmentDescription}`,
+    `Show ONLY this single garment piece laid flat on a clean white surface.`,
+    `The garment must be reproduced with exact accuracy — same color, fabric, pattern, texture, stitching, buttons, zippers, and all details as worn by the person in the reference.`,
+    `Professional e-commerce product photography, overhead angle, soft even lighting, no shadows, no wrinkles, garment neatly arranged.`,
+    `Show NOTHING else — no person, no other clothing items, no accessories, no props. Just the single ${garmentLabel} on white.`,
+  ].join('\n');
+
+  const result = await generateWithNanoBanana([sourceImageUrl], prompt);
+  return { ...result, label: garmentLabel };
+}
+
 // ─── Main handler ────────────────────────────────────────────────────
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -667,7 +749,100 @@ serve(async (req) => {
       height = 1024,
       company_id,
       user_id,
+      outfit_extract,
+      outfit_source_url,
     } = await req.json();
+
+    // ══════════════════════════════════════════════════════════════════════
+    // Outfit Extractor Pipeline
+    // 1. Identify garments with Gemini vision
+    // 2. Generate flat-lay for each piece (parallel Nano Banana calls)
+    // 3. Generate one combined image with all pieces
+    // ══════════════════════════════════════════════════════════════════════
+    if (outfit_extract && outfit_source_url) {
+      console.log('Outfit Extractor: analyzing garments...');
+
+      // Step 1: Identify garments
+      const { garments, descriptions } = await identifyGarments(outfit_source_url);
+      console.log(`Identified ${garments.length} garments:`, garments);
+
+      if (garments.length === 0) {
+        return new Response(
+          JSON.stringify({ error: 'No garments could be identified in the image' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Step 2: Generate individual flat-lay for each piece (in parallel)
+      const piecePromises = garments.map(g =>
+        extractGarmentPiece(outfit_source_url, g, descriptions[g] || g)
+      );
+
+      // Step 3: Generate combined image with all pieces
+      const allDescriptions = garments.map(g => `${g}: ${descriptions[g] || g}`).join('\n');
+      const combinedPrompt = [
+        `Generate a professional flat-lay product photo showing ALL of these garment pieces from the reference image arranged together on a clean white surface:`,
+        allDescriptions,
+        `Arrange all pieces neatly in a flat-lay composition — as if the complete outfit was laid out for display.`,
+        `Each garment must match the original EXACTLY — same colors, fabrics, patterns, and details.`,
+        `Professional e-commerce product photography, overhead angle, soft even lighting, editorial arrangement.`,
+      ].join('\n');
+
+      const combinedPromise = generateWithNanoBanana([outfit_source_url], combinedPrompt)
+        .then(r => ({ ...r, label: 'complete_outfit' }));
+
+      // Wait for all results
+      const allResults = await Promise.all([...piecePromises, combinedPromise]);
+
+      // Upload successful results to storage
+      const extractedPieces: Array<{ label: string; url: string; description: string }> = [];
+      let totalCost = 0;
+
+      for (const result of allResults) {
+        if (result.success && result.data) {
+          const ext = result.mimeType?.includes('jpeg') ? 'jpg' : 'png';
+          const fileName = `outfit-extract-${result.label}-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+          const imageData = Uint8Array.from(atob(result.data), c => c.charCodeAt(0));
+          const { publicUrl } = await uploadToStorage('generated-content', fileName, imageData, result.mimeType || 'image/jpeg');
+
+          extractedPieces.push({
+            label: result.label,
+            url: publicUrl,
+            description: descriptions[result.label] || result.label,
+          });
+          totalCost += 0.04; // per Nano Banana call
+        } else {
+          console.warn(`Failed to extract ${result.label}:`, result.error);
+        }
+      }
+
+      // Log usage
+      if (company_id && totalCost > 0) {
+        try {
+          await supabaseInsert('ai_usage_logs', {
+            organization_id: company_id, user_id: user_id || null,
+            model_id: null, prompt_tokens: 0, completion_tokens: 0, total_tokens: 0,
+            cost: totalCost, request_type: 'image', endpoint: 'google/nano-banana-pro',
+            metadata: {
+              pipeline: 'outfit-extractor', garments_identified: garments.length,
+              pieces_generated: extractedPieces.length,
+            }
+          });
+        } catch (logError) { console.error('Failed to log usage:', logError); }
+      }
+
+      return new Response(
+        JSON.stringify({
+          pieces: extractedPieces,
+          garments_identified: garments,
+          descriptions,
+          total_pieces: extractedPieces.length,
+          cost_usd: totalCost,
+          pipeline: 'outfit-extractor',
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // ── Model selection ──────────────────────────────────────────────
     let selectedModelKey = model_key;
@@ -708,13 +883,13 @@ serve(async (req) => {
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    // Fashion Booth Pipeline v3 — Gemini 3 Pro Image (Nano Banana 2 Pro)
-    // Primary: Single-call Gemini 3 with [avatar, garment] multi-image
+    // Fashion Booth Pipeline v3 — Nano Banana Pro (Google Gemini API)
+    // Primary: Single-call with [avatar, garment] multi-image input
     //          → native character consistency + text rendering
-    // Fallback: FASHN V1.6 → Face Swap → CodeFormer (if Gemini fails)
+    // Fallback: FASHN V1.6 → Face Swap → CodeFormer (if Nano Banana fails)
     // ══════════════════════════════════════════════════════════════════════
     if (fashion_booth && fashion_avatar_url && refImageUrl) {
-      console.log('Fashion Booth v3: Gemini 3 Pro Image (primary) / FASHN (fallback)');
+      console.log('Fashion Booth v3: Nano Banana Pro (primary) / FASHN (fallback)');
 
       // ── Build the fashion prompt ──────────────────────────────────
       const pose = fashion_pose ? POSE_PRESETS_SERVER[fashion_pose] || fashion_pose : 'standing front-facing, relaxed posture';
@@ -736,49 +911,30 @@ serve(async (req) => {
         `CRITICAL: Character identity from image 1 must be perfectly preserved. Garment details from image 2 must be reproduced exactly.`,
       ].filter(Boolean).join('\n');
 
-      // ── PRIMARY: Gemini 3 Pro Image ───────────────────────────────
-      const geminiResult = await generateWithGemini3ProImage(
+      // ── PRIMARY: Nano Banana Pro (Google Gemini API) ──────────────
+      const nanoBananaResult = await generateWithNanoBanana(
         [fashion_avatar_url, refImageUrl],
         fashionPrompt,
       );
 
-      if (geminiResult.success && (geminiResult.data || geminiResult.imageUrl)) {
-        console.log('Gemini 3 Pro Image succeeded');
+      if (nanoBananaResult.success && nanoBananaResult.data) {
+        console.log('Nano Banana Pro succeeded');
 
-        let publicUrl: string;
-
-        if (geminiResult.data) {
-          // Base64 response — upload to storage
-          const ext = geminiResult.mimeType?.includes('jpeg') ? 'jpg' : 'png';
-          const fileName = `fashion-booth-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-          const imageData = Uint8Array.from(atob(geminiResult.data), c => c.charCodeAt(0));
-          const uploaded = await uploadToStorage('generated-content', fileName, imageData, geminiResult.mimeType || 'image/png');
-          publicUrl = uploaded.publicUrl;
-        } else {
-          // URL response — download and re-upload to our storage
-          const downloaded = await downloadImage(geminiResult.imageUrl!);
-          if (!downloaded) {
-            console.warn('Failed to download Gemini result, falling through to FASHN');
-            // Fall through to FASHN below
-            publicUrl = '';
-          } else {
-            const ext = downloaded.mimeType?.includes('jpeg') ? 'jpg' : 'png';
-            const fileName = `fashion-booth-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-            const uploaded = await uploadToStorage('generated-content', fileName, downloaded.data, downloaded.mimeType);
-            publicUrl = uploaded.publicUrl;
-          }
-        }
+        const ext = nanoBananaResult.mimeType?.includes('jpeg') ? 'jpg' : 'png';
+        const fileName = `fashion-booth-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+        const imageData = Uint8Array.from(atob(nanoBananaResult.data), c => c.charCodeAt(0));
+        const { publicUrl } = await uploadToStorage('generated-content', fileName, imageData, nanoBananaResult.mimeType || 'image/jpeg');
 
         if (publicUrl) {
-          const costUsd = 0.134;
+          const costUsd = 0.04; // Nano Banana pricing via Google API
           if (company_id) {
             try {
               await supabaseInsert('ai_usage_logs', {
                 organization_id: company_id, user_id: user_id || null,
                 model_id: null, prompt_tokens: 0, completion_tokens: 0, total_tokens: 0,
-                cost: costUsd, request_type: 'image', endpoint: 'together.ai/gemini-3-pro-image',
+                cost: costUsd, request_type: 'image', endpoint: 'google/nano-banana-pro',
                 metadata: {
-                  model_key: 'gemini-3-pro-image', pipeline: 'gemini3',
+                  model_key: 'nano-banana-pro', pipeline: 'nano-banana',
                   use_case: 'fashion_booth', fashion_scene, fashion_pose, fashion_angle, fashion_framing,
                 }
               });
@@ -788,8 +944,8 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({
               url: publicUrl,
-              model: 'gemini-3-pro-image',
-              pipeline: 'gemini3',
+              model: 'nano-banana-pro',
+              pipeline: 'nano-banana',
               original_prompt: original_prompt || prompt,
               dimensions: { width, height },
               product_preserved: true,
@@ -802,7 +958,7 @@ serve(async (req) => {
       }
 
       // ── FALLBACK: FASHN → Face Swap → CodeFormer ──────────────────
-      console.warn('Gemini 3 failed, falling back to FASHN pipeline:', geminiResult.error);
+      console.warn('Nano Banana failed, falling back to FASHN pipeline:', nanoBananaResult.error);
       const pipelineSteps: string[] = [];
       let bestResultUrl: string | null = null;
 

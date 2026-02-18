@@ -7,7 +7,7 @@ import {
   ChevronDown, ChevronRight, Image as ImageIcon, RefreshCw, Package,
   Eye, Move, RotateCw, Maximize, User, Users, Layers, Square,
   RectangleHorizontal, RectangleVertical, Zap, ArrowLeft,
-  Sun, Moon,
+  Sun, Moon, Scissors, Grid3X3,
 } from 'lucide-react';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { Button } from '@/components/ui/button';
@@ -191,6 +191,88 @@ const FASHION_AVATAR_MODELS = [
       },
     ],
   },
+  {
+    id: 'euro-female-01',
+    name: 'Sophia',
+    gender: 'female',
+    description: '25yo European female model',
+    characterPrompt: 'Young European female model, approximately 25 years old, with long wavy honey-blonde hair, warm brown eyes, soft natural makeup, clear fair skin, slim feminine build, high cheekbones, gentle smile, natural elegance.',
+    thumbnail: `${STORAGE_BASE}/euro-female-01/Genuine_warm_smile_eye_level.jpg`,
+    trainingImages: [
+      {
+        id: 'warm_smile',
+        url: `${STORAGE_BASE}/euro-female-01/Genuine_warm_smile_eye_level.jpg`,
+        label: 'Warm Smile',
+        desc: 'Front, eye-level, genuine warm smile',
+        bestFor: ['standing_front', 'walking_casual', 'walking_street', 'pose_hands_pockets', 'sitting_casual'],
+        angle: 'front',
+        framing: 'three_quarter',
+      },
+      {
+        id: 'confident_3q',
+        url: `${STORAGE_BASE}/euro-female-01/Soft_confident_smile_45_three-quarter.jpg`,
+        label: 'Confident 3/4',
+        desc: '45° three-quarter, soft confident smile',
+        bestFor: ['standing_3q', 'walking_confident', 'pose_hand_hip', 'pose_editorial', 'pose_dynamic'],
+        angle: '45deg',
+        framing: 'three_quarter',
+      },
+      {
+        id: 'serious_low',
+        url: `${STORAGE_BASE}/euro-female-01/Serious_editorial_look_low_angle.jpg`,
+        label: 'Serious',
+        desc: 'Low angle, serious editorial look',
+        bestFor: ['pose_arms_crossed', 'pose_lean_wall', 'pose_crouch'],
+        angle: 'low',
+        framing: 'three_quarter',
+      },
+      {
+        id: 'intense',
+        url: `${STORAGE_BASE}/euro-female-01/Intense_fashion_look_dramatic_contrast.jpg`,
+        label: 'Intense',
+        desc: 'Dramatic contrast, intense fashion look',
+        bestFor: ['pose_looking_away', 'sitting_lean', 'pose_editorial'],
+        angle: 'front_down',
+        framing: 'three_quarter',
+      },
+      {
+        id: 'curious_lean',
+        url: `${STORAGE_BASE}/euro-female-01/Curious_expression_slight_forward_lean.jpg`,
+        label: 'Curious',
+        desc: 'Slight forward lean, curious expression',
+        bestFor: ['sitting_cross', 'pose_dynamic', 'pose_jump'],
+        angle: 'front_close',
+        framing: 'upper_body',
+      },
+      {
+        id: 'side_profile',
+        url: `${STORAGE_BASE}/euro-female-01/Thoughtful_side_profile_90_angle.jpg`,
+        label: 'Side Profile',
+        desc: 'Full side view, thoughtful',
+        bestFor: ['standing_side', 'standing_back', 'pose_over_shoulder', 'profile_angle'],
+        angle: 'side',
+        framing: 'upper_body',
+      },
+      {
+        id: 'relaxed_above',
+        url: `${STORAGE_BASE}/euro-female-01/Relaxed_candid_camera_slightly_above.jpg`,
+        label: 'Relaxed',
+        desc: 'From above, candid relaxed',
+        bestFor: ['high_angle', 'birds_eye'],
+        angle: 'above',
+        framing: 'upper_body',
+      },
+      {
+        id: 'playful_tilt',
+        url: `${STORAGE_BASE}/euro-female-01/Subtle_playful_expression_slight_head_tilt.jpg`,
+        label: 'Playful',
+        desc: 'Slight head tilt, playful expression',
+        bestFor: ['close_up', 'extreme_close', 'mid_shot'],
+        angle: 'front',
+        framing: 'close_up',
+      },
+    ],
+  },
 ];
 
 // Auto-suggest the best training image for a given pose + angle + framing combination
@@ -230,6 +312,9 @@ export default function FashionBooth({ embedded = false }) {
   const { user } = useUser();
   const { theme, toggleTheme, ct } = useTheme();
 
+  // ─── MODE ─────────────────────────────────────────────────
+  const [activeMode, setActiveMode] = useState('booth'); // 'booth' | 'extractor'
+
   // ─── STATE ────────────────────────────────────────────────
   const [prompt, setPrompt] = useState('');
   const [selectedAvatarModel, setSelectedAvatarModel] = useState(null);
@@ -252,6 +337,13 @@ export default function FashionBooth({ embedded = false }) {
   const [expandedPoseCategory, setExpandedPoseCategory] = useState('standing');
   const [showHistory, setShowHistory] = useState(false);
   const [brandAssets, setBrandAssets] = useState(null);
+
+  // ─── OUTFIT EXTRACTOR STATE ────────────────────────────────
+  const [extractorSourceUrl, setExtractorSourceUrl] = useState(null);
+  const [extractorUploading, setExtractorUploading] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractedPieces, setExtractedPieces] = useState([]);
+  const [extractorGarments, setExtractorGarments] = useState([]);
 
   // ─── DATA LOADING ─────────────────────────────────────────
   useEffect(() => {
@@ -523,6 +615,99 @@ export default function FashionBooth({ embedded = false }) {
     }
   };
 
+  // ─── OUTFIT EXTRACTOR UPLOAD ─────────────────────────────
+  const handleExtractorUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Please upload an image file'); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error('Image must be under 10MB'); return; }
+    setExtractorUploading(true);
+    try {
+      const fileName = `outfit-source-${Date.now()}-${Math.random().toString(36).substring(7)}.${file.name.split('.').pop()}`;
+      const { error: uploadError } = await supabase.storage.from('generated-content').upload(fileName, file, { contentType: file.type });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from('generated-content').getPublicUrl(fileName);
+      setExtractorSourceUrl(publicUrl);
+      setExtractedPieces([]);
+      setExtractorGarments([]);
+      toast.success('Image uploaded');
+    } catch (err) {
+      toast.error('Failed to upload image');
+    } finally {
+      setExtractorUploading(false);
+    }
+  };
+
+  // ─── OUTFIT EXTRACT ────────────────────────────────────────
+  const handleExtract = async () => {
+    if (!extractorSourceUrl) { toast.error('Please upload an image first'); return; }
+    setIsExtracting(true);
+    setExtractedPieces([]);
+    setExtractorGarments([]);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-image`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            outfit_extract: true,
+            outfit_source_url: extractorSourceUrl,
+            company_id: user?.company_id,
+            user_id: user?.id,
+          }),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Extraction failed');
+
+      if (data.pieces?.length > 0) {
+        setExtractedPieces(data.pieces);
+        setExtractorGarments(data.garments_identified || []);
+        toast.success(`Extracted ${data.pieces.length} garment pieces!`);
+
+        // Save each piece to generated content
+        for (const piece of data.pieces) {
+          try {
+            await GeneratedContent.create({
+              company_id: user.company_id,
+              user_id: user.id,
+              content_type: 'image',
+              url: piece.url,
+              name: `Outfit Extract - ${piece.label}`,
+              metadata: { source: 'outfit_extractor', label: piece.label, description: piece.description },
+            });
+          } catch (saveErr) { console.warn('Failed to save piece:', saveErr); }
+        }
+      } else {
+        toast.error('No garment pieces could be extracted');
+      }
+    } catch (err) {
+      console.error('Extraction error:', err);
+      toast.error(err.message || 'Extraction failed');
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const handleDownloadPiece = async (piece) => {
+    try {
+      const response = await fetch(piece.url);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `outfit-${piece.label}-${Date.now()}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error('Download failed');
+    }
+  };
+
   // ─── FILTERED PRODUCTS ────────────────────────────────────
   const filteredProducts = useMemo(() => {
     if (!productSearch.trim()) return products.slice(0, 10);
@@ -544,17 +729,42 @@ export default function FashionBooth({ embedded = false }) {
               <Shirt className="w-5 h-5 text-rose-400" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Fashion Booth</h1>
-              <p className="text-xs text-zinc-500">AI fashion photography with garment-accurate generation</p>
+              <h1 className="text-xl font-bold text-white">Fashion Studio</h1>
+              <p className="text-xs text-zinc-500">AI fashion photography & outfit extraction</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center bg-zinc-900/60 border border-zinc-800/50 rounded-xl p-1">
+              <button
+                onClick={() => setActiveMode('booth')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  activeMode === 'booth'
+                    ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <Camera className="w-3.5 h-3.5" />
+                Fashion Booth
+              </button>
+              <button
+                onClick={() => setActiveMode('extractor')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  activeMode === 'extractor'
+                    ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <Scissors className="w-3.5 h-3.5" />
+                Outfit Extractor
+              </button>
+            </div>
             <button onClick={toggleTheme} className="p-2 rounded-lg bg-zinc-900/50 border border-zinc-800/60 text-zinc-400 hover:text-white transition-colors">
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
           </div>
         </div>
 
+        {activeMode === 'booth' ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
           {/* ════════════════════════════════════════════════════════
@@ -1048,6 +1258,151 @@ export default function FashionBooth({ embedded = false }) {
 
           </div>
         </div>
+        ) : (
+        /* ══════════════════════════════════════════════════════════
+           OUTFIT EXTRACTOR MODE
+           ══════════════════════════════════════════════════════════ */
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* ── Upload Section ── */}
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                <Scissors className="w-4 h-4 text-violet-400" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-white">Outfit Extractor</h2>
+                <p className="text-[11px] text-zinc-500">Upload a photo of someone wearing an outfit. AI will identify and extract each garment piece as individual product shots.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left: Upload area */}
+              <div>
+                {extractorSourceUrl ? (
+                  <div className="relative">
+                    <img src={extractorSourceUrl} alt="Source outfit" className="w-full max-h-[400px] object-contain rounded-xl border border-zinc-800/60" />
+                    <button
+                      onClick={() => { setExtractorSourceUrl(null); setExtractedPieces([]); setExtractorGarments([]); }}
+                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center gap-3 h-64 rounded-xl border-2 border-dashed border-zinc-700 hover:border-violet-500/40 bg-zinc-900/30 cursor-pointer transition-all group">
+                    <input type="file" accept="image/*" onChange={handleExtractorUpload} className="hidden" />
+                    {extractorUploading ? (
+                      <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+                    ) : (
+                      <>
+                        <Upload className="w-8 h-8 text-zinc-600 group-hover:text-violet-400 transition-colors" />
+                        <span className="text-sm text-zinc-500 group-hover:text-zinc-300">Upload outfit photo</span>
+                        <span className="text-[10px] text-zinc-600">JPG, PNG up to 10MB</span>
+                      </>
+                    )}
+                  </label>
+                )}
+              </div>
+
+              {/* Right: Info + Generate */}
+              <div className="flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="bg-zinc-800/30 rounded-xl p-4 border border-zinc-800/40">
+                    <h3 className="text-xs font-semibold text-violet-400 mb-2">How it works</h3>
+                    <ol className="text-[11px] text-zinc-400 space-y-1.5 list-decimal list-inside">
+                      <li>Upload a photo of a person wearing clothes</li>
+                      <li>AI identifies each visible garment piece</li>
+                      <li>Generates individual flat-lay product shots</li>
+                      <li>Plus one combined image with all pieces</li>
+                    </ol>
+                  </div>
+                  {extractorGarments.length > 0 && (
+                    <div className="bg-zinc-800/30 rounded-xl p-4 border border-zinc-800/40">
+                      <h3 className="text-xs font-semibold text-zinc-300 mb-2">Detected garments</h3>
+                      <div className="flex flex-wrap gap-1.5">
+                        {extractorGarments.map(g => (
+                          <span key={g} className="px-2.5 py-1 rounded-lg text-[10px] font-medium bg-violet-500/10 text-violet-300 border border-violet-500/20 capitalize">{g}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={handleExtract}
+                  disabled={!extractorSourceUrl || isExtracting}
+                  className={`w-full py-4 mt-4 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
+                    extractorSourceUrl && !isExtracting
+                      ? 'bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-400 hover:to-purple-400 text-white shadow-lg shadow-violet-500/20'
+                      : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                  }`}
+                >
+                  {isExtracting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Extracting garments...
+                    </>
+                  ) : (
+                    <>
+                      <Scissors className="w-5 h-5" />
+                      Extract Outfit Pieces
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Extracted Pieces Grid ── */}
+          <AnimatePresence>
+            {extractedPieces.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-4"
+              >
+                <div className="flex items-center gap-2">
+                  <Grid3X3 className="w-4 h-4 text-violet-400" />
+                  <span className="text-sm font-semibold text-white">Extracted Pieces ({extractedPieces.length})</span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {extractedPieces.map((piece, i) => (
+                    <motion.div
+                      key={piece.label + i}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl overflow-hidden group"
+                    >
+                      <div className="relative">
+                        <img src={piece.url} alt={piece.label} className="w-full aspect-square object-contain bg-zinc-950/50 p-2" />
+                        <button
+                          onClick={() => handleDownloadPiece(piece)}
+                          className="absolute top-2 right-2 p-2 rounded-xl bg-black/70 backdrop-blur-sm text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                        {piece.label === 'complete_outfit' && (
+                          <div className="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-violet-500/80 text-white text-[10px] font-semibold">
+                            COMBINED
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3 border-t border-zinc-800/40">
+                        <span className="text-xs font-medium text-white capitalize">{piece.label === 'complete_outfit' ? 'Complete Outfit' : piece.label}</span>
+                        {piece.description && piece.label !== 'complete_outfit' && (
+                          <p className="text-[10px] text-zinc-500 mt-0.5 line-clamp-2">{piece.description}</p>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+        )}
       </div>
     </div>
   );
