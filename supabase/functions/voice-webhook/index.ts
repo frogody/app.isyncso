@@ -139,11 +139,12 @@ async function findUserForNumber(toNumber: string): Promise<{ userId: string | n
 
   if (!phoneRecord) return { userId: null, greeting: "Hello, how can I help you?" };
 
-  // Find an admin/owner user in this org to ring
+  // Find a user in this org to ring
+  // organization_phone_numbers.organization_id maps to users.organization_id
   const { data: users } = await supabase
     .from("users")
     .select("id, full_name")
-    .eq("company_id", phoneRecord.organization_id)
+    .eq("organization_id", phoneRecord.organization_id)
     .limit(1);
 
   const userName = users?.[0]?.full_name || "our team";

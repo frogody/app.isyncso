@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Device } from '@twilio/voice-sdk';
+import { Device, Call } from '@twilio/voice-sdk';
 
 const EDGE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -81,7 +81,7 @@ export function useTwilioDevice(userId) {
       }
 
       const newDevice = new Device(token, {
-        codecPreferences: [Device.Codec.Opus, Device.Codec.PCMU],
+        codecPreferences: [Call.Codec.Opus, Call.Codec.PCMU],
         closeProtection: true,
         logLevel: 1,
       });

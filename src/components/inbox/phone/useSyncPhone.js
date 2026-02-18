@@ -19,7 +19,9 @@ export function useSyncPhone() {
   const mountedRef = useRef(true);
 
   const companyId = company?.id || user?.company_id;
-  const orgId = companyId;
+  // organization_phone_numbers uses organization_id (FK to organizations table)
+  // RLS policy now checks auth_organization_id() which returns users.organization_id
+  const orgId = user?.organization_id || companyId;
   const userId = user?.id;
 
   // Initialize Twilio Voice SDK device
