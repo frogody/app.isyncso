@@ -365,6 +365,45 @@ async function downloadImage(url: string): Promise<{ data: Uint8Array; mimeType:
   }
 }
 
+// ─── FAL.ai Face Swap ──────────────────────────────────────────────
+// Swaps the face from swap_image onto the person in base_image.
+// Used after FASHN try-on to restore the avatar's face identity.
+async function faceSwap(
+  baseImageUrl: string,
+  swapImageUrl: string
+): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
+  if (!FAL_KEY) return { success: false, error: 'No FAL API key configured' };
+
+  try {
+    console.log('Face swap: restoring avatar face onto try-on result...');
+    const response = await fetch('https://fal.run/fal-ai/face-swap', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${FAL_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        base_image_url: baseImageUrl,
+        swap_image_url: swapImageUrl,
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Face swap error:', errText);
+      return { success: false, error: `Face swap error: ${errText}` };
+    }
+
+    const data = await response.json();
+    const imageUrl = data.image?.url;
+    if (imageUrl) return { success: true, imageUrl };
+    return { success: false, error: 'No image in face swap response' };
+  } catch (e: any) {
+    console.error('Face swap exception:', e.message);
+    return { success: false, error: e.message };
+  }
+}
+
 // ─── Server-side pose/framing/angle labels for prompt construction ───
 const POSE_PRESETS_SERVER: Record<string, string> = {
   standing_front: 'standing front-facing, relaxed posture',
@@ -528,89 +567,125 @@ serve(async (req) => {
       );
     }
 
-    // ── Fashion Booth: Kontext Max with avatar as reference ─────────
-    // Send the AVATAR photo as the image reference so Kontext preserves identity.
-    // Describe the garment change + pose + scene in the text prompt.
-    // Kontext edits the avatar photo: keeps face/body, changes outfit + pose + scene.
-    if (fashion_booth && fashion_avatar_url) {
-      console.log('Fashion Booth: Avatar as reference → Kontext Max (identity-preserving edit)');
+    // ── Fashion Booth: FASHN try-on → Face Swap → optional Kontext scene ──
+    // Pipeline:
+    //   1. FASHN V1.6: avatar + garment → accurate try-on (garment pixel-perfect, face may differ)
+    //   2. Face Swap: try-on result + avatar → restore avatar's actual face
+    //   3. (Optional) Kontext Max: adjust pose/scene if non-default selected
+    if (fashion_booth && fashion_avatar_url && refImageUrl) {
+      console.log('Fashion Booth: FASHN try-on → Face Swap pipeline');
 
-      const pose = fashion_pose ? POSE_PRESETS_SERVER[fashion_pose] || fashion_pose : 'standing naturally';
-      const framing = fashion_framing ? FRAMING_SERVER[fashion_framing] || fashion_framing : 'full body';
-      const angle = fashion_angle ? ANGLE_SERVER[fashion_angle] || fashion_angle : 'eye level';
-      const sceneDesc = fashion_scene && SCENE_PROMPT_MAP[fashion_scene]
-        ? SCENE_PROMPT_MAP[fashion_scene]
-        : 'a clean white studio backdrop';
+      // Step 1: FASHN V1.6 — accurate garment transfer
+      const tryOnResult = await generateWithFalTryOn(fashion_avatar_url, refImageUrl);
 
-      // Build garment description from product name + any user additions
-      const garmentName = (prompt?.trim() ? '' : (product_context?.name || '')) || 'the specified garment';
+      if (tryOnResult.success && tryOnResult.imageUrl) {
+        console.log('Step 1 (FASHN try-on) succeeded');
 
-      const editParts: string[] = [];
-      editParts.push(`Transform this photo into a professional fashion editorial. Change the person's outfit: they are now wearing ${garmentName}.`);
-      if (prompt?.trim()) editParts.push(`Garment and style details: ${prompt.trim()}`);
-      editParts.push('IDENTITY RULE: The person\'s face, hair color, hair style, skin tone, facial hair, eye color, and body build must remain EXACTLY identical to the input photo. This is the same person — do not alter their identity.');
-      editParts.push(`The person is ${pose}. Shot framing: ${framing}. Camera angle: ${angle}.`);
-      if (sceneDesc) editParts.push(`Background/setting: ${sceneDesc}.`);
-      editParts.push('Professional fashion editorial photography, sharp focus on outfit details, natural skin tones, realistic fabric draping, 8K quality.');
+        // Step 2: Face swap — put avatar's actual face onto the try-on body
+        const swapResult = await faceSwap(tryOnResult.imageUrl, fashion_avatar_url);
+        let bestResultUrl = swapResult.success ? swapResult.imageUrl! : tryOnResult.imageUrl;
+        const pipelineSteps: string[] = swapResult.success ? ['fashn', 'faceswap'] : ['fashn'];
 
-      const editPrompt = editParts.join('\n');
-
-      const kontextMaxConfig = MODELS['flux-kontext-max'];
-      const avatarResult = await generateWithTogether(
-        kontextMaxConfig,
-        editPrompt,
-        fashion_avatar_url,   // Avatar photo as reference — preserves identity
-        width,
-        height
-      );
-
-      if (avatarResult.success && avatarResult.data) {
-        const ext = avatarResult.mimeType?.includes('jpeg') ? 'jpg' : 'png';
-        const fileName = `fashion-booth-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-        const imageData = Uint8Array.from(atob(avatarResult.data), c => c.charCodeAt(0));
-        const { publicUrl } = await uploadToStorage('generated-content', fileName, imageData, avatarResult.mimeType || 'image/png');
-
-        const megapixels = (width * height) / 1000000;
-        const costUsd = megapixels * kontextMaxConfig.costPerMp;
-
-        if (company_id) {
-          try {
-            await supabaseInsert('ai_usage_logs', {
-              organization_id: company_id,
-              user_id: user_id || null,
-              model_id: null, prompt_tokens: 0, completion_tokens: 0, total_tokens: 0,
-              cost: costUsd,
-              request_type: 'image',
-              endpoint: '/v1/images/generations',
-              metadata: {
-                model_name: kontextMaxConfig.id,
-                model_key: 'flux-kontext-max',
-                pipeline: 'avatar-edit',
-                use_case: 'fashion_booth',
-                fashion_scene, fashion_pose, fashion_angle,
-              }
-            });
-          } catch (logError) { console.error('Failed to log usage:', logError); }
+        if (swapResult.success) {
+          console.log('Step 2 (Face swap) succeeded');
+        } else {
+          console.warn('Step 2 (Face swap) failed, using FASHN output:', swapResult.error);
         }
 
-        return new Response(
-          JSON.stringify({
-            url: publicUrl,
-            model: 'flux-kontext-max',
-            model_id: kontextMaxConfig.id,
-            cost_usd: costUsd,
-            steps: kontextMaxConfig.steps,
-            pipeline: 'avatar-edit',
-            prompt: editPrompt,
-            original_prompt: original_prompt || prompt,
-            dimensions: { width, height },
-            product_preserved: false,
-            use_case: 'fashion_booth'
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        // Step 3 (optional): Kontext Max for custom pose/scene
+        const isDefaultSetup = (fashion_pose === 'standing_front' || !fashion_pose)
+          && (fashion_scene === 'studio_white' || !fashion_scene)
+          && (fashion_angle === 'eye_level' || !fashion_angle);
+
+        if (!isDefaultSetup) {
+          console.log('Step 3: Kontext Max pose/scene adjustment');
+          const pose = fashion_pose ? POSE_PRESETS_SERVER[fashion_pose] || fashion_pose : 'standing naturally';
+          const framing = fashion_framing ? FRAMING_SERVER[fashion_framing] || fashion_framing : 'full body';
+          const angle = fashion_angle ? ANGLE_SERVER[fashion_angle] || fashion_angle : 'eye level';
+          const sceneDesc = fashion_scene && SCENE_PROMPT_MAP[fashion_scene]
+            ? SCENE_PROMPT_MAP[fashion_scene] : '';
+
+          const editParts: string[] = [];
+          editParts.push(`Adjust this fashion photo: the person should be ${pose}.`);
+          editParts.push(`Shot framing: ${framing}. Camera angle: ${angle}.`);
+          if (sceneDesc) editParts.push(`Background: ${sceneDesc}.`);
+          editParts.push('CRITICAL: Keep the person\'s face and the clothing EXACTLY unchanged. Only adjust pose, camera angle, and background.');
+          if (prompt?.trim()) editParts.push(prompt.trim());
+          editParts.push('Professional fashion editorial photography, 8K quality.');
+
+          const kontextResult = await generateWithTogether(
+            MODELS['flux-kontext-max'],
+            editParts.join('\n'),
+            bestResultUrl,
+            width,
+            height
+          );
+
+          if (kontextResult.success && kontextResult.data) {
+            console.log('Step 3 (Kontext pose/scene) succeeded');
+            pipelineSteps.push('kontext');
+            const ext = kontextResult.mimeType?.includes('jpeg') ? 'jpg' : 'png';
+            const fileName = `fashion-booth-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+            const imageData = Uint8Array.from(atob(kontextResult.data), c => c.charCodeAt(0));
+            const { publicUrl } = await uploadToStorage('generated-content', fileName, imageData, kontextResult.mimeType || 'image/png');
+
+            const megapixels = (width * height) / 1000000;
+            const kontextMaxConfig = MODELS['flux-kontext-max'];
+            const costUsd = megapixels * kontextMaxConfig.costPerMp;
+
+            if (company_id) {
+              try {
+                await supabaseInsert('ai_usage_logs', {
+                  organization_id: company_id, user_id: user_id || null,
+                  model_id: null, prompt_tokens: 0, completion_tokens: 0, total_tokens: 0,
+                  cost: costUsd, request_type: 'image', endpoint: '/v1/images/generations',
+                  metadata: { model_key: 'flux-kontext-max', pipeline: pipelineSteps.join('-'), use_case: 'fashion_booth', fashion_scene, fashion_pose, fashion_angle }
+                });
+              } catch (logError) { console.error('Failed to log usage:', logError); }
+            }
+
+            return new Response(
+              JSON.stringify({
+                url: publicUrl, model: 'flux-kontext-max', model_id: kontextMaxConfig.id,
+                cost_usd: costUsd, steps: kontextMaxConfig.steps,
+                pipeline: pipelineSteps.join('-'), original_prompt: original_prompt || prompt,
+                dimensions: { width, height }, product_preserved: true, use_case: 'fashion_booth'
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          } else {
+            console.warn('Step 3 (Kontext) failed, using previous result:', kontextResult.error);
+          }
+        }
+
+        // Return the best available result (face-swapped or FASHN-only)
+        const downloaded = await downloadImage(bestResultUrl);
+        if (downloaded) {
+          const fileName = `fashion-booth-${Date.now()}-${Math.random().toString(36).substring(7)}.png`;
+          const { publicUrl } = await uploadToStorage('generated-content', fileName, downloaded.data, downloaded.mimeType);
+
+          if (company_id) {
+            try {
+              await supabaseInsert('ai_usage_logs', {
+                organization_id: company_id, user_id: user_id || null,
+                model_id: null, prompt_tokens: 0, completion_tokens: 0, total_tokens: 0,
+                cost: 0.05, request_type: 'image', endpoint: 'fal.ai',
+                metadata: { pipeline: pipelineSteps.join('-'), use_case: 'fashion_booth', fashion_scene, fashion_pose, fashion_angle }
+              });
+            } catch (logError) { console.error('Failed to log usage:', logError); }
+          }
+
+          return new Response(
+            JSON.stringify({
+              url: publicUrl, model: pipelineSteps.join('+'),
+              pipeline: pipelineSteps.join('-'), original_prompt: original_prompt || prompt,
+              dimensions: { width, height }, product_preserved: true, use_case: 'fashion_booth'
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
       } else {
-        console.warn('Kontext Max avatar edit failed, falling back:', avatarResult.error);
+        console.warn('Step 1 (FASHN) failed, falling through to standard:', tryOnResult.error);
       }
     }
 
