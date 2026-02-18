@@ -45,6 +45,7 @@ import { executeCreateAction } from './tools/create.ts';
 import { executeResearchAction } from './tools/research.ts';
 import { executeComposioAction, COMPOSIO_ACTIONS } from './tools/composio.ts';
 import { executeTalentAction } from './tools/talent.ts';
+import { executePhoneAction, PHONE_ACTIONS } from './tools/phone.ts';
 import { ActionContext, ActionResult, ChainedAction, ActionChainResult } from './tools/types.ts';
 
 // Import new improvement modules
@@ -654,6 +655,10 @@ async function executeActionCore(
 
   if (TALENT_ACTIONS.includes(actionName)) {
     return executeTalentAction(ctx, actionName, data);
+  }
+
+  if (PHONE_ACTIONS.includes(actionName)) {
+    return executePhoneAction(ctx, actionName, data);
   }
 
   // Unknown action
@@ -1513,6 +1518,20 @@ You: I'll archive that for you!
 [ACTION]{"action": "composio_create_calendar_event", "data": {"title": "Team Meeting", "start_time": "2026-01-15T10:00:00Z", "end_time": "2026-01-15T11:00:00Z"}}[/ACTION]
 
 **IMPORTANT**: When user asks "what integrations do I have" or "what apps are connected" - ALWAYS execute composio_list_integrations!
+
+### PHONE SCHEDULING (2 actions)
+- **schedule_meeting_calls**: Autonomously call people to find a meeting time. Looks up contacts, checks your calendar, calls each person to ask availability, finds overlapping slot, creates calendar event.
+- **get_scheduling_job_status**: Check the status of an ongoing scheduling job.
+
+Examples:
+- "Call David and Mike to schedule a meeting next week" →
+[ACTION]{"action": "schedule_meeting_calls", "data": {"participants": ["David", "Mike"], "meeting_subject": "Team sync", "date_range": "next week"}}[/ACTION]
+
+- "Phone Sarah about meeting Thursday" →
+[ACTION]{"action": "schedule_meeting_calls", "data": {"participants": ["Sarah"], "meeting_subject": "Catch up", "date_range": "this week"}}[/ACTION]
+
+- "What's the status of the scheduling?" →
+[ACTION]{"action": "get_scheduling_job_status", "data": {}}[/ACTION]
 
 ## Action Chaining (Multi-Step Operations)
 
@@ -3298,6 +3317,7 @@ Examples of BAD voice responses:
           ...COMPOSIO_ACTIONS,
           ...RESEARCH_ACTIONS,
           ...TALENT_ACTIONS,
+          ...PHONE_ACTIONS,
         ];
 
         // Enrich system prompt with entity context

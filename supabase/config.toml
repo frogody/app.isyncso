@@ -237,3 +237,6 @@ verify_jwt = false
 
 [functions.voice-webhook]
 verify_jwt = false
+
+[functions.scheduling-orchestrator]
+verify_jwt = false
