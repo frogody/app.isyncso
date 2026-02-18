@@ -70,6 +70,18 @@ TEXTILES & FABRICS:
 - Color-accurate lighting (CRI 95+)
 - Show natural draping, movement, or structure
 
+FASHION & APPAREL (dresses, shirts, jackets, shoes, accessories worn on body):
+- GARMENT PRESERVATION IS #1 PRIORITY: exact same fabric, color, pattern, stitching, silhouette, construction details
+- 85mm portrait lens, f/4-5.6, compressed perspective, flattering proportions
+- Full-body or 3/4 shot depending on garment type (top = 3/4, full outfit = full body, shoes = knee-down)
+- Soft key light 45° with large beauty dish or softbox, subtle fill, rim light for separation
+- Natural skin tones, no color cast on fabric
+- Fabric should drape naturally on the body — show movement, weight, and texture
+- Editorial pose: confident but natural, not stiff, appropriate for the garment style
+- For flat-lay: overhead shot, styled with accessories, clean surface, even lighting
+- For ghost mannequin: front-facing, clean white/grey background, garment shape clearly visible
+- NEVER alter the garment design, color, pattern, or any detail from the reference image
+
 OUTPUT FORMAT (strict JSON):
 {
   "enhanced_prompt": "The complete enhanced prompt ready for image generation",
@@ -79,14 +91,17 @@ OUTPUT FORMAT (strict JSON):
 }`;
 
 // Deterministic material detection
-function detectMaterial(name?: string, description?: string, tags?: string[], category?: string): 'jewelry' | 'gemstone' | 'luxury' | 'glass' | 'food' | 'textile' | 'standard' {
+function detectMaterial(name?: string, description?: string, tags?: string[], category?: string, isFashion?: boolean): 'jewelry' | 'gemstone' | 'luxury' | 'glass' | 'food' | 'textile' | 'fashion' | 'standard' {
+  if (isFashion) return 'fashion';
+
   const signals = [name, description, tags?.join(' '), category].filter(Boolean).join(' ').toLowerCase();
   if (/\b(ring|necklace|bracelet|earring|pendant|brooch|bangle|anklet|tiara|cufflink|gold|silver|platinum|18k|14k|925|sterling|karat|carat|jewel)/i.test(signals)) return 'jewelry';
   if (/\b(diamond|sapphire|ruby|emerald|pearl|opal|topaz|amethyst|gemstone|gem\b|brilliant.cut|facet)/i.test(signals)) return 'gemstone';
   if (/\b(watch|timepiece|luxury|premium|haute|couture|designer|handcrafted|swarovski)/i.test(signals)) return 'luxury';
   if (/\b(glass|crystal|bottle|perfume|fragrance|vase|transparent|translucent)/i.test(signals)) return 'glass';
   if (/\b(food|chocolate|cake|coffee|tea|wine|cheese|bread|organic|gourmet|culinary|spice|honey)/i.test(signals)) return 'food';
-  if (/\b(fabric|textile|clothing|dress|shirt|cotton|silk|linen|wool|leather|suede|cashmere)/i.test(signals)) return 'textile';
+  if (/\b(dress|shirt|jacket|pants|skirt|blouse|coat|sweater|hoodie|jeans|sneaker|boot|heel|sandal|t-shirt|trousers|fashion|garment|apparel|outfit|wear)/i.test(signals)) return 'fashion';
+  if (/\b(fabric|textile|clothing|cotton|silk|linen|wool|leather|suede|cashmere)/i.test(signals)) return 'textile';
   return 'standard';
 }
 
@@ -117,6 +132,10 @@ const MATERIAL_QUALITY_BOOST: Record<string, { suffix: string; negative: string 
     suffix: ', fabric texture visible with raking light, natural draping, accurate color reproduction',
     negative: 'wrinkled messily, inaccurate colors, flat lighting, blurry, low quality, watermark'
   },
+  fashion: {
+    suffix: ', exact garment preservation from reference, natural fabric draping on body, editorial fashion lighting, professional model pose, accurate garment color and pattern fidelity, skin tone accuracy, sharp focus on garment construction details',
+    negative: 'wrong garment color, altered pattern, missing garment details, distorted body proportions, unnatural pose, deformed hands, deformed face, extra fingers, mutated limbs, stiff mannequin pose, flat lighting, blurry, low quality, watermark'
+  },
   standard: {
     suffix: ', professional studio lighting, sharp focus throughout, clean composition',
     negative: 'blurry, low quality, distorted, deformed, watermark, text overlay, amateur lighting, noisy, grainy'
@@ -140,7 +159,8 @@ serve(async (req) => {
       product_category,
       brand_mood,
       has_reference_image,
-      product_size_scale
+      product_size_scale,
+      fashion_model_preset,
     } = await req.json();
 
     if (!prompt?.trim()) {
@@ -161,7 +181,9 @@ serve(async (req) => {
         'product_scene': 'Premium lifestyle product shot in a real-world context with beautiful environment',
         'marketing_creative': 'High-impact marketing/advertising imagery for promotional campaigns, social media, or ads',
         'quick_draft': 'Quick concept visualization — keep it simple but visually appealing',
-        'premium_quality': 'Ultra high-end commercial photography, award-winning quality, maximum detail and impact'
+        'premium_quality': 'Ultra high-end commercial photography, award-winning quality, maximum detail and impact',
+        'fashion_tryon': 'FASHION VIRTUAL TRY-ON: The reference image contains a garment. Generate the garment being worn on a fashion model. PRESERVE the exact garment design, fabric, color, pattern, and all construction details. Describe the MODEL and SCENE, not the garment itself.',
+        'fashion_lookbook': 'FASHION LOOKBOOK: The reference image contains a garment. Generate a styled editorial fashion lookbook scene featuring this garment. PRESERVE exact garment appearance. Focus on editorial styling, scene composition, and mood.',
       };
       context.push(`Use case: ${useCaseDescriptions[use_case] || use_case}`);
     }
@@ -190,7 +212,24 @@ serve(async (req) => {
       context.push(`Brand mood/atmosphere: ${brand_mood}`);
     }
 
-    if (has_reference_image) {
+    const isFashionUseCase = use_case === 'fashion_tryon' || use_case === 'fashion_lookbook';
+
+    if (has_reference_image && isFashionUseCase) {
+      context.push('NOTE: A reference image of a GARMENT will be provided. The AI model will use this to preserve the exact garment design. Focus the prompt on the MODEL, POSE, SCENE, and LIGHTING — the garment appearance is locked by the reference.');
+      context.push('CRITICAL GARMENT PRESERVATION: The reference image is a fashion garment. Your enhanced prompt MUST include an explicit instruction to preserve the EXACT garment design — same fabric texture, same color, same pattern, same stitching, same silhouette, same construction details. NEVER alter the garment. This is the #1 priority.');
+
+      if (fashion_model_preset) {
+        const presetDescriptions: Record<string, string> = {
+          'female_editorial': 'Professional female fashion model with natural proportions, confident editorial pose.',
+          'male_editorial': 'Professional male fashion model with natural proportions, confident editorial pose.',
+          'diverse_group': 'Diverse group of professional fashion models in a styled group shot.',
+          'flat_lay': 'No model. Flat-lay arrangement on a clean surface with fashion accessories and styling props.',
+          'mannequin': 'Ghost/invisible mannequin shot. Clean e-commerce product shot showing garment shape.',
+          'custom': 'User will describe their own model/scene in the prompt.',
+        };
+        context.push(`Model type: ${presetDescriptions[fashion_model_preset] || 'Professional fashion model.'}`);
+      }
+    } else if (has_reference_image) {
       context.push('NOTE: A reference image will be provided to the model. Focus the prompt on the desired SCENE, ENVIRONMENT, and LIGHTING — the product appearance is already locked in by the reference image.');
       context.push('CRITICAL TEXT/LOGO PRESERVATION: The reference image contains brand logos, text, icons, and printed markings on the product. Your enhanced prompt MUST include an explicit instruction to preserve ALL text, logos, brand names, and printed details from the reference image exactly as they appear — correct spelling, font, placement, and size. Never blur, distort, or hallucinate any text or logo. This is the #1 priority for product photography.');
     }
@@ -200,7 +239,7 @@ serve(async (req) => {
     }
 
     // Material-specific instructions
-    const detectedMaterial = detectMaterial(product_name, product_description, product_tags, product_category);
+    const detectedMaterial = detectMaterial(product_name, product_description, product_tags, product_category, isFashionUseCase);
     const isLuxuryStyle = style === 'luxury';
 
     if (detectedMaterial === 'jewelry' || detectedMaterial === 'gemstone') {
@@ -225,6 +264,8 @@ serve(async (req) => {
       context.push('GLASS/TRANSPARENT product. Rim lighting, backlit edges, gradient background for material definition.');
     } else if (detectedMaterial === 'food') {
       context.push('FOOD product. Warm appetizing tones, natural light feel, shallow DOF, texture detail.');
+    } else if (detectedMaterial === 'fashion') {
+      context.push('FASHION/APPAREL product. Preserve exact garment from reference. Fashion editorial photography: 85mm lens, f/4, soft key light with beauty dish, natural skin tones, fabric draping naturally on body. Focus on garment fidelity — same color, same pattern, same texture, same construction details.');
     } else if (detectedMaterial === 'textile') {
       context.push('TEXTILE product. Raking light for texture, accurate colors, natural draping.');
     }
@@ -257,7 +298,7 @@ serve(async (req) => {
       console.error('Together.ai API error:', errText);
 
       // Fallback: return a quality-boosted version
-      const material = detectMaterial(product_name, product_description, product_tags, product_category);
+      const material = detectMaterial(product_name, product_description, product_tags, product_category, isFashionUseCase);
       const boost = MATERIAL_QUALITY_BOOST[material];
       return new Response(
         JSON.stringify({
@@ -294,7 +335,7 @@ serve(async (req) => {
 
     // ── Deterministic quality boost ──────────────────────────────────
     // Always inject material-specific quality keywords after the LLM output
-    const material = detectMaterial(product_name, product_description, product_tags, product_category);
+    const material = detectMaterial(product_name, product_description, product_tags, product_category, isFashionUseCase);
     let finalPrompt = enhanced.enhanced_prompt || prompt;
     let finalNegative = enhanced.negative_prompt || '';
 

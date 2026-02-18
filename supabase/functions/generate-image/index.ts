@@ -54,7 +54,9 @@ const USE_CASE_MODELS: Record<string, string> = {
   'quick_draft': 'flux-schnell',
   'premium_quality': 'flux-pro',
   'product_quick': 'flux-kontext',
-  'draft': 'flux-dev'
+  'draft': 'flux-dev',
+  'fashion_tryon': 'flux-kontext-pro',
+  'fashion_lookbook': 'flux-kontext-pro',
 };
 
 // ─── Quality prefix injected into EVERY prompt ───────────────────────
@@ -105,7 +107,9 @@ async function uploadToStorage(
 }
 
 // ─── Product category detection ──────────────────────────────────────
-function detectProductCategory(productContext: any, prompt: string): 'jewelry' | 'luxury' | 'glass' | 'food' | 'textile' | 'standard' {
+function detectProductCategory(productContext: any, prompt: string, isFashion?: boolean): 'jewelry' | 'luxury' | 'glass' | 'food' | 'textile' | 'fashion' | 'standard' {
+  if (isFashion) return 'fashion';
+
   const signals = [
     productContext?.name, productContext?.description, productContext?.short_description,
     productContext?.tags?.join(' '), productContext?.category, prompt
@@ -115,7 +119,8 @@ function detectProductCategory(productContext: any, prompt: string): 'jewelry' |
   if (/\b(watch|timepiece|luxury|premium|haute|couture|designer|handcrafted|crystal|swarovski)\b/.test(signals)) return 'luxury';
   if (/\b(glass|crystal|bottle|perfume|fragrance|vase|transparent|translucent)\b/.test(signals)) return 'glass';
   if (/\b(food|chocolate|cake|coffee|tea|wine|cheese|bread|organic|gourmet|culinary)\b/.test(signals)) return 'food';
-  if (/\b(fabric|textile|clothing|dress|shirt|cotton|silk|linen|wool|leather|suede)\b/.test(signals)) return 'textile';
+  if (/\b(dress|shirt|jacket|pants|skirt|blouse|coat|sweater|hoodie|jeans|sneaker|boot|heel|sandal|t-shirt|trousers|fashion|garment|apparel|outfit|wear|clothing|fabric|textile|cotton|silk|linen|wool|leather|suede|denim|cashmere|polyester)\b/.test(signals)) return 'fashion';
+  if (/\b(fabric|textile)\b/.test(signals)) return 'textile';
   return 'standard';
 }
 
@@ -164,6 +169,7 @@ function buildFinalPrompt(
     glass: 'Transparent product photography: rim lighting defining edges, gradient background, backlit material clarity, caustic light patterns',
     food: 'Food photography: appetizing warm tones, shallow depth of field, natural light feel, fresh ingredients visible, steam or texture detail',
     textile: 'Textile photography: fabric texture visible, natural draping, accurate color reproduction, soft directional lighting showing weave',
+    fashion: 'Fashion photography: preserve exact garment design, fabric texture, color fidelity, stitching details, and pattern from reference. Professional fashion model pose, editorial lighting, Vogue-quality composition, natural body proportions, fabric draping realistically on the body',
     standard: 'Professional product photography: clean lighting, accurate colors, sharp detail throughout'
   };
   parts.push(categoryDirectives[category]);
@@ -197,6 +203,7 @@ function getDefaultNegatives(category: string): string {
     glass: 'blurry, low quality, fingerprints, smudges, flat lighting, distorted, watermark',
     food: 'blurry, low quality, unappetizing colors, artificial looking, distorted, watermark',
     textile: 'blurry, low quality, wrinkled messily, inaccurate colors, distorted, watermark',
+    fashion: 'blurry, low quality, distorted body proportions, unnatural pose, wrong garment color, missing garment details, deformed hands, deformed face, extra fingers, mutated limbs, watermark, amateur lighting, flat lighting, wrinkled messily',
     standard: 'blurry, low quality, distorted, deformed, watermark, text overlay, amateur lighting, noisy, grainy'
   };
   return categoryNegatives[category] || categoryNegatives.standard;
@@ -336,6 +343,8 @@ serve(async (req) => {
       product_context,
       product_images,
       is_physical_product,
+      is_fashion,
+      fashion_model_preset,
       negative_prompt,
       prompt_enhanced = false,
       width = 1024,
@@ -382,10 +391,35 @@ serve(async (req) => {
       );
     }
 
+    // ── Fashion model preset → prompt fragment ─────────────────────
+    const FASHION_MODEL_PROMPTS: Record<string, string> = {
+      'female_editorial': 'worn by a professional female fashion model with natural proportions, confident editorial pose, looking at camera',
+      'male_editorial': 'worn by a professional male fashion model with natural proportions, confident editorial pose, looking at camera',
+      'diverse_group': 'worn by a diverse group of professional fashion models with natural proportions, styled editorial group shot',
+      'flat_lay': 'styled flat-lay arrangement on a clean surface with fashion accessories and props, no model, garment laid flat',
+      'mannequin': 'on an invisible ghost mannequin, clean e-commerce product shot, garment shown from front with shape visible',
+      'custom': '',
+    };
+
     // ── Prompt construction ──────────────────────────────────────────
     let finalPrompt = prompt;
 
-    if (modelConfig.requiresImage) {
+    const isFashionUseCase = use_case === 'fashion_tryon' || use_case === 'fashion_lookbook';
+
+    if (isFashionUseCase && modelConfig.requiresImage) {
+      // Fashion-specific Kontext prompt: preserve garment, describe the model/scene
+      const modelFragment = FASHION_MODEL_PROMPTS[fashion_model_preset] || FASHION_MODEL_PROMPTS['female_editorial'];
+      const garmentPreservation = 'CRITICAL: Preserve the EXACT garment design from the reference image — same fabric texture, same color, same pattern, same stitching, same silhouette, same details. Do not alter the garment in any way.';
+
+      if (use_case === 'fashion_tryon') {
+        const sceneDesc = prompt?.trim() ? prompt.trim() : 'professional fashion studio with soft directional lighting';
+        finalPrompt = `${garmentPreservation} Show this garment ${modelFragment}, in setting: ${sceneDesc}. High-fashion editorial photography, Vogue-quality, natural skin tones, realistic fabric draping on the body, professional fashion lighting, sharp focus on garment details. Ultra high quality, 8K detail.`;
+      } else {
+        // fashion_lookbook
+        const sceneDesc = prompt?.trim() ? prompt.trim() : 'styled editorial fashion lookbook scene';
+        finalPrompt = `${garmentPreservation} ${sceneDesc}. ${modelFragment ? modelFragment + '.' : ''} Fashion lookbook photography, styled scene, editorial composition, natural colors, professional lighting highlighting fabric texture and garment construction. Ultra high quality, 8K detail.`;
+      }
+    } else if (modelConfig.requiresImage) {
       // For Kontext (image-to-image): keep prompt focused but add quality + preservation hints
       // Kontext prompts describe the EDIT, not the full scene
       if (prompt) {

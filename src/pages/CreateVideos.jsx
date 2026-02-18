@@ -88,6 +88,7 @@ const STYLE_PRESETS = [
   { id: 'documentary', label: 'Documentary', icon: FileVideo },
   { id: 'animated', label: 'Animated', icon: Clapperboard },
   { id: 'product_showcase', label: 'Product', icon: Package },
+  { id: 'fashion', label: 'Fashion', icon: Sparkles },
   { id: 'explainer', label: 'Explainer', icon: Lightbulb },
   { id: 'social_media', label: 'Social', icon: Smartphone },
   { id: 'corporate', label: 'Corporate', icon: Building2 },
@@ -132,6 +133,8 @@ const QUICK_SUGGESTIONS = [
   'Cinematic intro',
   'Social ad',
   'Explainer',
+  'Fashion lookbook',
+  'Runway walk',
 ];
 
 function getTemplateProps(templateId, selectedProduct, brandAssets, digitalProductData, designAnalysis) {
@@ -480,6 +483,9 @@ export default function CreateVideos({ embedded = false, defaultMode = 'ai' }) {
     if (style) enhanced += ` Style: ${style.label} video.`;
     const dur = DURATIONS.find(d => d.id === duration);
     if (dur) enhanced += ` Duration: ${dur.seconds} seconds.`;
+    if (selectedStyle === 'fashion') {
+      enhanced += ' High-fashion editorial video, professional fashion model, runway-quality movement, elegant transitions, fabric flowing naturally, Vogue-quality cinematography, soft key lighting with dramatic shadows, slow-motion fabric details.';
+    }
     if (useBrandContext && brandAssets) {
       if (brandAssets.colors?.primary) {
         enhanced += ` Brand colors: ${brandAssets.colors.primary}`;
