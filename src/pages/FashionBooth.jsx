@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@/components/context/UserContext';
 import { BrandAssets, GeneratedContent, Product, PhysicalProduct } from '@/api/entities';
@@ -16,7 +16,6 @@ import { Badge } from '@/components/ui/badge';
 import { CREATE_LIMITS } from '@/tokens/create';
 import { toast } from 'sonner';
 import { supabase } from '@/api/supabaseClient';
-import { PRESET_AVATARS } from '@/components/shared/AvatarSelector';
 
 // ─── POSE PRESETS (20+) ───────────────────────────────────────────
 const POSE_PRESETS = [
@@ -115,13 +114,126 @@ const QUICK_SUGGESTIONS = [
   'Night city neon vibe',
 ];
 
+// ─── AVATAR MODELS (Multi-Reference Training Sets) ──────────────
+const STORAGE_BASE = 'https://sfxpmzicgpaxfntqleig.supabase.co/storage/v1/object/public/generated-content/fashion-avatars';
+
+const FASHION_AVATAR_MODELS = [
+  {
+    id: 'euro-male-01',
+    name: 'Lucas',
+    gender: 'male',
+    description: '25yo European male model',
+    characterPrompt: 'Young European male model, approximately 25 years old, with tousled wavy light brown hair with natural golden highlights, blue-green eyes, light stubble along jawline and chin, athletic lean build, strong jawline, defined cheekbones, fair skin with light sun-kissed complexion.',
+    thumbnail: `${STORAGE_BASE}/euro-male-01/Warm_genuine_smile_-_eye_level.jpg`,
+    trainingImages: [
+      {
+        id: 'warm_smile',
+        url: `${STORAGE_BASE}/euro-male-01/Warm_genuine_smile_-_eye_level.jpg`,
+        label: 'Warm Smile',
+        desc: 'Front, eye-level, genuine smile',
+        bestFor: ['standing_front', 'walking_casual', 'walking_street', 'pose_hands_pockets', 'sitting_casual'],
+        angle: 'front',
+        framing: 'three_quarter',
+      },
+      {
+        id: 'confident_smirk',
+        url: `${STORAGE_BASE}/euro-male-01/Confident_slight_smirk_-_45deg_angle.jpg`,
+        label: 'Confident',
+        desc: '45° angle, slight smirk',
+        bestFor: ['standing_3q', 'walking_confident', 'pose_hand_hip', 'pose_editorial', 'pose_dynamic'],
+        angle: '45deg',
+        framing: 'three_quarter',
+      },
+      {
+        id: 'serious_low',
+        url: `${STORAGE_BASE}/euro-male-01/Serious_-_low_angle.jpg`,
+        label: 'Serious',
+        desc: 'Close-up, low angle, intense',
+        bestFor: ['pose_arms_crossed', 'pose_lean_wall', 'pose_crouch'],
+        angle: 'low',
+        framing: 'close_up',
+      },
+      {
+        id: 'intense',
+        url: `${STORAGE_BASE}/euro-male-01/Intense_-_dramatic_lighting.jpg`,
+        label: 'Intense',
+        desc: 'Looking down, dramatic mood',
+        bestFor: ['pose_looking_away', 'sitting_lean', 'pose_editorial'],
+        angle: 'front_down',
+        framing: 'three_quarter',
+      },
+      {
+        id: 'amused_close',
+        url: `${STORAGE_BASE}/euro-male-01/Slightly_amused_-_close_crop.jpg`,
+        label: 'Close-Up',
+        desc: 'Close crop, subtle smile',
+        bestFor: ['close_up', 'extreme_close', 'mid_shot'],
+        angle: 'front_close',
+        framing: 'close_up',
+      },
+      {
+        id: 'side_profile',
+        url: `${STORAGE_BASE}/euro-male-01/Thoughtful_-_side_profile.jpg`,
+        label: 'Side Profile',
+        desc: 'Full side view, thoughtful',
+        bestFor: ['standing_side', 'standing_back', 'pose_over_shoulder', 'profile_angle'],
+        angle: 'side',
+        framing: 'upper_body',
+      },
+      {
+        id: 'relaxed_above',
+        url: `${STORAGE_BASE}/euro-male-01/Relaxed_candid_-_slightly_above.jpg`,
+        label: 'Relaxed',
+        desc: 'From above, leaning forward, candid',
+        bestFor: ['sitting_cross', 'high_angle', 'birds_eye', 'pose_jump'],
+        angle: 'above',
+        framing: 'upper_body',
+      },
+    ],
+  },
+];
+
+// Auto-suggest the best training image for a given pose + angle + framing combination
+function suggestBestReference(model, poseId, angleId, framingId) {
+  if (!model?.trainingImages?.length) return null;
+
+  // Score each training image by how well it matches the current selections
+  let bestScore = -1;
+  let bestImg = model.trainingImages[0];
+
+  for (const img of model.trainingImages) {
+    let score = 0;
+    // Pose match
+    if (img.bestFor?.includes(poseId)) score += 3;
+    // Angle match
+    if (angleId === 'profile_angle' && img.angle === 'side') score += 2;
+    if (angleId === 'low_angle' && img.angle === 'low') score += 2;
+    if (angleId === 'high_angle' && img.angle === 'above') score += 2;
+    if (angleId === 'eye_level' && img.angle === 'front') score += 2;
+    if (angleId === 'three_quarter_low' && img.angle === '45deg') score += 2;
+    if (angleId === 'dutch_angle' && img.angle === '45deg') score += 1;
+    // Framing match
+    if (framingId === img.framing) score += 1;
+    if (framingId === 'close_up' && img.framing === 'close_up') score += 2;
+    if (framingId === 'full_body' && img.framing === 'three_quarter') score += 1;
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestImg = img;
+    }
+  }
+
+  return bestImg;
+}
+
 export default function FashionBooth({ embedded = false }) {
   const { user } = useUser();
   const { theme, toggleTheme, ct } = useTheme();
 
   // ─── STATE ────────────────────────────────────────────────
   const [prompt, setPrompt] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState(null);
+  const [selectedAvatarModel, setSelectedAvatarModel] = useState(null);
+  const [selectedTrainingImage, setSelectedTrainingImage] = useState(null);
   const [customAvatarUrl, setCustomAvatarUrl] = useState(null);
   const [selectedPose, setSelectedPose] = useState('standing_front');
   const [selectedFraming, setSelectedFraming] = useState('full_body');
@@ -188,6 +300,16 @@ export default function FashionBooth({ embedded = false }) {
     } catch (e) { console.error('Error loading product images:', e); setProductImages([]); }
   };
 
+  // ─── AUTO-SUGGEST BEST REFERENCE ON POSE/ANGLE/FRAMING CHANGE ──
+  useEffect(() => {
+    if (selectedAvatarModel) {
+      const best = suggestBestReference(selectedAvatarModel, selectedPose, selectedAngle, selectedFraming);
+      if (best && best.id !== selectedTrainingImage?.id) {
+        setSelectedTrainingImage(best);
+      }
+    }
+  }, [selectedPose, selectedAngle, selectedFraming]);
+
   // ─── GARMENT UPLOAD ───────────────────────────────────────
   const handleGarmentUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -221,7 +343,8 @@ export default function FashionBooth({ embedded = false }) {
       if (uploadError) throw uploadError;
       const { data: { publicUrl } } = supabase.storage.from('generated-content').getPublicUrl(fileName);
       setCustomAvatarUrl(publicUrl);
-      setSelectedAvatar({ id: 'custom', url: publicUrl });
+      setSelectedAvatarModel(null);
+      setSelectedTrainingImage({ id: 'custom', url: publicUrl, label: 'Custom Upload' });
       toast.success('Avatar reference uploaded');
     } catch (err) {
       toast.error('Failed to upload avatar');
@@ -263,8 +386,10 @@ export default function FashionBooth({ embedded = false }) {
       };
       parts.push(poseDescs[selectedPose] || pose.desc);
     } else {
-      // Model-based generation
-      if (selectedAvatar?.url) {
+      // Model-based generation with character consistency
+      if (selectedAvatarModel?.characterPrompt) {
+        parts.push(`The model MUST look EXACTLY like the person in the avatar reference image. Character description for consistency: ${selectedAvatarModel.characterPrompt} The face, body type, skin tone, hair style, and overall appearance must be identical to the reference — this is the same person.`);
+      } else if (selectedTrainingImage?.url) {
         parts.push(`The model should look EXACTLY like the person in the avatar reference image — same face, same body type, same skin tone, same hair. Character-consistent generation.`);
       }
 
@@ -332,7 +457,7 @@ export default function FashionBooth({ embedded = false }) {
             fashion_framing: selectedFraming,
             fashion_angle: selectedAngle,
             fashion_scene: selectedScene,
-            fashion_avatar_url: selectedAvatar?.url || null,
+            fashion_avatar_url: selectedTrainingImage?.url || null,
           }),
         }
       );
@@ -507,41 +632,125 @@ export default function FashionBooth({ embedded = false }) {
 
             {/* ── 2. Avatar / Model ── */}
             <Section title="Model / Avatar" icon={User} color="violet">
-              <p className="text-[11px] text-zinc-500 mb-3">Select an avatar for character-consistent generation, or skip for generic model.</p>
-              <div className="grid grid-cols-5 gap-2 mb-3">
-                {/* No avatar option */}
+              <p className="text-[11px] text-zinc-500 mb-3">Select a model for character-consistent generation, or skip for generic model.</p>
+
+              {/* Model selector row */}
+              <div className="flex items-center gap-2 mb-3">
+                {/* No model option */}
                 <button
-                  onClick={() => { setSelectedAvatar(null); setCustomAvatarUrl(null); }}
-                  className={`aspect-square rounded-xl flex items-center justify-center border-2 transition-all ${
-                    !selectedAvatar
+                  onClick={() => { setSelectedAvatarModel(null); setSelectedTrainingImage(null); setCustomAvatarUrl(null); }}
+                  className={`w-14 h-14 rounded-xl flex-shrink-0 flex items-center justify-center border-2 transition-all ${
+                    !selectedAvatarModel && !customAvatarUrl
                       ? 'border-violet-500 bg-violet-500/10'
                       : 'border-zinc-800/60 hover:border-zinc-700 bg-zinc-900/50'
                   }`}
                 >
                   <Users className="w-5 h-5 text-zinc-500" />
                 </button>
-                {/* Preset avatars */}
-                {PRESET_AVATARS.map(av => (
+                {/* Avatar models */}
+                {FASHION_AVATAR_MODELS.map(model => (
                   <button
-                    key={av.id}
-                    onClick={() => setSelectedAvatar(av)}
-                    className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${
-                      selectedAvatar?.id === av.id
+                    key={model.id}
+                    onClick={() => {
+                      setSelectedAvatarModel(model);
+                      setCustomAvatarUrl(null);
+                      // Auto-select best reference for current pose/angle/framing
+                      const best = suggestBestReference(model, selectedPose, selectedAngle, selectedFraming);
+                      setSelectedTrainingImage(best);
+                    }}
+                    className={`w-14 h-14 rounded-xl flex-shrink-0 overflow-hidden border-2 transition-all relative group ${
+                      selectedAvatarModel?.id === model.id
                         ? 'border-violet-500 ring-2 ring-violet-500/30'
                         : 'border-zinc-800/60 hover:border-zinc-700'
                     }`}
                   >
-                    <img src={av.url} alt="" className="w-full h-full object-cover" />
+                    <img src={model.thumbnail} alt={model.name} className="w-full h-full object-cover" />
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-1 py-0.5">
+                      <span className="text-[8px] font-medium text-white leading-none">{model.name}</span>
+                    </div>
                   </button>
                 ))}
+                {/* Custom upload option */}
+                {customAvatarUrl && (
+                  <button
+                    onClick={() => { setSelectedAvatarModel(null); setSelectedTrainingImage({ id: 'custom', url: customAvatarUrl, label: 'Custom' }); }}
+                    className={`w-14 h-14 rounded-xl flex-shrink-0 overflow-hidden border-2 transition-all ${
+                      !selectedAvatarModel && customAvatarUrl
+                        ? 'border-violet-500 ring-2 ring-violet-500/30'
+                        : 'border-zinc-800/60 hover:border-zinc-700'
+                    }`}
+                  >
+                    <img src={customAvatarUrl} alt="Custom" className="w-full h-full object-cover" />
+                  </button>
+                )}
               </div>
+
+              {/* Training image reference selector (shown when a model is selected) */}
+              {selectedAvatarModel && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-medium text-violet-400">Reference angle for this shot</span>
+                    <button
+                      onClick={() => {
+                        const best = suggestBestReference(selectedAvatarModel, selectedPose, selectedAngle, selectedFraming);
+                        setSelectedTrainingImage(best);
+                        toast.success(`Auto-selected: ${best.label}`);
+                      }}
+                      className="text-[10px] px-2 py-1 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors flex items-center gap-1"
+                    >
+                      <Zap className="w-3 h-3" />
+                      Auto-suggest
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {selectedAvatarModel.trainingImages.map(img => {
+                      const isSelected = selectedTrainingImage?.id === img.id;
+                      const isSuggested = suggestBestReference(selectedAvatarModel, selectedPose, selectedAngle, selectedFraming)?.id === img.id;
+                      return (
+                        <button
+                          key={img.id}
+                          onClick={() => setSelectedTrainingImage(img)}
+                          className={`relative rounded-xl overflow-hidden border-2 transition-all group ${
+                            isSelected
+                              ? 'border-violet-500 ring-2 ring-violet-500/30'
+                              : isSuggested
+                                ? 'border-violet-500/40 border-dashed'
+                                : 'border-zinc-800/40 hover:border-zinc-700'
+                          }`}
+                        >
+                          <img src={img.url} alt={img.label} className="w-full aspect-square object-cover" />
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-1.5 pt-4">
+                            <span className="text-[9px] font-medium text-white leading-tight block">{img.label}</span>
+                            <span className="text-[8px] text-zinc-400 leading-tight block">{img.desc}</span>
+                          </div>
+                          {isSelected && (
+                            <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                          {isSuggested && !isSelected && (
+                            <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-violet-500/40 flex items-center justify-center">
+                              <Zap className="w-3 h-3 text-violet-300" />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-zinc-600">
+                    <Zap className="w-3 h-3 inline text-violet-500/50 mr-0.5" />
+                    Dashed border = best match for your current pose/angle. Select any reference you prefer.
+                  </p>
+                </div>
+              )}
+
               {/* Upload custom avatar */}
-              <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-800/60 hover:border-violet-500/30 bg-zinc-900/30 cursor-pointer transition-all group text-xs text-zinc-500">
+              <label className="flex items-center gap-2 px-3 py-2 mt-2 rounded-lg border border-zinc-800/60 hover:border-violet-500/30 bg-zinc-900/30 cursor-pointer transition-all group text-xs text-zinc-500">
                 <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
                 <Upload className="w-3.5 h-3.5 group-hover:text-violet-400" />
                 Upload custom model reference
               </label>
-              {customAvatarUrl && (
+              {customAvatarUrl && !selectedAvatarModel && (
                 <div className="mt-2 flex items-center gap-2">
                   <img src={customAvatarUrl} className="w-10 h-10 rounded-lg object-cover border border-violet-500/30" alt="" />
                   <span className="text-xs text-violet-400">Custom avatar selected</span>
@@ -722,7 +931,8 @@ export default function FashionBooth({ embedded = false }) {
               </div>
               <div className="flex flex-wrap gap-2">
                 {garmentReferenceUrl && <SummaryBadge label="Garment" value="Uploaded" color="rose" />}
-                {selectedAvatar && <SummaryBadge label="Avatar" value={selectedAvatar.id === 'custom' ? 'Custom' : `Preset ${selectedAvatar.id.split('-')[1]}`} color="violet" />}
+                {selectedAvatarModel && <SummaryBadge label="Model" value={selectedAvatarModel.name} color="violet" />}
+                {selectedTrainingImage && <SummaryBadge label="Ref" value={selectedTrainingImage.label} color="violet" />}
                 <SummaryBadge label="Pose" value={POSE_PRESETS.find(p => p.id === selectedPose)?.label} color="amber" />
                 <SummaryBadge label="Framing" value={FRAMING_OPTIONS.find(f => f.id === selectedFraming)?.label} color="cyan" />
                 <SummaryBadge label="Angle" value={CAMERA_ANGLES.find(a => a.id === selectedAngle)?.label} color="blue" />
