@@ -414,47 +414,6 @@ export default function FashionBooth({ embedded = false }) {
     return parts.join('\n\n');
   };
 
-  // ─── CREATE COMPOSITE (avatar left + garment right) ───────
-  const createCompositeImage = useCallback(async (avatarUrl, garmentUrl) => {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const avatarImg = new window.Image();
-      const garmentImg = new window.Image();
-      avatarImg.crossOrigin = 'anonymous';
-      garmentImg.crossOrigin = 'anonymous';
-
-      let loaded = 0;
-      const onLoad = () => {
-        loaded++;
-        if (loaded < 2) return;
-        // Side-by-side: avatar left, garment right, both 1024×1024
-        const size = 1024;
-        canvas.width = size * 2;
-        canvas.height = size;
-        ctx.fillStyle = '#f0f0f0';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        // Draw avatar centered on left panel
-        const drawCentered = (img, offsetX) => {
-          const scale = Math.min(size / img.naturalWidth, size / img.naturalHeight);
-          const w = img.naturalWidth * scale;
-          const h = img.naturalHeight * scale;
-          ctx.drawImage(img, offsetX + (size - w) / 2, (size - h) / 2, w, h);
-        };
-        drawCentered(avatarImg, 0);
-        drawCentered(garmentImg, size);
-        canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Canvas toBlob failed')), 'image/jpeg', 0.92);
-      };
-      const onError = () => reject(new Error('Failed to load image for composite'));
-      avatarImg.onload = onLoad;
-      garmentImg.onload = onLoad;
-      avatarImg.onerror = onError;
-      garmentImg.onerror = onError;
-      avatarImg.src = avatarUrl;
-      garmentImg.src = garmentUrl;
-    });
-  }, []);
-
   // ─── GENERATE ─────────────────────────────────────────────
   const handleGenerate = async () => {
     if (!garmentReferenceUrl) {
@@ -469,22 +428,11 @@ export default function FashionBooth({ embedded = false }) {
       const fullPrompt = buildFashionPrompt();
       const ratio = ASPECT_RATIOS.find(r => r.id === aspectRatio);
 
-      // If avatar is selected, create composite reference (avatar + garment side by side)
-      // Kontext Max sees both the person identity AND garment details in one image
-      let compositeUrl = null;
-      if (selectedTrainingImage?.url && garmentReferenceUrl) {
-        try {
-          toast.info('Creating avatar + garment composite...');
-          const compositeBlob = await createCompositeImage(selectedTrainingImage.url, garmentReferenceUrl);
-          const compositeFileName = `composite-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
-          const { error: uploadErr } = await supabase.storage.from('generated-content').upload(compositeFileName, compositeBlob, { contentType: 'image/jpeg' });
-          if (uploadErr) throw uploadErr;
-          const { data: { publicUrl } } = supabase.storage.from('generated-content').getPublicUrl(compositeFileName);
-          compositeUrl = publicUrl;
-        } catch (compErr) {
-          console.warn('Composite creation failed, falling back to standard:', compErr);
-        }
-      }
+      // Build garment description for the AI prompt
+      // When an avatar is selected, Kontext Max uses the avatar as image reference
+      // and describes the garment change in text — so garment description matters
+      const garmentDesc = selectedProduct?.name
+        || (prompt.trim() ? '' : 'the garment from the uploaded reference image');
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-image`,
@@ -496,10 +444,10 @@ export default function FashionBooth({ embedded = false }) {
           },
           body: JSON.stringify({
             prompt: fullPrompt,
-            product_name: selectedProduct?.name || 'Fashion garment',
+            original_prompt: prompt,
+            product_context: selectedProduct ? { name: selectedProduct.name, description: selectedProduct.description || selectedProduct.short_description || '' } : { name: garmentDesc },
             product_images: garmentReferenceUrl ? [garmentReferenceUrl] : [],
             reference_image_url: garmentReferenceUrl,
-            composite_reference_url: compositeUrl,
             use_case: 'fashion_tryon',
             style: 'photorealistic',
             width: ratio?.width || 1024,

@@ -528,47 +528,47 @@ serve(async (req) => {
       );
     }
 
-    // ── Fashion Booth: Kontext Max with composite reference ────────
-    // When avatar + garment are both provided, the client creates a side-by-side
-    // composite image (avatar left, garment right) and sends its URL as
-    // `composite_reference_url`. Kontext Max sees BOTH the person identity AND
-    // the garment details in one reference, preserves the face, and swaps clothing.
-    if (fashion_booth && composite_reference_url) {
-      console.log('Fashion Booth: Using Kontext Max with composite reference (avatar + garment)');
+    // ── Fashion Booth: Kontext Max with avatar as reference ─────────
+    // Send the AVATAR photo as the image reference so Kontext preserves identity.
+    // Describe the garment change + pose + scene in the text prompt.
+    // Kontext edits the avatar photo: keeps face/body, changes outfit + pose + scene.
+    if (fashion_booth && fashion_avatar_url) {
+      console.log('Fashion Booth: Avatar as reference → Kontext Max (identity-preserving edit)');
 
       const pose = fashion_pose ? POSE_PRESETS_SERVER[fashion_pose] || fashion_pose : 'standing naturally';
       const framing = fashion_framing ? FRAMING_SERVER[fashion_framing] || fashion_framing : 'full body';
       const angle = fashion_angle ? ANGLE_SERVER[fashion_angle] || fashion_angle : 'eye level';
-      const scene = fashion_scene && SCENE_PROMPT_MAP[fashion_scene] ? SCENE_PROMPT_MAP[fashion_scene] : 'clean white studio backdrop';
+      const sceneDesc = fashion_scene && SCENE_PROMPT_MAP[fashion_scene]
+        ? SCENE_PROMPT_MAP[fashion_scene]
+        : 'a clean white studio backdrop';
 
-      const compositeParts: string[] = [];
-      compositeParts.push('This image contains two panels side by side. The LEFT panel shows a person. The RIGHT panel shows a garment.');
-      compositeParts.push('TASK: Generate a new image of ONLY the person from the LEFT panel wearing the EXACT garment from the RIGHT panel.');
-      compositeParts.push('CRITICAL IDENTITY RULE: The person\'s face, hair color, hair style, skin tone, facial hair, eye color, and body build must be IDENTICAL to the LEFT panel. Do NOT change the person\'s identity in any way.');
-      compositeParts.push('CRITICAL GARMENT RULE: The garment must match the RIGHT panel EXACTLY — same color, same fabric texture, same print/logo/text, same silhouette, same pockets, same hood/collar, same zipper/buttons. Reproduce every detail.');
-      compositeParts.push(`POSE: The person is ${pose}.`);
-      compositeParts.push(`FRAMING: ${framing} shot.`);
-      compositeParts.push(`CAMERA ANGLE: ${angle}.`);
-      compositeParts.push(`SCENE: ${scene}.`);
-      if (prompt?.trim()) compositeParts.push(prompt.trim());
-      compositeParts.push('Output a single high-resolution fashion photograph. Professional editorial lighting, sharp focus on garment details, 8K quality.');
+      // Build garment description from product name + any user additions
+      const garmentName = (prompt?.trim() ? '' : (product_context?.name || '')) || 'the specified garment';
 
-      const compositePrompt = compositeParts.join('\n');
+      const editParts: string[] = [];
+      editParts.push(`Transform this photo into a professional fashion editorial. Change the person's outfit: they are now wearing ${garmentName}.`);
+      if (prompt?.trim()) editParts.push(`Garment and style details: ${prompt.trim()}`);
+      editParts.push('IDENTITY RULE: The person\'s face, hair color, hair style, skin tone, facial hair, eye color, and body build must remain EXACTLY identical to the input photo. This is the same person — do not alter their identity.');
+      editParts.push(`The person is ${pose}. Shot framing: ${framing}. Camera angle: ${angle}.`);
+      if (sceneDesc) editParts.push(`Background/setting: ${sceneDesc}.`);
+      editParts.push('Professional fashion editorial photography, sharp focus on outfit details, natural skin tones, realistic fabric draping, 8K quality.');
+
+      const editPrompt = editParts.join('\n');
 
       const kontextMaxConfig = MODELS['flux-kontext-max'];
-      const compositeResult = await generateWithTogether(
+      const avatarResult = await generateWithTogether(
         kontextMaxConfig,
-        compositePrompt,
-        composite_reference_url,
+        editPrompt,
+        fashion_avatar_url,   // Avatar photo as reference — preserves identity
         width,
         height
       );
 
-      if (compositeResult.success && compositeResult.data) {
-        const ext = compositeResult.mimeType?.includes('jpeg') ? 'jpg' : 'png';
+      if (avatarResult.success && avatarResult.data) {
+        const ext = avatarResult.mimeType?.includes('jpeg') ? 'jpg' : 'png';
         const fileName = `fashion-booth-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-        const imageData = Uint8Array.from(atob(compositeResult.data), c => c.charCodeAt(0));
-        const { publicUrl } = await uploadToStorage('generated-content', fileName, imageData, compositeResult.mimeType || 'image/png');
+        const imageData = Uint8Array.from(atob(avatarResult.data), c => c.charCodeAt(0));
+        const { publicUrl } = await uploadToStorage('generated-content', fileName, imageData, avatarResult.mimeType || 'image/png');
 
         const megapixels = (width * height) / 1000000;
         const costUsd = megapixels * kontextMaxConfig.costPerMp;
@@ -585,7 +585,7 @@ serve(async (req) => {
               metadata: {
                 model_name: kontextMaxConfig.id,
                 model_key: 'flux-kontext-max',
-                pipeline: 'kontext-max-composite',
+                pipeline: 'avatar-edit',
                 use_case: 'fashion_booth',
                 fashion_scene, fashion_pose, fashion_angle,
               }
@@ -600,17 +600,17 @@ serve(async (req) => {
             model_id: kontextMaxConfig.id,
             cost_usd: costUsd,
             steps: kontextMaxConfig.steps,
-            pipeline: 'kontext-max-composite',
-            prompt: compositePrompt,
+            pipeline: 'avatar-edit',
+            prompt: editPrompt,
             original_prompt: original_prompt || prompt,
             dimensions: { width, height },
-            product_preserved: true,
+            product_preserved: false,
             use_case: 'fashion_booth'
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } else {
-        console.warn('Kontext Max composite failed, falling back:', compositeResult.error);
+        console.warn('Kontext Max avatar edit failed, falling back:', avatarResult.error);
       }
     }
 
