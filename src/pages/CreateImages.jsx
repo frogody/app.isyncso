@@ -29,13 +29,10 @@ import {
   AlertCircle,
   ArrowLeft,
   Zap,
-  Upload,
   Save,
   ChevronRight,
   BookmarkPlus,
   Hand,
-  Shirt,
-  User,
 } from 'lucide-react';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/contexts/GlobalThemeContext';
@@ -112,26 +109,6 @@ const USE_CASES = {
     estimatedCost: 0.04,
     color: 'yellow'
   },
-  fashion_tryon: {
-    id: 'fashion_tryon',
-    name: 'Fashion Try-On',
-    description: 'Show garment on a model — preserves fabric, color, and details',
-    icon: Shirt,
-    requiresReferenceImage: true,
-    costTier: 'premium',
-    estimatedCost: 0.04,
-    color: 'rose'
-  },
-  fashion_lookbook: {
-    id: 'fashion_lookbook',
-    name: 'Fashion Lookbook',
-    description: 'Garment in styled scenes, flat-lays, or editorial settings',
-    icon: Camera,
-    requiresReferenceImage: true,
-    costTier: 'premium',
-    estimatedCost: 0.04,
-    color: 'rose'
-  }
 };
 
 const STYLE_PRESETS = [
@@ -144,7 +121,6 @@ const STYLE_PRESETS = [
   { id: 'vintage', label: 'Vintage', icon: Clock },
   { id: 'cinematic', label: 'Cinema', icon: Film },
   { id: 'luxury', label: 'Luxury', icon: Sparkles },
-  { id: 'editorial_fashion', label: 'Editorial', icon: Shirt },
 ];
 
 const ASPECT_RATIOS = [
@@ -173,24 +149,6 @@ const QUICK_SUGGESTIONS = [
   'Jewelry close-up',
 ];
 
-const FASHION_SUGGESTIONS = [
-  'Model walking on city street',
-  'Studio editorial white backdrop',
-  'Outdoor golden hour portrait',
-  'Flat-lay on linen fabric',
-  'Runway show setting',
-  'Casual lifestyle scene',
-];
-
-const FASHION_MODEL_PRESETS = [
-  { id: 'female_editorial', label: 'Female Model', desc: 'Professional female fashion model, editorial pose' },
-  { id: 'male_editorial', label: 'Male Model', desc: 'Professional male fashion model, editorial pose' },
-  { id: 'diverse_group', label: 'Group Shot', desc: 'Diverse group of models wearing the garment' },
-  { id: 'flat_lay', label: 'Flat-Lay', desc: 'No model — garment laid flat with styling props' },
-  { id: 'mannequin', label: 'Mannequin', desc: 'Ghost mannequin / invisible mannequin shot' },
-  { id: 'custom', label: 'Custom', desc: 'Describe your own model/scene in the prompt' },
-];
-
 // Mode mapping: group old use cases into 3 modes
 const MODES = [
   {
@@ -216,14 +174,6 @@ const MODES = [
     icon: Zap,
     useCases: ['quick_draft'],
     defaultUseCase: 'quick_draft',
-  },
-  {
-    id: 'fashion',
-    label: 'Fashion',
-    description: 'Virtual try-on & lookbook from garment reference photos',
-    icon: Shirt,
-    useCases: ['fashion_tryon', 'fashion_lookbook'],
-    defaultUseCase: 'fashion_tryon',
   },
 ];
 
@@ -256,10 +206,6 @@ export default function CreateImages({ embedded = false }) {
   const [productSizeScale, setProductSizeScale] = useState(3);
   const [productAnalysis, setProductAnalysis] = useState(null);
   const [isAnalyzingProduct, setIsAnalyzingProduct] = useState(false);
-  const [fashionModelPreset, setFashionModelPreset] = useState('female_editorial');
-  const [customReferenceFile, setCustomReferenceFile] = useState(null);
-  const [uploadingReference, setUploadingReference] = useState(false);
-
   const selectedMode = getModeFromUseCase(selectedUseCase);
 
   const handleModeSelect = (mode) => {
@@ -383,9 +329,7 @@ export default function CreateImages({ embedded = false }) {
     setProductSearch('');
     if (product) {
       await loadProductImages(product);
-      if (isFashionMode) {
-        // Stay in fashion mode, don't switch
-      } else if (product.type === 'physical') {
+      if (product.type === 'physical') {
         setSelectedUseCase('product_variation');
       } else {
         setSelectedUseCase('marketing_creative');
@@ -451,38 +395,6 @@ export default function CreateImages({ embedded = false }) {
     return null;
   };
 
-  const handleCustomReferenceUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Image must be under 10MB');
-      return;
-    }
-    setUploadingReference(true);
-    try {
-      const fileName = `fashion-ref-${Date.now()}-${Math.random().toString(36).substring(7)}.${file.name.split('.').pop()}`;
-      const { error: uploadError } = await supabase.storage
-        .from('generated-content')
-        .upload(fileName, file, { contentType: file.type });
-      if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase.storage
-        .from('generated-content')
-        .getPublicUrl(fileName);
-      setSelectedReferenceImage(publicUrl);
-      setCustomReferenceFile(file);
-      toast.success('Reference image uploaded');
-    } catch (err) {
-      console.error('Upload error:', err);
-      toast.error('Failed to upload reference image');
-    } finally {
-      setUploadingReference(false);
-    }
-  };
-
   const getStyleEnhancements = (styleId) => {
     const styleEnhancements = {
       photorealistic: 'ultra-realistic photograph, professional photography, sharp focus, high resolution, natural textures',
@@ -494,7 +406,6 @@ export default function CreateImages({ embedded = false }) {
       vintage: 'vintage aesthetic, retro color grading, film grain, nostalgic atmosphere',
       cinematic: 'cinematic composition, dramatic lighting, movie still quality, anamorphic lens, depth of field',
       luxury: 'luxury product photography, dark sophisticated backdrop, controlled reflections, dramatic lighting, aspirational premium aesthetic, negative space, editorial high-end feel',
-      editorial_fashion: 'high-fashion editorial photography, Vogue-quality, dramatic pose, professional fashion model, runway-ready styling, fashion-forward composition, magazine-cover lighting',
     };
     return styleEnhancements[styleId] || '';
   };
@@ -504,8 +415,6 @@ export default function CreateImages({ embedded = false }) {
       const enhancements = {
         product_variation: 'maintaining exact product appearance, only changing the background and environment',
         product_scene: 'preserving product details while placing in lifestyle context',
-        fashion_tryon: 'preserving EXACT garment design, fabric texture, color, pattern, stitching, and all details from reference — place on a fashion model in the described pose and setting',
-        fashion_lookbook: 'preserving EXACT garment design, fabric, color, and pattern from reference — style in an editorial fashion lookbook scene',
       };
       return enhancements[useCaseId] || '';
     }
@@ -600,7 +509,6 @@ export default function CreateImages({ embedded = false }) {
               brand_mood: brandAssets?.visual_style?.mood,
               has_reference_image: !!selectedReferenceImage,
               product_size_scale: selectedProduct ? SIZE_SCALE[productSizeScale - 1] : null,
-              fashion_model_preset: isFashionMode ? fashionModelPreset : null,
             }),
           }
         );
@@ -642,8 +550,6 @@ export default function CreateImages({ embedded = false }) {
             product_context: selectedProduct ? { ...selectedProduct, type: selectedProduct.type, product_size_scale: SIZE_SCALE[productSizeScale - 1] } : null,
             product_images: isPhysicalProduct ? productImages : [],
             is_physical_product: isPhysicalProduct,
-            is_fashion: isFashionMode,
-            fashion_model_preset: isFashionMode ? fashionModelPreset : null,
             company_id: user.company_id,
             user_id: user.id,
           }),
@@ -754,7 +660,6 @@ export default function CreateImages({ embedded = false }) {
 
   const currentUseCase = USE_CASES[selectedUseCase];
   const isProductMode = selectedMode.id === 'product';
-  const isFashionMode = selectedMode.id === 'fashion';
 
   const Wrapper = embedded ? React.Fragment : CreatePageTransition;
 
@@ -954,7 +859,7 @@ export default function CreateImages({ embedded = false }) {
             )}
             <div className={`flex items-center justify-between mt-3 pt-3 border-t ${ct('border-slate-100', 'border-zinc-800/40')}`}>
               <div className="flex flex-wrap gap-1.5">
-                {(isFashionMode ? FASHION_SUGGESTIONS : QUICK_SUGGESTIONS).map(chip => (
+                {QUICK_SUGGESTIONS.map(chip => (
                   <button
                     key={chip}
                     onClick={() => setPrompt(prev => prev ? `${prev}, ${chip.toLowerCase()}` : chip)}
@@ -973,7 +878,7 @@ export default function CreateImages({ embedded = false }) {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.05 }}
-            className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+            className="grid grid-cols-3 gap-3"
           >
             {MODES.map(mode => {
               const IconComp = mode.icon;
@@ -1060,7 +965,7 @@ export default function CreateImages({ embedded = false }) {
 
               {/* Product selector (product & fashion modes) */}
               <AnimatePresence>
-                {(isProductMode || isFashionMode) && (
+                {isProductMode && (
                   <motion.div
                     initial={{ opacity: 0, width: 0 }}
                     animate={{ opacity: 1, width: 'auto' }}
@@ -1272,140 +1177,6 @@ export default function CreateImages({ embedded = false }) {
               )}
             </AnimatePresence>
 
-            {/* Fashion mode panel */}
-            <AnimatePresence>
-              {isFashionMode && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className={`mt-4 pt-4 border-t ${ct('border-slate-100', 'border-zinc-800/40')} space-y-4`}
-                >
-                  {/* Fashion use case sub-selector */}
-                  <div className="flex gap-2">
-                    {['fashion_tryon', 'fashion_lookbook'].map(ucId => {
-                      const uc = USE_CASES[ucId];
-                      const isActive = selectedUseCase === ucId;
-                      return (
-                        <button
-                          key={ucId}
-                          onClick={() => setSelectedUseCase(ucId)}
-                          className={`flex-1 px-3 py-2.5 rounded-xl text-left transition-all border ${
-                            isActive
-                              ? 'bg-rose-500/10 border-rose-500/30'
-                              : ct('bg-slate-50 border-slate-200 hover:border-slate-300', 'bg-zinc-800/30 border-zinc-700/40 hover:border-zinc-600')
-                          }`}
-                        >
-                          <div className={`text-xs font-semibold ${isActive ? 'text-rose-400' : ct('text-slate-700', 'text-zinc-300')}`}>
-                            {uc.name}
-                          </div>
-                          <div className={`text-[10px] mt-0.5 ${ct('text-slate-500', 'text-zinc-500')}`}>{uc.description}</div>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Garment reference image */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Shirt className="w-4 h-4 text-rose-400" />
-                      <span className="text-xs font-medium text-rose-400">Garment Reference</span>
-                      <span className={`text-[10px] ${ct('text-slate-500', 'text-zinc-500')}`}>- Upload the garment to generate from</span>
-                    </div>
-
-                    {/* Product images if a product is selected */}
-                    {selectedProduct?.type === 'physical' && productImages.length > 0 && (
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        {productImages.slice(0, 8).map((imageUrl, index) => (
-                          <button
-                            key={index}
-                            onClick={() => setSelectedReferenceImage(imageUrl)}
-                            className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-all ${
-                              selectedReferenceImage === imageUrl
-                                ? 'border-rose-500 ring-2 ring-rose-500/20'
-                                : ct('border-slate-200 hover:border-slate-400', 'border-zinc-700/50 hover:border-zinc-500')
-                            }`}
-                          >
-                            <img src={imageUrl} alt={`Garment ${index + 1}`} className="w-full h-full object-cover" />
-                            {selectedReferenceImage === imageUrl && (
-                              <div className="absolute inset-0 bg-rose-500/10 flex items-center justify-center">
-                                <Check className="w-3.5 h-3.5 text-rose-400" />
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Upload custom garment reference */}
-                    <div className="flex items-center gap-2">
-                      <label className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all border border-dashed ${
-                        ct('border-slate-300 hover:border-rose-400 bg-slate-50', 'border-zinc-700 hover:border-rose-500/40 bg-zinc-800/30')
-                      } ${uploadingReference ? 'opacity-50 pointer-events-none' : ''}`}>
-                        {uploadingReference ? (
-                          <Loader2 className="w-4 h-4 text-rose-400 animate-spin" />
-                        ) : (
-                          <Upload className="w-4 h-4 text-rose-400" />
-                        )}
-                        <span className={`text-xs ${ct('text-slate-600', 'text-zinc-400')}`}>
-                          {uploadingReference ? 'Uploading...' : 'Upload garment photo'}
-                        </span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleCustomReferenceUpload}
-                          disabled={uploadingReference}
-                        />
-                      </label>
-                      {selectedReferenceImage && (
-                        <div className="relative w-10 h-10 rounded-lg overflow-hidden border-2 border-rose-500/40 flex-shrink-0">
-                          <img src={selectedReferenceImage} alt="Selected" className="w-full h-full object-cover" />
-                        </div>
-                      )}
-                    </div>
-
-                    {!selectedReferenceImage && !selectedProduct && (
-                      <div className="flex items-center gap-2 p-2.5 mt-2 rounded-lg bg-rose-500/5 border border-rose-500/10">
-                        <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
-                        <span className="text-xs text-rose-400/70">Upload a garment photo or select a product above for best results.</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Model preset selector (only for try-on) */}
-                  {selectedUseCase === 'fashion_tryon' && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <User className="w-4 h-4 text-rose-400" />
-                        <span className="text-xs font-medium text-rose-400">Model Type</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {FASHION_MODEL_PRESETS.map(preset => {
-                          const isActive = fashionModelPreset === preset.id;
-                          return (
-                            <button
-                              key={preset.id}
-                              onClick={() => setFashionModelPreset(preset.id)}
-                              className={`px-2.5 py-2 rounded-lg text-left transition-all border ${
-                                isActive
-                                  ? 'bg-rose-500/10 border-rose-500/30'
-                                  : ct('bg-slate-50 border-slate-200 hover:border-slate-300', 'bg-zinc-800/30 border-zinc-700/40 hover:border-zinc-600')
-                              }`}
-                            >
-                              <div className={`text-[11px] font-semibold ${isActive ? 'text-rose-400' : ct('text-slate-700', 'text-zinc-300')}`}>
-                                {preset.label}
-                              </div>
-                              <div className={`text-[9px] mt-0.5 leading-snug ${ct('text-slate-500', 'text-zinc-600')}`}>{preset.desc}</div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
           </motion.div>
 
           {/* Product Analysis Loading */}
@@ -1503,7 +1274,7 @@ export default function CreateImages({ embedded = false }) {
           >
             <button
               onClick={handleGenerate}
-              disabled={isGenerating || (!currentUseCase?.requiresReferenceImage && !prompt.trim()) || (currentUseCase?.requiresReferenceImage && !selectedReferenceImage) || uploadingReference}
+              disabled={isGenerating || (!currentUseCase?.requiresReferenceImage && !prompt.trim()) || (currentUseCase?.requiresReferenceImage && !selectedReferenceImage)}
               className={`bg-yellow-400 hover:bg-yellow-300 ${ct('disabled:bg-slate-200 disabled:text-slate-400', 'disabled:bg-zinc-800 disabled:text-zinc-600')} text-black font-bold rounded-full px-8 py-3 text-sm transition-all flex items-center gap-2 disabled:cursor-not-allowed`}
             >
               {isGenerating ? (

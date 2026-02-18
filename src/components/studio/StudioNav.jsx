@@ -12,6 +12,7 @@ import {
   Mic,
   AudioLines,
   UserCircle,
+  Shirt,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { key: 'library',    label: 'Library',    path: '/StudioLibrary',    icon: FolderOpen },
   { key: 'podcast',    label: 'Podcast',    path: '/StudioPodcast',    icon: Mic },
   { key: 'voice',      label: 'Voice',      path: '/StudioVoice',      icon: AudioLines },
+  { key: 'fashion',    label: 'Fashion',    path: '/StudioFashionBooth', icon: Shirt },
   { key: 'avatar',     label: 'Avatar',     path: '/StudioAvatar',     icon: UserCircle },
 ];
 

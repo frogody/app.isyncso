@@ -344,7 +344,13 @@ serve(async (req) => {
       product_images,
       is_physical_product,
       is_fashion,
+      fashion_booth,
       fashion_model_preset,
+      fashion_pose,
+      fashion_framing,
+      fashion_angle,
+      fashion_scene,
+      fashion_avatar_url,
       negative_prompt,
       prompt_enhanced = false,
       width = 1024,
@@ -391,7 +397,12 @@ serve(async (req) => {
       );
     }
 
-    // ── Fashion model preset → prompt fragment ─────────────────────
+    // ── Fashion Booth prompt construction ──────────────────────────
+    // When fashion_booth=true, the prompt already contains full instructions
+    // built by FashionBooth.jsx (pose, framing, angle, scene, avatar, garment preservation).
+    // We respect that prompt directly with minimal additions.
+
+    // Legacy fashion model preset → prompt fragment (for non-booth fashion calls)
     const FASHION_MODEL_PROMPTS: Record<string, string> = {
       'female_editorial': 'worn by a professional female fashion model with natural proportions, confident editorial pose, looking at camera',
       'male_editorial': 'worn by a professional male fashion model with natural proportions, confident editorial pose, looking at camera',
@@ -406,8 +417,12 @@ serve(async (req) => {
 
     const isFashionUseCase = use_case === 'fashion_tryon' || use_case === 'fashion_lookbook';
 
-    if (isFashionUseCase && modelConfig.requiresImage) {
-      // Fashion-specific Kontext prompt: preserve garment, describe the model/scene
+    if (fashion_booth && modelConfig.requiresImage) {
+      // Fashion Booth sends a fully constructed prompt with all pose/framing/angle/scene details.
+      // Just add a quality suffix and garment preservation emphasis.
+      finalPrompt = `${prompt}\n\nIMPORTANT: The garment from the reference image must be reproduced with pixel-perfect accuracy — same fabric weave, same color shade, same pattern placement, same stitching, same pocket shapes, same zipper/button details, same collar/hood shape. Any deviation is unacceptable. Ultra high resolution, 8K detail, sharp focus on garment construction.`;
+    } else if (isFashionUseCase && modelConfig.requiresImage) {
+      // Legacy fashion mode (non-booth) — keep existing behavior
       const modelFragment = FASHION_MODEL_PROMPTS[fashion_model_preset] || FASHION_MODEL_PROMPTS['female_editorial'];
       const garmentPreservation = 'CRITICAL: Preserve the EXACT garment design from the reference image — same fabric texture, same color, same pattern, same stitching, same silhouette, same details. Do not alter the garment in any way.';
 
@@ -415,7 +430,6 @@ serve(async (req) => {
         const sceneDesc = prompt?.trim() ? prompt.trim() : 'professional fashion studio with soft directional lighting';
         finalPrompt = `${garmentPreservation} Show this garment ${modelFragment}, in setting: ${sceneDesc}. High-fashion editorial photography, Vogue-quality, natural skin tones, realistic fabric draping on the body, professional fashion lighting, sharp focus on garment details. Ultra high quality, 8K detail.`;
       } else {
-        // fashion_lookbook
         const sceneDesc = prompt?.trim() ? prompt.trim() : 'styled editorial fashion lookbook scene';
         finalPrompt = `${garmentPreservation} ${sceneDesc}. ${modelFragment ? modelFragment + '.' : ''} Fashion lookbook photography, styled scene, editorial composition, natural colors, professional lighting highlighting fabric texture and garment construction. Ultra high quality, 8K detail.`;
       }

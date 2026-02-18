@@ -317,6 +317,7 @@ import StudioTemplates from "./StudioTemplates";
 import StudioLibrary from "./StudioLibrary";
 import StudioPodcast from "./StudioPodcast";
 import StudioVoice from "./StudioVoice";
+import StudioFashionBooth from "./StudioFashionBooth";
 import StudioAvatar from "./StudioAvatar";
 
 import InventoryReceiving from "./InventoryReceiving";
@@ -709,6 +710,7 @@ const PAGES = {
     StudioLibrary: StudioLibrary,
     StudioPodcast: StudioPodcast,
     StudioVoice: StudioVoice,
+    StudioFashionBooth: StudioFashionBooth,
     StudioAvatar: StudioAvatar,
 
     InventoryReceiving: InventoryReceiving,
@@ -1216,6 +1218,7 @@ function PagesContent() {
                 <Route path="/StudioLibrary" element={<StudioLibrary />} />
                 <Route path="/StudioPodcast" element={<StudioPodcast />} />
                 <Route path="/StudioVoice" element={<StudioVoice />} />
+                <Route path="/StudioFashionBooth" element={<StudioFashionBooth />} />
                 <Route path="/StudioAvatar" element={<StudioAvatar />} />
 
                 <Route path="/Warehouse" element={<Warehouse />} />

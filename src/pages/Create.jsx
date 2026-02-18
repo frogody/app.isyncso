@@ -5,7 +5,7 @@ import { createPageUrl } from '@/utils';
 import {
   Image, Film, Camera, Clapperboard, ArrowRight, Sparkles, Mic, AudioLines,
   UserCircle, Wand2, FolderOpen, FileImage, Play, Layers, Palette,
-  LayoutTemplate, Brush, CalendarDays, Clock, ChevronRight, Eye, Download,
+  LayoutTemplate, Brush, CalendarDays, Clock, ChevronRight, Eye, Download, Shirt,
 } from 'lucide-react';
 import { StudioNav } from '@/components/studio';
 import { GeneratedContent, VideoProject } from '@/api/entities';
@@ -77,6 +77,17 @@ const TOOLS = [
     gradient: 'from-pink-500/20 to-rose-500/10',
     color: 'text-pink-400',
     borderColor: 'group-hover:border-pink-500/30',
+    status: 'live',
+  },
+  {
+    key: 'fashion',
+    title: 'Fashion Booth',
+    description: 'AI fashion photography from garment references',
+    icon: Shirt,
+    route: '/StudioFashionBooth',
+    gradient: 'from-rose-500/20 to-pink-500/10',
+    color: 'text-rose-400',
+    borderColor: 'group-hover:border-rose-500/30',
     status: 'live',
   },
   {
