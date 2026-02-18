@@ -235,6 +235,8 @@ async function handleOutbound(payload: Record<string, string>, callSid: string):
   // The actual caller number is passed as a custom param
   const callerNumber = payload.CallerNumber || payload.FromNumber || "";
 
+  console.log("[voice-webhook] handleOutbound:", { to, from, callerNumber, callSid });
+
   // Normalize number to E.164: convert 00 prefix to +, or prepend + for bare digits
   if (to.startsWith("00") && to.length > 6) {
     to = "+" + to.slice(2);
@@ -246,22 +248,32 @@ async function handleOutbound(payload: Record<string, string>, callSid: string):
 
   // If To looks like a phone number, dial it
   if (to.startsWith("+") || /^\d{10,}$/.test(to)) {
-    // Create call record
-    const { data: callRecord } = await supabase
-      .from("sync_phone_calls")
-      .insert({
-        user_id: from.replace("client:user_", ""),
-        direction: "outbound",
-        caller_number: callerNumber || from,
-        callee_number: to,
-        status: "ringing",
-        twilio_call_sid: callSid,
-        started_at: new Date().toISOString(),
-      })
-      .select("id")
-      .single();
+    // Create call record (wrapped in try-catch so DB errors don't kill the TwiML response)
+    let callRecordId = "";
+    try {
+      const { data: callRecord, error: dbError } = await supabase
+        .from("sync_phone_calls")
+        .insert({
+          user_id: from.replace("client:user_", ""),
+          direction: "outbound",
+          caller_number: callerNumber || from,
+          callee_number: to,
+          status: "ringing",
+          twilio_call_sid: callSid,
+          started_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
 
-    const statusUrl = `${SUPABASE_URL}/functions/v1/voice-webhook?action=status&callId=${callRecord?.id || ""}`;
+      if (dbError) {
+        console.error("[voice-webhook] DB insert error:", dbError);
+      }
+      callRecordId = callRecord?.id || "";
+    } catch (dbErr) {
+      console.error("[voice-webhook] DB insert exception:", dbErr);
+    }
+
+    const statusUrl = `${SUPABASE_URL}/functions/v1/voice-webhook?action=status&callId=${callRecordId}`;
 
     // callerId must be a valid Twilio number owned by the account; fall back gracefully
     const dialCallerId = callerNumber || "";
@@ -269,16 +281,21 @@ async function handleOutbound(payload: Record<string, string>, callSid: string):
       ? `callerId="${escapeXml(dialCallerId)}" `
       : "";
 
-    return twiml(`
-      <Dial ${dialAttrs}record="record-from-answer-dual"
+    const twimlBody = `
+      <Dial ${dialAttrs}timeout="30"
             statusCallback="${escapeXml(statusUrl)}"
             statusCallbackEvent="initiated ringing answered completed">
         <Number>${escapeXml(to)}</Number>
       </Dial>
-    `);
+    `;
+
+    console.log("[voice-webhook] Outbound TwiML:", twimlBody);
+
+    return twiml(twimlBody);
   }
 
   // If To is another client identity (shouldn't happen normally)
+  console.warn("[voice-webhook] Unrecognized outbound target:", to);
   return twiml(`<Say voice="alice">Sorry, I couldn't connect that call.</Say><Hangup/>`);
 }
 
