@@ -287,9 +287,96 @@ async function generateWithTogether(
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// FAL.AI FASHION PIPELINE MODELS
-// Pipeline: FASHN V1.6 → Face Swap → CodeFormer → Kontext Max Multi
+// FASHION BOOTH PIPELINE v3 — Gemini 3 Pro Image (Nano Banana 2 Pro)
+// Primary: Single-call via Together.ai chat completions with multi-image
+// Fallback: FASHN V1.6 → Face Swap → CodeFormer
 // ═══════════════════════════════════════════════════════════════════════
+
+// ─── Gemini 3 Pro Image (Together.ai chat completions) ──────────────
+// Accepts multiple reference images via OpenAI-compatible multimodal format.
+// Native character consistency + state-of-the-art text rendering.
+// $0.134/image at 2K resolution.
+async function generateWithGemini3ProImage(
+  imageUrls: string[],
+  textPrompt: string,
+): Promise<{ success: boolean; data?: string; imageUrl?: string; mimeType?: string; error?: string }> {
+  if (!TOGETHER_API_KEY) return { success: false, error: 'No Together API key configured' };
+  try {
+    console.log(`Gemini 3 Pro Image: ${imageUrls.length} reference images...`);
+
+    // Build multimodal content: text prompt + all reference images
+    const content: any[] = [{ type: 'text', text: textPrompt }];
+    for (const url of imageUrls) {
+      content.push({ type: 'image_url', image_url: { url } });
+    }
+
+    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${TOGETHER_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-3-pro-image',
+        messages: [{ role: 'user', content }],
+        max_tokens: 4096,
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Gemini 3 Pro Image error:', errText);
+      return { success: false, error: `Gemini 3 Pro Image error: ${errText}` };
+    }
+
+    const result = await response.json();
+    const choice = result.choices?.[0]?.message;
+    if (!choice) return { success: false, error: 'No response from Gemini 3' };
+
+    // Parse response — image can come in multiple formats
+    // Format 1: content is array of blocks (multimodal response)
+    if (Array.isArray(choice.content)) {
+      for (const block of choice.content) {
+        // image_url block with data URI
+        if (block.type === 'image_url' && block.image_url?.url) {
+          const dataUrl = block.image_url.url;
+          if (dataUrl.startsWith('data:')) {
+            const match = dataUrl.match(/^data:(image\/[^;]+);base64,(.+)$/);
+            if (match) return { success: true, data: match[2], mimeType: match[1] };
+          }
+          return { success: true, imageUrl: dataUrl };
+        }
+        // inline image block
+        if (block.type === 'image' && block.image) {
+          if (block.image.data) return { success: true, data: block.image.data, mimeType: block.image.mime_type || 'image/png' };
+          if (block.image.url) return { success: true, imageUrl: block.image.url };
+        }
+        // b64_json block
+        if (block.b64_json) return { success: true, data: block.b64_json, mimeType: 'image/png' };
+        // url block
+        if (block.url) return { success: true, imageUrl: block.url };
+      }
+    }
+
+    // Format 2: content is a string (might be a data URI or URL)
+    if (typeof choice.content === 'string') {
+      const text = choice.content;
+      if (text.startsWith('data:image')) {
+        const match = text.match(/^data:(image\/[^;]+);base64,(.+)$/);
+        if (match) return { success: true, data: match[2], mimeType: match[1] };
+      }
+      if (text.startsWith('http')) {
+        return { success: true, imageUrl: text };
+      }
+    }
+
+    console.error('Gemini 3 response format not recognized:', JSON.stringify(result).substring(0, 500));
+    return { success: false, error: 'No image found in Gemini 3 response' };
+  } catch (e: any) {
+    console.error('Gemini 3 Pro Image exception:', e.message);
+    return { success: false, error: e.message };
+  }
+}
 
 const SCENE_PROMPT_MAP: Record<string, string> = {
   studio_white: '',
@@ -621,108 +708,78 @@ serve(async (req) => {
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    // Fashion Booth Pipeline v2
-    // 1. FASHN V1.6 Quality → pixel-perfect garment on body
-    // 2. Face Swap → restore avatar's actual face
-    // 3. CodeFormer → clean up face artifacts, enhance quality
-    // 4. (Optional) Kontext Max Multi → pose/scene via FAL.ai multi-ref
+    // Fashion Booth Pipeline v3 — Gemini 3 Pro Image (Nano Banana 2 Pro)
+    // Primary: Single-call Gemini 3 with [avatar, garment] multi-image
+    //          → native character consistency + text rendering
+    // Fallback: FASHN V1.6 → Face Swap → CodeFormer (if Gemini fails)
     // ══════════════════════════════════════════════════════════════════════
     if (fashion_booth && fashion_avatar_url && refImageUrl) {
-      console.log('Fashion Booth v2: FASHN → Face Swap → CodeFormer → Kontext Max Multi');
-      const pipelineSteps: string[] = [];
-      let bestResultUrl: string | null = null;
+      console.log('Fashion Booth v3: Gemini 3 Pro Image (primary) / FASHN (fallback)');
 
-      // ── Step 1: FASHN V1.6 — garment transfer ──────────────────────
-      const tryOnResult = await generateWithFalTryOn(fashion_avatar_url, refImageUrl);
-      if (!tryOnResult.success || !tryOnResult.imageUrl) {
-        console.warn('Step 1 (FASHN) failed, falling through to standard:', tryOnResult.error);
-        // Fall through to standard generation below
-      } else {
-        console.log('Step 1 (FASHN try-on) succeeded');
-        pipelineSteps.push('fashn');
-        bestResultUrl = tryOnResult.imageUrl;
+      // ── Build the fashion prompt ──────────────────────────────────
+      const pose = fashion_pose ? POSE_PRESETS_SERVER[fashion_pose] || fashion_pose : 'standing front-facing, relaxed posture';
+      const framing = fashion_framing ? FRAMING_SERVER[fashion_framing] || fashion_framing : 'full body head to toe';
+      const angle = fashion_angle ? ANGLE_SERVER[fashion_angle] || fashion_angle : 'eye level, straight on';
+      const sceneDesc = (fashion_scene && SCENE_PROMPT_MAP[fashion_scene])
+        ? SCENE_PROMPT_MAP[fashion_scene] : 'a clean white studio backdrop';
 
-        // ── Step 2: Face Swap — restore avatar face ─────────────────
-        const swapResult = await faceSwap(bestResultUrl, fashion_avatar_url);
-        if (swapResult.success && swapResult.imageUrl) {
-          console.log('Step 2 (Face swap) succeeded');
-          pipelineSteps.push('faceswap');
-          bestResultUrl = swapResult.imageUrl;
+      const fashionPrompt = [
+        `Generate a professional fashion photograph.`,
+        `The person must be EXACTLY the person from image 1 — identical face, hair, skin tone, body shape, and all distinguishing features.`,
+        `They must be wearing the EXACT garment from image 2 — reproduce every detail: all text, logos, brand names, patterns, colors, fabric texture, stitching, and design elements with pixel-level accuracy.`,
+        `Pose: ${pose}.`,
+        `Framing: ${framing}.`,
+        `Camera angle: ${angle}.`,
+        sceneDesc ? `Setting: ${sceneDesc}.` : '',
+        prompt?.trim() ? prompt.trim() : '',
+        `Professional fashion editorial photography, 8K resolution, sharp focus throughout, masterful studio lighting, commercial quality.`,
+        `CRITICAL: Character identity from image 1 must be perfectly preserved. Garment details from image 2 must be reproduced exactly.`,
+      ].filter(Boolean).join('\n');
+
+      // ── PRIMARY: Gemini 3 Pro Image ───────────────────────────────
+      const geminiResult = await generateWithGemini3ProImage(
+        [fashion_avatar_url, refImageUrl],
+        fashionPrompt,
+      );
+
+      if (geminiResult.success && (geminiResult.data || geminiResult.imageUrl)) {
+        console.log('Gemini 3 Pro Image succeeded');
+
+        let publicUrl: string;
+
+        if (geminiResult.data) {
+          // Base64 response — upload to storage
+          const ext = geminiResult.mimeType?.includes('jpeg') ? 'jpg' : 'png';
+          const fileName = `fashion-booth-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+          const imageData = Uint8Array.from(atob(geminiResult.data), c => c.charCodeAt(0));
+          const uploaded = await uploadToStorage('generated-content', fileName, imageData, geminiResult.mimeType || 'image/png');
+          publicUrl = uploaded.publicUrl;
         } else {
-          console.warn('Step 2 (Face swap) failed, continuing with FASHN output:', swapResult.error);
-        }
-
-        // ── Step 3: CodeFormer — face restoration ───────────────────
-        const codeformerResult = await restoreWithCodeFormer(bestResultUrl, 0.7);
-        if (codeformerResult.success && codeformerResult.imageUrl) {
-          console.log('Step 3 (CodeFormer) succeeded');
-          pipelineSteps.push('codeformer');
-          bestResultUrl = codeformerResult.imageUrl;
-        } else {
-          console.warn('Step 3 (CodeFormer) failed, continuing:', codeformerResult.error);
-        }
-
-        // ── Step 4 (optional): Kontext Max Multi — pose/scene ───────
-        const isDefaultSetup = (fashion_pose === 'standing_front' || !fashion_pose)
-          && (fashion_scene === 'studio_white' || !fashion_scene)
-          && (fashion_angle === 'eye_level' || !fashion_angle);
-
-        if (!isDefaultSetup) {
-          console.log('Step 4: Kontext Max Multi for pose/scene adjustment');
-          const pose = fashion_pose ? POSE_PRESETS_SERVER[fashion_pose] || fashion_pose : 'standing naturally';
-          const framing = fashion_framing ? FRAMING_SERVER[fashion_framing] || fashion_framing : 'full body';
-          const angle = fashion_angle ? ANGLE_SERVER[fashion_angle] || fashion_angle : 'eye level';
-          const sceneDesc = fashion_scene && SCENE_PROMPT_MAP[fashion_scene] ? SCENE_PROMPT_MAP[fashion_scene] : '';
-
-          const editParts: string[] = [];
-          editParts.push(`Recreate this exact person wearing the exact same outfit in a new pose and setting.`);
-          editParts.push(`Pose: ${pose}. Framing: ${framing}. Camera angle: ${angle}.`);
-          if (sceneDesc) editParts.push(`Setting: ${sceneDesc}.`);
-          editParts.push('CRITICAL: The person\'s face must be IDENTICAL to the reference photo. The clothing must be EXACTLY the same garment with identical text, logos, colors, and patterns.');
-          if (prompt?.trim()) editParts.push(prompt.trim());
-          editParts.push('Professional fashion editorial photography, 8K quality, sharp focus.');
-
-          // Multi-reference: pass [result, avatar] so Kontext sees both
-          const referenceUrls = [bestResultUrl, fashion_avatar_url];
-          const kontextAR = ASPECT_RATIO_MAP[aspect_ratio] || '3:4';
-
-          const kontextResult = await generateWithKontextMaxMulti(
-            referenceUrls,
-            editParts.join('\n'),
-            kontextAR
-          );
-
-          if (kontextResult.success && kontextResult.imageUrl) {
-            console.log('Step 4 (Kontext Max Multi) succeeded');
-            pipelineSteps.push('kontext-multi');
-            bestResultUrl = kontextResult.imageUrl;
+          // URL response — download and re-upload to our storage
+          const downloaded = await downloadImage(geminiResult.imageUrl!);
+          if (!downloaded) {
+            console.warn('Failed to download Gemini result, falling through to FASHN');
+            // Fall through to FASHN below
+            publicUrl = '';
           } else {
-            console.warn('Step 4 (Kontext Max Multi) failed, using previous result:', kontextResult.error);
+            const ext = downloaded.mimeType?.includes('jpeg') ? 'jpg' : 'png';
+            const fileName = `fashion-booth-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+            const uploaded = await uploadToStorage('generated-content', fileName, downloaded.data, downloaded.mimeType);
+            publicUrl = uploaded.publicUrl;
           }
         }
 
-        // ── Upload final result and return ──────────────────────────
-        const downloaded = await downloadImage(bestResultUrl);
-        if (downloaded) {
-          const ext = downloaded.mimeType?.includes('jpeg') ? 'jpg' : 'png';
-          const fileName = `fashion-booth-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-          const { publicUrl } = await uploadToStorage('generated-content', fileName, downloaded.data, downloaded.mimeType);
-
-          // Estimate cost: ~$0.05 for FASHN + face swap + codeformer, +$0.08 for kontext
-          const baseCost = 0.05;
-          const kontextCost = pipelineSteps.includes('kontext-multi') ? 0.08 : 0;
-          const totalCost = baseCost + kontextCost;
-
+        if (publicUrl) {
+          const costUsd = 0.134;
           if (company_id) {
             try {
               await supabaseInsert('ai_usage_logs', {
                 organization_id: company_id, user_id: user_id || null,
                 model_id: null, prompt_tokens: 0, completion_tokens: 0, total_tokens: 0,
-                cost: totalCost, request_type: 'image', endpoint: 'fal.ai',
+                cost: costUsd, request_type: 'image', endpoint: 'together.ai/gemini-3-pro-image',
                 metadata: {
-                  pipeline: pipelineSteps.join('-'), use_case: 'fashion_booth',
-                  fashion_scene, fashion_pose, fashion_angle, fashion_framing,
-                  steps_completed: pipelineSteps.length,
+                  model_key: 'gemini-3-pro-image', pipeline: 'gemini3',
+                  use_case: 'fashion_booth', fashion_scene, fashion_pose, fashion_angle, fashion_framing,
                 }
               });
             } catch (logError) { console.error('Failed to log usage:', logError); }
@@ -731,17 +788,73 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({
               url: publicUrl,
-              model: pipelineSteps.join('+'),
-              pipeline: pipelineSteps.join('-'),
+              model: 'gemini-3-pro-image',
+              pipeline: 'gemini3',
               original_prompt: original_prompt || prompt,
               dimensions: { width, height },
               product_preserved: true,
               use_case: 'fashion_booth',
-              cost_usd: totalCost,
+              cost_usd: costUsd,
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
+      }
+
+      // ── FALLBACK: FASHN → Face Swap → CodeFormer ──────────────────
+      console.warn('Gemini 3 failed, falling back to FASHN pipeline:', geminiResult.error);
+      const pipelineSteps: string[] = [];
+      let bestResultUrl: string | null = null;
+
+      const tryOnResult = await generateWithFalTryOn(fashion_avatar_url, refImageUrl);
+      if (tryOnResult.success && tryOnResult.imageUrl) {
+        console.log('Fallback Step 1 (FASHN) succeeded');
+        pipelineSteps.push('fashn');
+        bestResultUrl = tryOnResult.imageUrl;
+
+        const swapResult = await faceSwap(bestResultUrl, fashion_avatar_url);
+        if (swapResult.success && swapResult.imageUrl) {
+          console.log('Fallback Step 2 (Face swap) succeeded');
+          pipelineSteps.push('faceswap');
+          bestResultUrl = swapResult.imageUrl;
+        }
+
+        const codeformerResult = await restoreWithCodeFormer(bestResultUrl, 0.7);
+        if (codeformerResult.success && codeformerResult.imageUrl) {
+          console.log('Fallback Step 3 (CodeFormer) succeeded');
+          pipelineSteps.push('codeformer');
+          bestResultUrl = codeformerResult.imageUrl;
+        }
+
+        const downloaded = await downloadImage(bestResultUrl);
+        if (downloaded) {
+          const ext = downloaded.mimeType?.includes('jpeg') ? 'jpg' : 'png';
+          const fileName = `fashion-booth-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+          const { publicUrl } = await uploadToStorage('generated-content', fileName, downloaded.data, downloaded.mimeType);
+
+          if (company_id) {
+            try {
+              await supabaseInsert('ai_usage_logs', {
+                organization_id: company_id, user_id: user_id || null,
+                model_id: null, prompt_tokens: 0, completion_tokens: 0, total_tokens: 0,
+                cost: 0.05, request_type: 'image', endpoint: 'fal.ai',
+                metadata: { pipeline: pipelineSteps.join('-'), use_case: 'fashion_booth' }
+              });
+            } catch (logError) { console.error('Failed to log usage:', logError); }
+          }
+
+          return new Response(
+            JSON.stringify({
+              url: publicUrl, model: pipelineSteps.join('+'),
+              pipeline: pipelineSteps.join('-'), original_prompt: original_prompt || prompt,
+              dimensions: { width, height }, product_preserved: true,
+              use_case: 'fashion_booth', cost_usd: 0.05,
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      } else {
+        console.warn('FASHN fallback also failed:', tryOnResult.error);
       }
     }
 
