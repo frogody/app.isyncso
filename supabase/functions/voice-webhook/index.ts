@@ -253,9 +253,14 @@ async function handleOutbound(payload: Record<string, string>, callSid: string):
 
     const statusUrl = `${SUPABASE_URL}/functions/v1/voice-webhook?action=status&callId=${callRecord?.id || ""}`;
 
+    // callerId must be a valid Twilio number owned by the account; fall back gracefully
+    const dialCallerId = callerNumber || "";
+    const dialAttrs = dialCallerId
+      ? `callerId="${escapeXml(dialCallerId)}" `
+      : "";
+
     return twiml(`
-      <Dial callerId="${escapeXml(callerNumber || to)}"
-            record="record-from-answer-dual"
+      <Dial ${dialAttrs}record="record-from-answer-dual"
             statusCallback="${escapeXml(statusUrl)}"
             statusCallbackEvent="initiated ringing answered completed">
         <Number>${escapeXml(to)}</Number>
@@ -440,22 +445,11 @@ async function handleGather(payload: Record<string, string>, callId: string): Pr
   const aiResponse = await callLLM(messages);
   messages.push({ role: "assistant", content: aiResponse });
 
-  // Save conversation
-  await saveConversation(callId, messages);
-
-  // Reset timeout count on successful speech
-  const { data: callData } = await supabase
+  // Save conversation and reset timeout count in one write
+  await supabase
     .from("sync_phone_calls")
-    .select("sync_actions_taken")
-    .eq("id", callId)
-    .single();
-
-  if (callData?.sync_actions_taken) {
-    await supabase
-      .from("sync_phone_calls")
-      .update({ sync_actions_taken: { ...callData.sync_actions_taken, messages, timeout_count: 0 } })
-      .eq("id", callId);
-  }
+    .update({ sync_actions_taken: { messages, timeout_count: 0 } })
+    .eq("id", callId);
 
   return twiml(`
     <Say voice="alice">${escapeXml(aiResponse)}</Say>
