@@ -490,22 +490,31 @@ export default function CreateImages({ embedded = false }) {
       let enhancementData = null;
       try {
         toast.info('AI is enhancing your prompt...', { duration: 2000 });
-        const { data: enhanceData, error: enhanceError } = await supabase.functions.invoke('enhance-prompt', {
-          body: {
-            prompt: prompt,
-            use_case: selectedUseCase,
-            style: selectedStyle,
-            product_name: selectedProduct?.name,
-            product_type: selectedProduct?.type,
-            product_description: selectedProduct?.description || selectedProduct?.short_description,
-            product_tags: selectedProduct?.tags,
-            product_category: selectedProduct?.category,
-            brand_mood: brandAssets?.visual_style?.mood,
-            has_reference_image: !!selectedReferenceImage,
-            product_size_scale: selectedProduct ? SIZE_SCALE[productSizeScale - 1] : null,
+        const enhanceRes = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enhance-prompt`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              prompt: prompt,
+              use_case: selectedUseCase,
+              style: selectedStyle,
+              product_name: selectedProduct?.name,
+              product_type: selectedProduct?.type,
+              product_description: selectedProduct?.description || selectedProduct?.short_description,
+              product_tags: selectedProduct?.tags,
+              product_category: selectedProduct?.category,
+              brand_mood: brandAssets?.visual_style?.mood,
+              has_reference_image: !!selectedReferenceImage,
+              product_size_scale: selectedProduct ? SIZE_SCALE[productSizeScale - 1] : null,
+            }),
           }
-        });
-        if (!enhanceError && enhanceData?.enhanced_prompt) {
+        );
+        const enhanceData = enhanceRes.ok ? await enhanceRes.json() : null;
+        if (enhanceData?.enhanced_prompt) {
           finalPrompt = enhanceData.enhanced_prompt;
           enhancementData = enhanceData;
           setAiEnhancedPrompt(enhanceData);
@@ -519,25 +528,37 @@ export default function CreateImages({ embedded = false }) {
       setIsEnhancing(false);
       const aspectConfig = ASPECT_RATIOS.find(a => a.id === aspectRatio);
       const isPhysicalProduct = selectedProduct?.type === 'physical';
-      const { data, error } = await supabase.functions.invoke('generate-image', {
-        body: {
-          use_case: selectedUseCase,
-          reference_image_url: selectedReferenceImage,
-          prompt: finalPrompt,
-          original_prompt: prompt,
-          style: selectedStyle,
-          aspect_ratio: aspectRatio,
-          width: aspectConfig?.width || 1024,
-          height: aspectConfig?.height || 1024,
-          brand_context: useBrandContext ? brandAssets : null,
-          product_context: selectedProduct ? { ...selectedProduct, type: selectedProduct.type, product_size_scale: SIZE_SCALE[productSizeScale - 1] } : null,
-          product_images: isPhysicalProduct ? productImages : [],
-          is_physical_product: isPhysicalProduct,
-          company_id: user.company_id,
-          user_id: user.id,
+      const genRes = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-image`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            use_case: selectedUseCase,
+            reference_image_url: selectedReferenceImage,
+            prompt: finalPrompt,
+            original_prompt: prompt,
+            style: selectedStyle,
+            aspect_ratio: aspectRatio,
+            width: aspectConfig?.width || 1024,
+            height: aspectConfig?.height || 1024,
+            brand_context: useBrandContext ? brandAssets : null,
+            product_context: selectedProduct ? { ...selectedProduct, type: selectedProduct.type, product_size_scale: SIZE_SCALE[productSizeScale - 1] } : null,
+            product_images: isPhysicalProduct ? productImages : [],
+            is_physical_product: isPhysicalProduct,
+            company_id: user.company_id,
+            user_id: user.id,
+          }),
         }
-      });
-      if (error) throw error;
+      );
+      if (!genRes.ok) {
+        const errText = await genRes.text();
+        throw new Error(`Image generation failed: ${errText}`);
+      }
+      const data = await genRes.json();
       if (data?.error) throw new Error(data.details || data.error);
       if (data?.url) {
         const savedContent = await GeneratedContent.create({
