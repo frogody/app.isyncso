@@ -297,7 +297,7 @@ async function handleOutbound(payload: Record<string, string>, callSid: string):
       : "";
 
     const twimlBody = `
-      <Dial ${dialAttrs}timeout="30" answerOnBridge="true"
+      <Dial ${dialAttrs}timeout="30"
             statusCallback="${escapeXml(statusUrl)}"
             statusCallbackEvent="initiated ringing answered completed">
         <Number>${escapeXml(to)}</Number>
