@@ -53,6 +53,7 @@ const FILTER_CHIPS = [
   { value: 'favorites', label: 'Favorites' },
   { value: 'recent', label: 'Recent' },
   { value: 'sync_studio', label: 'Sync Studio' },
+  { value: 'fashion_booth', label: 'Fashion Booth' },
 ];
 
 export default function CreateLibrary({ embedded = false }) {
@@ -167,6 +168,14 @@ export default function CreateLibrary({ embedded = false }) {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       items = items.filter(item => new Date(item.created_at) >= sevenDaysAgo);
+    } else if (filterType === 'fashion_booth') {
+      items = items.filter(item =>
+        item.tags?.some(t => t === 'fashion_booth' || t === 'outfit_extractor') ||
+        item.generation_config?.source === 'fashion_booth' ||
+        item.generation_config?.source === 'outfit_extractor' ||
+        item.name?.startsWith('Fashion Booth') ||
+        item.name?.startsWith('Outfit Extract')
+      );
     }
 
     // Search filter
