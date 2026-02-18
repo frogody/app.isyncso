@@ -103,8 +103,8 @@ export const UI = {
 // Feature Flags
 export const FEATURES = {
   // Core navigation + default-enabled engine apps (sync is now core, not an engine app)
-  DEFAULT_ENABLED_APPS: ['dashboard', 'crm', 'projects', 'tasks', 'inbox', 'learn', 'growth', 'sentinel', 'create', 'talent'],
-  ALL_APPS: ['dashboard', 'crm', 'projects', 'tasks', 'inbox', 'growth', 'learn', 'sentinel', 'finance', 'raise', 'create', 'talent'],
+  DEFAULT_ENABLED_APPS: ['dashboard', 'crm', 'projects', 'tasks', 'inbox', 'learn', 'growth', 'sentinel', 'create', 'talent', 'reach'],
+  ALL_APPS: ['dashboard', 'crm', 'projects', 'tasks', 'inbox', 'growth', 'learn', 'sentinel', 'finance', 'raise', 'create', 'talent', 'reach'],
   BETA_FEATURES: ['vision', 'voice', 'mcp'],
   ENTERPRISE_ONLY: ['sso', 'audit-log', 'custom-branding']
 };
