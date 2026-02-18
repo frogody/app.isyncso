@@ -98,6 +98,7 @@ import {
   Phone,
   PenLine,
   Volume2,
+  Signal,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -325,7 +326,7 @@ const ENGINE_ITEMS_CONFIG = {
   reach: {
     title: "Reach",
     url: createPageUrl("ReachDashboard"),
-    icon: Megaphone,
+    icon: Signal,
     id: 'reach',
     permission: null, // Always visible - marketing hub
     matchPatterns: ["/reach"],
