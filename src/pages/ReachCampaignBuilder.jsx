@@ -29,6 +29,7 @@ import {
   RotateCcw,
   Users,
   AlertCircle,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/api/supabaseClient";
@@ -161,83 +162,99 @@ function StepProduct({ selected, onSelect, additionalContext, onContextChange })
   const [query, setQuery] = useState("");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
 
-  const searchProducts = useCallback(async () => {
-    if (!user?.organization_id) return;
-    setLoading(true);
-    setSearched(true);
-    try {
-      let q = supabase
-        .from("products")
-        .select("id, name, description, price, category, featured_image")
-        .eq("company_id", user.organization_id)
-        .order("name")
-        .limit(20);
-
-      if (query.trim()) {
-        q = q.ilike("name", `%${query.trim()}%`);
-      }
-
-      const { data, error } = await q;
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (err) {
-      console.error("Product search failed:", err);
-      toast.error("Failed to search products");
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.organization_id, query]);
-
+  // Fetch all products once on mount (matches Growth pattern)
   useEffect(() => {
-    if (user?.organization_id) {
-      searchProducts();
+    async function fetchProducts() {
+      if (!user?.company_id) return;
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("id, name, type, description, short_description, price, featured_image, status, tagline, category")
+          .eq("company_id", user.company_id)
+          .order("updated_at", { ascending: false });
+        if (error) {
+          console.error("Error fetching products:", error);
+          toast.error("Failed to load products");
+        } else {
+          setProducts(data || []);
+        }
+      } catch (err) {
+        console.error("Product fetch failed:", err);
+        toast.error("Failed to load products");
+      } finally {
+        setLoading(false);
+      }
     }
-  }, [user?.organization_id]);
+    fetchProducts();
+  }, [user?.company_id]);
+
+  // Client-side search-as-you-type filtering (matches Growth pattern)
+  const filteredProducts = useMemo(() => {
+    if (!query.trim()) return products;
+    const q = query.toLowerCase();
+    return products.filter(
+      (p) =>
+        (p.name || "").toLowerCase().includes(q) ||
+        (p.description || "").toLowerCase().includes(q) ||
+        (p.tagline || "").toLowerCase().includes(q) ||
+        (p.short_description || "").toLowerCase().includes(q) ||
+        (p.type || "").toLowerCase().includes(q) ||
+        (p.category || "").toLowerCase().includes(q)
+    );
+  }, [products, query]);
 
   return (
     <div className="space-y-6">
-      {/* Search bar */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-          <Input
-            placeholder="Search products..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && searchProducts()}
-            className="pl-10 bg-zinc-900/60 border-zinc-800 text-white placeholder:text-zinc-500"
-          />
-        </div>
-        <Button
-          variant="glass"
-          onClick={searchProducts}
-          disabled={loading}
-          className="shrink-0"
-        >
-          {loading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Search className="w-4 h-4" />
-          )}
-        </Button>
+      {/* Search-as-you-type input */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+        <Input
+          placeholder="Search products..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="pl-10 bg-zinc-900/60 border-zinc-800 text-white placeholder:text-zinc-500"
+          autoComplete="off"
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
+      <p className="text-xs text-zinc-500">
+        {products.length} product{products.length !== 1 ? "s" : ""} available
+        {query.trim() ? ` \u2014 ${filteredProducts.length} matching "${query}"` : " \u2014 start typing to filter"}
+      </p>
 
       {/* Product list */}
-      {loading && !products.length ? (
+      {loading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
         </div>
-      ) : products.length === 0 && searched ? (
+      ) : !loading && products.length === 0 ? (
         <div className="text-center py-12 text-zinc-500">
           <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
           <p>No products found</p>
         </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="text-center py-12 text-zinc-500">
+          <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No products match "{query}"</p>
+          <p className="text-xs text-zinc-600 mt-1">Try a different search term</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[320px] overflow-y-auto pr-1">
-          {products.map((product) => {
+          {filteredProducts.map((product) => {
             const isSelected = selected?.id === product.id;
+            const imgSrc = typeof product.featured_image === "string"
+              ? product.featured_image
+              : product.featured_image?.url || null;
             return (
               <motion.button
                 key={product.id}
@@ -251,9 +268,9 @@ function StepProduct({ selected, onSelect, additionalContext, onContextChange })
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  {product.featured_image ? (
+                  {imgSrc ? (
                     <img
-                      src={product.featured_image}
+                      src={imgSrc}
                       alt={product.name}
                       className="w-12 h-12 rounded-lg object-cover shrink-0 bg-zinc-800"
                     />
@@ -263,9 +280,21 @@ function StepProduct({ selected, onSelect, additionalContext, onContextChange })
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-white truncate">
-                      {product.name}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-white truncate">
+                        {product.name}
+                      </p>
+                      {product.type && (
+                        <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                          {product.type}
+                        </span>
+                      )}
+                    </div>
+                    {(product.tagline || product.short_description) && (
+                      <p className="text-xs text-zinc-400 truncate mt-0.5">
+                        {product.tagline || product.short_description}
+                      </p>
+                    )}
                     {product.category && (
                       <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-800/60 text-zinc-400 border border-zinc-700/40">
                         {product.category}
@@ -1021,13 +1050,13 @@ export default function ReachCampaignBuilder() {
 
   // Load active brand voice profile
   useEffect(() => {
-    if (!user?.organization_id) return;
+    if (!user?.company_id) return;
     (async () => {
       try {
         const { data } = await supabase
           .from("brand_voice_profiles")
           .select("*")
-          .eq("company_id", user.organization_id)
+          .eq("company_id", user.company_id)
           .eq("is_active", true)
           .limit(1)
           .maybeSingle();
@@ -1047,7 +1076,7 @@ export default function ReachCampaignBuilder() {
         console.error("Failed to load brand voice:", err);
       }
     })();
-  }, [user?.organization_id]);
+  }, [user?.company_id]);
 
   // Step validation
   const canProceed = useMemo(() => {
@@ -1075,7 +1104,7 @@ export default function ReachCampaignBuilder() {
   }
 
   async function handleSaveCampaign() {
-    if (!user?.organization_id) return;
+    if (!user?.company_id) return;
     setSaving(true);
 
     try {
@@ -1095,7 +1124,7 @@ export default function ReachCampaignBuilder() {
       const { data: campaign, error: campError } = await supabase
         .from("reach_campaigns")
         .insert({
-          company_id: user.organization_id,
+          company_id: user.company_id,
           created_by: user.id,
           name: campaignName.trim(),
           product_id: selectedProduct.id,

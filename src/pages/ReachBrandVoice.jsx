@@ -577,7 +577,7 @@ function VersionHistoryItem({ profile, isActive, onRestore }) {
 // ---------------------------------------------------------------------------
 export default function ReachBrandVoice() {
   const { user } = useUser();
-  const companyId = user?.organization_id || user?.company_id;
+  const companyId = user?.company_id;
 
   // --- Data state ---
   const [profiles, setProfiles] = useState([]);

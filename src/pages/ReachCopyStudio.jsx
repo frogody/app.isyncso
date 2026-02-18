@@ -322,7 +322,7 @@ function HistoryItem({ item, onClick, isActive }) {
 // ===========================================================================
 export default function ReachCopyStudio() {
   const { user } = useUser();
-  const companyId = user?.organization_id || user?.company_id;
+  const companyId = user?.company_id;
 
   // UI state
   const [activeUseCase, setActiveUseCase] = useState("ad_copy");

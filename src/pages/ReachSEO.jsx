@@ -35,12 +35,8 @@ import {
   pdf,
 } from "@react-pdf/renderer";
 
-const SUPABASE_URL =
-  import.meta.env.VITE_SUPABASE_URL ||
-  "https://sfxpmzicgpaxfntqleig.supabase.co";
-const SUPABASE_ANON_KEY =
-  import.meta.env.VITE_SUPABASE_ANON_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // ---------------------------------------------------------------------------
 // Score Gauge
@@ -747,13 +743,13 @@ export default function ReachSEO() {
   // -------------------------------------------------------------------------
 
   const loadHistory = useCallback(async () => {
-    if (!user?.organization_id) return;
+    if (!user?.company_id) return;
     setLoadingHistory(true);
     try {
       const { data, error } = await supabase
         .from("reach_seo_reports")
         .select("*")
-        .eq("company_id", user.organization_id)
+        .eq("company_id", user.company_id)
         .order("created_at", { ascending: false })
         .limit(20);
 
@@ -764,7 +760,7 @@ export default function ReachSEO() {
     } finally {
       setLoadingHistory(false);
     }
-  }, [user?.organization_id]);
+  }, [user?.company_id]);
 
   useEffect(() => {
     loadHistory();
@@ -793,7 +789,7 @@ export default function ReachSEO() {
       toast.error("Enter a valid URL starting with http:// or https://");
       return;
     }
-    if (!user?.organization_id) {
+    if (!user?.company_id) {
       toast.error("No workspace found");
       return;
     }
@@ -827,7 +823,7 @@ export default function ReachSEO() {
       const { data: saved, error: saveErr } = await supabase
         .from("reach_seo_reports")
         .insert({
-          company_id: user.organization_id,
+          company_id: user.company_id,
           created_by: user.id,
           url: url.trim(),
           score: data.score,

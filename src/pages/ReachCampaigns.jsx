@@ -191,9 +191,9 @@ export default function ReachCampaigns() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
-    if (!user?.organization_id) return;
+    if (!user?.company_id) return;
     fetchCampaigns();
-  }, [user?.organization_id]);
+  }, [user?.company_id]);
 
   async function fetchCampaigns() {
     setLoading(true);
@@ -201,7 +201,7 @@ export default function ReachCampaigns() {
       const { data, error } = await supabase
         .from("reach_campaigns")
         .select("*, products:product_id(name)")
-        .eq("company_id", user.organization_id)
+        .eq("company_id", user.company_id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;

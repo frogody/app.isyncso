@@ -350,7 +350,7 @@ const PLATFORM_COLORS = {
 // ---------------------------------------------------------------------------
 export default function ReachDashboard() {
   const { user } = useUser();
-  const companyId = user?.organization_id;
+  const companyId = user?.company_id;
 
   const [dateRange, setDateRange] = useState("30");
   const [loading, setLoading] = useState(true);
@@ -513,12 +513,12 @@ export default function ReachDashboard() {
     setRefreshingInsights(true);
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL || "https://sfxpmzicgpaxfntqleig.supabase.co"}/functions/v1/reach-generate-insights`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reach-generate-insights`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4"}`,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({
             company_id: companyId,
@@ -631,7 +631,7 @@ export default function ReachDashboard() {
       {!loading && !isConnected && <EmptyState />}
 
       {/* Connected state (or sample data preview when connected but no metrics) */}
-      {!loading && (isConnected || true) && (
+      {!loading && isConnected && (
         <>
           {/* Sample data banner */}
           {isSample && isConnected && (

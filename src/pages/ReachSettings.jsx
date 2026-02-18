@@ -213,7 +213,7 @@ function ApiKeyCard({ apiKey, index }) {
 // ---------------------------------------------------------------------------
 export default function ReachSettings() {
   const { user } = useUser();
-  const companyId = user?.organization_id;
+  const companyId = user?.company_id;
 
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -305,12 +305,12 @@ export default function ReachSettings() {
     setSyncing(true);
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL || "https://sfxpmzicgpaxfntqleig.supabase.co"}/functions/v1/reach-fetch-metrics`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reach-fetch-metrics`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4"}`,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({ company_id: companyId, date_range: "30" }),
         }

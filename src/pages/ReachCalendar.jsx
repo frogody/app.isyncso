@@ -121,7 +121,7 @@ const MEDIA_TYPES = [
 // ============================================================================
 export default function ReachCalendar() {
   const { user } = useUser();
-  const companyId = user?.organization_id || user?.company_id;
+  const companyId = user?.company_id;
 
   // State
   const [posts, setPosts] = useState([]);
@@ -247,8 +247,8 @@ export default function ReachCalendar() {
   const handleRetry = async (post, e) => {
     if (e) e.stopPropagation();
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxfntqleig.supabase.co';
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
       const resp = await fetch(`${supabaseUrl}/functions/v1/reach-publish-post`, {
         method: 'POST',
