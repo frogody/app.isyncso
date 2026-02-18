@@ -2037,10 +2037,21 @@ export default function ProductDetail() {
           ...updates,
         });
         setDetails(newRow);
+      } else if (!details && type === 'digital') {
+        const newRow = await DigitalProduct.create({
+          product_id: product.id,
+          company_id: user?.company_id,
+          ...updates,
+        });
+        setDetails(newRow);
       } else if (!details) {
-        toast.error('Product details not loaded');
-        setSaving(false);
-        return;
+        // Physical product (default) — auto-create row
+        const newRow = await PhysicalProduct.create({
+          product_id: product.id,
+          company_id: user?.company_id,
+          ...updates,
+        });
+        setDetails(newRow);
       } else {
         // Existing row — update as normal
         const detailsId = details.product_id || details.id;
