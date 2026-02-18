@@ -337,6 +337,7 @@ serve(async (req) => {
       product_images,
       is_physical_product,
       negative_prompt,
+      prompt_enhanced = false,
       width = 1024,
       height = 1024,
       company_id,
@@ -384,15 +385,23 @@ serve(async (req) => {
     // ── Prompt construction ──────────────────────────────────────────
     let finalPrompt = prompt;
 
-    if (!modelConfig.requiresImage) {
-      // For text-to-image: wrap prompt with quality directives
-      finalPrompt = buildFinalPrompt(prompt, brand_context, product_context, style, negative_prompt);
-    } else {
+    if (modelConfig.requiresImage) {
       // For Kontext (image-to-image): keep prompt focused but add quality hint
       // Kontext prompts describe the EDIT, not the full scene
       if (prompt) {
         finalPrompt = `${prompt}. Ultra high quality, sharp detail, professional lighting, commercial grade output.`;
       }
+    } else if (prompt_enhanced) {
+      // Prompt was already enhanced by enhance-prompt — use as-is to avoid bloat
+      // Only add a minimal quality suffix if the prompt doesn't already have one
+      if (!/\b(8K|ultra high|professional photograph|sharp focus)\b/i.test(prompt)) {
+        finalPrompt = `${prompt}. Ultra high resolution, 8K detail, sharp focus, professional commercial quality.`;
+      } else {
+        finalPrompt = prompt;
+      }
+    } else {
+      // Raw prompt — wrap with full quality directives
+      finalPrompt = buildFinalPrompt(prompt, brand_context, product_context, style, negative_prompt);
     }
 
     // ── Generate ─────────────────────────────────────────────────────
