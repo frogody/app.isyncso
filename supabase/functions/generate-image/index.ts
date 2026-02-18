@@ -286,9 +286,11 @@ async function generateWithTogether(
   }
 }
 
-// ─── FAL.ai FASHN Virtual Try-On V1.6 ────────────────────────────────
-// Purpose-built model: takes a person image + garment image → outputs person wearing garment.
-// 864×1296 resolution, preserves garment text/patterns/details accurately.
+// ═══════════════════════════════════════════════════════════════════════
+// FAL.AI FASHION PIPELINE MODELS
+// Pipeline: FASHN V1.6 → Face Swap → CodeFormer → Kontext Max Multi
+// ═══════════════════════════════════════════════════════════════════════
+
 const SCENE_PROMPT_MAP: Record<string, string> = {
   studio_white: '',
   studio_dark: 'a dark moody black studio backdrop with dramatic directional lighting',
@@ -305,54 +307,146 @@ const SCENE_PROMPT_MAP: Record<string, string> = {
   abstract_gradient: 'a soft abstract gradient background with smooth color transitions',
 };
 
+// Map frontend aspect ratios to Kontext Max Multi presets
+const ASPECT_RATIO_MAP: Record<string, string> = {
+  '1:1': '1:1', '4:5': '3:4', '9:16': '9:16', '3:4': '3:4', '16:9': '16:9',
+};
+
+// ─── Step 1: FASHN V1.6 Virtual Try-On ──────────────────────────────
+// Best-in-class garment text/logo/pattern preservation. 864×1296 native.
+// Quality mode: ~19s, strongest identity preservation + garment fidelity.
 async function generateWithFalTryOn(
   personImageUrl: string,
   garmentImageUrl: string,
-  garmentDescription?: string
 ): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
   if (!FAL_KEY) return { success: false, error: 'No FAL API key configured' };
-
   try {
-    console.log('FASHN V1.6 try-on: person + garment composite...');
-
+    console.log('FASHN V1.6 Quality: person + garment try-on...');
     const response = await fetch('https://fal.run/fal-ai/fashn/tryon/v1.6', {
       method: 'POST',
-      headers: {
-        'Authorization': `Key ${FAL_KEY}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Authorization': `Key ${FAL_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model_image: personImageUrl,
         garment_image: garmentImageUrl,
         category: 'auto',
         mode: 'quality',
         garment_photo_type: 'auto',
+        segmentation_free: true,
         num_samples: 1,
         output_format: 'png',
       }),
     });
-
     if (!response.ok) {
       const errText = await response.text();
       console.error('FASHN V1.6 error:', errText);
       return { success: false, error: `FASHN try-on error: ${errText}` };
     }
-
     const data = await response.json();
     const imageUrl = data.images?.[0]?.url || data.image?.url;
-
-    if (imageUrl) {
-      return { success: true, imageUrl };
-    }
-
-    return { success: false, error: 'No image in FASHN response' };
+    return imageUrl ? { success: true, imageUrl } : { success: false, error: 'No image in FASHN response' };
   } catch (e: any) {
     console.error('FASHN exception:', e.message);
     return { success: false, error: e.message };
   }
 }
 
-// Download an image from a URL and return as Uint8Array
+// ─── Step 2: FAL.ai Face Swap ───────────────────────────────────────
+// Swaps the avatar's actual face onto the try-on body.
+// Preserves pixel-perfect face identity from the reference photo.
+async function faceSwap(
+  baseImageUrl: string,
+  swapImageUrl: string
+): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
+  if (!FAL_KEY) return { success: false, error: 'No FAL API key configured' };
+  try {
+    console.log('Face swap: restoring avatar face...');
+    const response = await fetch('https://fal.run/fal-ai/face-swap', {
+      method: 'POST',
+      headers: { 'Authorization': `Key ${FAL_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ base_image_url: baseImageUrl, swap_image_url: swapImageUrl }),
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      return { success: false, error: `Face swap error: ${errText}` };
+    }
+    const data = await response.json();
+    const imageUrl = data.image?.url;
+    return imageUrl ? { success: true, imageUrl } : { success: false, error: 'No image in face swap response' };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+// ─── Step 3: CodeFormer Face Restoration ────────────────────────────
+// Cleans up face artifacts from swap, enhances quality. $0.002/image.
+// fidelity 0.7 = prioritize identity preservation over generic beauty.
+async function restoreWithCodeFormer(
+  imageUrl: string,
+  fidelity: number = 0.7
+): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
+  if (!FAL_KEY) return { success: false, error: 'No FAL API key configured' };
+  try {
+    console.log(`CodeFormer face restoration (fidelity=${fidelity})...`);
+    const response = await fetch('https://fal.run/fal-ai/codeformer', {
+      method: 'POST',
+      headers: { 'Authorization': `Key ${FAL_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image_url: imageUrl,
+        fidelity,
+        upscale_factor: 1,
+        face_upscale: true,
+        only_center_face: false,
+      }),
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      return { success: false, error: `CodeFormer error: ${errText}` };
+    }
+    const data = await response.json();
+    const resultUrl = data.image?.url;
+    return resultUrl ? { success: true, imageUrl: resultUrl } : { success: false, error: 'No image in CodeFormer response' };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+// ─── Step 4: Kontext Max Multi (FAL.ai) ─────────────────────────────
+// Multi-reference endpoint: accepts array of image URLs.
+// Used for scene/pose adjustment while preserving identity + garment.
+// Can pass [result, avatar_reference] for identity reinforcement.
+async function generateWithKontextMaxMulti(
+  imageUrls: string[],
+  prompt: string,
+  aspectRatio: string = '3:4'
+): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
+  if (!FAL_KEY) return { success: false, error: 'No FAL API key configured' };
+  try {
+    console.log(`Kontext Max Multi: ${imageUrls.length} references, AR=${aspectRatio}...`);
+    const response = await fetch('https://fal.run/fal-ai/flux-pro/kontext/max/multi', {
+      method: 'POST',
+      headers: { 'Authorization': `Key ${FAL_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image_urls: imageUrls,
+        prompt,
+        aspect_ratio: aspectRatio,
+        num_images: 1,
+        output_format: 'jpeg',
+        safety_tolerance: '5',
+      }),
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      return { success: false, error: `Kontext Max Multi error: ${errText}` };
+    }
+    const data = await response.json();
+    const resultUrl = data.images?.[0]?.url || data.image?.url;
+    return resultUrl ? { success: true, imageUrl: resultUrl } : { success: false, error: 'No image in Kontext Max Multi response' };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+// ─── Download helper ────────────────────────────────────────────────
 async function downloadImage(url: string): Promise<{ data: Uint8Array; mimeType: string } | null> {
   try {
     const response = await fetch(url);
@@ -360,48 +454,7 @@ async function downloadImage(url: string): Promise<{ data: Uint8Array; mimeType:
     const arrayBuffer = await response.arrayBuffer();
     const mimeType = response.headers.get('content-type') || 'image/png';
     return { data: new Uint8Array(arrayBuffer), mimeType };
-  } catch {
-    return null;
-  }
-}
-
-// ─── FAL.ai Face Swap ──────────────────────────────────────────────
-// Swaps the face from swap_image onto the person in base_image.
-// Used after FASHN try-on to restore the avatar's face identity.
-async function faceSwap(
-  baseImageUrl: string,
-  swapImageUrl: string
-): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
-  if (!FAL_KEY) return { success: false, error: 'No FAL API key configured' };
-
-  try {
-    console.log('Face swap: restoring avatar face onto try-on result...');
-    const response = await fetch('https://fal.run/fal-ai/face-swap', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Key ${FAL_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        base_image_url: baseImageUrl,
-        swap_image_url: swapImageUrl,
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('Face swap error:', errText);
-      return { success: false, error: `Face swap error: ${errText}` };
-    }
-
-    const data = await response.json();
-    const imageUrl = data.image?.url;
-    if (imageUrl) return { success: true, imageUrl };
-    return { success: false, error: 'No image in face swap response' };
-  } catch (e: any) {
-    console.error('Face swap exception:', e.message);
-    return { success: false, error: e.message };
-  }
+  } catch { return null; }
 }
 
 // ─── Server-side pose/framing/angle labels for prompt construction ───
@@ -567,125 +620,128 @@ serve(async (req) => {
       );
     }
 
-    // ── Fashion Booth: FASHN try-on → Face Swap → optional Kontext scene ──
-    // Pipeline:
-    //   1. FASHN V1.6: avatar + garment → accurate try-on (garment pixel-perfect, face may differ)
-    //   2. Face Swap: try-on result + avatar → restore avatar's actual face
-    //   3. (Optional) Kontext Max: adjust pose/scene if non-default selected
+    // ══════════════════════════════════════════════════════════════════════
+    // Fashion Booth Pipeline v2
+    // 1. FASHN V1.6 Quality → pixel-perfect garment on body
+    // 2. Face Swap → restore avatar's actual face
+    // 3. CodeFormer → clean up face artifacts, enhance quality
+    // 4. (Optional) Kontext Max Multi → pose/scene via FAL.ai multi-ref
+    // ══════════════════════════════════════════════════════════════════════
     if (fashion_booth && fashion_avatar_url && refImageUrl) {
-      console.log('Fashion Booth: FASHN try-on → Face Swap pipeline');
+      console.log('Fashion Booth v2: FASHN → Face Swap → CodeFormer → Kontext Max Multi');
+      const pipelineSteps: string[] = [];
+      let bestResultUrl: string | null = null;
 
-      // Step 1: FASHN V1.6 — accurate garment transfer
+      // ── Step 1: FASHN V1.6 — garment transfer ──────────────────────
       const tryOnResult = await generateWithFalTryOn(fashion_avatar_url, refImageUrl);
-
-      if (tryOnResult.success && tryOnResult.imageUrl) {
+      if (!tryOnResult.success || !tryOnResult.imageUrl) {
+        console.warn('Step 1 (FASHN) failed, falling through to standard:', tryOnResult.error);
+        // Fall through to standard generation below
+      } else {
         console.log('Step 1 (FASHN try-on) succeeded');
+        pipelineSteps.push('fashn');
+        bestResultUrl = tryOnResult.imageUrl;
 
-        // Step 2: Face swap — put avatar's actual face onto the try-on body
-        const swapResult = await faceSwap(tryOnResult.imageUrl, fashion_avatar_url);
-        let bestResultUrl = swapResult.success ? swapResult.imageUrl! : tryOnResult.imageUrl;
-        const pipelineSteps: string[] = swapResult.success ? ['fashn', 'faceswap'] : ['fashn'];
-
-        if (swapResult.success) {
+        // ── Step 2: Face Swap — restore avatar face ─────────────────
+        const swapResult = await faceSwap(bestResultUrl, fashion_avatar_url);
+        if (swapResult.success && swapResult.imageUrl) {
           console.log('Step 2 (Face swap) succeeded');
+          pipelineSteps.push('faceswap');
+          bestResultUrl = swapResult.imageUrl;
         } else {
-          console.warn('Step 2 (Face swap) failed, using FASHN output:', swapResult.error);
+          console.warn('Step 2 (Face swap) failed, continuing with FASHN output:', swapResult.error);
         }
 
-        // Step 3 (optional): Kontext Max for custom pose/scene
+        // ── Step 3: CodeFormer — face restoration ───────────────────
+        const codeformerResult = await restoreWithCodeFormer(bestResultUrl, 0.7);
+        if (codeformerResult.success && codeformerResult.imageUrl) {
+          console.log('Step 3 (CodeFormer) succeeded');
+          pipelineSteps.push('codeformer');
+          bestResultUrl = codeformerResult.imageUrl;
+        } else {
+          console.warn('Step 3 (CodeFormer) failed, continuing:', codeformerResult.error);
+        }
+
+        // ── Step 4 (optional): Kontext Max Multi — pose/scene ───────
         const isDefaultSetup = (fashion_pose === 'standing_front' || !fashion_pose)
           && (fashion_scene === 'studio_white' || !fashion_scene)
           && (fashion_angle === 'eye_level' || !fashion_angle);
 
         if (!isDefaultSetup) {
-          console.log('Step 3: Kontext Max pose/scene adjustment');
+          console.log('Step 4: Kontext Max Multi for pose/scene adjustment');
           const pose = fashion_pose ? POSE_PRESETS_SERVER[fashion_pose] || fashion_pose : 'standing naturally';
           const framing = fashion_framing ? FRAMING_SERVER[fashion_framing] || fashion_framing : 'full body';
           const angle = fashion_angle ? ANGLE_SERVER[fashion_angle] || fashion_angle : 'eye level';
-          const sceneDesc = fashion_scene && SCENE_PROMPT_MAP[fashion_scene]
-            ? SCENE_PROMPT_MAP[fashion_scene] : '';
+          const sceneDesc = fashion_scene && SCENE_PROMPT_MAP[fashion_scene] ? SCENE_PROMPT_MAP[fashion_scene] : '';
 
           const editParts: string[] = [];
-          editParts.push(`Adjust this fashion photo: the person should be ${pose}.`);
-          editParts.push(`Shot framing: ${framing}. Camera angle: ${angle}.`);
-          if (sceneDesc) editParts.push(`Background: ${sceneDesc}.`);
-          editParts.push('CRITICAL: Keep the person\'s face and the clothing EXACTLY unchanged. Only adjust pose, camera angle, and background.');
+          editParts.push(`Recreate this exact person wearing the exact same outfit in a new pose and setting.`);
+          editParts.push(`Pose: ${pose}. Framing: ${framing}. Camera angle: ${angle}.`);
+          if (sceneDesc) editParts.push(`Setting: ${sceneDesc}.`);
+          editParts.push('CRITICAL: The person\'s face must be IDENTICAL to the reference photo. The clothing must be EXACTLY the same garment with identical text, logos, colors, and patterns.');
           if (prompt?.trim()) editParts.push(prompt.trim());
-          editParts.push('Professional fashion editorial photography, 8K quality.');
+          editParts.push('Professional fashion editorial photography, 8K quality, sharp focus.');
 
-          const kontextResult = await generateWithTogether(
-            MODELS['flux-kontext-max'],
+          // Multi-reference: pass [result, avatar] so Kontext sees both
+          const referenceUrls = [bestResultUrl, fashion_avatar_url];
+          const kontextAR = ASPECT_RATIO_MAP[aspect_ratio] || '3:4';
+
+          const kontextResult = await generateWithKontextMaxMulti(
+            referenceUrls,
             editParts.join('\n'),
-            bestResultUrl,
-            width,
-            height
+            kontextAR
           );
 
-          if (kontextResult.success && kontextResult.data) {
-            console.log('Step 3 (Kontext pose/scene) succeeded');
-            pipelineSteps.push('kontext');
-            const ext = kontextResult.mimeType?.includes('jpeg') ? 'jpg' : 'png';
-            const fileName = `fashion-booth-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-            const imageData = Uint8Array.from(atob(kontextResult.data), c => c.charCodeAt(0));
-            const { publicUrl } = await uploadToStorage('generated-content', fileName, imageData, kontextResult.mimeType || 'image/png');
-
-            const megapixels = (width * height) / 1000000;
-            const kontextMaxConfig = MODELS['flux-kontext-max'];
-            const costUsd = megapixels * kontextMaxConfig.costPerMp;
-
-            if (company_id) {
-              try {
-                await supabaseInsert('ai_usage_logs', {
-                  organization_id: company_id, user_id: user_id || null,
-                  model_id: null, prompt_tokens: 0, completion_tokens: 0, total_tokens: 0,
-                  cost: costUsd, request_type: 'image', endpoint: '/v1/images/generations',
-                  metadata: { model_key: 'flux-kontext-max', pipeline: pipelineSteps.join('-'), use_case: 'fashion_booth', fashion_scene, fashion_pose, fashion_angle }
-                });
-              } catch (logError) { console.error('Failed to log usage:', logError); }
-            }
-
-            return new Response(
-              JSON.stringify({
-                url: publicUrl, model: 'flux-kontext-max', model_id: kontextMaxConfig.id,
-                cost_usd: costUsd, steps: kontextMaxConfig.steps,
-                pipeline: pipelineSteps.join('-'), original_prompt: original_prompt || prompt,
-                dimensions: { width, height }, product_preserved: true, use_case: 'fashion_booth'
-              }),
-              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
+          if (kontextResult.success && kontextResult.imageUrl) {
+            console.log('Step 4 (Kontext Max Multi) succeeded');
+            pipelineSteps.push('kontext-multi');
+            bestResultUrl = kontextResult.imageUrl;
           } else {
-            console.warn('Step 3 (Kontext) failed, using previous result:', kontextResult.error);
+            console.warn('Step 4 (Kontext Max Multi) failed, using previous result:', kontextResult.error);
           }
         }
 
-        // Return the best available result (face-swapped or FASHN-only)
+        // ── Upload final result and return ──────────────────────────
         const downloaded = await downloadImage(bestResultUrl);
         if (downloaded) {
-          const fileName = `fashion-booth-${Date.now()}-${Math.random().toString(36).substring(7)}.png`;
+          const ext = downloaded.mimeType?.includes('jpeg') ? 'jpg' : 'png';
+          const fileName = `fashion-booth-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
           const { publicUrl } = await uploadToStorage('generated-content', fileName, downloaded.data, downloaded.mimeType);
+
+          // Estimate cost: ~$0.05 for FASHN + face swap + codeformer, +$0.08 for kontext
+          const baseCost = 0.05;
+          const kontextCost = pipelineSteps.includes('kontext-multi') ? 0.08 : 0;
+          const totalCost = baseCost + kontextCost;
 
           if (company_id) {
             try {
               await supabaseInsert('ai_usage_logs', {
                 organization_id: company_id, user_id: user_id || null,
                 model_id: null, prompt_tokens: 0, completion_tokens: 0, total_tokens: 0,
-                cost: 0.05, request_type: 'image', endpoint: 'fal.ai',
-                metadata: { pipeline: pipelineSteps.join('-'), use_case: 'fashion_booth', fashion_scene, fashion_pose, fashion_angle }
+                cost: totalCost, request_type: 'image', endpoint: 'fal.ai',
+                metadata: {
+                  pipeline: pipelineSteps.join('-'), use_case: 'fashion_booth',
+                  fashion_scene, fashion_pose, fashion_angle, fashion_framing,
+                  steps_completed: pipelineSteps.length,
+                }
               });
             } catch (logError) { console.error('Failed to log usage:', logError); }
           }
 
           return new Response(
             JSON.stringify({
-              url: publicUrl, model: pipelineSteps.join('+'),
-              pipeline: pipelineSteps.join('-'), original_prompt: original_prompt || prompt,
-              dimensions: { width, height }, product_preserved: true, use_case: 'fashion_booth'
+              url: publicUrl,
+              model: pipelineSteps.join('+'),
+              pipeline: pipelineSteps.join('-'),
+              original_prompt: original_prompt || prompt,
+              dimensions: { width, height },
+              product_preserved: true,
+              use_case: 'fashion_booth',
+              cost_usd: totalCost,
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-      } else {
-        console.warn('Step 1 (FASHN) failed, falling through to standard:', tryOnResult.error);
       }
     }
 
