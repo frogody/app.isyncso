@@ -75,19 +75,6 @@ export function useTwilioDevice(userId) {
     if (!token || !mountedRef.current) return;
 
     try {
-      // Pre-request microphone access so the audio stream is ready
-      // before the Twilio SDK tries to capture it (fixes one-way audio)
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Stop the tracks immediately — we just needed the permission grant
-        stream.getTracks().forEach(t => t.stop());
-        console.log('[Twilio] Microphone access granted');
-      } catch (micErr) {
-        console.warn('[Twilio] Microphone access denied:', micErr);
-        if (mountedRef.current) setError('Microphone access is required for phone calls');
-        return;
-      }
-
       // Destroy existing device
       if (deviceRef.current) {
         deviceRef.current.destroy();
