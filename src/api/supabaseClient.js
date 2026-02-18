@@ -151,6 +151,17 @@ const tableNameMap = {
 
   // === Tasks ===
   'Task': 'tasks',
+
+  // === Reach (Marketing Hub) ===
+  'BrandVoiceProfile': 'brand_voice_profiles',
+  'ReachCampaign': 'reach_campaigns',
+  'ReachAdVariant': 'reach_ad_variants',
+  'ReachScheduledPost': 'reach_scheduled_posts',
+  'ReachSEOReport': 'reach_seo_reports',
+  'ReachCopyOutput': 'reach_copy_outputs',
+  'ReachSocialConnection': 'reach_social_connections',
+  'ReachPerformanceMetric': 'reach_performance_metrics',
+  'ReachInsight': 'reach_insights',
 };
 
 /**

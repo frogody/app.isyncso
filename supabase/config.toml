@@ -240,3 +240,30 @@ verify_jwt = false
 
 [functions.scheduling-orchestrator]
 verify_jwt = false
+
+[functions.reach-analyze-brand-voice]
+verify_jwt = false
+
+[functions.reach-generate-copy]
+verify_jwt = false
+
+[functions.reach-seo-scan]
+verify_jwt = false
+
+[functions.reach-publish-post]
+verify_jwt = false
+
+[functions.reach-generate-ad-copy]
+verify_jwt = false
+
+[functions.reach-generate-ad-image]
+verify_jwt = false
+
+[functions.reach-generate-ad-video]
+verify_jwt = false
+
+[functions.reach-fetch-metrics]
+verify_jwt = false
+
+[functions.reach-generate-insights]
+verify_jwt = false

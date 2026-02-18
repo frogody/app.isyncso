@@ -96,6 +96,8 @@ import {
   ShieldAlert,
   Globe,
   Phone,
+  PenLine,
+  Volume2,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -320,6 +322,14 @@ const ENGINE_ITEMS_CONFIG = {
     permission: null, // Always visible - content creation feature
     matchPatterns: ["/create"],
   },
+  reach: {
+    title: "Reach",
+    url: createPageUrl("ReachDashboard"),
+    icon: Megaphone,
+    id: 'reach',
+    permission: null, // Always visible - marketing hub
+    matchPatterns: ["/reach"],
+  },
 };
 
 
@@ -534,6 +544,24 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       title: 'SYNC',
       color: 'cyan',
       items: activityItems
+    };
+  }
+
+  // REACH routes
+  if (path.startsWith('/reach')) {
+    return {
+      title: 'REACH',
+      color: 'cyan',
+      agent: 'reach',
+      items: [
+        { label: 'Performance', path: createPageUrl('ReachDashboard'), icon: BarChart3 },
+        { label: 'Ad Campaigns', path: createPageUrl('ReachCampaigns'), icon: Megaphone },
+        { label: 'SEO Scanner', path: createPageUrl('ReachSEO'), icon: Search },
+        { label: 'Calendar', path: createPageUrl('ReachCalendar'), icon: Calendar },
+        { label: 'Copy Studio', path: createPageUrl('ReachCopyStudio'), icon: PenLine },
+        { label: 'Brand Voice', path: createPageUrl('ReachBrandVoice'), icon: Volume2 },
+        { label: 'Settings', path: createPageUrl('ReachSettings'), icon: SettingsIcon },
+      ]
     };
   }
 

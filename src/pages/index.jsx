@@ -176,6 +176,16 @@ import Projects from "./Projects";
 
 import RecommendationsFeed from "./RecommendationsFeed";
 
+import ReachDashboard from "./ReachDashboard";
+import ReachCampaigns from "./ReachCampaigns";
+import ReachCampaignBuilder from "./ReachCampaignBuilder";
+import ReachCampaignDetail from "./ReachCampaignDetail";
+import ReachSEO from "./ReachSEO";
+import ReachCalendar from "./ReachCalendar";
+import ReachCopyStudio from "./ReachCopyStudio";
+import ReachBrandVoice from "./ReachBrandVoice";
+import ReachSettings from "./ReachSettings";
+
 import RiskAssessment from "./RiskAssessment";
 
 import Sentinel from "./Sentinel";
@@ -760,6 +770,17 @@ const PAGES = {
 
     TalentSMSOutreach: TalentSMSOutreach,
 
+    ReachDashboard: ReachDashboard,
+    ReachCampaigns: ReachCampaigns,
+    ReachCampaignBuilder: ReachCampaignBuilder,
+    ReachCampaignDetail: ReachCampaignDetail,
+    ReachSEO: ReachSEO,
+    ReachCalendar: ReachCalendar,
+    ReachCopyStudio: ReachCopyStudio,
+    ReachBrandVoice: ReachBrandVoice,
+    ReachPerformance: ReachDashboard,
+    ReachSettings: ReachSettings,
+
 }
 
 function _getCurrentPage(url) {
@@ -1279,6 +1300,18 @@ function PagesContent() {
                 <Route path="/TalentNestDetail" element={<TalentNestDetail />} />
 
                 <Route path="/TalentSMSOutreach" element={<TalentSMSOutreach />} />
+
+                {/* Reach Marketing Hub */}
+                <Route path="/ReachDashboard" element={<ReachDashboard />} />
+                <Route path="/ReachPerformance" element={<ReachDashboard />} />
+                <Route path="/ReachCampaigns" element={<ReachCampaigns />} />
+                <Route path="/ReachCampaignBuilder" element={<ReachCampaignBuilder />} />
+                <Route path="/ReachCampaignDetail" element={<ReachCampaignDetail />} />
+                <Route path="/ReachSEO" element={<ReachSEO />} />
+                <Route path="/ReachCalendar" element={<ReachCalendar />} />
+                <Route path="/ReachCopyStudio" element={<ReachCopyStudio />} />
+                <Route path="/ReachBrandVoice" element={<ReachBrandVoice />} />
+                <Route path="/ReachSettings" element={<ReachSettings />} />
 
                 {/* 404 catch-all route */}
                 <Route path="*" element={
