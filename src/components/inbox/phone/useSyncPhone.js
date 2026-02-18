@@ -18,7 +18,9 @@ export function useSyncPhone() {
   const mountedRef = useRef(true);
 
   const companyId = company?.id || user?.company_id;
-  const orgId = user?.organization_id || companyId;
+  // RLS policies on organization_phone_numbers check auth_company_id() which returns
+  // users.company_id, so we must use companyId here — not organization_id
+  const orgId = companyId;
 
   // Fetch user's assigned Sync phone number
   const fetchPhoneNumber = useCallback(async () => {
