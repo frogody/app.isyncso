@@ -12,6 +12,7 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
+const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -116,17 +117,27 @@ async function callGatekeeperLLM(
   messages: Array<{ role: string; content: string }>,
   userName: string,
 ): Promise<string> {
-  if (!TOGETHER_API_KEY) return "I'm sorry, I'm having trouble right now. Can I take a message?";
+  // Prefer Groq (much faster inference ~200ms) over Together.ai (~2-5s)
+  const useGroq = !!GROQ_API_KEY;
+  const apiKey = useGroq ? GROQ_API_KEY : TOGETHER_API_KEY;
+  const apiUrl = useGroq
+    ? "https://api.groq.com/openai/v1/chat/completions"
+    : "https://api.together.ai/v1/chat/completions";
+  const model = useGroq
+    ? "llama-3.3-70b-versatile"
+    : "meta-llama/Llama-3.3-70B-Instruct-Turbo";
+
+  if (!apiKey) return "I'm sorry, I'm having trouble right now. Can I take a message?";
 
   try {
-    const res = await fetch("https://api.together.ai/v1/chat/completions", {
+    const res = await fetch(apiUrl, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${TOGETHER_API_KEY}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        model,
         messages: [{ role: "system", content: getGatekeeperPrompt(userName) }, ...messages],
         max_tokens: 200,
         temperature: 0.6,
@@ -306,7 +317,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Voice webhook error:", error);
-    return twiml(`<Say voice="Google.en-US-Neural2-F">Sorry, something went wrong. Please try again later.</Say><Hangup/>`);
+    return twiml(`<Say voice="Polly.Joanna-Neural">Sorry, something went wrong. Please try again later.</Say><Hangup/>`);
   }
 });
 
@@ -379,7 +390,7 @@ async function handleOutbound(payload: Record<string, string>, callSid: string):
 
   // If To is another client identity (shouldn't happen normally)
   console.warn("[voice-webhook] Unrecognized outbound target:", to);
-  return twiml(`<Say voice="Google.en-US-Neural2-F">Sorry, I couldn't connect that call.</Say><Hangup/>`);
+  return twiml(`<Say voice="Polly.Joanna-Neural">Sorry, I couldn't connect that call.</Say><Hangup/>`);
 }
 
 // ─── Call Sync (Browser → AI Conversation) ──────────────────────────────────
@@ -405,15 +416,15 @@ async function handleCallSync(payload: Record<string, string>, callSid: string, 
   const gatherUrl = `${SUPABASE_URL}/functions/v1/voice-webhook?action=gather&callId=${callRecord?.id || ""}`;
 
   return twiml(`
-    <Say voice="Google.en-US-Neural2-F">Hey! I'm Sync, your AI assistant. What can I help you with?</Say>
-    <Gather input="speech" timeout="5" speechTimeout="auto"
-           action="${escapeXml(gatherUrl)}" method="POST">
+    <Gather input="speech" language="en-US" enhanced="true" speechModel="experimental_conversations"
+            timeout="5" speechTimeout="auto" action="${escapeXml(gatherUrl)}" method="POST">
+      <Say voice="Polly.Joanna-Neural">Hey! I'm Sync, your AI assistant. What can I help you with?</Say>
     </Gather>
-    <Say voice="Google.en-US-Neural2-F">Are you still there?</Say>
-    <Gather input="speech" timeout="5" speechTimeout="auto"
-           action="${escapeXml(gatherUrl)}" method="POST">
+    <Gather input="speech" language="en-US" enhanced="true" speechModel="experimental_conversations"
+            timeout="5" speechTimeout="auto" action="${escapeXml(gatherUrl)}" method="POST">
+      <Say voice="Polly.Joanna-Neural">Are you still there?</Say>
     </Gather>
-    <Say voice="Google.en-US-Neural2-F">Okay, talk to you later! Bye.</Say>
+    <Say voice="Polly.Joanna-Neural">Okay, talk to you later! Bye.</Say>
     <Hangup/>
   `);
 }
@@ -477,15 +488,15 @@ async function handleInbound(payload: Record<string, string>, callSid: string): 
   const gatherUrl = `${SUPABASE_URL}/functions/v1/voice-webhook?action=gatekeeper-gather&callId=${callIdParam}&userId=${userId || ""}`;
 
   return twiml(`
-    <Say voice="Google.en-US-Neural2-F">Hi, you've reached the office of ${escapeXml(userName)}. I'm SYNC, their AI assistant. How can I help you today?</Say>
-    <Gather input="speech" timeout="6" speechTimeout="auto"
-           action="${escapeXml(gatherUrl)}" method="POST">
+    <Gather input="speech" language="en-US" enhanced="true" speechModel="experimental_conversations"
+            timeout="5" speechTimeout="auto" action="${escapeXml(gatherUrl)}" method="POST">
+      <Say voice="Polly.Joanna-Neural">Hi, you've reached the office of ${escapeXml(userName)}. I'm SYNC, their AI assistant. How can I help you today?</Say>
     </Gather>
-    <Say voice="Google.en-US-Neural2-F">Are you still there? How can I help?</Say>
-    <Gather input="speech" timeout="6" speechTimeout="auto"
-           action="${escapeXml(gatherUrl)}" method="POST">
+    <Gather input="speech" language="en-US" enhanced="true" speechModel="experimental_conversations"
+            timeout="5" speechTimeout="auto" action="${escapeXml(gatherUrl)}" method="POST">
+      <Say voice="Polly.Joanna-Neural">Are you still there? How can I help?</Say>
     </Gather>
-    <Say voice="Google.en-US-Neural2-F">I haven't heard from you. Goodbye, I'll let them know you called.</Say>
+    <Say voice="Polly.Joanna-Neural">I haven't heard from you. Goodbye, I'll let them know you called.</Say>
     <Hangup/>
   `);
 }
@@ -538,15 +549,15 @@ async function handleDialStatus(payload: Record<string, string>, callId: string)
   await saveConversation(callId, existingMessages);
 
   return twiml(`
-    <Say voice="Google.en-US-Neural2-F">I'm sorry, they're not available right now. Can I take a message for them?</Say>
-    <Gather input="speech" timeout="6" speechTimeout="auto"
-           action="${escapeXml(gatherUrl)}" method="POST">
+    <Gather input="speech" language="en-US" enhanced="true" speechModel="experimental_conversations"
+            timeout="5" speechTimeout="auto" action="${escapeXml(gatherUrl)}" method="POST">
+      <Say voice="Polly.Joanna-Neural">I'm sorry, they're not available right now. Can I take a message for them?</Say>
     </Gather>
-    <Say voice="Google.en-US-Neural2-F">Are you still there? Would you like to leave a message?</Say>
-    <Gather input="speech" timeout="6" speechTimeout="auto"
-           action="${escapeXml(gatherUrl)}" method="POST">
+    <Gather input="speech" language="en-US" enhanced="true" speechModel="experimental_conversations"
+            timeout="5" speechTimeout="auto" action="${escapeXml(gatherUrl)}" method="POST">
+      <Say voice="Polly.Joanna-Neural">Are you still there? Would you like to leave a message?</Say>
     </Gather>
-    <Say voice="Google.en-US-Neural2-F">Alright, I'll let them know you called. Goodbye!</Say>
+    <Say voice="Polly.Joanna-Neural">Alright, I'll let them know you called. Goodbye!</Say>
     <Hangup/>
   `);
 }
@@ -576,13 +587,13 @@ async function handleGatekeeperGather(
       .eq("id", callId);
 
     if (timeoutCount >= 3) {
-      return twiml(`<Say voice="Google.en-US-Neural2-F">I haven't heard from you, so I'll let you go. Goodbye!</Say><Hangup/>`);
+      return twiml(`<Say voice="Polly.Joanna-Neural">I haven't heard from you, so I'll let you go. Goodbye!</Say><Hangup/>`);
     }
 
     return twiml(`
-      <Say voice="Google.en-US-Neural2-F">I'm still here. How can I help you?</Say>
-      <Gather input="speech" timeout="6" speechTimeout="auto"
-             action="${escapeXml(gatherUrl)}" method="POST">
+      <Gather input="speech" language="en-US" enhanced="true" speechModel="experimental_conversations"
+              timeout="5" speechTimeout="auto" action="${escapeXml(gatherUrl)}" method="POST">
+        <Say voice="Polly.Joanna-Neural">I'm still here. How can I help you?</Say>
       </Gather>
       <Redirect>${escapeXml(gatherUrl)}</Redirect>
     `);
@@ -647,7 +658,7 @@ async function handleGatekeeperGather(
     await saveConversation(callId, messages);
 
     return twiml(`
-      <Say voice="Google.en-US-Neural2-F">${escapeXml(sayText)}</Say>
+      <Say voice="Polly.Joanna-Neural">${escapeXml(sayText)}</Say>
       <Dial timeout="25" action="${escapeXml(dialStatusUrl)}" method="POST">
         <Client>${escapeXml(identity)}</Client>
       </Dial>
@@ -688,7 +699,7 @@ async function handleGatekeeperGather(
 
     const sayText = cleanResponse || `I'll pass that along to ${userName}. Thanks for calling, goodbye!`;
     return twiml(`
-      <Say voice="Google.en-US-Neural2-F">${escapeXml(sayText)}</Say>
+      <Say voice="Polly.Joanna-Neural">${escapeXml(sayText)}</Say>
       <Hangup/>
     `);
   }
@@ -699,9 +710,9 @@ async function handleGatekeeperGather(
   await saveConversation(callId, messages);
 
   return twiml(`
-    <Say voice="Google.en-US-Neural2-F">${escapeXml(cleanResponse)}</Say>
-    <Gather input="speech" timeout="6" speechTimeout="auto"
-           action="${escapeXml(gatherUrl)}" method="POST">
+    <Gather input="speech" language="en-US" enhanced="true" speechModel="experimental_conversations"
+            timeout="5" speechTimeout="auto" action="${escapeXml(gatherUrl)}" method="POST">
+      <Say voice="Polly.Joanna-Neural">${escapeXml(cleanResponse)}</Say>
     </Gather>
     <Redirect>${escapeXml(gatherUrl)}</Redirect>
   `);
@@ -729,13 +740,13 @@ async function handleGather(payload: Record<string, string>, callId: string): Pr
       .eq("id", callId);
 
     if (timeoutCount >= 3) {
-      return twiml(`<Say voice="Google.en-US-Neural2-F">I haven't heard from you, so I'll let you go. Goodbye!</Say><Hangup/>`);
+      return twiml(`<Say voice="Polly.Joanna-Neural">I haven't heard from you, so I'll let you go. Goodbye!</Say><Hangup/>`);
     }
 
     return twiml(`
-      <Say voice="Google.en-US-Neural2-F">I'm still here. Go ahead when you're ready.</Say>
-      <Gather input="speech" timeout="5" speechTimeout="auto"
-             action="${escapeXml(gatherUrl)}" method="POST">
+      <Gather input="speech" language="en-US" enhanced="true" speechModel="experimental_conversations"
+              timeout="5" speechTimeout="auto" action="${escapeXml(gatherUrl)}" method="POST">
+        <Say voice="Polly.Joanna-Neural">I'm still here. Go ahead when you're ready.</Say>
       </Gather>
       <Redirect>${escapeXml(gatherUrl)}</Redirect>
     `);
@@ -755,9 +766,9 @@ async function handleGather(payload: Record<string, string>, callId: string): Pr
     .eq("id", callId);
 
   return twiml(`
-    <Say voice="Google.en-US-Neural2-F">${escapeXml(aiResponse)}</Say>
-    <Gather input="speech" timeout="5" speechTimeout="auto"
-           action="${escapeXml(gatherUrl)}" method="POST">
+    <Gather input="speech" language="en-US" enhanced="true" speechModel="experimental_conversations"
+            timeout="5" speechTimeout="auto" action="${escapeXml(gatherUrl)}" method="POST">
+      <Say voice="Polly.Joanna-Neural">${escapeXml(aiResponse)}</Say>
     </Gather>
     <Redirect>${escapeXml(gatherUrl)}</Redirect>
   `);
@@ -925,13 +936,13 @@ async function handleSchedulingCall(
 
   if (jobError || !job) {
     console.error("[Scheduling] Job not found:", jobId, jobError);
-    return twiml(`<Say voice="Google.en-US-Neural2-F">Sorry, something went wrong. Goodbye.</Say><Hangup/>`);
+    return twiml(`<Say voice="Polly.Joanna-Neural">Sorry, something went wrong. Goodbye.</Say><Hangup/>`);
   }
 
   const participant = job.participants?.[pIdx];
   if (!participant) {
     console.error("[Scheduling] Participant not found at index:", pIdx);
-    return twiml(`<Say voice="Google.en-US-Neural2-F">Sorry, something went wrong. Goodbye.</Say><Hangup/>`);
+    return twiml(`<Say voice="Polly.Joanna-Neural">Sorry, something went wrong. Goodbye.</Say><Hangup/>`);
   }
 
   // Create a call record in sync_phone_calls
@@ -1001,15 +1012,15 @@ async function handleSchedulingCall(
   const gatherUrl = `${SUPABASE_URL}/functions/v1/voice-webhook?action=scheduling-gather&jobId=${jobId}&participantIndex=${participantIndex}&callId=${callRecordId}`;
 
   return twiml(`
-    <Say voice="Google.en-US-Neural2-F">${escapeXml(cleanGreeting)}</Say>
-    <Gather input="speech" timeout="6" speechTimeout="auto"
-           action="${escapeXml(gatherUrl)}" method="POST">
+    <Gather input="speech" language="en-US" enhanced="true" speechModel="experimental_conversations"
+            timeout="5" speechTimeout="auto" action="${escapeXml(gatherUrl)}" method="POST">
+      <Say voice="Polly.Joanna-Neural">${escapeXml(cleanGreeting)}</Say>
     </Gather>
-    <Say voice="Google.en-US-Neural2-F">Are you still there?</Say>
-    <Gather input="speech" timeout="6" speechTimeout="auto"
-           action="${escapeXml(gatherUrl)}" method="POST">
+    <Gather input="speech" language="en-US" enhanced="true" speechModel="experimental_conversations"
+            timeout="5" speechTimeout="auto" action="${escapeXml(gatherUrl)}" method="POST">
+      <Say voice="Polly.Joanna-Neural">Are you still there?</Say>
     </Gather>
-    <Say voice="Google.en-US-Neural2-F">It seems like you're busy. I'll try again later. Goodbye!</Say>
+    <Say voice="Polly.Joanna-Neural">It seems like you're busy. I'll try again later. Goodbye!</Say>
     <Hangup/>
   `);
 }
@@ -1041,13 +1052,13 @@ async function handleSchedulingGather(
     if (timeoutCount >= 3) {
       // Mark participant as failed due to no response
       await markParticipantStatus(jobId, pIdx, "failed", "No response during call");
-      return twiml(`<Say voice="Google.en-US-Neural2-F">I haven't heard from you, so I'll let you go. Goodbye!</Say><Hangup/>`);
+      return twiml(`<Say voice="Polly.Joanna-Neural">I haven't heard from you, so I'll let you go. Goodbye!</Say><Hangup/>`);
     }
 
     return twiml(`
-      <Say voice="Google.en-US-Neural2-F">I'm still here. When are you free for the meeting?</Say>
-      <Gather input="speech" timeout="6" speechTimeout="auto"
-             action="${escapeXml(gatherUrl)}" method="POST">
+      <Gather input="speech" language="en-US" enhanced="true" speechModel="experimental_conversations"
+              timeout="5" speechTimeout="auto" action="${escapeXml(gatherUrl)}" method="POST">
+        <Say voice="Polly.Joanna-Neural">I'm still here. When are you free for the meeting?</Say>
       </Gather>
       <Redirect>${escapeXml(gatherUrl)}</Redirect>
     `);
@@ -1061,12 +1072,12 @@ async function handleSchedulingGather(
     .single();
 
   if (!job) {
-    return twiml(`<Say voice="Google.en-US-Neural2-F">Sorry, something went wrong. Goodbye.</Say><Hangup/>`);
+    return twiml(`<Say voice="Polly.Joanna-Neural">Sorry, something went wrong. Goodbye.</Say><Hangup/>`);
   }
 
   const participant = job.participants?.[pIdx];
   if (!participant) {
-    return twiml(`<Say voice="Google.en-US-Neural2-F">Sorry, something went wrong. Goodbye.</Say><Hangup/>`);
+    return twiml(`<Say voice="Polly.Joanna-Neural">Sorry, something went wrong. Goodbye.</Say><Hangup/>`);
   }
 
   // Build candidate slots from previous participants
@@ -1111,16 +1122,16 @@ async function handleSchedulingGather(
     }
 
     return twiml(`
-      <Say voice="Google.en-US-Neural2-F">${escapeXml(cleanResponse)}</Say>
+      <Say voice="Polly.Joanna-Neural">${escapeXml(cleanResponse)}</Say>
       <Hangup/>
     `);
   }
 
   // Continue conversation
   return twiml(`
-    <Say voice="Google.en-US-Neural2-F">${escapeXml(cleanResponse)}</Say>
-    <Gather input="speech" timeout="6" speechTimeout="auto"
-           action="${escapeXml(gatherUrl)}" method="POST">
+    <Gather input="speech" language="en-US" enhanced="true" speechModel="experimental_conversations"
+            timeout="5" speechTimeout="auto" action="${escapeXml(gatherUrl)}" method="POST">
+      <Say voice="Polly.Joanna-Neural">${escapeXml(cleanResponse)}</Say>
     </Gather>
     <Redirect>${escapeXml(gatherUrl)}</Redirect>
   `);
