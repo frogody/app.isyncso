@@ -43,6 +43,12 @@ const MODELS: Record<string, { id: string; requiresImage: boolean; costPerMp: nu
     requiresImage: false,
     costPerMp: 0.04,
     steps: 40
+  },
+  'flux-kontext-max': {
+    id: 'black-forest-labs/FLUX.1-kontext-max',
+    requiresImage: true,
+    costPerMp: 0.08,
+    steps: 40
   }
 };
 
@@ -359,6 +365,50 @@ async function downloadImage(url: string): Promise<{ data: Uint8Array; mimeType:
   }
 }
 
+// ─── Server-side pose/framing/angle labels for prompt construction ───
+const POSE_PRESETS_SERVER: Record<string, string> = {
+  standing_front: 'standing front-facing, relaxed posture',
+  standing_3q: 'standing at a three-quarter angle toward camera',
+  standing_side: 'standing in full side profile',
+  standing_back: 'facing away from camera',
+  walking_casual: 'walking casually mid-stride',
+  walking_confident: 'walking with a confident runway stride',
+  walking_street: 'walking relaxed on a street',
+  sitting_casual: 'sitting casually on a stool',
+  sitting_cross: 'sitting with legs crossed',
+  sitting_lean: 'sitting and leaning back casually',
+  pose_hand_hip: 'standing with one hand on hip',
+  pose_arms_crossed: 'standing with arms crossed',
+  pose_hands_pockets: 'standing with hands in pockets',
+  pose_looking_away: 'looking to the side',
+  pose_over_shoulder: 'looking back over their shoulder',
+  pose_dynamic: 'in a dynamic mid-movement pose',
+  pose_editorial: 'in a high-fashion editorial pose',
+  pose_lean_wall: 'leaning against a wall',
+  pose_crouch: 'crouching low',
+  pose_jump: 'mid-air jumping',
+};
+
+const FRAMING_SERVER: Record<string, string> = {
+  full_body: 'full body head to toe',
+  three_quarter: 'three-quarter body, head to mid-thigh',
+  upper_body: 'upper body, head to waist',
+  close_up: 'close-up detail shot',
+  mid_shot: 'mid shot, waist up',
+  extreme_close: 'extreme close-up of fabric texture',
+};
+
+const ANGLE_SERVER: Record<string, string> = {
+  eye_level: 'eye level, straight on',
+  low_angle: 'low angle looking up, dramatic',
+  high_angle: 'high angle looking down',
+  dutch_angle: 'dutch angle, tilted and dynamic',
+  birds_eye: 'top-down bird\'s eye view',
+  worms_eye: 'extreme low worm\'s eye angle',
+  three_quarter_low: 'three-quarter low angle',
+  profile_angle: 'side profile, 90 degrees from front',
+};
+
 // ─── Gemini fallback ─────────────────────────────────────────────────
 async function tryGemini(prompt: string): Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }> {
   if (!GOOGLE_API_KEY) return { success: false, error: 'No Google API key' };
@@ -431,6 +481,7 @@ serve(async (req) => {
       fashion_angle,
       fashion_scene,
       fashion_avatar_url,
+      composite_reference_url,
       negative_prompt,
       prompt_enhanced = false,
       width = 1024,
@@ -477,129 +528,93 @@ serve(async (req) => {
       );
     }
 
-    // ── Fashion Booth: FASHN Virtual Try-On pipeline ──────────────
-    // When avatar + garment are both provided, use FAL's FASHN V1.6 dedicated
-    // virtual try-on model. This takes person + garment → composite image.
-    // Optionally, a second Kontext pass transforms the scene/background.
-    if (fashion_booth && fashion_avatar_url && refImageUrl && FAL_KEY) {
-      console.log('Fashion Booth: Using FASHN V1.6 virtual try-on pipeline');
+    // ── Fashion Booth: Kontext Max with composite reference ────────
+    // When avatar + garment are both provided, the client creates a side-by-side
+    // composite image (avatar left, garment right) and sends its URL as
+    // `composite_reference_url`. Kontext Max sees BOTH the person identity AND
+    // the garment details in one reference, preserves the face, and swaps clothing.
+    if (fashion_booth && composite_reference_url) {
+      console.log('Fashion Booth: Using Kontext Max with composite reference (avatar + garment)');
 
-      // Step 1: Virtual try-on (person + garment → person wearing garment)
-      const vtonResult = await generateWithFalTryOn(
-        fashion_avatar_url,
-        refImageUrl,
-        prompt || 'Fashion garment'
+      const pose = fashion_pose ? POSE_PRESETS_SERVER[fashion_pose] || fashion_pose : 'standing naturally';
+      const framing = fashion_framing ? FRAMING_SERVER[fashion_framing] || fashion_framing : 'full body';
+      const angle = fashion_angle ? ANGLE_SERVER[fashion_angle] || fashion_angle : 'eye level';
+      const scene = fashion_scene && SCENE_PROMPT_MAP[fashion_scene] ? SCENE_PROMPT_MAP[fashion_scene] : 'clean white studio backdrop';
+
+      const compositeParts: string[] = [];
+      compositeParts.push('This image contains two panels side by side. The LEFT panel shows a person. The RIGHT panel shows a garment.');
+      compositeParts.push('TASK: Generate a new image of ONLY the person from the LEFT panel wearing the EXACT garment from the RIGHT panel.');
+      compositeParts.push('CRITICAL IDENTITY RULE: The person\'s face, hair color, hair style, skin tone, facial hair, eye color, and body build must be IDENTICAL to the LEFT panel. Do NOT change the person\'s identity in any way.');
+      compositeParts.push('CRITICAL GARMENT RULE: The garment must match the RIGHT panel EXACTLY — same color, same fabric texture, same print/logo/text, same silhouette, same pockets, same hood/collar, same zipper/buttons. Reproduce every detail.');
+      compositeParts.push(`POSE: The person is ${pose}.`);
+      compositeParts.push(`FRAMING: ${framing} shot.`);
+      compositeParts.push(`CAMERA ANGLE: ${angle}.`);
+      compositeParts.push(`SCENE: ${scene}.`);
+      if (prompt?.trim()) compositeParts.push(prompt.trim());
+      compositeParts.push('Output a single high-resolution fashion photograph. Professional editorial lighting, sharp focus on garment details, 8K quality.');
+
+      const compositePrompt = compositeParts.join('\n');
+
+      const kontextMaxConfig = MODELS['flux-kontext-max'];
+      const compositeResult = await generateWithTogether(
+        kontextMaxConfig,
+        compositePrompt,
+        composite_reference_url,
+        width,
+        height
       );
 
-      if (vtonResult.success && vtonResult.imageUrl) {
-        let finalImageData: Uint8Array;
-        let finalMimeType = 'image/png';
-
-        // Step 2 (optional): Scene transformation with Kontext
-        const needsSceneEdit = fashion_scene && fashion_scene !== 'studio_white' && SCENE_PROMPT_MAP[fashion_scene];
-
-        if (needsSceneEdit) {
-          console.log(`Fashion Booth: Scene edit → ${fashion_scene}`);
-          const sceneDesc = SCENE_PROMPT_MAP[fashion_scene];
-          const scenePrompt = `Change ONLY the background/environment to: ${sceneDesc}. Keep the person and their clothing EXACTLY the same — do not alter the garment, face, body, hair, or pose in any way. Professional fashion photography lighting appropriate for the new setting.`;
-
-          const sceneResult = await generateWithTogether(
-            MODELS['flux-kontext-pro'],
-            scenePrompt,
-            vtonResult.imageUrl,
-            width,
-            height
-          );
-
-          if (sceneResult.success && sceneResult.data) {
-            finalImageData = Uint8Array.from(atob(sceneResult.data), c => c.charCodeAt(0));
-            finalMimeType = sceneResult.mimeType || 'image/png';
-          } else {
-            // Scene edit failed — use try-on result as-is (white background)
-            console.warn('Scene edit failed, using try-on result directly:', sceneResult.error);
-            const downloaded = await downloadImage(vtonResult.imageUrl);
-            if (!downloaded) {
-              return new Response(
-                JSON.stringify({ error: 'Failed to download try-on result' }),
-                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-              );
-            }
-            finalImageData = downloaded.data;
-            finalMimeType = downloaded.mimeType;
-          }
-        } else {
-          // No scene edit needed — download try-on result directly
-          const downloaded = await downloadImage(vtonResult.imageUrl);
-          if (!downloaded) {
-            return new Response(
-              JSON.stringify({ error: 'Failed to download try-on result' }),
-              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
-          }
-          finalImageData = downloaded.data;
-          finalMimeType = downloaded.mimeType;
-        }
-
-        // Upload to our storage
-        const ext = finalMimeType.includes('jpeg') ? 'jpg' : 'png';
+      if (compositeResult.success && compositeResult.data) {
+        const ext = compositeResult.mimeType?.includes('jpeg') ? 'jpg' : 'png';
         const fileName = `fashion-booth-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-        const { publicUrl } = await uploadToStorage('generated-content', fileName, finalImageData, finalMimeType);
+        const imageData = Uint8Array.from(atob(compositeResult.data), c => c.charCodeAt(0));
+        const { publicUrl } = await uploadToStorage('generated-content', fileName, imageData, compositeResult.mimeType || 'image/png');
 
-        // Usage tracking
-        const megapixels = (864 * 1296) / 1000000; // FASHN native resolution
-        const baseCost = 0.075; // FASHN cost
-        const sceneCost = needsSceneEdit ? (width * height / 1000000) * MODELS['flux-kontext-pro'].costPerMp : 0;
-        const totalCost = baseCost + sceneCost;
+        const megapixels = (width * height) / 1000000;
+        const costUsd = megapixels * kontextMaxConfig.costPerMp;
 
         if (company_id) {
           try {
             await supabaseInsert('ai_usage_logs', {
               organization_id: company_id,
               user_id: user_id || null,
-              model_id: null,
-              prompt_tokens: 0,
-              completion_tokens: 0,
-              total_tokens: 0,
-              cost: totalCost,
+              model_id: null, prompt_tokens: 0, completion_tokens: 0, total_tokens: 0,
+              cost: costUsd,
               request_type: 'image',
-              endpoint: 'fal-ai/fashn/tryon/v1.6',
+              endpoint: '/v1/images/generations',
               metadata: {
-                model_name: 'FASHN V1.6 Virtual Try-On',
-                pipeline: needsSceneEdit ? 'fashn-vton + kontext-scene' : 'fashn-vton',
+                model_name: kontextMaxConfig.id,
+                model_key: 'flux-kontext-max',
+                pipeline: 'kontext-max-composite',
                 use_case: 'fashion_booth',
-                fashion_scene,
-                fashion_pose,
-                fashion_angle,
-                has_scene_edit: !!needsSceneEdit,
+                fashion_scene, fashion_pose, fashion_angle,
               }
             });
-          } catch (logError) {
-            console.error('Failed to log usage:', logError);
-          }
+          } catch (logError) { console.error('Failed to log usage:', logError); }
         }
 
         return new Response(
           JSON.stringify({
             url: publicUrl,
-            model: 'fashn-v1.6',
-            model_id: 'fal-ai/fashn/tryon/v1.6',
-            cost_usd: totalCost,
-            pipeline: needsSceneEdit ? 'fashn-vton + kontext-scene' : 'fashn-vton',
-            prompt: prompt,
+            model: 'flux-kontext-max',
+            model_id: kontextMaxConfig.id,
+            cost_usd: costUsd,
+            steps: kontextMaxConfig.steps,
+            pipeline: 'kontext-max-composite',
+            prompt: compositePrompt,
             original_prompt: original_prompt || prompt,
-            dimensions: { width: 864, height: 1296 },
+            dimensions: { width, height },
             product_preserved: true,
             use_case: 'fashion_booth'
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } else {
-        // FASHN failed — fall through to Kontext approach
-        console.warn('FASHN try-on failed, falling back to Kontext:', vtonResult.error);
+        console.warn('Kontext Max composite failed, falling back:', compositeResult.error);
       }
     }
 
-    // ── Fashion Booth fallback (no avatar, or FASHN failed) ─────────
+    // ── Fashion Booth fallback (no avatar, or composite failed) ─────
     // Legacy fashion model preset → prompt fragment (for non-booth fashion calls)
     const FASHION_MODEL_PROMPTS: Record<string, string> = {
       'female_editorial': 'worn by a professional female fashion model with natural proportions, confident editorial pose, looking at camera',
