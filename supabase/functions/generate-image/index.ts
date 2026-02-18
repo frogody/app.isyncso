@@ -7,6 +7,7 @@ const corsHeaders = {
 
 const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
 const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
+const FAL_KEY = Deno.env.get("FAL_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -279,6 +280,85 @@ async function generateWithTogether(
   }
 }
 
+// ─── FAL.ai FASHN Virtual Try-On V1.6 ────────────────────────────────
+// Purpose-built model: takes a person image + garment image → outputs person wearing garment.
+// 864×1296 resolution, preserves garment text/patterns/details accurately.
+const SCENE_PROMPT_MAP: Record<string, string> = {
+  studio_white: '',
+  studio_dark: 'a dark moody black studio backdrop with dramatic directional lighting',
+  studio_grey: 'a neutral grey seamless paper studio backdrop',
+  urban_street: 'a city street with modern architecture and natural daylight',
+  urban_alley: 'a gritty industrial alleyway with textured brick walls',
+  nature_outdoor: 'lush greenery and natural outdoor setting with soft dappled light',
+  golden_hour: 'warm golden hour sunset backlighting with soft warm tones',
+  cafe_interior: 'a cozy modern cafe interior with warm ambient lighting',
+  luxury_interior: 'a high-end luxury hotel lobby or designer lounge interior',
+  beach: 'a sandy beach with ocean waves in the background and bright natural light',
+  rooftop: 'an urban rooftop with a dramatic city skyline in the background',
+  runway: 'a fashion show runway with dramatic spotlighting and audience blur',
+  abstract_gradient: 'a soft abstract gradient background with smooth color transitions',
+};
+
+async function generateWithFalTryOn(
+  personImageUrl: string,
+  garmentImageUrl: string,
+  garmentDescription?: string
+): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
+  if (!FAL_KEY) return { success: false, error: 'No FAL API key configured' };
+
+  try {
+    console.log('FASHN V1.6 try-on: person + garment composite...');
+
+    const response = await fetch('https://fal.run/fal-ai/fashn/tryon/v1.6', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${FAL_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model_image: personImageUrl,
+        garment_image: garmentImageUrl,
+        category: 'auto',
+        mode: 'quality',
+        garment_photo_type: 'auto',
+        num_samples: 1,
+        output_format: 'png',
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('FASHN V1.6 error:', errText);
+      return { success: false, error: `FASHN try-on error: ${errText}` };
+    }
+
+    const data = await response.json();
+    const imageUrl = data.images?.[0]?.url || data.image?.url;
+
+    if (imageUrl) {
+      return { success: true, imageUrl };
+    }
+
+    return { success: false, error: 'No image in FASHN response' };
+  } catch (e: any) {
+    console.error('FASHN exception:', e.message);
+    return { success: false, error: e.message };
+  }
+}
+
+// Download an image from a URL and return as Uint8Array
+async function downloadImage(url: string): Promise<{ data: Uint8Array; mimeType: string } | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const arrayBuffer = await response.arrayBuffer();
+    const mimeType = response.headers.get('content-type') || 'image/png';
+    return { data: new Uint8Array(arrayBuffer), mimeType };
+  } catch {
+    return null;
+  }
+}
+
 // ─── Gemini fallback ─────────────────────────────────────────────────
 async function tryGemini(prompt: string): Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }> {
   if (!GOOGLE_API_KEY) return { success: false, error: 'No Google API key' };
@@ -397,11 +477,129 @@ serve(async (req) => {
       );
     }
 
-    // ── Fashion Booth prompt construction ──────────────────────────
-    // When fashion_booth=true, the prompt already contains full instructions
-    // built by FashionBooth.jsx (pose, framing, angle, scene, avatar, garment preservation).
-    // We respect that prompt directly with minimal additions.
+    // ── Fashion Booth: FASHN Virtual Try-On pipeline ──────────────
+    // When avatar + garment are both provided, use FAL's FASHN V1.6 dedicated
+    // virtual try-on model. This takes person + garment → composite image.
+    // Optionally, a second Kontext pass transforms the scene/background.
+    if (fashion_booth && fashion_avatar_url && refImageUrl && FAL_KEY) {
+      console.log('Fashion Booth: Using FASHN V1.6 virtual try-on pipeline');
 
+      // Step 1: Virtual try-on (person + garment → person wearing garment)
+      const vtonResult = await generateWithFalTryOn(
+        fashion_avatar_url,
+        refImageUrl,
+        prompt || 'Fashion garment'
+      );
+
+      if (vtonResult.success && vtonResult.imageUrl) {
+        let finalImageData: Uint8Array;
+        let finalMimeType = 'image/png';
+
+        // Step 2 (optional): Scene transformation with Kontext
+        const needsSceneEdit = fashion_scene && fashion_scene !== 'studio_white' && SCENE_PROMPT_MAP[fashion_scene];
+
+        if (needsSceneEdit) {
+          console.log(`Fashion Booth: Scene edit → ${fashion_scene}`);
+          const sceneDesc = SCENE_PROMPT_MAP[fashion_scene];
+          const scenePrompt = `Change ONLY the background/environment to: ${sceneDesc}. Keep the person and their clothing EXACTLY the same — do not alter the garment, face, body, hair, or pose in any way. Professional fashion photography lighting appropriate for the new setting.`;
+
+          const sceneResult = await generateWithTogether(
+            MODELS['flux-kontext-pro'],
+            scenePrompt,
+            vtonResult.imageUrl,
+            width,
+            height
+          );
+
+          if (sceneResult.success && sceneResult.data) {
+            finalImageData = Uint8Array.from(atob(sceneResult.data), c => c.charCodeAt(0));
+            finalMimeType = sceneResult.mimeType || 'image/png';
+          } else {
+            // Scene edit failed — use try-on result as-is (white background)
+            console.warn('Scene edit failed, using try-on result directly:', sceneResult.error);
+            const downloaded = await downloadImage(vtonResult.imageUrl);
+            if (!downloaded) {
+              return new Response(
+                JSON.stringify({ error: 'Failed to download try-on result' }),
+                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+            finalImageData = downloaded.data;
+            finalMimeType = downloaded.mimeType;
+          }
+        } else {
+          // No scene edit needed — download try-on result directly
+          const downloaded = await downloadImage(vtonResult.imageUrl);
+          if (!downloaded) {
+            return new Response(
+              JSON.stringify({ error: 'Failed to download try-on result' }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+          finalImageData = downloaded.data;
+          finalMimeType = downloaded.mimeType;
+        }
+
+        // Upload to our storage
+        const ext = finalMimeType.includes('jpeg') ? 'jpg' : 'png';
+        const fileName = `fashion-booth-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+        const { publicUrl } = await uploadToStorage('generated-content', fileName, finalImageData, finalMimeType);
+
+        // Usage tracking
+        const megapixels = (864 * 1296) / 1000000; // FASHN native resolution
+        const baseCost = 0.075; // FASHN cost
+        const sceneCost = needsSceneEdit ? (width * height / 1000000) * MODELS['flux-kontext-pro'].costPerMp : 0;
+        const totalCost = baseCost + sceneCost;
+
+        if (company_id) {
+          try {
+            await supabaseInsert('ai_usage_logs', {
+              organization_id: company_id,
+              user_id: user_id || null,
+              model_id: null,
+              prompt_tokens: 0,
+              completion_tokens: 0,
+              total_tokens: 0,
+              cost: totalCost,
+              request_type: 'image',
+              endpoint: 'fal-ai/fashn/tryon/v1.6',
+              metadata: {
+                model_name: 'FASHN V1.6 Virtual Try-On',
+                pipeline: needsSceneEdit ? 'fashn-vton + kontext-scene' : 'fashn-vton',
+                use_case: 'fashion_booth',
+                fashion_scene,
+                fashion_pose,
+                fashion_angle,
+                has_scene_edit: !!needsSceneEdit,
+              }
+            });
+          } catch (logError) {
+            console.error('Failed to log usage:', logError);
+          }
+        }
+
+        return new Response(
+          JSON.stringify({
+            url: publicUrl,
+            model: 'fashn-v1.6',
+            model_id: 'fal-ai/fashn/tryon/v1.6',
+            cost_usd: totalCost,
+            pipeline: needsSceneEdit ? 'fashn-vton + kontext-scene' : 'fashn-vton',
+            prompt: prompt,
+            original_prompt: original_prompt || prompt,
+            dimensions: { width: 864, height: 1296 },
+            product_preserved: true,
+            use_case: 'fashion_booth'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        // FASHN failed — fall through to Kontext approach
+        console.warn('FASHN try-on failed, falling back to Kontext:', vtonResult.error);
+      }
+    }
+
+    // ── Fashion Booth fallback (no avatar, or FASHN failed) ─────────
     // Legacy fashion model preset → prompt fragment (for non-booth fashion calls)
     const FASHION_MODEL_PROMPTS: Record<string, string> = {
       'female_editorial': 'worn by a professional female fashion model with natural proportions, confident editorial pose, looking at camera',
@@ -418,8 +616,7 @@ serve(async (req) => {
     const isFashionUseCase = use_case === 'fashion_tryon' || use_case === 'fashion_lookbook';
 
     if (fashion_booth && modelConfig.requiresImage) {
-      // Fashion Booth sends a fully constructed prompt with all pose/framing/angle/scene details.
-      // Just add a quality suffix and garment preservation emphasis.
+      // Fashion Booth without avatar — Kontext approach with garment as reference
       finalPrompt = `${prompt}\n\nIMPORTANT: The garment from the reference image must be reproduced with pixel-perfect accuracy — same fabric weave, same color shade, same pattern placement, same stitching, same pocket shapes, same zipper/button details, same collar/hood shape. Any deviation is unacceptable. Ultra high resolution, 8K detail, sharp focus on garment construction.`;
     } else if (isFashionUseCase && modelConfig.requiresImage) {
       // Legacy fashion mode (non-booth) — keep existing behavior
