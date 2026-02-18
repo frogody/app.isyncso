@@ -488,6 +488,7 @@ export default function CreateImages({ embedded = false }) {
     try {
       let finalPrompt = prompt;
       let enhancementData = null;
+      let wasEnhanced = false;
       try {
         toast.info('AI is enhancing your prompt...', { duration: 2000 });
         const enhanceRes = await fetch(
@@ -517,6 +518,7 @@ export default function CreateImages({ embedded = false }) {
         if (enhanceData?.enhanced_prompt) {
           finalPrompt = enhanceData.enhanced_prompt;
           enhancementData = enhanceData;
+          wasEnhanced = true;
           setAiEnhancedPrompt(enhanceData);
         } else {
           finalPrompt = buildEnhancedPrompt();
@@ -541,6 +543,7 @@ export default function CreateImages({ embedded = false }) {
             reference_image_url: selectedReferenceImage,
             prompt: finalPrompt,
             original_prompt: prompt,
+            prompt_enhanced: wasEnhanced,
             style: selectedStyle,
             aspect_ratio: aspectRatio,
             width: aspectConfig?.width || 1024,
