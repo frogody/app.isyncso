@@ -231,3 +231,9 @@ verify_jwt = false
 
 [functions.smart-compose]
 verify_jwt = false
+
+[functions.twilio-token]
+verify_jwt = false
+
+[functions.voice-webhook]
+verify_jwt = false

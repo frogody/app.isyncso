@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import { toast } from 'sonner';
+import { useTwilioDevice } from './useTwilioDevice';
 
 const EDGE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -18,9 +19,11 @@ export function useSyncPhone() {
   const mountedRef = useRef(true);
 
   const companyId = company?.id || user?.company_id;
-  // RLS policies on organization_phone_numbers check auth_company_id() which returns
-  // users.company_id, so we must use companyId here — not organization_id
   const orgId = companyId;
+  const userId = user?.id;
+
+  // Initialize Twilio Voice SDK device
+  const twilioDevice = useTwilioDevice(userId);
 
   // Fetch user's assigned Sync phone number
   const fetchPhoneNumber = useCallback(async () => {
@@ -54,7 +57,6 @@ export function useSyncPhone() {
     }
     setProvisioning(true);
     try {
-      // First search for available numbers
       const searchRes = await fetch(`${EDGE_URL}/twilio-numbers`, {
         method: 'POST',
         headers: {
@@ -75,7 +77,6 @@ export function useSyncPhone() {
         return null;
       }
 
-      // Purchase the first available number
       const numberToPurchase = searchData.numbers[0];
       const purchaseRes = await fetch(`${EDGE_URL}/twilio-numbers`, {
         method: 'POST',
@@ -142,21 +143,20 @@ export function useSyncPhone() {
     }
   }, [orgId]);
 
-  // Fetch call history
+  // Fetch call history from sync_phone_calls
   const fetchCallHistory = useCallback(async () => {
-    if (!orgId) return;
+    if (!userId) return;
     setCallsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('phone_calls')
+        .from('sync_phone_calls')
         .select('*')
-        .eq('company_id', companyId)
-        .order('started_at', { ascending: false })
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) {
-        // Table may not exist yet, silently handle
-        console.warn('phone_calls query failed:', error.message);
+        console.warn('sync_phone_calls query failed:', error.message);
         if (mountedRef.current) setCallHistory([]);
         return;
       }
@@ -167,7 +167,7 @@ export function useSyncPhone() {
     } finally {
       if (mountedRef.current) setCallsLoading(false);
     }
-  }, [companyId, orgId]);
+  }, [userId]);
 
   // Fetch SMS history
   const fetchSmsHistory = useCallback(async () => {
@@ -195,11 +195,35 @@ export function useSyncPhone() {
     }
   }, [orgId]);
 
-  // Make outbound call (placeholder for Twilio client SDK)
+  // Make outbound call via Twilio Device
   const makeCall = useCallback(async (toNumber) => {
-    toast.info('Outbound calling will be available in the next update');
-    return null;
-  }, []);
+    if (!twilioDevice.isReady) {
+      toast.error('Phone not ready. Please wait a moment.');
+      return null;
+    }
+    if (!phoneNumber?.phone_number) {
+      toast.error('No phone number configured');
+      return null;
+    }
+    const call = await twilioDevice.makeCall(toNumber, phoneNumber.phone_number);
+    if (call) {
+      toast.info(`Calling ${toNumber}...`);
+    }
+    return call;
+  }, [twilioDevice, phoneNumber]);
+
+  // Call Sync AI
+  const callSync = useCallback(async () => {
+    if (!twilioDevice.isReady) {
+      toast.error('Phone not ready. Please wait a moment.');
+      return null;
+    }
+    const call = await twilioDevice.makeCall('sync-ai', phoneNumber?.phone_number || '');
+    if (call) {
+      toast.info('Connecting to Sync AI...');
+    }
+    return call;
+  }, [twilioDevice, phoneNumber]);
 
   // Send SMS
   const sendSMS = useCallback(async (toNumber, body) => {
@@ -230,7 +254,6 @@ export function useSyncPhone() {
       }
 
       toast.success('SMS sent');
-      // Refresh SMS history
       await fetchSmsHistory();
       return data;
     } catch (err) {
@@ -283,17 +306,33 @@ export function useSyncPhone() {
   }, [orgId, fetchPhoneNumber, fetchCallHistory, fetchSmsHistory]);
 
   return {
+    // Phone number
     phoneNumber,
     loading,
     provisioning,
+    requestPhoneNumber,
+    releasePhoneNumber,
+    // History
     callHistory,
     smsHistory,
     callsLoading,
     smsLoading,
-    requestPhoneNumber,
-    releasePhoneNumber,
+    // Calling (Twilio Device)
+    isDeviceReady: twilioDevice.isReady,
+    callStatus: twilioDevice.callStatus,
+    isMuted: twilioDevice.isMuted,
+    callDuration: twilioDevice.callDuration,
+    incomingCall: twilioDevice.incomingCall,
+    activeCall: twilioDevice.activeCall,
     makeCall,
+    callSync,
+    acceptCall: twilioDevice.acceptCall,
+    rejectCall: twilioDevice.rejectCall,
+    hangupCall: twilioDevice.hangup,
+    toggleMute: twilioDevice.toggleMute,
+    // SMS
     sendSMS,
+    // Settings
     updateSettings,
     refetch,
   };

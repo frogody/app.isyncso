@@ -1,15 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Phone, MessageSquare, VoicemailIcon, ArrowDownLeft, ArrowUpRight,
   Clock, Loader2, PhoneOff, PhoneIncoming, PhoneOutgoing,
   ChevronRight, Play, RefreshCw, Settings, Users as UsersIcon,
-  BarChart3, Send
+  BarChart3, Send, Mic, MicOff, PhoneCall, X, Sparkles, Hash,
+  Delete, Bot
 } from 'lucide-react';
 import PhoneSettings from './PhoneSettings';
 import PhoneContactManager from './PhoneContactManager';
 
 const TAB_ITEMS = [
+  { id: 'dialer', label: 'Dialer', icon: Hash },
   { id: 'calls', label: 'Recent Calls', icon: Phone },
   { id: 'sms', label: 'SMS', icon: MessageSquare },
   { id: 'voicemail', label: 'Voicemail', icon: VoicemailIcon },
@@ -18,6 +20,13 @@ const TAB_ITEMS = [
 ];
 
 function formatDuration(seconds) {
+  if (!seconds && seconds !== 0) return '--';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function formatDurationShort(seconds) {
   if (!seconds) return '--';
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -40,6 +49,20 @@ function formatTimestamp(ts) {
   }
   return d.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
+
+function formatPhoneDisplay(number) {
+  if (!number) return '';
+  const cleaned = number.replace(/\D/g, '');
+  if (cleaned.length === 11 && cleaned.startsWith('1')) {
+    return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+  }
+  if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+  }
+  return number;
+}
+
+// ─── Phone Provision Card ─────────────────────────────────────────────────────
 
 function PhoneProvisionCard({ onProvision, provisioning }) {
   const [areaCode, setAreaCode] = useState('');
@@ -97,7 +120,9 @@ function PhoneProvisionCard({ onProvision, provisioning }) {
   );
 }
 
-function StatsBar({ callHistory, smsHistory, phoneNumber }) {
+// ─── Stats Bar ────────────────────────────────────────────────────────────────
+
+function StatsBar({ callHistory, smsHistory, phoneNumber, isDeviceReady }) {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
@@ -126,16 +151,297 @@ function StatsBar({ callHistory, smsHistory, phoneNumber }) {
       </div>
       <div className="w-px h-4 bg-zinc-800" />
       <div className="flex items-center gap-2">
-        <div className={`w-2 h-2 rounded-full ${phoneNumber?.status === 'active' ? 'bg-cyan-400' : 'bg-zinc-600'}`} />
+        <div className={`w-2 h-2 rounded-full ${isDeviceReady ? 'bg-cyan-400 animate-pulse' : phoneNumber?.status === 'active' ? 'bg-zinc-500' : 'bg-zinc-600'}`} />
         <span className="text-xs text-zinc-400">
-          {phoneNumber?.status === 'active' ? 'Active' : 'Inactive'}
+          {isDeviceReady ? 'Ready' : phoneNumber?.status === 'active' ? 'Connecting...' : 'Inactive'}
         </span>
       </div>
     </div>
   );
 }
 
-function CallsList({ calls, loading }) {
+// ─── Dialer ──────────────────────────────────────────────────────────────────
+
+const DIALPAD_KEYS = [
+  ['1', '2', '3'],
+  ['4', '5', '6'],
+  ['7', '8', '9'],
+  ['*', '0', '#'],
+];
+
+const DIALPAD_SUB = {
+  '2': 'ABC', '3': 'DEF', '4': 'GHI', '5': 'JKL',
+  '6': 'MNO', '7': 'PQRS', '8': 'TUV', '9': 'WXYZ',
+  '0': '+',
+};
+
+function Dialer({ makeCall, callSync, isDeviceReady, phoneNumber, callHistory }) {
+  const [dialNumber, setDialNumber] = useState('');
+
+  const handleKeyPress = useCallback((key) => {
+    setDialNumber(prev => prev + key);
+  }, []);
+
+  const handleBackspace = useCallback(() => {
+    setDialNumber(prev => prev.slice(0, -1));
+  }, []);
+
+  const handleDial = useCallback(() => {
+    if (!dialNumber.trim()) return;
+    let number = dialNumber.trim();
+    if (!number.startsWith('+') && number.length === 10) {
+      number = '+1' + number;
+    }
+    makeCall(number);
+  }, [dialNumber, makeCall]);
+
+  // Recent numbers for quick dial
+  const recentNumbers = useMemo(() => {
+    const seen = new Set();
+    return callHistory
+      .filter(c => {
+        const num = c.direction === 'outbound' ? c.callee_number : c.caller_number;
+        if (!num || num === 'sync-ai' || seen.has(num)) return false;
+        seen.add(num);
+        return true;
+      })
+      .slice(0, 4)
+      .map(c => ({
+        number: c.direction === 'outbound' ? c.callee_number : c.caller_number,
+        name: c.caller_name || null,
+        direction: c.direction,
+      }));
+  }, [callHistory]);
+
+  return (
+    <div className="flex flex-col items-center py-6 px-4 max-w-sm mx-auto">
+      {/* Number display */}
+      <div className="w-full mb-6">
+        <div className="text-center min-h-[48px] flex items-center justify-center">
+          <span className={`font-mono tracking-wider ${
+            dialNumber.length > 12 ? 'text-lg' : dialNumber.length > 0 ? 'text-2xl' : 'text-lg'
+          } ${dialNumber ? 'text-white' : 'text-zinc-600'}`}>
+            {dialNumber ? formatPhoneDisplay(dialNumber) : 'Enter number'}
+          </span>
+        </div>
+        {phoneNumber?.phone_number && (
+          <p className="text-center text-[10px] text-zinc-600 mt-1">
+            Calling from {formatPhoneDisplay(phoneNumber.phone_number)}
+          </p>
+        )}
+      </div>
+
+      {/* Dialpad */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        {DIALPAD_KEYS.map((row) =>
+          row.map((key) => (
+            <button
+              key={key}
+              onClick={() => handleKeyPress(key)}
+              className="w-16 h-16 rounded-2xl bg-zinc-800/60 hover:bg-zinc-700/60 active:bg-zinc-600/60 transition-all flex flex-col items-center justify-center"
+            >
+              <span className="text-xl font-medium text-white">{key}</span>
+              {DIALPAD_SUB[key] && (
+                <span className="text-[9px] text-zinc-500 tracking-widest mt-0.5">{DIALPAD_SUB[key]}</span>
+              )}
+            </button>
+          ))
+        )}
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex items-center gap-4 mb-8">
+        {/* Backspace */}
+        <button
+          onClick={handleBackspace}
+          disabled={!dialNumber}
+          className="w-12 h-12 rounded-xl flex items-center justify-center text-zinc-500 hover:text-zinc-300 disabled:opacity-30 transition-colors"
+        >
+          <Delete className="w-5 h-5" />
+        </button>
+
+        {/* Dial button */}
+        <button
+          onClick={handleDial}
+          disabled={!isDeviceReady || !dialNumber.trim()}
+          className="w-16 h-16 rounded-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white flex items-center justify-center transition-all shadow-lg shadow-cyan-600/20 hover:shadow-cyan-500/30 disabled:shadow-none"
+        >
+          <Phone className="w-6 h-6" />
+        </button>
+
+        {/* Call Sync */}
+        <button
+          onClick={callSync}
+          disabled={!isDeviceReady}
+          className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 hover:border-cyan-400/50 disabled:opacity-30 transition-all"
+          title="Call Sync AI"
+        >
+          <Bot className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Quick dial: recent numbers */}
+      {recentNumbers.length > 0 && (
+        <div className="w-full">
+          <p className="text-[10px] text-zinc-600 uppercase tracking-wider mb-2 px-1">Recent</p>
+          <div className="space-y-1">
+            {recentNumbers.map((r, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  setDialNumber(r.number.replace('+1', ''));
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-zinc-800/40 transition-colors text-left"
+              >
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                  r.direction === 'inbound' ? 'bg-cyan-500/10' : 'bg-blue-500/10'
+                }`}>
+                  {r.direction === 'inbound' ? (
+                    <PhoneIncoming className="w-3.5 h-3.5 text-cyan-400" />
+                  ) : (
+                    <PhoneOutgoing className="w-3.5 h-3.5 text-blue-400" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm text-zinc-300 truncate block">{r.name || formatPhoneDisplay(r.number)}</span>
+                  {r.name && <span className="text-[10px] text-zinc-600">{formatPhoneDisplay(r.number)}</span>}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Active Call Overlay ─────────────────────────────────────────────────────
+
+function ActiveCallOverlay({ callStatus, callDuration, isMuted, toggleMute, hangupCall, activeCall, incomingCall }) {
+  // Determine display info
+  const isIncoming = !!incomingCall && callStatus === 'ringing';
+  const callParams = activeCall?.parameters || activeCall?.customParameters || {};
+  const incomingFrom = incomingCall?.parameters?.From || incomingCall?.parameters?.from || 'Unknown';
+
+  let displayNumber = 'Unknown';
+  let statusLabel = 'Connecting...';
+
+  if (isIncoming) {
+    displayNumber = incomingFrom;
+    statusLabel = 'Incoming Call';
+  } else if (activeCall) {
+    displayNumber = callParams.To || callParams.to || 'Unknown';
+    if (displayNumber === 'sync-ai') displayNumber = 'Sync AI';
+  }
+
+  if (callStatus === 'connecting') statusLabel = 'Connecting...';
+  else if (callStatus === 'ringing') statusLabel = isIncoming ? 'Incoming Call' : 'Ringing...';
+  else if (callStatus === 'connected') statusLabel = formatDuration(callDuration);
+
+  return (
+    <motion.div
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 100, opacity: 0 }}
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[380px]"
+    >
+      <div className="bg-zinc-900/95 backdrop-blur-xl border border-zinc-700/60 rounded-2xl shadow-2xl shadow-black/50 p-5">
+        {/* Call info */}
+        <div className="text-center mb-5">
+          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center mx-auto mb-3">
+            {callStatus === 'connected' ? (
+              <PhoneCall className="w-6 h-6 text-cyan-400" />
+            ) : isIncoming ? (
+              <PhoneIncoming className="w-6 h-6 text-cyan-400 animate-pulse" />
+            ) : (
+              <Phone className="w-6 h-6 text-cyan-400 animate-pulse" />
+            )}
+          </div>
+          <p className="text-lg font-medium text-white">
+            {displayNumber === 'Sync AI' ? 'Sync AI' : formatPhoneDisplay(displayNumber)}
+          </p>
+          <p className={`text-sm mt-1 ${
+            callStatus === 'connected' ? 'text-cyan-400 font-mono' : 'text-zinc-400'
+          }`}>
+            {statusLabel}
+          </p>
+        </div>
+
+        {/* Controls */}
+        <div className="flex items-center justify-center gap-4">
+          {/* Mute */}
+          <button
+            onClick={toggleMute}
+            disabled={callStatus !== 'connected'}
+            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+              isMuted
+                ? 'bg-red-500/20 border border-red-500/40 text-red-400'
+                : 'bg-zinc-800 border border-zinc-700/50 text-zinc-300 hover:bg-zinc-700'
+            } disabled:opacity-30`}
+            title={isMuted ? 'Unmute' : 'Mute'}
+          >
+            {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+          </button>
+
+          {/* Hang up */}
+          <button
+            onClick={hangupCall}
+            className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center transition-colors shadow-lg shadow-red-600/30"
+          >
+            <PhoneOff className="w-6 h-6" />
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Incoming Call Banner ────────────────────────────────────────────────────
+
+function IncomingCallBanner({ incomingCall, acceptCall, rejectCall }) {
+  const callerNumber = incomingCall?.parameters?.From || 'Unknown';
+
+  return (
+    <motion.div
+      initial={{ y: -60, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: -60, opacity: 0 }}
+      className="absolute top-0 left-0 right-0 z-40 bg-gradient-to-r from-cyan-900/90 to-blue-900/90 backdrop-blur-xl border-b border-cyan-500/30 px-5 py-4"
+    >
+      <div className="flex items-center gap-4">
+        <div className="w-10 h-10 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center animate-pulse">
+          <PhoneIncoming className="w-5 h-5 text-cyan-400" />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-white">Incoming Call</p>
+          <p className="text-xs text-cyan-300/70">{formatPhoneDisplay(callerNumber)}</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={rejectCall}
+            className="w-10 h-10 rounded-full bg-red-600/80 hover:bg-red-500 text-white flex items-center justify-center transition-colors"
+            title="Decline"
+          >
+            <PhoneOff className="w-4 h-4" />
+          </button>
+          <button
+            onClick={acceptCall}
+            className="w-10 h-10 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white flex items-center justify-center transition-colors"
+            title="Answer"
+          >
+            <Phone className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Calls List ─────────────────────────────────────────────────────────────
+
+function CallsList({ calls, loading, makeCall }) {
   const [expandedId, setExpandedId] = useState(null);
 
   if (loading) {
@@ -151,7 +457,7 @@ function CallsList({ calls, loading }) {
       <div className="flex flex-col items-center justify-center py-16">
         <Phone className="w-10 h-10 text-zinc-800 mb-3" />
         <p className="text-sm text-zinc-500">No calls yet</p>
-        <p className="text-xs text-zinc-600 mt-1">Calls will appear here when your Sync number receives them</p>
+        <p className="text-xs text-zinc-600 mt-1">Use the Dialer tab to make your first call</p>
       </div>
     );
   }
@@ -162,6 +468,7 @@ function CallsList({ calls, loading }) {
         {calls.map((call, i) => {
           const isInbound = call.direction === 'inbound';
           const expanded = expandedId === call.id;
+          const displayNumber = isInbound ? call.caller_number : call.callee_number;
 
           return (
             <motion.div
@@ -192,7 +499,7 @@ function CallsList({ calls, loading }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-zinc-200 truncate">
-                      {isInbound ? (call.caller_number || 'Unknown') : (call.callee_number || 'Unknown')}
+                      {call.caller_name || (displayNumber === 'sync-ai' ? 'Sync AI' : formatPhoneDisplay(displayNumber) || 'Unknown')}
                     </span>
                     {isInbound ? (
                       <ArrowDownLeft className="w-3 h-3 text-zinc-600 flex-shrink-0" />
@@ -209,14 +516,26 @@ function CallsList({ calls, loading }) {
                     }`}>
                       {call.status || 'unknown'}
                     </span>
-                    {call.duration && (
-                      <span className="text-[10px] text-zinc-600">{formatDuration(call.duration)}</span>
+                    {call.duration_seconds > 0 && (
+                      <span className="text-[10px] text-zinc-600">{formatDurationShort(call.duration_seconds)}</span>
                     )}
                   </div>
                 </div>
 
-                <div className="text-right flex-shrink-0">
-                  <span className="text-xs text-zinc-500">{formatTimestamp(call.started_at)}</span>
+                <div className="text-right flex-shrink-0 flex items-center gap-2">
+                  <span className="text-xs text-zinc-500">{formatTimestamp(call.started_at || call.created_at)}</span>
+                  {displayNumber && displayNumber !== 'sync-ai' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        makeCall(displayNumber);
+                      }}
+                      className="p-1.5 rounded-lg text-zinc-600 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
+                      title="Call back"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -229,10 +548,16 @@ function CallsList({ calls, loading }) {
                     className="overflow-hidden"
                   >
                     <div className="px-5 pb-3 pl-16 space-y-2">
+                      {call.sync_summary && (
+                        <div>
+                          <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Summary</p>
+                          <p className="text-xs text-zinc-400 leading-relaxed">{call.sync_summary}</p>
+                        </div>
+                      )}
                       {call.transcript && (
                         <div>
                           <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Transcript</p>
-                          <p className="text-xs text-zinc-400 leading-relaxed">{call.transcript}</p>
+                          <p className="text-xs text-zinc-400 leading-relaxed whitespace-pre-line">{call.transcript}</p>
                         </div>
                       )}
                       {call.recording_url && (
@@ -247,7 +572,7 @@ function CallsList({ calls, loading }) {
                           Play Recording
                         </button>
                       )}
-                      {!call.transcript && !call.recording_url && (
+                      {!call.transcript && !call.recording_url && !call.sync_summary && (
                         <p className="text-xs text-zinc-600 italic">No additional details</p>
                       )}
                     </div>
@@ -261,6 +586,8 @@ function CallsList({ calls, loading }) {
     </div>
   );
 }
+
+// ─── SMS List ───────────────────────────────────────────────────────────────
 
 function SMSList({ conversations, loading }) {
   const [expandedId, setExpandedId] = useState(null);
@@ -364,6 +691,8 @@ function SMSList({ conversations, loading }) {
   );
 }
 
+// ─── Voicemail List ─────────────────────────────────────────────────────────
+
 function VoicemailList({ calls }) {
   const voicemails = useMemo(
     () => calls.filter((c) => c.voicemail_url || c.status === 'voicemail'),
@@ -405,8 +734,8 @@ function VoicemailList({ calls }) {
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-              {vm.duration && (
-                <span className="text-xs text-zinc-500">{formatDuration(vm.duration)}</span>
+              {vm.duration_seconds > 0 && (
+                <span className="text-xs text-zinc-500">{formatDurationShort(vm.duration_seconds)}</span>
               )}
               {vm.voicemail_url && (
                 <button
@@ -431,6 +760,8 @@ function VoicemailList({ calls }) {
   );
 }
 
+// ─── Main Dashboard ─────────────────────────────────────────────────────────
+
 export default function PhoneDashboard({
   phoneNumber,
   loading,
@@ -442,8 +773,21 @@ export default function PhoneDashboard({
   requestPhoneNumber,
   updateSettings,
   refetch,
+  // Calling props
+  isDeviceReady,
+  callStatus,
+  isMuted,
+  callDuration,
+  incomingCall,
+  activeCall,
+  makeCall,
+  callSync,
+  acceptCall,
+  rejectCall,
+  hangupCall,
+  toggleMute,
 }) {
-  const [activeTab, setActiveTab] = useState('calls');
+  const [activeTab, setActiveTab] = useState('dialer');
 
   // If no phone number, show provisioning card
   if (!loading && !phoneNumber) {
@@ -458,13 +802,26 @@ export default function PhoneDashboard({
     );
   }
 
+  const isInCall = callStatus !== 'idle';
+
   return (
-    <div className="flex-1 flex flex-col min-h-0">
+    <div className="flex-1 flex flex-col min-h-0 relative">
+      {/* Incoming call banner */}
+      <AnimatePresence>
+        {incomingCall && callStatus === 'ringing' && !activeCall && (
+          <IncomingCallBanner
+            incomingCall={incomingCall}
+            acceptCall={acceptCall}
+            rejectCall={rejectCall}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Stats Bar */}
-      <StatsBar callHistory={callHistory} smsHistory={smsHistory} phoneNumber={phoneNumber} />
+      <StatsBar callHistory={callHistory} smsHistory={smsHistory} phoneNumber={phoneNumber} isDeviceReady={isDeviceReady} />
 
       {/* Tabs */}
-      <div className="flex items-center border-b border-zinc-800/60 bg-zinc-900/30 px-4">
+      <div className="flex items-center border-b border-zinc-800/60 bg-zinc-900/30 px-4 overflow-x-auto">
         {TAB_ITEMS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -472,7 +829,7 @@ export default function PhoneDashboard({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium border-b-2 transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium border-b-2 transition-all whitespace-nowrap ${
                 isActive
                   ? 'text-cyan-400 border-cyan-500'
                   : 'text-zinc-500 border-transparent hover:text-zinc-300'
@@ -506,8 +863,17 @@ export default function PhoneDashboard({
             transition={{ duration: 0.15 }}
             className={activeTab === 'settings' || activeTab === 'contacts' ? 'p-6 max-w-2xl' : ''}
           >
+            {activeTab === 'dialer' && (
+              <Dialer
+                makeCall={makeCall}
+                callSync={callSync}
+                isDeviceReady={isDeviceReady}
+                phoneNumber={phoneNumber}
+                callHistory={callHistory}
+              />
+            )}
             {activeTab === 'calls' && (
-              <CallsList calls={callHistory} loading={callsLoading} />
+              <CallsList calls={callHistory} loading={callsLoading} makeCall={makeCall} />
             )}
             {activeTab === 'sms' && (
               <SMSList conversations={smsHistory} loading={smsLoading} />
@@ -524,6 +890,21 @@ export default function PhoneDashboard({
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Active call overlay */}
+      <AnimatePresence>
+        {isInCall && (
+          <ActiveCallOverlay
+            callStatus={callStatus}
+            callDuration={callDuration}
+            isMuted={isMuted}
+            toggleMute={toggleMute}
+            hangupCall={hangupCall}
+            activeCall={activeCall}
+            incomingCall={incomingCall}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

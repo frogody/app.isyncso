@@ -31,18 +31,7 @@ export default function SyncPhone() {
         </div>
 
         {/* Phone Dashboard */}
-        <PhoneDashboard
-          phoneNumber={syncPhone.phoneNumber}
-          loading={syncPhone.loading}
-          provisioning={syncPhone.provisioning}
-          callHistory={syncPhone.callHistory}
-          smsHistory={syncPhone.smsHistory}
-          callsLoading={syncPhone.callsLoading}
-          smsLoading={syncPhone.smsLoading}
-          requestPhoneNumber={syncPhone.requestPhoneNumber}
-          updateSettings={syncPhone.updateSettings}
-          refetch={syncPhone.refetch}
-        />
+        <PhoneDashboard {...syncPhone} />
       </div>
     </SyncPageTransition>
   );

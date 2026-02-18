@@ -10,7 +10,7 @@ const corsHeaders = {
 };
 
 interface TwilioNumberRequest {
-  action: "search" | "purchase" | "release" | "list" | "update";
+  action: "search" | "purchase" | "release" | "list" | "update" | "setup-voice" | "configure-voice";
   organization_id: string;
   // Search params
   country?: string;
@@ -71,6 +71,12 @@ serve(async (req) => {
 
       case "update":
         return await updateNumber(body, supabase);
+
+      case "setup-voice":
+        return await setupVoice(supabase, twilioAuth, TWILIO_ACCOUNT_SID);
+
+      case "configure-voice":
+        return await configureVoice(body, supabase, twilioAuth, TWILIO_ACCOUNT_SID);
 
       default:
         return new Response(
@@ -166,14 +172,20 @@ async function purchaseNumber(
     );
   }
 
-  // Webhook URL for incoming SMS
-  const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/sms-webhook`;
+  // Webhook URLs
+  const baseUrl = Deno.env.get("SUPABASE_URL");
+  const smsWebhookUrl = `${baseUrl}/functions/v1/sms-webhook`;
+  const voiceWebhookUrl = `${baseUrl}/functions/v1/voice-webhook`;
 
-  // Purchase from Twilio
+  // Purchase from Twilio with SMS + Voice webhooks
   const purchaseBody = new URLSearchParams({
     PhoneNumber: phone_number,
-    SmsUrl: webhookUrl,
+    SmsUrl: smsWebhookUrl,
     SmsMethod: "POST",
+    VoiceUrl: voiceWebhookUrl,
+    VoiceMethod: "POST",
+    StatusCallback: `${voiceWebhookUrl}?action=status`,
+    StatusCallbackMethod: "POST",
   });
 
   if (friendly_name) {
@@ -446,6 +458,149 @@ async function updateNumber(params: TwilioNumberRequest, supabase: any) {
 
   return new Response(
     JSON.stringify({ success: true, number: data }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
+// One-time setup: Create Twilio API Key + TwiML Application for voice calling
+async function setupVoice(
+  supabase: any,
+  twilioAuth: string,
+  accountSid: string
+) {
+  const baseUrl = Deno.env.get("SUPABASE_URL");
+  const voiceWebhookUrl = `${baseUrl}/functions/v1/voice-webhook`;
+
+  // 1. Create API Key for signing Access Tokens
+  const keyRes = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Keys.json`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${twilioAuth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({ FriendlyName: "isyncso-voice" }).toString(),
+    }
+  );
+
+  if (!keyRes.ok) {
+    const err = await keyRes.json();
+    return new Response(
+      JSON.stringify({ success: false, error: `Failed to create API Key: ${err.message}` }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const keyData = await keyRes.json();
+
+  // 2. Create TwiML Application for routing outbound calls
+  const appRes = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Applications.json`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${twilioAuth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        FriendlyName: "iSyncSO-Voice",
+        VoiceUrl: voiceWebhookUrl,
+        VoiceMethod: "POST",
+        StatusCallback: `${voiceWebhookUrl}?action=status`,
+        StatusCallbackMethod: "POST",
+      }).toString(),
+    }
+  );
+
+  if (!appRes.ok) {
+    const err = await appRes.json();
+    return new Response(
+      JSON.stringify({ success: false, error: `Failed to create TwiML App: ${err.message}` }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const appData = await appRes.json();
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      message: "Voice setup complete. Set these as Supabase secrets:",
+      secrets: {
+        TWILIO_API_KEY_SID: keyData.sid,
+        TWILIO_API_KEY_SECRET: keyData.secret,
+        TWILIO_TWIML_APP_SID: appData.sid,
+      },
+      instructions: [
+        `Run: npx supabase secrets set TWILIO_API_KEY_SID="${keyData.sid}" TWILIO_API_KEY_SECRET="${keyData.secret}" TWILIO_TWIML_APP_SID="${appData.sid}" --project-ref sfxpmzicgpaxfntqleig`,
+        "Then redeploy all edge functions to pick up the new secrets.",
+      ],
+    }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
+// Configure VoiceUrl on an existing phone number
+async function configureVoice(
+  params: TwilioNumberRequest,
+  supabase: any,
+  twilioAuth: string,
+  accountSid: string
+) {
+  const { organization_id } = params;
+  const baseUrl = Deno.env.get("SUPABASE_URL");
+  const voiceWebhookUrl = `${baseUrl}/functions/v1/voice-webhook`;
+
+  // Get all active numbers for this org
+  const { data: numbers, error } = await supabase
+    .from("organization_phone_numbers")
+    .select("id, twilio_sid, phone_number")
+    .eq("organization_id", organization_id)
+    .eq("status", "active");
+
+  if (error || !numbers?.length) {
+    return new Response(
+      JSON.stringify({ success: false, error: "No active numbers found" }),
+      { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const results = [];
+  for (const num of numbers) {
+    const updateRes = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/IncomingPhoneNumbers/${num.twilio_sid}.json`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Basic ${twilioAuth}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          VoiceUrl: voiceWebhookUrl,
+          VoiceMethod: "POST",
+          StatusCallback: `${voiceWebhookUrl}?action=status`,
+          StatusCallbackMethod: "POST",
+        }).toString(),
+      }
+    );
+
+    results.push({
+      phone_number: num.phone_number,
+      success: updateRes.ok,
+    });
+
+    // Also update capabilities to include voice
+    if (updateRes.ok) {
+      await supabase
+        .from("organization_phone_numbers")
+        .update({ capabilities: { sms: true, mms: false, voice: true } })
+        .eq("id", num.id);
+    }
+  }
+
+  return new Response(
+    JSON.stringify({ success: true, results }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 }
