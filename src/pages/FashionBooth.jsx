@@ -571,11 +571,11 @@ export default function FashionBooth({ embedded = false }) {
         try {
           await GeneratedContent.create({
             company_id: user.company_id,
-            user_id: user.id,
+            created_by: user.id,
             content_type: 'image',
             url: data.url,
             name: `Fashion Booth - ${selectedProduct?.name || 'Custom'}`,
-            metadata: {
+            generation_config: {
               source: 'fashion_booth',
               pose: selectedPose,
               framing: selectedFraming,
@@ -583,6 +583,7 @@ export default function FashionBooth({ embedded = false }) {
               scene: selectedScene,
               prompt: prompt,
             },
+            tags: ['fashion_booth'],
           });
           loadHistory();
         } catch (saveErr) {
@@ -674,11 +675,12 @@ export default function FashionBooth({ embedded = false }) {
           try {
             await GeneratedContent.create({
               company_id: user.company_id,
-              user_id: user.id,
+              created_by: user.id,
               content_type: 'image',
               url: piece.url,
               name: `Outfit Extract - ${piece.label}`,
-              metadata: { source: 'outfit_extractor', label: piece.label, description: piece.description },
+              generation_config: { source: 'outfit_extractor', label: piece.label, description: piece.description, prompt: `Extracted ${piece.label} from outfit photo` },
+              tags: ['outfit_extractor', piece.label],
             });
           } catch (saveErr) { console.warn('Failed to save piece:', saveErr); }
         }
