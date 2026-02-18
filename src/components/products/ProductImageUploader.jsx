@@ -2,12 +2,13 @@ import React, { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { storage } from '@/api/supabaseClient';
+import { storage, supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import { toast } from 'sonner';
 import {
   Upload, X, Image as ImageIcon, Star, StarOff, GripVertical,
-  Loader2, AlertCircle, CheckCircle, Trash2, RotateCcw, ZoomIn
+  Loader2, AlertCircle, CheckCircle, Trash2, RotateCcw, ZoomIn,
+  FolderOpen, Check
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -38,6 +39,10 @@ export default function ProductImageUploader({
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [libraryItems, setLibraryItems] = useState([]);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [selectedLibrary, setSelectedLibrary] = useState(new Set());
 
   const safeImages = Array.isArray(images) ? images : [];
   const allImages = [
@@ -214,6 +219,61 @@ export default function ProductImageUploader({
     onImagesChange?.(galleryImages);
   };
 
+  const openLibraryPicker = async () => {
+    setShowLibrary(true);
+    setSelectedLibrary(new Set());
+    setLibraryLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('generated_content')
+        .select('id, url, name, content_type, created_at, tags')
+        .eq('company_id', user?.company_id)
+        .eq('content_type', 'image')
+        .order('created_at', { ascending: false })
+        .limit(60);
+      if (error) throw error;
+      setLibraryItems(data || []);
+    } catch (err) {
+      console.error('Failed to load library:', err);
+      toast.error('Failed to load content library');
+    } finally {
+      setLibraryLoading(false);
+    }
+  };
+
+  const toggleLibraryItem = (id) => {
+    setSelectedLibrary(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        if (allImages.length + next.size >= maxImages) {
+          toast.error(`Maximum ${maxImages} images allowed`);
+          return prev;
+        }
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleAddFromLibrary = () => {
+    const selected = libraryItems.filter(item => selectedLibrary.has(item.id));
+    const newProductImages = selected.map(item => ({
+      url: item.url,
+      alt: item.name || 'Library image',
+      size: null,
+      type: 'image/png',
+    }));
+    const updatedImages = [...images, ...newProductImages];
+    onImagesChange?.(updatedImages);
+    if (!featuredImage && newProductImages.length > 0) {
+      onFeaturedChange?.(newProductImages[0]);
+    }
+    toast.success(`${newProductImages.length} image(s) added from library`);
+    setShowLibrary(false);
+  };
+
   return (
     <div className={cn("space-y-4", className)}>
       {/* Drop Zone */}
@@ -290,6 +350,22 @@ export default function ProductImageUploader({
           )}
         </AnimatePresence>
       </div>
+
+      {/* Add from Library Button */}
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); openLibraryPicker(); }}
+        className={cn(
+          "w-full flex items-center justify-center gap-2 py-2 rounded-lg border transition-colors text-sm",
+          t('border-slate-200', 'border-zinc-800'),
+          t('text-slate-600', 'text-zinc-400'),
+          t('hover:bg-slate-50', 'hover:bg-zinc-900/50'),
+          t('hover:text-slate-900', 'hover:text-zinc-200'),
+        )}
+      >
+        <FolderOpen className="w-4 h-4" />
+        Add from Content Library
+      </button>
 
       {/* Upload Progress */}
       {Object.keys(uploadProgress).length > 0 && (
@@ -404,6 +480,83 @@ export default function ProductImageUploader({
           </Reorder.Group>
         </div>
       )}
+
+      {/* Content Library Picker */}
+      <Dialog open={showLibrary} onOpenChange={setShowLibrary}>
+        <DialogContent className={cn("max-w-2xl max-h-[80vh] flex flex-col p-0 overflow-hidden", t('bg-white', 'bg-zinc-900'), t('border-slate-200', 'border-zinc-800'))}>
+          <div className={cn("flex items-center justify-between px-5 py-4 border-b", t('border-slate-200', 'border-zinc-800'))}>
+            <div>
+              <h3 className={cn("text-base font-semibold", t('text-slate-900', 'text-white'))}>Content Library</h3>
+              <p className={cn("text-xs mt-0.5", t('text-slate-500', 'text-zinc-500'))}>Select images to add to this product</p>
+            </div>
+            {selectedLibrary.size > 0 && (
+              <span className="text-xs font-medium text-cyan-400">{selectedLibrary.size} selected</span>
+            )}
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-5 py-4">
+            {libraryLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+              </div>
+            ) : libraryItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <FolderOpen className={cn("w-12 h-12 mb-3", t('text-slate-300', 'text-zinc-700'))} />
+                <p className={cn("font-medium", t('text-slate-600', 'text-zinc-400'))}>No images in library</p>
+                <p className={cn("text-sm mt-1", t('text-slate-400', 'text-zinc-600'))}>Generate content in the Studio first</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-3">
+                {libraryItems.map(item => {
+                  const isSelected = selectedLibrary.has(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => toggleLibraryItem(item.id)}
+                      className={cn(
+                        "relative aspect-square rounded-lg overflow-hidden border-2 transition-all group",
+                        isSelected
+                          ? "border-cyan-500 ring-2 ring-cyan-500/30"
+                          : cn(t('border-slate-200', 'border-zinc-800'), t('hover:border-slate-400', 'hover:border-zinc-600'))
+                      )}
+                    >
+                      <img src={item.url} alt={item.name || ''} className="w-full h-full object-cover" />
+                      {isSelected && (
+                        <div className="absolute inset-0 bg-cyan-500/20 flex items-center justify-center">
+                          <div className="w-7 h-7 rounded-full bg-cyan-500 flex items-center justify-center">
+                            <Check className="w-4 h-4 text-black" />
+                          </div>
+                        </div>
+                      )}
+                      <div className={cn(
+                        "absolute bottom-0 inset-x-0 px-1.5 py-1 text-[10px] truncate",
+                        "bg-gradient-to-t from-black/70 to-transparent text-white/80"
+                      )}>
+                        {item.name || 'Untitled'}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className={cn("flex items-center justify-end gap-2 px-5 py-3 border-t", t('border-slate-200', 'border-zinc-800'))}>
+            <Button variant="ghost" size="sm" onClick={() => setShowLibrary(false)} className={t('text-slate-600', 'text-zinc-400')}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleAddFromLibrary}
+              disabled={selectedLibrary.size === 0}
+              className="bg-cyan-600 hover:bg-cyan-700 text-white"
+            >
+              Add {selectedLibrary.size > 0 ? `${selectedLibrary.size} image${selectedLibrary.size > 1 ? 's' : ''}` : 'selected'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Image Preview Lightbox */}
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
