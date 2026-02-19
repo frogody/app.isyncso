@@ -301,72 +301,100 @@ async function generateWithNanoBanana(
   textPrompt: string,
 ): Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }> {
   if (!GOOGLE_API_KEY) return { success: false, error: 'No Google API key configured' };
-  try {
-    console.log(`Nano Banana Pro: ${imageUrls.length} reference images...`);
 
-    // Build parts: text prompt first, then all reference images as inlineData
-    const parts: any[] = [{ text: textPrompt }];
-
-    for (const url of imageUrls) {
+  // Download and encode reference images once
+  const parts: any[] = [{ text: textPrompt }];
+  for (const url of imageUrls) {
+    try {
       const imgResp = await fetch(url);
-      if (!imgResp.ok) {
-        console.warn(`Failed to download image: ${url} (${imgResp.status})`);
-        continue;
-      }
+      if (!imgResp.ok) { console.warn(`Failed to download image: ${url} (${imgResp.status})`); continue; }
       const arrayBuffer = await imgResp.arrayBuffer();
       const bytes = new Uint8Array(arrayBuffer);
-      // Convert to base64
       let binary = '';
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
       const b64 = btoa(binary);
       const contentType = imgResp.headers.get('content-type') || 'image/jpeg';
       parts.push({ inlineData: { mimeType: contentType, data: b64 } });
+    } catch (e) {
+      console.warn(`Failed to process image ${url}:`, e);
     }
-
-    if (parts.length < 2) {
-      return { success: false, error: 'No reference images could be loaded' };
-    }
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/nano-banana-pro-preview:generateContent?key=${GOOGLE_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts }],
-          generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('Nano Banana error:', errText);
-      return { success: false, error: `Nano Banana error: ${errText}` };
-    }
-
-    const result = await response.json();
-    const candidate = result.candidates?.[0];
-    if (candidate?.content?.parts) {
-      for (const part of candidate.content.parts) {
-        if (part.inlineData?.mimeType?.startsWith('image/')) {
-          return {
-            success: true,
-            data: part.inlineData.data,
-            mimeType: part.inlineData.mimeType,
-          };
-        }
-      }
-    }
-
-    console.error('Nano Banana: no image in response');
-    return { success: false, error: 'No image in Nano Banana response' };
-  } catch (e: any) {
-    console.error('Nano Banana exception:', e.message);
-    return { success: false, error: e.message };
   }
+
+  if (parts.length < 2) {
+    return { success: false, error: 'No reference images could be loaded' };
+  }
+
+  // Try multiple Google image-generation models with retry on 503
+  const models = ['gemini-2.5-flash-image', 'nano-banana-pro-preview', 'gemini-3-pro-image-preview'];
+  const maxRetries = 2;
+
+  for (const model of models) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`generateWithNanoBanana: ${model} attempt ${attempt}/${maxRetries} (${imageUrls.length} refs)...`);
+
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts }],
+              generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
+            }),
+          }
+        );
+
+        if (response.status === 503 && attempt < maxRetries) {
+          console.warn(`${model}: 503 overloaded, retrying in ${attempt * 3}s...`);
+          await new Promise(r => setTimeout(r, attempt * 3000));
+          continue;
+        }
+
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error(`${model} error (${response.status}):`, errText.substring(0, 200));
+          break; // try next model
+        }
+
+        const result = await response.json();
+        const candidate = result.candidates?.[0];
+        if (candidate?.content?.parts) {
+          for (const part of candidate.content.parts) {
+            if (part.inlineData?.mimeType?.startsWith('image/')) {
+              console.log(`generateWithNanoBanana: ${model} returned image`);
+              return {
+                success: true,
+                data: part.inlineData.data,
+                mimeType: part.inlineData.mimeType,
+              };
+            }
+          }
+        }
+        console.warn(`${model}: no image in response`);
+        break; // try next model
+      } catch (e: any) {
+        console.error(`${model} exception:`, e.message);
+        break; // try next model
+      }
+    }
+  }
+
+  // All Google models failed — fallback to Together.ai FLUX Kontext Pro with reference image
+  if (TOGETHER_API_KEY && imageUrls.length > 0) {
+    console.log('generateWithNanoBanana: all Google models failed, trying Together.ai FLUX Kontext Pro fallback...');
+    const kontextResult = await generateWithTogether(
+      { id: 'black-forest-labs/FLUX.1-Kontext-pro', requiresImage: true, costPerMp: 0.04, steps: 40 },
+      textPrompt,
+      imageUrls[0],
+      1024,
+      1024
+    );
+    if (kontextResult.success) return kontextResult;
+    console.warn('Together Kontext fallback also failed:', kontextResult.error);
+  }
+
+  return { success: false, error: 'All image generation providers failed (Google + Together)' };
 }
 
 const SCENE_PROMPT_MAP: Record<string, string> = {
@@ -583,7 +611,7 @@ const ANGLE_SERVER: Record<string, string> = {
 async function tryGemini(prompt: string): Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }> {
   if (!GOOGLE_API_KEY) return { success: false, error: 'No Google API key' };
 
-  const models = ['gemini-2.5-flash-preview-04-17', 'gemini-2.0-flash-exp', 'gemini-2.0-flash'];
+  const models = ['gemini-2.5-flash-image', 'nano-banana-pro-preview', 'gemini-3-pro-image-preview'];
 
   for (const model of models) {
     try {
@@ -664,7 +692,7 @@ Rules:
 - Typically 2-6 pieces per outfit`;
 
   // Try multiple Gemini models in case one is retired/overloaded
-  const models = ['gemini-2.5-flash-preview-04-17', 'gemini-2.0-flash', 'gemini-2.0-flash-exp'];
+  const models = ['gemini-2.5-flash-image', 'gemini-2.0-flash', 'gemini-2.5-flash-preview-04-17'];
 
   for (const model of models) {
     try {

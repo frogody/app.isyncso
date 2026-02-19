@@ -55,52 +55,57 @@ async function generateWithNanoBanana(
 ): Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }> {
   if (!GOOGLE_API_KEY) return { success: false, error: "No GOOGLE_API_KEY" };
 
-  const maxRetries = 3;
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    console.log(`[nano-banana] Attempt ${attempt}/${maxRetries}...`);
+  const models = ["gemini-2.5-flash-image", "nano-banana-pro-preview", "gemini-3-pro-image-preview"];
+  const maxRetries = 2;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/nano-banana-pro-preview:generateContent?key=${GOOGLE_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts }],
-          generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
-        }),
+  for (const model of models) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      console.log(`[google] ${model} attempt ${attempt}/${maxRetries}...`);
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts }],
+            generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+          }),
+        }
+      );
+
+      if (response.status === 503 && attempt < maxRetries) {
+        console.warn(`[google] ${model} 503 overloaded, retrying in ${attempt * 3}s...`);
+        await new Promise((r) => setTimeout(r, attempt * 3000));
+        continue;
       }
-    );
 
-    if (response.status === 503 && attempt < maxRetries) {
-      const waitMs = attempt * 3000;
-      console.warn(`[nano-banana] 503 overloaded, retrying in ${waitMs}ms...`);
-      await new Promise((r) => setTimeout(r, waitMs));
-      continue;
-    }
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error(`[google] ${model} error (${response.status}):`, errText.substring(0, 200));
+        break; // try next model
+      }
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error(`[nano-banana] Error (${response.status}):`, errText.substring(0, 300));
-      return { success: false, error: `nano-banana ${response.status}` };
-    }
-
-    const result = await response.json();
-    const candidate = result.candidates?.[0];
-    if (candidate?.content?.parts) {
-      for (const part of candidate.content.parts) {
-        if (part.inlineData?.mimeType?.startsWith("image/")) {
-          return {
-            success: true,
-            data: part.inlineData.data,
-            mimeType: part.inlineData.mimeType,
-          };
+      const result = await response.json();
+      const candidate = result.candidates?.[0];
+      if (candidate?.content?.parts) {
+        for (const part of candidate.content.parts) {
+          if (part.inlineData?.mimeType?.startsWith("image/")) {
+            console.log(`[google] ${model} returned image`);
+            return {
+              success: true,
+              data: part.inlineData.data,
+              mimeType: part.inlineData.mimeType,
+            };
+          }
         }
       }
+      console.warn(`[google] ${model}: no image in response`);
+      break; // try next model
     }
-    return { success: false, error: "No image in nano-banana response" };
   }
 
-  return { success: false, error: "nano-banana: max retries exceeded (503)" };
+  return { success: false, error: "All Google image models unavailable" };
 }
 
 // ── Together.ai FLUX fallback ───────────────────────────────────────
