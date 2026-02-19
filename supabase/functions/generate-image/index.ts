@@ -652,16 +652,7 @@ async function identifyGarments(
   const b64 = btoa(binary);
   const contentType = imgResp.headers.get('content-type') || 'image/jpeg';
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            {
-              text: `Analyze this fashion photo. Identify each distinct garment piece or accessory the person is wearing. For each item, provide a detailed description of EXACTLY what that garment looks like (color, fabric, style, pattern, details).
+  const analysisPrompt = `Analyze this fashion photo. Identify each distinct garment piece or accessory the person is wearing. For each item, provide a detailed description of EXACTLY what that garment looks like (color, fabric, style, pattern, details).
 
 Respond ONLY with valid JSON, no markdown, no code fences. Use this exact format:
 {"garments":["top","bottom","shoes"],"descriptions":{"top":"White cotton button-down blouse with pointed collar...","bottom":"Black high-waisted A-line skirt...","shoes":"Black leather ankle boots with low heel..."}}
@@ -670,35 +661,62 @@ Rules:
 - Use simple lowercase labels: "top", "bottom", "jacket", "blazer", "shirt", "shoes", "boots", "hat", "scarf", "belt", "bag", "dress", "coat", "vest", "skirt", "pants", "shorts", "sweater"
 - Only include items that are clearly visible
 - Be very specific about colors, patterns, fabric texture, and design details
-- Typically 2-6 pieces per outfit`
-            },
-            { inlineData: { mimeType: contentType, data: b64 } }
-          ]
-        }],
-      }),
+- Typically 2-6 pieces per outfit`;
+
+  // Try multiple Gemini models in case one is retired/overloaded
+  const models = ['gemini-2.5-flash-preview-04-17', 'gemini-2.0-flash', 'gemini-2.0-flash-exp'];
+
+  for (const model of models) {
+    try {
+      console.log(`identifyGarments: trying ${model}...`);
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: analysisPrompt },
+                { inlineData: { mimeType: contentType, data: b64 } }
+              ]
+            }],
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error(`identifyGarments: ${model} error (${response.status}):`, errText.substring(0, 200));
+        continue;
+      }
+
+      const result = await response.json();
+      const textPart = result.candidates?.[0]?.content?.parts?.find((p: any) => p.text);
+      if (!textPart?.text) {
+        console.warn(`identifyGarments: ${model} returned no text`);
+        continue;
+      }
+
+      // Parse JSON from response, strip code fences if present
+      let jsonStr = textPart.text.trim();
+      if (jsonStr.startsWith('```')) {
+        jsonStr = jsonStr.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+      }
+
+      const parsed = JSON.parse(jsonStr);
+      console.log(`identifyGarments: ${model} identified ${parsed.garments?.length || 0} garments`);
+      return {
+        garments: parsed.garments || [],
+        descriptions: parsed.descriptions || {},
+      };
+    } catch (e: any) {
+      console.error(`identifyGarments: ${model} exception:`, e.message);
+      continue;
     }
-  );
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Gemini analysis error: ${errText}`);
   }
 
-  const result = await response.json();
-  const textPart = result.candidates?.[0]?.content?.parts?.find((p: any) => p.text);
-  if (!textPart?.text) throw new Error('No text response from Gemini analysis');
-
-  // Parse JSON from response, strip code fences if present
-  let jsonStr = textPart.text.trim();
-  if (jsonStr.startsWith('```')) {
-    jsonStr = jsonStr.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
-  }
-
-  const parsed = JSON.parse(jsonStr);
-  return {
-    garments: parsed.garments || [],
-    descriptions: parsed.descriptions || {},
-  };
+  throw new Error('All Gemini models failed for garment identification');
 }
 
 async function extractGarmentPiece(
