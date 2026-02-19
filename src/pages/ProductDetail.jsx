@@ -192,6 +192,7 @@ function SectionNav({ activeSection, onSectionChange, productType }) {
             onClick={() => onSectionChange(item.id)}
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap",
+              item.id === 'listing' && 'ml-auto',
               isActive
                 ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
                 : cn(t('text-slate-500', 'text-zinc-400'), t('hover:text-slate-900', 'hover:text-white'), "hover:bg-white/5")
