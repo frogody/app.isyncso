@@ -197,19 +197,19 @@ const VIDEO_DURATIONS = [
 
 // ─── CAMERA MOVEMENTS ───────────────────────────────────────────────
 const CAMERA_MOVEMENTS = [
-  { id: 'static', label: 'Static', desc: 'No camera movement', promptHint: 'Static camera, no camera movement.' },
-  { id: 'slow_zoom_in', label: 'Zoom In', desc: 'Slowly close in on subject', promptHint: 'Slow cinematic zoom in toward the subject, closing in on outfit details.' },
-  { id: 'slow_zoom_out', label: 'Zoom Out', desc: 'Pull back to reveal scene', promptHint: 'Slow zoom out revealing the full outfit and surrounding scene.' },
-  { id: 'pan_left', label: 'Pan Left', desc: 'Camera pans left', promptHint: 'Smooth camera pan from right to left across the scene.' },
-  { id: 'pan_right', label: 'Pan Right', desc: 'Camera pans right', promptHint: 'Smooth camera pan from left to right across the scene.' },
-  { id: 'orbit_cw', label: 'Orbit CW', desc: 'Orbit clockwise around model', promptHint: 'Camera slowly orbits clockwise around the subject, revealing the outfit from multiple angles.' },
-  { id: 'orbit_ccw', label: 'Orbit CCW', desc: 'Orbit counter-clockwise', promptHint: 'Camera slowly orbits counter-clockwise around the subject.' },
-  { id: 'tilt_up', label: 'Tilt Up', desc: 'Camera tilts from low to high', promptHint: 'Camera tilts upward from shoes to head, revealing the full outfit bottom to top.' },
-  { id: 'tilt_down', label: 'Tilt Down', desc: 'Camera tilts from high to low', promptHint: 'Camera tilts downward from head to shoes, scanning the full outfit.' },
-  { id: 'dolly_in', label: 'Dolly In', desc: 'Camera moves forward', promptHint: 'Camera dollies forward toward the subject, creating depth and intimacy.' },
-  { id: 'dolly_out', label: 'Dolly Out', desc: 'Camera moves backward', promptHint: 'Camera dollies backward away from the subject, revealing the full scene.' },
-  { id: 'crane_up', label: 'Crane Up', desc: 'Camera rises dramatically', promptHint: 'Camera rises on a crane, starting low and sweeping up for a dramatic reveal.' },
-  { id: 'tracking', label: 'Tracking', desc: 'Follow model sideways', promptHint: 'Camera tracks sideways following the model as they walk, maintaining a side angle.' },
+  { id: 'static', label: 'Static', desc: 'No camera movement', promptHint: 'Handheld static camera, no camera movement, real-time speed.' },
+  { id: 'slow_zoom_in', label: 'Zoom In', desc: 'Close in on subject', promptHint: 'Gentle zoom in toward the subject at natural real-time speed.' },
+  { id: 'slow_zoom_out', label: 'Zoom Out', desc: 'Pull back to reveal scene', promptHint: 'Gentle zoom out revealing the full outfit at natural real-time speed.' },
+  { id: 'pan_left', label: 'Pan Left', desc: 'Camera pans left', promptHint: 'Camera pans from right to left at natural real-time speed.' },
+  { id: 'pan_right', label: 'Pan Right', desc: 'Camera pans right', promptHint: 'Camera pans from left to right at natural real-time speed.' },
+  { id: 'orbit_cw', label: 'Orbit CW', desc: 'Orbit clockwise around model', promptHint: 'Camera orbits clockwise around the subject at natural walking pace.' },
+  { id: 'orbit_ccw', label: 'Orbit CCW', desc: 'Orbit counter-clockwise', promptHint: 'Camera orbits counter-clockwise around the subject at natural walking pace.' },
+  { id: 'tilt_up', label: 'Tilt Up', desc: 'Camera tilts from low to high', promptHint: 'Camera tilts upward from feet to head at natural real-time speed.' },
+  { id: 'tilt_down', label: 'Tilt Down', desc: 'Camera tilts from high to low', promptHint: 'Camera tilts downward from head to feet at natural real-time speed.' },
+  { id: 'dolly_in', label: 'Dolly In', desc: 'Camera moves forward', promptHint: 'Camera moves forward toward the subject at natural walking pace.' },
+  { id: 'dolly_out', label: 'Dolly Out', desc: 'Camera moves backward', promptHint: 'Camera moves backward away from the subject at natural walking pace.' },
+  { id: 'crane_up', label: 'Crane Up', desc: 'Camera rises up', promptHint: 'Camera rises upward at natural real-time speed.' },
+  { id: 'tracking', label: 'Tracking', desc: 'Follow model sideways', promptHint: 'Camera tracks sideways following the model as they walk at natural pace.' },
 ];
 
 export default function FashionBooth({ embedded = false }) {
@@ -413,10 +413,9 @@ export default function FashionBooth({ embedded = false }) {
 
       const motionPrompt = videoPrompt.trim()
         || [
-          `Animate this fashion photo into a cinematic video.`,
-          `The fashion model confidently strikes multiple poses in a ${sceneLabel.toLowerCase()} setting, showing off the outfit from different angles.`,
-          `The model transitions smoothly between poses — a front-facing look, a three-quarter turn, a hand on hip, and a slow full rotation to reveal the back of the garment.`,
-          `Natural fabric movement with each pose, professional studio lighting, cinematic slow motion.`,
+          `Raw single-take video shot at natural real-time speed, no slow motion.`,
+          `The fashion model moves naturally in a ${sceneLabel.toLowerCase()} setting — subtle weight shifts, a slight turn, natural breathing and micro-movements.`,
+          `Real-time fabric movement, natural lighting. Shot on a handheld camera as if captured in one continuous unedited take.`,
           cameraHint,
           `Keep the model's face, body, and outfit exactly as they appear in the image.`,
         ].filter(Boolean).join(' ');

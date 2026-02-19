@@ -189,7 +189,7 @@ serve(async (req) => {
     // ── Step 2: Build the video generation prompt ────────────────────
     const videoPrompt = prompt?.trim()
       ? prompt.trim()
-      : 'Animate this fashion photo into a cinematic video. The model confidently strikes multiple poses, slowly turning to show the outfit from different angles. Natural fabric movement, smooth camera motion, professional studio lighting. Keep the person, outfit, and setting exactly as they appear.';
+      : 'Raw single-take video at natural real-time speed, no slow motion. The model moves naturally with subtle weight shifts and micro-movements. Real-time fabric movement, natural lighting. Shot as one continuous unedited take. Keep the person, outfit, and setting exactly as they appear.';
 
     // ── Step 3: Try Veo predictLongRunning with image input ──────────
     // Try multiple image formats: fileUri (Files API), bytesBase64Encoded, inlineData
