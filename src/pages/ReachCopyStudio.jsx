@@ -846,7 +846,7 @@ export default function ReachCopyStudio() {
                     <Button
                       onClick={handleGenerate}
                       disabled={generating}
-                      className="bg-cyan-600 hover:bg-cyan-500 text-white px-6 disabled:opacity-50"
+                      className="bg-cyan-500 hover:bg-cyan-400 text-black px-6 disabled:opacity-50"
                     >
                       {generating ? (
                         <>

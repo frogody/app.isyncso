@@ -13,10 +13,8 @@ import {
   Unplug,
   RefreshCw,
   AlertTriangle,
-  Key,
   CloudCog,
   Loader2,
-  ExternalLink,
   Clock,
   Shield,
   Info,
@@ -38,30 +36,6 @@ const PLATFORM_ICON_MAP = {
   Music2,
   BarChart3,
 };
-
-// ---------------------------------------------------------------------------
-// API key definitions
-// ---------------------------------------------------------------------------
-const API_KEYS = [
-  {
-    id: "NANOBANANA_API_KEY",
-    name: "NanoBanana API Key",
-    description: "Required for AI-powered marketing image generation",
-    icon: "image",
-  },
-  {
-    id: "RUNWAY_API_KEY",
-    name: "Runway API Key",
-    description: "Required for AI video generation and editing",
-    icon: "video",
-  },
-  {
-    id: "ANTHROPIC_API_KEY",
-    name: "Anthropic API Key",
-    description: "Powers AI copy generation, insights, and brand voice analysis",
-    icon: "ai",
-  },
-];
 
 // ---------------------------------------------------------------------------
 // Platform connection card
@@ -141,7 +115,7 @@ function PlatformCard({ platformKey, platform, connection, onConnect, onDisconne
 }
 
 // ---------------------------------------------------------------------------
-// OAuth setup banner
+// OAuth info banner
 // ---------------------------------------------------------------------------
 function OAuthBanner({ platformName, onClose }) {
   return (
@@ -149,60 +123,26 @@ function OAuthBanner({ platformName, onClose }) {
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: "auto" }}
       exit={{ opacity: 0, height: 0 }}
-      className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 mb-4"
+      className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4 mb-4"
     >
       <div className="flex items-start gap-3">
-        <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+        <Info className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
         <div className="flex-1">
-          <h4 className="text-sm font-semibold text-amber-300 mb-1">
-            OAuth Configuration Required
+          <h4 className="text-sm font-semibold text-cyan-300 mb-1">
+            Connecting {platformName}
           </h4>
-          <p className="text-sm text-amber-300/70 leading-relaxed">
-            To connect <span className="font-medium text-amber-200">{platformName}</span>,
-            you need to configure OAuth credentials in your Supabase project secrets. This
-            requires creating a developer app on the platform and adding the client ID and
-            secret to your environment.
-          </p>
-          <p className="text-sm text-amber-300/70 mt-2">
-            See <code className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 text-xs">
-            REACH_SETUP_NOTES.md</code> for step-by-step instructions.
+          <p className="text-sm text-cyan-300/70 leading-relaxed">
+            OAuth credentials for <span className="font-medium text-cyan-200">{platformName}</span>{" "}
+            are managed server-side. If the connection does not work, contact your administrator
+            to verify that the platform credentials have been configured.
           </p>
         </div>
         <button
           onClick={onClose}
-          className="text-amber-400/60 hover:text-amber-400 transition-colors p-1"
+          className="text-cyan-400/60 hover:text-cyan-400 transition-colors p-1"
         >
           <XCircle className="w-4 h-4" />
         </button>
-      </div>
-    </motion.div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// API key status card
-// ---------------------------------------------------------------------------
-function ApiKeyCard({ apiKey, index }) {
-  // We cannot verify keys from the frontend (they are in Supabase secrets).
-  // Show informational status.
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 backdrop-blur-sm"
-    >
-      <div className="flex items-center gap-4">
-        <div className="p-2.5 rounded-xl bg-zinc-800">
-          <Key className="w-5 h-5 text-zinc-400" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-white">{apiKey.name}</h3>
-          <p className="text-sm text-zinc-500 mt-0.5">{apiKey.description}</p>
-        </div>
-        <Badge variant="outline" size="sm" className="text-zinc-500 border-zinc-700 shrink-0">
-          Managed via Secrets
-        </Badge>
       </div>
     </motion.div>
   );
@@ -337,7 +277,7 @@ export default function ReachSettings() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="p-6 space-y-8 max-w-4xl"
+      className="p-6 space-y-6 max-w-4xl"
     >
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -390,27 +330,27 @@ export default function ReachSettings() {
         )}
       </section>
 
-      {/* API Keys Status */}
+      {/* AI Services */}
       <section>
-        <div className="flex items-center gap-2 mb-1">
-          <h2 className="text-lg font-semibold text-white">API Keys Status</h2>
-        </div>
-        <p className="text-sm text-zinc-500 mb-4">
-          These keys are managed in your Supabase project secrets and power various Reach features.
-        </p>
-
-        <div className="space-y-3">
-          {API_KEYS.map((apiKey, i) => (
-            <ApiKeyCard key={apiKey.id} apiKey={apiKey} index={i} />
-          ))}
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-lg font-semibold text-white">AI Services</h2>
         </div>
 
-        <div className="flex items-start gap-2.5 mt-4 px-1">
-          <Info className="w-4 h-4 text-zinc-500 shrink-0 mt-0.5" />
-          <p className="text-xs text-zinc-500 leading-relaxed">
-            API keys are securely stored as Supabase Edge Function secrets and cannot be viewed or
-            modified from this interface. To update them, use the Supabase Dashboard or CLI.
-          </p>
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 backdrop-blur-sm">
+          <div className="flex items-start gap-4">
+            <div className="p-2.5 rounded-xl bg-cyan-500/10 shrink-0">
+              <CheckCircle2 className="w-5 h-5 text-cyan-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-white">
+                Image and video generation are configured and ready to use.
+              </h3>
+              <p className="text-sm text-zinc-500 mt-1 leading-relaxed">
+                AI services for copy generation, image creation, and video editing are managed
+                server-side and require no additional configuration.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 

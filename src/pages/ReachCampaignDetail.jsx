@@ -76,7 +76,7 @@ const VARIANT_STATUS_STYLES = {
 // Variant Card
 // ---------------------------------------------------------------------------
 
-function DetailVariantCard({ variant, onUpdate, onApprove, onDelete }) {
+function DetailVariantCard({ variant, campaign, onUpdate, onApprove, onDelete }) {
   const [editing, setEditing] = useState(false);
   const [localData, setLocalData] = useState({
     headline: variant.headline || "",
@@ -84,6 +84,7 @@ function DetailVariantCard({ variant, onUpdate, onApprove, onDelete }) {
     cta_label: variant.cta_label || "",
   });
   const [saving, setSaving] = useState(false);
+  const [generatingImage, setGeneratingImage] = useState(false);
 
   const statusInfo =
     VARIANT_STATUSES[variant.status] || VARIANT_STATUSES.draft;
@@ -135,6 +136,58 @@ function DetailVariantCard({ variant, onUpdate, onApprove, onDelete }) {
     const text = `${localData.headline}\n\n${localData.primary_text}\n\nCTA: ${localData.cta_label}`;
     navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard");
+  }
+
+  async function handleGenerateImage() {
+    setGeneratingImage(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reach-generate-ad-image`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            product_name: campaign?.product_name,
+            ad_headline: variant.headline,
+            platform: variant.platform || variant.placement,
+            dimensions: variant.dimensions || { width: 1024, height: 1024 },
+            style: "professional",
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.error || `Request failed (${res.status})`);
+      }
+
+      const body = await res.json();
+      const imageUrl = body.image_url || body.url;
+
+      if (!imageUrl) throw new Error("No image URL returned");
+
+      // Persist the image_url to the database
+      const { error: dbError } = await supabase
+        .from("reach_ad_variants")
+        .update({ image_url: imageUrl })
+        .eq("id", variant.id);
+
+      if (dbError) {
+        console.error("Failed to save image URL:", dbError);
+        toast.error("Image generated but failed to save");
+      }
+
+      onUpdate({ ...variant, image_url: imageUrl });
+      toast.success("Image generated successfully");
+    } catch (err) {
+      console.error("Failed to generate image:", err);
+      toast.error(err.message || "Failed to generate image");
+    } finally {
+      setGeneratingImage(false);
+    }
   }
 
   return (
@@ -258,18 +311,49 @@ function DetailVariantCard({ variant, onUpdate, onApprove, onDelete }) {
         </div>
       )}
 
-      {/* Image placeholder */}
+      {/* Image / Generate Image */}
       {variant.image_url ? (
-        <img
-          src={variant.image_url}
-          alt="Ad creative"
-          className="w-full rounded-lg object-cover max-h-40"
-        />
-      ) : (
-        <div className="rounded-lg border border-dashed border-zinc-700/40 bg-zinc-900/30 p-2 flex items-center gap-2">
-          <Image className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
-          <p className="text-[11px] text-zinc-600">No image</p>
+        <div className="relative group">
+          <img
+            src={variant.image_url}
+            alt="Ad creative"
+            className="w-full rounded-lg object-cover max-h-40"
+          />
+          <div className="absolute inset-0 rounded-lg bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <Button
+              variant="glass"
+              size="xs"
+              onClick={handleGenerateImage}
+              disabled={generatingImage}
+              className="gap-1.5"
+            >
+              {generatingImage ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3.5 h-3.5" />
+              )}
+              {generatingImage ? "Generating..." : "Regenerate Image"}
+            </Button>
+          </div>
         </div>
+      ) : (
+        <button
+          onClick={handleGenerateImage}
+          disabled={generatingImage}
+          className="w-full rounded-lg border border-dashed border-zinc-700/40 bg-zinc-900/30 p-3 flex items-center justify-center gap-2 hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {generatingImage ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin shrink-0" />
+              <span className="text-[11px] text-cyan-400">Generating image...</span>
+            </>
+          ) : (
+            <>
+              <Image className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+              <span className="text-[11px] text-zinc-500">Generate Image</span>
+            </>
+          )}
+        </button>
       )}
 
       {/* Actions */}
@@ -666,6 +750,7 @@ export default function ReachCampaignDetail() {
                     <DetailVariantCard
                       key={v.id}
                       variant={v}
+                      campaign={campaign}
                       onUpdate={handleVariantUpdate}
                       onApprove={handleVariantApprove}
                     />
@@ -682,6 +767,7 @@ export default function ReachCampaignDetail() {
             <DetailVariantCard
               key={v.id}
               variant={v}
+              campaign={campaign}
               onUpdate={handleVariantUpdate}
               onApprove={handleVariantApprove}
             />

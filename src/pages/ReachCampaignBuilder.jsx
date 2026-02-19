@@ -638,7 +638,10 @@ function VariantCard({
   onUpdate,
   onRegenerate,
   onApprove,
+  onGenerateImage,
   regenerating,
+  generatingImage,
+  product,
 }) {
   const plat = PLATFORMS[placementKey];
   const statusInfo = VARIANT_STATUSES[variant.status] || VARIANT_STATUSES.draft;
@@ -707,13 +710,50 @@ function VariantCard({
         />
       </div>
 
-      {/* Image placeholder */}
-      <div className="rounded-lg border border-dashed border-zinc-700/40 bg-zinc-900/30 p-3 flex items-center gap-2">
-        <Image className="w-4 h-4 text-zinc-600 shrink-0" />
-        <p className="text-xs text-zinc-600">
-          Image generation requires API key
-        </p>
-      </div>
+      {/* Ad Image */}
+      {variant.image_url ? (
+        <div className="relative group rounded-lg overflow-hidden">
+          <img
+            src={variant.image_url}
+            alt="Ad creative"
+            className="w-full rounded-lg object-cover max-h-40 bg-zinc-800"
+          />
+          <button
+            type="button"
+            onClick={onGenerateImage}
+            disabled={generatingImage}
+            className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <span className="flex items-center gap-1.5 text-xs text-white font-medium">
+              {generatingImage ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3.5 h-3.5" />
+              )}
+              Regenerate Image
+            </span>
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onGenerateImage}
+          disabled={generatingImage}
+          className="w-full rounded-lg border border-dashed border-zinc-700/40 bg-zinc-900/30 p-3 flex items-center justify-center gap-2 hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-colors disabled:opacity-50"
+        >
+          {generatingImage ? (
+            <>
+              <Loader2 className="w-4 h-4 text-cyan-400 animate-spin shrink-0" />
+              <span className="text-xs text-cyan-400">Generating image...</span>
+            </>
+          ) : (
+            <>
+              <Image className="w-4 h-4 text-zinc-500 shrink-0" />
+              <span className="text-xs text-zinc-500">Generate Ad Image</span>
+            </>
+          )}
+        </button>
+      )}
 
       {/* Actions */}
       <div className="flex items-center gap-2 pt-1">
@@ -764,6 +804,58 @@ function StepGenerate({
 }) {
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [regeneratingKey, setRegeneratingKey] = useState(null);
+  const [generatingImageKey, setGeneratingImageKey] = useState(null);
+
+  async function handleGenerateImage(placementKey, variantIndex) {
+    const key = `${placementKey}-${variantIndex}`;
+    setGeneratingImageKey(key);
+    try {
+      const variant = generatedVariants[placementKey]?.[variantIndex];
+      const plat = PLATFORMS[placementKey];
+      const productImageUrl =
+        typeof product?.featured_image === "string"
+          ? product.featured_image
+          : product?.featured_image?.url || null;
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reach-generate-ad-image`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            product_name: product?.name,
+            product_description: product?.description,
+            ad_headline: variant?.headline,
+            ad_primary_text: variant?.primary_text,
+            platform: plat?.name,
+            dimensions: { width: plat?.width || 1024, height: plat?.height || 1024 },
+            style: "professional",
+            product_image_url: productImageUrl,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`Image generation failed: ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (data.image_url) {
+        handleUpdateVariant(placementKey, variantIndex, { image_url: data.image_url });
+        toast.success("Ad image generated");
+      } else {
+        toast.error(data.error || "Image generation failed");
+      }
+    } catch (err) {
+      console.error("Image generation error:", err);
+      toast.error("Failed to generate image");
+    } finally {
+      setGeneratingImageKey(null);
+    }
+  }
 
   async function generateForPlacement(placementKey) {
     const plat = PLATFORMS[placementKey];
@@ -999,12 +1091,15 @@ function StepGenerate({
                   variant={variant}
                   placementKey={placementKey}
                   variantIndex={idx}
+                  product={product}
                   onUpdate={(updates) =>
                     handleUpdateVariant(placementKey, idx, updates)
                   }
                   onRegenerate={() => handleRegenerate(placementKey, idx)}
                   onApprove={() => handleApproveVariant(placementKey, idx)}
+                  onGenerateImage={() => handleGenerateImage(placementKey, idx)}
                   regenerating={regeneratingKey === `${placementKey}-${idx}`}
+                  generatingImage={generatingImageKey === `${placementKey}-${idx}`}
                 />
               ))}
             </div>

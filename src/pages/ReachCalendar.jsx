@@ -277,7 +277,7 @@ export default function ReachCalendar() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="p-6 space-y-5"
+      className="p-6 space-y-6"
     >
       {/* ---- Header ---- */}
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -382,9 +382,8 @@ export default function ReachCalendar() {
       {/* ---- Calendar body ---- */}
       <div className="rounded-2xl bg-zinc-900/50 border border-zinc-800/60 overflow-hidden">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-24">
-            <Loader2 className="w-8 h-8 text-cyan-400 animate-spin mb-3" />
-            <p className="text-sm text-zinc-500">Loading calendar...</p>
+          <div className="flex items-center justify-center py-24">
+            <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
           </div>
         ) : posts.length === 0 && view === 'month' ? (
           <EmptyState onNewPost={handleNewPost} />
