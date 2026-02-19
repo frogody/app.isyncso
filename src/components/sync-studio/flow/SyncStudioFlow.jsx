@@ -683,12 +683,14 @@ function SelectStage({ state, dispatch, user, callEdge }) {
 
     try {
       // Step 1: Import catalog
-      await callEdge('sync-studio-import-catalog', {
+      const importResult = await callEdge('sync-studio-import-catalog', {
         action: 'start',
         userId: user.id,
         companyId: user.company_id,
         productIds,
       });
+
+      const importJobId = importResult.importJobId;
 
       dispatch({
         type: 'PLANNING_PROGRESS',
@@ -700,20 +702,24 @@ function SelectStage({ state, dispatch, user, callEdge }) {
         action: 'start',
         userId: user.id,
         companyId: user.company_id,
+        importJobId,
       });
 
-      while (planResult?.status === 'processing') {
+      while (planResult?.status === 'processing' || planResult?.status === 'planning') {
         dispatch({
           type: 'PLANNING_PROGRESS',
           payload: {
-            current: planResult.processed || 0,
-            total: planResult.total || productIds.length,
+            current: planResult.planned || planResult.processed || 0,
+            total: planResult.totalProducts || planResult.total || productIds.length,
           },
         });
         await new Promise((r) => setTimeout(r, 2000));
         planResult = await callEdge('sync-studio-generate-plans', {
           action: 'continue',
           userId: user.id,
+          companyId: user.company_id,
+          importJobId,
+          page: (planResult.page || 1) + 1,
         });
       }
 
