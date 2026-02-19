@@ -27,6 +27,7 @@ serve(async (req) => {
       language,        // 'en', 'nl', 'de', 'fr'
       tone,            // 'professional', 'casual', 'technical', 'luxury'
       focus_keywords,  // optional user-provided keywords
+      research_context, // optional: { findings, valuePropositions, targetAudience, competitorInsights, keyFeatures }
     } = await req.json();
 
     if (!product_name) {
@@ -102,7 +103,21 @@ serve(async (req) => {
 - **EAN:** ${product_ean || 'Not provided'}
 - **Specifications:** ${specsText}
 ${focus_keywords ? `- **Focus Keywords:** ${focus_keywords}` : ''}
+${research_context ? `
+## Market Research Insights
+${research_context.findings || 'No additional research available'}
 
+### Key Value Propositions (discovered through research)
+${(research_context.valuePropositions || []).map((v: string) => `- ${v}`).join('\n') || '- Not available'}
+
+### Target Audience
+${research_context.targetAudience || 'General consumers'}
+
+### Competitive Context
+${research_context.competitorInsights || 'No competitor data available'}
+
+IMPORTANT: Use these research insights to craft copy that highlights the product's genuine strengths and differentiators. Reference specific features and benefits discovered through research rather than generic marketing language.
+` : ''}
 ## Channel Requirements
 ${channelGuide}
 

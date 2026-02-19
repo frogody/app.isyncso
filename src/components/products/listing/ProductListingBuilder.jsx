@@ -168,7 +168,38 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
     return data.url;
   }, [product, productReferenceImages, user]);
 
-  // Generate all listing content via AI - the main orchestrator
+  // Generate a single image with custom aspect ratio (for video frames)
+  const generateImageWide = useCallback(async (prompt, useCase = 'product_scene') => {
+    const { data, error } = await supabase.functions.invoke('generate-image', {
+      body: {
+        prompt,
+        product_name: product?.name,
+        product_images: productReferenceImages,
+        use_case: productReferenceImages.length > 0 ? useCase : 'marketing_creative',
+        model_key: 'nano-banana-pro',
+        style: 'photorealistic',
+        aspect_ratio: '16:9',
+        width: 1280,
+        height: 720,
+        company_id: user?.company_id,
+        user_id: user?.id,
+        reference_image_url: productReferenceImages[0] || null,
+        is_physical_product: true,
+        product_context: {
+          name: product?.name,
+          description: product?.description || product?.short_description,
+          type: 'physical',
+        },
+      },
+    });
+
+    if (error) throw error;
+    if (data?.error) throw new Error(data.details || data.error);
+    if (!data?.url) throw new Error('No image URL returned');
+    return data.url;
+  }, [product, productReferenceImages, user]);
+
+  // Generate all listing content via AI - the main 7-phase orchestrator
   const handleGenerateAll = useCallback(async () => {
     if (!product?.id || !user?.company_id) return;
 
@@ -189,9 +220,83 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
     };
 
     try {
-      // --- Step 1: Generate Copy ---
-      updateProgress({ phase: 'copy', progress: 5, stepLabel: 'Analyzing product and crafting copy...', copy: null, heroImageUrl: null, galleryImages: [], galleryTotal: 4, videoUrl: null });
-      toast.loading('Generating product copy...', { id: toastId });
+      // ═══════════════════════════════════════════════════════════════
+      // Phase 1: RESEARCH — Investigate the product via Tavily + LLM
+      // ═══════════════════════════════════════════════════════════════
+      updateProgress({
+        phase: 'research', progress: 2, stepLabel: 'Researching product...',
+        research: null, copy: null, heroImageUrl: null, galleryImages: [], galleryTotal: 4,
+        videoFrames: [], videoFramesTotal: 2, videoUrl: null,
+      });
+      toast.loading('AI is researching your product...', { id: toastId });
+
+      let researchData = null;
+      let researchContext = null;
+
+      try {
+        const { data: rData, error: rError } = await supabase.functions.invoke('research-product', {
+          body: {
+            productDescription: `${product?.name || ''} ${product?.description || ''}`.trim(),
+            extractedEan: details?.ean || details?.barcode || '',
+            supplierName: product?.brand || '',
+            modelNumber: details?.model_number || details?.sku || '',
+          },
+        });
+
+        if (rError) throw rError;
+
+        researchData = rData?.product || rData;
+
+        const specs = researchData?.specifications || [];
+        const valueProps = specs.map((s) => `${s.name}: ${s.value}`).filter(Boolean);
+        const keyFeatures = specs.slice(0, 8).map((s) => s.name).filter(Boolean);
+
+        researchContext = {
+          findings: researchData?.description || researchData?.tagline || '',
+          valuePropositions: valueProps,
+          targetAudience: researchData?.category ? `Consumers interested in ${researchData.category}` : 'General consumers',
+          competitorInsights: researchData?.sourceUrl ? `Market data sourced from ${researchData.sourceUrl}` : '',
+          keyFeatures,
+        };
+
+        updateProgress({
+          phase: 'research', progress: 10, stepLabel: 'Research complete!',
+          research: {
+            summary: researchData?.description || researchData?.tagline || 'Product analyzed from catalog data',
+            valuePropositions: valueProps,
+            targetAudience: researchContext.targetAudience,
+            competitorInsights: researchContext.competitorInsights,
+            keyFeatures,
+            sources: researchData?.sourceUrl ? [researchData.sourceUrl] : [],
+          },
+        });
+      } catch (researchErr) {
+        console.warn('[ProductListingBuilder] Research failed, using catalog data:', researchErr.message);
+        researchContext = {
+          findings: product?.description || '',
+          valuePropositions: [],
+          targetAudience: product?.category ? `Consumers interested in ${product.category}` : 'General consumers',
+          competitorInsights: '',
+          keyFeatures: [],
+        };
+        updateProgress({
+          phase: 'research', progress: 10, stepLabel: 'Using catalog data',
+          research: {
+            summary: product?.description || 'Using existing product catalog data',
+            valuePropositions: [],
+            targetAudience: researchContext.targetAudience,
+            competitorInsights: '',
+            keyFeatures: [],
+            sources: [],
+          },
+        });
+      }
+
+      // ═══════════════════════════════════════════════════════════════
+      // Phase 2: COPY — Generate research-informed listing copy
+      // ═══════════════════════════════════════════════════════════════
+      updateProgress({ phase: 'copy', progress: 12, stepLabel: 'Crafting research-informed copy...' });
+      toast.loading('Writing product copy...', { id: toastId });
 
       const { data: copyData, error: copyError } = await supabase.functions.invoke('generate-listing-copy', {
         body: {
@@ -207,6 +312,7 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
           channel: selectedChannel || 'generic',
           language: 'EN',
           tone: 'professional',
+          research_context: researchContext,
         },
       });
 
@@ -232,11 +338,8 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
 
       savedListing = await saveListingSilent(copyPayload);
 
-      // Update progress with live copy content
       updateProgress({
-        phase: 'copy',
-        progress: 20,
-        stepLabel: 'Copy generated!',
+        phase: 'copy', progress: 22, stepLabel: 'Copy generated!',
         copy: {
           title: firstTitle,
           allTitles,
@@ -250,7 +353,9 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
         },
       });
 
-      // --- Step 2: Generate Hero Image ---
+      // ═══════════════════════════════════════════════════════════════
+      // Phase 3: HERO IMAGE — Studio product shot
+      // ═══════════════════════════════════════════════════════════════
       updateProgress({ phase: 'hero', progress: 25, stepLabel: 'Creating studio hero shot...' });
       toast.loading('Creating hero image...', { id: toastId });
 
@@ -258,14 +363,16 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
         const heroPrompt = `Professional e-commerce product photography of ${product?.name || 'the product'} on a clean white background, studio lighting, sharp detail, commercial hero shot, high resolution, centered composition`;
         const heroUrl = await generateImage(heroPrompt, 'product_variation');
         savedListing = await saveListingSilent({ hero_image_url: heroUrl });
-        updateProgress({ phase: 'hero', progress: 35, stepLabel: 'Hero image created!', heroImageUrl: heroUrl });
+        updateProgress({ phase: 'hero', progress: 32, stepLabel: 'Hero image created!', heroImageUrl: heroUrl });
       } catch (imgErr) {
         console.warn('[ProductListingBuilder] Hero image failed:', imgErr.message);
-        updateProgress({ phase: 'hero', progress: 35, stepLabel: 'Hero image skipped' });
+        updateProgress({ phase: 'hero', progress: 32, stepLabel: 'Hero image skipped' });
       }
 
-      // --- Step 3: Generate Gallery Images (4 lifestyle variants) ---
-      updateProgress({ phase: 'gallery', progress: 40, stepLabel: 'Generating lifestyle gallery...' });
+      // ═══════════════════════════════════════════════════════════════
+      // Phase 4: GALLERY — 4 lifestyle variant shots
+      // ═══════════════════════════════════════════════════════════════
+      updateProgress({ phase: 'gallery', progress: 35, stepLabel: 'Generating lifestyle gallery...' });
       toast.loading('Generating lifestyle images...', { id: toastId });
 
       const galleryScenes = [
@@ -280,16 +387,12 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
         try {
           updateProgress({
             phase: 'gallery',
-            progress: 40 + ((i + 1) / galleryScenes.length) * 30,
+            progress: 35 + ((i + 1) / galleryScenes.length) * 20,
             stepLabel: `Creating ${galleryScenes[i].label} (${i + 1}/${galleryScenes.length})...`,
           });
           const url = await generateImage(galleryScenes[i].prompt, 'product_scene');
           galleryUrls.push({ url, description: galleryScenes[i].label });
-
-          // Update gallery one at a time for progressive reveal
-          updateProgress({
-            galleryImages: [...galleryUrls],
-          });
+          updateProgress({ galleryImages: [...galleryUrls] });
         } catch (err) {
           console.warn(`[ProductListingBuilder] Gallery image ${i + 1} failed:`, err.message);
         }
@@ -302,44 +405,103 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
         });
       }
 
-      // --- Step 4: Generate Video ---
-      updateProgress({ phase: 'video', progress: 75, stepLabel: 'Generating product video...' });
-      toast.loading('Creating product video...', { id: toastId });
+      // ═══════════════════════════════════════════════════════════════
+      // Phase 5: VIDEO FRAMES — 2 cinematic 16:9 reference frames
+      // ═══════════════════════════════════════════════════════════════
+      updateProgress({ phase: 'videoframes', progress: 58, stepLabel: 'Generating cinematic video frames...' });
+      toast.loading('Creating video reference frames...', { id: toastId });
 
-      try {
-        const videoPrompt = `Cinematic product showcase of ${product?.name || 'the product'}: slow rotating view, studio lighting on clean background, smooth camera movement, professional commercial quality`;
-        const { data: videoData, error: videoError } = await supabase.functions.invoke('generate-video', {
-          body: {
-            prompt: videoPrompt,
-            product_name: product?.name,
-            reference_image_url: savedListing?.hero_image_url || productReferenceImages[0] || null,
-            company_id: user?.company_id,
-            user_id: user?.id,
-          },
-        });
+      const videoFrameScenes = [
+        {
+          prompt: `Cinematic product hero shot of ${product?.name || 'the product'}, dramatic studio lighting, shallow depth of field, product centered on dark reflective surface with rim lighting, wide angle, commercial film quality, 16:9 cinematic composition`,
+          label: 'Cinematic Hero Frame',
+        },
+        {
+          prompt: `Dynamic lifestyle shot of ${product?.name || 'the product'} in an elegant modern setting, cinematic warm ambient lighting, product in context with complementary styling, wide composition suggesting movement, commercial video still quality`,
+          label: 'Lifestyle Motion Frame',
+        },
+      ];
 
-        if (videoError) throw videoError;
-        if (videoData?.url) {
-          savedListing = await saveListingSilent({ video_url: videoData.url });
-          updateProgress({ phase: 'video', progress: 90, stepLabel: 'Video created!', videoUrl: videoData.url });
-        } else if (videoData?.status === 'processing') {
-          updateProgress({ phase: 'video', progress: 85, stepLabel: 'Video processing in background...' });
-        } else {
-          updateProgress({ phase: 'video', progress: 85, stepLabel: 'Video generation skipped' });
+      const videoFrames = [];
+      for (let i = 0; i < videoFrameScenes.length; i++) {
+        try {
+          updateProgress({
+            phase: 'videoframes',
+            progress: 58 + ((i + 1) / videoFrameScenes.length) * 12,
+            stepLabel: `Creating ${videoFrameScenes[i].label} (${i + 1}/${videoFrameScenes.length})...`,
+          });
+          const url = await generateImageWide(videoFrameScenes[i].prompt, 'product_scene');
+          videoFrames.push({ url, description: videoFrameScenes[i].label });
+          updateProgress({ videoFrames: [...videoFrames] });
+        } catch (err) {
+          console.warn(`[ProductListingBuilder] Video frame ${i + 1} failed:`, err.message);
         }
-      } catch (vidErr) {
-        console.warn('[ProductListingBuilder] Video generation failed:', vidErr.message);
-        updateProgress({ phase: 'video', progress: 85, stepLabel: 'Video skipped' });
       }
 
-      // --- Step 5: Done ---
+      // Save video frames alongside gallery
+      if (videoFrames.length > 0) {
+        savedListing = await saveListingSilent({
+          video_reference_frames: videoFrames.map((f) => f.url),
+        });
+      }
+
+      // ═══════════════════════════════════════════════════════════════
+      // Phase 6: PRODUCT VIDEO — Veo 3.1 via generate-fashion-video
+      // ═══════════════════════════════════════════════════════════════
+      updateProgress({ phase: 'video', progress: 72, stepLabel: 'Generating product video with Veo 3.1...' });
+      toast.loading('Creating cinematic product video...', { id: toastId });
+
+      const videoReferenceUrl = videoFrames[0]?.url || savedListing?.hero_image_url || productReferenceImages[0] || null;
+
+      if (videoReferenceUrl) {
+        try {
+          const researchSummary = researchContext?.findings
+            ? researchContext.findings.substring(0, 200)
+            : '';
+          const videoPrompt = `Cinematic product showcase of ${product?.name || 'the product'}. ${researchSummary}. Smooth camera movement revealing product details from multiple angles, professional studio lighting with dramatic shadows, shallow depth of field. Premium commercial quality.`;
+
+          const { data: videoData, error: videoError } = await supabase.functions.invoke('generate-fashion-video', {
+            body: {
+              image_url: videoReferenceUrl,
+              prompt: videoPrompt,
+              model_key: 'veo-3.1-fast',
+              duration_seconds: 6,
+              aspect_ratio: '16:9',
+              generate_audio: false,
+              company_id: user?.company_id,
+              user_id: user?.id,
+            },
+          });
+
+          if (videoError) throw videoError;
+          if (videoData?.url) {
+            savedListing = await saveListingSilent({ video_url: videoData.url });
+            updateProgress({ phase: 'video', progress: 95, stepLabel: 'Video created!', videoUrl: videoData.url });
+          } else if (videoData?.status === 'processing') {
+            updateProgress({ phase: 'video', progress: 90, stepLabel: 'Video processing in background...' });
+          } else {
+            updateProgress({ phase: 'video', progress: 90, stepLabel: 'Video generation completed' });
+          }
+        } catch (vidErr) {
+          console.warn('[ProductListingBuilder] Video generation failed:', vidErr.message);
+          updateProgress({ phase: 'video', progress: 90, stepLabel: 'Video skipped — check Video Studio later' });
+        }
+      } else {
+        console.warn('[ProductListingBuilder] No reference image for video');
+        updateProgress({ phase: 'video', progress: 90, stepLabel: 'Video skipped — no reference image' });
+      }
+
+      // ═══════════════════════════════════════════════════════════════
+      // Phase 7: DONE — Grand finale
+      // ═══════════════════════════════════════════════════════════════
       updateProgress({ phase: 'done', progress: 100, stepLabel: 'Your listing is ready!' });
+
+      const totalImages = (savedListing?.hero_image_url ? 1 : 0) + galleryUrls.length + videoFrames.length;
       toast.success(
-        `Listing complete! ${galleryUrls.length + (savedListing?.hero_image_url ? 1 : 0)} images generated`,
+        `Listing complete! Researched, ${totalImages} images + video generated`,
         { id: toastId, duration: 5000 }
       );
 
-      // Re-fetch to sync state
       await fetchListing();
 
     } catch (err) {
@@ -348,9 +510,8 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
       setGeneratingProgress(null);
     } finally {
       setGenerating(false);
-      // Don't auto-clear progress or auto-switch tabs - user stays on Overview with the immersive view
     }
-  }, [product, details, user, listing, selectedChannel, saveListingSilent, generateImage, fetchListing, productReferenceImages]);
+  }, [product, details, user, listing, selectedChannel, saveListingSilent, generateImage, generateImageWide, fetchListing, productReferenceImages]);
 
   // Switch to a specific sub-tab - clear generation view when leaving overview
   const handleTabChange = useCallback((tabId) => {
