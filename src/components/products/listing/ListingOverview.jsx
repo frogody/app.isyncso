@@ -19,37 +19,89 @@ import { useTheme } from '@/contexts/GlobalThemeContext';
 import ListingGenerationView from './ListingGenerationView';
 
 // --- Score Calculation ---
+// ONLY scores listing-specific data. Product catalog data (name, description, featured_image) does NOT count.
+// A listing with no AI-generated content should score 0.
 
-function calculateScores(listing, product) {
-  // Images score (max 50)
-  const hasHero = !!(listing?.hero_image_url || product?.featured_image);
-  const galleryCount = listing?.gallery_urls?.length || product?.gallery?.length || 0;
-  const imagesScore = (hasHero ? 30 : 0) + Math.min(galleryCount * 5, 20);
+function calculateScores(listing) {
+  if (!listing) {
+    return {
+      total: 0,
+      images: { score: 0, max: 30, pct: 0 },
+      copy: { score: 0, max: 35, pct: 0 },
+      seo: { score: 0, max: 20, pct: 0 },
+      media: { score: 0, max: 15, pct: 0 },
+    };
+  }
 
-  // Copy score (max 30)
-  const hasTitle = !!(listing?.listing_title || listing?.title || product?.name);
-  const hasDescription = !!(listing?.listing_description || listing?.description || product?.description);
-  const bulletsCount = listing?.bullet_points?.length || 0;
-  const copyScore = (hasTitle ? 10 : 0) + (hasDescription ? 10 : 0) + Math.min(bulletsCount * 2, 10);
+  // ── Images (max 30) ──────────────────────────────────────────
+  // Hero image from listing (NOT product.featured_image)
+  const hasHero = !!listing.hero_image_url;
+  const galleryCount = listing.gallery_urls?.length || 0;
+  let imagesScore = 0;
+  imagesScore += hasHero ? 10 : 0;
+  imagesScore += Math.min(galleryCount, 4) * 5; // 5 per gallery image, max 4 = 20
 
-  // SEO score (max 15)
-  const hasSeoTitle = !!listing?.seo_title;
-  const hasSeoDescription = !!listing?.seo_description;
-  const keywordsCount = listing?.search_keywords?.length || listing?.keywords?.length || 0;
-  const seoScore = (hasSeoTitle ? 5 : 0) + (hasSeoDescription ? 5 : 0) + (keywordsCount > 3 ? 5 : 0);
+  // ── Copy (max 35) ────────────────────────────────────────────
+  // Only listing-specific fields, not product.name/description
+  const title = listing.listing_title || '';
+  const description = listing.listing_description || '';
+  const bullets = listing.bullet_points || [];
+  let copyScore = 0;
 
-  // Completeness (max 5)
-  const requiredFields = [hasHero, hasTitle, hasDescription, bulletsCount >= 3, hasSeoTitle];
-  const completeness = requiredFields.every(Boolean) ? 5 : 0;
+  // Title quality: exists (3), decent length (4), good length (3)
+  if (title.length > 0) copyScore += 3;
+  if (title.length >= 20) copyScore += 4;
+  if (title.length >= 40 && title.length <= 200) copyScore += 3;
 
-  const total = imagesScore + copyScore + seoScore + completeness;
+  // Description quality: exists (3), substantial (4), rich/detailed (3)
+  if (description.length > 0) copyScore += 3;
+  if (description.length >= 100) copyScore += 4;
+  if (description.length >= 300) copyScore += 3;
+
+  // Bullet points: 2 per bullet up to 5 bullets = max 10
+  copyScore += Math.min(bullets.length, 5) * 2;
+
+  // Reasoning/tagline bonus
+  if (listing.short_tagline) copyScore += 2;
+
+  // Cap at 35
+  copyScore = Math.min(copyScore, 35);
+
+  // ── SEO (max 20) ────────────────────────────────────────────
+  const seoTitle = listing.seo_title || '';
+  const seoDescription = listing.seo_description || '';
+  const keywords = listing.search_keywords || [];
+  let seoScore = 0;
+
+  // SEO title: exists (2), good length 30-70 chars (3)
+  if (seoTitle.length > 0) seoScore += 2;
+  if (seoTitle.length >= 30 && seoTitle.length <= 70) seoScore += 3;
+
+  // SEO description: exists (2), good length 100-160 chars (3)
+  if (seoDescription.length > 0) seoScore += 2;
+  if (seoDescription.length >= 100 && seoDescription.length <= 160) seoScore += 3;
+
+  // Keywords: 1 per keyword up to 7 = max 7
+  seoScore += Math.min(keywords.length, 7);
+
+  // Cap at 20
+  seoScore = Math.min(seoScore, 20);
+
+  // ── Media / Video (max 15) ──────────────────────────────────
+  const hasVideo = !!listing.video_url;
+  const hasVideoFrames = (listing.video_reference_frames?.length || 0) > 0;
+  let mediaScore = 0;
+  mediaScore += hasVideo ? 10 : 0;
+  mediaScore += hasVideoFrames ? 5 : 0;
+
+  const total = imagesScore + copyScore + seoScore + mediaScore;
 
   return {
     total,
-    images: { score: imagesScore, max: 50, pct: Math.round((imagesScore / 50) * 100) },
-    copy: { score: copyScore, max: 30, pct: Math.round((copyScore / 30) * 100) },
-    seo: { score: seoScore, max: 15, pct: Math.round((seoScore / 15) * 100) },
-    completeness: { score: completeness, max: 5, pct: completeness > 0 ? 100 : 0 },
+    images: { score: imagesScore, max: 30, pct: Math.round((imagesScore / 30) * 100) },
+    copy: { score: copyScore, max: 35, pct: Math.round((copyScore / 35) * 100) },
+    seo: { score: seoScore, max: 20, pct: Math.round((seoScore / 20) * 100) },
+    media: { score: mediaScore, max: 15, pct: Math.round((mediaScore / 15) * 100) },
   };
 }
 
@@ -257,26 +309,26 @@ function ChecklistItem({ label, completed }) {
 export default function ListingOverview({ product, details, listing, onGenerateAll, onTabChange, loading, generatingProgress }) {
   const { t } = useTheme();
 
-  const scores = useMemo(() => calculateScores(listing, product), [listing, product]);
+  const scores = useMemo(() => calculateScores(listing), [listing]);
 
-  // Checklist items
+  // Checklist — only listing-specific fields
   const checklist = useMemo(() => {
-    const hasHero = !!(listing?.hero_image_url || product?.featured_image);
-    const hasTitle = !!(listing?.listing_title || listing?.title || product?.name);
-    const hasDescription = !!(listing?.listing_description || listing?.description || product?.description);
-    const hasBullets = (listing?.bullet_points?.length || 0) >= 3;
-    const hasSeoTitle = !!listing?.seo_title;
-    const hasSeoDesc = !!listing?.seo_description;
+    const title = listing?.listing_title || '';
+    const desc = listing?.listing_description || '';
+    const bullets = listing?.bullet_points || [];
 
     return [
-      { label: 'Hero image (required)', completed: hasHero },
-      { label: 'Product title', completed: hasTitle },
-      { label: 'Product description', completed: hasDescription },
-      { label: 'At least 3 bullet points', completed: hasBullets },
-      { label: 'SEO meta title', completed: hasSeoTitle },
-      { label: 'SEO meta description', completed: hasSeoDesc },
+      { label: 'AI-generated hero image', completed: !!listing?.hero_image_url },
+      { label: 'Listing title (20+ characters)', completed: title.length >= 20 },
+      { label: 'Listing description (100+ characters)', completed: desc.length >= 100 },
+      { label: 'At least 3 bullet points', completed: bullets.length >= 3 },
+      { label: 'Gallery images (3+)', completed: (listing?.gallery_urls?.length || 0) >= 3 },
+      { label: 'SEO meta title', completed: !!(listing?.seo_title) },
+      { label: 'SEO meta description', completed: !!(listing?.seo_description) },
+      { label: 'Search keywords (4+)', completed: (listing?.search_keywords?.length || 0) >= 4 },
+      { label: 'Product video', completed: !!listing?.video_url },
     ];
-  }, [listing, product]);
+  }, [listing]);
 
   const incompleteCount = checklist.filter((item) => !item.completed).length;
 
@@ -324,7 +376,7 @@ export default function ListingOverview({ product, details, listing, onGenerateA
             <ScoreBar label="Images" pct={scores.images.pct} color="bg-gradient-to-r from-cyan-500 to-cyan-400" />
             <ScoreBar label="Copy" pct={scores.copy.pct} color="bg-gradient-to-r from-blue-500 to-blue-400" />
             <ScoreBar label="SEO" pct={scores.seo.pct} color="bg-gradient-to-r from-violet-500 to-violet-400" />
-            <ScoreBar label="Complete" pct={scores.completeness.pct} color="bg-gradient-to-r from-emerald-500 to-emerald-400" />
+            <ScoreBar label="Video" pct={scores.media.pct} color="bg-gradient-to-r from-emerald-500 to-emerald-400" />
           </div>
         </div>
       </div>

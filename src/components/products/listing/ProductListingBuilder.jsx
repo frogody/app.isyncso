@@ -354,13 +354,34 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
       });
 
       // ═══════════════════════════════════════════════════════════════
+      // Build rich product context for image/video prompts
+      // ═══════════════════════════════════════════════════════════════
+      const productName = product?.name || 'the product';
+      const productBrand = product?.brand || researchData?.brand || '';
+      const productCategory = product?.category || researchData?.category || '';
+      const productDesc = product?.description || product?.short_description || '';
+      const keySpecs = researchContext?.keyFeatures?.slice(0, 4)?.join(', ') || '';
+      const brandPrefix = productBrand ? `${productBrand} ` : '';
+      const productIdentity = `${brandPrefix}${productName}`.trim();
+      const materialHints = keySpecs ? ` Key features: ${keySpecs}.` : '';
+
+      // ═══════════════════════════════════════════════════════════════
       // Phase 3: HERO IMAGE — Studio product shot
       // ═══════════════════════════════════════════════════════════════
       updateProgress({ phase: 'hero', progress: 25, stepLabel: 'Creating studio hero shot...' });
       toast.loading('Creating hero image...', { id: toastId });
 
       try {
-        const heroPrompt = `Professional e-commerce product photography of ${product?.name || 'the product'} on a clean white background, studio lighting, sharp detail, commercial hero shot, high resolution, centered composition`;
+        const heroPrompt = [
+          `Generate a professional e-commerce hero photograph of the ${productIdentity}.`,
+          productDesc ? `Product description: ${productDesc.substring(0, 200)}.` : '',
+          `The product must look EXACTLY like the reference image(s) provided — preserve every detail of shape, color, material finish, branding, and proportions.`,
+          `Setting: Pure white seamless backdrop with soft gradient shadow beneath the product.`,
+          `Lighting: Three-point studio setup — large softbox key light at 45 degrees camera-left, fill card camera-right reducing shadow density, subtle rim light from behind for edge separation.`,
+          `Composition: Product centered in frame with generous negative space for text overlay. Shot at eye level, slight 3/4 angle to show dimensionality.`,
+          `Technical: 100mm macro lens equivalent, f/8 for full depth of field, no motion blur, tack-sharp across entire product surface.`,
+          `Quality: Award-winning commercial product photography, pixel-perfect detail on textures and materials, color-accurate, ready for high-end e-commerce listing.`,
+        ].filter(Boolean).join('\n');
         const heroUrl = await generateImage(heroPrompt, 'product_variation');
         savedListing = await saveListingSilent({ hero_image_url: heroUrl });
         updateProgress({ phase: 'hero', progress: 32, stepLabel: 'Hero image created!', heroImageUrl: heroUrl });
@@ -376,10 +397,54 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
       toast.loading('Generating lifestyle images...', { id: toastId });
 
       const galleryScenes = [
-        { prompt: `${product?.name || 'Product'} in a modern lifestyle setting, warm natural light, home interior, aspirational photography`, label: 'Lifestyle Setting' },
-        { prompt: `${product?.name || 'Product'} close-up detail shot, macro photography, texture and material visible, commercial quality`, label: 'Close-up Detail' },
-        { prompt: `${product?.name || 'Product'} in flat-lay composition with complementary accessories, top-down view, styled product photography`, label: 'Flat-lay Composition' },
-        { prompt: `${product?.name || 'Product'} in use, lifestyle demonstration, real-world context, authentic feel, soft natural lighting`, label: 'In-use Demo' },
+        {
+          prompt: [
+            `Generate a lifestyle environment photograph of the ${productIdentity} in a real-world setting.`,
+            productDesc ? `Product: ${productDesc.substring(0, 150)}.` : '',
+            `The product must look EXACTLY like the reference image(s) — same shape, color, branding, and all visual details preserved precisely.`,
+            `Setting: Modern, well-designed ${productCategory?.includes('Kitchen') || productCategory?.includes('Home') ? 'home interior with natural materials — light wood, marble, or concrete surfaces' : 'contemporary interior with clean lines and neutral tones'}.`,
+            `Lighting: Warm natural window light streaming in from the side, creating soft directional shadows.${materialHints}`,
+            `Style: Editorial lifestyle photography, aspirational but authentic. Product is the clear hero but feels naturally placed in the environment.`,
+            `Technical: 35mm lens equivalent, f/2.8 with gentle background bokeh, warm color temperature (5500K).`,
+          ].filter(Boolean).join('\n'),
+          label: 'Lifestyle Setting',
+        },
+        {
+          prompt: [
+            `Generate an extreme close-up detail photograph of the ${productIdentity}.`,
+            productDesc ? `Product: ${productDesc.substring(0, 150)}.` : '',
+            `The product must look EXACTLY like the reference image(s) — all textures, finishes, logos, and material properties reproduced precisely.`,
+            `Focus: Tight crop on the most visually interesting detail — surface texture, material quality, control interface, or distinctive design element.`,
+            `Lighting: Raking light from a low angle to emphasize surface texture and material quality. Single focused light source with minimal fill.`,
+            `Style: Macro product photography revealing craftsmanship and build quality. Shallow depth of field isolating the detail.`,
+            `Technical: 100mm macro lens, f/4, razor-thin focal plane on the key detail, creamy bokeh on surrounding areas.`,
+          ].filter(Boolean).join('\n'),
+          label: 'Close-up Detail',
+        },
+        {
+          prompt: [
+            `Generate a styled flat-lay photograph featuring the ${productIdentity} with complementary props.`,
+            productDesc ? `Product: ${productDesc.substring(0, 150)}.` : '',
+            `The product must look EXACTLY like the reference image(s) — preserve all visual details.`,
+            `Composition: Overhead bird's-eye view, product placed off-center using rule of thirds, surrounded by 3-4 carefully chosen accessories or props relevant to ${productCategory || 'its use case'}.`,
+            `Surface: Clean matte surface — light linen fabric, marble slab, or warm wood. Complementary color palette that makes the product pop.`,
+            `Lighting: Even, diffused overhead light with very subtle shadows for depth.`,
+            `Style: Instagram-worthy styled flat-lay, editorial product arrangement with intentional negative space and visual breathing room.`,
+          ].filter(Boolean).join('\n'),
+          label: 'Flat-lay Composition',
+        },
+        {
+          prompt: [
+            `Generate an action/in-use photograph showing the ${productIdentity} being used naturally.`,
+            productDesc ? `Product: ${productDesc.substring(0, 150)}.` : '',
+            `The product must look EXACTLY like the reference image(s) — same appearance in every detail.`,
+            `Scene: A person's hands naturally using or interacting with the product in its intended context. The interaction should look genuine and purposeful, not posed.`,
+            `Lighting: Soft natural light, warm and inviting. Slight backlight creating a rim of light around the product for visual separation.`,
+            `Style: Authentic lifestyle documentation, the kind of image that makes a viewer imagine themselves using the product. Not overly staged.`,
+            `Technical: 50mm lens, f/2.8, focus on the product and hands, gentle environmental bokeh in the background.`,
+          ].filter(Boolean).join('\n'),
+          label: 'In-use Demo',
+        },
       ];
 
       const galleryUrls = [];
@@ -413,11 +478,29 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
 
       const videoFrameScenes = [
         {
-          prompt: `Cinematic product hero shot of ${product?.name || 'the product'}, dramatic studio lighting, shallow depth of field, product centered on dark reflective surface with rim lighting, wide angle, commercial film quality, 16:9 cinematic composition`,
+          prompt: [
+            `Generate a cinematic opening frame for a product video of the ${productIdentity}.`,
+            productDesc ? `Product: ${productDesc.substring(0, 150)}.` : '',
+            `The product must look EXACTLY like the reference image(s) — identical shape, color, material, branding, and every visual detail.`,
+            `Setting: Dark reflective surface — polished black acrylic or obsidian — in a controlled studio environment. Deep black background with no visible edges or seams.`,
+            `Lighting: Dramatic three-point cinematic lighting — cool-toned key light at 30 degrees creating defined highlights on the product surface, subtle blue rim light from behind for edge definition, warm accent light from below reflecting off the surface.`,
+            `Composition: Wide 16:9 cinematic frame. Product positioned at center-right using golden ratio, with leading space on the left suggesting the camera will move. Shot from slightly below eye level for a heroic, commanding perspective.`,
+            `Mood: Premium commercial film still. The kind of frame that opens a 30-second product reveal ad. High contrast, rich shadows, polished and luxurious.`,
+            `Technical: Anamorphic lens look, slight vignette on edges, 24fps motion-picture color science.`,
+          ].filter(Boolean).join('\n'),
           label: 'Cinematic Hero Frame',
         },
         {
-          prompt: `Dynamic lifestyle shot of ${product?.name || 'the product'} in an elegant modern setting, cinematic warm ambient lighting, product in context with complementary styling, wide composition suggesting movement, commercial video still quality`,
+          prompt: [
+            `Generate a cinematic lifestyle frame for a product video of the ${productIdentity}.`,
+            productDesc ? `Product: ${productDesc.substring(0, 150)}.` : '',
+            `The product must look EXACTLY like the reference image(s) — all visual details preserved precisely.`,
+            `Setting: Elegant ${productCategory?.includes('Kitchen') || productCategory?.includes('Home') ? 'modern kitchen or living space' : 'contemporary environment'} with warm, lived-in atmosphere. Clean background with subtle depth layers.`,
+            `Lighting: Cinematic warm ambient light (3200K-4500K), large soft source from a window or practical light, volumetric haze catching light beams. Natural shadows adding depth.`,
+            `Composition: Wide 16:9 frame. Product in its natural environment, positioned at the left third of frame with the environment breathing into the right side. Depth is important — foreground element softly out of focus, product sharp, background softly defocused.`,
+            `Mood: The aspirational mid-point of a product commercial where the viewer sees the product in context. Warm, inviting, makes you want to reach into the frame.`,
+            `Technical: 35mm anamorphic look, shallow depth of field, warm color grading with lifted shadows.`,
+          ].filter(Boolean).join('\n'),
           label: 'Lifestyle Motion Frame',
         },
       ];
@@ -456,9 +539,17 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
       if (videoReferenceUrl) {
         try {
           const researchSummary = researchContext?.findings
-            ? researchContext.findings.substring(0, 200)
+            ? researchContext.findings.substring(0, 150)
             : '';
-          const videoPrompt = `Cinematic product showcase of ${product?.name || 'the product'}. ${researchSummary}. Smooth camera movement revealing product details from multiple angles, professional studio lighting with dramatic shadows, shallow depth of field. Premium commercial quality.`;
+          const videoPrompt = [
+            `Cinematic product reveal video of the ${productIdentity}.`,
+            researchSummary ? `Context: ${researchSummary}.` : '',
+            `Camera movement: Begin with a slow dolly-in toward the product from a wide establishing shot, then transition into a smooth 180-degree orbit around the product at a slight low angle, revealing all sides and details. End with a slow push-in to a hero close-up of the product's most distinctive feature.`,
+            `Lighting: Professional studio lighting that evolves subtly during the shot — starting with dramatic rim lighting and deep shadows, gradually introducing fill light as the camera orbits to reveal surface details and material quality.`,
+            `Pace: Smooth and deliberate. No fast cuts or jerky movements. Each movement flows naturally into the next with cinematic easing. Real-time speed, no slow motion.`,
+            `Style: Premium commercial product film — the visual quality of an Apple or Dyson product video. Shallow depth of field keeping the product razor-sharp while the background falls away into soft bokeh.`,
+            `Keep the product exactly as shown in the reference image. Do not alter, modify, or reimagine the product in any way.`,
+          ].filter(Boolean).join(' ');
 
           const { data: videoData, error: videoError } = await supabase.functions.invoke('generate-fashion-video', {
             body: {

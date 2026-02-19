@@ -927,15 +927,30 @@ serve(async (req) => {
     // ══════════════════════════════════════════════════════════════════════
     if (selectedModelKey === 'nano-banana-pro') {
       const refImages = product_images?.length > 0 ? product_images : (reference_image_url ? [reference_image_url] : []);
-      console.log(`Nano Banana Pro: ${refImages.length} reference images`);
+      console.log(`Nano Banana Pro: ${refImages.length} reference images, product: ${product_name || 'unknown'}`);
 
-      const finalPrompt = [
-        prompt,
-        refImages.length > 0
-          ? `The product must be reproduced with exact accuracy — same shape, color, material, branding, and all visual details as shown in the reference image(s).`
-          : null,
-        `Professional product photography, commercial quality, 8K resolution, sharp focus, masterful studio lighting.`,
-      ].filter(Boolean).join('\n');
+      // Build contextual prompt — the frontend sends detailed prompts, so we augment rather than override
+      const contextParts: string[] = [];
+
+      // Add the user/frontend prompt as-is (it's already well-structured)
+      contextParts.push(prompt);
+
+      // Add product identity context if available and not already in the prompt
+      if (product_name && !prompt.includes(product_name)) {
+        contextParts.push(`Product: ${product_name}.`);
+      }
+      if (product_context?.description && !prompt.toLowerCase().includes('description')) {
+        contextParts.push(`Product description: ${product_context.description.substring(0, 200)}.`);
+      }
+
+      // Reference image instructions — critical for product fidelity
+      if (refImages.length > 0) {
+        contextParts.push(
+          `CRITICAL: The provided reference image(s) show the ACTUAL product. You MUST reproduce this exact product — same shape, proportions, color, material finish, branding, logos, buttons, details. Do not invent, alter, or stylize the product design. The generated image must be indistinguishable from a real photograph of this exact product.`
+        );
+      }
+
+      const finalPrompt = contextParts.join('\n');
 
       const nanoBananaResult = await generateWithNanoBanana(
         refImages.slice(0, 5),
