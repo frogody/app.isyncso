@@ -10,43 +10,30 @@ const GOOGLE_VEO_API_KEY = Deno.env.get("GOOGLE_VEO_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// ─── Available Google Veo models ─────────────────────────────────────
-const VEO_MODELS: Record<string, { id: string; label: string; maxDuration: number; costPerSec: number; supportsAudio: boolean }> = {
-  'veo-2': {
-    id: 'veo-2-generate-preview',
-    label: 'Veo 2',
-    maxDuration: 8,
-    costPerSec: 0.35,
-    supportsAudio: false,
-  },
-  'veo-3': {
-    id: 'veo-3-generate-preview',
-    label: 'Veo 3',
-    maxDuration: 8,
-    costPerSec: 0.40,
-    supportsAudio: true,
-  },
-  'veo-3-fast': {
-    id: 'veo-3-fast-generate-preview',
-    label: 'Veo 3 Fast',
-    maxDuration: 8,
-    costPerSec: 0.15,
-    supportsAudio: true,
-  },
-  'veo-3.1': {
-    id: 'veo-3.1-generate-preview',
-    label: 'Veo 3.1',
-    maxDuration: 8,
-    costPerSec: 0.40,
-    supportsAudio: true,
-  },
-  'veo-3.1-fast': {
-    id: 'veo-3.1-fast-generate-preview',
-    label: 'Veo 3.1 Fast',
-    maxDuration: 8,
-    costPerSec: 0.15,
-    supportsAudio: true,
-  },
+// ─── Models to try ───────────────────────────────────────────────────
+// Uses same Gemini generateContent API with responseModalities: ["video"]
+// Image-to-video: pass the source image as inlineData in parts[]
+const GEMINI_VIDEO_MODELS = [
+  'gemini-2.0-flash-exp',
+  'gemini-2.5-flash-preview-04-17',
+];
+
+// Model label mapping for the frontend selector
+// All models funnel through the same Gemini generateContent API
+const MODEL_LABELS: Record<string, string> = {
+  'veo-3.1-fast': 'Veo 3.1 Fast',
+  'veo-3.1': 'Veo 3.1',
+  'veo-3-fast': 'Veo 3 Fast',
+  'veo-3': 'Veo 3',
+  'veo-2': 'Veo 2',
+};
+
+const COST_PER_SEC: Record<string, number> = {
+  'veo-3.1-fast': 0.15,
+  'veo-3.1': 0.40,
+  'veo-3-fast': 0.15,
+  'veo-3': 0.40,
+  'veo-2': 0.35,
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -140,10 +127,10 @@ serve(async (req) => {
       );
     }
 
-    const modelConfig = VEO_MODELS[model_key] || VEO_MODELS['veo-3.1-fast'];
-    const duration = String(Math.min(duration_seconds, modelConfig.maxDuration));
+    const modelLabel = MODEL_LABELS[model_key] || model_key;
+    const costPerSec = COST_PER_SEC[model_key] || 0.15;
 
-    console.log(`Fashion Video: ${modelConfig.label} | ${duration}s | AR=${aspect_ratio} | audio=${generate_audio}`);
+    console.log(`Fashion Video: ${modelLabel} | ${duration_seconds}s | AR=${aspect_ratio}`);
 
     // ── Step 1: Download the fashion image and encode to base64 ──────
     console.log('Downloading source image...');
@@ -152,148 +139,160 @@ serve(async (req) => {
 
     // ── Step 2: Build the video generation prompt ────────────────────
     const videoPrompt = prompt?.trim()
-      ? prompt.trim()
-      : 'The fashion model slowly turns to show the outfit from different angles, with natural fabric movement and professional studio lighting. Smooth camera motion, cinematic quality.';
+      ? `Animate this fashion photo into a video: ${prompt.trim()}`
+      : 'Animate this fashion photo into a cinematic video. The model confidently strikes multiple poses, slowly turning to show the outfit from different angles. Natural fabric movement, smooth camera motion, professional studio lighting. Keep the person, outfit, and setting exactly as they appear.';
 
-    // ── Step 3: Submit to Google Veo API ─────────────────────────────
-    const requestBody: any = {
-      instances: [{
-        prompt: videoPrompt,
-        image: {
-          inlineData: {
-            mimeType: imageMime.startsWith('image/') ? imageMime : 'image/jpeg',
-            data: imageB64,
-          },
-        },
-      }],
-      parameters: {
-        aspectRatio: aspect_ratio,
-        resolution: '720p',
-        durationSeconds: duration,
-        negativePrompt: 'distorted face, extra limbs, deformed hands, low quality, blurry, glitch, jittery motion',
-        personGeneration: 'allow_adult',
-        numberOfVideos: 1,
-      },
-    };
+    // ── Step 3: Try Gemini models with video output ──────────────────
+    // Same pattern as the working generate-video edge function:
+    // Use generateContent with responseModalities: ["video"] + image inlineData
+    let videoUrl: string | null = null;
+    let usedModel = 'unknown';
 
-    // Audio control for Veo 3+
-    if (modelConfig.supportsAudio) {
-      requestBody.parameters.generateAudio = generate_audio;
-    }
-
-    console.log(`Submitting to ${modelConfig.id}...`);
-    const submitResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${modelConfig.id}:predictLongRunning`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        body: JSON.stringify(requestBody),
-      }
-    );
-
-    if (!submitResponse.ok) {
-      const errText = await submitResponse.text();
-      console.error(`Veo submit error (${submitResponse.status}):`, errText.substring(0, 500));
-      return new Response(
-        JSON.stringify({ error: `Video generation failed: ${errText.substring(0, 200)}` }),
-        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const submitData = await submitResponse.json();
-    const operationName = submitData.name;
-
-    if (!operationName) {
-      return new Response(
-        JSON.stringify({ error: 'No operation ID returned from Veo API' }),
-        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log(`Operation started: ${operationName}`);
-
-    // ── Step 4: Poll for completion ──────────────────────────────────
-    let videoUri: string | null = null;
-    let attempts = 0;
-    const maxAttempts = 60; // 10s intervals × 60 = 10 minutes max
-
-    while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 10000)); // 10s poll interval
-      attempts++;
-
+    for (const geminiModel of GEMINI_VIDEO_MODELS) {
       try {
-        const statusResponse = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/${operationName}`,
+        console.log(`Trying ${geminiModel} for image-to-video...`);
+
+        const geminiResponse = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
           {
-            headers: { 'x-goog-api-key': apiKey },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: imageMime.startsWith('image/') ? imageMime : 'image/jpeg',
+                      data: imageB64,
+                    },
+                  },
+                  {
+                    text: videoPrompt,
+                  },
+                ],
+              }],
+              generationConfig: {
+                responseModalities: ["video"],
+                videoConfig: {
+                  durationSeconds: duration_seconds || 6,
+                  aspectRatio: aspect_ratio || "9:16",
+                },
+              },
+            }),
           }
         );
 
-        if (!statusResponse.ok) {
-          console.warn(`Poll attempt ${attempts}: HTTP ${statusResponse.status}`);
+        if (!geminiResponse.ok) {
+          const errText = await geminiResponse.text();
+          console.error(`${geminiModel} error (${geminiResponse.status}):`, errText.substring(0, 300));
           continue;
         }
 
-        const statusData = await statusResponse.json();
+        const geminiData = await geminiResponse.json();
 
-        if (statusData.done) {
-          // Check for error
-          if (statusData.error) {
-            console.error('Veo generation error:', JSON.stringify(statusData.error));
-            return new Response(
-              JSON.stringify({ error: `Video generation failed: ${statusData.error.message || 'Unknown error'}` }),
-              { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
-          }
+        // Extract video from response (base64 inline data)
+        const videoPart = geminiData.candidates?.[0]?.content?.parts?.find(
+          (part: any) => part.inlineData?.mimeType?.startsWith('video/')
+        );
 
-          // Extract video URI
-          const samples = statusData.response?.generateVideoResponse?.generatedSamples;
-          if (samples?.[0]?.video?.uri) {
-            videoUri = samples[0].video.uri;
-            console.log(`Video ready after ${attempts * 10}s: ${videoUri}`);
-          }
+        if (videoPart?.inlineData?.data) {
+          console.log(`${geminiModel}: video generated! Uploading to storage...`);
+
+          const fileName = `fashion-video-${Date.now()}-${Math.random().toString(36).substring(7)}.mp4`;
+          const videoData = Uint8Array.from(atob(videoPart.inlineData.data), c => c.charCodeAt(0));
+
+          const { publicUrl } = await uploadToStorage(
+            'generated-content',
+            fileName,
+            videoData,
+            videoPart.inlineData.mimeType || 'video/mp4'
+          );
+
+          videoUrl = publicUrl;
+          usedModel = geminiModel;
+          console.log(`Video uploaded: ${publicUrl}`);
           break;
+        } else {
+          console.warn(`${geminiModel}: no video in response`);
         }
-
-        console.log(`Poll ${attempts}/${maxAttempts}: still processing...`);
-      } catch (pollErr: any) {
-        console.warn(`Poll error (attempt ${attempts}):`, pollErr.message);
+      } catch (modelErr: any) {
+        console.error(`${geminiModel} exception:`, modelErr.message);
+        continue;
       }
     }
 
-    if (!videoUri) {
+    // ── Step 4: If all Gemini models failed, try Veo LRO as fallback ─
+    if (!videoUrl) {
+      const veoApiKey = GOOGLE_VEO_API_KEY || GOOGLE_API_KEY;
+      if (veoApiKey) {
+        try {
+          console.log('Gemini video models failed, trying Veo text-to-video fallback...');
+
+          // Veo doesn't support image input easily, so we describe the image in the prompt
+          const veoPrompt = `${videoPrompt}. Professional fashion photography, cinematic quality, smooth motion.`;
+
+          const veoResponse = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/veo:generateVideo?key=${veoApiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                prompt: veoPrompt,
+                durationSeconds: duration_seconds || 6,
+                aspectRatio: aspect_ratio || '9:16',
+              }),
+            }
+          );
+
+          if (veoResponse.ok) {
+            const veoData = await veoResponse.json();
+
+            if (veoData.operationId) {
+              let attempts = 0;
+              const maxAttempts = 60;
+
+              while (attempts < maxAttempts) {
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                attempts++;
+
+                const statusResponse = await fetch(
+                  `https://generativelanguage.googleapis.com/v1beta/operations/${veoData.operationId}?key=${veoApiKey}`
+                );
+
+                if (statusResponse.ok) {
+                  const statusData = await statusResponse.json();
+                  if (statusData.done) {
+                    if (statusData.response?.videoUrl) {
+                      videoUrl = statusData.response.videoUrl;
+                      usedModel = 'veo-text2video';
+                    }
+                    break;
+                  }
+                }
+
+                console.log(`Veo poll ${attempts}/${maxAttempts}...`);
+              }
+            } else if (veoData.videoUrl) {
+              videoUrl = veoData.videoUrl;
+              usedModel = 'veo-text2video';
+            }
+          }
+        } catch (veoErr: any) {
+          console.error('Veo fallback error:', veoErr.message);
+        }
+      }
+    }
+
+    if (!videoUrl) {
       return new Response(
-        JSON.stringify({ error: 'Video generation timed out or produced no result' }),
-        { status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Video generation failed — all providers returned no video. This may be a temporary issue, please try again.' }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // ── Step 5: Download the video from Google ───────────────────────
-    console.log('Downloading video from Google...');
-    const videoResponse = await fetch(videoUri, {
-      headers: { 'x-goog-api-key': apiKey },
-    });
-
-    if (!videoResponse.ok) {
-      const errText = await videoResponse.text();
-      throw new Error(`Failed to download video: ${errText.substring(0, 200)}`);
-    }
-
-    const videoArrayBuffer = await videoResponse.arrayBuffer();
-    const videoData = new Uint8Array(videoArrayBuffer);
-    console.log(`Video downloaded: ${Math.round(videoData.length / 1024)}KB`);
-
-    // ── Step 6: Upload to Supabase storage ───────────────────────────
-    const fileName = `fashion-video-${Date.now()}-${Math.random().toString(36).substring(7)}.mp4`;
-    const { publicUrl } = await uploadToStorage('generated-content', fileName, videoData, 'video/mp4');
-    console.log(`Video uploaded: ${publicUrl}`);
-
-    // ── Step 7: Log usage ────────────────────────────────────────────
-    const durationNum = parseInt(duration) || 6;
-    const costUsd = durationNum * modelConfig.costPerSec;
+    // ── Step 5: Log usage ────────────────────────────────────────────
+    const durationNum = duration_seconds || 6;
+    const costUsd = durationNum * costPerSec;
 
     if (company_id) {
       try {
@@ -306,14 +305,14 @@ serve(async (req) => {
           total_tokens: 0,
           cost: costUsd,
           request_type: 'video',
-          endpoint: `google/${modelConfig.id}`,
+          endpoint: `google/${usedModel}`,
           metadata: {
             pipeline: 'fashion-video',
             model_key,
-            model_label: modelConfig.label,
+            model_label: modelLabel,
+            actual_model: usedModel,
             duration_seconds: durationNum,
             aspect_ratio,
-            generate_audio,
           },
         });
       } catch (logError) {
@@ -323,9 +322,10 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        url: publicUrl,
+        url: videoUrl,
         model: model_key,
-        model_label: modelConfig.label,
+        model_label: modelLabel,
+        actual_model: usedModel,
         duration_seconds: durationNum,
         aspect_ratio,
         cost_usd: costUsd,
