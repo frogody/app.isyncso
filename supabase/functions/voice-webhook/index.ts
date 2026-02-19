@@ -117,40 +117,60 @@ async function callGatekeeperLLM(
   messages: Array<{ role: string; content: string }>,
   userName: string,
 ): Promise<string> {
-  // Prefer Groq (much faster inference ~200ms) over Together.ai (~2-5s)
-  const useGroq = !!GROQ_API_KEY;
-  const apiKey = useGroq ? GROQ_API_KEY : TOGETHER_API_KEY;
-  const apiUrl = useGroq
-    ? "https://api.groq.com/openai/v1/chat/completions"
-    : "https://api.together.ai/v1/chat/completions";
-  const model = useGroq
-    ? "llama-3.3-70b-versatile"
-    : "meta-llama/Llama-3.3-70B-Instruct-Turbo";
+  const llmPayload = {
+    messages: [{ role: "system", content: getGatekeeperPrompt(userName) }, ...messages],
+    max_tokens: 200,
+    temperature: 0.6,
+  };
 
-  if (!apiKey) return "I'm sorry, I'm having trouble right now. Can I take a message?";
+  // Try Groq first (fastest), fall back to Together.ai
+  const providers = [
+    ...(GROQ_API_KEY ? [{
+      url: "https://api.groq.com/openai/v1/chat/completions",
+      key: GROQ_API_KEY,
+      model: "llama-3.3-70b-versatile",
+      name: "Groq",
+    }] : []),
+    ...(TOGETHER_API_KEY ? [{
+      url: "https://api.together.ai/v1/chat/completions",
+      key: TOGETHER_API_KEY,
+      model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+      name: "Together",
+    }] : []),
+  ];
 
-  try {
-    const res = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: "system", content: getGatekeeperPrompt(userName) }, ...messages],
-        max_tokens: 200,
-        temperature: 0.6,
-      }),
-    });
+  if (providers.length === 0) return "I'm sorry, I'm having trouble right now. Can I take a message?";
 
-    if (!res.ok) throw new Error(`Gatekeeper LLM error: ${res.status}`);
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content?.trim() || "I didn't catch that. Could you say that again?";
-  } catch (err) {
-    console.error("[Gatekeeper] LLM error:", err);
-    return "I'm sorry, I'm having a moment. Can I take a message instead?";
+  for (const provider of providers) {
+    try {
+      const res = await fetch(provider.url, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${provider.key}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ model: provider.model, ...llmPayload }),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => "");
+        console.error(`[Gatekeeper] ${provider.name} error ${res.status}: ${errBody}`);
+        continue; // Try next provider
+      }
+
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content?.trim();
+      if (content) {
+        console.log(`[Gatekeeper] Used ${provider.name} successfully`);
+        return content;
+      }
+    } catch (err) {
+      console.error(`[Gatekeeper] ${provider.name} failed:`, err);
+      continue; // Try next provider
+    }
   }
+
+  return "I didn't catch that. Could you say that again?";
 }
 
 // ─── Parse Twilio Form Data ────────────────────────────────────────────────
