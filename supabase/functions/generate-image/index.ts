@@ -583,45 +583,49 @@ const ANGLE_SERVER: Record<string, string> = {
 async function tryGemini(prompt: string): Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }> {
   if (!GOOGLE_API_KEY) return { success: false, error: 'No Google API key' };
 
-  try {
-    console.log('Trying Gemini fallback...');
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseModalities: ["image", "text"] }
-        })
-      }
-    );
+  const models = ['gemini-2.5-flash-preview-04-17', 'gemini-2.0-flash-exp', 'gemini-2.0-flash'];
 
-    if (!response.ok) {
-      const errText = await response.text();
-      if (errText.includes('not available in your country')) {
-        return { success: false, error: 'Gemini geo-restricted' };
-      }
-      return { success: false, error: `Gemini error: ${errText}` };
-    }
+  for (const model of models) {
+    try {
+      console.log(`Trying Gemini fallback (${model})...`);
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseModalities: ["IMAGE", "TEXT"] }
+          })
+        }
+      );
 
-    const data = await response.json();
-    const candidate = data.candidates?.[0];
-    if (candidate?.content?.parts) {
-      for (const part of candidate.content.parts) {
-        if (part.inlineData?.mimeType?.startsWith('image/')) {
-          return {
-            success: true,
-            data: part.inlineData.data,
-            mimeType: part.inlineData.mimeType
-          };
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error(`Gemini ${model} error (${response.status}):`, errText.substring(0, 200));
+        continue;
+      }
+
+      const data = await response.json();
+      const candidate = data.candidates?.[0];
+      if (candidate?.content?.parts) {
+        for (const part of candidate.content.parts) {
+          if (part.inlineData?.mimeType?.startsWith('image/')) {
+            return {
+              success: true,
+              data: part.inlineData.data,
+              mimeType: part.inlineData.mimeType
+            };
+          }
         }
       }
+    } catch (e: any) {
+      console.error(`Gemini ${model} exception:`, e.message);
+      continue;
     }
-    return { success: false, error: 'No image in Gemini response' };
-  } catch (e: any) {
-    return { success: false, error: e.message };
   }
+
+  return { success: false, error: 'All Gemini models failed' };
 }
 
 // ═══════════════════════════════════════════════════════════════════════
