@@ -7,7 +7,7 @@ import {
   ChevronDown, ChevronRight, Image as ImageIcon, RefreshCw, Package,
   Eye, Move, RotateCw, Maximize, User, Users, Layers, Square,
   RectangleHorizontal, RectangleVertical, Zap, ArrowLeft,
-  Sun, Moon, Scissors, Grid3X3,
+  Sun, Moon, Scissors, Grid3X3, Film, Play, Pause,
 } from 'lucide-react';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { Textarea } from '@/components/ui/textarea';
@@ -180,6 +180,21 @@ const SHOT_TABS = [
   { id: 'scene', label: 'Scene', icon: Layers },
 ];
 
+// ─── VEO VIDEO MODELS ───────────────────────────────────────────────
+const VEO_MODELS = [
+  { key: 'veo-3.1-fast', label: 'Veo 3.1 Fast', desc: 'Best value, good quality', cost: '$0.15/s' },
+  { key: 'veo-3.1', label: 'Veo 3.1', desc: 'Best quality, fabric physics', cost: '$0.40/s' },
+  { key: 'veo-3-fast', label: 'Veo 3 Fast', desc: 'Fast with audio', cost: '$0.15/s' },
+  { key: 'veo-3', label: 'Veo 3', desc: 'High quality + audio', cost: '$0.40/s' },
+  { key: 'veo-2', label: 'Veo 2', desc: 'Stable, no audio', cost: '$0.35/s' },
+];
+
+const VIDEO_DURATIONS = [
+  { value: 4, label: '4s' },
+  { value: 6, label: '6s' },
+  { value: 8, label: '8s' },
+];
+
 export default function FashionBooth({ embedded = false }) {
   const { user } = useUser();
   const { theme, toggleTheme, ct } = useTheme();
@@ -209,6 +224,14 @@ export default function FashionBooth({ embedded = false }) {
   const [expandedPoseCategory, setExpandedPoseCategory] = useState('standing');
   const [showHistory, setShowHistory] = useState(false);
   const [brandAssets, setBrandAssets] = useState(null);
+
+  // Video animation state
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [generatedVideo, setGeneratedVideo] = useState(null);
+  const [selectedVeoModel, setSelectedVeoModel] = useState('veo-3.1-fast');
+  const [videoDuration, setVideoDuration] = useState(6);
+  const [videoPrompt, setVideoPrompt] = useState('');
+  const [showVideoSettings, setShowVideoSettings] = useState(false);
 
   // Outfit extractor
   const [extractorSourceUrl, setExtractorSourceUrl] = useState(null);
@@ -357,6 +380,58 @@ export default function FashionBooth({ embedded = false }) {
     try {
       const response = await fetch(generatedImage.url); const blob = await response.blob(); const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = `fashion-booth-${Date.now()}.png`; a.click(); URL.revokeObjectURL(url); toast.success('Image downloaded');
+    } catch (err) { toast.error('Download failed'); }
+  };
+
+  // ─── Animate (image → video) ──────────────────────────────────────
+  const handleAnimate = async () => {
+    if (!generatedImage?.url) { toast.error('Generate an image first'); return; }
+    setIsAnimating(true); setGeneratedVideo(null);
+    try {
+      const poseLabel = POSE_PRESETS.find(p => p.id === selectedPose)?.label || 'standing';
+      const sceneLabel = SCENE_PRESETS.find(s => s.id === selectedScene)?.label || 'studio';
+      const motionPrompt = videoPrompt.trim()
+        || `The fashion model confidently strikes multiple poses in a ${sceneLabel.toLowerCase()} setting, showing off the outfit from different angles. The model transitions smoothly between poses — a front-facing look, a three-quarter turn, a hand on hip, and a slow full rotation to reveal the back of the garment. Natural fabric movement with each pose, professional studio lighting, cinematic slow motion. Keep the model's face, body, and outfit exactly as they appear in the image.`;
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-fashion-video`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({
+          image_url: generatedImage.url,
+          prompt: motionPrompt,
+          model_key: selectedVeoModel,
+          duration_seconds: videoDuration,
+          aspect_ratio: aspectRatio === '1:1' ? '16:9' : (aspectRatio === '9:16' || aspectRatio === '4:5' || aspectRatio === '3:4') ? '9:16' : '16:9',
+          generate_audio: false,
+          company_id: user?.company_id,
+          user_id: user?.id,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Video generation failed');
+
+      if (data.url) {
+        setGeneratedVideo(data);
+        toast.success(`Video created with ${data.model_label || data.model}!`);
+        try {
+          await GeneratedContent.create({
+            company_id: user.company_id, created_by: user.id, content_type: 'video',
+            url: data.url, name: `Fashion Video - ${selectedProduct?.name || 'Custom'}`,
+            generation_config: { source: 'fashion_video', model: data.model, duration: data.duration_seconds, pose: selectedPose, scene: selectedScene },
+            tags: ['fashion_video'],
+          });
+        } catch (saveErr) { console.warn('Failed to save video to history:', saveErr); }
+      }
+    } catch (err) { toast.error(err.message || 'Video generation failed'); }
+    finally { setIsAnimating(false); }
+  };
+
+  const handleDownloadVideo = async () => {
+    if (!generatedVideo?.url) return;
+    try {
+      const response = await fetch(generatedVideo.url); const blob = await response.blob(); const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `fashion-video-${Date.now()}.mp4`; a.click(); URL.revokeObjectURL(url); toast.success('Video downloaded');
     } catch (err) { toast.error('Download failed'); }
   };
 
@@ -731,15 +806,162 @@ export default function FashionBooth({ embedded = false }) {
                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
                   className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] overflow-hidden flex-1">
                   <div className="relative">
-                    <img src={generatedImage.url} alt="Generated fashion" className="w-full object-contain max-h-[500px]" />
+                    <img src={generatedImage.url} alt="Generated fashion" className="w-full object-contain max-h-[400px]" />
                     <div className="absolute top-3 right-3 flex items-center gap-2">
                       <button onClick={handleDownload} className="p-2 rounded-xl bg-black/70 backdrop-blur-sm text-white hover:bg-black/90 transition-colors"><Download className="w-4 h-4" /></button>
                       <button onClick={handleGenerate} disabled={isGenerating} className="p-2 rounded-xl bg-black/70 backdrop-blur-sm text-white hover:bg-black/90 transition-colors"><RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} /></button>
                     </div>
                   </div>
-                  {generatedImage.enhanced_prompt && (
-                    <div className="px-4 py-2 border-t border-zinc-800/60"><p className="text-[10px] text-zinc-500 line-clamp-2">{generatedImage.enhanced_prompt}</p></div>
-                  )}
+
+                  {/* ── Make a Pose (image → video) ── */}
+                  <div className="px-3 py-2.5 border-t border-zinc-800/60">
+                    {!showVideoSettings && !isAnimating ? (
+                      <button
+                        onClick={() => setShowVideoSettings(true)}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-black shadow-lg shadow-yellow-500/20 transition-all"
+                      >
+                        <Film className="w-4 h-4" />
+                        Make a Pose
+                        <span className="text-[10px] font-normal opacity-70">— Animate to video</span>
+                      </button>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {/* Model picker row */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[10px] font-semibold text-yellow-400">Google Veo Model</span>
+                            <button onClick={() => { setShowVideoSettings(false); }} className="text-[10px] text-zinc-600 hover:text-zinc-400 flex items-center gap-0.5">
+                              <X className="w-3 h-3" /> Close
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {VEO_MODELS.map(m => (
+                              <button
+                                key={m.key}
+                                onClick={() => setSelectedVeoModel(m.key)}
+                                className={`px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-all ${
+                                  selectedVeoModel === m.key
+                                    ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
+                                    : 'text-zinc-500 border border-zinc-800/40 hover:text-zinc-300 hover:bg-zinc-800/30'
+                                }`}
+                              >
+                                <span className="block">{m.label}</span>
+                                <span className="text-[8px] opacity-60">{m.cost}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Duration + cost row */}
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-zinc-500">Duration</span>
+                            {VIDEO_DURATIONS.map(d => (
+                              <button
+                                key={d.value}
+                                onClick={() => setVideoDuration(d.value)}
+                                className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
+                                  videoDuration === d.value
+                                    ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
+                                    : 'text-zinc-500 border border-zinc-800/40 hover:text-zinc-300'
+                                }`}
+                              >
+                                {d.label}
+                              </button>
+                            ))}
+                          </div>
+                          <span className="text-[10px] text-zinc-600 ml-auto">
+                            Est. ~${(videoDuration * parseFloat((VEO_MODELS.find(m => m.key === selectedVeoModel)?.cost || '$0.15').replace('$','').replace('/s',''))).toFixed(2)}
+                          </span>
+                        </div>
+
+                        {/* Custom motion prompt */}
+                        <input
+                          type="text"
+                          value={videoPrompt}
+                          onChange={(e) => setVideoPrompt(e.target.value)}
+                          placeholder="Custom motion: e.g. 'slow spin, hands on hips, fabric flowing' (optional — auto-generated if empty)"
+                          className="w-full px-3 py-1.5 text-xs bg-zinc-950/50 border border-zinc-800/40 rounded-xl text-white placeholder-zinc-600 focus:border-yellow-500/40 focus:outline-none"
+                        />
+
+                        {/* Generate button */}
+                        <button
+                          onClick={handleAnimate}
+                          disabled={isAnimating}
+                          className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold transition-all ${
+                            isAnimating
+                              ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-black shadow-lg shadow-yellow-500/20'
+                          }`}
+                        >
+                          {isAnimating ? (
+                            <><Loader2 className="w-4 h-4 animate-spin" />Creating poses...</>
+                          ) : (
+                            <><Play className="w-4 h-4" />Make a Pose</>
+                          )}
+                        </button>
+
+                        {/* Progress bar */}
+                        {isAnimating && (
+                          <div className="flex items-center gap-2 text-[11px] text-zinc-500">
+                            <div className="w-full bg-zinc-800/60 rounded-full h-1.5 overflow-hidden">
+                              <motion.div
+                                className="h-full bg-yellow-400/60 rounded-full"
+                                initial={{ width: '5%' }}
+                                animate={{ width: '90%' }}
+                                transition={{ duration: 120, ease: 'linear' }}
+                              />
+                            </div>
+                            <span className="shrink-0 whitespace-nowrap">~1-3 min</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* ── Generated Video Result ── */}
+            <AnimatePresence mode="wait">
+              {generatedVideo && (
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
+                  className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] overflow-hidden">
+                  <div className="relative">
+                    <video
+                      src={generatedVideo.url}
+                      controls
+                      autoPlay
+                      loop
+                      playsInline
+                      className="w-full max-h-[400px] object-contain bg-black"
+                    />
+                    <div className="absolute top-3 right-3 flex items-center gap-2">
+                      <button onClick={handleDownloadVideo} className="p-2 rounded-xl bg-black/70 backdrop-blur-sm text-white hover:bg-black/90 transition-colors"><Download className="w-4 h-4" /></button>
+                    </div>
+                    <div className="absolute top-3 left-3">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-400 text-black">
+                        <Film className="w-3 h-3" />VIDEO
+                      </span>
+                    </div>
+                  </div>
+                  <div className="px-3 py-2 border-t border-zinc-800/60 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-zinc-500">{generatedVideo.model_label || generatedVideo.model}</span>
+                      <span className="text-[10px] text-zinc-600">•</span>
+                      <span className="text-[10px] text-zinc-500">{generatedVideo.duration_seconds}s</span>
+                      {generatedVideo.cost_usd && (
+                        <>
+                          <span className="text-[10px] text-zinc-600">•</span>
+                          <span className="text-[10px] text-zinc-500">${generatedVideo.cost_usd.toFixed(2)}</span>
+                        </>
+                      )}
+                    </div>
+                    <button onClick={handleAnimate} disabled={isAnimating}
+                      className="text-[10px] text-yellow-400 hover:text-yellow-300 flex items-center gap-1">
+                      <RefreshCw className={`w-3 h-3 ${isAnimating ? 'animate-spin' : ''}`} />New poses
+                    </button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
