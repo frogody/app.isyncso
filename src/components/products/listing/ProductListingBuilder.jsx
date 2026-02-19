@@ -137,7 +137,7 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
     return images;
   }, [product]);
 
-  // Generate a single image
+  // Generate a single image via NanoBanana Pro
   const generateImage = useCallback(async (prompt, useCase = 'product_scene') => {
     const { data, error } = await supabase.functions.invoke('generate-image', {
       body: {
@@ -145,6 +145,7 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
         product_name: product?.name,
         product_images: productReferenceImages,
         use_case: productReferenceImages.length > 0 ? useCase : 'marketing_creative',
+        model_key: 'nano-banana-pro',
         style: 'photorealistic',
         aspect_ratio: '1:1',
         width: 1024,
