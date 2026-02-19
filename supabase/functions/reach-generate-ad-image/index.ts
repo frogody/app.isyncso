@@ -6,9 +6,31 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
+const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
+const FAL_KEY = Deno.env.get("FAL_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+const QUALITY_PREFIX =
+  "Ultra high resolution professional photograph, 8K detail, sharp focus, masterful lighting, commercial quality";
+
+// FLUX supported sizes — must be multiples of 32, between 256-1440, max ~1.5MP
+function snapToFluxDimensions(w: number, h: number): { width: number; height: number } {
+  // Clamp to valid range
+  const clamp = (v: number) => Math.max(256, Math.min(1440, v));
+  let width = Math.round(clamp(w) / 32) * 32;
+  let height = Math.round(clamp(h) / 32) * 32;
+
+  // Ensure total pixels <= ~1.5MP (1536x1536 max area)
+  const maxPixels = 1536 * 1536;
+  if (width * height > maxPixels) {
+    const scale = Math.sqrt(maxPixels / (width * height));
+    width = Math.round((width * scale) / 32) * 32;
+    height = Math.round((height * scale) / 32) * 32;
+  }
+
+  return { width: Math.max(256, width), height: Math.max(256, height) };
+}
 
 async function uploadToStorage(
   bucket: string,
@@ -35,47 +57,105 @@ async function uploadToStorage(
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${fileName}`;
 }
 
-// Try generating with a specific Google model
-async function tryGoogleModel(
-  model: string,
-  parts: Array<Record<string, unknown>>
-): Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }> {
+// Together.ai FLUX generation
+async function tryTogether(
+  prompt: string,
+  width: number,
+  height: number,
+  referenceImageUrl?: string | null
+): Promise<{ success: boolean; data?: string; error?: string }> {
+  if (!TOGETHER_API_KEY) return { success: false, error: "No Together API key" };
+
+  const hasRef = !!referenceImageUrl;
+  const model = hasRef
+    ? "black-forest-labs/FLUX.1-Kontext-pro"
+    : "black-forest-labs/FLUX.1.1-pro";
+  const steps = hasRef ? 40 : 28;
+
+  const dims = snapToFluxDimensions(width, height);
+
+  const body: Record<string, unknown> = {
+    model,
+    prompt,
+    width: dims.width,
+    height: dims.height,
+    steps,
+    n: 1,
+    response_format: "b64_json",
+  };
+
+  if (hasRef) {
+    body.image_url = referenceImageUrl;
+  }
+
+  console.log(`[together] ${model}, ${dims.width}x${dims.height}, steps=${steps}`);
+
   try {
-    console.log(`[reach-generate-ad-image] Trying model: ${model}`);
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts }],
-          generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
-        }),
-      }
-    );
+    const res = await fetch("https://api.together.xyz/v1/images/generations", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${TOGETHER_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error(`[reach-generate-ad-image] ${model} error:`, errText);
-      return { success: false, error: `${model}: ${response.status} - ${errText.substring(0, 200)}` };
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("[together] error:", errText);
+      return { success: false, error: `Together ${res.status}: ${errText.substring(0, 200)}` };
     }
 
-    const data = await response.json();
-    const candidate = data.candidates?.[0];
-    if (candidate?.content?.parts) {
-      for (const part of candidate.content.parts) {
-        if (part.inlineData?.mimeType?.startsWith("image/")) {
-          return {
-            success: true,
-            data: part.inlineData.data,
-            mimeType: part.inlineData.mimeType,
-          };
-        }
-      }
-    }
-    return { success: false, error: `${model}: No image in response` };
+    const data = await res.json();
+    const b64 = data?.data?.[0]?.b64_json;
+    if (!b64) return { success: false, error: "No image data from Together" };
+
+    return { success: true, data: b64 };
   } catch (e: any) {
-    return { success: false, error: `${model}: ${e.message}` };
+    return { success: false, error: `Together: ${e.message}` };
+  }
+}
+
+// fal.ai FLUX generation
+async function tryFal(
+  prompt: string,
+  width: number,
+  height: number
+): Promise<{ success: boolean; data?: string; url?: string; error?: string }> {
+  if (!FAL_KEY) return { success: false, error: "No FAL key" };
+
+  const dims = snapToFluxDimensions(width, height);
+
+  try {
+    console.log(`[fal] flux-pro/v1.1, ${dims.width}x${dims.height}`);
+
+    const res = await fetch("https://fal.run/fal-ai/flux-pro/v1.1", {
+      method: "POST",
+      headers: {
+        Authorization: `Key ${FAL_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        prompt,
+        image_size: { width: dims.width, height: dims.height },
+        num_images: 1,
+        enable_safety_checker: false,
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("[fal] error:", errText);
+      return { success: false, error: `fal ${res.status}: ${errText.substring(0, 200)}` };
+    }
+
+    const data = await res.json();
+    const imageUrl = data?.images?.[0]?.url;
+    if (!imageUrl) return { success: false, error: "No image URL from fal" };
+
+    return { success: true, url: imageUrl };
+  } catch (e: any) {
+    return { success: false, error: `fal: ${e.message}` };
   }
 }
 
@@ -97,20 +177,8 @@ serve(async (req: Request) => {
       product_image_url,
     } = body;
 
-    if (!GOOGLE_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "Image generation not configured" }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        }
-      );
-    }
-
     // Build the prompt
-    const promptParts = [
-      "Ultra high resolution professional advertisement image, 8K detail, sharp focus, masterful lighting, commercial quality",
-    ];
+    const promptParts = [QUALITY_PREFIX];
 
     if (style === "lifestyle") {
       promptParts.push("Lifestyle product photography, natural setting, warm tones");
@@ -122,104 +190,72 @@ serve(async (req: Request) => {
       promptParts.push("Professional advertising campaign image, polished commercial style");
     }
 
-    if (product_name) {
-      promptParts.push(`Product: ${product_name}`);
-    }
-    if (product_description) {
-      promptParts.push(`Description: ${product_description.substring(0, 200)}`);
-    }
-    if (ad_headline) {
-      promptParts.push(`Ad concept: ${ad_headline}`);
-    }
-    if (platform) {
-      promptParts.push(`Optimized for ${platform} advertising`);
-    }
+    if (product_name) promptParts.push(`Product: ${product_name}`);
+    if (product_description) promptParts.push(`Description: ${product_description.substring(0, 200)}`);
+    if (ad_headline) promptParts.push(`Ad concept: ${ad_headline}`);
+    if (platform) promptParts.push(`Optimized for ${platform} advertising`);
 
     const width = dimensions?.width || 1024;
     const height = dimensions?.height || 1024;
-    promptParts.push(
-      `Image dimensions: ${width}x${height} pixels, ${width > height ? "landscape" : width < height ? "portrait" : "square"} format`
-    );
+    const orientation = width > height ? "landscape" : width < height ? "portrait" : "square";
+    promptParts.push(`${orientation} format advertisement`);
 
     const prompt = promptParts.join(". ");
 
-    console.log(`[reach-generate-ad-image] Generating image, prompt length=${prompt.length}`);
+    console.log(`[reach-generate-ad-image] prompt=${prompt.length}chars, target=${width}x${height}`);
 
-    // Build request parts - include reference image if provided
-    const parts: Array<Record<string, unknown>> = [];
-    let hasReference = false;
+    // Resolve product reference image URL
+    const productRef = typeof product_image_url === "string" && product_image_url.startsWith("http")
+      ? product_image_url
+      : null;
 
-    if (product_image_url) {
-      try {
-        const imgRes = await fetch(product_image_url);
-        if (imgRes.ok) {
-          const imgBuffer = await imgRes.arrayBuffer();
-          const imgBytes = new Uint8Array(imgBuffer);
-          let binary = "";
-          for (let i = 0; i < imgBytes.length; i++) {
-            binary += String.fromCharCode(imgBytes[i]);
-          }
-          const imgB64 = btoa(binary);
-          const contentType = imgRes.headers.get("content-type") || "image/jpeg";
-          parts.push({
-            inlineData: { mimeType: contentType, data: imgB64 },
-          });
-          parts.push({
-            text: `Use the above product image as reference. Generate a new professional ad image featuring this product. ${prompt}`,
-          });
-          hasReference = true;
-        }
-      } catch (e) {
-        console.warn("[reach-generate-ad-image] Could not fetch reference image:", e);
-      }
+    // Strategy 1: Together.ai FLUX (primary — works for Create module)
+    const togetherResult = await tryTogether(prompt, width, height, productRef);
+    if (togetherResult.success && togetherResult.data) {
+      const binaryStr = atob(togetherResult.data);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+
+      const ts = Date.now();
+      const rand = Math.random().toString(36).substring(2, 8);
+      const fileName = `reach-ad-${ts}-${rand}.png`;
+      const publicUrl = await uploadToStorage("generated-content", fileName, bytes, "image/png");
+
+      console.log(`[reach-generate-ad-image] Together success: ${publicUrl}`);
+      return new Response(JSON.stringify({ image_url: publicUrl }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
 
-    if (!hasReference) {
-      parts.push({ text: prompt });
-    }
+    console.warn(`[reach-generate-ad-image] Together failed: ${togetherResult.error}`);
 
-    // Try models in order: nano-banana (best for product images) → gemini-2.0-flash-exp → gemini-2.0-flash
-    const models = hasReference
-      ? ["nano-banana-pro-preview", "gemini-2.0-flash-exp", "gemini-2.0-flash"]
-      : ["gemini-2.0-flash-exp", "gemini-2.0-flash", "nano-banana-pro-preview"];
-
-    let lastError = "";
-    for (const model of models) {
-      const result = await tryGoogleModel(model, parts);
-      if (result.success && result.data) {
-        // Decode base64 to Uint8Array
-        const binaryStr = atob(result.data);
-        const bytes = new Uint8Array(binaryStr.length);
-        for (let i = 0; i < binaryStr.length; i++) {
-          bytes[i] = binaryStr.charCodeAt(i);
-        }
-
-        // Upload to storage
-        const mimeType = result.mimeType || "image/png";
-        const ext = mimeType.includes("png") ? "png" : "jpg";
-        const timestamp = Date.now();
+    // Strategy 2: fal.ai FLUX (fallback — returns URL, download & re-upload)
+    const falResult = await tryFal(prompt, width, height);
+    if (falResult.success && falResult.url) {
+      // Download from fal and re-upload to our storage
+      const imgRes = await fetch(falResult.url);
+      if (imgRes.ok) {
+        const imgBuffer = await imgRes.arrayBuffer();
+        const bytes = new Uint8Array(imgBuffer);
+        const contentType = imgRes.headers.get("content-type") || "image/jpeg";
+        const ext = contentType.includes("png") ? "png" : "jpg";
+        const ts = Date.now();
         const rand = Math.random().toString(36).substring(2, 8);
-        const fileName = `reach-ad-${timestamp}-${rand}.${ext}`;
+        const fileName = `reach-ad-${ts}-${rand}.${ext}`;
+        const publicUrl = await uploadToStorage("generated-content", fileName, bytes, contentType);
 
-        const publicUrl = await uploadToStorage(
-          "generated-content",
-          fileName,
-          bytes,
-          mimeType
-        );
-
-        console.log(`[reach-generate-ad-image] Success with ${model}, uploaded: ${publicUrl}`);
-
+        console.log(`[reach-generate-ad-image] fal success: ${publicUrl}`);
         return new Response(JSON.stringify({ image_url: publicUrl }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
         });
       }
-      lastError = result.error || "Unknown error";
-      console.warn(`[reach-generate-ad-image] ${model} failed: ${lastError}`);
     }
 
-    throw new Error(`All models failed. Last error: ${lastError}`);
+    console.warn(`[reach-generate-ad-image] fal failed: ${falResult.error}`);
+
+    throw new Error(`Image generation failed. Together: ${togetherResult.error}. fal: ${falResult.error}`);
   } catch (err) {
     console.error("[reach-generate-ad-image] Error:", err);
     return new Response(
