@@ -289,8 +289,10 @@ async function processImage(
       );
     }
 
-    // Call the existing generate-image edge function
+    // Call the existing generate-image edge function using NanoBanana (Google Gemini)
+    // for high-quality product photography with reference image preservation
     const prompt = buildPrompt(shot, product, settings);
+    const productImages = product.existing_image_urls || [];
 
     const genResponse = await fetch(
       `${SUPABASE_URL}/functions/v1/generate-image`,
@@ -303,8 +305,10 @@ async function processImage(
         body: JSON.stringify({
           prompt,
           product_name: product.title,
-          product_images: product.existing_image_urls || [],
-          use_case: "product_scene",
+          product_images: productImages,
+          reference_image_url: productImages[0] || null,
+          model_key: productImages.length > 0 ? "nano-banana-pro" : "flux-pro",
+          is_physical_product: true,
           style: "photorealistic",
           user_id: userId,
           company_id: companyId,
@@ -421,12 +425,12 @@ serve(async (req) => {
       // START: Create job and begin
       // ============================
       case "start": {
-        // 1. Count all approved shoot plans for this user
+        // 1. Count all approved (or generating from a previous retry) shoot plans
         const { data: approvedPlans, error: plansErr } = await supabase
           .from("sync_studio_shoot_plans")
           .select("plan_id, product_ean, total_shots, shots")
           .eq("user_id", userId)
-          .eq("plan_status", "approved");
+          .in("plan_status", ["approved", "generating"]);
 
         if (plansErr) {
           return json(
@@ -440,6 +444,17 @@ serve(async (req) => {
             { error: "No approved shoot plans found. Approve plans first." },
             400,
           );
+        }
+
+        // Reset any "generating" plans back to approved first, then proceed
+        const generatingIds = approvedPlans
+          .filter((p: any) => p.plan_status === "generating")
+          .map((p: any) => p.plan_id);
+        if (generatingIds.length > 0) {
+          await supabase
+            .from("sync_studio_shoot_plans")
+            .update({ plan_status: "approved" })
+            .in("plan_id", generatingIds);
         }
 
         // 2. Calculate total images from the sum of total_shots

@@ -917,6 +917,64 @@ serve(async (req) => {
       selectedModelKey = 'flux-pro';
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // Nano Banana Pro — Product Photoshoot Pipeline
+    // Uses Google Gemini image generation with product reference images
+    // for high-quality, product-preserving photoshoot images.
+    // ══════════════════════════════════════════════════════════════════════
+    if (selectedModelKey === 'nano-banana-pro' && product_images?.length > 0) {
+      console.log(`Product Photoshoot: Nano Banana Pro with ${product_images.length} reference images`);
+
+      const finalPrompt = [
+        prompt,
+        `The product must be reproduced with exact accuracy — same shape, color, material, branding, and all visual details as shown in the reference image(s).`,
+        `Professional product photography, commercial quality, 8K resolution, sharp focus, masterful studio lighting.`,
+      ].filter(Boolean).join('\n');
+
+      const nanoBananaResult = await generateWithNanoBanana(
+        product_images.slice(0, 5),
+        finalPrompt,
+        undefined,
+        width,
+        height,
+      );
+
+      if (nanoBananaResult.success && nanoBananaResult.data) {
+        console.log('Product Photoshoot: Nano Banana Pro succeeded');
+        const ext = nanoBananaResult.mimeType?.includes('jpeg') ? 'jpg' : 'png';
+        const fileName = `photoshoot-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+        const imageData = Uint8Array.from(atob(nanoBananaResult.data), (c: string) => c.charCodeAt(0));
+        const { publicUrl } = await uploadToStorage('generated-content', fileName, imageData, nanoBananaResult.mimeType || 'image/jpeg');
+
+        if (publicUrl) {
+          const costUsd = 0.04;
+          if (company_id) {
+            try {
+              await supabaseInsert('ai_usage_logs', {
+                organization_id: company_id, user_id: user_id || null,
+                model_id: null, prompt_tokens: 0, completion_tokens: 0, total_tokens: 0,
+                cost: costUsd, request_type: 'image', endpoint: 'google/nano-banana-pro',
+                metadata: { model_key: 'nano-banana-pro', pipeline: 'nano-banana', use_case: use_case || 'product_photoshoot' }
+              });
+            } catch (logError) { console.error('Failed to log usage:', logError); }
+          }
+
+          return new Response(
+            JSON.stringify({
+              url: publicUrl, model: 'nano-banana-pro', pipeline: 'nano-banana',
+              original_prompt: original_prompt || prompt, dimensions: { width, height },
+              product_preserved: true, use_case: use_case || 'product_photoshoot', cost_usd: costUsd,
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+
+      // Fallback to flux-kontext-pro if NanoBanana fails
+      console.warn('Product Photoshoot: Nano Banana failed, falling back to flux-kontext-pro:', nanoBananaResult.error);
+      selectedModelKey = 'flux-kontext-pro';
+    }
+
     const modelConfig = MODELS[selectedModelKey];
     if (!modelConfig) {
       return new Response(
