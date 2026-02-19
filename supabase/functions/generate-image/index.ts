@@ -957,7 +957,7 @@ serve(async (req) => {
       const nanoBananaResult = await generateWithNanoBanana(
         refImages.slice(0, 5),
         finalPrompt,
-        aspectRatio,
+        aspect_ratio,
         width,
         height,
       );
