@@ -323,8 +323,9 @@ async function generateWithNanoBanana(
     }
   }
 
+  // Text-only mode is fine — Gemini can generate images from text alone
   if (parts.length < 2) {
-    return { success: false, error: 'No reference images could be loaded' };
+    console.log('generateWithNanoBanana: no reference images loaded, using text-only mode');
   }
 
   // Try multiple Google image-generation models with retry on 503
@@ -903,7 +904,9 @@ serve(async (req) => {
     // ── Model selection ──────────────────────────────────────────────
     let selectedModelKey = model_key;
 
-    if (use_case && USE_CASE_MODELS[use_case]) {
+    // Only apply use_case routing if no explicit model_key was provided
+    // (e.g. nano-banana-pro should NOT be overridden by use_case mapping)
+    if (!selectedModelKey && use_case && USE_CASE_MODELS[use_case]) {
       selectedModelKey = USE_CASE_MODELS[use_case];
     }
 
@@ -922,19 +925,22 @@ serve(async (req) => {
     // Uses Google Gemini image generation with product reference images
     // for high-quality, product-preserving photoshoot images.
     // ══════════════════════════════════════════════════════════════════════
-    if (selectedModelKey === 'nano-banana-pro' && product_images?.length > 0) {
-      console.log(`Product Photoshoot: Nano Banana Pro with ${product_images.length} reference images`);
+    if (selectedModelKey === 'nano-banana-pro') {
+      const refImages = product_images?.length > 0 ? product_images : (reference_image_url ? [reference_image_url] : []);
+      console.log(`Nano Banana Pro: ${refImages.length} reference images`);
 
       const finalPrompt = [
         prompt,
-        `The product must be reproduced with exact accuracy — same shape, color, material, branding, and all visual details as shown in the reference image(s).`,
+        refImages.length > 0
+          ? `The product must be reproduced with exact accuracy — same shape, color, material, branding, and all visual details as shown in the reference image(s).`
+          : null,
         `Professional product photography, commercial quality, 8K resolution, sharp focus, masterful studio lighting.`,
       ].filter(Boolean).join('\n');
 
       const nanoBananaResult = await generateWithNanoBanana(
-        product_images.slice(0, 5),
+        refImages.slice(0, 5),
         finalPrompt,
-        undefined,
+        aspectRatio,
         width,
         height,
       );
