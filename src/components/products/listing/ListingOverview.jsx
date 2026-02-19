@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/GlobalThemeContext';
+import ListingGenerationView from './ListingGenerationView';
 
 // --- Score Calculation ---
 
@@ -279,6 +280,18 @@ export default function ListingOverview({ product, details, listing, onGenerateA
 
   const incompleteCount = checklist.filter((item) => !item.completed).length;
 
+  // If generating, show the immersive generation view instead
+  if (generatingProgress) {
+    return (
+      <ListingGenerationView
+        progress={generatingProgress}
+        listing={listing}
+        product={product}
+        onNavigateToPublish={() => onTabChange?.('publish')}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Quality Score + Breakdown */}
@@ -344,80 +357,8 @@ export default function ListingOverview({ product, details, listing, onGenerateA
           Quick Actions
         </h3>
         <div className="grid sm:grid-cols-3 gap-3">
-          {/* Hero: Generate Everything / Progress Tracker */}
-          {generatingProgress ? (
-            <div className="sm:col-span-3 rounded-2xl overflow-hidden bg-gradient-to-r from-cyan-600 to-blue-600 shadow-lg shadow-cyan-500/20">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
-              <div className="relative p-5 space-y-4">
-                {/* Header */}
-                <div className="flex items-center gap-3">
-                  <Loader2 className="w-5 h-5 text-white animate-spin" />
-                  <p className="text-sm font-semibold text-white">
-                    {generatingProgress.stepLabel || 'Generating...'}
-                  </p>
-                </div>
-
-                {/* Overall progress bar */}
-                <div className="space-y-2">
-                  <div className="h-2 rounded-full bg-white/20 overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${generatingProgress.progress || 0}%` }}
-                      transition={{ duration: 0.5, ease: 'easeOut' }}
-                      className="h-full rounded-full bg-white"
-                    />
-                  </div>
-                  <p className="text-xs text-white/60 tabular-nums">
-                    {Math.round(generatingProgress.progress || 0)}% complete
-                  </p>
-                </div>
-
-                {/* Step indicators */}
-                <div className="grid grid-cols-4 gap-2">
-                  {[
-                    { key: 'copy', label: 'Copy' },
-                    { key: 'hero', label: 'Hero Image' },
-                    { key: 'gallery', label: 'Gallery' },
-                    { key: 'done', label: 'Complete' },
-                  ].map((s) => {
-                    const steps = ['copy', 'hero', 'gallery', 'done'];
-                    const currentIdx = steps.indexOf(generatingProgress.step);
-                    const stepIdx = steps.indexOf(s.key);
-                    const isDone = stepIdx < currentIdx || generatingProgress.step === 'done';
-                    const isActive = s.key === generatingProgress.step && generatingProgress.step !== 'done';
-
-                    return (
-                      <div key={s.key} className="flex flex-col items-center gap-1.5">
-                        <div className={cn(
-                          'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300',
-                          isDone
-                            ? 'bg-white text-cyan-600'
-                            : isActive
-                              ? 'bg-white/30 text-white ring-2 ring-white/50'
-                              : 'bg-white/10 text-white/40'
-                        )}>
-                          {isDone ? (
-                            <Check className="w-4 h-4" />
-                          ) : isActive ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            stepIdx + 1
-                          )}
-                        </div>
-                        <span className={cn(
-                          'text-[10px] font-medium',
-                          isDone ? 'text-white' : isActive ? 'text-white/80' : 'text-white/40'
-                        )}>
-                          {s.label}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <button
+          {/* Hero: Generate Everything */}
+          <button
               onClick={onGenerateAll}
               disabled={loading}
               className={cn(
@@ -441,13 +382,12 @@ export default function ListingOverview({ product, details, listing, onGenerateA
                     {loading ? 'Generating...' : 'Generate Everything with AI'}
                   </p>
                   <p className="text-sm text-white/70 mt-0.5">
-                    Auto-generate title, description, bullets, SEO meta, hero + gallery images
+                    AI copy, hero image, gallery, product video - the complete listing
                   </p>
                 </div>
                 <ArrowRight className="w-5 h-5 text-white/60 ml-auto flex-shrink-0 transition-transform group-hover:translate-x-1" />
               </div>
             </button>
-          )}
 
           {/* Secondary: Generate Copy */}
           <button

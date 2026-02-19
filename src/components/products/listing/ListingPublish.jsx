@@ -208,7 +208,10 @@ function ShopifyPreview({ listing, product }) {
   const price = product?.price || product?.selling_price || '0.00';
   const comparePrice = product?.compare_at_price;
   const heroImage = listing?.hero_image_url || product?.featured_image;
+  const galleryImages = listing?.gallery_urls || [];
   const bullets = listing?.bullet_points || [];
+  const [activeImage, setActiveImage] = useState(0);
+  const allImages = [heroImage, ...galleryImages].filter(Boolean);
 
   return (
     <div className={cn(
@@ -235,15 +238,36 @@ function ShopifyPreview({ listing, product }) {
 
       {/* Product page content */}
       <div className="grid md:grid-cols-2 gap-0">
-        {/* Left: Image */}
-        <div className="bg-slate-50 p-8 flex items-center justify-center min-h-[320px] border-r border-slate-100">
-          {heroImage ? (
-            <img
-              src={heroImage}
-              alt={title}
-              className="max-w-full max-h-[280px] object-contain rounded-lg"
-              onError={(e) => { e.target.style.display = 'none'; }}
-            />
+        {/* Left: Image + Gallery Thumbnails */}
+        <div className="bg-slate-50 p-6 flex flex-col items-center justify-center min-h-[320px] border-r border-slate-100">
+          {allImages.length > 0 ? (
+            <>
+              <img
+                src={allImages[activeImage] || allImages[0]}
+                alt={title}
+                className="max-w-full max-h-[240px] object-contain rounded-lg mb-3"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+              {allImages.length > 1 && (
+                <div className="flex items-center gap-2 mt-2">
+                  {allImages.slice(0, 5).map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveImage(idx)}
+                      className={cn(
+                        'w-12 h-12 rounded-lg border-2 overflow-hidden transition-all flex-shrink-0',
+                        activeImage === idx ? 'border-slate-900 ring-1 ring-slate-900/20' : 'border-slate-200 hover:border-slate-300'
+                      )}
+                    >
+                      <img src={img} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                    </button>
+                  ))}
+                  {allImages.length > 5 && (
+                    <span className="text-xs text-slate-400 ml-1">+{allImages.length - 5}</span>
+                  )}
+                </div>
+              )}
+            </>
           ) : (
             <div className="w-48 h-48 rounded-xl bg-slate-100 flex items-center justify-center">
               <ImageIcon className="w-12 h-12 text-slate-300" />
@@ -319,7 +343,10 @@ function BolcomPreview({ listing, product }) {
   const description = listing?.description || listing?.listing_description || product?.description || '';
   const price = product?.price || product?.selling_price || '0.00';
   const heroImage = listing?.hero_image_url || product?.featured_image;
+  const galleryImages = listing?.gallery_urls || [];
   const bullets = listing?.bullet_points || [];
+  const [activeBolImg, setActiveBolImg] = useState(0);
+  const allBolImages = [heroImage, ...galleryImages].filter(Boolean);
 
   return (
     <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white">
@@ -342,15 +369,33 @@ function BolcomPreview({ listing, product }) {
 
       {/* Product content */}
       <div className="grid md:grid-cols-2 gap-0">
-        {/* Left: Image */}
-        <div className="p-6 flex items-center justify-center min-h-[300px] border-r border-slate-100">
-          {heroImage ? (
-            <img
-              src={heroImage}
-              alt={title}
-              className="max-w-full max-h-[260px] object-contain"
-              onError={(e) => { e.target.style.display = 'none'; }}
-            />
+        {/* Left: Image + Thumbnails */}
+        <div className="p-6 flex flex-col items-center justify-center min-h-[300px] border-r border-slate-100">
+          {allBolImages.length > 0 ? (
+            <>
+              <img
+                src={allBolImages[activeBolImg] || allBolImages[0]}
+                alt={title}
+                className="max-w-full max-h-[220px] object-contain mb-3"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+              {allBolImages.length > 1 && (
+                <div className="flex items-center gap-1.5 mt-2">
+                  {allBolImages.slice(0, 5).map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveBolImg(idx)}
+                      className={cn(
+                        'w-10 h-10 rounded border overflow-hidden transition-all flex-shrink-0',
+                        activeBolImg === idx ? 'border-[#0000A4] ring-1 ring-[#0000A4]/20' : 'border-slate-200 hover:border-slate-300'
+                      )}
+                    >
+                      <img src={img} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
           ) : (
             <div className="w-48 h-48 rounded-xl bg-slate-50 flex items-center justify-center">
               <ImageIcon className="w-12 h-12 text-slate-200" />
@@ -398,7 +443,7 @@ function BolcomPreview({ listing, product }) {
                 {bullets.slice(0, 5).map((bullet, idx) => (
                   <li key={idx} className="flex items-start gap-2 text-xs text-slate-700">
                     <Check className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>{typeof bullet === 'string' ? bullet : bullet.text || bullet.content || ''}</span>
+                    <span dangerouslySetInnerHTML={{ __html: typeof bullet === 'string' ? bullet : bullet.text || bullet.content || '' }} />
                   </li>
                 ))}
               </ul>
@@ -426,10 +471,12 @@ function GenericPreview({ listing, product }) {
   const description = listing?.description || listing?.listing_description || product?.description || '';
   const price = product?.price || product?.selling_price;
   const heroImage = listing?.hero_image_url || product?.featured_image;
+  const galleryImages = listing?.gallery_urls || [];
   const bullets = listing?.bullet_points || [];
   const seoTitle = listing?.seo_title || '';
   const seoDesc = listing?.seo_description || '';
   const keywords = listing?.keywords || listing?.search_keywords || [];
+  const videoUrl = listing?.video_url;
 
   return (
     <div className={cn(
@@ -448,36 +495,41 @@ function GenericPreview({ listing, product }) {
       </div>
 
       <div className="p-6 space-y-5">
-        {/* Image + Title row */}
-        <div className="flex items-start gap-5">
-          {heroImage ? (
+        {/* Hero Image Large */}
+        {heroImage && (
+          <div className={cn('rounded-xl overflow-hidden border', t('border-slate-200', 'border-white/10'))}>
             <img
               src={heroImage}
               alt={title}
-              className={cn(
-                'w-24 h-24 rounded-xl object-cover flex-shrink-0 border',
-                t('border-slate-200', 'border-white/10')
-              )}
+              className="w-full h-64 object-cover"
               onError={(e) => { e.target.style.display = 'none'; }}
             />
-          ) : (
-            <div className={cn(
-              'w-24 h-24 rounded-xl flex items-center justify-center flex-shrink-0 border',
-              t('bg-slate-50 border-slate-200', 'bg-white/[0.04] border-white/10')
-            )}>
-              <ImageIcon className={cn('w-8 h-8', t('text-slate-300', 'text-zinc-600'))} />
-            </div>
-          )}
+          </div>
+        )}
+
+        {/* Gallery Grid */}
+        {galleryImages.length > 0 && (
+          <div className="grid grid-cols-4 gap-2">
+            {galleryImages.slice(0, 4).map((img, idx) => (
+              <div key={idx} className={cn('rounded-lg overflow-hidden border aspect-square', t('border-slate-200', 'border-white/10'))}>
+                <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Title + Price row */}
+        <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h3 className={cn('text-lg font-semibold leading-tight', t('text-slate-900', 'text-white'))}>
               {title}
             </h3>
-            {price && (
-              <p className={cn('text-xl font-bold mt-1', t('text-slate-900', 'text-white'))}>
-                {typeof price === 'number' ? `$${price.toFixed(2)}` : `$${price}`}
-              </p>
-            )}
           </div>
+          {price && (
+            <p className={cn('text-xl font-bold flex-shrink-0', t('text-slate-900', 'text-white'))}>
+              {typeof price === 'number' ? `$${price.toFixed(2)}` : `$${price}`}
+            </p>
+          )}
         </div>
 
         {/* Description */}
@@ -503,7 +555,7 @@ function GenericPreview({ listing, product }) {
               {bullets.slice(0, 6).map((b, idx) => (
                 <li key={idx} className={cn('flex items-start gap-2 text-sm', t('text-slate-700', 'text-zinc-300'))}>
                   <span className="text-cyan-400 mt-0.5">-</span>
-                  <span>{typeof b === 'string' ? b : b.text || b.content || ''}</span>
+                  <span dangerouslySetInnerHTML={{ __html: typeof b === 'string' ? b : b.text || b.content || '' }} />
                 </li>
               ))}
             </ul>

@@ -174,12 +174,22 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
     setGenerating(true);
     setActiveTab('overview');
 
+    const startTime = Date.now();
     const toastId = toast.loading('Starting AI generation...');
     let savedListing = listing;
 
+    // Helper to build progress state with live content
+    const updateProgress = (updates) => {
+      setGeneratingProgress((prev) => ({
+        ...prev,
+        startTime,
+        ...updates,
+      }));
+    };
+
     try {
       // --- Step 1: Generate Copy ---
-      setGeneratingProgress({ step: 'copy', progress: 10, stepLabel: 'Generating copy...' });
+      updateProgress({ phase: 'copy', progress: 5, stepLabel: 'Analyzing product and crafting copy...', copy: null, heroImageUrl: null, galleryImages: [], galleryTotal: 4, videoUrl: null });
       toast.loading('Generating product copy...', { id: toastId });
 
       const { data: copyData, error: copyError } = await supabase.functions.invoke('generate-listing-copy', {
@@ -208,6 +218,8 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
         ? (typeof ai.titles[0] === 'string' ? ai.titles[0] : ai.titles[0].text || '')
         : product?.name || '';
 
+      const allTitles = (ai.titles || []).map((t) => typeof t === 'string' ? t : t.text || '');
+
       const copyPayload = {
         listing_title: firstTitle,
         listing_description: ai.description || '',
@@ -218,43 +230,65 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
       };
 
       savedListing = await saveListingSilent(copyPayload);
-      setGeneratingProgress({ step: 'copy', progress: 30, stepLabel: 'Copy generated!' });
+
+      // Update progress with live copy content
+      updateProgress({
+        phase: 'copy',
+        progress: 20,
+        stepLabel: 'Copy generated!',
+        copy: {
+          title: firstTitle,
+          allTitles,
+          description: ai.description || '',
+          bulletPoints: ai.bullet_points || [],
+          seoTitle: ai.seo_title || '',
+          seoDescription: ai.seo_description || '',
+          searchKeywords: ai.search_keywords || [],
+          shortTagline: ai.short_tagline || '',
+          reasoning: ai.reasoning || '',
+        },
+      });
 
       // --- Step 2: Generate Hero Image ---
-      setGeneratingProgress({ step: 'hero', progress: 35, stepLabel: 'Creating hero image...' });
+      updateProgress({ phase: 'hero', progress: 25, stepLabel: 'Creating studio hero shot...' });
       toast.loading('Creating hero image...', { id: toastId });
 
       try {
         const heroPrompt = `Professional e-commerce product photography of ${product?.name || 'the product'} on a clean white background, studio lighting, sharp detail, commercial hero shot, high resolution, centered composition`;
         const heroUrl = await generateImage(heroPrompt, 'product_variation');
         savedListing = await saveListingSilent({ hero_image_url: heroUrl });
-        setGeneratingProgress({ step: 'hero', progress: 50, stepLabel: 'Hero image created!' });
+        updateProgress({ phase: 'hero', progress: 35, stepLabel: 'Hero image created!', heroImageUrl: heroUrl });
       } catch (imgErr) {
         console.warn('[ProductListingBuilder] Hero image failed:', imgErr.message);
-        setGeneratingProgress({ step: 'hero', progress: 50, stepLabel: 'Hero image skipped' });
+        updateProgress({ phase: 'hero', progress: 35, stepLabel: 'Hero image skipped' });
       }
 
       // --- Step 3: Generate Gallery Images (4 lifestyle variants) ---
-      setGeneratingProgress({ step: 'gallery', progress: 55, stepLabel: 'Generating gallery images...' });
+      updateProgress({ phase: 'gallery', progress: 40, stepLabel: 'Generating lifestyle gallery...' });
       toast.loading('Generating lifestyle images...', { id: toastId });
 
-      const galleryPrompts = [
-        `${product?.name || 'Product'} in a modern lifestyle setting, warm natural light, home interior, aspirational photography`,
-        `${product?.name || 'Product'} close-up detail shot, macro photography, texture and material visible, commercial quality`,
-        `${product?.name || 'Product'} in flat-lay composition with complementary accessories, top-down view, styled product photography`,
-        `${product?.name || 'Product'} in use, lifestyle demonstration, real-world context, authentic feel, soft natural lighting`,
+      const galleryScenes = [
+        { prompt: `${product?.name || 'Product'} in a modern lifestyle setting, warm natural light, home interior, aspirational photography`, label: 'Lifestyle Setting' },
+        { prompt: `${product?.name || 'Product'} close-up detail shot, macro photography, texture and material visible, commercial quality`, label: 'Close-up Detail' },
+        { prompt: `${product?.name || 'Product'} in flat-lay composition with complementary accessories, top-down view, styled product photography`, label: 'Flat-lay Composition' },
+        { prompt: `${product?.name || 'Product'} in use, lifestyle demonstration, real-world context, authentic feel, soft natural lighting`, label: 'In-use Demo' },
       ];
 
       const galleryUrls = [];
-      for (let i = 0; i < galleryPrompts.length; i++) {
+      for (let i = 0; i < galleryScenes.length; i++) {
         try {
-          setGeneratingProgress({
-            step: 'gallery',
-            progress: 55 + ((i + 1) / galleryPrompts.length) * 35,
-            stepLabel: `Generating image ${i + 1} of ${galleryPrompts.length}...`,
+          updateProgress({
+            phase: 'gallery',
+            progress: 40 + ((i + 1) / galleryScenes.length) * 30,
+            stepLabel: `Creating ${galleryScenes[i].label} (${i + 1}/${galleryScenes.length})...`,
           });
-          const url = await generateImage(galleryPrompts[i], 'product_scene');
-          galleryUrls.push(url);
+          const url = await generateImage(galleryScenes[i].prompt, 'product_scene');
+          galleryUrls.push({ url, description: galleryScenes[i].label });
+
+          // Update gallery one at a time for progressive reveal
+          updateProgress({
+            galleryImages: [...galleryUrls],
+          });
         } catch (err) {
           console.warn(`[ProductListingBuilder] Gallery image ${i + 1} failed:`, err.message);
         }
@@ -263,38 +297,67 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
       if (galleryUrls.length > 0) {
         const existingGallery = savedListing?.gallery_urls || [];
         savedListing = await saveListingSilent({
-          gallery_urls: [...existingGallery, ...galleryUrls],
+          gallery_urls: [...existingGallery, ...galleryUrls.map((g) => g.url)],
         });
       }
 
-      // --- Step 4: Done ---
-      setGeneratingProgress({ step: 'done', progress: 100, stepLabel: 'Complete!' });
+      // --- Step 4: Generate Video ---
+      updateProgress({ phase: 'video', progress: 75, stepLabel: 'Generating product video...' });
+      toast.loading('Creating product video...', { id: toastId });
+
+      try {
+        const videoPrompt = `Cinematic product showcase of ${product?.name || 'the product'}: slow rotating view, studio lighting on clean background, smooth camera movement, professional commercial quality`;
+        const { data: videoData, error: videoError } = await supabase.functions.invoke('generate-video', {
+          body: {
+            prompt: videoPrompt,
+            product_name: product?.name,
+            reference_image_url: savedListing?.hero_image_url || productReferenceImages[0] || null,
+            company_id: user?.company_id,
+            user_id: user?.id,
+          },
+        });
+
+        if (videoError) throw videoError;
+        if (videoData?.url) {
+          savedListing = await saveListingSilent({ video_url: videoData.url });
+          updateProgress({ phase: 'video', progress: 90, stepLabel: 'Video created!', videoUrl: videoData.url });
+        } else if (videoData?.status === 'processing') {
+          updateProgress({ phase: 'video', progress: 85, stepLabel: 'Video processing in background...' });
+        } else {
+          updateProgress({ phase: 'video', progress: 85, stepLabel: 'Video generation skipped' });
+        }
+      } catch (vidErr) {
+        console.warn('[ProductListingBuilder] Video generation failed:', vidErr.message);
+        updateProgress({ phase: 'video', progress: 85, stepLabel: 'Video skipped' });
+      }
+
+      // --- Step 5: Done ---
+      updateProgress({ phase: 'done', progress: 100, stepLabel: 'Your listing is ready!' });
       toast.success(
-        `Listing generated: ${firstTitle.slice(0, 40)}${firstTitle.length > 40 ? '...' : ''} + ${galleryUrls.length + (savedListing?.hero_image_url ? 1 : 0)} images`,
+        `Listing complete! ${galleryUrls.length + (savedListing?.hero_image_url ? 1 : 0)} images generated`,
         { id: toastId, duration: 5000 }
       );
 
       // Re-fetch to sync state
       await fetchListing();
 
-      // Auto-switch to publish tab after a moment
-      setTimeout(() => {
-        setActiveTab('publish');
-      }, 2000);
-
     } catch (err) {
       console.error('[ProductListingBuilder] generateAll error:', err);
       toast.error('Generation failed: ' + (err.message || 'Unknown error'), { id: toastId });
+      setGeneratingProgress(null);
     } finally {
       setGenerating(false);
-      setTimeout(() => setGeneratingProgress(null), 3000);
+      // Don't auto-clear progress or auto-switch tabs - user stays on Overview with the immersive view
     }
-  }, [product, details, user, listing, selectedChannel, saveListingSilent, generateImage, fetchListing]);
+  }, [product, details, user, listing, selectedChannel, saveListingSilent, generateImage, fetchListing, productReferenceImages]);
 
-  // Switch to a specific sub-tab
+  // Switch to a specific sub-tab - clear generation view when leaving overview
   const handleTabChange = useCallback((tabId) => {
+    if (tabId !== 'overview' && generatingProgress?.phase === 'done') {
+      setGeneratingProgress(null);
+    }
     setActiveTab(tabId);
-  }, []);
+  }, [generatingProgress]);
 
   // Render the active sub-component
   const renderContent = useMemo(() => {

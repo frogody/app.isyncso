@@ -131,7 +131,8 @@ Return a JSON object with this exact structure:
   "seo_title": "SEO-optimized page title (max 70 chars)",
   "seo_description": "Compelling meta description with call-to-action (max 160 chars)",
   "search_keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5", "keyword6", "keyword7", "keyword8"],
-  "short_tagline": "A punchy one-liner for the product (max 100 chars)"
+  "short_tagline": "A punchy one-liner for the product (max 100 chars)",
+  "reasoning": "2-3 sentences explaining WHY you chose this angle, which product strengths you emphasized, and what makes this listing compelling for the target audience."
 }
 
 IMPORTANT: Return ONLY valid JSON, no markdown code blocks, no explanation text.`;
@@ -249,7 +250,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown code blocks, no explanation text.
       JSON.stringify({
         success: true,
         listing: parsed,
-        model: 'llama-3.3-70b-versatile',
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
         channel,
         language,
         tone,
