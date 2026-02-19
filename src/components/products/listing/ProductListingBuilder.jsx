@@ -530,13 +530,17 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
 
       // ═══════════════════════════════════════════════════════════════
       // Phase 6: PRODUCT VIDEO — Veo 3.1 via generate-fashion-video
+      // Only proceeds if we have a successfully generated video frame
+      // or at minimum a hero image from this generation run.
       // ═══════════════════════════════════════════════════════════════
-      updateProgress({ phase: 'video', progress: 72, stepLabel: 'Generating product video with Veo 3.1...' });
+      updateProgress({ phase: 'video', progress: 72, stepLabel: 'Preparing product video...' });
       toast.loading('Creating cinematic product video...', { id: toastId });
 
-      const videoReferenceUrl = videoFrames[0]?.url || savedListing?.hero_image_url || productReferenceImages[0] || null;
+      // Require a generated image — prefer video frame, then hero from THIS run, then existing hero
+      const videoReferenceUrl = videoFrames[0]?.url || savedListing?.hero_image_url || null;
+      const hasValidReference = !!videoReferenceUrl;
 
-      if (videoReferenceUrl) {
+      if (hasValidReference) {
         try {
           const researchSummary = researchContext?.findings
             ? researchContext.findings.substring(0, 150)
@@ -578,8 +582,8 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
           updateProgress({ phase: 'video', progress: 90, stepLabel: 'Video skipped — check Video Studio later' });
         }
       } else {
-        console.warn('[ProductListingBuilder] No reference image for video');
-        updateProgress({ phase: 'video', progress: 90, stepLabel: 'Video skipped — no reference image' });
+        console.warn('[ProductListingBuilder] No generated images available for video — skipping');
+        updateProgress({ phase: 'video', progress: 90, stepLabel: 'Video skipped — images must generate first' });
       }
 
       // ═══════════════════════════════════════════════════════════════
