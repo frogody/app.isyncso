@@ -8,7 +8,6 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
 const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
 const TAVILY_API_KEY = Deno.env.get("TAVILY_API_KEY");
 
@@ -46,49 +45,103 @@ function isValidImageUrl(url: string): boolean {
 }
 
 // =============================================================================
-// TAVILY EXTRACT
+// TAVILY SEARCH (proven to work - same as research-product)
 // =============================================================================
 
-async function extractWithTavily(url: string): Promise<string> {
+async function searchWithTavily(
+  url: string,
+  retryCount = 0
+): Promise<{ content: string; images: string[] }> {
   if (!TAVILY_API_KEY) {
-    console.log("[Tavily] No API key, skipping extract");
-    return "";
+    console.log("[Tavily] No API key");
+    return { content: "", images: [] };
   }
 
+  const MAX_RETRIES = 2;
+  const RETRY_DELAY = 1500;
+
+  // Strategy: use the URL directly as the search query — Tavily will
+  // crawl it and return the page content. This is the same approach
+  // that works in research-product.
   try {
-    console.log(`[Tavily] Extracting content from: ${url}`);
-    const response = await fetch("https://api.tavily.com/extract", {
+    console.log(`[Tavily] Search attempt ${retryCount + 1}`);
+
+    const response = await fetch("https://api.tavily.com/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         api_key: TAVILY_API_KEY,
-        urls: [url],
+        query: url,
+        search_depth: "advanced",
+        include_answer: true,
+        include_raw_content: true,
+        include_images: true,
+        max_results: 5,
       }),
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error(`[Tavily] Extract failed (${response.status}): ${errText}`);
-      return "";
+      console.error(`[Tavily] Search failed (${response.status}): ${errText}`);
+
+      if (
+        (response.status >= 500 || response.status === 429) &&
+        retryCount < MAX_RETRIES
+      ) {
+        await new Promise((r) =>
+          setTimeout(r, RETRY_DELAY * (retryCount + 1))
+        );
+        return searchWithTavily(url, retryCount + 1);
+      }
+      return { content: "", images: [] };
     }
 
     const data = await response.json();
-    const content = data.results?.[0]?.raw_content || data.results?.[0]?.text || "";
-    console.log(`[Tavily] Extracted ${content.length} chars`);
-    return content;
+    const results = data.results || [];
+
+    // Combine ALL results content for maximum data coverage
+    let content = "";
+    if (data.answer) {
+      content += data.answer + "\n\n";
+    }
+    for (const r of results) {
+      const chunk = r.raw_content || r.content || "";
+      if (chunk) content += chunk + "\n\n";
+    }
+    content = content.trim();
+
+    // Collect images from all results
+    const images: string[] = [];
+    if (data.images) images.push(...data.images);
+    for (const r of results) {
+      if (r.images) images.push(...r.images);
+    }
+
+    console.log(
+      `[Tavily] Got ${content.length} chars, ${images.length} images from ${results.length} results`
+    );
+    return { content, images: [...new Set(images)] };
   } catch (err) {
-    console.error("[Tavily] Extract error:", err);
-    return "";
+    console.error("[Tavily] Search error:", err);
+    if (retryCount < MAX_RETRIES) {
+      await new Promise((r) =>
+        setTimeout(r, RETRY_DELAY * (retryCount + 1))
+      );
+      return searchWithTavily(url, retryCount + 1);
+    }
+    return { content: "", images: [] };
   }
 }
 
 // =============================================================================
-// HTML FETCH + EXTRACT (fallback)
+// DIRECT URL FETCH (secondary source)
 // =============================================================================
 
-async function fetchPageHtml(url: string): Promise<string> {
+async function fetchPageContent(
+  url: string
+): Promise<{ text: string; images: string[] }> {
   try {
-    console.log(`[Fetch] Fetching HTML from: ${url}`);
+    console.log(`[Fetch] Fetching: ${url}`);
     const response = await fetch(url, {
       headers: {
         "User-Agent":
@@ -101,59 +154,53 @@ async function fetchPageHtml(url: string): Promise<string> {
     });
 
     if (!response.ok) {
-      console.error(`[Fetch] Failed: ${response.status}`);
-      return "";
+      console.log(`[Fetch] HTTP ${response.status}`);
+      return { text: "", images: [] };
     }
 
     const html = await response.text();
-    console.log(`[Fetch] Got ${html.length} chars of HTML`);
-    return html;
+    console.log(`[Fetch] Got ${html.length} chars HTML`);
+
+    // Extract text
+    let text = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
+    text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
+    text = text.replace(/<!--[\s\S]*?-->/g, "");
+    text = text.replace(/<\/(p|div|h[1-6]|li|tr|br|hr)[^>]*>/gi, "\n");
+    text = text.replace(/<[^>]+>/g, " ");
+    text = text.replace(/&nbsp;/g, " ");
+    text = text.replace(/&amp;/g, "&");
+    text = text.replace(/&lt;/g, "<");
+    text = text.replace(/&gt;/g, ">");
+    text = text.replace(/&quot;/g, '"');
+    text = text.replace(/&#39;/g, "'");
+    text = text.replace(/\s+/g, " ");
+    text = text.replace(/\n\s+/g, "\n");
+    text = text.replace(/\n+/g, "\n");
+    text = text.trim();
+
+    // Extract images
+    const images: string[] = [];
+    const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+    let match;
+    while ((match = imgRegex.exec(html)) !== null) {
+      if (match[1] && isValidImageUrl(match[1])) images.push(match[1]);
+    }
+    const ogRegex =
+      /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/gi;
+    while ((match = ogRegex.exec(html)) !== null) {
+      if (match[1]) images.push(match[1]);
+    }
+
+    console.log(`[Fetch] Extracted ${text.length} chars text, ${images.length} images`);
+    return { text, images: [...new Set(images)] };
   } catch (err) {
     console.error("[Fetch] Error:", err);
-    return "";
+    return { text: "", images: [] };
   }
-}
-
-function extractTextFromHtml(html: string): string {
-  let text = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
-  text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
-  text = text.replace(/<!--[\s\S]*?-->/g, "");
-  text = text.replace(/<\/(p|div|h[1-6]|li|tr|br|hr)[^>]*>/gi, "\n");
-  text = text.replace(/<[^>]+>/g, " ");
-  text = text.replace(/&nbsp;/g, " ");
-  text = text.replace(/&amp;/g, "&");
-  text = text.replace(/&lt;/g, "<");
-  text = text.replace(/&gt;/g, ">");
-  text = text.replace(/&quot;/g, '"');
-  text = text.replace(/&#39;/g, "'");
-  text = text.replace(/\s+/g, " ");
-  text = text.replace(/\n\s+/g, "\n");
-  text = text.replace(/\n+/g, "\n");
-  return text.trim();
-}
-
-function extractImageUrlsFromHtml(html: string): string[] {
-  const urls: string[] = [];
-  // Match src attributes from img tags
-  const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-  let match;
-  while ((match = imgRegex.exec(html)) !== null) {
-    if (match[1] && isValidImageUrl(match[1])) {
-      urls.push(match[1]);
-    }
-  }
-  // Match og:image meta tags
-  const ogRegex =
-    /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/gi;
-  while ((match = ogRegex.exec(html)) !== null) {
-    if (match[1]) urls.push(match[1]);
-  }
-  // Deduplicate
-  return [...new Set(urls)];
 }
 
 // =============================================================================
-// LLM EXTRACTION
+// LLM EXTRACTION (Together.ai only)
 // =============================================================================
 
 const EXTRACTION_PROMPT = `You are a product data extractor. Given raw text content from a product listing page, extract all product information into a structured JSON object.
@@ -190,83 +237,57 @@ Rules:
 - Return ONLY the JSON object, no other text`;
 
 async function callLLM(content: string): Promise<any> {
-  const llmPayload = {
-    messages: [
-      { role: "system", content: EXTRACTION_PROMPT },
-      {
-        role: "user",
-        content: `Extract product data from this listing:\n\n${content.substring(0, 12000)}`,
-      },
-    ],
-    max_tokens: 2000,
-    temperature: 0.1,
-    response_format: { type: "json_object" },
-  };
-
-  const providers = [
-    ...(GROQ_API_KEY
-      ? [
-          {
-            url: "https://api.groq.com/openai/v1/chat/completions",
-            key: GROQ_API_KEY,
-            model: "llama-3.3-70b-versatile",
-            name: "Groq",
-          },
-        ]
-      : []),
-    ...(TOGETHER_API_KEY
-      ? [
-          {
-            url: "https://api.together.ai/v1/chat/completions",
-            key: TOGETHER_API_KEY,
-            model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-            name: "Together",
-          },
-        ]
-      : []),
-  ];
-
-  for (const provider of providers) {
-    try {
-      console.log(`[LLM] Trying ${provider.name}...`);
-      const res = await fetch(provider.url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${provider.key}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ model: provider.model, ...llmPayload }),
-      });
-
-      if (!res.ok) {
-        const errBody = await res.text().catch(() => "");
-        console.error(
-          `[LLM] ${provider.name} error ${res.status}: ${errBody}`
-        );
-        continue;
-      }
-
-      const data = await res.json();
-      const raw = data.choices?.[0]?.message?.content?.trim();
-      if (!raw) continue;
-
-      // Parse JSON from response
-      const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        console.error(`[LLM] ${provider.name} returned non-JSON`);
-        continue;
-      }
-
-      const parsed = JSON.parse(jsonMatch[0]);
-      console.log(`[LLM] ${provider.name} extracted successfully`);
-      return parsed;
-    } catch (err) {
-      console.error(`[LLM] ${provider.name} failed:`, err);
-      continue;
-    }
+  if (!TOGETHER_API_KEY) {
+    console.error("[LLM] No TOGETHER_API_KEY");
+    return null;
   }
 
-  return null;
+  try {
+    console.log(`[LLM] Sending ${content.length} chars to Together.ai...`);
+    const res = await fetch("https://api.together.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${TOGETHER_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        messages: [
+          { role: "system", content: EXTRACTION_PROMPT },
+          {
+            role: "user",
+            content: `Extract product data from this listing:\n\n${content.substring(0, 12000)}`,
+          },
+        ],
+        max_tokens: 2000,
+        temperature: 0.1,
+        response_format: { type: "json_object" },
+      }),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => "");
+      console.error(`[LLM] Together error ${res.status}: ${errBody}`);
+      return null;
+    }
+
+    const data = await res.json();
+    const raw = data.choices?.[0]?.message?.content?.trim();
+    if (!raw) return null;
+
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("[LLM] Non-JSON response");
+      return null;
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    console.log(`[LLM] Extracted: "${parsed.name}"`);
+    return parsed;
+  } catch (err) {
+    console.error("[LLM] Failed:", err);
+    return null;
+  }
 }
 
 // =============================================================================
@@ -299,11 +320,7 @@ async function downloadAndStoreImages(
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           Accept:
             "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-          "Accept-Language": "en-US,en;q=0.9",
           Referer: new URL(imageUrl).origin + "/",
-          "Sec-Fetch-Dest": "image",
-          "Sec-Fetch-Mode": "no-cors",
-          "Sec-Fetch-Site": "same-origin",
         },
         redirect: "follow",
       });
@@ -314,10 +331,7 @@ async function downloadAndStoreImages(
       }
 
       const contentType = response.headers.get("content-type") || "image/jpeg";
-      if (!contentType.startsWith("image/")) {
-        console.log(`[Image] Not an image (${contentType}), skipping`);
-        continue;
-      }
+      if (!contentType.startsWith("image/")) continue;
 
       const extension = contentType.includes("png")
         ? "png"
@@ -328,10 +342,7 @@ async function downloadAndStoreImages(
             : "jpg";
 
       const blob = await response.blob();
-      if (blob.size < 1000) {
-        console.log(`[Image] Too small (${blob.size} bytes), skipping`);
-        continue;
-      }
+      if (blob.size < 1000) continue;
 
       const arrayBuffer = await blob.arrayBuffer();
       const buffer = new Uint8Array(arrayBuffer);
@@ -345,7 +356,7 @@ async function downloadAndStoreImages(
         .upload(filename, buffer, { contentType, upsert: false });
 
       if (error) {
-        console.log(`[Image] Upload failed ${i + 1}: ${error.message}`);
+        console.log(`[Image] Upload failed: ${error.message}`);
         continue;
       }
 
@@ -360,14 +371,14 @@ async function downloadAndStoreImages(
             alt: productName || `Product image ${i + 1}`,
             uploaded_at: new Date().toISOString(),
           });
-          console.log(`[Image] Stored ${i + 1}: ${urlData.publicUrl}`);
         }
       }
     } catch (imgError) {
-      console.error(`[Image] Error downloading image ${i + 1}:`, imgError);
+      console.error(`[Image] Error ${i + 1}:`, imgError);
     }
   }
 
+  console.log(`[Image] Stored ${storedImages.length} images`);
   return storedImages;
 }
 
@@ -403,7 +414,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate URL
     let parsedUrl: URL;
     try {
       parsedUrl = new URL(url);
@@ -417,59 +427,49 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`[Scrape] Starting extraction for: ${url}`);
+    console.log(`[Scrape] Starting for: ${url}`);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Step 1: Fetch page HTML + Tavily extract in parallel
-    const [html, tavilyContent] = await Promise.all([
-      fetchPageHtml(url),
-      extractWithTavily(url),
+    // Step 1: Fetch content from multiple sources in parallel
+    const [tavilyResult, fetchResult] = await Promise.all([
+      searchWithTavily(url),
+      fetchPageContent(url),
     ]);
 
-    if (!html && !tavilyContent) {
-      return new Response(
-        JSON.stringify({
-          error: "Could not fetch any content from the URL",
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
+    // Combine all content — prefer Tavily (more reliable via search API)
+    const contentForLLM = tavilyResult.content || fetchResult.text;
+    const allImages = [
+      ...tavilyResult.images,
+      ...fetchResult.images,
+    ].filter((u, i, a) => isValidImageUrl(u) && a.indexOf(u) === i);
 
-    // Step 2: Combine content sources for LLM
-    const htmlText = html ? extractTextFromHtml(html) : "";
-    const htmlImages = html ? extractImageUrlsFromHtml(html) : [];
-
-    // Prefer Tavily content (cleaner), fall back to HTML text
-    const contentForLLM = tavilyContent || htmlText;
-
-    if (!contentForLLM || contentForLLM.length < 50) {
-      return new Response(
-        JSON.stringify({
-          error: "Could not extract meaningful content from the URL",
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Step 3: LLM extraction
     console.log(
-      `[Scrape] Sending ${contentForLLM.length} chars to LLM for extraction`
+      `[Scrape] Content: ${contentForLLM.length} chars, Images found: ${allImages.length}`
     );
+
+    if (!contentForLLM || contentForLLM.length < 30) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Could not fetch content from this URL. Try a different product link.",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Step 2: LLM extraction via Together.ai
     const extracted = await callLLM(contentForLLM);
 
     if (!extracted) {
       return new Response(
         JSON.stringify({
-          error: "Failed to extract product data from the page content",
+          error: "Failed to extract product data. Please try again.",
         }),
         {
           status: 500,
@@ -478,28 +478,24 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Step 4: Merge image sources — LLM-extracted + HTML-extracted
-    const allImageUrls = [
+    // Step 3: Merge LLM-extracted images with scraped images
+    const mergedImages = [
       ...(extracted.images || []),
-      ...htmlImages,
+      ...allImages,
     ].filter(
       (imgUrl: string, idx: number, arr: string[]) =>
         isValidImageUrl(imgUrl) && arr.indexOf(imgUrl) === idx
     );
 
-    console.log(`[Scrape] Found ${allImageUrls.length} unique image URLs`);
-
-    // Step 5: Download images to Supabase storage
+    // Step 4: Download images
     const storedImages = await downloadAndStoreImages(
       supabase,
       userId,
-      allImageUrls,
+      mergedImages,
       extracted.name || "Product"
     );
 
-    console.log(`[Scrape] Successfully stored ${storedImages.length} images`);
-
-    // Step 6: Build response
+    // Step 5: Return result
     const result = {
       name: extracted.name || null,
       brand: extracted.brand || null,
