@@ -158,34 +158,38 @@ serve(async (req) => {
       : 'Animate this fashion photo into a cinematic video. The model confidently strikes multiple poses, slowly turning to show the outfit from different angles. Natural fabric movement, smooth camera motion, professional studio lighting. Keep the person, outfit, and setting exactly as they appear.';
 
     // ── Step 3: Try Veo predictLongRunning with image input ──────────
-    // Uses the correct Gemini API format: instances[].image.inlineData
+    // Gemini API format: image wrapped in inlineData { mimeType, data }
     let videoUrl: string | null = null;
     let usedModel = 'unknown';
+    let lastApiError = '';
 
     const modelIds = MODEL_MAP[model_key] || ['veo-3.1-fast-generate-preview'];
+    const safeMime = imageMime.startsWith('image/') ? imageMime : 'image/jpeg';
 
     for (const modelId of modelIds) {
       try {
-        console.log(`Trying ${modelId} predictLongRunning with image input...`);
+        console.log(`Trying model ${modelId}...`);
 
         const veoResponse = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:predictLongRunning?key=${apiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:predictLongRunning`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': apiKey,
+            },
             body: JSON.stringify({
               instances: [{
                 prompt: videoPrompt,
                 image: {
                   inlineData: {
-                    mimeType: imageMime.startsWith('image/') ? imageMime : 'image/jpeg',
+                    mimeType: safeMime,
                     data: imageB64,
                   },
                 },
               }],
               parameters: {
                 aspectRatio: aspect_ratio || '9:16',
-                resolution: '720p',
               },
             }),
           }
@@ -194,21 +198,22 @@ serve(async (req) => {
         if (!veoResponse.ok) {
           const errText = await veoResponse.text();
           console.error(`${modelId} error (${veoResponse.status}):`, errText.substring(0, 500));
+          lastApiError = `${modelId} (${veoResponse.status}): ${errText.substring(0, 500)}`;
           continue;
         }
 
         const veoData = await veoResponse.json();
-        console.log(`${modelId} response keys:`, Object.keys(veoData));
+        console.log(`${modelId} accepted! Response keys:`, Object.keys(veoData));
 
         // Get operation name for polling
         const operationName = veoData.name;
         if (!operationName) {
-          console.error(`${modelId}: no operation name in response, checking for immediate result...`);
+          console.error(`${modelId}: no operation name, checking for immediate result...`);
           const immediateUri = findVideoUri(veoData);
           if (immediateUri) {
-            const dlUrl = immediateUri.includes('key=') ? immediateUri :
-              immediateUri.includes('?') ? `${immediateUri}&key=${apiKey}` : `${immediateUri}?key=${apiKey}`;
-            const videoResp = await fetch(dlUrl);
+            const videoResp = await fetch(immediateUri, {
+              headers: { 'x-goog-api-key': apiKey },
+            });
             if (videoResp.ok) {
               const videoBytes = new Uint8Array(await videoResp.arrayBuffer());
               const fileName = `fashion-video-${Date.now()}-${Math.random().toString(36).substring(7)}.mp4`;
@@ -218,6 +223,7 @@ serve(async (req) => {
               break;
             }
           }
+          lastApiError = `${modelId}: no operation name in response`;
           continue;
         }
 
@@ -232,7 +238,8 @@ serve(async (req) => {
 
           try {
             const statusResponse = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${apiKey}`
+              `https://generativelanguage.googleapis.com/v1beta/${operationName}`,
+              { headers: { 'x-goog-api-key': apiKey } }
             );
 
             if (!statusResponse.ok) {
@@ -248,23 +255,22 @@ serve(async (req) => {
               console.log(`Operation complete after ${attempts * 5}s!`);
 
               if (statusData.error) {
-                console.error(`Operation failed with error:`, JSON.stringify(statusData.error).substring(0, 300));
+                console.error(`Operation failed:`, JSON.stringify(statusData.error).substring(0, 500));
+                lastApiError = `${modelId} operation error: ${JSON.stringify(statusData.error).substring(0, 300)}`;
                 break;
               }
 
-              // Log the full response shape for debugging
               const responseStr = JSON.stringify(statusData.response || statusData);
               console.log(`Response structure:`, responseStr.substring(0, 500));
 
-              // Try to find the video URI from the response
+              // Try to find the video URI
               const foundUri = findVideoUri(statusData.response || statusData);
 
               if (foundUri) {
                 console.log(`Found video URI: ${foundUri.substring(0, 100)}...`);
-                const dlUrl = foundUri.includes('key=') ? foundUri :
-                  foundUri.includes('?') ? `${foundUri}&key=${apiKey}` : `${foundUri}?key=${apiKey}`;
-
-                const videoResp = await fetch(dlUrl);
+                const videoResp = await fetch(foundUri, {
+                  headers: { 'x-goog-api-key': apiKey },
+                });
                 if (videoResp.ok) {
                   const videoBytes = new Uint8Array(await videoResp.arrayBuffer());
                   console.log(`Downloaded video: ${videoBytes.length} bytes`);
@@ -274,10 +280,10 @@ serve(async (req) => {
                   usedModel = modelId;
                   console.log(`Video uploaded to storage: ${publicUrl}`);
                 } else {
-                  console.error(`Failed to download video (${videoResp.status}): ${await videoResp.text().then(t => t.substring(0, 200))}`);
+                  console.error(`Failed to download video (${videoResp.status})`);
                 }
               } else {
-                // No URI found — check for inline base64 video data
+                // Check for inline base64 video data
                 const inlinePaths = [
                   statusData.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.inlineData,
                   statusData.response?.generatedSamples?.[0]?.video?.inlineData,
@@ -296,8 +302,9 @@ serve(async (req) => {
                 }
 
                 if (!videoUrl) {
-                  console.error('Operation done but no video URI or inline data found in response');
+                  console.error('Done but no video found in response');
                   console.error('Full response:', responseStr.substring(0, 1000));
+                  lastApiError = `${modelId}: operation done but no video in response`;
                 }
               }
               break;
@@ -314,18 +321,20 @@ serve(async (req) => {
         if (videoUrl) break;
 
         if (attempts >= maxAttempts) {
-          console.error(`${modelId}: timed out after ${maxAttempts * 5}s`);
+          lastApiError = `${modelId}: timed out after ${maxAttempts * 5}s`;
+          console.error(lastApiError);
         }
       } catch (modelErr: any) {
         console.error(`${modelId} exception:`, modelErr.message);
+        lastApiError = `${modelId} exception: ${modelErr.message}`;
         continue;
       }
-    }
+    } // end model loop
 
     // ── Step 4: Return result ────────────────────────────────────────
     if (!videoUrl) {
       return new Response(
-        JSON.stringify({ error: 'Video generation failed — Veo returned no video. This may be a temporary issue. Please try again or select a different model.' }),
+        JSON.stringify({ error: 'Video generation failed — Veo returned no video. This may be a temporary issue. Please try again or select a different model.', debug_last_error: lastApiError }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
