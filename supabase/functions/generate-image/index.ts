@@ -788,6 +788,7 @@ serve(async (req) => {
       style,
       aspect_ratio,
       brand_context,
+      product_name,
       product_context,
       product_images,
       is_physical_product,
@@ -931,15 +932,16 @@ serve(async (req) => {
 
       // Build contextual prompt — the frontend sends detailed prompts, so we augment rather than override
       const contextParts: string[] = [];
+      const promptStr = prompt || '';
 
       // Add the user/frontend prompt as-is (it's already well-structured)
-      contextParts.push(prompt);
+      if (promptStr) contextParts.push(promptStr);
 
       // Add product identity context if available and not already in the prompt
-      if (product_name && !prompt.includes(product_name)) {
+      if (product_name && !promptStr.includes(product_name)) {
         contextParts.push(`Product: ${product_name}.`);
       }
-      if (product_context?.description && !prompt.toLowerCase().includes('description')) {
+      if (product_context?.description && !promptStr.toLowerCase().includes('description')) {
         contextParts.push(`Product description: ${product_context.description.substring(0, 200)}.`);
       }
 
