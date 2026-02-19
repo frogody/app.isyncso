@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Box, Plus, Search, Filter, Grid3X3, List, Table2, Tag, Eye, Edit2,
-  Barcode, Package, Truck, Building2, Euro, AlertTriangle,
+  Barcode, Package, Truck, Building2, Euro, AlertTriangle, Link2,
   ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal, Archive, Trash2, Copy, CheckCircle, XCircle,
   Pencil, Save, X
 } from "lucide-react";
@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
 import { Product, PhysicalProduct, ProductCategory, Supplier } from "@/api/entities";
 import { supabase } from '@/api/supabaseClient';
-import { ProductModal, ProductGridCard, ProductListRow, ProductTableView } from "@/components/products";
+import { ProductModal, ImportFromURLModal, ProductGridCard, ProductListRow, ProductTableView } from "@/components/products";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -84,6 +84,7 @@ export default function ProductsPhysical() {
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
   // Debounce search input (300ms)
@@ -415,6 +416,13 @@ export default function ProductsPhysical() {
             <p className={`text-xs ${t('text-slate-500', 'text-zinc-400')}`}>Manage your physical inventory</p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setImportModalOpen(true)}
+              className={t('border-slate-200 text-slate-700 hover:bg-slate-50', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}
+            >
+              <Link2 className="w-4 h-4 mr-2" /> Import from URL
+            </Button>
             <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
               <Plus className="w-4 h-4 mr-2" /> New Physical Product
             </Button>
@@ -746,6 +754,13 @@ export default function ProductsPhysical() {
           onClose={() => setModalOpen(false)}
           productType="physical"
           product={editingProduct}
+          onSave={handleProductSaved}
+        />
+
+        {/* Import from URL Modal */}
+        <ImportFromURLModal
+          open={importModalOpen}
+          onClose={() => setImportModalOpen(false)}
           onSave={handleProductSaved}
         />
       </div>

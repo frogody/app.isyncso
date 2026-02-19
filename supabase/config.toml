@@ -273,3 +273,6 @@ verify_jwt = false
 
 [functions.reach-generate-insights]
 verify_jwt = false
+
+[functions.scrape-product-url]
+verify_jwt = false
