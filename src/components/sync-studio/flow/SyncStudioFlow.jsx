@@ -71,6 +71,12 @@ const SHOT_TYPE_STYLES = {
     border: 'border-yellow-500/20',
     dot: 'bg-yellow-400',
   },
+  usp_features: {
+    bg: 'bg-rose-500/10',
+    text: 'text-rose-400',
+    border: 'border-rose-500/20',
+    dot: 'bg-rose-400',
+  },
   lifestyle: {
     bg: 'bg-orange-500/10',
     text: 'text-orange-400',
@@ -99,6 +105,7 @@ const SHOT_TYPE_STYLES = {
 
 const SHOT_TYPE_OPTIONS = [
   'hero',
+  'usp_features',
   'lifestyle',
   'detail',
   'alternate',
@@ -1176,16 +1183,23 @@ function PlanStage({ state, dispatch, user, callEdge }) {
     }
   }
 
+  const [isStarting, setIsStarting] = useState(false);
+
   async function handleStartPhotoshoot() {
+    setIsStarting(true);
+    toast.loading('Starting photoshoot...', { id: 'start-shoot' });
     try {
       const result = await callEdge('sync-studio-execute-photoshoot', {
         action: 'start',
         userId: user.id,
       });
+      toast.dismiss('start-shoot');
       dispatch({ type: 'START_EXECUTION', payload: result.jobId || result.job_id });
       toast.success('Photoshoot started');
     } catch (err) {
+      toast.dismiss('start-shoot');
       toast.error(err.message);
+      setIsStarting(false);
     }
   }
 
@@ -1384,15 +1398,19 @@ function PlanStage({ state, dispatch, user, callEdge }) {
         )}
         <button
           onClick={handleStartPhotoshoot}
-          disabled={!allApproved}
+          disabled={!allApproved || isStarting}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
-            allApproved
+            allApproved && !isStarting
               ? 'bg-yellow-400 hover:bg-yellow-300 text-black shadow-lg shadow-yellow-500/20'
               : 'bg-zinc-800/60 text-zinc-600 cursor-not-allowed'
           }`}
         >
-          <Camera className="w-4 h-4" />
-          Start Photoshoot
+          {isStarting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Camera className="w-4 h-4" />
+          )}
+          {isStarting ? 'Starting...' : 'Start Photoshoot'}
         </button>
       </div>
 

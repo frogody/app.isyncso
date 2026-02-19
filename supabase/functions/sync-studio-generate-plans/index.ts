@@ -147,22 +147,14 @@ interface ShotSpec {
   focus: string;
 }
 
-function determineShotCount(existingImages: string[] | null): number {
-  const count = existingImages?.length || 0;
-  if (count === 0) return 4;
-  if (count === 1) return 3;
-  if (count <= 3) return 2;
-  return 1;
+function determineShotCount(_existingImages: string[] | null): number {
+  // Always 5 shots per product for complete webshop listings
+  return 5;
 }
 
-function getShotTypes(shotCount: number): string[] {
-  switch (shotCount) {
-    case 4: return ["hero", "lifestyle", "detail", "alternate"];
-    case 3: return ["hero", "lifestyle", "detail"];
-    case 2: return ["lifestyle", "contextual"];
-    case 1: return ["lifestyle"];
-    default: return ["hero"];
-  }
+function getShotTypes(_shotCount: number): string[] {
+  // E-commerce optimized: hero + USP/features + lifestyle + detail + alternate angle
+  return ["hero", "usp_features", "lifestyle", "detail", "alternate"];
 }
 
 // ============================================
@@ -190,28 +182,32 @@ function generateShotSpecs(
 
     switch (shotType) {
       case "hero":
-        spec.description = `Main product shot of ${title}. ${scene.scene}. ${priceTier.styling}`;
-        spec.focus = "Full product visibility, clean composition, brand-ready";
+        spec.description = `Primary product listing image of ${title} on clean white/light background. The product must be the sole focus, fully visible, well-lit, and shot at a slight angle to show dimension. This is the main thumbnail for webshop listings. ${priceTier.styling}`;
+        spec.focus = "Clean e-commerce hero shot, full product visibility, white/neutral background, webshop thumbnail ready";
+        break;
+      case "usp_features":
+        spec.description = `Feature highlight shot of ${title} showing the key selling points and unique features. Annotate-style composition that draws attention to what makes this product special — buttons, materials, unique design elements, or technology. ${priceTier.styling}`;
+        spec.focus = "USP visualization, key features, selling points, what makes the product stand out from competitors";
         break;
       case "lifestyle":
-        spec.description = `Lifestyle/context shot of ${title} in natural setting. ${priceTier.styling}`;
-        spec.focus = "Product in use or styled environment, emotional connection";
+        spec.description = `Lifestyle shot of ${title} being used in a real-world setting by a person or in a styled environment. Show the product in action so buyers can imagine owning it. ${scene.scene}. ${priceTier.styling}`;
+        spec.focus = "Product in use, aspirational setting, emotional purchase trigger, buyer can picture themselves using it";
         break;
       case "detail":
-        spec.description = `Close-up detail shot highlighting texture, material, or key feature of ${title}.`;
-        spec.focus = "Texture, craftsmanship, material quality, macro perspective";
+        spec.description = `Close-up detail shot of ${title} highlighting build quality, texture, material finish, and craftsmanship. Show what buyers can't see from the hero shot — stitching, surface texture, premium materials, fine details.`;
+        spec.focus = "Macro detail, material quality, craftsmanship, texture close-up, builds buyer confidence";
         break;
       case "alternate":
-        spec.description = `Alternate angle of ${title}, showing back or side view. ${scene.scene}.`;
-        spec.focus = "Secondary angle, completeness of product view";
+        spec.description = `Alternate angle of ${title} showing the back, side, or bottom view. Give online shoppers a complete 360-degree understanding of the product. ${scene.scene}.`;
+        spec.focus = "Secondary angle, completeness of product view, back/side/bottom, helps buyer make informed decision";
         break;
       case "contextual":
-        spec.description = `${title} shown in real-world context with complementary items. ${priceTier.styling}`;
-        spec.focus = "Contextual storytelling, product ecosystem, scale reference";
+        spec.description = `${title} shown alongside complementary products or in a curated collection. Scale reference included. ${priceTier.styling}`;
+        spec.focus = "Size reference, product ecosystem, cross-sell opportunity, curated styling";
         break;
       default:
-        spec.description = `Product shot of ${title}. ${scene.scene}.`;
-        spec.focus = "Product clarity";
+        spec.description = `Professional e-commerce product shot of ${title}. ${scene.scene}.`;
+        spec.focus = "Product clarity, webshop ready";
     }
 
     return spec;
