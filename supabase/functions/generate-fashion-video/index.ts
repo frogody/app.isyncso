@@ -190,6 +190,8 @@ serve(async (req) => {
               }],
               parameters: {
                 aspectRatio: aspect_ratio || '9:16',
+                durationSeconds: String(duration_seconds || 8),
+                personGeneration: 'allow_adult',
               },
             }),
           }
