@@ -36,7 +36,8 @@ import {
   Loader2,
   CircleDot,
   ShieldCheck,
-  Bot
+  Bot,
+  Phone
 } from 'lucide-react';
 
 import { SyncViewSelector } from '@/components/sync/ui';
@@ -46,6 +47,16 @@ import ExecuteActionModal from '@/components/actions/ExecuteActionModal';
 import ActionHistoryList from '@/components/actions/ActionHistoryList';
 import ActionQueueCard from '@/components/actions/ActionQueueCard';
 import CreateActionModal from '@/components/actions/CreateActionModal';
+
+// Lazy load phone components
+const LazyPhoneTab = lazy(() => import('@/components/inbox/phone').then(mod => {
+  const { useSyncPhone, PhoneDashboard } = mod;
+  // Wrapper component that calls the hook and renders PhoneDashboard
+  return { default: function PhoneTab() {
+    const syncPhone = useSyncPhone();
+    return <PhoneDashboard {...syncPhone} />;
+  }};
+}));
 
 // Lazy load ride components
 const RideSelector = lazy(() => import('@/components/rides/RideSelector'));
@@ -375,6 +386,9 @@ export default function Actions() {
             <TabsTrigger value="integrations" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300/90 text-zinc-500 px-3 text-sm">
               <Plug className="w-4 h-4 mr-1" />Integrations
             </TabsTrigger>
+            <TabsTrigger value="phone" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300/90 text-zinc-500 px-3 text-sm">
+              <Phone className="w-4 h-4 mr-1" />Phone
+            </TabsTrigger>
           </TabsList>
 
           {/* Rides Tab */}
@@ -574,6 +588,15 @@ export default function Actions() {
                 </div>
               </div>
             )}
+          </TabsContent>
+
+          {/* Phone Tab */}
+          <TabsContent value="phone" className="mt-4">
+            <div className="rounded-xl bg-zinc-900/50 border border-zinc-800/60 overflow-hidden" style={{ height: 'calc(100dvh - 280px)', minHeight: '500px' }}>
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="w-6 h-6 text-cyan-400 animate-spin" /></div>}>
+                <LazyPhoneTab />
+              </Suspense>
+            </div>
           </TabsContent>
 
           {/* History Tab */}
