@@ -82,10 +82,21 @@ export default function AdminCredits() {
 
   const fetchOverviewStats = async () => {
     try {
-      const { data: issuedData } = await supabase
+      const { data: issuedData, error: issuedError } = await supabase
         .from('credit_transactions')
         .select('amount')
         .gt('amount', 0);
+
+      if (issuedError) {
+        console.warn('[AdminCredits] credit_transactions not available:', issuedError.message);
+        setStats({
+          totalCreditsIssued: 0,
+          totalCreditsUsed: 0,
+          activeUsers: 0,
+          avgCreditsPerUser: 0,
+        });
+        return;
+      }
 
       const totalIssued = issuedData?.reduce((sum, t) => sum + t.amount, 0) || 0;
 
@@ -155,17 +166,21 @@ export default function AdminCredits() {
 
       const { data, error } = await query;
 
-      if (!error) {
-        let filtered = data || [];
-        if (transactionFilters.search) {
-          const search = transactionFilters.search.toLowerCase();
-          filtered = filtered.filter(t =>
-            t.reference_name?.toLowerCase().includes(search) ||
-            t.description?.toLowerCase().includes(search)
-          );
-        }
-        setTransactions(filtered);
+      if (error) {
+        console.warn('[AdminCredits] credit_transactions not available:', error.message);
+        setTransactions([]);
+        return;
       }
+
+      let filtered = data || [];
+      if (transactionFilters.search) {
+        const search = transactionFilters.search.toLowerCase();
+        filtered = filtered.filter(t =>
+          t.reference_name?.toLowerCase().includes(search) ||
+          t.description?.toLowerCase().includes(search)
+        );
+      }
+      setTransactions(filtered);
     } catch (error) {
       console.error('Error fetching transactions:', error);
     }

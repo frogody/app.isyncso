@@ -90,7 +90,18 @@ export default function FinanceReportAging({ embedded = false }) {
         p_company_id: user.company_id,
         p_as_of_date: asOfDate,
       });
-      if (error) throw error;
+
+      if (error) {
+        console.error('[FinanceReportAging] error:', error);
+        if (error.message?.includes('404') || error.code === 'PGRST202') {
+          toast.error(`Aging report function (${rpcName}) not available. Please contact support.`);
+          setReportData([]);
+          setGenerated(true);
+          return;
+        }
+        throw error;
+      }
+
       setReportData(data || []);
       setGenerated(true);
     } catch (err) {

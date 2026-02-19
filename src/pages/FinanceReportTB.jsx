@@ -85,7 +85,18 @@ export default function FinanceReportTB({ embedded = false }) {
         p_company_id: user.company_id,
         p_as_of_date: asOfDate,
       });
-      if (error) throw error;
+
+      if (error) {
+        console.error('[FinanceReportTB] get_trial_balance error:', error);
+        if (error.message?.includes('404') || error.code === 'PGRST202') {
+          toast.error('Trial Balance report function not available. Please contact support.');
+          setReportData([]);
+          setGenerated(true);
+          return;
+        }
+        throw error;
+      }
+
       setReportData(data || []);
       setGenerated(true);
     } catch (err) {

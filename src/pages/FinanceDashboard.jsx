@@ -103,11 +103,23 @@ export default function FinanceDashboard() {
     try {
       const [plResult, tbResult, agingResult, entriesResult, billsResult] = await Promise.all([
         // P&L for the selected period
-        supabase.rpc('get_profit_loss', { p_company_id: companyId, p_start_date: dateRange.from, p_end_date: dateRange.to }).then(r => r, () => ({ data: [] })),
+        supabase.rpc('get_profit_loss', { p_company_id: companyId, p_start_date: dateRange.from, p_end_date: dateRange.to })
+          .then(r => r, (err) => {
+            console.warn('[FinanceDashboard] get_profit_loss not available:', err.message);
+            return { data: [], error: null };
+          }),
         // Trial Balance as of today
-        supabase.rpc('get_trial_balance', { p_company_id: companyId, p_as_of_date: today }).then(r => r, () => ({ data: [] })),
+        supabase.rpc('get_trial_balance', { p_company_id: companyId, p_as_of_date: today })
+          .then(r => r, (err) => {
+            console.warn('[FinanceDashboard] get_trial_balance not available:', err.message);
+            return { data: [], error: null };
+          }),
         // AP Aging
-        supabase.rpc('get_aged_payables', { p_company_id: companyId, p_as_of_date: today }).then(r => r, () => ({ data: [] })),
+        supabase.rpc('get_aged_payables', { p_company_id: companyId, p_as_of_date: today })
+          .then(r => r, (err) => {
+            console.warn('[FinanceDashboard] get_aged_payables not available:', err.message);
+            return { data: [], error: null };
+          }),
         // Recent journal entries
         Promise.resolve(db.entities.JournalEntry?.list?.({ limit: 10, sort_by: 'entry_date', sort_order: 'desc' })).catch(() => []),
         // Bills due in next 7 days

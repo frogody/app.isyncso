@@ -4,7 +4,7 @@ import anime from '@/lib/anime-wrapper';
 const animate = anime;
 const stagger = anime.stagger;
 import { prefersReducedMotion } from '@/lib/animations';
-import { db } from "@/api/supabaseClient";
+import { db, supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import {
   Plus, Search, Filter, Folder, FolderOpen, Calendar, Users, MoreVertical, X,

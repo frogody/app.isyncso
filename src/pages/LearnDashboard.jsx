@@ -177,10 +177,10 @@ export default function LearnDashboard() {
       setCourses(allCourses);
       setCertificates(certsData);
       setActivitySessions(sessionsData);
-      // Load compliance training recommendations
-      db.functions.invoke('getSentinelLearningRecommendations', { user_id: user?.id })
-        .then(res => { if (res?.data) setComplianceRecs(res.data); })
-        .catch(() => {});
+      // Load compliance training recommendations - disabled (edge function not implemented)
+      // db.functions.invoke('getSentinelLearningRecommendations', { user_id: user?.id })
+      //   .then(res => { if (res?.data) setComplianceRecs(res.data); })
+      //   .catch(() => {});
 
       setSkills(skillsData.slice(0, 5).map(s => ({
         id: s.id,

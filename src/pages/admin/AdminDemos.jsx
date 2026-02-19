@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/api/supabaseClient';
 import {
   Presentation,
   Plus,
@@ -52,11 +52,6 @@ import {
   Languages,
 } from 'lucide-react';
 import { LANGUAGES, DEFAULT_LANGUAGE, LANGUAGE_NAMES } from '@/constants/languages';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
 
 const INDUSTRY_OPTIONS = [
   'Technology',
@@ -144,18 +139,6 @@ function getSyncDialogue(stepOrder, recipientName, companyName) {
     15: `That's the full picture, ${recipientName}. You've just seen a complete deal lifecycle for ${companyName}: a lead came in through Growth, we enriched them in the CRM, closed the deal, auto-generated the invoice in Finance, hired and onboarded the team through Talent and Learn, created marketing assets in Create, managed the product catalog in Products, tracked compliance with Sentinel, and coordinated everything through Tasks and the Inbox — with SYNC operating as the AI backbone across all of it. Every module has its own sub-pages you can explore using the sidebar navigation. And remember, you can click any icon in the sidebar or just ask me to take you anywhere. Want to schedule a call to explore how this maps to ${companyName}'s specific workflow? I'd love to dive deeper into the modules that matter most to you.`,
   };
   return dialogues[stepOrder] || '';
-}
-
-function getAuthSupabase(accessToken) {
-  return createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY,
-    {
-      global: {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      },
-    }
-  );
 }
 
 // Stats Card
@@ -375,21 +358,12 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
 
     setIsCreating(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
-      if (!accessToken) {
-        toast.error('Not authenticated. Please log in again.');
-        setIsCreating(false);
-        return;
-      }
-
-      const authSupabase = getAuthSupabase(accessToken);
       const token = crypto.randomUUID().replace(/-/g, '').slice(0, 24);
       const modules = Object.entries(selectedModules)
         .filter(([, v]) => v)
         .map(([k]) => k.toLowerCase());
 
-      const { data: demoLink, error: insertError } = await authSupabase
+      const { data: demoLink, error: insertError } = await supabase
         .from('demo_links')
         .insert({
           token,
@@ -429,7 +403,7 @@ function CreateDemoDialog({ open, onOpenChange, onCreated }) {
         wait_for_user: step.wait_for_user,
       }));
 
-      const { error: stepsError } = await authSupabase
+      const { error: stepsError } = await supabase
         .from('demo_script_steps')
         .insert(steps);
 
@@ -866,16 +840,7 @@ function DeleteDemoDialog({ demo, open, onOpenChange, onDeleted }) {
     if (!demo) return;
     setIsDeleting(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
-      if (!accessToken) {
-        toast.error('Not authenticated.');
-        setIsDeleting(false);
-        return;
-      }
-
-      const authSupabase = getAuthSupabase(accessToken);
-      const { error } = await authSupabase
+      const { error } = await supabase
         .from('demo_links')
         .delete()
         .eq('id', demo.id);
@@ -967,15 +932,7 @@ export default function AdminDemos() {
   const fetchDemos = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
-      if (!accessToken) {
-        setIsLoading(false);
-        return;
-      }
-
-      const authSupabase = getAuthSupabase(accessToken);
-      let query = authSupabase
+      let query = supabase
         .from('demo_links')
         .select('*')
         .order('created_at', { ascending: false });

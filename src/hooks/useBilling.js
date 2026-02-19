@@ -54,7 +54,11 @@ export function useBilling() {
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-          .limit(20),
+          .limit(20)
+          .then(r => r, (err) => {
+            console.warn('[useBilling] credit_transactions table not available:', err.message);
+            return { data: [], error: null };
+          }),
       ]);
 
       if (plansRes.data) setPlans(plansRes.data);

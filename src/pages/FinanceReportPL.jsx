@@ -144,7 +144,18 @@ export default function FinanceReportPL({ embedded = false }) {
         p_start_date: dateRange.from,
         p_end_date: dateRange.to,
       });
-      if (error) throw error;
+
+      if (error) {
+        console.error('[FinanceReportPL] get_profit_loss error:', error);
+        if (error.message?.includes('404') || error.code === 'PGRST202') {
+          toast.error('Profit & Loss report function not available. Please contact support.');
+          setReportData([]);
+          setGenerated(true);
+          return;
+        }
+        throw error;
+      }
+
       setReportData(data || []);
 
       if (compare) {
@@ -154,8 +165,13 @@ export default function FinanceReportPL({ embedded = false }) {
           p_start_date: prev.from,
           p_end_date: prev.to,
         });
-        if (prevErr) throw prevErr;
-        setComparisonData({ data: prevData || [], from: prev.from, to: prev.to });
+
+        if (prevErr) {
+          console.warn('[FinanceReportPL] Previous period error:', prevErr);
+          setComparisonData(null);
+        } else {
+          setComparisonData({ data: prevData || [], from: prev.from, to: prev.to });
+        }
       } else {
         setComparisonData(null);
       }
