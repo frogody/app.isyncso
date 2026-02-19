@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
+import { StudioNav } from '@/components/studio';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxfntqleig.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
@@ -431,16 +432,24 @@ export default function SyncStudioImport() {
     : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
 
   return (
-    <div className="min-h-screen bg-black pb-28">
+    <div className="min-h-screen bg-[#09090b] pb-28">
+      {/* ============================================ */}
+      {/* STUDIO NAV                                   */}
+      {/* ============================================ */}
+      <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
+        <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
+          <StudioNav />
+        </div>
+      </div>
       {/* ============================================ */}
       {/* HEADER                                       */}
       {/* ============================================ */}
-      <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
+      <div className="bg-black/40 border-b border-zinc-800/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           {/* Top row */}
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate('/SyncStudioHome')}
+              onClick={() => navigate('/StudioPhotoshoot')}
               className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-zinc-800/60 transition-colors shrink-0"
             >
               <ArrowLeft className="w-4 h-4" />

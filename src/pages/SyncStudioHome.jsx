@@ -124,7 +124,7 @@ const colorMap = {
 // ═════════════════════════════════════════════════════════════
 // Main Component
 // ═════════════════════════════════════════════════════════════
-export default function SyncStudioHome() {
+export default function SyncStudioHome({ embedded = false }) {
   const { user } = useUser();
   const navigate = useNavigate();
 
@@ -166,7 +166,7 @@ export default function SyncStudioHome() {
   // ─── Loading ─────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className={`${embedded ? 'min-h-[60vh]' : 'min-h-screen'} bg-black flex items-center justify-center`}>
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center gap-4">
           <div className="relative">
             <div className="w-16 h-16 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
@@ -181,7 +181,7 @@ export default function SyncStudioHome() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
+    <div className={`${embedded ? '' : 'min-h-screen'} bg-black relative overflow-hidden`}>
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-yellow-500/[0.03] rounded-full blur-[140px]" />
@@ -189,10 +189,12 @@ export default function SyncStudioHome() {
       </div>
 
       <div className="relative z-10 w-full px-6 lg:px-10 pt-6 pb-24">
-        {/* Nav */}
-        <div className="flex justify-center mb-10">
-          <SyncStudioNav />
-        </div>
+        {/* Nav - hidden when embedded (parent provides StudioNav) */}
+        {!embedded && (
+          <div className="flex justify-center mb-10">
+            <SyncStudioNav />
+          </div>
+        )}
 
         {/* ════════════════════════════════════════════════════════ */}
         {/* HERO                                                     */}

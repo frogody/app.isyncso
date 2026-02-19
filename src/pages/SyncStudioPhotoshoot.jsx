@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
-import { SyncStudioNav } from '@/components/sync-studio';
+import { StudioNav } from '@/components/studio';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxfntqleig.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
@@ -316,26 +316,33 @@ export default function SyncStudioPhotoshoot() {
 
   if (!jobId) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4 sm:p-8 max-w-md w-full text-center"
-        >
-          <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center mx-auto mb-5">
-            <Camera className="w-7 h-7 text-zinc-500" />
+      <div className="min-h-screen bg-[#09090b]">
+        <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
+          <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
+            <StudioNav />
           </div>
-          <h2 className="text-xl font-semibold text-white mb-2">No Photoshoot Found</h2>
-          <p className="text-sm text-zinc-400 mb-6">
-            No job ID was provided. Please start a photoshoot from the dashboard.
-          </p>
-          <button
-            onClick={() => navigate('/SyncStudioDashboard')}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 text-sm font-medium rounded-xl transition-colors"
+        </div>
+        <div className="min-h-[70vh] flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4 sm:p-8 max-w-md w-full text-center"
           >
-            Go to Dashboard
-          </button>
-        </motion.div>
+            <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center mx-auto mb-5">
+              <Camera className="w-7 h-7 text-zinc-500" />
+            </div>
+            <h2 className="text-xl font-semibold text-white mb-2">No Photoshoot Found</h2>
+            <p className="text-sm text-zinc-400 mb-6">
+              No job ID was provided. Please start a photoshoot from the dashboard.
+            </p>
+            <button
+              onClick={() => navigate('/SyncStudioDashboard')}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 text-sm font-medium rounded-xl transition-colors"
+            >
+              Go to Dashboard
+            </button>
+          </motion.div>
+        </div>
       </div>
     );
   }
@@ -346,7 +353,13 @@ export default function SyncStudioPhotoshoot() {
 
   if (stage === 'completed') {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#09090b]">
+        <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
+          <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
+            <StudioNav />
+          </div>
+        </div>
+      <div className="min-h-[70vh] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -412,6 +425,7 @@ export default function SyncStudioPhotoshoot() {
           </motion.div>
         </motion.div>
       </div>
+      </div>
     );
   }
 
@@ -421,7 +435,13 @@ export default function SyncStudioPhotoshoot() {
 
   if (stage === 'cancelled') {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#09090b]">
+        <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
+          <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
+            <StudioNav />
+          </div>
+        </div>
+      <div className="min-h-[70vh] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -471,6 +491,7 @@ export default function SyncStudioPhotoshoot() {
           </div>
         </motion.div>
       </div>
+      </div>
     );
   }
 
@@ -480,7 +501,13 @@ export default function SyncStudioPhotoshoot() {
 
   if (stage === 'error') {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#09090b]">
+        <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
+          <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
+            <StudioNav />
+          </div>
+        </div>
+      <div className="min-h-[70vh] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -515,6 +542,7 @@ export default function SyncStudioPhotoshoot() {
           </div>
         </motion.div>
       </div>
+      </div>
     );
   }
 
@@ -523,13 +551,16 @@ export default function SyncStudioPhotoshoot() {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center p-4">
+    <div className="min-h-screen bg-[#09090b]">
       {/* Studio Nav */}
-      <div className="mt-2 shrink-0">
-        <SyncStudioNav />
+      <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
+        <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
+          <StudioNav />
+        </div>
       </div>
 
-      <div className="max-w-2xl w-full my-auto">
+      <div className="flex flex-col items-center p-4">
+      <div className="max-w-2xl w-full my-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -723,6 +754,7 @@ export default function SyncStudioPhotoshoot() {
             </button>
           </div>
         </motion.div>
+      </div>
       </div>
     </div>
   );

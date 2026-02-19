@@ -27,7 +27,8 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
-import { SyncStudioNav, ImageLightbox, CompareSlider, PlatformExportDialog } from '@/components/sync-studio';
+import { ImageLightbox, CompareSlider, PlatformExportDialog } from '@/components/sync-studio';
+import { StudioNav } from '@/components/studio';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxfntqleig.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
@@ -673,10 +674,14 @@ export default function SyncStudioResults() {
   // -------------------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-black p-6 lg:px-10">
-      <div className="w-full space-y-6">
-        {/* Studio Nav */}
-        <SyncStudioNav current="/SyncStudioResults" />
+    <div className="min-h-screen bg-[#09090b]">
+      {/* Studio Nav */}
+      <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
+        <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
+          <StudioNav />
+        </div>
+      </div>
+      <div className="w-full p-6 lg:px-10 space-y-6">
 
         {/* Lightbox */}
         <ImageLightbox

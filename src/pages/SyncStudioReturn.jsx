@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
-import { SyncStudioNav } from '@/components/sync-studio';
+import { StudioNav } from '@/components/studio';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -160,11 +160,11 @@ export default function SyncStudioReturn() {
 
   // -- Main --
   return (
-    <div className="min-h-screen bg-black">
-      {/* ─── Sticky Nav (matches Dashboard) ────────────────────── */}
+    <div className="min-h-screen bg-[#09090b]">
+      {/* ─── Sticky Nav ────────────────────── */}
       <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-        <div className="w-full px-4 lg:px-8 py-3">
-          <SyncStudioNav />
+        <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
+          <StudioNav />
         </div>
       </div>
 
