@@ -299,6 +299,9 @@ async function generateWithTogether(
 async function generateWithNanoBanana(
   imageUrls: string[],
   textPrompt: string,
+  aspectRatio?: string,
+  width?: number,
+  height?: number,
 ): Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }> {
   if (!GOOGLE_API_KEY) return { success: false, error: 'No Google API key configured' };
 
@@ -340,7 +343,10 @@ async function generateWithNanoBanana(
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{ parts }],
-              generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
+              generationConfig: {
+                responseModalities: ['IMAGE', 'TEXT'],
+                ...(aspectRatio ? { imageGenerationConfig: { aspectRatio } } : {}),
+              },
             }),
           }
         );
@@ -387,8 +393,8 @@ async function generateWithNanoBanana(
       { id: 'black-forest-labs/FLUX.1-Kontext-pro', requiresImage: true, costPerMp: 0.04, steps: 40 },
       textPrompt,
       imageUrls[0],
-      1024,
-      1024
+      width || 1024,
+      height || 1024
     );
     if (kontextResult.success) return kontextResult;
     console.warn('Together Kontext fallback also failed:', kontextResult.error);
@@ -962,9 +968,16 @@ serve(async (req) => {
       ].filter(Boolean).join('\n');
 
       // ── PRIMARY: Nano Banana Pro (Google Gemini API) ──────────────
+      // Map frontend ratio to Gemini-supported ratio (1:1, 3:4, 4:3, 9:16, 16:9)
+      const geminiAspectMap: Record<string, string> = { '1:1': '1:1', '4:5': '3:4', '9:16': '9:16', '3:4': '3:4', '16:9': '16:9' };
+      const geminiAspect = geminiAspectMap[aspect_ratio] || '3:4';
+
       const nanoBananaResult = await generateWithNanoBanana(
         [fashion_avatar_url, refImageUrl],
         fashionPrompt,
+        geminiAspect,
+        width,
+        height,
       );
 
       if (nanoBananaResult.success && nanoBananaResult.data) {

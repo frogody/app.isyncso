@@ -195,6 +195,23 @@ const VIDEO_DURATIONS = [
   { value: 8, label: '8s' },
 ];
 
+// ─── CAMERA MOVEMENTS ───────────────────────────────────────────────
+const CAMERA_MOVEMENTS = [
+  { id: 'static', label: 'Static', desc: 'No camera movement', promptHint: 'Static camera, no camera movement.' },
+  { id: 'slow_zoom_in', label: 'Zoom In', desc: 'Slowly close in on subject', promptHint: 'Slow cinematic zoom in toward the subject, closing in on outfit details.' },
+  { id: 'slow_zoom_out', label: 'Zoom Out', desc: 'Pull back to reveal scene', promptHint: 'Slow zoom out revealing the full outfit and surrounding scene.' },
+  { id: 'pan_left', label: 'Pan Left', desc: 'Camera pans left', promptHint: 'Smooth camera pan from right to left across the scene.' },
+  { id: 'pan_right', label: 'Pan Right', desc: 'Camera pans right', promptHint: 'Smooth camera pan from left to right across the scene.' },
+  { id: 'orbit_cw', label: 'Orbit CW', desc: 'Orbit clockwise around model', promptHint: 'Camera slowly orbits clockwise around the subject, revealing the outfit from multiple angles.' },
+  { id: 'orbit_ccw', label: 'Orbit CCW', desc: 'Orbit counter-clockwise', promptHint: 'Camera slowly orbits counter-clockwise around the subject.' },
+  { id: 'tilt_up', label: 'Tilt Up', desc: 'Camera tilts from low to high', promptHint: 'Camera tilts upward from shoes to head, revealing the full outfit bottom to top.' },
+  { id: 'tilt_down', label: 'Tilt Down', desc: 'Camera tilts from high to low', promptHint: 'Camera tilts downward from head to shoes, scanning the full outfit.' },
+  { id: 'dolly_in', label: 'Dolly In', desc: 'Camera moves forward', promptHint: 'Camera dollies forward toward the subject, creating depth and intimacy.' },
+  { id: 'dolly_out', label: 'Dolly Out', desc: 'Camera moves backward', promptHint: 'Camera dollies backward away from the subject, revealing the full scene.' },
+  { id: 'crane_up', label: 'Crane Up', desc: 'Camera rises dramatically', promptHint: 'Camera rises on a crane, starting low and sweeping up for a dramatic reveal.' },
+  { id: 'tracking', label: 'Tracking', desc: 'Follow model sideways', promptHint: 'Camera tracks sideways following the model as they walk, maintaining a side angle.' },
+];
+
 export default function FashionBooth({ embedded = false }) {
   const { user } = useUser();
   const { theme, toggleTheme, ct } = useTheme();
@@ -232,6 +249,7 @@ export default function FashionBooth({ embedded = false }) {
   const [videoDuration, setVideoDuration] = useState(6);
   const [videoPrompt, setVideoPrompt] = useState('');
   const [showVideoSettings, setShowVideoSettings] = useState(false);
+  const [cameraMovement, setCameraMovement] = useState('static');
 
   // Outfit extractor
   const [extractorSourceUrl, setExtractorSourceUrl] = useState(null);
@@ -390,15 +408,30 @@ export default function FashionBooth({ embedded = false }) {
     try {
       const poseLabel = POSE_PRESETS.find(p => p.id === selectedPose)?.label || 'standing';
       const sceneLabel = SCENE_PRESETS.find(s => s.id === selectedScene)?.label || 'studio';
+      const camMove = CAMERA_MOVEMENTS.find(c => c.id === cameraMovement);
+      const cameraHint = camMove?.promptHint || '';
+
       const motionPrompt = videoPrompt.trim()
-        || `The fashion model confidently strikes multiple poses in a ${sceneLabel.toLowerCase()} setting, showing off the outfit from different angles. The model transitions smoothly between poses — a front-facing look, a three-quarter turn, a hand on hip, and a slow full rotation to reveal the back of the garment. Natural fabric movement with each pose, professional studio lighting, cinematic slow motion. Keep the model's face, body, and outfit exactly as they appear in the image.`;
+        || [
+          `Animate this fashion photo into a cinematic video.`,
+          `The fashion model confidently strikes multiple poses in a ${sceneLabel.toLowerCase()} setting, showing off the outfit from different angles.`,
+          `The model transitions smoothly between poses — a front-facing look, a three-quarter turn, a hand on hip, and a slow full rotation to reveal the back of the garment.`,
+          `Natural fabric movement with each pose, professional studio lighting, cinematic slow motion.`,
+          cameraHint,
+          `Keep the model's face, body, and outfit exactly as they appear in the image.`,
+        ].filter(Boolean).join(' ');
+
+      // If user wrote a custom prompt, append camera movement
+      const finalPrompt = videoPrompt.trim()
+        ? `${videoPrompt.trim()} ${cameraHint}`.trim()
+        : motionPrompt;
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-fashion-video`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
         body: JSON.stringify({
           image_url: generatedImage.url,
-          prompt: motionPrompt,
+          prompt: finalPrompt,
           model_key: selectedVeoModel,
           duration_seconds: videoDuration,
           aspect_ratio: aspectRatio === '1:1' ? '16:9' : (aspectRatio === '9:16' || aspectRatio === '4:5' || aspectRatio === '3:4') ? '9:16' : '16:9',
@@ -490,7 +523,7 @@ export default function FashionBooth({ embedded = false }) {
 
   // ─── RENDER ─────────────────────────────────────────────────────
   return (
-    <div className={embedded ? '' : 'min-h-screen bg-[#09090b]'}>
+    <div className={embedded ? 'bg-[#09090b]' : 'min-h-screen bg-[#09090b]'}>
       <div className="w-full px-4 lg:px-6 py-4">
 
         {/* ── Header ── */}
@@ -813,7 +846,7 @@ export default function FashionBooth({ embedded = false }) {
                     </div>
                   </div>
 
-                  {/* ── Make a Pose (image → video) ── */}
+                  {/* ── Starting Shot (image → video) ── */}
                   <div className="px-3 py-2.5 border-t border-zinc-800/60">
                     {!showVideoSettings && !isAnimating ? (
                       <button
@@ -821,7 +854,7 @@ export default function FashionBooth({ embedded = false }) {
                         className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-black shadow-lg shadow-yellow-500/20 transition-all"
                       >
                         <Film className="w-4 h-4" />
-                        Make a Pose
+                        Starting Shot
                         <span className="text-[10px] font-normal opacity-70">— Animate to video</span>
                       </button>
                     ) : (
@@ -850,6 +883,30 @@ export default function FashionBooth({ embedded = false }) {
                               </button>
                             ))}
                           </div>
+                        </div>
+
+                        {/* Camera Movement */}
+                        <div>
+                          <span className="text-[10px] font-semibold text-yellow-400 mb-1.5 block">Camera Movement</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {CAMERA_MOVEMENTS.map(c => (
+                              <button
+                                key={c.id}
+                                onClick={() => setCameraMovement(c.id)}
+                                title={c.desc}
+                                className={`px-2 py-1 rounded-lg text-[10px] font-medium transition-all ${
+                                  cameraMovement === c.id
+                                    ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
+                                    : 'text-zinc-500 border border-zinc-800/40 hover:text-zinc-300 hover:bg-zinc-800/30'
+                                }`}
+                              >
+                                {c.label}
+                              </button>
+                            ))}
+                          </div>
+                          {cameraMovement !== 'static' && (
+                            <p className="text-[9px] text-zinc-600 mt-1">{CAMERA_MOVEMENTS.find(c => c.id === cameraMovement)?.desc}</p>
+                          )}
                         </div>
 
                         {/* Duration + cost row */}
@@ -895,9 +952,9 @@ export default function FashionBooth({ embedded = false }) {
                           }`}
                         >
                           {isAnimating ? (
-                            <><Loader2 className="w-4 h-4 animate-spin" />Creating poses...</>
+                            <><Loader2 className="w-4 h-4 animate-spin" />Creating starting shot...</>
                           ) : (
-                            <><Play className="w-4 h-4" />Make a Pose</>
+                            <><Play className="w-4 h-4" />Create Starting Shot</>
                           )}
                         </button>
 
@@ -959,7 +1016,7 @@ export default function FashionBooth({ embedded = false }) {
                     </div>
                     <button onClick={handleAnimate} disabled={isAnimating}
                       className="text-[10px] text-yellow-400 hover:text-yellow-300 flex items-center gap-1">
-                      <RefreshCw className={`w-3 h-3 ${isAnimating ? 'animate-spin' : ''}`} />New poses
+                      <RefreshCw className={`w-3 h-3 ${isAnimating ? 'animate-spin' : ''}`} />New shot
                     </button>
                   </div>
                 </motion.div>
