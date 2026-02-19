@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Package, Cloud, Box, Briefcase, Plus,
-  Settings, Loader2, Layers
+  Settings, Loader2, Layers, Link2, ChevronDown
 } from "lucide-react";
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/contexts/GlobalThemeContext';
@@ -36,8 +36,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import ProductTypeContent from "@/components/products/ProductTypeContent";
+import { ImportFromURLModal } from "@/components/products";
 
 const PRODUCTS_SETTINGS_KEY = 'isyncso_products_settings';
 
@@ -63,6 +70,7 @@ export default function Products() {
 
   // Create product modal
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [creatingProduct, setCreatingProduct] = useState(false);
   const [newProductData, setNewProductData] = useState({
     name: '',
@@ -292,12 +300,27 @@ export default function Products() {
               </PopoverContent>
             </Popover>
 
-            <Button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-cyan-600/80 hover:bg-cyan-600 text-white"
-            >
-              <Plus className="w-4 h-4 mr-1" /> Add Product
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="bg-cyan-600/80 hover:bg-cyan-600 text-white">
+                  <Plus className="w-4 h-4 mr-1" /> Add Product <ChevronDown className="w-3.5 h-3.5 ml-1 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className={cn("w-52 border", t('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800'))}>
+                <DropdownMenuItem
+                  onClick={() => setShowCreateModal(true)}
+                  className={cn("cursor-pointer", t('text-slate-700 hover:bg-slate-50', 'text-zinc-300 hover:bg-zinc-800'))}
+                >
+                  <Plus className="w-4 h-4 mr-2 text-cyan-400" /> New Product
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setShowImportModal(true)}
+                  className={cn("cursor-pointer", t('text-slate-700 hover:bg-slate-50', 'text-zinc-300 hover:bg-zinc-800'))}
+                >
+                  <Link2 className="w-4 h-4 mr-2 text-cyan-400" /> Import from URL
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -428,6 +451,17 @@ export default function Products() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Import from URL Modal */}
+      <ImportFromURLModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onSave={(product) => {
+          if (product?.slug) {
+            navigate(createPageUrl('ProductDetail') + `?type=physical&slug=${product.slug}`);
+          }
+        }}
+      />
     </ProductsPageTransition>
   );
 }
