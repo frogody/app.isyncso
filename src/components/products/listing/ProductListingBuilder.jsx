@@ -47,6 +47,7 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [generatingProgress, setGeneratingProgress] = useState(null); // { step, progress, stepLabel }
 
   // Fetch existing listing from DB when product or channel changes
   const fetchListing = useCallback(async () => {
@@ -74,8 +75,8 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
     fetchListing();
   }, [fetchListing]);
 
-  // Upsert listing data back to DB
-  const saveListing = useCallback(async (updates) => {
+  // Upsert listing data back to DB (silent version for orchestration)
+  const saveListingSilent = useCallback(async (updates) => {
     if (!product?.id || !user?.company_id) return null;
 
     try {
@@ -88,7 +89,6 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
         updated_at: new Date().toISOString(),
       };
 
-      // Remove null id to let Supabase auto-generate
       if (!payload.id) delete payload.id;
 
       const { data, error } = await supabase
@@ -99,28 +99,197 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
 
       if (error) throw error;
       setListing(data);
-      toast.success('Listing saved');
       return data;
     } catch (err) {
       console.error('[ProductListingBuilder] saveListing error:', err);
-      toast.error('Failed to save listing');
       throw err;
     }
   }, [listing, product?.id, user?.company_id, selectedChannel]);
 
-  // Generate all listing content via AI
-  const handleGenerateAll = useCallback(async () => {
-    setGenerating(true);
+  // Upsert listing data back to DB (with toast feedback)
+  const saveListing = useCallback(async (updates) => {
     try {
-      // Placeholder: will call edge function for AI generation
-      toast.info('AI generation coming soon');
+      const data = await saveListingSilent(updates);
+      toast.success('Listing saved');
+      return data;
+    } catch (err) {
+      toast.error('Failed to save listing');
+      throw err;
+    }
+  }, [saveListingSilent]);
+
+  // Collect product reference images
+  const productReferenceImages = useMemo(() => {
+    const images = [];
+    const featured = product?.featured_image?.url || product?.featured_image;
+    if (featured) images.push(featured);
+    if (product?.gallery && Array.isArray(product.gallery)) {
+      product.gallery.forEach((img) => {
+        const url = typeof img === 'string' ? img : img?.url;
+        if (url && !images.includes(url)) images.push(url);
+      });
+    }
+    if (product?.gallery_images && Array.isArray(product.gallery_images)) {
+      product.gallery_images.forEach((url) => {
+        if (url && !images.includes(url)) images.push(url);
+      });
+    }
+    return images;
+  }, [product]);
+
+  // Generate a single image
+  const generateImage = useCallback(async (prompt, useCase = 'product_scene') => {
+    const { data, error } = await supabase.functions.invoke('generate-image', {
+      body: {
+        prompt,
+        product_name: product?.name,
+        product_images: productReferenceImages,
+        use_case: productReferenceImages.length > 0 ? useCase : 'marketing_creative',
+        style: 'photorealistic',
+        aspect_ratio: '1:1',
+        width: 1024,
+        height: 1024,
+        company_id: user?.company_id,
+        user_id: user?.id,
+        reference_image_url: productReferenceImages[0] || null,
+        is_physical_product: true,
+        product_context: {
+          name: product?.name,
+          description: product?.description || product?.short_description,
+          type: 'physical',
+        },
+      },
+    });
+
+    if (error) throw error;
+    if (data?.error) throw new Error(data.details || data.error);
+    if (!data?.url) throw new Error('No image URL returned');
+    return data.url;
+  }, [product, productReferenceImages, user]);
+
+  // Generate all listing content via AI - the main orchestrator
+  const handleGenerateAll = useCallback(async () => {
+    if (!product?.id || !user?.company_id) return;
+
+    setGenerating(true);
+    setActiveTab('overview');
+
+    const toastId = toast.loading('Starting AI generation...');
+    let savedListing = listing;
+
+    try {
+      // --- Step 1: Generate Copy ---
+      setGeneratingProgress({ step: 'copy', progress: 10, stepLabel: 'Generating copy...' });
+      toast.loading('Generating product copy...', { id: toastId });
+
+      const { data: copyData, error: copyError } = await supabase.functions.invoke('generate-listing-copy', {
+        body: {
+          product_name: product?.name || '',
+          product_description: product?.description || '',
+          product_category: product?.category || '',
+          product_specs: details?.specifications || details || {},
+          product_price: product?.price,
+          product_currency: product?.currency || 'EUR',
+          product_brand: product?.brand || '',
+          product_tags: product?.tags || [],
+          product_ean: details?.ean || details?.barcode || '',
+          channel: selectedChannel || 'generic',
+          language: 'EN',
+          tone: 'professional',
+        },
+      });
+
+      if (copyError) throw copyError;
+
+      const ai = copyData?.listing;
+      if (!ai) throw new Error('No copy data returned');
+
+      const firstTitle = ai.titles?.[0]
+        ? (typeof ai.titles[0] === 'string' ? ai.titles[0] : ai.titles[0].text || '')
+        : product?.name || '';
+
+      const copyPayload = {
+        listing_title: firstTitle,
+        listing_description: ai.description || '',
+        bullet_points: ai.bullet_points || [],
+        seo_title: ai.seo_title || '',
+        seo_description: ai.seo_description || '',
+        search_keywords: ai.search_keywords || [],
+      };
+
+      savedListing = await saveListingSilent(copyPayload);
+      setGeneratingProgress({ step: 'copy', progress: 30, stepLabel: 'Copy generated!' });
+
+      // --- Step 2: Generate Hero Image ---
+      setGeneratingProgress({ step: 'hero', progress: 35, stepLabel: 'Creating hero image...' });
+      toast.loading('Creating hero image...', { id: toastId });
+
+      try {
+        const heroPrompt = `Professional e-commerce product photography of ${product?.name || 'the product'} on a clean white background, studio lighting, sharp detail, commercial hero shot, high resolution, centered composition`;
+        const heroUrl = await generateImage(heroPrompt, 'product_variation');
+        savedListing = await saveListingSilent({ hero_image_url: heroUrl });
+        setGeneratingProgress({ step: 'hero', progress: 50, stepLabel: 'Hero image created!' });
+      } catch (imgErr) {
+        console.warn('[ProductListingBuilder] Hero image failed:', imgErr.message);
+        setGeneratingProgress({ step: 'hero', progress: 50, stepLabel: 'Hero image skipped' });
+      }
+
+      // --- Step 3: Generate Gallery Images (4 lifestyle variants) ---
+      setGeneratingProgress({ step: 'gallery', progress: 55, stepLabel: 'Generating gallery images...' });
+      toast.loading('Generating lifestyle images...', { id: toastId });
+
+      const galleryPrompts = [
+        `${product?.name || 'Product'} in a modern lifestyle setting, warm natural light, home interior, aspirational photography`,
+        `${product?.name || 'Product'} close-up detail shot, macro photography, texture and material visible, commercial quality`,
+        `${product?.name || 'Product'} in flat-lay composition with complementary accessories, top-down view, styled product photography`,
+        `${product?.name || 'Product'} in use, lifestyle demonstration, real-world context, authentic feel, soft natural lighting`,
+      ];
+
+      const galleryUrls = [];
+      for (let i = 0; i < galleryPrompts.length; i++) {
+        try {
+          setGeneratingProgress({
+            step: 'gallery',
+            progress: 55 + ((i + 1) / galleryPrompts.length) * 35,
+            stepLabel: `Generating image ${i + 1} of ${galleryPrompts.length}...`,
+          });
+          const url = await generateImage(galleryPrompts[i], 'product_scene');
+          galleryUrls.push(url);
+        } catch (err) {
+          console.warn(`[ProductListingBuilder] Gallery image ${i + 1} failed:`, err.message);
+        }
+      }
+
+      if (galleryUrls.length > 0) {
+        const existingGallery = savedListing?.gallery_urls || [];
+        savedListing = await saveListingSilent({
+          gallery_urls: [...existingGallery, ...galleryUrls],
+        });
+      }
+
+      // --- Step 4: Done ---
+      setGeneratingProgress({ step: 'done', progress: 100, stepLabel: 'Complete!' });
+      toast.success(
+        `Listing generated: ${firstTitle.slice(0, 40)}${firstTitle.length > 40 ? '...' : ''} + ${galleryUrls.length + (savedListing?.hero_image_url ? 1 : 0)} images`,
+        { id: toastId, duration: 5000 }
+      );
+
+      // Re-fetch to sync state
+      await fetchListing();
+
+      // Auto-switch to publish tab after a moment
+      setTimeout(() => {
+        setActiveTab('publish');
+      }, 2000);
+
     } catch (err) {
       console.error('[ProductListingBuilder] generateAll error:', err);
-      toast.error('Generation failed');
+      toast.error('Generation failed: ' + (err.message || 'Unknown error'), { id: toastId });
     } finally {
       setGenerating(false);
+      setTimeout(() => setGeneratingProgress(null), 3000);
     }
-  }, []);
+  }, [product, details, user, listing, selectedChannel, saveListingSilent, generateImage, fetchListing]);
 
   // Switch to a specific sub-tab
   const handleTabChange = useCallback((tabId) => {
@@ -139,6 +308,7 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
             onGenerateAll={handleGenerateAll}
             onTabChange={handleTabChange}
             loading={generating}
+            generatingProgress={generatingProgress}
           />
         );
       case 'copywriter':
@@ -179,12 +349,13 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
             listing={listing}
             onUpdate={saveListing}
             channel={selectedChannel}
+            onNavigate={handleTabChange}
           />
         );
       default:
         return null;
     }
-  }, [activeTab, product, details, listing, generating, handleGenerateAll, handleTabChange, saveListing, selectedChannel, t]);
+  }, [activeTab, product, details, listing, generating, generatingProgress, handleGenerateAll, handleTabChange, saveListing, selectedChannel]);
 
   return (
     <div className="space-y-6">

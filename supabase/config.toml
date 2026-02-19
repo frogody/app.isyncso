@@ -199,6 +199,9 @@ verify_jwt = false
 [functions.shopify-webhooks]
 verify_jwt = false
 
+[functions.publish-listing]
+verify_jwt = false
+
 [functions.commander-chat]
 verify_jwt = false
 

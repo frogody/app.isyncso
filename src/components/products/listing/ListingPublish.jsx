@@ -34,6 +34,8 @@ import {
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { toast } from 'sonner';
+import { supabase } from '@/api/supabaseClient';
+import { useUser } from '@/components/context/UserContext';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -772,11 +774,13 @@ function SyncStatus({ channel, listing }) {
 // Main Component
 // ---------------------------------------------------------------------------
 
-export default function ListingPublish({ product, details, listing, onUpdate, channel }) {
+export default function ListingPublish({ product, details, listing, onUpdate, channel, onNavigate }) {
   const { t } = useTheme();
+  const { user } = useUser();
   const [showMappingTable, setShowMappingTable] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState(null); // { type: 'shopify' | 'bolcom' | 'export' }
   const [publishing, setPublishing] = useState(false);
+  const [publishResult, setPublishResult] = useState(null); // { success, channel, external_url, message }
 
   const checklist = useMemo(() => buildChecklist(listing, product), [listing, product]);
   const completedCount = checklist.filter((i) => i.completed).length;
@@ -785,57 +789,167 @@ export default function ListingPublish({ product, details, listing, onUpdate, ch
 
   // Navigate to a different tab in the parent builder
   const handleNavigateToTab = useCallback((tab) => {
-    // The parent ProductListingBuilder handles tab switching via onUpdate
-    // We call a custom event or toast since we don't have direct tab control
-    toast.info(`Switch to the "${tab === 'copywriter' ? 'AI Copywriter' : tab === 'images' ? 'Image Studio' : 'Video Studio'}" tab to complete this item`);
-  }, []);
+    if (onNavigate) {
+      onNavigate(tab);
+    } else {
+      toast.info(`Switch to the "${tab === 'copywriter' ? 'AI Copywriter' : tab === 'images' ? 'Image Studio' : 'Video Studio'}" tab to complete this item`);
+    }
+  }, [onNavigate]);
 
   // Publish handlers
   const handlePublishShopify = useCallback(async () => {
     setPublishing(true);
+    setPublishResult(null);
+    const toastId = toast.loading('Publishing to Shopify...');
     try {
-      // Placeholder for actual Shopify sync
-      await new Promise((r) => setTimeout(r, 1500));
-      toast.success('Shopify sync coming soon', {
-        description: 'This feature will sync your listing data to your Shopify store via the Admin API.',
+      const { data, error } = await supabase.functions.invoke('publish-listing', {
+        body: {
+          product_id: product?.id,
+          channel: 'shopify',
+          company_id: user?.company_id,
+          user_id: user?.id,
+          listing_data: listing,
+          product_data: {
+            name: product?.name,
+            price: product?.price || product?.selling_price,
+            sku: product?.sku,
+            ean: details?.ean || details?.barcode || product?.barcode,
+            description: product?.description,
+            stock_quantity: product?.stock_quantity || product?.quantity,
+          },
+        },
       });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.details || data.error);
+
+      setPublishResult({ success: true, channel: 'shopify', external_url: data.external_url, message: data.message });
+      toast.success(data.message || 'Published to Shopify!', {
+        id: toastId,
+        description: data.external_url ? 'View in Shopify Admin' : undefined,
+        action: data.external_url ? {
+          label: 'Open',
+          onClick: () => window.open(data.external_url, '_blank'),
+        } : undefined,
+      });
+
+      // Refresh listing data
+      if (onUpdate) {
+        await onUpdate({ publish_status: 'published', published_at: new Date().toISOString() });
+      }
     } catch (err) {
-      toast.error('Failed to publish to Shopify');
+      console.error('[ListingPublish] Shopify publish error:', err);
+      toast.error('Failed to publish to Shopify', {
+        id: toastId,
+        description: err.message || 'Check your Shopify connection in Settings.',
+      });
+      setPublishResult({ success: false, channel: 'shopify', message: err.message });
     } finally {
       setPublishing(false);
       setConfirmDialog(null);
     }
-  }, []);
+  }, [product, listing, details, user, onUpdate]);
 
   const handlePublishBolcom = useCallback(async () => {
     setPublishing(true);
+    setPublishResult(null);
+    const toastId = toast.loading('Publishing to bol.com...');
     try {
-      await new Promise((r) => setTimeout(r, 1500));
-      toast.success('bol.com sync coming soon', {
-        description: 'This feature will sync your listing data to bol.com via the Retailer API.',
+      const { data, error } = await supabase.functions.invoke('publish-listing', {
+        body: {
+          product_id: product?.id,
+          channel: 'bolcom',
+          company_id: user?.company_id,
+          user_id: user?.id,
+          listing_data: listing,
+          product_data: {
+            name: product?.name,
+            price: product?.price || product?.selling_price,
+            sku: product?.sku,
+            ean: details?.ean || details?.barcode || product?.barcode,
+            description: product?.description,
+            stock_quantity: product?.stock_quantity || product?.quantity,
+          },
+        },
       });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.details || data.error);
+
+      setPublishResult({ success: true, channel: 'bolcom', external_url: data.external_url, message: data.message });
+      toast.success(data.message || 'Published to bol.com!', {
+        id: toastId,
+        description: data.images_pushed ? `${data.images_pushed} images uploaded` : undefined,
+        action: data.external_url ? {
+          label: 'View',
+          onClick: () => window.open(data.external_url, '_blank'),
+        } : undefined,
+      });
+
+      if (onUpdate) {
+        await onUpdate({ publish_status: 'published', published_at: new Date().toISOString() });
+      }
     } catch (err) {
-      toast.error('Failed to publish to bol.com');
+      console.error('[ListingPublish] bol.com publish error:', err);
+      toast.error('Failed to publish to bol.com', {
+        id: toastId,
+        description: err.message || 'Check your bol.com connection in Settings.',
+      });
+      setPublishResult({ success: false, channel: 'bolcom', message: err.message });
     } finally {
       setPublishing(false);
       setConfirmDialog(null);
     }
-  }, []);
+  }, [product, listing, details, user, onUpdate]);
 
   const handleExportZip = useCallback(async () => {
     setPublishing(true);
+    const toastId = toast.loading('Preparing export...');
     try {
-      await new Promise((r) => setTimeout(r, 1000));
-      toast.success('ZIP export coming soon', {
-        description: 'This feature will bundle all listing assets into a downloadable ZIP file.',
-      });
+      // Build a JSON export of all listing data
+      const exportData = {
+        listing: {
+          title: listing?.listing_title || listing?.title || product?.name,
+          description: listing?.listing_description || listing?.description,
+          bullet_points: listing?.bullet_points || [],
+          seo_title: listing?.seo_title,
+          seo_description: listing?.seo_description,
+          search_keywords: listing?.search_keywords || listing?.keywords || [],
+        },
+        images: {
+          hero: listing?.hero_image_url,
+          gallery: listing?.gallery_urls || [],
+        },
+        product: {
+          name: product?.name,
+          price: product?.price,
+          sku: product?.sku,
+          ean: details?.ean || details?.barcode,
+        },
+        exported_at: new Date().toISOString(),
+        channel,
+      };
+
+      // Download as JSON file
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `listing-${(product?.name || 'product').toLowerCase().replace(/\s+/g, '-')}-${channel}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success('Listing data exported', { id: toastId, description: 'JSON file downloaded with all listing data and image URLs.' });
     } catch (err) {
-      toast.error('Failed to generate ZIP');
+      console.error('[ListingPublish] Export error:', err);
+      toast.error('Failed to export', { id: toastId });
     } finally {
       setPublishing(false);
       setConfirmDialog(null);
     }
-  }, []);
+  }, [listing, product, details, channel]);
 
   // Determine which preview to show based on channel
   const previewComponent = useMemo(() => {
@@ -894,6 +1008,39 @@ export default function ListingPublish({ product, details, listing, onUpdate, ch
 
         {/* Sync Status */}
         <SyncStatus channel={channel} listing={listing} />
+
+        {/* Publish Result Banner */}
+        {publishResult && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={cn(
+              'flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-sm',
+              publishResult.success
+                ? t('bg-cyan-50 text-cyan-800 border border-cyan-200', 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20')
+                : t('bg-red-50 text-red-800 border border-red-200', 'bg-red-500/10 text-red-300 border border-red-500/20')
+            )}
+          >
+            <div className="flex items-center gap-2">
+              {publishResult.success ? (
+                <Check className="w-4 h-4 flex-shrink-0" />
+              ) : (
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              )}
+              <span className="font-medium">{publishResult.message}</span>
+            </div>
+            {publishResult.external_url && (
+              <a
+                href={publishResult.external_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs font-semibold hover:underline flex-shrink-0"
+              >
+                View <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+          </motion.div>
+        )}
       </div>
 
       {/* Completeness Checklist */}

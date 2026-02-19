@@ -194,7 +194,9 @@ export default function ListingCopywriter({
   details,
   listing,
   onSave,
+  onUpdate,
   selectedChannel,
+  channel,
 }) {
   const { t } = useTheme();
   const { copiedField, copyToClipboard } = useCopyToClipboard();
@@ -228,6 +230,12 @@ export default function ListingCopywriter({
   // -- Change tracking --
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Support both onSave and onUpdate prop names
+  const saveFn = onSave || onUpdate;
+
+  // Use channel from either prop name
+  const activeChannel = selectedChannel || channel || 'generic';
+
   // Sync from listing prop when it changes
   useEffect(() => {
     if (listing) {
@@ -257,10 +265,10 @@ export default function ListingCopywriter({
     product_brand: product?.brand || '',
     product_tags: product?.tags || [],
     product_ean: details?.ean || details?.barcode || '',
-    channel: selectedChannel || 'generic',
+    channel: activeChannel,
     language,
     tone,
-  }), [product, details, selectedChannel, language, tone]);
+  }), [product, details, activeChannel, language, tone]);
 
   // -----------------------------------------------------------------------
   // Generation handlers
@@ -379,9 +387,10 @@ export default function ListingCopywriter({
   // -----------------------------------------------------------------------
 
   const handleSave = useCallback(async () => {
+    if (!saveFn) return;
     setSaving(true);
     try {
-      await onSave({
+      await saveFn({
         listing_title: title,
         listing_description: description,
         bullet_points: bullets,
@@ -396,7 +405,7 @@ export default function ListingCopywriter({
     } finally {
       setSaving(false);
     }
-  }, [title, description, bullets, seoTitle, seoDescription, keywords, onSave]);
+  }, [title, description, bullets, seoTitle, seoDescription, keywords, saveFn]);
 
   const handleDiscard = useCallback(() => {
     setTitle(listing?.listing_title || '');

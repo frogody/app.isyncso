@@ -26,15 +26,15 @@ function calculateScores(listing, product) {
   const imagesScore = (hasHero ? 30 : 0) + Math.min(galleryCount * 5, 20);
 
   // Copy score (max 30)
-  const hasTitle = !!(listing?.title || product?.name);
-  const hasDescription = !!(listing?.description || product?.description);
+  const hasTitle = !!(listing?.listing_title || listing?.title || product?.name);
+  const hasDescription = !!(listing?.listing_description || listing?.description || product?.description);
   const bulletsCount = listing?.bullet_points?.length || 0;
   const copyScore = (hasTitle ? 10 : 0) + (hasDescription ? 10 : 0) + Math.min(bulletsCount * 2, 10);
 
   // SEO score (max 15)
   const hasSeoTitle = !!listing?.seo_title;
   const hasSeoDescription = !!listing?.seo_description;
-  const keywordsCount = listing?.keywords?.length || 0;
+  const keywordsCount = listing?.search_keywords?.length || listing?.keywords?.length || 0;
   const seoScore = (hasSeoTitle ? 5 : 0) + (hasSeoDescription ? 5 : 0) + (keywordsCount > 3 ? 5 : 0);
 
   // Completeness (max 5)
@@ -253,7 +253,7 @@ function ChecklistItem({ label, completed }) {
 
 // --- Main Component ---
 
-export default function ListingOverview({ product, details, listing, onGenerateAll, onTabChange, loading }) {
+export default function ListingOverview({ product, details, listing, onGenerateAll, onTabChange, loading, generatingProgress }) {
   const { t } = useTheme();
 
   const scores = useMemo(() => calculateScores(listing, product), [listing, product]);
@@ -261,8 +261,8 @@ export default function ListingOverview({ product, details, listing, onGenerateA
   // Checklist items
   const checklist = useMemo(() => {
     const hasHero = !!(listing?.hero_image_url || product?.featured_image);
-    const hasTitle = !!(listing?.title || product?.name);
-    const hasDescription = !!(listing?.description || product?.description);
+    const hasTitle = !!(listing?.listing_title || listing?.title || product?.name);
+    const hasDescription = !!(listing?.listing_description || listing?.description || product?.description);
     const hasBullets = (listing?.bullet_points?.length || 0) >= 3;
     const hasSeoTitle = !!listing?.seo_title;
     const hasSeoDesc = !!listing?.seo_description;
@@ -344,38 +344,110 @@ export default function ListingOverview({ product, details, listing, onGenerateA
           Quick Actions
         </h3>
         <div className="grid sm:grid-cols-3 gap-3">
-          {/* Hero: Generate Everything */}
-          <button
-            onClick={onGenerateAll}
-            disabled={loading}
-            className={cn(
-              'sm:col-span-3 relative overflow-hidden group rounded-2xl p-5 text-left transition-all duration-300',
-              'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500',
-              'shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30',
-              loading && 'opacity-70 cursor-not-allowed'
-            )}
-          >
-            {/* Subtle background pattern */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
-            <div className="relative flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
-                {loading ? (
-                  <Loader2 className="w-6 h-6 text-white animate-spin" />
-                ) : (
-                  <Sparkles className="w-6 h-6 text-white" />
-                )}
+          {/* Hero: Generate Everything / Progress Tracker */}
+          {generatingProgress ? (
+            <div className="sm:col-span-3 rounded-2xl overflow-hidden bg-gradient-to-r from-cyan-600 to-blue-600 shadow-lg shadow-cyan-500/20">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+              <div className="relative p-5 space-y-4">
+                {/* Header */}
+                <div className="flex items-center gap-3">
+                  <Loader2 className="w-5 h-5 text-white animate-spin" />
+                  <p className="text-sm font-semibold text-white">
+                    {generatingProgress.stepLabel || 'Generating...'}
+                  </p>
+                </div>
+
+                {/* Overall progress bar */}
+                <div className="space-y-2">
+                  <div className="h-2 rounded-full bg-white/20 overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${generatingProgress.progress || 0}%` }}
+                      transition={{ duration: 0.5, ease: 'easeOut' }}
+                      className="h-full rounded-full bg-white"
+                    />
+                  </div>
+                  <p className="text-xs text-white/60 tabular-nums">
+                    {Math.round(generatingProgress.progress || 0)}% complete
+                  </p>
+                </div>
+
+                {/* Step indicators */}
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { key: 'copy', label: 'Copy' },
+                    { key: 'hero', label: 'Hero Image' },
+                    { key: 'gallery', label: 'Gallery' },
+                    { key: 'done', label: 'Complete' },
+                  ].map((s) => {
+                    const steps = ['copy', 'hero', 'gallery', 'done'];
+                    const currentIdx = steps.indexOf(generatingProgress.step);
+                    const stepIdx = steps.indexOf(s.key);
+                    const isDone = stepIdx < currentIdx || generatingProgress.step === 'done';
+                    const isActive = s.key === generatingProgress.step && generatingProgress.step !== 'done';
+
+                    return (
+                      <div key={s.key} className="flex flex-col items-center gap-1.5">
+                        <div className={cn(
+                          'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300',
+                          isDone
+                            ? 'bg-white text-cyan-600'
+                            : isActive
+                              ? 'bg-white/30 text-white ring-2 ring-white/50'
+                              : 'bg-white/10 text-white/40'
+                        )}>
+                          {isDone ? (
+                            <Check className="w-4 h-4" />
+                          ) : isActive ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            stepIdx + 1
+                          )}
+                        </div>
+                        <span className={cn(
+                          'text-[10px] font-medium',
+                          isDone ? 'text-white' : isActive ? 'text-white/80' : 'text-white/40'
+                        )}>
+                          {s.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <div>
-                <p className="text-base font-semibold text-white">
-                  {loading ? 'Generating...' : 'Generate Everything with AI'}
-                </p>
-                <p className="text-sm text-white/70 mt-0.5">
-                  Auto-generate title, description, bullets, SEO meta, and image suggestions
-                </p>
-              </div>
-              <ArrowRight className="w-5 h-5 text-white/60 ml-auto flex-shrink-0 transition-transform group-hover:translate-x-1" />
             </div>
-          </button>
+          ) : (
+            <button
+              onClick={onGenerateAll}
+              disabled={loading}
+              className={cn(
+                'sm:col-span-3 relative overflow-hidden group rounded-2xl p-5 text-left transition-all duration-300',
+                'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500',
+                'shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30',
+                loading && 'opacity-70 cursor-not-allowed'
+              )}
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+              <div className="relative flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
+                  {loading ? (
+                    <Loader2 className="w-6 h-6 text-white animate-spin" />
+                  ) : (
+                    <Sparkles className="w-6 h-6 text-white" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-white">
+                    {loading ? 'Generating...' : 'Generate Everything with AI'}
+                  </p>
+                  <p className="text-sm text-white/70 mt-0.5">
+                    Auto-generate title, description, bullets, SEO meta, hero + gallery images
+                  </p>
+                </div>
+                <ArrowRight className="w-5 h-5 text-white/60 ml-auto flex-shrink-0 transition-transform group-hover:translate-x-1" />
+              </div>
+            </button>
+          )}
 
           {/* Secondary: Generate Copy */}
           <button
