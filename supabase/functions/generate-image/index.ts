@@ -345,8 +345,8 @@ async function generateWithNanoBanana(
               contents: [{ parts }],
               generationConfig: {
                 responseModalities: ['IMAGE', 'TEXT'],
-                ...(aspectRatio ? { imageGenerationConfig: { aspectRatio } } : {}),
               },
+              ...(aspectRatio ? { imageGenerationConfig: { aspectRatio } } : {}),
             }),
           }
         );
