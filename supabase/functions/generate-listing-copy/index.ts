@@ -143,7 +143,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown code blocks, no explanation text.
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
         messages: [
           { role: 'system', content: 'You are a world-class e-commerce copywriter. Always respond with valid JSON only.' },
           { role: 'user', content: prompt },
@@ -154,12 +154,71 @@ IMPORTANT: Return ONLY valid JSON, no markdown code blocks, no explanation text.
       }),
     });
 
+    // Fallback to another model if primary fails
     if (!groqResponse.ok) {
-      const err = await groqResponse.text();
-      console.error('Groq API error:', err);
+      const errText = await groqResponse.text();
+      console.warn('Primary model failed, trying fallback:', errText);
+
+      const fallbackResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [
+            { role: 'system', content: 'You are a world-class e-commerce copywriter. Always respond with valid JSON only.' },
+            { role: 'user', content: prompt },
+          ],
+          temperature: 0.7,
+          max_tokens: 4096,
+          response_format: { type: 'json_object' },
+        }),
+      });
+
+      if (!fallbackResponse.ok) {
+        const err2 = await fallbackResponse.text();
+        console.error('Fallback model also failed:', err2);
+        return new Response(
+          JSON.stringify({ error: 'AI generation failed', details: err2 }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Use fallback response
+      const fallbackData = await fallbackResponse.json();
+      const fallbackContent = fallbackData.choices?.[0]?.message?.content;
+
+      if (!fallbackContent) {
+        return new Response(
+          JSON.stringify({ error: 'No content generated' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      let parsedFallback;
+      try {
+        parsedFallback = JSON.parse(fallbackContent);
+      } catch (e) {
+        const jsonMatch = fallbackContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          parsedFallback = JSON.parse(jsonMatch[1]);
+        } else {
+          throw new Error('Failed to parse AI response as JSON');
+        }
+      }
+
       return new Response(
-        JSON.stringify({ error: 'AI generation failed', details: err }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          success: true,
+          listing: parsedFallback,
+          model: 'llama-3.1-8b-instant',
+          channel,
+          language,
+          tone,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
