@@ -19,9 +19,9 @@ const TOOLS = [
     description: 'AI product photos & marketing visuals',
     icon: Image,
     route: '/StudioImage',
-    gradient: 'from-blue-500/20 to-cyan-500/10',
-    color: 'text-blue-400',
-    borderColor: 'group-hover:border-blue-500/30',
+    gradient: 'from-yellow-500/20 to-amber-500/10',
+    color: 'text-yellow-400',
+    borderColor: 'group-hover:border-yellow-500/30',
     status: 'live',
   },
   {
@@ -30,9 +30,9 @@ const TOOLS = [
     description: 'Cinematic AI product videos',
     icon: Film,
     route: '/StudioVideo',
-    gradient: 'from-purple-500/20 to-violet-500/10',
-    color: 'text-purple-400',
-    borderColor: 'group-hover:border-purple-500/30',
+    gradient: 'from-yellow-500/20 to-amber-500/10',
+    color: 'text-yellow-400',
+    borderColor: 'group-hover:border-yellow-500/30',
     status: 'live',
   },
   {
@@ -52,9 +52,9 @@ const TOOLS = [
     description: 'Multi-shot video storyboards',
     icon: Clapperboard,
     route: '/StudioClipshoot',
-    gradient: 'from-emerald-500/20 to-green-500/10',
-    color: 'text-emerald-400',
-    borderColor: 'group-hover:border-emerald-500/30',
+    gradient: 'from-yellow-500/20 to-amber-500/10',
+    color: 'text-yellow-400',
+    borderColor: 'group-hover:border-yellow-500/30',
     status: 'live',
   },
   {
@@ -63,9 +63,9 @@ const TOOLS = [
     description: 'AI podcasts with multiple speakers',
     icon: Mic,
     route: '/StudioPodcast',
-    gradient: 'from-orange-500/20 to-red-500/10',
-    color: 'text-orange-400',
-    borderColor: 'group-hover:border-orange-500/30',
+    gradient: 'from-yellow-500/20 to-amber-500/10',
+    color: 'text-yellow-400',
+    borderColor: 'group-hover:border-yellow-500/30',
     status: 'live',
   },
   {
@@ -74,9 +74,9 @@ const TOOLS = [
     description: 'Clone any voice for content',
     icon: AudioLines,
     route: '/StudioVoice',
-    gradient: 'from-pink-500/20 to-rose-500/10',
-    color: 'text-pink-400',
-    borderColor: 'group-hover:border-pink-500/30',
+    gradient: 'from-yellow-500/20 to-amber-500/10',
+    color: 'text-yellow-400',
+    borderColor: 'group-hover:border-yellow-500/30',
     status: 'live',
   },
   {
@@ -85,9 +85,9 @@ const TOOLS = [
     description: 'AI fashion photography from garment references',
     icon: Shirt,
     route: '/StudioFashionBooth',
-    gradient: 'from-rose-500/20 to-pink-500/10',
-    color: 'text-rose-400',
-    borderColor: 'group-hover:border-rose-500/30',
+    gradient: 'from-yellow-500/20 to-amber-500/10',
+    color: 'text-yellow-400',
+    borderColor: 'group-hover:border-yellow-500/30',
     status: 'live',
   },
   {
@@ -96,9 +96,9 @@ const TOOLS = [
     description: 'AI avatars for UGC & social',
     icon: UserCircle,
     route: '/StudioAvatar',
-    gradient: 'from-violet-500/20 to-purple-500/10',
-    color: 'text-violet-400',
-    borderColor: 'group-hover:border-violet-500/30',
+    gradient: 'from-yellow-500/20 to-amber-500/10',
+    color: 'text-yellow-400',
+    borderColor: 'group-hover:border-yellow-500/30',
     status: 'soon',
   },
 ];
@@ -156,15 +156,15 @@ export default function Create() {
     <div className="min-h-screen bg-[#09090b]">
       {/* Sticky StudioNav */}
       <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-        <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
+        <div className="w-full px-4 lg:px-6 py-3 flex justify-center">
           <StudioNav />
         </div>
       </div>
 
-      <div className="w-full px-4 lg:px-8 py-6 space-y-8">
+      <div className="w-full px-4 lg:px-6 py-6 space-y-5">
 
         {/* ── Hero Section ── */}
-        <div className="relative overflow-hidden rounded-2xl border border-zinc-800/40">
+        <div className="relative overflow-hidden rounded-[20px] border border-zinc-800/40">
           {/* Background gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/[0.04] via-transparent to-yellow-500/[0.02]" />
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent" />
@@ -244,7 +244,7 @@ export default function Create() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
                   onClick={() => navigate(tool.route)}
-                  className="group relative text-left bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4 hover:bg-zinc-900/80 transition-all"
+                  className="group relative text-left bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-3 hover:bg-zinc-900/80 transition-all"
                 >
                   <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${tool.gradient} flex items-center justify-center mb-3 border border-zinc-800/40`}>
                     <Icon className={`w-5 h-5 ${tool.color}`} />
@@ -255,7 +255,7 @@ export default function Create() {
                       <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">Soon</span>
                     )}
                     {tool.status === 'live' && (
-                      <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Live</span>
+                      <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">Live</span>
                     )}
                   </div>
                   <p className="text-[11px] text-zinc-500 leading-relaxed line-clamp-2">{tool.description}</p>
@@ -313,16 +313,16 @@ export default function Create() {
             {loading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[1,2,3,4,5,6].map(i => (
-                  <div key={i} className="aspect-[4/3] rounded-2xl bg-zinc-900/60 border border-zinc-800/40 animate-pulse" />
+                  <div key={i} className="aspect-square rounded-[20px] bg-zinc-900/60 border border-zinc-800/40 animate-pulse" />
                 ))}
               </div>
             ) : galleryItems.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex flex-col items-center justify-center py-16 rounded-2xl border border-dashed border-zinc-800/60 bg-zinc-900/20"
+                className="flex flex-col items-center justify-center py-12 rounded-[20px] border border-dashed border-zinc-800/60 bg-zinc-900/20"
               >
-                <div className="w-12 h-12 rounded-2xl bg-yellow-500/[0.06] border border-yellow-500/[0.1] flex items-center justify-center mb-4">
+                <div className="w-12 h-12 rounded-[20px] bg-yellow-500/[0.06] border border-yellow-500/[0.1] flex items-center justify-center mb-4">
                   <Sparkles className="w-5 h-5 text-yellow-400/50" />
                 </div>
                 <p className="text-sm font-medium text-white mb-1">Your canvas awaits</p>
@@ -336,7 +336,7 @@ export default function Create() {
                 </button>
               </motion.div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {galleryItems.map((item, i) => {
                   const isVideo = item.content_type === 'video' || item._type === 'video_project';
                   const mediaUrl = item.url || item.thumbnail_url || item.final_thumbnail_url;
@@ -349,7 +349,7 @@ export default function Create() {
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: i * 0.04 }}
-                      className="relative aspect-[4/3] rounded-2xl overflow-hidden group cursor-pointer border border-zinc-800/40 hover:border-zinc-700 transition-all"
+                      className="relative aspect-square rounded-[20px] overflow-hidden group cursor-pointer border border-zinc-800/40 hover:border-zinc-700 transition-all"
                       onClick={() => navigate('/StudioLibrary')}
                     >
                       {isVideoFile ? (

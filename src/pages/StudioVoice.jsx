@@ -95,7 +95,7 @@ function EqualizerBars({ playing, size = 'sm' }) {
       {heights.map((h, i) => (
         <motion.div
           key={i}
-          className="rounded-full bg-pink-400"
+          className="rounded-full bg-yellow-400"
           style={{ width: barWidth }}
           animate={
             playing
@@ -133,7 +133,7 @@ function VoiceCard({ voice, isPlaying, onPlay, onStop, onUseInStudio, index }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.05 }}
-      className="group relative bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-5 flex flex-col gap-4 hover:border-zinc-700/60 transition-colors"
+      className="group relative bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-5 flex flex-col gap-4 hover:border-zinc-700/60 transition-colors"
     >
       {/* Header: avatar + name + badge */}
       <div className="flex items-center gap-3">
@@ -151,7 +151,7 @@ function VoiceCard({ voice, isPlaying, onPlay, onStop, onUseInStudio, index }) {
           className={`px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide uppercase ${
             isPreset
               ? 'bg-zinc-800 text-zinc-400 border border-zinc-700/50'
-              : 'bg-pink-500/10 text-pink-400 border border-pink-500/20'
+              : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
           }`}
         >
           {isPreset ? 'Preset' : 'Custom'}
@@ -169,7 +169,7 @@ function VoiceCard({ voice, isPlaying, onPlay, onStop, onUseInStudio, index }) {
           onClick={() => (isPlaying ? onStop() : onPlay(voice.id))}
           className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
             isPlaying
-              ? 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
+              ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
               : 'bg-zinc-800/80 text-zinc-400 hover:text-white hover:bg-zinc-700/80 border border-zinc-700/40'
           }`}
         >
@@ -179,7 +179,7 @@ function VoiceCard({ voice, isPlaying, onPlay, onStop, onUseInStudio, index }) {
         <div className="flex-1 h-1 rounded-full bg-zinc-800 overflow-hidden">
           {isPlaying && (
             <motion.div
-              className="h-full bg-gradient-to-r from-pink-500 to-pink-400 rounded-full"
+              className="h-full bg-gradient-to-r from-yellow-500 to-yellow-400 rounded-full"
               initial={{ width: '0%' }}
               animate={{ width: '100%' }}
               transition={{ duration: 3, ease: 'linear' }}
@@ -214,8 +214,8 @@ function UploadedFileCard({ file, onRemove }) {
       exit={{ opacity: 0, scale: 0.95 }}
       className="flex items-center gap-3 bg-zinc-800/50 border border-zinc-700/40 rounded-xl px-4 py-3"
     >
-      <div className="w-8 h-8 rounded-lg bg-pink-500/10 border border-pink-500/20 flex items-center justify-center shrink-0">
-        <FileAudio className="w-4 h-4 text-pink-400" />
+      <div className="w-8 h-8 rounded-lg bg-pink-500/10 border border-yellow-500/20 flex items-center justify-center shrink-0">
+        <FileAudio className="w-4 h-4 text-yellow-400" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium text-white truncate">{file.file.name}</p>
@@ -408,15 +408,15 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
   }, [voiceName, description, uploadedFiles, meetsMinimum, totalDuration, onCloneSuccess]);
 
   return (
-    <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl overflow-hidden">
+    <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] overflow-hidden">
       {/* Header toggle */}
       <button
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center justify-between px-6 py-5 text-left group"
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500/20 to-rose-500/10 border border-pink-500/20 flex items-center justify-center">
-            <Wand2 className="w-5 h-5 text-pink-400" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500/20 to-amber-500/10 border border-yellow-500/20 flex items-center justify-center">
+            <Wand2 className="w-5 h-5 text-yellow-400" />
           </div>
           <div>
             <h2 className="text-base font-semibold text-white">Create Voice Clone</h2>
@@ -442,7 +442,7 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
               {/* Step 1: Name */}
               <div className="space-y-2">
                 <label className="text-xs font-medium text-zinc-400 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-[10px] font-bold text-pink-400">
+                  <span className="w-5 h-5 rounded-full bg-pink-500/10 border border-yellow-500/20 flex items-center justify-center text-[10px] font-bold text-yellow-400">
                     1
                   </span>
                   Name your voice
@@ -452,14 +452,14 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
                   value={voiceName}
                   onChange={(e) => setVoiceName(e.target.value)}
                   placeholder="e.g. My Voice, Sarah's Clone, Brand Narrator"
-                  className="w-full bg-zinc-800/50 border border-zinc-700/40 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/40 focus:ring-1 focus:ring-pink-500/20 transition-colors"
+                  className="w-full bg-zinc-800/50 border border-zinc-700/40 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-yellow-500/40 focus:ring-1 focus:ring-yellow-500/20 transition-colors"
                 />
               </div>
 
               {/* Step 2: Upload samples */}
               <div className="space-y-3">
                 <label className="text-xs font-medium text-zinc-400 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-[10px] font-bold text-pink-400">
+                  <span className="w-5 h-5 rounded-full bg-pink-500/10 border border-yellow-500/20 flex items-center justify-center text-[10px] font-bold text-yellow-400">
                     2
                   </span>
                   Upload voice samples
@@ -473,8 +473,8 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
                   onClick={() => fileInputRef.current?.click()}
                   className={`relative cursor-pointer border-2 border-dashed rounded-xl px-6 py-8 text-center transition-colors ${
                     isDragging
-                      ? 'border-pink-500/60 bg-pink-500/5'
-                      : 'border-zinc-700/50 hover:border-pink-500/40 bg-zinc-800/20'
+                      ? 'border-yellow-500/60 bg-yellow-500/5'
+                      : 'border-zinc-700/50 hover:border-yellow-500/40 bg-zinc-800/20'
                   }`}
                 >
                   <input
@@ -489,12 +489,12 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
                     <div
                       className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
                         isDragging
-                          ? 'bg-pink-500/20 border border-pink-500/30'
+                          ? 'bg-pink-500/20 border border-yellow-500/30'
                           : 'bg-zinc-800/60 border border-zinc-700/40'
                       }`}
                     >
                       <Upload
-                        className={`w-5 h-5 transition-colors ${isDragging ? 'text-pink-400' : 'text-zinc-500'}`}
+                        className={`w-5 h-5 transition-colors ${isDragging ? 'text-yellow-400' : 'text-zinc-500'}`}
                       />
                     </div>
                     <div>
@@ -530,7 +530,7 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
               {/* Step 3: Description (optional) */}
               <div className="space-y-2">
                 <label className="text-xs font-medium text-zinc-400 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-[10px] font-bold text-pink-400">
+                  <span className="w-5 h-5 rounded-full bg-pink-500/10 border border-yellow-500/20 flex items-center justify-center text-[10px] font-bold text-yellow-400">
                     3
                   </span>
                   Description
@@ -541,7 +541,7 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe the voice characteristics, accent, tone..."
                   rows={3}
-                  className="w-full bg-zinc-800/50 border border-zinc-700/40 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/40 focus:ring-1 focus:ring-pink-500/20 transition-colors resize-none"
+                  className="w-full bg-zinc-800/50 border border-zinc-700/40 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-yellow-500/40 focus:ring-1 focus:ring-yellow-500/20 transition-colors resize-none"
                 />
               </div>
 
@@ -550,7 +550,7 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 text-pink-400 animate-spin" />
+                      <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />
                       <span className="text-sm text-zinc-300">
                         {cloneProgress < 15
                           ? 'Uploading audio samples...'
@@ -563,11 +563,11 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
                                 : 'Almost there...'}
                       </span>
                     </div>
-                    <span className="text-xs font-medium text-pink-400">{cloneProgress}%</span>
+                    <span className="text-xs font-medium text-yellow-400">{cloneProgress}%</span>
                   </div>
                   <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
                     <motion.div
-                      className="h-full bg-gradient-to-r from-pink-600 to-pink-400 rounded-full"
+                      className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-full"
                       animate={{ width: `${cloneProgress}%` }}
                       transition={{ duration: 0.5 }}
                     />
@@ -739,17 +739,17 @@ export default function StudioVoice() {
     <div className="min-h-screen bg-[#09090b]">
       {/* Sticky nav */}
       <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-        <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
+        <div className="w-full px-4 lg:px-6 py-3 flex justify-center">
           <StudioNav />
         </div>
       </div>
 
-      <div className="w-full max-w-7xl mx-auto px-4 lg:px-8 py-8 space-y-8">
+      <div className="w-full px-4 lg:px-6 py-6 space-y-5">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500/20 to-rose-500/10 border border-pink-500/20 flex items-center justify-center shrink-0">
-              <AudioLines className="w-6 h-6 text-pink-400" />
+            <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20 shrink-0">
+              <AudioLines className="w-5 h-5 text-yellow-400" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">Voice Library</h1>
@@ -766,10 +766,10 @@ export default function StudioVoice() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-500/10 border border-yellow-500/20"
               >
                 <EqualizerBars playing={true} size="sm" />
-                <span className="text-xs text-pink-300 font-medium">
+                <span className="text-xs text-yellow-300 font-medium">
                   Playing: {allVoices.find((v) => v.id === playingVoiceId)?.name}
                 </span>
               </motion.div>
@@ -786,7 +786,7 @@ export default function StudioVoice() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search voices by name, gender, or description..."
-              className="w-full bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/30 focus:ring-1 focus:ring-pink-500/20 transition-colors"
+              className="w-full bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-yellow-500/30 focus:ring-1 focus:ring-yellow-500/20 transition-colors"
             />
             {searchQuery && (
               <button
@@ -836,7 +836,7 @@ export default function StudioVoice() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-zinc-800/50 border border-zinc-700/40 flex items-center justify-center mb-4">
+            <div className="w-14 h-14 rounded-[20px] bg-zinc-800/50 border border-zinc-700/40 flex items-center justify-center mb-4">
               <Volume2 className="w-6 h-6 text-zinc-600" />
             </div>
             <p className="text-sm text-zinc-400 font-medium mb-1">No voices found</p>
@@ -854,7 +854,7 @@ export default function StudioVoice() {
         <div className="flex items-center gap-4">
           <div className="flex-1 h-px bg-zinc-800/60" />
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/50 border border-zinc-800/60">
-            <Plus className="w-3 h-3 text-pink-400" />
+            <Plus className="w-3 h-3 text-yellow-400" />
             <span className="text-xs text-zinc-500 font-medium">Create New</span>
           </div>
           <div className="flex-1 h-px bg-zinc-800/60" />

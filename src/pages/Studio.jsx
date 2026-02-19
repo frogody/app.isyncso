@@ -106,7 +106,7 @@ export default function Studio() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.08 }}
                 onClick={() => navigate(tool.route)}
-                className="group text-left bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-5 hover:border-zinc-700 transition-all"
+                className="group text-left bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-5 hover:border-zinc-700 transition-all"
               >
                 <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${tool.gradient} flex items-center justify-center mb-4 border border-zinc-800/40`}>
                   <Icon className={`w-5 h-5 ${tool.color}`} />

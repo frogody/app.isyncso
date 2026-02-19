@@ -118,7 +118,7 @@ function StepIndicator({ currentStep, totalSteps = 3 }) {
                 className={`
                   w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300
                   ${isActive ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/30 scale-110' : ''}
-                  ${isCompleted ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : ''}
+                  ${isCompleted ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : ''}
                   ${!isActive && !isCompleted ? 'bg-zinc-800/60 text-zinc-500 border border-zinc-700/40' : ''}
                 `}
               >
@@ -126,7 +126,7 @@ function StepIndicator({ currentStep, totalSteps = 3 }) {
               </div>
               <span
                 className={`text-xs font-medium hidden sm:block transition-colors ${
-                  isActive ? 'text-yellow-400' : isCompleted ? 'text-orange-400' : 'text-zinc-500'
+                  isActive ? 'text-yellow-400' : isCompleted ? 'text-yellow-400' : 'text-zinc-500'
                 }`}
               >
                 {labels[i]}
@@ -135,7 +135,7 @@ function StepIndicator({ currentStep, totalSteps = 3 }) {
             {i < totalSteps - 1 && (
               <div
                 className={`w-8 sm:w-12 h-px transition-colors ${
-                  isCompleted ? 'bg-orange-500/40' : 'bg-zinc-700/40'
+                  isCompleted ? 'bg-yellow-500/40' : 'bg-zinc-700/40'
                 }`}
               />
             )}
@@ -160,7 +160,7 @@ function SelectDropdown({ label, value, onChange, options, icon: Icon }) {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className={`w-full bg-zinc-800/60 border border-zinc-700/50 rounded-xl text-sm text-white appearance-none cursor-pointer
-            focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500/50 transition-all
+            focus:outline-none focus:ring-2 focus:ring-yellow-500/30 focus:border-yellow-500/50 transition-all
             ${Icon ? 'pl-10 pr-4 py-3' : 'px-4 py-3'}
           `}
         >
@@ -189,7 +189,7 @@ function DurationPicker({ value, onChange }) {
             onClick={() => onChange(d.value)}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
               value === d.value
-                ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30 shadow-lg shadow-orange-500/10'
+                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 shadow-lg shadow-yellow-500/10'
                 : 'bg-zinc-800/40 text-zinc-400 border border-zinc-700/30 hover:border-zinc-600/50 hover:text-zinc-300'
             }`}
           >
@@ -214,12 +214,12 @@ function VoiceSelector({ selectedId, onSelect }) {
             onClick={() => onSelect(v.id)}
             className={`relative flex flex-col items-center gap-0.5 px-2 py-2 rounded-lg text-[11px] transition-all ${
               isSelected
-                ? 'bg-orange-500/15 border border-orange-500/40 text-orange-300'
+                ? 'bg-yellow-500/15 border border-yellow-500/40 text-yellow-300'
                 : 'bg-zinc-800/30 border border-zinc-700/20 text-zinc-400 hover:border-zinc-600/40 hover:text-zinc-300'
             }`}
           >
             {isSelected && (
-              <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-orange-500 rounded-full flex items-center justify-center">
+              <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-yellow-500 rounded-full flex items-center justify-center">
                 <Check className="w-2 h-2 text-black" />
               </div>
             )}
@@ -283,13 +283,13 @@ function SpeakerCard({ speaker, index, onUpdate, onRemove, canRemove }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20, scale: 0.95 }}
       transition={{ duration: 0.25 }}
-      className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-5 space-y-4"
+      className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-5 space-y-4"
     >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/20 flex items-center justify-center">
-            <RoleIcon className="w-5 h-5 text-orange-400" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500/20 to-amber-500/10 border border-yellow-500/20 flex items-center justify-center">
+            <RoleIcon className="w-5 h-5 text-yellow-400" />
           </div>
           <div>
             <span className="text-xs text-zinc-500 font-medium">Speaker {index + 1}</span>
@@ -315,7 +315,7 @@ function SpeakerCard({ speaker, index, onUpdate, onRemove, canRemove }) {
             value={speaker.name}
             onChange={(e) => onUpdate({ ...speaker, name: e.target.value })}
             placeholder="Speaker name"
-            className="w-full bg-zinc-800/50 border border-zinc-700/40 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500/50 transition-all"
+            className="w-full bg-zinc-800/50 border border-zinc-700/40 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500/30 focus:border-yellow-500/50 transition-all"
           />
         </div>
         <div className="space-y-1.5">
@@ -323,7 +323,7 @@ function SpeakerCard({ speaker, index, onUpdate, onRemove, canRemove }) {
           <select
             value={speaker.role}
             onChange={(e) => onUpdate({ ...speaker, role: e.target.value })}
-            className="w-full bg-zinc-800/50 border border-zinc-700/40 rounded-lg px-3 py-2 text-sm text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500/50 transition-all"
+            className="w-full bg-zinc-800/50 border border-zinc-700/40 rounded-lg px-3 py-2 text-sm text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-500/30 focus:border-yellow-500/50 transition-all"
           >
             {SPEAKER_ROLES.map((r) => (
               <option key={r.value} value={r.value}>
@@ -341,7 +341,7 @@ function SpeakerCard({ speaker, index, onUpdate, onRemove, canRemove }) {
           <button
             onClick={handlePreviewVoice}
             disabled={previewing}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-zinc-800/60 text-zinc-400 hover:text-orange-400 hover:bg-orange-500/10 border border-zinc-700/30 hover:border-orange-500/30 transition-all disabled:opacity-50"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-zinc-800/60 text-zinc-400 hover:text-yellow-400 hover:bg-yellow-500/10 border border-zinc-700/30 hover:border-yellow-500/30 transition-all disabled:opacity-50"
           >
             {previewing ? (
               <>
@@ -374,7 +374,7 @@ function WaveformVisualizer({ isPlaying }) {
         return (
           <motion.div
             key={i}
-            className="w-[3px] rounded-full bg-gradient-to-t from-orange-500/60 to-orange-400/90"
+            className="w-[3px] rounded-full bg-gradient-to-t from-yellow-500/60 to-yellow-400/90"
             animate={
               isPlaying
                 ? {
@@ -474,11 +474,11 @@ function AudioPlayer({ audioUrl, duration }) {
       <div className="px-4">
         <div className="relative h-1.5 bg-zinc-800 rounded-full cursor-pointer group" onClick={handleSeek}>
           <motion.div
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-orange-500 to-amber-400 rounded-full"
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-yellow-500 to-amber-400 rounded-full"
             style={{ width: `${progress}%` }}
           />
           <div
-            className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-lg shadow-orange-500/30 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-lg shadow-yellow-500/30 opacity-0 group-hover:opacity-100 transition-opacity"
             style={{ left: `${progress}%`, transform: `translate(-50%, -50%)` }}
           />
         </div>
@@ -498,7 +498,7 @@ function AudioPlayer({ audioUrl, duration }) {
         </button>
         <button
           onClick={togglePlay}
-          className="w-12 h-12 rounded-full bg-orange-500 hover:bg-orange-400 text-black flex items-center justify-center shadow-lg shadow-orange-500/30 transition-all hover:scale-105 active:scale-95"
+          className="w-12 h-12 rounded-full bg-yellow-500 hover:bg-yellow-400 text-black flex items-center justify-center shadow-lg shadow-yellow-500/30 transition-all hover:scale-105 active:scale-95"
         >
           {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
         </button>
@@ -518,7 +518,7 @@ function AudioPlayer({ audioUrl, duration }) {
 function TranscriptView({ script }) {
   const speakerColors = {};
   const palette = [
-    'text-orange-400',
+    'text-yellow-400',
     'text-cyan-400',
     'text-violet-400',
     'text-emerald-400',
@@ -566,7 +566,7 @@ function GenerationProgress({ progress }) {
       {/* Progress bar */}
       <div className="relative h-2 bg-zinc-800 rounded-full overflow-hidden">
         <motion.div
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-400 rounded-full"
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-400 rounded-full"
           initial={{ width: '0%' }}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -576,10 +576,10 @@ function GenerationProgress({ progress }) {
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Loader2 className="w-4 h-4 text-orange-400 animate-spin" />
+          <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />
           <span className="text-sm text-zinc-300">{currentStage.label}...</span>
         </div>
-        <span className="text-sm font-mono text-orange-400">{Math.round(progress)}%</span>
+        <span className="text-sm font-mono text-yellow-400">{Math.round(progress)}%</span>
       </div>
 
       {/* Stage dots */}
@@ -590,7 +590,7 @@ function GenerationProgress({ progress }) {
             <div key={i} className="flex flex-col items-center gap-1">
               <div
                 className={`w-2.5 h-2.5 rounded-full transition-all ${
-                  reached ? 'bg-orange-400 shadow-sm shadow-orange-400/50' : 'bg-zinc-700'
+                  reached ? 'bg-yellow-400 shadow-sm shadow-yellow-400/50' : 'bg-zinc-700'
                 }`}
               />
               <span className={`text-[10px] ${reached ? 'text-zinc-300' : 'text-zinc-600'}`}>
@@ -692,7 +692,7 @@ function Step1TopicScript({
           onChange={(e) => setTopic(e.target.value)}
           rows={4}
           placeholder="e.g. Discuss our new iPhone case line and why it's the best on the market. Cover durability, design philosophy, and customer testimonials..."
-          className="w-full bg-zinc-800/50 border border-zinc-700/40 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 resize-none focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500/50 transition-all"
+          className="w-full bg-zinc-800/50 border border-zinc-700/40 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 resize-none focus:outline-none focus:ring-2 focus:ring-yellow-500/30 focus:border-yellow-500/50 transition-all"
         />
       </div>
 
@@ -751,7 +751,7 @@ function Step1TopicScript({
               value={scriptText}
               onChange={(e) => handleScriptEdit(e.target.value)}
               rows={Math.min(16, Math.max(8, script.length * 2))}
-              className="w-full bg-zinc-800/30 border border-zinc-700/30 rounded-xl px-4 py-3 text-sm text-zinc-300 font-mono leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500/40 transition-all custom-scrollbar"
+              className="w-full bg-zinc-800/30 border border-zinc-700/30 rounded-xl px-4 py-3 text-sm text-zinc-300 font-mono leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-500/40 transition-all custom-scrollbar"
             />
           </motion.div>
         )}
@@ -796,7 +796,7 @@ function Step2SpeakersVoices({ speakers, setSpeakers }) {
         <button
           onClick={addSpeaker}
           disabled={speakers.length >= 4}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold bg-orange-500/15 text-orange-400 border border-orange-500/25 hover:bg-orange-500/25 hover:border-orange-500/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold bg-yellow-500/15 text-yellow-400 border border-yellow-500/25 hover:bg-yellow-500/25 hover:border-yellow-500/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Plus className="w-3.5 h-3.5" />
           Add Speaker
@@ -809,7 +809,7 @@ function Step2SpeakersVoices({ speakers, setSpeakers }) {
           <div
             key={n}
             className={`h-1 flex-1 rounded-full transition-all ${
-              n <= speakers.length ? 'bg-orange-500/60' : 'bg-zinc-800/60'
+              n <= speakers.length ? 'bg-yellow-500/60' : 'bg-zinc-800/60'
             }`}
           />
         ))}
@@ -951,9 +951,9 @@ function Step3GeneratePreview({ topic, style, tone, duration, speakers, script, 
   return (
     <div className="space-y-6">
       {/* Summary */}
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-5">
+      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-5">
         <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-          <FileText className="w-4 h-4 text-orange-400" />
+          <FileText className="w-4 h-4 text-yellow-400" />
           Podcast Summary
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -987,7 +987,7 @@ function Step3GeneratePreview({ topic, style, tone, duration, speakers, script, 
                 key={s.id}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-800/60 border border-zinc-700/30 text-xs"
               >
-                <Headphones className="w-3 h-3 text-orange-400" />
+                <Headphones className="w-3 h-3 text-yellow-400" />
                 <span className="text-zinc-300 font-medium">{s.name || 'Unnamed'}</span>
                 <span className="text-zinc-500">as {s.role}</span>
                 {voice && <span className="text-zinc-600">({voice.name})</span>}
@@ -1012,7 +1012,7 @@ function Step3GeneratePreview({ topic, style, tone, duration, speakers, script, 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6"
+          className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-6"
         >
           <GenerationProgress progress={progress} />
         </motion.div>
@@ -1026,10 +1026,10 @@ function Step3GeneratePreview({ topic, style, tone, duration, speakers, script, 
           className="space-y-5"
         >
           {/* Player */}
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-5">
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <AudioLines className="w-4 h-4 text-orange-400" />
+                <AudioLines className="w-4 h-4 text-yellow-400" />
                 Your Podcast
               </h3>
               <div className="flex items-center gap-2">
@@ -1042,7 +1042,7 @@ function Step3GeneratePreview({ topic, style, tone, duration, speakers, script, 
                 </button>
                 <button
                   onClick={handleRegenerate}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-zinc-800/60 text-zinc-300 hover:text-orange-400 border border-zinc-700/30 hover:border-orange-500/30 transition-all"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-zinc-800/60 text-zinc-300 hover:text-yellow-400 border border-zinc-700/30 hover:border-yellow-500/30 transition-all"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   Regenerate
@@ -1053,9 +1053,9 @@ function Step3GeneratePreview({ topic, style, tone, duration, speakers, script, 
           </div>
 
           {/* Transcript */}
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-5">
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-5">
             <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <FileText className="w-4 h-4 text-orange-400" />
+              <FileText className="w-4 h-4 text-yellow-400" />
               Transcript
             </h3>
             <TranscriptView script={script} />
@@ -1112,18 +1112,18 @@ export default function StudioPodcast() {
     <div className="min-h-screen bg-[#09090b]">
       {/* Nav */}
       <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-        <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
+        <div className="w-full px-4 lg:px-6 py-3 flex justify-center">
           <StudioNav />
         </div>
       </div>
 
       {/* Content */}
-      <div className="w-full px-4 lg:px-8 py-8 max-w-3xl mx-auto">
+      <div className="w-full px-4 lg:px-6 py-6 max-w-3xl mx-auto space-y-5">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 mb-4">
-            <Mic className="w-3.5 h-3.5 text-orange-400" />
-            <span className="text-xs font-medium text-orange-300">AI Podcast Studio</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 mb-4">
+            <Mic className="w-3.5 h-3.5 text-yellow-400" />
+            <span className="text-xs font-medium text-yellow-300">AI Podcast Studio</span>
           </div>
           <h1 className="text-2xl font-bold text-white mb-1">Create Your Podcast</h1>
           <p className="text-sm text-zinc-500">
@@ -1135,7 +1135,7 @@ export default function StudioPodcast() {
         <StepIndicator currentStep={currentStep} />
 
         {/* Step Content */}
-        <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-2xl p-5 sm:p-6 mb-6">
+        <div className="bg-zinc-900/30 border border-zinc-800/40 rounded-[20px] p-5 sm:p-6 mb-6">
           <AnimatePresence mode="wait">
             {currentStep === 1 && (
               <motion.div key="step1" variants={stepVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.25 }}>

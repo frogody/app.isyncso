@@ -87,29 +87,29 @@ const USE_CASES = [
     icon: Clapperboard,
     title: 'UGC Videos',
     desc: 'Create talking-head videos for TikTok and Instagram Reels that look and feel authentic.',
-    gradient: 'from-violet-500/20 to-purple-500/10',
-    border: 'border-violet-500/20',
+    gradient: 'from-yellow-500/20 to-amber-500/10',
+    border: 'border-yellow-500/20',
   },
   {
     icon: ShoppingBag,
     title: 'Product Reviews',
     desc: 'Let your avatar present and review products naturally, building trust with your audience.',
-    gradient: 'from-cyan-500/20 to-blue-500/10',
-    border: 'border-cyan-500/20',
+    gradient: 'from-yellow-500/20 to-amber-500/10',
+    border: 'border-yellow-500/20',
   },
   {
     icon: MessageSquare,
     title: 'Social Posts',
     desc: 'Generate consistent, branded social content at scale without scheduling photoshoots.',
-    gradient: 'from-amber-500/20 to-yellow-500/10',
-    border: 'border-amber-500/20',
+    gradient: 'from-yellow-500/20 to-amber-500/10',
+    border: 'border-yellow-500/20',
   },
   {
     icon: Presentation,
     title: 'Presentations',
     desc: 'Professional avatar presenter for business decks, webinars, and training materials.',
-    gradient: 'from-emerald-500/20 to-teal-500/10',
-    border: 'border-emerald-500/20',
+    gradient: 'from-yellow-500/20 to-amber-500/10',
+    border: 'border-yellow-500/20',
   },
 ];
 
@@ -121,10 +121,10 @@ const TRAINING_STAGES = [
 ];
 
 const PREVIEW_POSES = [
-  { id: 'p1', label: 'Professional headshot', gradient: 'from-violet-700 to-indigo-800' },
-  { id: 'p2', label: 'Casual angle', gradient: 'from-cyan-600 to-blue-700' },
-  { id: 'p3', label: 'Presentation pose', gradient: 'from-emerald-600 to-teal-700' },
-  { id: 'p4', label: 'Lifestyle setting', gradient: 'from-amber-600 to-orange-700' },
+  { id: 'p1', label: 'Professional headshot', gradient: 'from-yellow-600 to-amber-700' },
+  { id: 'p2', label: 'Casual angle', gradient: 'from-yellow-600 to-amber-700' },
+  { id: 'p3', label: 'Presentation pose', gradient: 'from-yellow-600 to-amber-700' },
+  { id: 'p4', label: 'Lifestyle setting', gradient: 'from-yellow-600 to-amber-700' },
 ];
 
 // --- Animation Variants ---
@@ -180,11 +180,11 @@ function AvatarCard({ avatar, onCreateVideo, onCreatePost }) {
     <motion.div
       variants={itemVariants}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
-      className="group bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-5 flex flex-col items-center text-center relative overflow-hidden"
+      className="group bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-5 flex flex-col items-center text-center relative overflow-hidden"
     >
-      <div className="absolute inset-0 bg-gradient-to-b from-violet-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-      <div className={`relative w-20 h-20 rounded-full bg-gradient-to-br ${avatar.gradient} flex items-center justify-center mb-4 ring-2 ring-zinc-800/60 group-hover:ring-violet-500/30 transition-all duration-300`}>
+      <div className={`relative w-20 h-20 rounded-full bg-gradient-to-br ${avatar.gradient} flex items-center justify-center mb-4 ring-2 ring-zinc-800/60 group-hover:ring-yellow-500/30 transition-all duration-300`}>
         <span className="text-xl font-bold text-white/90">{avatar.initials}</span>
       </div>
 
@@ -221,12 +221,12 @@ function CreateNewCard({ onClick }) {
       variants={itemVariants}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
       onClick={onClick}
-      className="group bg-zinc-900/30 border-2 border-dashed border-zinc-700/50 hover:border-violet-500/40 rounded-2xl p-5 flex flex-col items-center justify-center text-center min-h-[220px] transition-all duration-300 cursor-pointer"
+      className="group bg-zinc-900/30 border-2 border-dashed border-zinc-700/50 hover:border-yellow-500/40 rounded-[20px] p-5 flex flex-col items-center justify-center text-center min-h-[220px] transition-all duration-300 cursor-pointer"
     >
-      <div className="w-14 h-14 rounded-full bg-zinc-800/60 group-hover:bg-violet-500/10 border border-zinc-700/50 group-hover:border-violet-500/30 flex items-center justify-center mb-3 transition-all duration-300">
-        <Plus className="w-6 h-6 text-zinc-500 group-hover:text-violet-400 transition-colors" />
+      <div className="w-14 h-14 rounded-full bg-zinc-800/60 group-hover:bg-yellow-500/10 border border-zinc-700/50 group-hover:border-yellow-500/30 flex items-center justify-center mb-3 transition-all duration-300">
+        <Plus className="w-6 h-6 text-zinc-500 group-hover:text-yellow-400 transition-colors" />
       </div>
-      <span className="text-sm font-semibold text-zinc-400 group-hover:text-violet-300 transition-colors">Create New Avatar</span>
+      <span className="text-sm font-semibold text-zinc-400 group-hover:text-yellow-300 transition-colors">Create New Avatar</span>
       <span className="text-xs text-zinc-600 mt-1">Upload photos to get started</span>
     </motion.button>
   );
@@ -243,15 +243,15 @@ function StepIndicator({ currentStep, totalSteps }) {
         return (
           <React.Fragment key={label}>
             {i > 0 && (
-              <div className={`flex-1 h-px ${isCompleted ? 'bg-violet-500/60' : 'bg-zinc-800'}`} />
+              <div className={`flex-1 h-px ${isCompleted ? 'bg-yellow-500/60' : 'bg-zinc-800'}`} />
             )}
             <div className="flex items-center gap-2">
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                   isActive
-                    ? 'bg-violet-500 text-white ring-4 ring-violet-500/20'
+                    ? 'bg-yellow-500text-white ring-4 ring-yellow-500/20'
                     : isCompleted
-                    ? 'bg-violet-500/80 text-white'
+                    ? 'bg-yellow-500/80 text-white'
                     : 'bg-zinc-800 text-zinc-500 border border-zinc-700/60'
                 }`}
               >
@@ -259,7 +259,7 @@ function StepIndicator({ currentStep, totalSteps }) {
               </div>
               <span
                 className={`text-xs font-medium hidden sm:inline ${
-                  isActive ? 'text-violet-300' : isCompleted ? 'text-zinc-400' : 'text-zinc-600'
+                  isActive ? 'text-yellow-300' : isCompleted ? 'text-zinc-400' : 'text-zinc-600'
                 }`}
               >
                 {label}
@@ -301,7 +301,7 @@ function PhotoUploadSlot({ slot, photo, onUpload, onRemove }) {
     <div className="relative group">
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
       {photo ? (
-        <div className="relative aspect-square rounded-xl overflow-hidden border border-zinc-700/60 group-hover:border-violet-500/40 transition-colors">
+        <div className="relative aspect-square rounded-xl overflow-hidden border border-zinc-700/60 group-hover:border-yellow-500/40 transition-colors">
           <img src={photo.url} alt={slot.label} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <button
@@ -321,14 +321,14 @@ function PhotoUploadSlot({ slot, photo, onUpload, onRemove }) {
       ) : (
         <button
           onClick={handleClick}
-          className="w-full aspect-square rounded-xl border-2 border-dashed border-zinc-700/50 hover:border-violet-500/40 bg-zinc-900/30 hover:bg-violet-500/[0.03] flex flex-col items-center justify-center gap-2 transition-all duration-200 cursor-pointer"
+          className="w-full aspect-square rounded-xl border-2 border-dashed border-zinc-700/50 hover:border-yellow-500/40 bg-zinc-900/30 hover:bg-yellow-500/[0.03] flex flex-col items-center justify-center gap-2 transition-all duration-200 cursor-pointer"
         >
-          <Icon className="w-5 h-5 text-zinc-600 group-hover:text-violet-400 transition-colors" />
+          <Icon className="w-5 h-5 text-zinc-600 group-hover:text-yellow-400 transition-colors" />
           <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 transition-colors leading-tight text-center px-1">
             {slot.label}
           </span>
           {slot.required && (
-            <span className="text-[9px] text-violet-400/60 font-medium">Required</span>
+            <span className="text-[9px] text-yellow-400/60 font-medium">Required</span>
           )}
         </button>
       )}
@@ -342,11 +342,11 @@ function UploadProgress({ count, max }) {
     <div className="mt-4">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-xs text-zinc-400">{count} of {max} photos uploaded</span>
-        <span className="text-xs font-semibold text-violet-400">{pct}%</span>
+        <span className="text-xs font-semibold text-yellow-400">{pct}%</span>
       </div>
       <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
         <motion.div
-          className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"
+          className="h-full bg-gradient-to-r from-yellow-500 to-amber-500 rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -366,16 +366,16 @@ function GuidelinesCard() {
     'No sunglasses or heavy filters',
   ];
   return (
-    <div className="bg-violet-500/[0.05] border border-violet-500/15 rounded-2xl p-5">
+    <div className="bg-yellow-500/[0.05] border border-yellow-500/15 rounded-[20px] p-5">
       <div className="flex items-center gap-2 mb-3">
-        <Sparkles className="w-4 h-4 text-violet-400" />
-        <h4 className="text-sm font-semibold text-violet-300">Photo Guidelines</h4>
+        <Sparkles className="w-4 h-4 text-yellow-400" />
+        <h4 className="text-sm font-semibold text-yellow-300">Photo Guidelines</h4>
       </div>
       <p className="text-xs text-zinc-400 mb-3">For best results, upload 5-10 high-quality photos following these tips:</p>
       <ul className="space-y-1.5">
         {tips.map((tip) => (
           <li key={tip} className="flex items-start gap-2 text-xs text-zinc-500">
-            <Check className="w-3 h-3 text-violet-400/60 mt-0.5 shrink-0" />
+            <Check className="w-3 h-3 text-yellow-400/60 mt-0.5 shrink-0" />
             {tip}
           </li>
         ))}
@@ -405,8 +405,8 @@ function GenerationProgress({ stage, progress }) {
           />
           <defs>
             <linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#8b5cf6" />
-              <stop offset="100%" stopColor="#a855f7" />
+              <stop offset="0%" stopColor="#eab308" />
+              <stop offset="100%" stopColor="#f59e0b" />
             </linearGradient>
           </defs>
         </svg>
@@ -529,24 +529,23 @@ export default function StudioAvatar() {
     <div className="min-h-screen bg-[#09090b]">
       {/* Sticky Nav */}
       <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-        <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
+        <div className="w-full px-4 lg:px-6 py-3 flex justify-center">
           <StudioNav />
         </div>
       </div>
 
-      <div className="w-full max-w-6xl mx-auto px-4 lg:px-8 py-8 pb-24">
+      <div className="w-full px-4 lg:px-6 py-6 pb-24 space-y-5">
         {/* ============ SECTION 1: My Avatars Gallery ============ */}
         <motion.section
           initial="hidden"
           animate="visible"
           variants={containerVariants}
-          className="mb-12"
         >
           <motion.div variants={itemVariants} className="flex items-center justify-between mb-6">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 mb-3">
-                <UserCircle className="w-3.5 h-3.5 text-violet-400" />
-                <span className="text-xs font-medium text-violet-300">AI Avatars</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 mb-3">
+                <UserCircle className="w-3.5 h-3.5 text-yellow-400" />
+                <span className="text-xs font-medium text-yellow-300">AI Avatars</span>
               </div>
               <h1 className="text-2xl font-bold text-white">My Avatars</h1>
               <p className="text-sm text-zinc-500 mt-1">Create and manage your AI-generated avatars for videos and social content.</p>
@@ -556,11 +555,11 @@ export default function StudioAvatar() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {avatars.length === 0 ? (
               <div className="col-span-full">
-                <div className="relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.05] via-transparent to-purple-500/[0.03] p-8 text-center">
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent" />
+                <div className="relative overflow-hidden rounded-[20px] border border-yellow-500/20 bg-gradient-to-br from-yellow-500/[0.05] via-transparent to-amber-500/[0.03] p-8 text-center">
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent" />
                   <div className="flex flex-col items-center">
-                    <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-4">
-                      <UserCircle className="w-8 h-8 text-violet-400/60" />
+                    <div className="w-16 h-16 rounded-[20px] bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mb-4">
+                      <UserCircle className="w-8 h-8 text-yellow-400/60" />
                     </div>
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 mb-3">
                       <Sparkles className="w-3 h-3 text-amber-400" />
@@ -606,14 +605,13 @@ export default function StudioAvatar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.4, ease: 'easeOut' }}
-              className="mb-12"
             >
-              <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6 lg:p-8">
+              <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-6 lg:p-8">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/10 border border-violet-500/20 flex items-center justify-center">
-                      <Sparkles className="w-5 h-5 text-violet-400" />
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500/20 to-amber-500/10 border border-yellow-500/20 flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-yellow-400" />
                     </div>
                     <div>
                       <h2 className="text-lg font-bold text-white">Avatar Creation Studio</h2>
@@ -683,7 +681,7 @@ export default function StudioAvatar() {
                               <input ref={extraInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleExtraUpload} />
                               <button
                                 onClick={() => extraInputRef.current?.click()}
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-zinc-700/50 hover:border-violet-500/40 text-xs text-zinc-400 hover:text-violet-300 transition-colors"
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-zinc-700/50 hover:border-yellow-500/40 text-xs text-zinc-400 hover:text-yellow-300 transition-colors"
                               >
                                 <Upload className="w-3.5 h-3.5" />
                                 Add more photos ({photoCount}/{maxPhotos})
@@ -714,7 +712,7 @@ export default function StudioAvatar() {
                             value={avatarName}
                             onChange={(e) => setAvatarName(e.target.value)}
                             placeholder="e.g. Business Professional"
-                            className="w-full max-w-md px-4 py-2.5 rounded-xl bg-zinc-800/60 border border-zinc-700/60 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40 transition-all"
+                            className="w-full max-w-md px-4 py-2.5 rounded-xl bg-zinc-800/60 border border-zinc-700/60 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500/40 focus:border-yellow-500/40 transition-all"
                           />
                         </div>
 
@@ -731,15 +729,15 @@ export default function StudioAvatar() {
                                   onClick={() => setSelectedStyle(style.id)}
                                   className={`relative p-4 rounded-xl border text-left transition-all duration-200 ${
                                     isSelected
-                                      ? 'bg-violet-500/10 border-violet-500/40 ring-1 ring-violet-500/20'
+                                      ? 'bg-yellow-500/10 border-yellow-500/40 ring-1 ring-yellow-500/20'
                                       : 'bg-zinc-800/30 border-zinc-700/50 hover:border-zinc-600/60'
                                   }`}
                                 >
-                                  <Icon className={`w-5 h-5 mb-2 ${isSelected ? 'text-violet-400' : 'text-zinc-500'}`} />
-                                  <p className={`text-sm font-semibold mb-0.5 ${isSelected ? 'text-violet-300' : 'text-white'}`}>{style.label}</p>
+                                  <Icon className={`w-5 h-5 mb-2 ${isSelected ? 'text-yellow-400' : 'text-zinc-500'}`} />
+                                  <p className={`text-sm font-semibold mb-0.5 ${isSelected ? 'text-yellow-300' : 'text-white'}`}>{style.label}</p>
                                   <p className="text-[11px] text-zinc-500 leading-snug">{style.desc}</p>
                                   {isSelected && (
-                                    <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
+                                    <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-yellow-500flex items-center justify-center">
                                       <Check className="w-3 h-3 text-white" />
                                     </div>
                                   )}
@@ -762,7 +760,7 @@ export default function StudioAvatar() {
                                   onClick={() => setSelectedBackground(bg.id)}
                                   className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all duration-200 ${
                                     isSelected
-                                      ? 'bg-violet-500/10 border border-violet-500/40 text-violet-300'
+                                      ? 'bg-yellow-500/10 border border-yellow-500/40 text-yellow-300'
                                       : 'bg-zinc-800/40 border border-zinc-700/50 text-zinc-400 hover:text-zinc-300 hover:border-zinc-600/60'
                                   }`}
                                 >
@@ -787,19 +785,19 @@ export default function StudioAvatar() {
                                   onClick={() => toggleFormat(fmt.id)}
                                   className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 ${
                                     isSelected
-                                      ? 'bg-violet-500/10 border-violet-500/40'
+                                      ? 'bg-yellow-500/10 border-yellow-500/40'
                                       : 'bg-zinc-800/30 border-zinc-700/50 hover:border-zinc-600/60'
                                   }`}
                                 >
-                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isSelected ? 'bg-violet-500/20' : 'bg-zinc-800/60'}`}>
-                                    <Icon className={`w-4 h-4 ${isSelected ? 'text-violet-400' : 'text-zinc-500'}`} />
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isSelected ? 'bg-yellow-500/20' : 'bg-zinc-800/60'}`}>
+                                    <Icon className={`w-4 h-4 ${isSelected ? 'text-yellow-400' : 'text-zinc-500'}`} />
                                   </div>
                                   <div className="text-left">
-                                    <p className={`text-xs font-semibold ${isSelected ? 'text-violet-300' : 'text-white'}`}>{fmt.label}</p>
+                                    <p className={`text-xs font-semibold ${isSelected ? 'text-yellow-300' : 'text-white'}`}>{fmt.label}</p>
                                     <p className="text-[10px] text-zinc-500">{fmt.ratio}</p>
                                   </div>
                                   {isSelected && (
-                                    <Check className="w-4 h-4 text-violet-400 ml-auto" />
+                                    <Check className="w-4 h-4 text-yellow-400 ml-auto" />
                                   )}
                                 </button>
                               );
@@ -887,7 +885,7 @@ export default function StudioAvatar() {
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.4, delay: 0.1 }}
-                                className="group relative aspect-[3/4] rounded-2xl overflow-hidden border border-zinc-700/50 cursor-pointer"
+                                className="group relative aspect-[3/4] rounded-[20px] overflow-hidden border border-zinc-700/50 cursor-pointer"
                               >
                                 <div className={`absolute inset-0 bg-gradient-to-br ${pose.gradient}`} />
                                 <div className="absolute inset-0 flex items-center justify-center">
@@ -993,10 +991,10 @@ export default function StudioAvatar() {
                   key={uc.title}
                   variants={itemVariants}
                   whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                  className={`bg-gradient-to-br ${uc.gradient} border ${uc.border} rounded-2xl p-5 group cursor-pointer`}
+                  className={`bg-gradient-to-br ${uc.gradient} border ${uc.border} rounded-[20px] p-5 group cursor-pointer`}
                 >
                   <div className="w-10 h-10 rounded-xl bg-zinc-900/60 border border-zinc-800/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200">
-                    <Icon className="w-5 h-5 text-violet-400" />
+                    <Icon className="w-5 h-5 text-yellow-400" />
                   </div>
                   <h3 className="text-sm font-semibold text-white mb-1.5">{uc.title}</h3>
                   <p className="text-xs text-zinc-400 leading-relaxed">{uc.desc}</p>

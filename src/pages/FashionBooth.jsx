@@ -722,7 +722,7 @@ export default function FashionBooth({ embedded = false }) {
   // ─── RENDER ───────────────────────────────────────────────
   return (
     <div className={embedded ? '' : 'min-h-screen bg-[#09090b]'}>
-      <div className="w-full px-4 lg:px-8 py-6">
+      <div className="w-full px-4 lg:px-6 py-6">
 
         {/* ── Header ── */}
         <div className="flex items-center justify-between mb-6">
@@ -1114,7 +1114,7 @@ export default function FashionBooth({ embedded = false }) {
           <div className="lg:col-span-7 xl:col-span-8 space-y-4">
 
             {/* ── Prompt Area ── */}
-            <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4">
+            <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="w-4 h-4 text-rose-400" />
                 <span className="text-sm font-medium text-white">Additional Scene Instructions</span>
@@ -1143,7 +1143,7 @@ export default function FashionBooth({ embedded = false }) {
             </div>
 
             {/* ── Selection Summary ── */}
-            <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4">
+            <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Layers className="w-4 h-4 text-zinc-400" />
                 <span className="text-sm font-medium text-white">Generation Summary</span>
@@ -1164,7 +1164,7 @@ export default function FashionBooth({ embedded = false }) {
             <button
               onClick={handleGenerate}
               disabled={!canGenerate}
-              className={`w-full py-4 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
+              className={`w-full py-4 rounded-[20px] font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
                 canGenerate
                   ? 'bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white shadow-lg shadow-rose-500/20'
                   : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
@@ -1190,7 +1190,7 @@ export default function FashionBooth({ embedded = false }) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl overflow-hidden"
+                  className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] overflow-hidden"
                 >
                   <div className="relative">
                     <img
@@ -1266,7 +1266,7 @@ export default function FashionBooth({ embedded = false }) {
            ══════════════════════════════════════════════════════════ */
         <div className="max-w-4xl mx-auto space-y-6">
           {/* ── Upload Section ── */}
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-6">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
                 <Scissors className="w-4 h-4 text-violet-400" />
@@ -1333,7 +1333,7 @@ export default function FashionBooth({ embedded = false }) {
                 <button
                   onClick={handleExtract}
                   disabled={!extractorSourceUrl || isExtracting}
-                  className={`w-full py-4 mt-4 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
+                  className={`w-full py-4 mt-4 rounded-[20px] font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
                     extractorSourceUrl && !isExtracting
                       ? 'bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-400 hover:to-purple-400 text-white shadow-lg shadow-violet-500/20'
                       : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
@@ -1375,7 +1375,7 @@ export default function FashionBooth({ embedded = false }) {
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: i * 0.1 }}
-                      className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl overflow-hidden group"
+                      className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] overflow-hidden group"
                     >
                       <div className="relative">
                         <img src={piece.url} alt={piece.label} className="w-full aspect-square object-contain bg-zinc-950/50 p-2" />
@@ -1426,7 +1426,7 @@ function Section({ title, icon: Icon, color, required, children }) {
   const [textColor] = colors.split(' ');
 
   return (
-    <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl overflow-hidden">
+    <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-zinc-800/20 transition-colors"

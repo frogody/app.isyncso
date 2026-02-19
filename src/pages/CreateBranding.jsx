@@ -94,39 +94,19 @@ const COLOR_LABELS = {
   text: 'Text',
 };
 
-// --- Collapsible Section ---
-function Section({ icon: Icon, title, defaultOpen = true, children }) {
-  const [open, setOpen] = useState(defaultOpen);
+// --- Section Card (always visible) ---
+function Section({ icon: Icon, title, children }) {
   const { ct } = useTheme();
 
   return (
     <div className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} overflow-hidden`}>
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className={`w-full flex items-center gap-3 px-5 py-4 text-left ${ct('hover:bg-slate-50', 'hover:bg-white/[0.02]')} transition-colors`}
-      >
+      <div className="flex items-center gap-3 px-5 py-4">
         <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
           <Icon className="w-4 h-4 text-yellow-400" />
         </div>
-        <span className={`${ct('text-slate-900', 'text-white')} font-semibold text-sm flex-1`}>{title}</span>
-        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
-          <ChevronDown className={`w-4 h-4 ${ct('text-slate-500', 'text-zinc-500')}`} />
-        </motion.div>
-      </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="overflow-hidden"
-          >
-            <div className="px-5 pb-5 pt-1">{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <span className={`${ct('text-slate-900', 'text-white')} font-semibold text-sm`}>{title}</span>
+      </div>
+      <div className="px-5 pb-5 pt-1">{children}</div>
     </div>
   );
 }

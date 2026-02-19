@@ -327,7 +327,7 @@ export default function CreateLibrary({ embedded = false }) {
   return (
     <Wrapper>
       <div className={`${embedded ? '' : 'min-h-screen'} ${ct('bg-slate-50', 'bg-[#09090b]')}`}>
-        <div className="w-full px-4 lg:px-6 py-4 space-y-4">
+        <div className="w-full px-4 lg:px-6 py-6 space-y-5">
 
           {/* Header Row */}
           <div className="flex items-center justify-between">
@@ -466,7 +466,7 @@ export default function CreateLibrary({ embedded = false }) {
                 >
                   {content.length === 0 && !searchQuery && filterType === 'all' ? (
                     <>
-                      <div className={`p-4 rounded-2xl ${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border mb-4`}>
+                      <div className={`p-4 rounded-[20px] ${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border mb-4`}>
                         <Sparkles className={`w-10 h-10 ${ct('text-slate-400', 'text-zinc-500')}`} />
                       </div>
                       <h3 className={`text-base font-medium ${ct('text-slate-900', 'text-white')} mb-1`}>Your library is empty</h3>
@@ -499,7 +499,7 @@ export default function CreateLibrary({ embedded = false }) {
                       initial={{ opacity: 0, scale: 0.97 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.25, delay: index * 0.02 }}
-                      className={`group relative aspect-square rounded-2xl overflow-hidden border transition-all cursor-pointer ${
+                      className={`group relative aspect-square rounded-[20px] overflow-hidden border transition-all cursor-pointer ${
                         selectedItems.includes(item.id)
                           ? 'border-yellow-500 ring-2 ring-yellow-500/30'
                           : ct('border-slate-200 hover:border-slate-300', 'border-zinc-800/40 hover:border-zinc-700')
@@ -604,7 +604,7 @@ export default function CreateLibrary({ embedded = false }) {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.2, delay: index * 0.02 }}
                       onClick={() => setPreviewItem(item)}
-                      className={`group flex items-center gap-3 p-2.5 rounded-2xl border cursor-pointer transition-all ${
+                      className={`group flex items-center gap-3 p-2.5 rounded-[20px] border cursor-pointer transition-all ${
                         selectedItems.includes(item.id)
                           ? 'border-yellow-500 bg-yellow-500/5'
                           : ct('border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50', 'border-zinc-800/60 bg-zinc-900/30 hover:border-zinc-700 hover:bg-zinc-900/50')
