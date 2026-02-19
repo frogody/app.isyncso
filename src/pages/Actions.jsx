@@ -48,15 +48,8 @@ import ActionHistoryList from '@/components/actions/ActionHistoryList';
 import ActionQueueCard from '@/components/actions/ActionQueueCard';
 import CreateActionModal from '@/components/actions/CreateActionModal';
 
-// Lazy load phone components
-const LazyPhoneTab = lazy(() => import('@/components/inbox/phone').then(mod => {
-  const { useSyncPhone, PhoneDashboard } = mod;
-  // Wrapper component that calls the hook and renders PhoneDashboard
-  return { default: function PhoneTab() {
-    const syncPhone = useSyncPhone();
-    return <PhoneDashboard {...syncPhone} />;
-  }};
-}));
+// Lazy load phone panel (compact layout designed for Actions context)
+const ActionsPhonePanel = lazy(() => import('@/components/actions/ActionsPhonePanel'));
 
 // Lazy load ride components
 const RideSelector = lazy(() => import('@/components/rides/RideSelector'));
@@ -592,9 +585,9 @@ export default function Actions() {
 
           {/* Phone Tab */}
           <TabsContent value="phone" className="mt-4">
-            <div className="rounded-xl bg-zinc-900/50 border border-zinc-800/60 overflow-hidden" style={{ height: 'calc(100dvh - 280px)', minHeight: '500px' }}>
+            <div className="rounded-xl bg-zinc-900/50 border border-zinc-800/60 overflow-hidden" style={{ height: 'calc(100dvh - 300px)', minHeight: '460px' }}>
               <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="w-6 h-6 text-cyan-400 animate-spin" /></div>}>
-                <LazyPhoneTab />
+                <ActionsPhonePanel />
               </Suspense>
             </div>
           </TabsContent>
