@@ -92,6 +92,40 @@ async function downloadImageAsBase64(url: string): Promise<{ data: string; mimeT
   return { data: b64, mimeType };
 }
 
+// Upload image to Google Files API to get a fileUri for Veo
+async function uploadToGoogleFiles(
+  imageB64: string,
+  mimeType: string,
+  apiKey: string
+): Promise<string | null> {
+  try {
+    const imageBytes = Uint8Array.from(atob(imageB64), c => c.charCodeAt(0));
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': mimeType,
+          'X-Goog-Upload-Protocol': 'raw',
+          'X-Goog-Upload-Command': 'upload, finalize',
+        },
+        body: imageBytes,
+      }
+    );
+    if (!resp.ok) {
+      console.error('Files API upload error:', (await resp.text()).substring(0, 300));
+      return null;
+    }
+    const data = await resp.json();
+    const uri = data.file?.uri;
+    console.log('Uploaded to Google Files:', uri);
+    return uri || null;
+  } catch (e: any) {
+    console.error('Files API exception:', e.message);
+    return null;
+  }
+}
+
 // Deep-search any object for a video URI
 function findVideoUri(obj: any, depth = 0): string | null {
   if (!obj || depth > 6) return null;
@@ -158,7 +192,7 @@ serve(async (req) => {
       : 'Animate this fashion photo into a cinematic video. The model confidently strikes multiple poses, slowly turning to show the outfit from different angles. Natural fabric movement, smooth camera motion, professional studio lighting. Keep the person, outfit, and setting exactly as they appear.';
 
     // ── Step 3: Try Veo predictLongRunning with image input ──────────
-    // Gemini API format: image wrapped in inlineData { mimeType, data }
+    // Try multiple image formats: fileUri (Files API), bytesBase64Encoded, inlineData
     let videoUrl: string | null = null;
     let usedModel = 'unknown';
     let lastApiError = '';
@@ -166,43 +200,70 @@ serve(async (req) => {
     const modelIds = MODEL_MAP[model_key] || ['veo-3.1-fast-generate-preview'];
     const safeMime = imageMime.startsWith('image/') ? imageMime : 'image/jpeg';
 
+    // Upload to Google Files API for fileUri approach
+    console.log('Uploading image to Google Files API...');
+    const googleFileUri = await uploadToGoogleFiles(imageB64, safeMime, apiKey);
+
+    // Build image payload variants — try each until one is accepted
+    type ImagePayload = { label: string; instance: Record<string, unknown> };
+    const imagePayloads: ImagePayload[] = [];
+
+    // Format 1: fileUri (via Google Files API) — most reliable for Veo
+    if (googleFileUri) {
+      imagePayloads.push({
+        label: 'fileUri',
+        instance: { prompt: videoPrompt, image: { fileUri: googleFileUri } },
+      });
+    }
+
+    // Format 2: bytesBase64Encoded (Vertex AI style)
+    imagePayloads.push({
+      label: 'bytesBase64Encoded',
+      instance: { prompt: videoPrompt, image: { bytesBase64Encoded: imageB64, mimeType: safeMime } },
+    });
+
+    // Format 3: inlineData wrapper (Gemini API style)
+    imagePayloads.push({
+      label: 'inlineData',
+      instance: { prompt: videoPrompt, image: { inlineData: { mimeType: safeMime, data: imageB64 } } },
+    });
+
+    // Format 4: text-only with image description as fallback
+    imagePayloads.push({
+      label: 'textOnly',
+      instance: { prompt: `${videoPrompt} Use the reference image to guide the animation.` },
+    });
+
     for (const modelId of modelIds) {
-      try {
-        console.log(`Trying model ${modelId}...`);
+      for (const payload of imagePayloads) {
+        try {
+          console.log(`Trying ${modelId} with ${payload.label} format...`);
 
-        const veoResponse = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:predictLongRunning`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': apiKey,
-            },
-            body: JSON.stringify({
-              instances: [{
-                prompt: videoPrompt,
-                image: {
-                  inlineData: {
-                    mimeType: safeMime,
-                    data: imageB64,
-                  },
-                },
-              }],
-              parameters: {
-                aspectRatio: aspect_ratio || '9:16',
-                durationSeconds: String(duration_seconds || 8),
-                personGeneration: 'allow_adult',
+          const veoResponse = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:predictLongRunning`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-goog-api-key': apiKey,
               },
-            }),
-          }
-        );
+              body: JSON.stringify({
+                instances: [payload.instance],
+                parameters: {
+                  aspectRatio: aspect_ratio || '9:16',
+                  durationSeconds: Number(duration_seconds) || 8,
+                  personGeneration: 'allow_adult',
+                },
+              }),
+            }
+          );
 
-        if (!veoResponse.ok) {
-          const errText = await veoResponse.text();
-          console.error(`${modelId} error (${veoResponse.status}):`, errText.substring(0, 500));
-          lastApiError = `${modelId} (${veoResponse.status}): ${errText.substring(0, 500)}`;
-          continue;
-        }
+          if (!veoResponse.ok) {
+            const errText = await veoResponse.text();
+            console.error(`${modelId}/${payload.label} (${veoResponse.status}):`, errText.substring(0, 300));
+            lastApiError = `${modelId}/${payload.label} (${veoResponse.status}): ${errText.substring(0, 300)}`;
+            continue; // try next payload format
+          }
 
         const veoData = await veoResponse.json();
         console.log(`${modelId} accepted! Response keys:`, Object.keys(veoData));
@@ -320,17 +381,20 @@ serve(async (req) => {
           }
         }
 
-        if (videoUrl) break;
+        if (videoUrl) break; // break inner payload loop
 
         if (attempts >= maxAttempts) {
-          lastApiError = `${modelId}: timed out after ${maxAttempts * 5}s`;
+          lastApiError = `${modelId}/${payload.label}: timed out after ${maxAttempts * 5}s`;
           console.error(lastApiError);
         }
-      } catch (modelErr: any) {
-        console.error(`${modelId} exception:`, modelErr.message);
-        lastApiError = `${modelId} exception: ${modelErr.message}`;
-        continue;
-      }
+        } catch (modelErr: any) {
+          console.error(`${modelId}/${payload.label} exception:`, modelErr.message);
+          lastApiError = `${modelId}/${payload.label} exception: ${modelErr.message}`;
+          continue; // try next payload format
+        }
+      } // end payload loop
+
+      if (videoUrl) break; // break outer model loop
     } // end model loop
 
     // ── Step 4: Return result ────────────────────────────────────────
