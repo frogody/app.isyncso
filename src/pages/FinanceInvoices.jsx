@@ -58,6 +58,7 @@ export default function FinanceInvoices() {
   });
 
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [taxRates, setTaxRates] = useState([]);
   const { hasPermission, isLoading: permLoading } = usePermissions();
   const companyId = user?.company_id;
 
@@ -77,6 +78,7 @@ export default function FinanceInvoices() {
   useEffect(() => {
     if (companyId) {
       loadInvoices();
+      loadTaxRates();
     }
   }, [companyId]);
 
@@ -99,6 +101,21 @@ export default function FinanceInvoices() {
       toast.error('Failed to load invoices');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadTaxRates = async () => {
+    if (!companyId) return;
+    try {
+      const { data } = await supabase
+        .from('tax_rates')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('is_active', true)
+        .order('rate', { ascending: true });
+      setTaxRates(data || []);
+    } catch (err) {
+      console.warn('Could not load tax rates:', err);
     }
   };
 
@@ -1056,9 +1073,17 @@ export default function FinanceInvoices() {
                       onChange={(e) => setFormData(prev => ({ ...prev, tax_rate: parseFloat(e.target.value) }))}
                       className={`w-full mt-1 ${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border border-zinc-700 text-white')} rounded-md px-3 py-2 text-sm`}
                     >
-                      <option value={0}>0% (No Tax)</option>
-                      <option value={9}>9% (Low BTW)</option>
-                      <option value={21}>21% (Standard BTW)</option>
+                      {taxRates.length > 0 ? (
+                        taxRates.map(tr => (
+                          <option key={tr.id} value={tr.rate}>{tr.name} ({tr.rate}%)</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value={0}>0% (No Tax)</option>
+                          <option value={9}>9% (Low BTW)</option>
+                          <option value={21}>21% (Standard BTW)</option>
+                        </>
+                      )}
                     </select>
                   </div>
                   <div>

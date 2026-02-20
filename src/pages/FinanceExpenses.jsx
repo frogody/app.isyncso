@@ -61,6 +61,7 @@ export default function FinanceExpenses({ embedded = false }) {
   const { hasPermission, isLoading: permLoading } = usePermissions();
   const { user } = useUser();
   const { theme, toggleTheme, ft } = useTheme();
+  const [taxRates, setTaxRates] = useState([]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -72,11 +73,13 @@ export default function FinanceExpenses({ embedded = false }) {
     notes: '',
     receipt_url: '',
     is_recurring: false,
-    tax_deductible: false
+    tax_deductible: false,
+    tax_rate: 21
   });
 
   useEffect(() => {
     loadExpenses();
+    loadTaxRates();
   }, []);
 
   const loadExpenses = async () => {
@@ -89,6 +92,22 @@ export default function FinanceExpenses({ embedded = false }) {
       toast.error('Failed to load expenses');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadTaxRates = async () => {
+    const companyId = user?.company_id || user?.organization_id;
+    if (!companyId) return;
+    try {
+      const { data } = await supabase
+        .from('tax_rates')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('is_active', true)
+        .order('rate', { ascending: true });
+      setTaxRates(data || []);
+    } catch (err) {
+      console.warn('Could not load tax rates:', err);
     }
   };
 
@@ -204,7 +223,8 @@ export default function FinanceExpenses({ embedded = false }) {
       notes: '',
       receipt_url: '',
       is_recurring: false,
-      tax_deductible: false
+      tax_deductible: false,
+      tax_rate: 21
     });
     setEditMode(false);
     setSelectedExpense(null);
@@ -221,17 +241,21 @@ export default function FinanceExpenses({ embedded = false }) {
 
     setSaving(true);
     try {
+      const amount = parseFloat(formData.amount) || 0;
+      const taxRate = parseFloat(formData.tax_rate) || 0;
+      const taxAmount = amount * (taxRate / 100);
       const expenseData = {
-        user_id: user.id, // Use user from context (guaranteed to exist)
+        user_id: user.id,
         description: formData.description,
-        amount: parseFloat(formData.amount) || 0,
+        amount,
         category: formData.category,
         vendor: formData.vendor,
         date: formData.date,
         notes: formData.notes,
         receipt_url: formData.receipt_url,
         is_recurring: formData.is_recurring,
-        tax_deductible: formData.tax_deductible
+        tax_deductible: formData.tax_deductible,
+        tax_amount: taxAmount
       };
 
       if (editMode && selectedExpense) {
@@ -303,7 +327,8 @@ export default function FinanceExpenses({ embedded = false }) {
       notes: expense.notes || '',
       receipt_url: expense.receipt_url || '',
       is_recurring: expense.is_recurring || false,
-      tax_deductible: expense.tax_deductible || false
+      tax_deductible: expense.tax_deductible || false,
+      tax_rate: expense.tax_rate ?? 21
     });
     setEditMode(true);
     setShowCreateModal(true);
@@ -720,6 +745,27 @@ export default function FinanceExpenses({ embedded = false }) {
                   placeholder="Additional notes..."
                   rows={2}
                 />
+              </div>
+
+              <div>
+                <Label className={`${ft('text-slate-600', 'text-zinc-300')} text-xs`}>Input Tax Rate (BTW)</Label>
+                <select
+                  value={formData.tax_rate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, tax_rate: parseFloat(e.target.value) }))}
+                  className={`w-full mt-1 ${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border border-zinc-700 text-white')} rounded-md px-3 py-2 text-sm`}
+                >
+                  {taxRates.length > 0 ? (
+                    taxRates.map(tr => (
+                      <option key={tr.id} value={tr.rate}>{tr.name} ({tr.rate}%)</option>
+                    ))
+                  ) : (
+                    <>
+                      <option value={0}>0% (No Tax)</option>
+                      <option value={9}>9% (Low BTW)</option>
+                      <option value={21}>21% (Standard BTW)</option>
+                    </>
+                  )}
+                </select>
               </div>
 
               <div className="flex gap-4">
