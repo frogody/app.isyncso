@@ -272,6 +272,8 @@ import FinanceReports from "./FinanceReports";
 import FinanceTaxRates from "./FinanceTaxRates";
 import FinanceRecurringInvoices from "./FinanceRecurringInvoices";
 import FinanceCreditNotes from "./FinanceCreditNotes";
+import FinanceBankAccounts from "./FinanceBankAccounts";
+import FinanceBankReconciliation from "./FinanceBankReconciliation";
 
 import Raise from "./Raise";
 
@@ -672,6 +674,8 @@ const PAGES = {
     FinanceTaxRates: FinanceTaxRates,
     FinanceRecurringInvoices: FinanceRecurringInvoices,
     FinanceCreditNotes: FinanceCreditNotes,
+    FinanceBankAccounts: FinanceBankAccounts,
+    FinanceBankReconciliation: FinanceBankReconciliation,
 
     Raise: Raise,
 
@@ -1196,6 +1200,8 @@ function PagesContent() {
                 <Route path="/FinanceTaxRates" element={<FinanceErrorWrapper><FinanceTaxRates /></FinanceErrorWrapper>} />
                 <Route path="/FinanceRecurringInvoices" element={<FinanceErrorWrapper><FinanceRecurringInvoices /></FinanceErrorWrapper>} />
                 <Route path="/FinanceCreditNotes" element={<FinanceErrorWrapper><FinanceCreditNotes /></FinanceErrorWrapper>} />
+                <Route path="/FinanceBankAccounts" element={<FinanceErrorWrapper><FinanceBankAccounts /></FinanceErrorWrapper>} />
+                <Route path="/FinanceBankReconciliation" element={<FinanceErrorWrapper><FinanceBankReconciliation /></FinanceErrorWrapper>} />
 
                 <Route path="/Raise" element={<Raise />} />
 

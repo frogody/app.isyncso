@@ -163,4 +163,4 @@
 | P2 | 8cf4a34 | Cash Flow report page + SYNC GL actions |
 | P3 | f003aa0 | CRM contact selector + AR aging customer grouping |
 | P4 | d1ca0ec | React Query + shared hooks + error boundaries |
-| P5 | TBD | Tax management + recurring invoices + credit notes |
+| P5 | 1672b46 | Tax management + recurring invoices + credit notes |
