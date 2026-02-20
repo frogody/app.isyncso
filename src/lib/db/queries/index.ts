@@ -48,3 +48,6 @@ export * from './emailPool';
 
 // Shopify Integration
 export * from './shopify';
+
+// B2B Wholesale Storefront
+export * from './b2b';
