@@ -857,110 +857,41 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
     }
   }, [product, details, user, listing, generateImage, saveListingSilent, fetchListing]);
 
-  // ── Fix with AI — Step 1: Build a detailed plan from audit data ──
-  // This ONLY builds the plan and stops. The user must approve before execution.
+  // ── Fix with AI — Step 1: Call AI to analyze audit and build fix plan ──
+  // This calls the plan-listing-fix edge function for deep AI reasoning,
+  // then stops at 'review' state for user approval.
   const handleBuildFixPlan = useCallback(async (auditData, { setFixing, setFixPlan }) => {
     if (!product?.id || !user?.company_id || !auditData) return;
 
     setFixing('planning');
 
     try {
-      const cats = auditData.categories || [];
-      const catByName = {};
-      cats.forEach((c) => { catByName[c.name] = c; });
-
-      const actions = [];
-
-      // ── Copy fix: combine title/tagline + bullets + description ──
-      const copyCategories = [];
-      const copyIssues = [];
-      const copySuggestions = [];
-      ['Title & Tagline', 'Bullet Points', 'Description'].forEach((name) => {
-        const cat = catByName[name];
-        if (cat && cat.score < 80) {
-          copyCategories.push(name);
-          (cat.issues || []).forEach((i) => copyIssues.push(i));
-          (cat.suggestions || []).forEach((s) => copySuggestions.push(s));
-        }
+      const { data, error } = await supabase.functions.invoke('plan-listing-fix', {
+        body: {
+          audit: auditData,
+          product_name: product?.name || '',
+          product_brand: product?.brand || '',
+          product_category: product?.category || details?.category || '',
+          listing_title: listing?.listing_title || '',
+          listing_description: listing?.listing_description || '',
+          bullet_points: listing?.bullet_points || [],
+          seo_title: listing?.seo_title || '',
+          seo_description: listing?.seo_description || '',
+          search_keywords: listing?.search_keywords || [],
+          image_count: (listing?.gallery_urls?.length || 0) + (listing?.hero_image_url ? 1 : 0),
+          has_video: !!listing?.video_url,
+        },
       });
 
-      if (copyCategories.length > 0) {
-        actions.push({
-          id: 'copy',
-          type: 'copy',
-          label: `Rewrite ${copyCategories.map((c) => c.split(' ')[0].toLowerCase()).join(', ')}`,
-          description: copyIssues.slice(0, 4).join(' | ') || 'Improve listing copy quality',
-          details: copySuggestions.slice(0, 4),
-          status: 'pending',
-          categories: copyCategories,
-          credits: 1,
-        });
-      }
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      // ── SEO fix ──
-      const seoCat = catByName['SEO & Discoverability'];
-      if (seoCat && seoCat.score < 80) {
-        actions.push({
-          id: 'seo',
-          type: 'seo',
-          label: 'Fix SEO & keywords',
-          description: (seoCat.issues || []).slice(0, 3).join(' | ') || 'Improve search visibility',
-          details: (seoCat.suggestions || []).slice(0, 3),
-          status: 'pending',
-          credits: copyCategories.length > 0 ? 0 : 1, // bundled with copy if both exist
-        });
-      }
-
-      // ── Visual Content issues (hero image problems, AI artifacts, etc.) ──
-      const visualCat = catByName['Visual Content'];
-      const visualIssues = visualCat?.issues || [];
-      const criticalImageIssues = visualIssues.filter((i) =>
-        /critical|unusable|replace|artifact|garbled|text|prompt/i.test(i)
-      );
-      if (criticalImageIssues.length > 0) {
-        actions.push({
-          id: 'replace_hero',
-          type: 'replace_image',
-          label: 'Replace problematic hero/gallery images',
-          description: criticalImageIssues.slice(0, 2).join(' | '),
-          details: (visualCat?.suggestions || []).slice(0, 3),
-          status: 'pending',
-          credits: criticalImageIssues.length,
-        });
-      }
-
-      // ── Missing USP visuals ──
-      const missingVisuals = auditData.missing_usp_visuals || [];
-      missingVisuals.forEach((desc, i) => {
-        actions.push({
-          id: `image_${i}`,
-          type: 'image',
-          label: `Generate USP: ${desc.length > 50 ? desc.substring(0, 50) + '...' : desc}`,
-          description: desc,
-          details: [],
-          status: 'pending',
-          imageUrl: null,
-          credits: 1,
-        });
-      });
-
-      // ── Conversion readiness suggestions (if critical) ──
-      const convCat = catByName['Conversion Readiness'];
-      if (convCat && convCat.score < 60) {
-        // Conversion issues get addressed by the copy rewrite — add note
-        if (!actions.find((a) => a.type === 'copy')) {
-          actions.push({
-            id: 'conversion_copy',
-            type: 'copy',
-            label: 'Improve conversion copy',
-            description: (convCat.issues || []).slice(0, 2).join(' | ') || 'Make copy more persuasive',
-            details: (convCat.suggestions || []).slice(0, 3),
-            status: 'pending',
-            categories: ['Title & Tagline', 'Bullet Points', 'Description'],
-            credits: 1,
-          });
-        }
-      }
+      // The edge function returns { reasoning, actions, totalCredits, summary }
+      const actions = (data.actions || []).map((a) => ({
+        ...a,
+        status: 'pending',
+        imageUrl: null,
+      }));
 
       if (actions.length === 0) {
         toast.success('Nothing to fix — listing looks great!');
@@ -968,17 +899,21 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
         return;
       }
 
-      // Calculate total estimated credits
-      const totalCredits = actions.reduce((sum, a) => sum + (a.credits || 0), 0);
-
-      setFixPlan({ actions, totalCredits, auditData });
-      setFixing('review'); // STOP HERE — user sees the plan and must click approve
+      setFixPlan({
+        reasoning: data.reasoning || [],
+        actions,
+        totalCredits: data.totalCredits || actions.reduce((s, a) => s + (a.credits || 1), 0),
+        summary: data.summary || '',
+        auditData,
+      });
+      setFixing('review'); // STOP — user sees AI reasoning + plan, must click approve
     } catch (err) {
       console.error('[handleBuildFixPlan] Error:', err);
-      toast.error('Failed to build fix plan: ' + (err.message || 'Unknown error'));
+      toast.error('Failed to analyze listing: ' + (err.message || 'Unknown error'));
       setFixing(null);
+      setFixPlan(null);
     }
-  }, [product, user]);
+  }, [product, details, user, listing]);
 
   // ── Fix with AI — Step 2: Execute the approved plan ──
   const handleExecuteFixPlan = useCallback(async (fixPlan, { setFixing, setFixPlan }) => {

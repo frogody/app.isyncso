@@ -49,6 +49,9 @@ verify_jwt = false
 [functions.audit-listing]
 verify_jwt = false
 
+[functions.plan-listing-fix]
+verify_jwt = false
+
 [functions.analyzeCampaignProject]
 verify_jwt = false
 
