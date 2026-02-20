@@ -26,10 +26,12 @@ import BuilderSidebar from './BuilderSidebar';
 import BuilderCanvas from './BuilderCanvas';
 import BuilderPropertyEditor from './BuilderPropertyEditor';
 import AIPromptBar from './AIPromptBar';
+import AIChatPanel from './AIChatPanel';
 
 import { useStoreBuilder } from './hooks/useStoreBuilder';
 import { useBuilderHistory } from './hooks/useBuilderHistory';
 import { useBuilderPreview } from './hooks/useBuilderPreview';
+import { useBuilderAI } from './hooks/useBuilderAI';
 import { createDefaultSection } from './utils/storeDefaults';
 
 // ---------------------------------------------------------------------------
@@ -100,13 +102,13 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   const builder = useStoreBuilder(organizationId);
   const history = useBuilderHistory(builder.config, builder.updateConfig);
   const preview = useBuilderPreview();
+  const ai = useBuilderAI();
 
   // ---- Local state ---------------------------------------------------------
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showAddSection, setShowAddSection] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
-  const [aiProcessing, setAiProcessing] = useState(false);
-  const [aiLastResponse, setAiLastResponse] = useState(null);
+  const [showAIChat, setShowAIChat] = useState(false);
 
   // ---- Sync config to preview iframe when it changes -----------------------
   const prevConfigRef = useRef(null);
@@ -232,24 +234,13 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
 
   const handleAIPrompt = useCallback(
     async (prompt) => {
-      setAiProcessing(true);
-      setAiLastResponse(null);
-
-      try {
-        // For now, show a placeholder response.
-        // In the future this will call the AI edge function.
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        setAiLastResponse(
-          `I received your request: "${prompt}". AI-powered store modifications are coming soon.`,
-        );
-      } catch (err) {
-        console.error('AI prompt failed:', err);
-        setAiLastResponse('Something went wrong. Please try again.');
-      } finally {
-        setAiProcessing(false);
+      const result = await ai.sendPrompt(prompt, builder.config);
+      if (result?.updatedConfig) {
+        history.pushState();
+        builder.updateConfig(result.updatedConfig);
       }
     },
-    [],
+    [ai.sendPrompt, builder.config, builder.updateConfig, history.pushState],
   );
 
   // ---- Loading state -------------------------------------------------------
@@ -366,7 +357,18 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
       {/* ---- Bottom AI Prompt Bar ---- */}
       <AIPromptBar
         onSendPrompt={handleAIPrompt}
-        isProcessing={aiProcessing}
+        isProcessing={ai.isProcessing}
+        suggestions={ai.suggestions}
+        onExpandChat={() => setShowAIChat(true)}
+      />
+
+      {/* ---- AI Chat Panel (slide-in) ---- */}
+      <AIChatPanel
+        messages={ai.messages}
+        isProcessing={ai.isProcessing}
+        isOpen={showAIChat}
+        onClose={() => setShowAIChat(false)}
+        onSendPrompt={handleAIPrompt}
       />
 
       {/* ---- Add Section Modal ---- */}

@@ -6,7 +6,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, ArrowUp, Loader2 } from 'lucide-react';
+import { Sparkles, ArrowUp, Loader2, MessageSquare } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Defaults
@@ -28,6 +28,7 @@ export default function AIPromptBar({
   onSendPrompt,
   isProcessing = false,
   suggestions = DEFAULT_SUGGESTIONS,
+  onExpandChat,
 }) {
   const [value, setValue] = useState('');
   const inputRef = useRef(null);
@@ -101,8 +102,14 @@ export default function AIPromptBar({
 
       {/* Input bar */}
       <div className="h-16 border-t border-zinc-800/60 bg-zinc-950 flex items-center px-4 gap-3">
-        {/* Sparkles icon */}
-        <Sparkles className="w-5 h-5 text-cyan-400 shrink-0" />
+        {/* Sparkles icon + expand chat */}
+        <button
+          onClick={onExpandChat}
+          className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-cyan-400 hover:bg-zinc-800 transition-colors"
+          title="Open AI chat"
+        >
+          <MessageSquare className="w-5 h-5" />
+        </button>
 
         {/* Text input */}
         <input
