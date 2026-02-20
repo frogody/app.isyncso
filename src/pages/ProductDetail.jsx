@@ -2311,6 +2311,7 @@ export default function ProductDetail() {
                 product={product}
                 details={details}
                 onDetailsUpdate={handleDetailsUpdate}
+                onProductUpdate={handleProductUpdate}
               />
             )}
         </div>

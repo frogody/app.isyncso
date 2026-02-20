@@ -52,7 +52,8 @@ async function saveToLibrary(url, { companyId, userId, productId, productName, l
 }
 
 // Helper: sync generated images back to the product record (gallery + featured_image)
-async function syncImagesToProduct(productId, { heroUrl, galleryImageObjects, existingGallery = [] }) {
+// Uses onProductUpdate callback if available so the parent state is refreshed too
+async function syncImagesToProduct(productId, { heroUrl, galleryImageObjects, existingGallery = [] }, onProductUpdate) {
   if (!productId) return;
   const updates = {};
 
@@ -71,7 +72,12 @@ async function syncImagesToProduct(productId, { heroUrl, galleryImageObjects, ex
 
   if (Object.keys(updates).length > 0) {
     try {
-      await supabase.from('products').update(updates).eq('id', productId);
+      if (onProductUpdate) {
+        // Use parent callback — updates DB + refreshes parent state (ProductDetail)
+        await onProductUpdate(updates);
+      } else {
+        await supabase.from('products').update(updates).eq('id', productId);
+      }
     } catch (err) {
       console.warn('[syncImagesToProduct] Failed:', err.message);
     }
@@ -93,7 +99,7 @@ const CHANNELS = [
   { id: 'bolcom', label: 'bol.com', icon: Store },
 ];
 
-export default function ProductListingBuilder({ product, details, onDetailsUpdate }) {
+export default function ProductListingBuilder({ product, details, onDetailsUpdate, onProductUpdate }) {
   const { t } = useTheme();
   const { user } = useUser();
 
@@ -672,7 +678,7 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
         heroUrl,
         galleryImageObjects,
         existingGallery: product?.gallery || [],
-      });
+      }, onProductUpdate);
 
       updateProgress({ phase: 'done', progress: 100, stepLabel: 'Your listing is ready!' });
 

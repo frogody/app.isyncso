@@ -14,8 +14,6 @@ import {
   X,
   ChevronDown,
   ChevronUp,
-  ChevronLeft,
-  ChevronRight,
   Check,
   GripVertical,
   FileText,
@@ -287,10 +285,6 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
     setDragOverIdx(null);
   };
 
-  // Navigate main image
-  const prevMain = () => setMainIdx((i) => (i - 1 + selectedUrls.length) % selectedUrls.length);
-  const nextMain = () => setMainIdx((i) => (i + 1) % selectedUrls.length);
-
   if (imagePool.length === 0) {
     return (
       <div className="space-y-2">
@@ -317,18 +311,18 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
 
   return (
     <div className="space-y-2">
-      {/* Main preview — image or video, compact 4:3 aspect */}
+      {/* Main preview — image or video */}
       {(mainImage || showingVideo) ? (
         <div className={cn(
-          'relative rounded-xl overflow-hidden border group',
-          t('bg-slate-50 border-slate-200', 'bg-zinc-800/30 border-white/5')
+          'relative rounded-lg overflow-hidden group',
+          t('bg-slate-50', 'bg-zinc-800/30')
         )}>
           {showingVideo && videoUrl ? (
             <video
               src={videoUrl}
               controls
               playsInline
-              className="w-full aspect-[4/3] object-contain bg-black"
+              className="w-full aspect-square object-contain bg-black"
             />
           ) : (
             <AnimatePresence mode="wait">
@@ -336,7 +330,7 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
                 key={mainImage}
                 src={mainImage}
                 alt="Main product"
-                className="w-full aspect-[4/3] object-contain"
+                className="w-full aspect-square object-cover"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -345,36 +339,10 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
             </AnimatePresence>
           )}
 
-          {/* Nav arrows (images only) */}
-          {!showingVideo && selectedUrls.length > 1 && (
-            <>
-              <button
-                onClick={prevMain}
-                className={cn(
-                  'absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center',
-                  'opacity-0 group-hover:opacity-100 transition-opacity',
-                  t('bg-white/90 shadow', 'bg-zinc-900/80 border border-white/10')
-                )}
-              >
-                <ChevronLeft className={cn('w-3 h-3', t('text-slate-600', 'text-zinc-300'))} />
-              </button>
-              <button
-                onClick={nextMain}
-                className={cn(
-                  'absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center',
-                  'opacity-0 group-hover:opacity-100 transition-opacity',
-                  t('bg-white/90 shadow', 'bg-zinc-900/80 border border-white/10')
-                )}
-              >
-                <ChevronRight className={cn('w-3 h-3', t('text-slate-600', 'text-zinc-300'))} />
-              </button>
-            </>
-          )}
-
           {/* Counter */}
           {totalMedia > 1 && (
             <div className={cn(
-              'absolute bottom-2 right-2 px-1.5 py-0.5 rounded text-[9px] font-medium',
+              'absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded text-[9px] font-medium',
               t('bg-white/90 text-slate-600', 'bg-zinc-900/80 text-zinc-400 border border-white/10')
             )}>
               {showingVideo ? 'Video' : `${mainIdx + 1} / ${selectedUrls.length}`}
@@ -383,7 +351,7 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
         </div>
       ) : (
         <div className={cn(
-          'aspect-[4/3] rounded-xl border border-dashed flex items-center justify-center',
+          'aspect-square rounded-lg border border-dashed flex items-center justify-center',
           t('bg-slate-50 border-slate-300', 'bg-white/[0.02] border-white/10')
         )}>
           <span className={cn('text-xs', t('text-slate-400', 'text-zinc-600'))}>Select images below</span>
