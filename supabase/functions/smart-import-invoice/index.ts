@@ -60,180 +60,139 @@ interface ExtractionResult {
 
 // ─── LLM Extraction ──────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a JSON-only invoice data extraction API. You receive invoice text and return structured JSON. Never output anything except a single valid JSON object. No explanations, no markdown, no echoing of the input text.
-
-Rules:
-- Extract ONLY visible data, use null for missing fields
-- Dates in ISO format (YYYY-MM-DD)
-- Currency: €=EUR, $=USD, £=GBP. Default EUR.
-- Dutch BTW: 21%, 9%, or 0%
-- Reverse charge: true if vendor is outside NL but buyer is Dutch
-- expense_category: software|hosting|office_supplies|professional_services|advertising|travel|telecom|insurance|rent|utilities|other`;
-
-const JSON_SCHEMA = `{"vendor":{"name":"string","address":"string|null","vat_number":"string|null","website":"string|null","email":"string|null","phone":"string|null","iban":"string|null"},"invoice":{"number":"string|null","date":"YYYY-MM-DD|null","due_date":"YYYY-MM-DD|null","currency":"EUR","subtotal":0,"tax_amount":0,"total":0},"line_items":[{"description":"string","quantity":1,"unit_price":0,"tax_rate_percent":21,"line_total":0,"category_hint":"string|null"}],"classification":{"is_recurring":false,"recurring_frequency":null,"expense_category":"other","is_reverse_charge":false},"confidence":{"overall":0.95,"vendor":0.9,"amounts":0.98,"line_items":0.85}}`;
-
-function extractJsonFromText(text: string): string | null {
-  // Remove markdown code fences
-  const cleaned = text
-    .replace(/```json\s*/gi, "")
-    .replace(/```\s*/g, "")
-    .trim();
-
-  // Strategy 1: Find {"vendor" — our expected schema start
-  const vendorIdx = cleaned.indexOf('"vendor"');
-  if (vendorIdx !== -1) {
-    // Walk back to find the opening brace
-    const before = cleaned.substring(0, vendorIdx);
-    const braceIdx = before.lastIndexOf("{");
-    if (braceIdx !== -1) {
-      const candidate = cleaned.substring(braceIdx);
-      // Find matching closing brace by counting depth
-      let depth = 0;
-      for (let i = 0; i < candidate.length; i++) {
-        if (candidate[i] === "{") depth++;
-        else if (candidate[i] === "}") depth--;
-        if (depth === 0 && i > 0) {
-          return candidate.substring(0, i + 1);
-        }
-      }
-    }
-  }
-
-  // Strategy 2: Find the largest balanced {...} block
-  const braces: number[] = [];
-  for (let i = 0; i < cleaned.length; i++) {
-    if (cleaned[i] === "{") braces.push(i);
-  }
-
-  for (const start of braces) {
-    let depth = 0;
-    for (let i = start; i < cleaned.length; i++) {
-      if (cleaned[i] === "{") depth++;
-      else if (cleaned[i] === "}") depth--;
-      if (depth === 0) {
-        const candidate = cleaned.substring(start, i + 1);
-        if (candidate.length > 50 && candidate.includes('"vendor"')) {
-          return candidate;
-        }
-        break;
-      }
-    }
-  }
-
-  // Strategy 3: Simple first/last brace fallback
-  const first = cleaned.indexOf("{");
-  const last = cleaned.lastIndexOf("}");
-  if (first !== -1 && last > first) {
-    return cleaned.substring(first, last + 1);
-  }
-
-  return null;
-}
-
-async function callGroq(
-  groqApiKey: string,
-  model: string,
-  messages: Array<{ role: string; content: string }>,
-  useJsonFormat: boolean
-): Promise<string> {
-  const body: Record<string, unknown> = {
-    model,
-    messages,
-    max_tokens: 4096,
-    temperature: 0,
-  };
-  if (useJsonFormat) {
-    body.response_format = { type: "json_object" };
-  }
-
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${groqApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Groq ${response.status}: ${errorText.substring(0, 200)}`);
-  }
-
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content || "";
-}
-
 async function extractInvoiceData(groqApiKey: string, pdfText: string): Promise<{ success: boolean; data?: ExtractionResult; error?: string }> {
   console.log(`[EXTRACT] Starting extraction, text length: ${pdfText.length}`);
+  console.log(`[EXTRACT] First 500 chars of input: ${pdfText.substring(0, 500)}`);
 
-  const userMsg = `Extract invoice data as JSON matching this schema:\n${JSON_SCHEMA}\n\nInvoice text:\n${pdfText}`;
+  // The PDF text is already clean (extracted by pdf.js client-side).
+  // We use the LLM purely to structure it into JSON — NOT to generate content.
+  const userMessage = `Below is the EXACT text extracted from a PDF invoice. Parse it into the JSON schema below.
 
-  // Attempt 1: Llama 4 Scout with response_format: json_object
-  try {
-    console.log("[EXTRACT] Attempt 1: Llama 4 Scout + json_object");
-    const content = await callGroq(groqApiKey, "meta-llama/llama-4-scout-17b-16e-instruct", [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: userMsg },
-    ], true);
+CRITICAL: Every value you return MUST come directly from the text. If a field is not present in the text, use null. Do NOT invent, guess, or hallucinate ANY values. The vendor name, amounts, dates — everything must be a direct copy from the text.
 
-    if (content) {
-      const jsonStr = extractJsonFromText(content);
-      if (jsonStr) {
-        const data = JSON.parse(jsonStr) as ExtractionResult;
-        console.log(`[EXTRACT] Attempt 1 success — vendor: ${data.vendor?.name}, total: ${data.invoice?.total}`);
-        return { success: true, data };
+JSON schema to fill:
+{
+  "vendor": { "name": "", "address": "", "vat_number": null, "website": null, "email": null, "phone": null, "iban": null },
+  "invoice": { "number": "", "date": "YYYY-MM-DD", "due_date": "YYYY-MM-DD or null", "currency": "EUR", "subtotal": 0, "tax_amount": 0, "total": 0 },
+  "line_items": [{ "description": "", "quantity": 1, "unit_price": 0, "tax_rate_percent": 0, "line_total": 0, "category_hint": null }],
+  "classification": { "is_recurring": false, "recurring_frequency": null, "expense_category": "other", "is_reverse_charge": false },
+  "confidence": { "overall": 0.0, "vendor": 0.0, "amounts": 0.0, "line_items": 0.0 }
+}
+
+Rules:
+- vendor = the company that SENT the invoice (not the "Bill to" recipient)
+- Dates must be ISO format YYYY-MM-DD
+- Currency: detect from € = EUR, $ = USD, £ = GBP
+- If tax is not explicitly listed, set tax_amount to 0 and tax_rate_percent to 0
+- is_reverse_charge = true if vendor is outside Netherlands but buyer is Dutch
+- is_recurring = true if it looks like a subscription (SaaS, monthly plan, etc.)
+- expense_category: software|hosting|office_supplies|professional_services|advertising|travel|telecom|insurance|rent|utilities|other
+
+=== INVOICE TEXT START ===
+${pdfText}
+=== INVOICE TEXT END ===
+
+Return ONLY the JSON object. No explanation, no markdown.`;
+
+  const callGroq = async (model: string, useJsonFormat: boolean): Promise<ExtractionResult | null> => {
+    const body: Record<string, unknown> = {
+      model,
+      messages: [
+        { role: "system", content: "You are a data extraction tool. You ONLY output valid JSON. You extract data from the provided text. You NEVER invent data." },
+        { role: "user", content: userMessage },
+      ],
+      max_tokens: 4096,
+      temperature: 0,
+    };
+    if (useJsonFormat) {
+      body.response_format = { type: "json_object" };
+    }
+
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${groqApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.warn(`[EXTRACT] ${model} returned ${response.status}: ${errText.substring(0, 200)}`);
+      return null;
+    }
+
+    const apiData = await response.json();
+    const content = apiData.choices?.[0]?.message?.content || "";
+    console.log(`[EXTRACT] ${model} raw response (first 300): ${content.substring(0, 300)}`);
+
+    if (!content) return null;
+
+    // Clean and extract JSON
+    let jsonStr = content
+      .replace(/```json\s*/gi, "")
+      .replace(/```\s*/g, "")
+      .trim();
+
+    // Find balanced JSON object containing "vendor"
+    const vendorIdx = jsonStr.indexOf('"vendor"');
+    if (vendorIdx !== -1) {
+      const before = jsonStr.substring(0, vendorIdx);
+      const braceIdx = before.lastIndexOf("{");
+      if (braceIdx !== -1) {
+        const candidate = jsonStr.substring(braceIdx);
+        let depth = 0;
+        for (let i = 0; i < candidate.length; i++) {
+          if (candidate[i] === "{") depth++;
+          else if (candidate[i] === "}") depth--;
+          if (depth === 0 && i > 0) {
+            jsonStr = candidate.substring(0, i + 1);
+            break;
+          }
+        }
       }
     }
-  } catch (e) {
-    console.warn("[EXTRACT] Attempt 1 failed:", e instanceof Error ? e.message.substring(0, 100) : e);
-  }
 
-  // Attempt 2: Llama 4 Scout WITHOUT response_format (model can output freely, we extract JSON)
+    // Clean trailing commas and control chars
+    jsonStr = jsonStr
+      .replace(/,\s*}/g, "}")
+      .replace(/,\s*]/g, "]")
+      .replace(/[\x00-\x1F\x7F]/g, " ");
+
+    const parsed = JSON.parse(jsonStr) as ExtractionResult;
+    console.log(`[EXTRACT] ${model} parsed — vendor: ${parsed.vendor?.name}, total: ${parsed.invoice?.total}`);
+    return parsed;
+  };
+
+  // Attempt 1: Llama 4 Scout with json_object mode
   try {
-    console.log("[EXTRACT] Attempt 2: Llama 4 Scout free-form");
-    const content = await callGroq(groqApiKey, "meta-llama/llama-4-scout-17b-16e-instruct", [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: userMsg },
-    ], false);
-
-    if (content) {
-      const jsonStr = extractJsonFromText(content);
-      if (jsonStr) {
-        const cleaned = jsonStr
-          .replace(/,\s*}/g, "}")
-          .replace(/,\s*]/g, "]")
-          .replace(/[\x00-\x1F\x7F]/g, " ");
-        const data = JSON.parse(cleaned) as ExtractionResult;
-        console.log(`[EXTRACT] Attempt 2 success — vendor: ${data.vendor?.name}, total: ${data.invoice?.total}`);
-        return { success: true, data };
-      }
-    }
+    console.log("[EXTRACT] Attempt 1: llama-4-scout + json_object");
+    const result = await callGroq("meta-llama/llama-4-scout-17b-16e-instruct", true);
+    if (result?.vendor?.name) return { success: true, data: result };
   } catch (e) {
-    console.warn("[EXTRACT] Attempt 2 failed:", e instanceof Error ? e.message.substring(0, 100) : e);
+    console.warn("[EXTRACT] Attempt 1 error:", (e as Error).message?.substring(0, 150));
   }
 
-  // Attempt 3: Fallback to llama-3.1-8b-instant (smaller but follows instructions better)
+  // Attempt 2: Llama 4 Scout free-form (extract JSON from mixed output)
   try {
-    console.log("[EXTRACT] Attempt 3: Llama 3.1 8B fallback");
-    const content = await callGroq(groqApiKey, "llama-3.1-8b-instant", [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: userMsg },
-    ], true);
-
-    if (content) {
-      const jsonStr = extractJsonFromText(content);
-      if (jsonStr) {
-        const data = JSON.parse(jsonStr) as ExtractionResult;
-        console.log(`[EXTRACT] Attempt 3 success — vendor: ${data.vendor?.name}, total: ${data.invoice?.total}`);
-        return { success: true, data };
-      }
-    }
+    console.log("[EXTRACT] Attempt 2: llama-4-scout free-form");
+    const result = await callGroq("meta-llama/llama-4-scout-17b-16e-instruct", false);
+    if (result?.vendor?.name) return { success: true, data: result };
   } catch (e) {
-    console.warn("[EXTRACT] Attempt 3 failed:", e instanceof Error ? e.message.substring(0, 100) : e);
+    console.warn("[EXTRACT] Attempt 2 error:", (e as Error).message?.substring(0, 150));
   }
 
-  return { success: false, error: "All extraction attempts failed. Please try again or use a different file." };
+  // Attempt 3: Gemma 2 9B — small but excellent at instruction following
+  try {
+    console.log("[EXTRACT] Attempt 3: gemma2-9b-it");
+    const result = await callGroq("gemma2-9b-it", true);
+    if (result?.vendor?.name) return { success: true, data: result };
+  } catch (e) {
+    console.warn("[EXTRACT] Attempt 3 error:", (e as Error).message?.substring(0, 150));
+  }
+
+  return { success: false, error: "Extraction failed — the AI could not parse this invoice. Please try again." };
 }
 
 // ─── ECB Currency Conversion ─────────────────────────────────────────────────
