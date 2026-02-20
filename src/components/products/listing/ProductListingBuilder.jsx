@@ -136,6 +136,44 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
     fetchListing();
   }, [fetchListing]);
 
+  // Auto-sync: when listing has images that aren't in product.gallery, push them
+  useEffect(() => {
+    if (!listing || !product?.id || !onProductUpdate) return;
+
+    const existingGallery = Array.isArray(product?.gallery) ? product.gallery : [];
+    const existingUrls = new Set(existingGallery.map(img => typeof img === 'string' ? img : img?.url).filter(Boolean));
+
+    // Check hero
+    const heroUrl = listing.hero_image_url;
+    const featuredUrl = typeof product?.featured_image === 'string'
+      ? product.featured_image
+      : product?.featured_image?.url || null;
+    const heroMissing = heroUrl && heroUrl !== featuredUrl;
+
+    // Check gallery
+    const listingGallery = Array.isArray(listing.gallery_urls) ? listing.gallery_urls : [];
+    const missingImages = listingGallery.filter(url => url && !existingUrls.has(url));
+
+    if (!heroMissing && missingImages.length === 0) return;
+
+    const updates = {};
+    if (heroMissing) {
+      updates.featured_image = { url: heroUrl, alt: 'AI-generated hero image', type: 'image/png' };
+    }
+    if (missingImages.length > 0) {
+      const newImages = missingImages.map((url, i) => ({
+        url,
+        alt: `AI-generated image ${i + 1}`,
+        type: 'image/png',
+      }));
+      updates.gallery = [...existingGallery, ...newImages];
+    }
+
+    onProductUpdate(updates).catch(err =>
+      console.warn('[auto-sync] Failed to sync listing images to product:', err.message)
+    );
+  }, [listing?.hero_image_url, listing?.gallery_urls, product?.id]);
+
   // Upsert listing data back to DB (silent version for orchestration)
   const saveListingSilent = useCallback(async (updates) => {
     if (!product?.id || !user?.company_id) return null;
