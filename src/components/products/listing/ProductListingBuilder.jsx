@@ -981,22 +981,16 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
             ? (typeof ai.titles[0] === 'string' ? ai.titles[0] : ai.titles[0].text || '')
             : listing?.listing_title || '';
 
-          // Always save ALL copy + SEO fields when either is needed
+          // Always save ALL available copy + SEO fields (don't rely on LLM category names)
           const updates = {};
           if (copyAction) {
-            const cc = copyAction.categories || [];
-            if (cc.includes('Title & Tagline')) {
-              updates.listing_title = firstTitle;
-              if (ai.short_tagline) updates.short_tagline = ai.short_tagline;
-            }
-            if (cc.includes('Bullet Points') && ai.bullet_points?.length) {
-              updates.bullet_points = ai.bullet_points;
-            }
-            if (cc.includes('Description') && ai.description) {
-              updates.listing_description = ai.description;
-            }
+            if (firstTitle) updates.listing_title = firstTitle;
+            if (ai.short_tagline) updates.short_tagline = ai.short_tagline;
+            if (ai.bullet_points?.length) updates.bullet_points = ai.bullet_points;
+            if (ai.description) updates.listing_description = ai.description;
           }
-          if (seoAction) {
+          // Always include SEO fields when either copy or seo action ran
+          if (copyAction || seoAction) {
             if (ai.seo_title) updates.seo_title = ai.seo_title;
             if (ai.seo_description) updates.seo_description = ai.seo_description;
             if (ai.search_keywords?.length) updates.search_keywords = ai.search_keywords;
@@ -1048,7 +1042,19 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
 
       // ── Execute USP image generation ──
       const imageActions = actions.filter((a) => a.type === 'image');
-      for (const imgAction of imageActions) {
+
+      // Angle/perspective variations so each USP image looks distinct
+      const ANGLE_VARIATIONS = [
+        { angle: 'three-quarter front view, slightly above eye level', distance: 'medium-close shot filling 60% of the frame', lighting: 'dramatic side lighting from the left with subtle rim light on the right edge' },
+        { angle: 'straight-on front view, eye level', distance: 'full product shot with breathing room around edges', lighting: 'soft even studio lighting from above, subtle gradient shadow beneath' },
+        { angle: 'dynamic low angle looking upward at the product, hero perspective', distance: 'close crop focusing on the top half of the product', lighting: 'cinematic backlight creating a halo effect, moody contrast' },
+        { angle: 'top-down angled view at approximately 45 degrees', distance: 'wide enough to show the full product with generous negative space', lighting: 'overhead soft box light with subtle warm accent from the side' },
+        { angle: 'slight three-quarter rear angle showing both profile and a hint of the back', distance: 'medium shot, product at two-thirds frame height', lighting: 'cool-toned key light from the right, subtle blue rim on the left edge' },
+        { angle: 'dramatic close-up detail shot focusing on the feature area', distance: 'tight crop showing the relevant product section prominently', lighting: 'focused spot light on the feature area, rest fading into shadow' },
+      ];
+
+      for (let imgIdx = 0; imgIdx < imageActions.length; imgIdx++) {
+        const imgAction = imageActions[imgIdx];
         updateAction(imgAction.id, { status: 'active' });
         toast.loading(`Generating: ${imgAction.label.substring(0, 40)}...`, { id: toastId });
 
@@ -1057,6 +1063,7 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
           const pBrand = product?.brand || '';
           const pDesc = product?.description || '';
           const pIdentity = `${pBrand ? pBrand + ' ' : ''}${pName}`.trim();
+          const variation = ANGLE_VARIATIONS[imgIdx % ANGLE_VARIATIONS.length];
 
           const prompt = [
             `Create a professional e-commerce USP infographic image for ${pIdentity}.`,
@@ -1065,9 +1072,15 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
             `PRODUCT CONSISTENCY — CRITICAL:`,
             `The product shown in this image MUST be an EXACT visual replica of the reference image(s). Do NOT alter the product shape, color, material, texture, branding, logo placement, or proportions in any way. The viewer must instantly recognize it as the same physical product. This is non-negotiable.`,
             ``,
+            `CAMERA ANGLE & COMPOSITION:`,
+            `- Perspective: ${variation.angle}`,
+            `- Framing: ${variation.distance}`,
+            `- Lighting: ${variation.lighting}`,
+            `- IMPORTANT: This specific camera angle should best communicate the feature being highlighted`,
+            ``,
             `DESIGN LAYOUT:`,
             `- Dark navy blue gradient background (#0f172a to #1e293b)`,
-            `- Product photograph shown large and prominently with dramatic studio lighting and drop shadow`,
+            `- Product photograph shown large and prominently with the specified camera angle`,
             `- This image must specifically showcase and highlight: "${imgAction.description}"`,
             `- Include visual callout elements (arrows, badges, icons, or highlight zones) pointing to this specific feature`,
             `- Bold headline text about the feature at the top`,

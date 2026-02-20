@@ -1226,6 +1226,7 @@ function FixWithAIModal({ fixing, fixPlan, onApprove, onCancel, onReaudit, t }) 
   const reasoning = fixPlan?.reasoning || [];
   const actions = fixPlan?.actions || [];
   const isOpen = fixing !== null;
+  const isCompact = fixing === 'executing' || fixing === 'done';
 
   // Typewriter effect: reveal reasoning lines one by one
   useEffect(() => {
@@ -1264,7 +1265,131 @@ function FixWithAIModal({ fixing, fixPlan, onApprove, onCancel, onReaudit, t }) 
   const doneCount = actions.filter((a) => a.status === 'done').length;
   const failedCount = actions.filter((a) => a.status === 'failed').length;
   const totalActions = actions.length;
+  const activeAction = actions.find((a) => a.status === 'active');
 
+  // ── Compact floating card for executing/done ──
+  if (isCompact) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 40, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 40, scale: 0.95 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className={cn(
+          'fixed bottom-5 right-5 z-50 w-80 rounded-xl border shadow-2xl overflow-hidden',
+          t('bg-white border-slate-200 shadow-slate-200/50', 'bg-zinc-900/95 border-white/10 shadow-black/40')
+        )}
+      >
+        {/* Compact header */}
+        <div className={cn(
+          'flex items-center justify-between px-3.5 py-2.5 border-b',
+          t('border-slate-100', 'border-white/[0.06]')
+        )}>
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              'w-6 h-6 rounded-md flex items-center justify-center',
+              fixing === 'done' ? 'bg-emerald-500/15' : 'bg-gradient-to-br from-cyan-500/20 to-blue-500/20'
+            )}>
+              {fixing === 'done'
+                ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                : <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
+              }
+            </div>
+            <span className={cn('text-xs font-semibold', t('text-slate-800', 'text-white'))}>
+              {fixing === 'done' ? 'Fixes Applied!' : 'Applying Fixes...'}
+            </span>
+          </div>
+          {fixing === 'done' && (
+            <button onClick={onCancel} className={cn(
+              'w-6 h-6 rounded-md flex items-center justify-center transition-colors',
+              t('hover:bg-slate-100 text-slate-400', 'hover:bg-white/5 text-zinc-500')
+            )}>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Compact body */}
+        <div className="px-3.5 py-2.5 space-y-2">
+          {fixing === 'executing' && (
+            <>
+              {/* Progress bar */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className={cn('text-[10px] font-medium', t('text-slate-500', 'text-zinc-400'))}>
+                    {doneCount + failedCount}/{totalActions} complete
+                  </span>
+                  <span className={cn('text-[10px] font-medium', 'text-cyan-400')}>
+                    {Math.round(totalActions > 0 ? ((doneCount + failedCount) / totalActions) * 100 : 0)}%
+                  </span>
+                </div>
+                <div className={cn('h-1.5 rounded-full overflow-hidden', t('bg-slate-200', 'bg-white/[0.06]'))}>
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${totalActions > 0 ? ((doneCount + failedCount) / totalActions) * 100 : 0}%` }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </div>
+              </div>
+              {/* Current action */}
+              {activeAction && (
+                <div className={cn(
+                  'flex items-center gap-2 rounded-lg border px-2.5 py-2',
+                  'border-cyan-500/20 bg-cyan-500/[0.03]'
+                )}>
+                  <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin flex-shrink-0" />
+                  <span className={cn('text-[11px] truncate', t('text-slate-600', 'text-zinc-300'))}>
+                    {activeAction.label}
+                  </span>
+                </div>
+              )}
+              {/* Completed actions mini list */}
+              {doneCount > 0 && (
+                <div className="space-y-1">
+                  {actions.filter((a) => a.status === 'done' || a.status === 'failed').slice(-3).map((a) => (
+                    <div key={a.id} className="flex items-center gap-1.5">
+                      {a.status === 'done'
+                        ? <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                        : <XCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+                      }
+                      <span className={cn('text-[10px] truncate', t('text-slate-400', 'text-zinc-500'))}>
+                        {a.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {fixing === 'done' && (
+            <>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span className={cn('text-xs font-medium', t('text-slate-700', 'text-zinc-300'))}>
+                  {doneCount} fix{doneCount !== 1 ? 'es' : ''} applied
+                  {failedCount > 0 && <span className="text-red-400"> ({failedCount} failed)</span>}
+                </span>
+              </div>
+              <button
+                onClick={() => { onCancel(); onReaudit?.(); }}
+                className={cn(
+                  'w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all',
+                  'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white'
+                )}
+              >
+                <ShieldCheck className="w-3 h-3" />
+                Re-audit Listing
+              </button>
+            </>
+          )}
+        </div>
+      </motion.div>
+    );
+  }
+
+  // ── Full centered modal for planning/review ──
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
@@ -1273,7 +1398,7 @@ function FixWithAIModal({ fixing, fixPlan, onApprove, onCancel, onReaudit, t }) 
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        onClick={fixing === 'done' || fixing === 'review' ? onCancel : undefined}
+        onClick={fixing === 'review' ? onCancel : undefined}
       />
 
       {/* Modal card */}
@@ -1293,36 +1418,15 @@ function FixWithAIModal({ fixing, fixPlan, onApprove, onCancel, onReaudit, t }) 
           t('border-slate-100', 'border-white/[0.06]')
         )}>
           <div className="flex items-center gap-2.5">
-            <div className={cn(
-              'w-8 h-8 rounded-lg flex items-center justify-center',
-              fixing === 'done'
-                ? 'bg-emerald-500/15'
-                : 'bg-gradient-to-br from-cyan-500/20 to-blue-500/20'
-            )}>
-              {fixing === 'done'
-                ? <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                : fixing === 'executing'
-                  ? <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
-                  : <Wand2 className="w-4 h-4 text-cyan-400" />
-              }
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-cyan-500/20 to-blue-500/20">
+              <Wand2 className="w-4 h-4 text-cyan-400" />
             </div>
-            <div>
-              <span className={cn('text-sm font-semibold', t('text-slate-800', 'text-white'))}>
-                {fixing === 'planning' ? 'Analyzing Listing...'
-                  : fixing === 'review' ? 'Fix Plan Ready'
-                  : fixing === 'executing' ? 'Applying Fixes...'
-                  : 'Fixes Applied!'
-                }
-              </span>
-              {fixing === 'executing' && totalActions > 0 && (
-                <span className={cn('text-[10px] block -mt-0.5', t('text-slate-400', 'text-zinc-500'))}>
-                  {doneCount + failedCount} / {totalActions} complete
-                </span>
-              )}
-            </div>
+            <span className={cn('text-sm font-semibold', t('text-slate-800', 'text-white'))}>
+              {fixing === 'planning' ? 'Analyzing Listing...' : 'Fix Plan Ready'}
+            </span>
           </div>
 
-          {(fixing === 'review' || fixing === 'done') && (
+          {fixing === 'review' && (
             <button onClick={onCancel} className={cn(
               'w-7 h-7 rounded-lg flex items-center justify-center transition-colors',
               t('hover:bg-slate-100 text-slate-400', 'hover:bg-white/5 text-zinc-500')
@@ -1366,7 +1470,7 @@ function FixWithAIModal({ fixing, fixPlan, onApprove, onCancel, onReaudit, t }) 
           )}
 
           {/* AI REASONING — typewriter reveal */}
-          {reasoning.length > 0 && (fixing === 'review' || fixing === 'executing' || fixing === 'done') && (
+          {reasoning.length > 0 && fixing === 'review' && (
             <div className="space-y-2">
               <div className="flex items-center gap-1.5 mb-1">
                 <Sparkles className="w-3 h-3 text-cyan-400" />
@@ -1378,7 +1482,7 @@ function FixWithAIModal({ fixing, fixPlan, onApprove, onCancel, onReaudit, t }) 
                 'rounded-xl border p-3 space-y-2',
                 t('bg-slate-50 border-slate-100', 'bg-white/[0.02] border-white/[0.05]')
               )}>
-                {reasoning.slice(0, fixing === 'review' ? revealedLines : reasoning.length).map((line, i) => (
+                {reasoning.slice(0, revealedLines).map((line, i) => (
                   <motion.p
                     key={i}
                     initial={{ opacity: 0, y: 6 }}
@@ -1389,7 +1493,7 @@ function FixWithAIModal({ fixing, fixPlan, onApprove, onCancel, onReaudit, t }) 
                     {line}
                   </motion.p>
                 ))}
-                {fixing === 'review' && revealedLines < reasoning.length && (
+                {revealedLines < reasoning.length && (
                   <div className="flex items-center gap-1.5 pt-1">
                     <Loader2 className="w-2.5 h-2.5 text-cyan-400/60 animate-spin" />
                     <span className={cn('text-[10px]', t('text-slate-400', 'text-zinc-600'))}>Thinking...</span>
@@ -1399,10 +1503,10 @@ function FixWithAIModal({ fixing, fixPlan, onApprove, onCancel, onReaudit, t }) 
             </div>
           )}
 
-          {/* ACTION CARDS — after reasoning completes, during execution, or done */}
-          {(showActions || fixing === 'executing' || fixing === 'done') && actions.length > 0 && (
+          {/* ACTION CARDS — after reasoning completes */}
+          {showActions && actions.length > 0 && (
             <motion.div
-              initial={fixing === 'review' ? { opacity: 0, y: 10 } : false}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
               className="space-y-2"
@@ -1421,78 +1525,37 @@ function FixWithAIModal({ fixing, fixPlan, onApprove, onCancel, onReaudit, t }) 
                 )}
               </div>
 
-              {actions.map((action) => {
-                const isActive = action.status === 'active';
-                const isDone = action.status === 'done';
-                const isFailed = action.status === 'failed';
-                const StatusIcon = isDone ? CheckCircle2 : isFailed ? XCircle : isActive ? Loader2 : Circle;
-                const statusColor = isDone ? 'text-emerald-400' : isFailed ? 'text-red-400' : isActive ? 'text-cyan-400' : t('text-slate-300', 'text-zinc-600');
-
-                return (
-                  <div
-                    key={action.id}
-                    className={cn(
-                      'rounded-lg border px-3 py-2.5 transition-all',
-                      isActive && 'border-cyan-500/30 bg-cyan-500/[0.03]',
-                      isDone && cn(t('border-emerald-200 bg-emerald-50/50', 'border-emerald-500/20 bg-emerald-500/[0.03]')),
-                      isFailed && cn(t('border-red-200 bg-red-50/50', 'border-red-500/20 bg-red-500/[0.03]')),
-                      !isActive && !isDone && !isFailed && cn(t('border-slate-100', 'border-white/[0.05]'))
-                    )}
-                  >
-                    <div className="flex items-start gap-2.5">
-                      <StatusIcon className={cn('w-4 h-4 mt-0.5 flex-shrink-0', statusColor, isActive && 'animate-spin')} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className={cn('text-xs font-medium', t('text-slate-700', 'text-zinc-300'))}>
-                            {action.label}
+              {actions.map((action) => (
+                <div
+                  key={action.id}
+                  className={cn(
+                    'rounded-lg border px-3 py-2.5 transition-all',
+                    t('border-slate-100', 'border-white/[0.05]')
+                  )}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <Circle className={cn('w-4 h-4 mt-0.5 flex-shrink-0', t('text-slate-300', 'text-zinc-600'))} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className={cn('text-xs font-medium', t('text-slate-700', 'text-zinc-300'))}>
+                          {action.label}
+                        </span>
+                        {action.credits > 0 && (
+                          <span className={cn(
+                            'text-[9px] font-medium px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0',
+                            'bg-zinc-500/10 text-zinc-500'
+                          )}>
+                            {action.credits} cr
                           </span>
-                          {action.credits > 0 && fixing === 'review' && (
-                            <span className={cn(
-                              'text-[9px] font-medium px-1.5 py-0.5 rounded-full ml-2 flex-shrink-0',
-                              'bg-zinc-500/10 text-zinc-500'
-                            )}>
-                              {action.credits} cr
-                            </span>
-                          )}
-                        </div>
-                        <p className={cn('text-[10px] leading-snug mt-0.5 line-clamp-2', t('text-slate-400', 'text-zinc-500'))}>
-                          {action.description}
-                        </p>
-                        {isDone && action.imageUrl && (
-                          <div className="mt-2 w-16 h-16 rounded-md overflow-hidden border border-white/10">
-                            <img src={action.imageUrl} alt="" className="w-full h-full object-cover" />
-                          </div>
                         )}
                       </div>
+                      <p className={cn('text-[10px] leading-snug mt-0.5 line-clamp-2', t('text-slate-400', 'text-zinc-500'))}>
+                        {action.description}
+                      </p>
                     </div>
                   </div>
-                );
-              })}
-            </motion.div>
-          )}
-
-          {/* DONE — success summary */}
-          {fixing === 'done' && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className={cn(
-                'rounded-xl border p-4 text-center',
-                t('bg-emerald-50 border-emerald-200', 'bg-emerald-500/[0.05] border-emerald-500/20')
-              )}
-            >
-              <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-              <p className={cn('text-sm font-medium', t('text-slate-800', 'text-white'))}>
-                {doneCount} fix{doneCount !== 1 ? 'es' : ''} applied successfully
-              </p>
-              {failedCount > 0 && (
-                <p className="text-[11px] text-red-400 mt-0.5">
-                  {failedCount} action{failedCount !== 1 ? 's' : ''} failed
-                </p>
-              )}
-              <p className={cn('text-[11px] mt-1', t('text-slate-500', 'text-zinc-500'))}>
-                Run a new audit to see your updated score
-              </p>
+                </div>
+              ))}
             </motion.div>
           )}
         </div>
@@ -1539,52 +1602,6 @@ function FixWithAIModal({ fixing, fixPlan, onApprove, onCancel, onReaudit, t }) 
               >
                 <Wand2 className="w-3.5 h-3.5" />
                 Approve & Fix ({fixPlan?.totalCredits || 0} credits)
-              </button>
-            </>
-          )}
-
-          {fixing === 'executing' && (
-            <div className="w-full">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className={cn('text-[11px] font-medium', t('text-slate-500', 'text-zinc-400'))}>
-                  Applying fixes...
-                </span>
-                <span className={cn('text-[11px] font-medium', 'text-cyan-400')}>
-                  {doneCount + failedCount}/{totalActions}
-                </span>
-              </div>
-              <div className={cn('h-1.5 rounded-full overflow-hidden', t('bg-slate-200', 'bg-white/[0.06]'))}>
-                <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${totalActions > 0 ? ((doneCount + failedCount) / totalActions) * 100 : 0}%` }}
-                  transition={{ duration: 0.5 }}
-                />
-              </div>
-            </div>
-          )}
-
-          {fixing === 'done' && (
-            <>
-              <button
-                onClick={onCancel}
-                className={cn(
-                  'px-3.5 py-2 rounded-lg text-xs font-medium transition-colors',
-                  t('text-slate-500 hover:bg-slate-100', 'text-zinc-500 hover:bg-white/5')
-                )}
-              >
-                Close
-              </button>
-              <button
-                onClick={() => { onCancel(); onReaudit?.(); }}
-                className={cn(
-                  'flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all',
-                  'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white',
-                  'shadow-sm shadow-cyan-500/15'
-                )}
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                Re-audit Listing
               </button>
             </>
           )}
