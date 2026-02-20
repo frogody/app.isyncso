@@ -34,7 +34,7 @@ import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import ContactSelector from '@/components/shared/ContactSelector';
 
 export default function FinanceInvoices() {
-  const { user } = useUser();
+  const { user, company: userCompany } = useUser();
   const { theme, toggleTheme, ft } = useTheme();
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState([]);
@@ -83,9 +83,14 @@ export default function FinanceInvoices() {
     if (companyId) {
       loadInvoices();
       loadTaxRates();
-      loadBrandConfig();
     }
   }, [companyId]);
+
+  useEffect(() => {
+    if (companyId && userCompany) {
+      loadBrandConfig();
+    }
+  }, [companyId, userCompany]);
 
   const loadInvoices = async () => {
     if (!companyId) return;
@@ -126,8 +131,7 @@ export default function FinanceInvoices() {
 
   const loadBrandConfig = async () => {
     try {
-      const branding = user?.company_id ? (await supabase.from('companies').select('invoice_branding, name, domain').eq('id', user.company_id).single())?.data : null;
-      const invoiceBranding = branding?.invoice_branding;
+      const invoiceBranding = userCompany?.invoice_branding;
       if (!invoiceBranding?.enabled) { setBrandConfig(null); return; }
 
       // Fetch brand assets for colors and logos
