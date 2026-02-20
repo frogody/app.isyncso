@@ -737,6 +737,85 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
     }
   }, [product, details, user, listing, selectedChannel, saveListingSilent, generateImage, generateImageWide, fetchListing, productReferenceImages]);
 
+  // Generate a single image for a specific template slot
+  const handleGenerateSlotImage = useCallback(async (slot) => {
+    if (!product?.id || !user?.company_id) return;
+
+    const productName = product?.name || 'Product';
+    const productBrand = product?.brand || '';
+    const productDesc = product?.description || product?.short_description || '';
+    const productCategory = product?.category || details?.category || '';
+    const productIdentity = `${productBrand ? productBrand + ' ' : ''}${productName}`.trim();
+
+    // Build prompt based on slot type and description
+    const slotPrompts = {
+      studio: {
+        'Front view, white BG': `Professional e-commerce front-view photograph of the ${productIdentity} on a pure white seamless backdrop. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} The product must look EXACTLY like the reference image(s). Three-point studio lighting, 100mm lens, f/8, tack-sharp, centered composition. Award-winning commercial product photography.`,
+        'Angle view, white BG': `Professional e-commerce 3/4 angle photograph of the ${productIdentity} on a pure white seamless backdrop. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} The product must look EXACTLY like the reference image(s). Slight elevated angle showing dimensionality, soft gradient shadow beneath, clean studio lighting. Commercial product photography quality.`,
+        'Detail/close-up, white BG': `Extreme close-up detail photograph of the ${productIdentity} on white background. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} The product must look EXACTLY like the reference image(s). Tight crop on the most visually interesting detail — surface texture, control interface, or distinctive design element. Macro lens, shallow depth of field, raking studio light.`,
+      },
+      lifestyle: {
+        'Product in use': `Lifestyle photograph of the ${productIdentity} being used naturally in its intended context. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} The product must look EXACTLY like the reference image(s). Person's hands interacting with the product, warm natural window light, authentic and aspirational. 50mm lens, f/2.8, gentle background bokeh.`,
+        'Context / setting': `Lifestyle environment photograph of the ${productIdentity} in a modern ${productCategory?.toLowerCase()?.includes('kitchen') || productCategory?.toLowerCase()?.includes('home') ? 'home interior with natural materials' : 'contemporary interior'}. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} The product must look EXACTLY like the reference image(s). Warm natural light, editorial style, product is the clear hero. 35mm lens, f/2.8.`,
+        'Scale / hands': `Photograph showing the ${productIdentity} held in human hands for scale reference. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} The product must look EXACTLY like the reference image(s). Clean, well-lit environment, focus on the product, hands providing natural sense of size. Soft natural light, warm tones.`,
+        'Styled flat lay': `Styled overhead flat-lay photograph of the ${productIdentity} with complementary props. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} The product must look EXACTLY like the reference image(s). Bird's-eye view, product off-center using rule of thirds, 3-4 relevant accessories. Clean matte surface, even diffused overhead light, Instagram-worthy editorial arrangement.`,
+      },
+      graphic: {
+        'Feature highlight #1': `Professional product infographic image of the ${productIdentity} highlighting its primary key feature/USP. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} The product shown at center with clean callout overlays pointing to the key feature. Dark gradient background, modern typography, clean design. Commercial quality graphic.`,
+        'Feature highlight #2': `Professional product infographic image of the ${productIdentity} highlighting a secondary feature/benefit. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} Product shown with clean graphical elements explaining the feature. Complementary color scheme, modern layout, commercial e-commerce graphic quality.`,
+        'Specs / comparison': `Professional product specifications graphic for the ${productIdentity}. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} Product centered with key technical specs displayed around it in a clean, modern layout. Iconographic callouts, premium color scheme, high-end e-commerce graphic.`,
+        'Awards / certifications': `Professional product trust/certification graphic for the ${productIdentity}. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} Product shown with quality badges, certification icons, or award elements. Clean modern design, premium feel, builds buyer confidence.`,
+      },
+    };
+
+    const typePrompts = slotPrompts[slot.type] || {};
+    const prompt = typePrompts[slot.desc] || `Professional product photograph of the ${productIdentity}. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} The product must look EXACTLY like the reference image(s). Commercial quality, studio lighting.`;
+
+    const useCase = slot.type === 'studio' ? 'product_variation' : 'product_scene';
+
+    try {
+      const url = await generateImage(prompt, useCase);
+
+      // Save to library
+      saveToLibrary(url, {
+        companyId: user.company_id,
+        userId: user.id,
+        productId: product.id,
+        productName: product.name,
+        label: `${slot.label} - ${slot.desc}`,
+        prompt,
+      });
+
+      // Insert at the correct position in the listing gallery
+      const currentHero = listing?.hero_image_url || null;
+      const currentGallery = listing?.gallery_urls || [];
+      const allCurrentUrls = [currentHero, ...currentGallery].filter(Boolean);
+
+      // Slot position determines where the new image goes (0-indexed)
+      const targetIdx = slot.slot - 1;
+      const newUrls = [...allCurrentUrls];
+
+      if (targetIdx <= newUrls.length) {
+        newUrls.splice(targetIdx, 0, url);
+      } else {
+        newUrls.push(url);
+      }
+
+      // Save back: first URL is hero, rest is gallery
+      await saveListingSilent({
+        hero_image_url: newUrls[0],
+        gallery_urls: newUrls.slice(1),
+      });
+
+      await fetchListing();
+      toast.success(`Generated ${slot.label.toLowerCase()} image for slot ${slot.slot}`);
+    } catch (err) {
+      console.error('[handleGenerateSlotImage] Failed:', err);
+      toast.error(`Failed to generate ${slot.label.toLowerCase()} image`);
+      throw err;
+    }
+  }, [product, details, user, listing, generateImage, saveListingSilent, fetchListing]);
+
   // Switch to a specific sub-tab - clear generation view when leaving analytics
   const handleTabChange = useCallback((tabId) => {
     if (tabId !== 'analytics' && generatingProgress?.phase === 'done') {
@@ -759,6 +838,7 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
             generatingProgress={generatingProgress}
             onTabChange={handleTabChange}
             onUpdate={saveListingSilent}
+            onGenerateSlotImage={handleGenerateSlotImage}
           />
         );
       case 'analytics':

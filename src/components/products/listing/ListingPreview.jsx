@@ -72,8 +72,25 @@ const TYPE_COLORS = {
   graphic: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
 };
 
-function ImageTemplateGuide({ selectedCount, hasVideo, t }) {
+const TEMPLATE_GROUPS = [
+  { type: 'studio', label: 'Studio (white BG)', slots: IMAGE_TEMPLATE.filter(s => s.type === 'studio') },
+  { type: 'lifestyle', label: 'Lifestyle', slots: IMAGE_TEMPLATE.filter(s => s.type === 'lifestyle') },
+  { type: 'graphic', label: 'USP Graphics', slots: IMAGE_TEMPLATE.filter(s => s.type === 'graphic') },
+];
+
+function ImageTemplateGuide({ selectedUrls, videoUrl, onGenerateForSlot, generatingSlot, t }) {
   const [expanded, setExpanded] = useState(false);
+  const selectedCount = selectedUrls.length;
+  const hasVideo = !!videoUrl;
+
+  // Map images to template slots by position
+  const slotImageMap = useMemo(() => {
+    const map = {};
+    IMAGE_TEMPLATE.forEach((tmpl, idx) => {
+      map[tmpl.slot] = selectedUrls[idx] || null;
+    });
+    return map;
+  }, [selectedUrls]);
 
   return (
     <div className={cn(
@@ -114,52 +131,77 @@ function ImageTemplateGuide({ selectedCount, hasVideo, t }) {
             transition={{ duration: 0.15 }}
             className="overflow-hidden"
           >
-            <div className={cn('px-2.5 pb-2.5 pt-1 border-t', t('border-slate-100', 'border-white/5'))}>
-              <div className="grid grid-cols-11 gap-1">
-                {IMAGE_TEMPLATE.map((slot) => {
-                  const colors = TYPE_COLORS[slot.type];
-                  const isFilled = slot.slot <= selectedCount;
+            <div className={cn('px-2.5 pb-2.5 pt-1.5 border-t space-y-2.5', t('border-slate-100', 'border-white/5'))}>
+              {TEMPLATE_GROUPS.map((group) => {
+                const colors = TYPE_COLORS[group.type];
+                const filledCount = group.slots.filter(s => slotImageMap[s.slot]).length;
+                const allFilled = filledCount === group.slots.length;
 
-                  return (
-                    <div
-                      key={slot.slot}
-                      className={cn(
-                        'flex flex-col items-center rounded-md border p-1 transition-all',
-                        isFilled
-                          ? cn(colors.bg, colors.border)
-                          : cn(t('border-slate-200 bg-white', 'border-white/5 bg-white/[0.02]'))
-                      )}
-                    >
-                      <span className={cn(
-                        'text-[8px] font-bold leading-none',
-                        isFilled ? colors.text : t('text-slate-300', 'text-zinc-700')
-                      )}>
-                        {slot.slot}
+                return (
+                  <div key={group.type}>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <div className={cn('w-1.5 h-1.5 rounded-full', colors.bg, 'ring-1', colors.border)} />
+                      <span className={cn('text-[9px] font-semibold', t('text-slate-500', 'text-zinc-500'))}>
+                        {group.label}
                       </span>
-                      <span className={cn(
-                        'text-[7px] font-medium leading-tight mt-0.5 text-center',
-                        isFilled ? colors.text : t('text-slate-400', 'text-zinc-600')
-                      )}>
-                        {slot.label}
+                      <span className={cn('text-[9px] font-medium', allFilled ? 'text-emerald-400' : t('text-slate-400', 'text-zinc-600'))}>
+                        {filledCount}/{group.slots.length}
                       </span>
                     </div>
-                  );
-                })}
-              </div>
+                    <div className="flex gap-1.5">
+                      {group.slots.map((slot) => {
+                        const imageUrl = slotImageMap[slot.slot];
+                        const isGenerating = generatingSlot === slot.slot;
 
-              {/* Legend */}
-              <div className="flex items-center gap-3 mt-1.5">
-                {[
-                  { type: 'studio', label: '3 Studio (white BG)' },
-                  { type: 'lifestyle', label: '4 Lifestyle' },
-                  { type: 'graphic', label: '4 USP Graphics' },
-                ].map(({ type, label }) => (
-                  <div key={type} className="flex items-center gap-1">
-                    <div className={cn('w-1.5 h-1.5 rounded-full', TYPE_COLORS[type].bg, 'ring-1', TYPE_COLORS[type].border)} />
-                    <span className={cn('text-[9px]', t('text-slate-400', 'text-zinc-500'))}>{label}</span>
+                        if (imageUrl) {
+                          return (
+                            <div key={slot.slot} className={cn(
+                              'relative flex-1 aspect-square rounded-md overflow-hidden border',
+                              colors.border
+                            )}>
+                              <img src={imageUrl} alt={slot.desc} className="w-full h-full object-cover" />
+                              <div className={cn(
+                                'absolute bottom-0 inset-x-0 py-px text-center text-[7px] font-bold',
+                                'bg-gradient-to-t from-black/60 to-transparent text-white/90'
+                              )}>
+                                {slot.slot}
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <button
+                            key={slot.slot}
+                            onClick={() => onGenerateForSlot?.(slot)}
+                            disabled={!!generatingSlot}
+                            className={cn(
+                              'relative flex-1 aspect-square rounded-md border-2 border-dashed',
+                              'flex flex-col items-center justify-center gap-0.5 transition-all',
+                              colors.border,
+                              isGenerating
+                                ? cn('opacity-100', colors.bg)
+                                : 'opacity-40 hover:opacity-100',
+                              !!generatingSlot && !isGenerating && 'cursor-not-allowed'
+                            )}
+                          >
+                            {isGenerating ? (
+                              <Loader2 className={cn('w-3.5 h-3.5 animate-spin', colors.text)} />
+                            ) : (
+                              <>
+                                <Sparkles className={cn('w-3 h-3', colors.text)} />
+                                <span className={cn('text-[6px] font-semibold leading-tight text-center px-0.5', colors.text)}>
+                                  {slot.desc.split(',')[0]}
+                                </span>
+                              </>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
           </motion.div>
         )}
@@ -172,7 +214,7 @@ function ImageTemplateGuide({ selectedCount, hasVideo, t }) {
 // Draggable Image Strip — marketplace-style main image + reorderable thumbs
 // ---------------------------------------------------------------------------
 
-function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
+function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, onGenerateSlotImage, generatingSlot, t }) {
   const videoUrl = listing?.video_url || null;
 
   // Build image pool from all sources
@@ -502,7 +544,13 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
       )}
 
       {/* Advised image template */}
-      <ImageTemplateGuide selectedCount={selectedUrls.length} hasVideo={!!videoUrl} t={t} />
+      <ImageTemplateGuide
+        selectedUrls={selectedUrls}
+        videoUrl={videoUrl}
+        onGenerateForSlot={onGenerateSlotImage}
+        generatingSlot={generatingSlot}
+        t={t}
+      />
     </div>
   );
 }
@@ -943,136 +991,207 @@ const STATUS_CONFIG = {
   critical: { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', label: 'Critical' },
 };
 
-function AuditReport({ audit, onClose, t }) {
-  if (!audit) return null;
+function AuditSidebar({ audit, auditing, onRunAudit, t }) {
+  const scoreColor = audit?.overall_score >= 80 ? 'text-emerald-400' : audit?.overall_score >= 50 ? 'text-amber-400' : 'text-red-400';
+  const scoreBg = audit?.overall_score >= 80 ? 'bg-emerald-500/10' : audit?.overall_score >= 50 ? 'bg-amber-500/10' : 'bg-red-500/10';
+  const scoreRingColor = audit?.overall_score >= 80 ? 'stroke-emerald-400' : audit?.overall_score >= 50 ? 'stroke-amber-400' : 'stroke-red-400';
 
-  const scoreColor = audit.overall_score >= 80 ? 'text-emerald-400' : audit.overall_score >= 50 ? 'text-amber-400' : 'text-red-400';
-  const scoreBg = audit.overall_score >= 80 ? 'bg-emerald-500/10' : audit.overall_score >= 50 ? 'bg-amber-500/10' : 'bg-red-500/10';
+  // Score ring
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const scoreOffset = audit ? circumference - (audit.overall_score / 100) * circumference : circumference;
 
   return (
-    <motion.div
-      initial={{ height: 0, opacity: 0 }}
-      animate={{ height: 'auto', opacity: 1 }}
-      exit={{ height: 0, opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className="overflow-hidden"
-    >
-      <div className={cn('border-t', t('border-slate-100', 'border-white/5'))}>
+    <div className={cn(
+      'lg:border-l h-full overflow-y-auto',
+      t('border-slate-100 bg-slate-50/50', 'border-white/[0.04] bg-white/[0.01]')
+    )}>
+      <div className="p-4 space-y-4">
         {/* Header */}
-        <div className={cn('flex items-center justify-between px-4 py-2', t('bg-slate-50', 'bg-white/[0.02]'))}>
-          <div className="flex items-center gap-2">
-            <ShieldCheck className={cn('w-3.5 h-3.5', scoreColor)} />
-            <span className={cn('text-[11px] font-semibold', t('text-slate-700', 'text-zinc-300'))}>AI Audit Report</span>
-            <span className={cn('text-sm font-bold tabular-nums px-1.5 py-0.5 rounded', scoreBg, scoreColor)}>
-              {audit.overall_score}/100
-            </span>
-          </div>
-          <button onClick={onClose} className={cn('p-1 rounded hover:bg-white/5', t('text-slate-400', 'text-zinc-500'))}>
-            <X className="w-3 h-3" />
-          </button>
+        <div className="flex items-center gap-2">
+          <ShieldCheck className={cn('w-4 h-4', audit ? scoreColor : t('text-slate-400', 'text-zinc-600'))} />
+          <span className={cn('text-xs font-semibold', t('text-slate-700', 'text-zinc-300'))}>Listing Audit</span>
         </div>
 
-        <div className="px-4 pb-4 space-y-3">
-          {/* Summary */}
-          {audit.summary && (
-            <p className={cn('text-xs leading-relaxed', t('text-slate-600', 'text-zinc-400'))}>
-              {audit.summary}
+        {/* Empty / Loading / Score states */}
+        {!audit && !auditing && (
+          <div className="flex flex-col items-center text-center pt-4 pb-2">
+            <div className={cn(
+              'w-20 h-20 rounded-full flex items-center justify-center mb-3',
+              t('bg-slate-100', 'bg-white/[0.04]')
+            )}>
+              <ShieldCheck className={cn('w-8 h-8', t('text-slate-300', 'text-zinc-700'))} />
+            </div>
+            <p className={cn('text-xs font-medium mb-1', t('text-slate-600', 'text-zinc-400'))}>
+              No audit yet
             </p>
-          )}
-
-          {/* Category scores */}
-          <div className="space-y-2">
-            {(audit.categories || []).map((cat, idx) => {
-              const cfg = STATUS_CONFIG[cat.status] || STATUS_CONFIG.warning;
-              const StatusIcon = cfg.icon;
-              const hasDetails = cat.issues?.length > 0 || cat.suggestions?.length > 0;
-
-              return (
-                <details key={idx} className={cn(
-                  'rounded-lg border overflow-hidden group',
-                  t('bg-white border-slate-200', 'bg-white/[0.02] border-white/5')
-                )}>
-                  <summary className={cn(
-                    'flex items-center justify-between px-3 py-2 cursor-pointer select-none',
-                    t('hover:bg-slate-50', 'hover:bg-white/[0.02]')
-                  )}>
-                    <div className="flex items-center gap-2">
-                      <StatusIcon className={cn('w-3.5 h-3.5', cfg.color)} />
-                      <span className={cn('text-xs font-medium', t('text-slate-700', 'text-zinc-300'))}>{cat.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded', cfg.bg, cfg.color)}>
-                        {cat.score}/100
-                      </span>
-                      <ChevronDown className={cn('w-3 h-3 transition-transform group-open:rotate-180', t('text-slate-400', 'text-zinc-600'))} />
-                    </div>
-                  </summary>
-
-                  {hasDetails && (
-                    <div className={cn('px-3 pb-2.5 pt-1 space-y-2 border-t', t('border-slate-100', 'border-white/5'))}>
-                      {cat.issues?.length > 0 && (
-                        <div className="space-y-1">
-                          {cat.issues.map((issue, i) => (
-                            <div key={i} className="flex items-start gap-1.5">
-                              <XCircle className="w-3 h-3 text-red-400/70 mt-0.5 flex-shrink-0" />
-                              <span className={cn('text-[11px] leading-snug', t('text-slate-600', 'text-zinc-400'))}>{issue}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {cat.suggestions?.length > 0 && (
-                        <div className="space-y-1">
-                          {cat.suggestions.map((sug, i) => (
-                            <div key={i} className="flex items-start gap-1.5">
-                              <Sparkles className="w-3 h-3 text-cyan-400/70 mt-0.5 flex-shrink-0" />
-                              <span className={cn('text-[11px] leading-snug', t('text-slate-600', 'text-zinc-400'))}>{sug}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </details>
-              );
-            })}
+            <p className={cn('text-[11px] mb-4 max-w-[200px]', t('text-slate-400', 'text-zinc-600'))}>
+              Run an AI audit to score your listing quality and get suggestions.
+            </p>
+            <button
+              onClick={onRunAudit}
+              className={cn(
+                'flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all',
+                'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white',
+                'shadow-sm shadow-cyan-500/10'
+              )}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Run Audit
+            </button>
           </div>
+        )}
 
-          {/* Missing USP visuals */}
-          {audit.missing_usp_visuals?.length > 0 && (
-            <div className={cn('rounded-lg border p-3', t('bg-red-50/50 border-red-200', 'bg-red-500/5 border-red-500/10'))}>
-              <span className={cn('text-[10px] font-semibold uppercase tracking-wider block mb-1.5', 'text-red-400')}>
-                Features Missing From Images
-              </span>
-              <div className="space-y-1">
-                {audit.missing_usp_visuals.map((f, i) => (
-                  <div key={i} className="flex items-start gap-1.5">
-                    <ImageIcon className="w-3 h-3 text-red-400/70 mt-0.5 flex-shrink-0" />
-                    <span className={cn('text-[11px] leading-snug', t('text-slate-700', 'text-zinc-300'))}>{f}</span>
-                  </div>
-                ))}
+        {auditing && (
+          <div className="flex flex-col items-center text-center pt-6 pb-2">
+            <div className="relative w-20 h-20 mb-3">
+              <svg className="w-20 h-20 -rotate-90 animate-pulse" viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r={radius} fill="none" className={t('stroke-slate-200', 'stroke-white/5')} strokeWidth="5" />
+                <circle cx="40" cy="40" r={radius} fill="none" className="stroke-cyan-500/40" strokeWidth="5"
+                  strokeDasharray={circumference} strokeDashoffset={circumference * 0.6}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
               </div>
             </div>
-          )}
+            <p className={cn('text-xs font-medium', t('text-slate-600', 'text-zinc-400'))}>
+              Analyzing listing...
+            </p>
+            <p className={cn('text-[10px] mt-0.5', t('text-slate-400', 'text-zinc-600'))}>
+              Inspecting images, copy & SEO
+            </p>
+          </div>
+        )}
 
-          {/* Top priorities */}
-          {audit.top_priorities?.length > 0 && (
-            <div className={cn('rounded-lg border p-3', t('bg-cyan-50/50 border-cyan-200', 'bg-cyan-500/5 border-cyan-500/10'))}>
-              <span className={cn('text-[10px] font-semibold uppercase tracking-wider block mb-1.5', 'text-cyan-500')}>
-                Top Priorities
-              </span>
-              <ol className="space-y-1">
-                {audit.top_priorities.map((p, i) => (
-                  <li key={i} className="flex items-start gap-1.5">
-                    <span className={cn('text-[10px] font-bold w-4 flex-shrink-0', 'text-cyan-400')}>{i + 1}.</span>
-                    <span className={cn('text-[11px] leading-snug', t('text-slate-700', 'text-zinc-300'))}>{p}</span>
-                  </li>
-                ))}
-              </ol>
+        {audit && !auditing && (
+          <>
+            {/* Score ring */}
+            <div className="flex flex-col items-center pt-1 pb-2">
+              <div className="relative w-24 h-24 mb-2">
+                <svg className="w-24 h-24 -rotate-90" viewBox="0 0 80 80">
+                  <circle cx="40" cy="40" r={radius} fill="none" className={t('stroke-slate-200', 'stroke-white/[0.06]')} strokeWidth="5" />
+                  <circle cx="40" cy="40" r={radius} fill="none" className={scoreRingColor} strokeWidth="5"
+                    strokeDasharray={circumference} strokeDashoffset={scoreOffset}
+                    strokeLinecap="round"
+                    style={{ transition: 'stroke-dashoffset 0.8s ease-out' }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className={cn('text-2xl font-bold tabular-nums', scoreColor)}>
+                    {audit.overall_score}
+                  </span>
+                  <span className={cn('text-[9px] font-medium -mt-0.5', t('text-slate-400', 'text-zinc-600'))}>/ 100</span>
+                </div>
+              </div>
+
+              {audit.summary && (
+                <p className={cn('text-[11px] leading-relaxed text-center max-w-[240px]', t('text-slate-500', 'text-zinc-500'))}>
+                  {audit.summary}
+                </p>
+              )}
             </div>
-          )}
-        </div>
+
+            {/* Category scores as compact bars */}
+            <div className="space-y-2">
+              {(audit.categories || []).map((cat, idx) => {
+                const cfg = STATUS_CONFIG[cat.status] || STATUS_CONFIG.warning;
+                const StatusIcon = cfg.icon;
+                const hasDetails = cat.issues?.length > 0 || cat.suggestions?.length > 0;
+                const barColor = cat.status === 'good' ? 'bg-emerald-400' : cat.status === 'warning' ? 'bg-amber-400' : 'bg-red-400';
+
+                return (
+                  <details key={idx} className="group">
+                    <summary className={cn(
+                      'flex items-center gap-2 cursor-pointer select-none py-1 transition-colors rounded-md px-1 -mx-1',
+                      t('hover:bg-slate-100', 'hover:bg-white/[0.03]')
+                    )}>
+                      <StatusIcon className={cn('w-3 h-3 flex-shrink-0', cfg.color)} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className={cn('text-[11px] font-medium truncate', t('text-slate-700', 'text-zinc-300'))}>{cat.name}</span>
+                          <span className={cn('text-[10px] font-semibold tabular-nums ml-2', cfg.color)}>{cat.score}</span>
+                        </div>
+                        <div className={cn('h-1 rounded-full overflow-hidden', t('bg-slate-200', 'bg-white/[0.06]'))}>
+                          <div className={cn('h-full rounded-full transition-all duration-500', barColor)}
+                            style={{ width: `${cat.score}%` }}
+                          />
+                        </div>
+                      </div>
+                      <ChevronDown className={cn('w-2.5 h-2.5 flex-shrink-0 transition-transform group-open:rotate-180', t('text-slate-400', 'text-zinc-600'))} />
+                    </summary>
+
+                    {hasDetails && (
+                      <div className={cn('pl-5 pr-1 pb-2 pt-1.5 space-y-1.5')}>
+                        {cat.issues?.map((issue, i) => (
+                          <div key={`i-${i}`} className="flex items-start gap-1.5">
+                            <XCircle className="w-2.5 h-2.5 text-red-400/70 mt-0.5 flex-shrink-0" />
+                            <span className={cn('text-[10px] leading-snug', t('text-slate-500', 'text-zinc-500'))}>{issue}</span>
+                          </div>
+                        ))}
+                        {cat.suggestions?.map((sug, i) => (
+                          <div key={`s-${i}`} className="flex items-start gap-1.5">
+                            <Sparkles className="w-2.5 h-2.5 text-cyan-400/70 mt-0.5 flex-shrink-0" />
+                            <span className={cn('text-[10px] leading-snug', t('text-slate-500', 'text-zinc-500'))}>{sug}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </details>
+                );
+              })}
+            </div>
+
+            {/* Missing USP visuals */}
+            {audit.missing_usp_visuals?.length > 0 && (
+              <div className={cn('rounded-lg border p-2.5', t('bg-red-50/50 border-red-200', 'bg-red-500/5 border-red-500/10'))}>
+                <span className={cn('text-[9px] font-semibold uppercase tracking-wider block mb-1.5', 'text-red-400')}>
+                  Missing From Images
+                </span>
+                <div className="space-y-1">
+                  {audit.missing_usp_visuals.map((f, i) => (
+                    <div key={i} className="flex items-start gap-1.5">
+                      <ImageIcon className="w-2.5 h-2.5 text-red-400/70 mt-0.5 flex-shrink-0" />
+                      <span className={cn('text-[10px] leading-snug', t('text-slate-700', 'text-zinc-300'))}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Top priorities */}
+            {audit.top_priorities?.length > 0 && (
+              <div className={cn('rounded-lg border p-2.5', t('bg-cyan-50/50 border-cyan-200', 'bg-cyan-500/5 border-cyan-500/10'))}>
+                <span className={cn('text-[9px] font-semibold uppercase tracking-wider block mb-1.5', 'text-cyan-500')}>
+                  Top Priorities
+                </span>
+                <ol className="space-y-1">
+                  {audit.top_priorities.map((p, i) => (
+                    <li key={i} className="flex items-start gap-1.5">
+                      <span className={cn('text-[9px] font-bold w-3 flex-shrink-0', 'text-cyan-400')}>{i + 1}.</span>
+                      <span className={cn('text-[10px] leading-snug', t('text-slate-700', 'text-zinc-300'))}>{p}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {/* Re-audit button */}
+            <button
+              onClick={onRunAudit}
+              className={cn(
+                'w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all border',
+                t('border-slate-200 hover:border-slate-300 text-slate-500 hover:text-slate-700', 'border-white/10 hover:border-white/20 text-zinc-500 hover:text-zinc-300')
+              )}
+            >
+              <ShieldCheck className="w-3 h-3" />
+              Re-audit
+            </button>
+          </>
+        )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -1089,12 +1208,26 @@ export default function ListingPreview({
   generatingProgress,
   onTabChange,
   onUpdate,
+  onGenerateSlotImage,
 }) {
   const { t } = useTheme();
   const [saveStatus, setSaveStatus] = useState('idle');
   const [auditData, setAuditData] = useState(null);
   const [auditing, setAuditing] = useState(false);
   const [specsExpanded, setSpecsExpanded] = useState(false);
+  const [generatingSlot, setGeneratingSlot] = useState(null);
+
+  const handleGenerateSlot = useCallback(async (slot) => {
+    if (!onGenerateSlotImage || generatingSlot) return;
+    setGeneratingSlot(slot.slot);
+    try {
+      await onGenerateSlotImage(slot);
+    } catch (err) {
+      console.error('[ListingPreview] Slot generation failed:', err);
+    } finally {
+      setGeneratingSlot(null);
+    }
+  }, [onGenerateSlotImage, generatingSlot]);
 
   // Build specifications array from details prop
   const specs = useMemo(() => {
@@ -1184,7 +1317,7 @@ export default function ListingPreview({
     )}>
       {/* Toolbar */}
       <div className={cn(
-        'flex items-center justify-between px-4 py-2 border-b',
+        'flex items-center justify-between px-5 py-2 border-b',
         t('bg-slate-50/80 border-slate-200', 'bg-white/[0.02] border-white/5')
       )}>
         <div className="flex items-center gap-2">
@@ -1205,50 +1338,37 @@ export default function ListingPreview({
             )}
           </AnimatePresence>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleAudit}
-            disabled={auditing}
-            className={cn(
-              'flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all border',
-              auditing
-                ? 'opacity-60 cursor-not-allowed'
-                : t('border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-800', 'border-white/10 hover:border-white/20 text-zinc-400 hover:text-zinc-200')
-            )}
-          >
-            {auditing ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
-            {auditing ? 'Auditing...' : 'Audit'}
-          </button>
-          <button
-            onClick={onGenerateAll}
-            disabled={loading}
-            className={cn(
-              'flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all',
-              'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white',
-              loading && 'opacity-60 cursor-not-allowed'
-            )}
-          >
-            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-            {loading ? 'Generating...' : 'Regenerate'}
-          </button>
-        </div>
+        <button
+          onClick={onGenerateAll}
+          disabled={loading}
+          className={cn(
+            'flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all',
+            'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white',
+            loading && 'opacity-60 cursor-not-allowed'
+          )}
+        >
+          {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+          {loading ? 'Generating...' : 'Regenerate'}
+        </button>
       </div>
 
-      {/* ── Two-column: Small images left, content right ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr]">
-        {/* Left: Image Gallery Editor (compact) */}
-        <div className={cn('p-3 lg:border-r', t('lg:border-slate-100', 'lg:border-white/[0.03]'))}>
+      {/* ── Three-column: Images | Content | Audit Sidebar ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr_280px]">
+        {/* Left: Image Gallery Editor */}
+        <div className={cn('p-4 lg:border-r', t('lg:border-slate-100', 'lg:border-white/[0.03]'))}>
           <ImageGalleryEditor
             product={product}
             listing={listing}
             onUpdate={handleImageUpdate}
             onTabChange={onTabChange}
+            onGenerateSlotImage={handleGenerateSlot}
+            generatingSlot={generatingSlot}
             t={t}
           />
         </div>
 
-        {/* Right: Title + Key Features + Description stacked */}
-        <div className="p-4 space-y-4">
+        {/* Middle: Title + Key Features + Description */}
+        <div className={cn('p-5 lg:p-6 space-y-5', t('', ''))}>
           {/* Title & Tagline */}
           <div>
             {product?.brand && (
@@ -1298,12 +1418,20 @@ export default function ListingPreview({
             />
           </div>
         </div>
+
+        {/* Right: Audit Sidebar */}
+        <AuditSidebar
+          audit={auditData}
+          auditing={auditing}
+          onRunAudit={handleAudit}
+          t={t}
+        />
       </div>
 
       {/* ── Product Specifications (below images, left-aligned) ── */}
       {specs.length > 0 && (
         <div className={cn('border-t', t('border-slate-100', 'border-white/[0.03]'))}>
-          <div className="p-3 lg:w-[420px]">
+          <div className="p-4 lg:w-[420px]">
             <button
               onClick={() => setSpecsExpanded(!specsExpanded)}
               className={cn(
@@ -1357,16 +1485,9 @@ export default function ListingPreview({
       )}
 
       {/* ── SEO Section (collapsible) ── */}
-      <div className={cn('px-4 py-3 border-t', t('border-slate-100', 'border-white/[0.03]'))}>
+      <div className={cn('px-5 py-3 border-t', t('border-slate-100', 'border-white/[0.03]'))}>
         <SEOSection listing={listing} onUpdate={debouncedOnUpdate} t={t} />
       </div>
-
-      {/* ── Audit Report ── */}
-      <AnimatePresence>
-        {auditData && (
-          <AuditReport audit={auditData} onClose={() => setAuditData(null)} t={t} />
-        )}
-      </AnimatePresence>
     </div>
   );
 }

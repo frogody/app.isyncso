@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import {
   Upload, X, Image as ImageIcon, Star, StarOff, GripVertical,
   Loader2, AlertCircle, CheckCircle, Trash2, RotateCcw, ZoomIn,
-  FolderOpen, Check
+  FolderOpen, Check, Camera, Sparkles, LayoutGrid, Tag
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -16,6 +16,36 @@ import {
   DialogContent,
 } from '@/components/ui/dialog';
 import { useTheme } from '@/contexts/GlobalThemeContext';
+
+const IMAGES_PER_ROW = 4;
+const MAX_VISIBLE_ROWS = 2;
+const MAX_VISIBLE = IMAGES_PER_ROW * MAX_VISIBLE_ROWS; // 8
+
+function classifyImageType(image) {
+  const alt = (image.alt || '').toLowerCase();
+  const url = (image.url || '').toLowerCase();
+
+  if (alt.includes('hero') || alt.includes('studio') || alt.includes('white background') || alt.includes('main'))
+    return 'studio';
+  if (alt.includes('lifestyle') || alt.includes('scene') || alt.includes('context') || alt.includes('setting'))
+    return 'lifestyle';
+  if (alt.includes('usp') || alt.includes('graphic') || alt.includes('infographic') || alt.includes('feature'))
+    return 'usp';
+  if (alt.includes('video') || alt.includes('frame') || alt.includes('cinematic'))
+    return 'video_frame';
+
+  if (image.isFeatured) return 'studio';
+
+  return 'other';
+}
+
+const IMAGE_TYPE_META = {
+  studio: { label: 'Studio Shots', icon: Camera, color: 'cyan' },
+  lifestyle: { label: 'Lifestyle', icon: Sparkles, color: 'blue' },
+  usp: { label: 'USP Graphics', icon: LayoutGrid, color: 'purple' },
+  video_frame: { label: 'Video Frames', icon: Tag, color: 'amber' },
+  other: { label: 'Other', icon: ImageIcon, color: 'zinc' },
+};
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -39,6 +69,7 @@ export default function ProductImageUploader({
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
+  const [showAllGallery, setShowAllGallery] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
   const [libraryItems, setLibraryItems] = useState([]);
   const [libraryLoading, setLibraryLoading] = useState(false);
@@ -49,6 +80,20 @@ export default function ProductImageUploader({
     ...(featuredImage ? [{ ...(typeof featuredImage === 'string' ? { url: featuredImage } : featuredImage), isFeatured: true }] : []),
     ...safeImages.filter(img => img.url !== featuredImage?.url)
   ];
+
+  const hiddenCount = Math.max(0, allImages.length - (MAX_VISIBLE - 1));
+  const showMoreTile = allImages.length > MAX_VISIBLE;
+  const visibleImages = showMoreTile ? allImages.slice(0, MAX_VISIBLE - 1) : allImages;
+
+  const categorizedImages = useMemo(() => {
+    const categories = {};
+    allImages.forEach((img) => {
+      const type = classifyImageType(img);
+      if (!categories[type]) categories[type] = [];
+      categories[type].push(img);
+    });
+    return categories;
+  }, [allImages]);
 
   const handleDragEnter = useCallback((e) => {
     e.preventDefault();
@@ -395,9 +440,9 @@ export default function ProductImageUploader({
             axis="x"
             values={allImages}
             onReorder={handleReorder}
-            className="flex flex-wrap gap-3"
+            className="grid grid-cols-4 gap-3"
           >
-            {allImages.map((image) => (
+            {visibleImages.map((image) => (
               <Reorder.Item
                 key={image.url}
                 value={image}
@@ -405,7 +450,7 @@ export default function ProductImageUploader({
               >
                 <div
                   className={cn(
-                    "relative w-28 h-28 rounded-lg overflow-hidden border-2 transition-all",
+                    "relative aspect-square rounded-lg overflow-hidden border-2 transition-all",
                     `${t('bg-slate-100', 'bg-zinc-800')} cursor-grab active:cursor-grabbing`,
                     image.isFeatured
                       ? "border-cyan-500 ring-2 ring-cyan-500/30"
@@ -477,9 +522,116 @@ export default function ProductImageUploader({
                 </div>
               </Reorder.Item>
             ))}
+
+            {/* "+X more" tile */}
+            {showMoreTile && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowAllGallery(true)}
+                  className={cn(
+                    "relative aspect-square w-full rounded-lg overflow-hidden border-2 transition-all",
+                    t('border-slate-300', 'border-zinc-700'),
+                    t('hover:border-slate-400', 'hover:border-cyan-600'),
+                    t('bg-slate-100', 'bg-zinc-800/80'),
+                    "group cursor-pointer"
+                  )}
+                >
+                  {/* Blurred preview of next hidden image */}
+                  {allImages[MAX_VISIBLE - 1] && (
+                    <img
+                      src={allImages[MAX_VISIBLE - 1].url}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover blur-sm opacity-40"
+                    />
+                  )}
+                  <div className={cn(
+                    "absolute inset-0 flex flex-col items-center justify-center gap-1",
+                    t('bg-slate-100/70', 'bg-black/60'),
+                    "group-hover:bg-black/70 transition-colors"
+                  )}>
+                    <span className={cn("text-2xl font-bold", t('text-slate-700', 'text-white'))}>
+                      +{hiddenCount}
+                    </span>
+                    <span className={cn("text-xs", t('text-slate-500', 'text-zinc-400'))}>
+                      more
+                    </span>
+                  </div>
+                </button>
+              </div>
+            )}
           </Reorder.Group>
         </div>
       )}
+
+      {/* All Images Gallery Modal (Categorized) */}
+      <Dialog open={showAllGallery} onOpenChange={setShowAllGallery}>
+        <DialogContent className={cn("max-w-3xl max-h-[85vh] flex flex-col p-0 overflow-hidden", t('bg-white', 'bg-zinc-900'), t('border-slate-200', 'border-zinc-800'))}>
+          <div className={cn("flex items-center justify-between px-6 py-4 border-b shrink-0", t('border-slate-200', 'border-zinc-800'))}>
+            <div>
+              <h3 className={cn("text-base font-semibold", t('text-slate-900', 'text-white'))}>All Product Images</h3>
+              <p className={cn("text-xs mt-0.5", t('text-slate-500', 'text-zinc-500'))}>{allImages.length} images across {Object.keys(categorizedImages).length} categories</p>
+            </div>
+            <button onClick={() => setShowAllGallery(false)} className={cn("p-1.5 rounded-lg transition-colors", t('hover:bg-slate-100', 'hover:bg-zinc-800'), t('text-slate-500', 'text-zinc-400'))}>
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+            {Object.entries(IMAGE_TYPE_META).map(([typeKey, meta]) => {
+              const imgs = categorizedImages[typeKey];
+              if (!imgs || imgs.length === 0) return null;
+              const Icon = meta.icon;
+              return (
+                <div key={typeKey}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Icon className={cn("w-4 h-4", {
+                      'text-cyan-400': meta.color === 'cyan',
+                      'text-blue-400': meta.color === 'blue',
+                      'text-purple-400': meta.color === 'purple',
+                      'text-amber-400': meta.color === 'amber',
+                      'text-zinc-400': meta.color === 'zinc',
+                    })} />
+                    <h4 className={cn("text-sm font-medium", t('text-slate-700', 'text-zinc-300'))}>{meta.label}</h4>
+                    <span className={cn("text-xs px-1.5 py-0.5 rounded-full", t('bg-slate-100 text-slate-500', 'bg-zinc-800 text-zinc-500'))}>{imgs.length}</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-3">
+                    {imgs.map((img) => (
+                      <button
+                        key={img.url}
+                        type="button"
+                        onClick={() => { setPreviewImage(img); }}
+                        className={cn(
+                          "relative aspect-square rounded-lg overflow-hidden border-2 transition-all group",
+                          img.isFeatured
+                            ? "border-cyan-500 ring-2 ring-cyan-500/30"
+                            : cn(t('border-slate-200', 'border-zinc-800'), t('hover:border-slate-400', 'hover:border-zinc-600'))
+                        )}
+                      >
+                        <img src={img.url} alt={img.alt || 'Product image'} className="w-full h-full object-cover" />
+                        {img.isFeatured && (
+                          <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-cyan-500 text-[10px] font-bold text-black">
+                            FEATURED
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <ZoomIn className="w-5 h-5 text-white" />
+                        </div>
+                        <div className={cn(
+                          "absolute bottom-0 inset-x-0 px-1.5 py-1 text-[10px] truncate",
+                          "bg-gradient-to-t from-black/70 to-transparent text-white/80"
+                        )}>
+                          {img.alt || 'Untitled'}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Content Library Picker */}
       <Dialog open={showLibrary} onOpenChange={setShowLibrary}>
