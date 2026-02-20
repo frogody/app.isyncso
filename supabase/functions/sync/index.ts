@@ -193,6 +193,10 @@ const FINANCE_ACTIONS = [
   'list_expenses',
   'get_financial_summary',
   'convert_proposal_to_invoice',
+  'create_vendor',
+  'create_bill',
+  'get_trial_balance',
+  'get_balance_sheet',
 ];
 
 const PRODUCT_ACTIONS = [
@@ -1293,6 +1297,10 @@ You: "Found it! Philips OneBlade 360 Face. What kind of images do you need - cle
 - **list_expenses**: List expenses with filters
 - **get_financial_summary**: Get revenue/expense summary (month/quarter/year)
 - **convert_proposal_to_invoice**: Convert accepted proposal to invoice
+- **create_vendor**: Create a vendor/supplier (name, email, phone)
+- **create_bill**: Create a bill/payable for a vendor (amount, vendor_name, due_date)
+- **get_trial_balance**: View trial balance report (all account debits & credits)
+- **get_balance_sheet**: View balance sheet (Assets = Liabilities + Equity)
 
 ### PRODUCTS (6 actions)
 - **search_products**: Search products by name
@@ -1419,6 +1427,10 @@ You: Let me check!
 [ACTION]{"action": "list_invoices", "data": {"status": "sent", "limit": 10}}[/ACTION]
 [ACTION]{"action": "create_expense", "data": {"description": "Office supplies", "amount": 150, "category": "office", "vendor": "Staples"}}[/ACTION]
 [ACTION]{"action": "get_financial_summary", "data": {"period": "month"}}[/ACTION]
+[ACTION]{"action": "create_vendor", "data": {"name": "Office Depot", "email": "orders@officedepot.com"}}[/ACTION]
+[ACTION]{"action": "create_bill", "data": {"vendor_name": "Office Depot", "amount": 450.00, "due_date": "2026-03-15"}}[/ACTION]
+[ACTION]{"action": "get_trial_balance", "data": {}}[/ACTION]
+[ACTION]{"action": "get_balance_sheet", "data": {}}[/ACTION]
 
 ### Products
 [ACTION]{"action": "search_products", "data": {"query": "OneBlade"}}[/ACTION]

@@ -48,10 +48,15 @@
 ## Phase 2: Cash Flow Report + SYNC GL Actions (M)
 
 ### 2A — Cash Flow Report Page
-- **Status:** NOT STARTED
+- **Status:** DONE
+- **File:** `src/pages/FinanceReportCashFlow.jsx` (NEW)
+- **Changes:** Added to FinanceReports.jsx tabs (Wallet icon), registered in index.jsx (import, PAGES, Route)
+- **Features:** Period selection, Operating/Investing/Financing sections, Net Change + Beginning/Ending Cash summary, CSV export, Print
 
-### 2B — SYNC GL Actions (create_vendor, create_bill, get_trial_balance, get_balance_sheet)
-- **Status:** NOT STARTED
+### 2B — SYNC GL Actions
+- **Status:** DONE (code), SYNC deploy BLOCKED (project inactive)
+- **Actions added:** `create_vendor`, `create_bill`, `get_trial_balance`, `get_balance_sheet`
+- **Files:** `finance.ts` (4 new functions + router cases), `index.ts` (FINANCE_ACTIONS array + system prompt examples)
 
 ---
 

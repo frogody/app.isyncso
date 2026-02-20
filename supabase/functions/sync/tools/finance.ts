@@ -600,6 +600,252 @@ export async function convertProposalToInvoice(
 }
 
 // ============================================================================
+// Create Vendor
+// ============================================================================
+
+export async function createVendor(
+  ctx: ActionContext,
+  data: { name: string; email?: string; phone?: string; vendor_code?: string; address?: string; notes?: string }
+): Promise<ActionResult> {
+  try {
+    if (!data.name) return errorResult('Vendor name is required');
+
+    const { data: vendor, error } = await ctx.supabase
+      .from('vendors')
+      .insert({
+        company_id: ctx.companyId,
+        name: data.name,
+        email: data.email || null,
+        phone: data.phone || null,
+        vendor_code: data.vendor_code || null,
+        address: data.address || null,
+        notes: data.notes || null,
+      })
+      .select()
+      .single();
+
+    if (error) return errorResult(`Failed to create vendor: ${error.message}`, error.message);
+
+    return successResult(
+      `✅ **Vendor Created**\n\n` +
+      `- **Name:** ${vendor.name}\n` +
+      (vendor.email ? `- **Email:** ${vendor.email}\n` : '') +
+      (vendor.phone ? `- **Phone:** ${vendor.phone}\n` : '') +
+      (vendor.vendor_code ? `- **Code:** ${vendor.vendor_code}\n` : ''),
+      vendor,
+      '/financevendors'
+    );
+  } catch (err) {
+    return errorResult(`Exception creating vendor: ${String(err)}`, String(err));
+  }
+}
+
+// ============================================================================
+// Create Bill
+// ============================================================================
+
+export async function createBill(
+  ctx: ActionContext,
+  data: { vendor_name?: string; vendor_id?: string; amount: number; bill_number?: string; due_date?: string; notes?: string }
+): Promise<ActionResult> {
+  try {
+    if (!data.amount) return errorResult('Bill amount is required');
+
+    let vendorId = data.vendor_id;
+
+    // Lookup vendor by name if no ID provided
+    if (!vendorId && data.vendor_name) {
+      const { data: vendors } = await ctx.supabase
+        .from('vendors')
+        .select('id, name')
+        .eq('company_id', ctx.companyId)
+        .ilike('name', `%${data.vendor_name}%`)
+        .limit(1);
+
+      if (vendors && vendors.length > 0) {
+        vendorId = vendors[0].id;
+      } else {
+        // Auto-create vendor
+        const { data: newVendor, error: vErr } = await ctx.supabase
+          .from('vendors')
+          .insert({ company_id: ctx.companyId, name: data.vendor_name })
+          .select()
+          .single();
+
+        if (vErr) return errorResult(`Failed to create vendor: ${vErr.message}`);
+        vendorId = newVendor.id;
+      }
+    }
+
+    if (!vendorId) return errorResult('Vendor name or vendor_id is required');
+
+    const dueDate = data.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+    const { data: bill, error } = await ctx.supabase
+      .from('bills')
+      .insert({
+        company_id: ctx.companyId,
+        vendor_id: vendorId,
+        bill_number: data.bill_number || null,
+        amount: data.amount,
+        balance_due: data.amount,
+        status: 'pending',
+        due_date: dueDate,
+        notes: data.notes || null,
+        issued_date: new Date().toISOString().slice(0, 10),
+      })
+      .select('*, vendors(name)')
+      .single();
+
+    if (error) return errorResult(`Failed to create bill: ${error.message}`, error.message);
+
+    return successResult(
+      `✅ **Bill Created**\n\n` +
+      `- **Vendor:** ${bill.vendors?.name || 'Unknown'}\n` +
+      `- **Amount:** ${formatCurrency(data.amount)}\n` +
+      `- **Due Date:** ${formatDate(dueDate)}\n` +
+      (bill.bill_number ? `- **Bill #:** ${bill.bill_number}\n` : ''),
+      bill,
+      '/financebills'
+    );
+  } catch (err) {
+    return errorResult(`Exception creating bill: ${String(err)}`, String(err));
+  }
+}
+
+// ============================================================================
+// Get Trial Balance
+// ============================================================================
+
+export async function getTrialBalance(
+  ctx: ActionContext,
+  data: { as_of_date?: string } = {}
+): Promise<ActionResult> {
+  try {
+    const asOfDate = data.as_of_date || new Date().toISOString().slice(0, 10);
+
+    const { data: tbData, error } = await ctx.supabase.rpc('get_trial_balance', {
+      p_company_id: ctx.companyId,
+      p_as_of_date: asOfDate,
+    });
+
+    if (error) {
+      if (error.code === 'PGRST202') return errorResult('Trial Balance report not available. Initialize Chart of Accounts first.');
+      return errorResult(`Failed to get trial balance: ${error.message}`);
+    }
+
+    if (!tbData || tbData.length === 0) {
+      return successResult(
+        '📊 **Trial Balance** — No accounts found.\n\nInitialize your Chart of Accounts first.',
+        { rows: [] },
+        '/financeaccounts'
+      );
+    }
+
+    // Format as readable table
+    let output = `📊 **Trial Balance** (as of ${formatDate(asOfDate)})\n\n`;
+    output += `| Code | Account | Debit | Credit |\n|------|---------|-------|--------|\n`;
+
+    let totalDebit = 0;
+    let totalCredit = 0;
+
+    for (const row of tbData) {
+      const debit = parseFloat(row.debit) || 0;
+      const credit = parseFloat(row.credit) || 0;
+      if (debit === 0 && credit === 0) continue;
+      totalDebit += debit;
+      totalCredit += credit;
+      output += `| ${row.account_code} | ${row.account_name} | ${debit > 0 ? formatCurrency(debit) : '—'} | ${credit > 0 ? formatCurrency(credit) : '—'} |\n`;
+    }
+
+    output += `| | **Totals** | **${formatCurrency(totalDebit)}** | **${formatCurrency(totalCredit)}** |\n`;
+
+    const diff = Math.abs(totalDebit - totalCredit);
+    if (diff > 0.01) {
+      output += `\n⚠️ **Out of balance by ${formatCurrency(diff)}**`;
+    } else {
+      output += `\n✅ **Balanced**`;
+    }
+
+    return successResult(output, { rows: tbData, totalDebit, totalCredit, balanced: diff <= 0.01 }, '/financereports#trial-balance');
+  } catch (err) {
+    return errorResult(`Exception getting trial balance: ${String(err)}`, String(err));
+  }
+}
+
+// ============================================================================
+// Get Balance Sheet
+// ============================================================================
+
+export async function getBalanceSheet(
+  ctx: ActionContext,
+  data: { as_of_date?: string } = {}
+): Promise<ActionResult> {
+  try {
+    const asOfDate = data.as_of_date || new Date().toISOString().slice(0, 10);
+
+    const { data: bsData, error } = await ctx.supabase.rpc('get_balance_sheet', {
+      p_company_id: ctx.companyId,
+      p_as_of_date: asOfDate,
+    });
+
+    if (error) {
+      if (error.code === 'PGRST202') return errorResult('Balance Sheet report not available. Initialize Chart of Accounts first.');
+      return errorResult(`Failed to get balance sheet: ${error.message}`);
+    }
+
+    if (!bsData || bsData.length === 0) {
+      return successResult(
+        '📊 **Balance Sheet** — No data found.\n\nInitialize your Chart of Accounts and post transactions first.',
+        { rows: [] },
+        '/financeaccounts'
+      );
+    }
+
+    let output = `📊 **Balance Sheet** (as of ${formatDate(asOfDate)})\n\n`;
+
+    // Group by category: Assets, Liabilities, Equity
+    const groups: Record<string, any[]> = { Assets: [], Liabilities: [], Equity: [] };
+    const totals: Record<string, number> = { Assets: 0, Liabilities: 0, Equity: 0 };
+
+    for (const row of bsData) {
+      const cat = row.category || row.section;
+      const isSummary = row.is_summary === true || row.row_type === 'subtotal';
+      const amt = parseFloat(row.amount) || 0;
+
+      if (isSummary && groups[cat] !== undefined) {
+        totals[cat] = amt;
+      } else if (groups[cat] !== undefined) {
+        groups[cat].push(row);
+      }
+    }
+
+    for (const [section, rows] of Object.entries(groups)) {
+      output += `**${section}**\n`;
+      if (rows.length === 0) {
+        output += `  No ${section.toLowerCase()} accounts\n`;
+      } else {
+        for (const r of rows) {
+          output += `  ${r.account_code} ${r.account_name}: ${formatCurrency(r.amount)}\n`;
+        }
+      }
+      output += `  **Total ${section}: ${formatCurrency(totals[section])}**\n\n`;
+    }
+
+    const equityCheck = totals.Assets - totals.Liabilities - totals.Equity;
+    if (Math.abs(equityCheck) > 0.01) {
+      output += `⚠️ Assets (${formatCurrency(totals.Assets)}) ≠ Liabilities + Equity (${formatCurrency(totals.Liabilities + totals.Equity)})`;
+    } else {
+      output += `✅ **A = L + E balanced**`;
+    }
+
+    return successResult(output, { rows: bsData, totals }, '/financereports#balance-sheet');
+  } catch (err) {
+    return errorResult(`Exception getting balance sheet: ${String(err)}`, String(err));
+  }
+}
+
+// ============================================================================
 // Finance Action Router
 // ============================================================================
 
@@ -625,6 +871,14 @@ export async function executeFinanceAction(
       return getFinancialSummary(ctx, data);
     case 'convert_proposal_to_invoice':
       return convertProposalToInvoice(ctx, data);
+    case 'create_vendor':
+      return createVendor(ctx, data);
+    case 'create_bill':
+      return createBill(ctx, data);
+    case 'get_trial_balance':
+      return getTrialBalance(ctx, data);
+    case 'get_balance_sheet':
+      return getBalanceSheet(ctx, data);
     default:
       return errorResult(`Unknown finance action: ${action}`, 'Unknown action');
   }
