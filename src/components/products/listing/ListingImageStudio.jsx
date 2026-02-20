@@ -37,6 +37,31 @@ import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import { toast } from 'sonner';
 
+// Helper: save a generated image to the library (generated_content table)
+async function saveToLibrary(url, { supabaseClient, companyId, userId, productId, productName, label, prompt = '' }) {
+  try {
+    await supabaseClient.from('generated_content').insert({
+      company_id: companyId,
+      created_by: userId,
+      content_type: 'image',
+      status: 'completed',
+      url,
+      thumbnail_url: url,
+      name: `${productName || 'Product'} - ${label}`,
+      generation_config: {
+        source: 'listing_image_studio',
+        label,
+        prompt: prompt?.substring?.(0, 500) || '',
+        product_id: productId,
+      },
+      product_context: { product_id: productId },
+      tags: ['product_listing', label.toLowerCase().replace(/\s+/g, '_')],
+    });
+  } catch (err) {
+    console.warn('[ListingImageStudio:saveToLibrary] Failed:', err.message);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -371,6 +396,7 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
       const url = await generateImage(basePrompt, 'product_variation');
       setGeneratedHero(url);
       toast.success('Hero image generated');
+      saveToLibrary(url, { supabaseClient: supabase, companyId: user?.company_id, userId: user?.id, productId: product?.id, productName: product?.name, label: 'Hero Image', prompt: basePrompt });
     } catch (err) {
       console.error('[ListingImageStudio] Hero generation error:', err);
       toast.error(err.message || 'Failed to generate hero image');
@@ -401,6 +427,7 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
       const url = await generateImage(prompt, 'product_scene');
       setLifestyleImages((prev) => [{ url, scene: preset.label, createdAt: Date.now() }, ...prev]);
       toast.success(`${preset.label} scene generated`);
+      saveToLibrary(url, { supabaseClient: supabase, companyId: user?.company_id, userId: user?.id, productId: product?.id, productName: product?.name, label: preset.label, prompt });
     } catch (err) {
       console.error('[ListingImageStudio] Scene generation error:', err);
       toast.error(err.message || 'Scene generation failed');
@@ -422,6 +449,7 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
       setLifestyleImages((prev) => [{ url, scene: 'Custom', createdAt: Date.now() }, ...prev]);
       setCustomScenePrompt('');
       toast.success('Custom scene generated');
+      saveToLibrary(url, { supabaseClient: supabase, companyId: user?.company_id, userId: user?.id, productId: product?.id, productName: product?.name, label: 'Custom Scene', prompt });
     } catch (err) {
       console.error('[ListingImageStudio] Custom scene error:', err);
       toast.error(err.message || 'Scene generation failed');
@@ -452,6 +480,8 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
         setBatchProgress(((i) / prompts.length) * 100);
         const url = await generateImage(prompts[i], i === 0 ? 'product_variation' : 'product_scene');
         results.push({ url, prompt: prompts[i], index: i });
+        const labels = ['Hero Shot', 'Lifestyle Setting', 'Close-up Detail', 'Flat-lay Composition'];
+        saveToLibrary(url, { supabaseClient: supabase, companyId: user?.company_id, userId: user?.id, productId: product?.id, productName: product?.name, label: labels[i] || `Batch ${i + 1}`, prompt: prompts[i] });
       } catch (err) {
         console.error(`[ListingImageStudio] Batch item ${i} failed:`, err);
         results.push({ url: null, prompt: prompts[i], index: i, error: err.message });

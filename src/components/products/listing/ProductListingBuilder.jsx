@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutGrid,
+  Eye,
+  BarChart3,
   PenTool,
   Image as ImageIcon,
   Video,
@@ -18,14 +19,68 @@ import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import { toast } from 'sonner';
 
+import ListingPreview from './ListingPreview';
 import ListingOverview from './ListingOverview';
 import ListingImageStudio from './ListingImageStudio';
 import ListingVideoStudio from './ListingVideoStudio';
 import ListingPublish from './ListingPublish';
 import ListingCopywriter from './ListingCopywriter';
 
+// Helper: save a generated image to the library (generated_content table)
+async function saveToLibrary(url, { companyId, userId, productId, productName, label, type = 'image', prompt = '' }) {
+  try {
+    await supabase.from('generated_content').insert({
+      company_id: companyId,
+      created_by: userId,
+      content_type: type,
+      status: 'completed',
+      url,
+      thumbnail_url: url,
+      name: `${productName || 'Product'} - ${label}`,
+      generation_config: {
+        source: 'product_listing',
+        label,
+        prompt: prompt?.substring?.(0, 500) || '',
+        product_id: productId,
+      },
+      product_context: { product_id: productId },
+      tags: ['product_listing', label.toLowerCase().replace(/\s+/g, '_')],
+    });
+  } catch (err) {
+    console.warn('[saveToLibrary] Failed:', err.message);
+  }
+}
+
+// Helper: sync generated images back to the product record (gallery + featured_image)
+async function syncImagesToProduct(productId, { heroUrl, galleryImageObjects, existingGallery = [] }) {
+  if (!productId) return;
+  const updates = {};
+
+  // Set hero as featured_image (structured object matching ProductImageUploader format)
+  if (heroUrl) {
+    updates.featured_image = { url: heroUrl, alt: 'AI-generated hero image', type: 'image/png' };
+  }
+
+  // Append gallery images to product's gallery array (structured objects, deduped by url)
+  if (galleryImageObjects?.length > 0) {
+    const existing = Array.isArray(existingGallery) ? existingGallery : [];
+    const existingUrls = new Set(existing.map(img => typeof img === 'string' ? img : img?.url).filter(Boolean));
+    const newImages = galleryImageObjects.filter(img => !existingUrls.has(img.url));
+    updates.gallery = [...existing, ...newImages];
+  }
+
+  if (Object.keys(updates).length > 0) {
+    try {
+      await supabase.from('products').update(updates).eq('id', productId);
+    } catch (err) {
+      console.warn('[syncImagesToProduct] Failed:', err.message);
+    }
+  }
+}
+
 const SUB_TABS = [
-  { id: 'overview', label: 'Overview', icon: LayoutGrid },
+  { id: 'preview', label: 'Preview', icon: Eye },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'copywriter', label: 'AI Copywriter', icon: PenTool },
   { id: 'images', label: 'Image Studio', icon: ImageIcon },
   { id: 'video', label: 'Video Studio', icon: Video },
@@ -42,7 +97,7 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
   const { t } = useTheme();
   const { user } = useUser();
 
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('preview');
   const [selectedChannel, setSelectedChannel] = useState('generic');
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -204,7 +259,7 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
     if (!product?.id || !user?.company_id) return;
 
     setGenerating(true);
-    setActiveTab('overview');
+    setActiveTab('analytics');
 
     const startTime = Date.now();
     const toastId = toast.loading('Starting AI generation...');
@@ -385,6 +440,8 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
         const heroUrl = await generateImage(heroPrompt, 'product_variation');
         savedListing = await saveListingSilent({ hero_image_url: heroUrl });
         updateProgress({ phase: 'hero', progress: 32, stepLabel: 'Hero image created!', heroImageUrl: heroUrl });
+        // Save to library
+        saveToLibrary(heroUrl, { companyId: user.company_id, userId: user.id, productId: product.id, productName: product.name, label: 'Hero Image', prompt: heroPrompt });
       } catch (imgErr) {
         console.warn('[ProductListingBuilder] Hero image failed:', imgErr.message);
         updateProgress({ phase: 'hero', progress: 32, stepLabel: 'Hero image skipped' });
@@ -458,6 +515,8 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
           const url = await generateImage(galleryScenes[i].prompt, 'product_scene');
           galleryUrls.push({ url, description: galleryScenes[i].label });
           updateProgress({ galleryImages: [...galleryUrls] });
+          // Save to library
+          saveToLibrary(url, { companyId: user.company_id, userId: user.id, productId: product.id, productName: product.name, label: galleryScenes[i].label, prompt: galleryScenes[i].prompt });
         } catch (err) {
           console.warn(`[ProductListingBuilder] Gallery image ${i + 1} failed:`, err.message);
         }
@@ -516,6 +575,8 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
           const url = await generateImageWide(videoFrameScenes[i].prompt, 'product_scene');
           videoFrames.push({ url, description: videoFrameScenes[i].label });
           updateProgress({ videoFrames: [...videoFrames] });
+          // Save to library
+          saveToLibrary(url, { companyId: user.company_id, userId: user.id, productId: product.id, productName: product.name, label: videoFrameScenes[i].label, prompt: videoFrameScenes[i].prompt });
         } catch (err) {
           console.warn(`[ProductListingBuilder] Video frame ${i + 1} failed:`, err.message);
         }
@@ -572,6 +633,8 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
           if (videoData?.url) {
             savedListing = await saveListingSilent({ video_url: videoData.url });
             updateProgress({ phase: 'video', progress: 95, stepLabel: 'Video created!', videoUrl: videoData.url });
+            // Save video to library
+            saveToLibrary(videoData.url, { companyId: user.company_id, userId: user.id, productId: product.id, productName: product.name, label: 'Product Video', type: 'video', prompt: videoPrompt });
           } else if (videoData?.status === 'processing') {
             updateProgress({ phase: 'video', progress: 90, stepLabel: 'Video processing in background...' });
           } else {
@@ -587,11 +650,33 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
       }
 
       // ═══════════════════════════════════════════════════════════════
-      // Phase 7: DONE — Grand finale
+      // Phase 7: DONE — Sync images to product + grand finale
       // ═══════════════════════════════════════════════════════════════
+
+      // Sync generated images back to the product record (featured_image + gallery)
+      // Include gallery images + video frames so ALL generated media appears in Product Detail
+      const heroUrl = savedListing?.hero_image_url || null;
+      const galleryImageObjects = [
+        ...galleryUrls.map((g, i) => ({
+          url: g.url,
+          alt: g.description || `AI-generated gallery image ${i + 1}`,
+          type: 'image/png',
+        })),
+        ...videoFrames.map((f, i) => ({
+          url: f.url,
+          alt: f.description || `Video reference frame ${i + 1}`,
+          type: 'image/png',
+        })),
+      ];
+      await syncImagesToProduct(product.id, {
+        heroUrl,
+        galleryImageObjects,
+        existingGallery: product?.gallery || [],
+      });
+
       updateProgress({ phase: 'done', progress: 100, stepLabel: 'Your listing is ready!' });
 
-      const totalImages = (savedListing?.hero_image_url ? 1 : 0) + galleryUrls.length + videoFrames.length;
+      const totalImages = (heroUrl ? 1 : 0) + galleryUrls.length + videoFrames.length;
       toast.success(
         `Listing complete! Researched, ${totalImages} images + video generated`,
         { id: toastId, duration: 5000 }
@@ -608,9 +693,9 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
     }
   }, [product, details, user, listing, selectedChannel, saveListingSilent, generateImage, generateImageWide, fetchListing, productReferenceImages]);
 
-  // Switch to a specific sub-tab - clear generation view when leaving overview
+  // Switch to a specific sub-tab - clear generation view when leaving analytics
   const handleTabChange = useCallback((tabId) => {
-    if (tabId !== 'overview' && generatingProgress?.phase === 'done') {
+    if (tabId !== 'analytics' && generatingProgress?.phase === 'done') {
       setGeneratingProgress(null);
     }
     setActiveTab(tabId);
@@ -619,7 +704,19 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
   // Render the active sub-component
   const renderContent = useMemo(() => {
     switch (activeTab) {
-      case 'overview':
+      case 'preview':
+        return (
+          <ListingPreview
+            product={product}
+            details={details}
+            listing={listing}
+            onGenerateAll={handleGenerateAll}
+            loading={generating}
+            generatingProgress={generatingProgress}
+            onTabChange={handleTabChange}
+          />
+        );
+      case 'analytics':
         return (
           <ListingOverview
             product={product}
