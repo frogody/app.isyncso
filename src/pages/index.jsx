@@ -426,6 +426,8 @@ import ClientProjects from "./portal/ClientProjects";
 import ClientApprovals from "./portal/ClientApprovals";
 import ClientActivity from "./portal/ClientActivity";
 import WholesaleHome from "./portal/WholesaleHome";
+import WholesaleCatalog from "./portal/WholesaleCatalog";
+import WholesaleProduct from "./portal/WholesaleProduct";
 
 import { BrowserRouter as Router, Route, Routes, useLocation, useParams, Navigate } from 'react-router-dom';
 
@@ -879,6 +881,8 @@ function PagesContent() {
 
                     {/* Wholesale store routes */}
                     <Route path="/portal/:org/shop" element={<WholesaleHome />} />
+                    <Route path="/portal/:org/shop/catalog" element={<WholesaleCatalog />} />
+                    <Route path="/portal/:org/shop/product/:productId" element={<WholesaleProduct />} />
 
                     {/* Organization-scoped routes */}
                     <Route path="/portal/:org/login" element={<ClientLogin />} />
