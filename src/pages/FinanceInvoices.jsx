@@ -29,6 +29,7 @@ import { usePermissions } from '@/components/context/PermissionContext';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
+import ContactSelector from '@/components/shared/ContactSelector';
 
 export default function FinanceInvoices() {
   const { user } = useUser();
@@ -62,6 +63,7 @@ export default function FinanceInvoices() {
 
   // Form state
   const [formData, setFormData] = useState({
+    contact_id: null,
     client_name: '',
     client_email: '',
     client_address: '',
@@ -156,6 +158,7 @@ export default function FinanceInvoices() {
 
   const resetForm = () => {
     setFormData({
+      contact_id: null,
       client_name: '',
       client_email: '',
       client_address: '',
@@ -166,6 +169,19 @@ export default function FinanceInvoices() {
       items: [{ description: '', quantity: 1, unit_price: '' }]
     });
     setEditMode(false);
+  };
+
+  const handleContactSelect = (contact) => {
+    if (contact) {
+      setFormData(prev => ({
+        ...prev,
+        contact_id: contact.id,
+        client_name: contact.name || prev.client_name,
+        client_email: contact.email || prev.client_email,
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, contact_id: null }));
+    }
   };
 
   // Calculate total from line items
@@ -802,6 +818,18 @@ export default function FinanceInvoices() {
 
           <form onSubmit={handleCreateInvoice} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
+              {/* CRM Contact Selector */}
+              <div className="col-span-2">
+                <Label className={ft('text-slate-600', 'text-zinc-300')}>Select from CRM</Label>
+                <div className="mt-1">
+                  <ContactSelector
+                    value={formData.contact_id}
+                    onSelect={handleContactSelect}
+                    placeholder="Search CRM contacts..."
+                  />
+                </div>
+              </div>
+
               <div className="col-span-2">
                 <Label className={ft('text-slate-600', 'text-zinc-300')}>Client Name *</Label>
                 <Input

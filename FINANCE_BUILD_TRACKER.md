@@ -1,8 +1,8 @@
 # Finance Module Build Tracker
 
 **Last Updated:** 2026-02-21
-**Current Phase:** Phase 1 — Data Integrity (code done, DB migration pending)
-**Overall Score:** 6.5/10
+**Current Phase:** Phase 3 complete, starting Phase 4
+**Overall Score:** ~7.0/10
 
 ---
 
@@ -63,10 +63,22 @@
 ## Phase 3: Invoice CRM Link + AR Aging Grouping (S)
 
 ### 3A — ContactSelector on Invoices
-- **Status:** NOT STARTED
+- **Status:** DONE
+- **File:** `src/pages/FinanceInvoices.jsx`
+- **Changes:** Import ContactSelector, add `contact_id` to formData, `handleContactSelect` auto-fills client_name/email
+- **DB:** `contact_id UUID REFERENCES prospects(id)` column added to invoices
 
 ### 3B — AR Aging Per-Customer Grouping
-- **Status:** NOT STARTED
+- **Status:** DONE
+- **DB:** Fixed `get_aged_receivables` (wrong column names: was using `i.notes`/`i.due_at`, now `i.client_name`/`i.due_date`). Created `get_aged_receivables_grouped` RPC.
+- **File:** `src/pages/FinanceReportAging.jsx` — Added "Group by Customer" toggle, grouped expandable rows with individual invoice drill-down
+
+### DB Migrations Applied (2026-02-21)
+- `invoice_type` column added, index created
+- `contact_id` column added to invoices
+- `get_aged_receivables` fixed (correct column names + customer invoice filter)
+- `get_aged_receivables_grouped` created
+- SYNC deploy FAILED: "Max number of functions reached" — needs plan upgrade or function cleanup
 
 ---
 

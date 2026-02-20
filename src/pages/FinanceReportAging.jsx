@@ -67,8 +67,10 @@ export default function FinanceReportAging({ embedded = false }) {
   const [activeTab, setActiveTab] = useState('payable');
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
+  const [groupedData, setGroupedData] = useState(null);
   const [generated, setGenerated] = useState(false);
   const [expanded, setExpanded] = useState({});
+  const [groupByCustomer, setGroupByCustomer] = useState(false);
 
   const navigate = useNavigate();
   const { hasPermission, isLoading: permLoading } = usePermissions();
@@ -111,6 +113,18 @@ export default function FinanceReportAging({ embedded = false }) {
       }
 
       setReportData(data || []);
+
+      // Fetch grouped AR data if applicable
+      if (activeTab === 'receivable') {
+        const { data: gData } = await supabase.rpc('get_aged_receivables_grouped', {
+          p_company_id: user.company_id,
+          p_as_of_date: asOfDate,
+        });
+        setGroupedData(gData || []);
+      } else {
+        setGroupedData(null);
+      }
+
       setGenerated(true);
     } catch (err) {
       console.error('Error fetching aging report:', err);
@@ -119,7 +133,7 @@ export default function FinanceReportAging({ embedded = false }) {
     } finally {
       setLoading(false);
     }
-  }, [user?.company_id, asOfDate, activeTab]);
+  }, [user?.company_id, asOfDate, activeTab, groupByCustomer]);
 
   // Compute summary totals
   const totals = useMemo(() => {
@@ -254,7 +268,7 @@ export default function FinanceReportAging({ embedded = false }) {
                 ))}
               </div>
 
-              {/* Date */}
+              {/* Date + Group toggle */}
               <div className="flex flex-wrap items-end gap-4">
                 <div className="w-48">
                   <Label className={`text-xs ${ft('text-slate-500', 'text-zinc-500')}`}>As Of Date</Label>
@@ -262,6 +276,14 @@ export default function FinanceReportAging({ embedded = false }) {
                     onChange={e => setAsOfDate(e.target.value)}
                     className={`mt-1 ${ft('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}`} />
                 </div>
+
+                {activeTab === 'receivable' && (
+                  <label className="flex items-center gap-2 cursor-pointer pb-2">
+                    <input type="checkbox" checked={groupByCustomer} onChange={e => setGroupByCustomer(e.target.checked)}
+                      className="rounded border-zinc-600 bg-zinc-800 text-blue-500 focus:ring-blue-500" />
+                    <span className={`text-sm ${ft('text-slate-600', 'text-zinc-400')}`}>Group by Customer</span>
+                  </label>
+                )}
 
                 <div className="flex-1" />
 
@@ -458,6 +480,75 @@ export default function FinanceReportAging({ embedded = false }) {
                                   </td>
                                 </tr>
                               )}
+                            </React.Fragment>
+                          );
+                        })
+                      ) : groupByCustomer && groupedData ? (
+                        // AR: Grouped by customer (expandable)
+                        groupedData.map((row) => {
+                          const custKey = row.customer_name || 'Unknown';
+                          const isOpen = expanded[custKey];
+                          const total = parseFloat(row.total_amount) || 0;
+                          return (
+                            <React.Fragment key={custKey}>
+                              <tr className={`border-t cursor-pointer ${ft('border-slate-50 hover:bg-slate-50/50', 'border-zinc-800/50 hover:bg-white/[0.02]')}`}
+                                onClick={() => toggleExpand(custKey)}>
+                                <td className="px-4 py-2.5">
+                                  {isOpen
+                                    ? <ChevronDown className={`w-4 h-4 ${ft('text-slate-400', 'text-zinc-500')}`} />
+                                    : <ChevronRight className={`w-4 h-4 ${ft('text-slate-400', 'text-zinc-500')}`} />
+                                  }
+                                </td>
+                                <td className={`px-4 py-2.5 text-sm font-medium ${ft('text-slate-800', 'text-zinc-200')}`}>
+                                  {custKey}
+                                  <span className={`ml-2 text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
+                                    ({row.invoice_count} invoice{row.invoice_count > 1 ? 's' : ''})
+                                  </span>
+                                </td>
+                                <td className={`px-4 py-2.5 text-sm ${ft('text-slate-500', 'text-zinc-500')}`} />
+                                {AGING_BUCKETS.map(b => {
+                                  const val = parseFloat(row[b.key]) || 0;
+                                  return (
+                                    <td key={b.key} className={`px-3 py-2.5 text-sm text-right tabular-nums ${
+                                      val > 0 ? `font-medium ${b.text}` : ft('text-slate-300', 'text-zinc-700')
+                                    }`}>
+                                      {val > 0 ? formatCurrency(val) : '—'}
+                                    </td>
+                                  );
+                                })}
+                                <td className={`px-4 py-2.5 text-sm text-right font-bold tabular-nums ${ft('text-slate-900', 'text-white')}`}>
+                                  {formatCurrency(total)}
+                                </td>
+                              </tr>
+                              {/* Expanded: individual invoices for this customer */}
+                              {isOpen && reportData
+                                .filter(inv => (inv.customer_name || 'Unknown') === custKey)
+                                .map(inv => (
+                                  <tr key={inv.invoice_id}
+                                    className={ft('bg-slate-50/50 border-t border-slate-50', 'bg-zinc-800/20 border-t border-zinc-800/30')}>
+                                    <td className="px-4 py-2" />
+                                    <td className={`px-4 py-2 text-xs ${ft('text-slate-500', 'text-zinc-400')} pl-10`}>
+                                      {inv.invoice_number}
+                                    </td>
+                                    <td className={`px-4 py-2 text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
+                                      {formatDate(inv.due_date)}
+                                    </td>
+                                    {AGING_BUCKETS.map(b => {
+                                      const val = parseFloat(inv[b.key]) || 0;
+                                      return (
+                                        <td key={b.key} className={`px-3 py-2 text-xs text-right tabular-nums ${
+                                          val > 0 ? b.text : ft('text-slate-300', 'text-zinc-700')
+                                        }`}>
+                                          {val > 0 ? formatCurrency(val) : '—'}
+                                        </td>
+                                      );
+                                    })}
+                                    <td className={`px-4 py-2 text-xs text-right tabular-nums ${ft('text-slate-600', 'text-zinc-400')}`}>
+                                      {formatCurrency(inv.total_amount)}
+                                    </td>
+                                  </tr>
+                                ))
+                              }
                             </React.Fragment>
                           );
                         })
