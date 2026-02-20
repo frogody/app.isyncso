@@ -409,6 +409,8 @@ import PlatformAdminStructuralTests from "./admin/AdminStructuralTests";
 import DemoExperience from "./DemoExperience";
 import RequestDemo from "./RequestDemo";
 
+import B2BStoreBuilder from "./B2BStoreBuilder";
+
 // Providers needed for admin routes (since they don't use main Layout)
 import { UserProvider } from "@/components/context/UserContext";
 import { PermissionProvider } from "@/components/context/PermissionContext";
@@ -846,6 +848,20 @@ function PagesContent() {
             <Routes>
                 <Route path="/book/:username" element={<CalendarBookingPage />} />
             </Routes>
+        );
+    }
+
+    // B2B Store Builder - full-screen IDE experience (no main Layout)
+    const isStoreBuilderRoute = location.pathname.startsWith('/store-builder');
+    if (isStoreBuilderRoute) {
+        return (
+            <UserProvider>
+                <PermissionProvider>
+                    <Routes>
+                        <Route path="/store-builder" element={<B2BStoreBuilder />} />
+                    </Routes>
+                </PermissionProvider>
+            </UserProvider>
         );
     }
 
