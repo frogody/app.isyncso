@@ -132,12 +132,17 @@ async function extractInvoiceData(groqApiKey: string, pdfText: string): Promise<
         model: "meta-llama/llama-4-scout-17b-16e-instruct",
         messages: [
           {
+            role: "system",
+            content: EXTRACTION_PROMPT,
+          },
+          {
             role: "user",
-            content: EXTRACTION_PROMPT + `\n\nHere is the invoice text:\n\n${pdfText}`,
+            content: `Here is the invoice text:\n\n${pdfText}`,
           },
         ],
         max_tokens: 4096,
         temperature: 0,
+        response_format: { type: "json_object" },
       }),
     });
 
