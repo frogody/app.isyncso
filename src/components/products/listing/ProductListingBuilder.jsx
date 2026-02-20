@@ -25,6 +25,7 @@ import ListingImageStudio from './ListingImageStudio';
 import ListingVideoStudio from './ListingVideoStudio';
 import ListingPublish from './ListingPublish';
 import ListingCopywriter from './ListingCopywriter';
+import { buildUSPPromptSet } from '@/lib/uspImageRenderer';
 
 // Helper: save a generated image to the library (generated_content table)
 async function saveToLibrary(url, { companyId, userId, productId, productName, label, type = 'image', prompt = '' }) {
@@ -574,6 +575,46 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
       }
 
       // ═══════════════════════════════════════════════════════════════
+      // Phase 4b: USP GRAPHICS — 4 professional infographic images
+      // ═══════════════════════════════════════════════════════════════
+      updateProgress({ phase: 'gallery', progress: 56, stepLabel: 'Generating USP infographics...' });
+      toast.loading('Creating USP graphics...', { id: toastId });
+
+      const uspPrompts = buildUSPPromptSet({
+        productName: productName,
+        productBrand: productBrand,
+        productDescription: productDesc,
+        bulletPoints: ai?.bullet_points || listing?.bullet_points || [],
+        shortTagline: ai?.short_tagline || listing?.short_tagline || '',
+      });
+
+      const uspUrls = [];
+      for (let i = 0; i < uspPrompts.length; i++) {
+        try {
+          updateProgress({
+            phase: 'gallery',
+            progress: 56 + ((i + 1) / uspPrompts.length) * 6,
+            stepLabel: `Creating ${uspPrompts[i].label} (${i + 1}/${uspPrompts.length})...`,
+          });
+          const url = await generateImage(uspPrompts[i].prompt, 'product_scene');
+          uspUrls.push({ url, description: `USP: ${uspPrompts[i].label}` });
+          updateProgress({ galleryImages: [...galleryUrls, ...uspUrls] });
+          // Save to library
+          saveToLibrary(url, { companyId: user.company_id, userId: user.id, productId: product.id, productName: product.name, label: `USP ${uspPrompts[i].label}`, prompt: uspPrompts[i].prompt });
+        } catch (err) {
+          console.warn(`[ProductListingBuilder] USP image ${i + 1} failed:`, err.message);
+        }
+      }
+
+      // Append USP images to gallery
+      if (uspUrls.length > 0) {
+        const currentGallery = savedListing?.gallery_urls || [];
+        savedListing = await saveListingSilent({
+          gallery_urls: [...currentGallery, ...uspUrls.map((g) => g.url)],
+        });
+      }
+
+      // ═══════════════════════════════════════════════════════════════
       // Phase 5: VIDEO FRAMES — 2 cinematic 16:9 reference frames
       // ═══════════════════════════════════════════════════════════════
       updateProgress({ phase: 'videoframes', progress: 58, stepLabel: 'Generating cinematic video frames...' });
@@ -761,10 +802,10 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
         'Styled flat lay': `Styled overhead flat-lay photograph of the ${productIdentity} with complementary props. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} The product must look EXACTLY like the reference image(s). Bird's-eye view, product off-center using rule of thirds, 3-4 relevant accessories. Clean matte surface, even diffused overhead light, Instagram-worthy editorial arrangement.`,
       },
       graphic: {
-        'Feature highlight #1': `Professional product infographic image of the ${productIdentity} highlighting its primary key feature/USP. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} The product shown at center with clean callout overlays pointing to the key feature. Dark gradient background, modern typography, clean design. Commercial quality graphic.`,
-        'Feature highlight #2': `Professional product infographic image of the ${productIdentity} highlighting a secondary feature/benefit. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} Product shown with clean graphical elements explaining the feature. Complementary color scheme, modern layout, commercial e-commerce graphic quality.`,
-        'Specs / comparison': `Professional product specifications graphic for the ${productIdentity}. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} Product centered with key technical specs displayed around it in a clean, modern layout. Iconographic callouts, premium color scheme, high-end e-commerce graphic.`,
-        'Awards / certifications': `Professional product trust/certification graphic for the ${productIdentity}. ${productDesc ? `Product: ${productDesc.substring(0, 150)}.` : ''} Product shown with quality badges, certification icons, or award elements. Clean modern design, premium feel, builds buyer confidence.`,
+        'Feature highlight #1': `Create a professional e-commerce USP infographic for ${productIdentity}. ${productDesc ? `Product: ${productDesc.substring(0, 200)}.` : ''} The product must look EXACTLY like the reference image(s). DESIGN: Dark navy gradient background (#0f172a to #1e293b). Product shown large on the left side with dramatic studio lighting and drop shadow. On the right side, 3-4 key features listed with modern icons in rounded badges and bold white text labels. Premium Amazon/bol.com A+ content style. Clean modern typography, professional e-commerce graphic design. NO watermarks, NO AI artifacts.`,
+        'Feature highlight #2': `Create a professional e-commerce benefit highlight infographic for ${productIdentity}. ${productDesc ? `Product: ${productDesc.substring(0, 200)}.` : ''} The product must look EXACTLY like the reference image(s). DESIGN: Dark blue-black background with subtle accent stripe at top. Product shown prominently in the center with a bold headline describing its key secondary benefit. Supporting description text below. Visual callout elements highlighting the specific feature. Premium commercial design, modern typography. NO watermarks, NO AI artifacts.`,
+        'Specs / comparison': `Create a professional product specifications callout infographic for ${productIdentity}. ${productDesc ? `Product: ${productDesc.substring(0, 200)}.` : ''} The product must look EXACTLY like the reference image(s). DESIGN: Dark background with subtle radial gradient. Product centered in the middle. Key specifications labeled on both sides, connected to the product with thin lines or dots. Each spec has a small glowing accent dot and clean white text. Technical feel meets premium design, like Apple product marketing. NO watermarks, NO AI artifacts.`,
+        'Awards / certifications': `Create a professional e-commerce multi-feature showcase for ${productIdentity}. ${productDesc ? `Product: ${productDesc.substring(0, 200)}.` : ''} The product must look EXACTLY like the reference image(s). DESIGN: Dark navy background with subtle concentric circle decorations. Product centered. Four feature/benefit callouts in the four corners with modern icons in rounded badges and bold white titles. Headline at top. Premium marketplace product showcase style, trustworthy and professional. NO watermarks, NO AI artifacts.`,
       },
     };
 
@@ -816,6 +857,237 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
     }
   }, [product, details, user, listing, generateImage, saveListingSilent, fetchListing]);
 
+  // Fix with AI — audit-driven auto-fix orchestrator
+  const handleFixWithAI = useCallback(async (auditData, { setFixing, setFixPlan }) => {
+    if (!product?.id || !user?.company_id || !auditData) return;
+
+    const toastId = toast.loading('Building fix plan...');
+
+    try {
+      // ── Step 1: Build plan from audit data ──
+      setFixing('planning');
+
+      const cats = auditData.categories || [];
+      const catByName = {};
+      cats.forEach((c) => { catByName[c.name] = c; });
+
+      const actions = [];
+
+      // Copy fix: combine title/tagline + bullets + description into one action
+      const copyCategories = [];
+      const copyIssues = [];
+      ['Title & Tagline', 'Bullet Points', 'Description'].forEach((name) => {
+        const cat = catByName[name];
+        if (cat && cat.score < 80) {
+          copyCategories.push(name);
+          (cat.issues || []).forEach((i) => copyIssues.push(i));
+        }
+      });
+
+      if (copyCategories.length > 0) {
+        actions.push({
+          id: 'copy',
+          type: 'copy',
+          label: `Rewrite ${copyCategories.map((c) => c.split(' ')[0].toLowerCase()).join(', ')}`,
+          description: copyIssues.slice(0, 3).join('; ') || 'Improve listing copy quality',
+          status: 'pending',
+          categories: copyCategories,
+        });
+      }
+
+      // SEO fix
+      const seoCat = catByName['SEO & Discoverability'];
+      if (seoCat && seoCat.score < 80) {
+        actions.push({
+          id: 'seo',
+          type: 'seo',
+          label: 'Fix SEO & keywords',
+          description: (seoCat.issues || []).slice(0, 2).join('; ') || 'Improve search visibility',
+          status: 'pending',
+        });
+      }
+
+      // Image fixes from missing_usp_visuals
+      const missingVisuals = auditData.missing_usp_visuals || [];
+      missingVisuals.forEach((desc, i) => {
+        actions.push({
+          id: `image_${i}`,
+          type: 'image',
+          label: `Generate: ${desc.length > 50 ? desc.substring(0, 50) + '...' : desc}`,
+          description: desc,
+          status: 'pending',
+          imageUrl: null,
+        });
+      });
+
+      if (actions.length === 0) {
+        toast.success('Nothing to fix — listing looks great!', { id: toastId });
+        setFixing(null);
+        return;
+      }
+
+      setFixPlan({ actions });
+      setFixing('executing');
+      toast.loading(`Executing ${actions.length} fixes...`, { id: toastId });
+
+      // Helper to update a single action's status
+      const updateAction = (actionId, updates) => {
+        setFixPlan((prev) => ({
+          ...prev,
+          actions: prev.actions.map((a) =>
+            a.id === actionId ? { ...a, ...updates } : a
+          ),
+        }));
+      };
+
+      // ── Step 2: Execute copy fix ──
+      const copyAction = actions.find((a) => a.type === 'copy');
+      const seoAction = actions.find((a) => a.type === 'seo');
+      let copyCalled = false;
+
+      if (copyAction || seoAction) {
+        const activeAction = copyAction || seoAction;
+        updateAction(activeAction.id, { status: 'active' });
+        toast.loading(`Rewriting listing copy...`, { id: toastId });
+
+        try {
+          // Gather audit suggestions as fix context
+          const allSuggestions = cats.flatMap((c) => c.suggestions || []);
+          const allIssues = cats.flatMap((c) => c.issues || []);
+
+          const { data: copyData, error: copyError } = await supabase.functions.invoke('generate-listing-copy', {
+            body: {
+              product_name: product?.name || '',
+              product_description: product?.description || '',
+              product_category: product?.category || '',
+              product_specs: details?.specifications || details || {},
+              product_price: product?.price,
+              product_currency: product?.currency || 'EUR',
+              product_brand: product?.brand || '',
+              product_tags: product?.tags || [],
+              product_ean: details?.ean || details?.barcode || '',
+              channel: selectedChannel || 'generic',
+              language: 'EN',
+              tone: 'professional',
+              research_context: {
+                findings: product?.description || '',
+                valuePropositions: allSuggestions.slice(0, 8),
+                targetAudience: 'General consumers',
+                competitorInsights: `Audit found these issues to fix: ${allIssues.slice(0, 5).join('. ')}`,
+                keyFeatures: [],
+              },
+            },
+          });
+
+          if (copyError) throw copyError;
+          const ai = copyData?.listing;
+          if (!ai) throw new Error('No copy data returned');
+
+          const firstTitle = ai.titles?.[0]
+            ? (typeof ai.titles[0] === 'string' ? ai.titles[0] : ai.titles[0].text || '')
+            : listing?.listing_title || '';
+
+          const updates = {};
+          if (copyAction) {
+            if (copyAction.categories.includes('Title & Tagline')) {
+              updates.listing_title = firstTitle;
+              if (ai.short_tagline) updates.short_tagline = ai.short_tagline;
+            }
+            if (copyAction.categories.includes('Bullet Points')) {
+              updates.bullet_points = ai.bullet_points || [];
+            }
+            if (copyAction.categories.includes('Description')) {
+              updates.listing_description = ai.description || '';
+            }
+          }
+
+          if (seoAction || copyAction) {
+            if (seoAction) {
+              updates.seo_title = ai.seo_title || '';
+              updates.seo_description = ai.seo_description || '';
+              updates.search_keywords = ai.search_keywords || [];
+            }
+          }
+
+          await saveListingSilent(updates);
+          copyCalled = true;
+
+          if (copyAction) updateAction('copy', { status: 'done' });
+          if (seoAction && (copyAction || true)) updateAction('seo', { status: 'done' });
+        } catch (err) {
+          console.error('[handleFixWithAI] Copy fix failed:', err);
+          if (copyAction) updateAction('copy', { status: 'failed' });
+          if (seoAction) updateAction('seo', { status: 'failed' });
+        }
+      }
+
+      // If only SEO needed fixing and copy wasn't called, the above handles it
+
+      // ── Step 3: Execute image generation (USP infographics via NanoBanana Pro) ──
+      const imageActions = actions.filter((a) => a.type === 'image');
+      for (const imgAction of imageActions) {
+        updateAction(imgAction.id, { status: 'active' });
+        toast.loading(`Generating USP graphic: ${imgAction.label.substring(0, 40)}...`, { id: toastId });
+
+        try {
+          const pName = product?.name || 'Product';
+          const pBrand = product?.brand || '';
+          const pDesc = product?.description || '';
+          const pIdentity = `${pBrand ? pBrand + ' ' : ''}${pName}`.trim();
+
+          const prompt = [
+            `Create a professional e-commerce USP infographic image for ${pIdentity}.`,
+            pDesc ? `Product description: ${pDesc.substring(0, 200)}.` : '',
+            `The product must look EXACTLY like the reference image(s) — preserve every detail of shape, color, material, branding, and proportions.`,
+            ``,
+            `DESIGN LAYOUT:`,
+            `- Dark navy blue gradient background (#0f172a to #1e293b)`,
+            `- Product photograph shown large and prominently with dramatic studio lighting and drop shadow`,
+            `- This image must specifically showcase and highlight: "${imgAction.description}"`,
+            `- Include visual callout elements (arrows, badges, icons, or highlight zones) that draw attention to this specific feature`,
+            `- Bold headline text describing the feature at the top of the image`,
+            `- Modern, clean graphic design typography in white on the dark background`,
+            ``,
+            `STYLE: Premium Amazon/bol.com product listing USP graphic. Professional e-commerce infographic design. Clean, modern, trustworthy.`,
+            `NO watermarks, NO AI artifacts. The product and graphic elements must look premium and commercial-grade.`,
+          ].filter(Boolean).join('\n');
+
+          const url = await generateImage(prompt, 'product_scene');
+
+          // Append to gallery
+          const currentGallery = listing?.gallery_urls || [];
+          await saveListingSilent({ gallery_urls: [...currentGallery, url] });
+
+          // Save to library
+          saveToLibrary(url, {
+            companyId: user.company_id,
+            userId: user.id,
+            productId: product.id,
+            productName: product.name,
+            label: `Fix: ${imgAction.description.substring(0, 60)}`,
+            prompt,
+          });
+
+          updateAction(imgAction.id, { status: 'done', imageUrl: url });
+        } catch (err) {
+          console.error(`[handleFixWithAI] Image fix failed:`, err);
+          updateAction(imgAction.id, { status: 'failed' });
+        }
+      }
+
+      // ── Step 4: Done ──
+      await fetchListing();
+      setFixing('done');
+      const doneCount = actions.length; // approximate
+      toast.success(`Applied ${doneCount} fixes! Run audit to check improvement.`, { id: toastId, duration: 4000 });
+
+    } catch (err) {
+      console.error('[handleFixWithAI] Error:', err);
+      toast.error('Fix failed: ' + (err.message || 'Unknown error'), { id: toastId });
+      setFixing(null);
+    }
+  }, [product, details, user, listing, selectedChannel, generateImage, saveListingSilent, fetchListing]);
+
   // Switch to a specific sub-tab - clear generation view when leaving analytics
   const handleTabChange = useCallback((tabId) => {
     if (tabId !== 'analytics' && generatingProgress?.phase === 'done') {
@@ -839,6 +1111,7 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
             onTabChange={handleTabChange}
             onUpdate={saveListingSilent}
             onGenerateSlotImage={handleGenerateSlotImage}
+            onFixWithAI={handleFixWithAI}
           />
         );
       case 'analytics':

@@ -105,25 +105,34 @@ serve(async (req) => {
       const imageContent: any[] = [
         {
           type: "text",
-          text: `You are an expert e-commerce image analyst. Analyze each of these ${allImageUrls.length} product images for "${product_name || "this product"}" (${product_brand || "unknown brand"}).
+          text: `You are an expert e-commerce image quality auditor. You MUST be extremely critical. Analyze each of these ${allImageUrls.length} product images for "${product_name || "this product"}" (${product_brand || "unknown brand"}).
 
 For EACH image, describe:
 1. **Type**: Is it a studio shot (white background), lifestyle shot, USP graphic, infographic, or other?
 2. **What it shows**: Product angle, setting, visible features, text overlays
 3. **Quality**: Lighting, composition, resolution assessment, professionalism
 4. **Features visible**: Which specific product features/USPs are highlighted or visible?
-5. **Issues**: Any problems (blurry, poor lighting, wrong aspect ratio, text hard to read, AI artifacts, unrealistic elements)
+5. **CRITICAL — Issues**: Look VERY carefully for these problems and report ALL you find:
+   - **Visible text/watermarks**: ANY text overlaid on the image that looks like AI generation prompts, gibberish text, garbled characters, or debug text. This is a CRITICAL flaw — an image with visible AI prompt text is UNUSABLE.
+   - **AI artifacts**: Distorted hands, impossible geometry, melted/morphed surfaces, unrealistic reflections, extra limbs or fingers, text that doesn't make sense
+   - **Blurry/low-res**: Soft focus where it shouldn't be, pixelation, compression artifacts
+   - **Wrong product**: Product looks different from the described product
+   - **Poor composition**: Product cut off, awkward angle, too much empty space, distracting background
+   - **Unprofessional**: Poor lighting, shadows in wrong direction, floating objects, unrealistic scale
+
+IMPORTANT: Be RUTHLESS about image quality. A marketplace image with visible AI prompt text, gibberish, or watermarks is a ZERO — it CANNOT be used. Flag it clearly as "CRITICAL: Image has visible AI-generated text/prompt artifacts — must be replaced."
 
 Then provide an OVERALL VISUAL ASSESSMENT:
-- Image variety: Do images cover studio, lifestyle, and USP graphic types?
+- Image variety: Do images cover studio, lifestyle, and USP graphic types? The ideal set is 3 studio + 4 lifestyle + 4 USP graphics = 11 total.
 - Feature coverage: Which key product features are well-represented visually? Which are MISSING from all images?
-- Hero image quality: Is the main/first image strong enough to drive clicks?
-- Conversion readiness: Would these images convince a buyer on a marketplace?
+- Hero image quality: Is the main/first image PERFECT for driving clicks? Any text, artifacts, or quality issues make it a FAIL.
+- Conversion readiness: Would these images convince a buyer on Amazon/bol.com? Be honest.
+- Missing image types: How many MORE images are needed to reach the ideal 11?
 
 The product's key features (from bullet points) are:
 ${bullet_points?.length ? bullet_points.map((b: string, i: number) => `- ${b}`).join("\n") : "(no bullet points provided)"}
 
-Be specific. Reference image numbers (Image 1 = hero, Image 2+).`,
+Be specific and brutal. Reference image numbers (Image 1 = hero, Image 2+). Do NOT be generous — flag every single issue.`,
         },
       ];
 
@@ -221,8 +230,8 @@ Return a JSON object with this EXACT structure. Be specific and reference actual
       "name": "Visual Content",
       "score": <0-100>,
       "status": "good" | "warning" | "critical",
-      "issues": ["<specific image problems found by vision analysis — e.g. 'Image 3 has AI artifacts', 'No image highlights the SteamGlide soleplate feature'>"],
-      "suggestions": ["<specific visual improvements — e.g. 'Add a close-up USP graphic showing the OptimalTEMP dial with text overlay'>"]
+      "issues": ["<CRITICAL issues first: visible text/prompt artifacts, AI generation flaws, then missing image types and feature gaps — e.g. 'CRITICAL: Hero image (Image 1) has visible AI-generated prompt text at the bottom — this image is UNUSABLE', 'Only 5 of 11 recommended images present', 'No USP graphics showing key features'>"],
+      "suggestions": ["<specific visual improvements — e.g. 'Replace hero image immediately — it has visible AI text artifacts', 'Add 6 more images: 1 studio detail shot, 2 lifestyle shots, 3 USP graphics for OptimalTEMP, SteamGlide, and auto-shutdown features'>"]
     },
     {
       "name": "SEO & Discoverability",
@@ -265,11 +274,15 @@ Return a JSON object with this EXACT structure. Be specific and reference actual
 - <150 words: -15 | No formatting/headers: -10 | No CTA: -10
 - Duplicates bullets: -10 | No brand story/emotional hook: -10
 
-**Visual Content (USE THE IMAGE ANALYSIS ABOVE):**
-- <5 images: -20 | No studio shots: -15 | No lifestyle shots: -15
-- No USP graphics: -20 | AI artifacts visible: -10 per image
+**Visual Content (USE THE IMAGE ANALYSIS ABOVE — be RUTHLESS):**
+- <5 images: -20 | <8 images: -10 | <11 images: -5
+- No studio shots: -15 | No lifestyle shots: -15 | No USP graphics: -20
+- AI artifacts visible: -15 per image with artifacts
+- VISIBLE TEXT/PROMPT LEAK in any image: -25 per image (this is a CRITICAL defect — the image is UNUSABLE)
+- Hero image has ANY quality issue: -20 (hero must be PERFECT)
 - Key USPs not shown in ANY image: -10 per missing USP
 - No video: -10 | Poor hero image: -15
+- Images that look AI-generated with obvious tells: -10 per image
 
 **SEO & Discoverability:**
 - Title >60 chars: -10 | Description >160 chars: -5 | <5 keywords: -15
@@ -285,7 +298,7 @@ Return ONLY valid JSON.`;
     const auditContent = await togetherChat(
       "meta-llama/Llama-3.3-70B-Instruct-Turbo",
       [
-        { role: "system", content: "You are an elite e-commerce listing auditor. Return only valid JSON. Be brutally specific — reference actual content, image numbers, and feature names." },
+        { role: "system", content: "You are an elite e-commerce listing auditor known for being BRUTALLY honest. Return only valid JSON. Be extremely specific — reference actual content, image numbers, and feature names. CRITICAL: If the vision analysis mentions ANY visible text, prompt artifacts, watermarks, or AI generation flaws in images, the Visual Content score MUST be very low (below 30). A hero image with visible AI text is a deal-breaker — score it as critical. Missing images are also a major issue: having only 5 of 11 recommended images should score below 40." },
         { role: "user", content: auditPrompt },
       ],
       { temperature: 0.3, max_tokens: 3000, json: true }
