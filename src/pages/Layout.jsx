@@ -97,6 +97,10 @@ import {
   Globe,
   Phone,
   PenLine,
+  Landmark,
+  Percent,
+  Repeat,
+  ReceiptText,
   Volume2,
   Signal,
   } from "lucide-react";
@@ -465,6 +469,11 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Expenses', path: createPageUrl('FinanceExpensesConsolidated'), icon: CreditCard },
         { label: 'Ledger', path: createPageUrl('FinanceLedger'), icon: BookOpen },
         { label: 'Payables', path: createPageUrl('FinancePayables'), icon: ScrollText },
+        { label: 'Tax Rates', path: createPageUrl('FinanceTaxRates'), icon: Percent },
+        { label: 'Recurring', path: createPageUrl('FinanceRecurringInvoices'), icon: Repeat },
+        { label: 'Credit Notes', path: createPageUrl('FinanceCreditNotes'), icon: ReceiptText },
+        { label: 'Bank Accounts', path: createPageUrl('FinanceBankAccounts'), icon: Landmark },
+        { label: 'Reconciliation', path: createPageUrl('FinanceBankReconciliation'), icon: Landmark },
         { label: 'Reports', path: createPageUrl('FinanceReports'), icon: BarChart3 },
       ]
     };
