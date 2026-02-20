@@ -425,6 +425,7 @@ import ClientProjectDetail from "./portal/ClientProjectDetail";
 import ClientProjects from "./portal/ClientProjects";
 import ClientApprovals from "./portal/ClientApprovals";
 import ClientActivity from "./portal/ClientActivity";
+import WholesaleHome from "./portal/WholesaleHome";
 
 import { BrowserRouter as Router, Route, Routes, useLocation, useParams, Navigate } from 'react-router-dom';
 
@@ -875,6 +876,9 @@ function PagesContent() {
                     {/* Auth callback - org-scoped (preferred) and org-agnostic (fallback) */}
                     <Route path="/portal/:org/auth/callback" element={<ClientAuthCallback />} />
                     <Route path="/portal/auth/callback" element={<ClientAuthCallback />} />
+
+                    {/* Wholesale store routes */}
+                    <Route path="/portal/:org/shop" element={<WholesaleHome />} />
 
                     {/* Organization-scoped routes */}
                     <Route path="/portal/:org/login" element={<ClientLogin />} />
