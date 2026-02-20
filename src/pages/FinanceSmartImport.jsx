@@ -40,8 +40,38 @@ async function extractPdfText(pdfFile) {
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
     const page = await pdf.getPage(pageNum);
     const textContent = await page.getTextContent();
-    const pageText = textContent.items.map(item => item.str).join(' ');
-    fullText += pageText + '\n';
+
+    // Sort items by Y position (top-to-bottom), then X (left-to-right)
+    // Transform: [scaleX, skewX, skewY, scaleY, translateX, translateY]
+    const items = textContent.items
+      .filter(item => item.str && item.str.trim())
+      .sort((a, b) => {
+        const yA = a.transform?.[5] ?? 0;
+        const yB = b.transform?.[5] ?? 0;
+        // PDF Y-axis goes bottom-to-top, so higher Y = higher on page
+        if (Math.abs(yA - yB) > 3) return yB - yA; // different lines (3px threshold)
+        const xA = a.transform?.[4] ?? 0;
+        const xB = b.transform?.[4] ?? 0;
+        return xA - xB; // same line, sort left-to-right
+      });
+
+    // Group items into lines based on Y position proximity
+    let lastY = null;
+    let lineTexts = [];
+    for (const item of items) {
+      const y = item.transform?.[5] ?? 0;
+      if (lastY !== null && Math.abs(y - lastY) > 3) {
+        // New line — flush current line
+        fullText += lineTexts.join('  ') + '\n';
+        lineTexts = [];
+      }
+      lineTexts.push(item.str.trim());
+      lastY = y;
+    }
+    if (lineTexts.length > 0) {
+      fullText += lineTexts.join('  ') + '\n';
+    }
+    fullText += '\n'; // page separator
   }
   return fullText.trim();
 }
@@ -229,6 +259,9 @@ export default function FinanceSmartImport() {
       let pdfText = '';
       if (isPDF) {
         pdfText = await extractPdfText(file);
+        console.log(`[SmartImport] PDF text extracted — length: ${pdfText.length}`);
+        console.log(`[SmartImport] First 500 chars:\n${pdfText.substring(0, 500)}`);
+        console.log(`[SmartImport] Last 200 chars:\n${pdfText.substring(pdfText.length - 200)}`);
       } else {
         // For images, we can't extract text client-side — send empty and let LLM handle via description
         pdfText = `[Image file: ${file.name}]`;
@@ -241,21 +274,25 @@ export default function FinanceSmartImport() {
 
       // Step 3: Call smart-import-invoice edge function
       setCurrentStep('analyze');
+      const requestBody = {
+        pdfText,
+        fileName: file.name,
+        companyId,
+        userId: user.id,
+      };
+      console.log(`[SmartImport] Sending to edge function — pdfText length: ${requestBody.pdfText.length}, keys:`, Object.keys(requestBody));
+
       const response = await fetch(`${SUPABASE_URL}/functions/v1/smart-import-invoice`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({
-          pdfText,
-          fileName: file.name,
-          companyId,
-          userId: user.id,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const result = await response.json();
+      console.log(`[SmartImport] Edge function response — status: ${response.status}, success: ${result.success}`, result.error || '');
       if (!result.success) {
         throw new Error(result.error || 'AI extraction failed');
       }
