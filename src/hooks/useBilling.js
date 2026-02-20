@@ -42,6 +42,7 @@ export function useBilling() {
           .from('invoices')
           .select('*')
           .eq('company_id', user.company_id)
+          .eq('invoice_type', 'platform')
           .order('created_at', { ascending: false })
           .limit(10),
         supabase

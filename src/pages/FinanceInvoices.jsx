@@ -87,6 +87,7 @@ export default function FinanceInvoices() {
         .from('invoices')
         .select('*')
         .eq('company_id', companyId)
+        .eq('invoice_type', 'customer')
         .order('created_at', { ascending: false });
 
       if (error) throw error;

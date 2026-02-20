@@ -394,6 +394,7 @@ export async function getFinancialSummary(
     // Calculate date range
     const now = new Date();
     let startDate: Date;
+    const endDate = now;
 
     switch (data.period || 'month') {
       case 'quarter':
@@ -407,31 +408,95 @@ export async function getFinancialSummary(
     }
 
     const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+    const periodLabel = data.period === 'year' ? 'This Year' : data.period === 'quarter' ? 'This Quarter' : 'This Month';
 
-    // Get invoice totals
+    // Try GL-based P&L first (matches Dashboard numbers)
+    const { data: plData, error: plError } = await ctx.supabase.rpc('get_profit_loss', {
+      p_company_id: ctx.companyId,
+      p_start_date: startDateStr,
+      p_end_date: endDateStr,
+    });
+
+    if (!plError && plData && plData.length > 0) {
+      // Parse GL P&L response — rows have: category, account_code, account_name, amount
+      let totalRevenue = 0;
+      let totalExpenses = 0;
+
+      for (const row of plData) {
+        const amt = parseFloat(row.amount) || 0;
+        if (row.category === 'Revenue' && !row.account_code) {
+          // Summary row for total revenue
+          totalRevenue = amt;
+        } else if (row.category === 'Revenue' && row.account_code) {
+          totalRevenue += amt;
+        }
+        if (row.category === 'Expenses' && !row.account_code) {
+          totalExpenses = amt;
+        } else if (row.category === 'Expenses' && row.account_code) {
+          totalExpenses += amt;
+        }
+      }
+
+      // If we got summary rows, use those directly
+      const revSummary = plData.find((r: any) => r.category === 'Revenue' && r.is_summary);
+      const expSummary = plData.find((r: any) => r.category === 'Expenses' && r.is_summary);
+      const netSummary = plData.find((r: any) => r.category === 'Net Income');
+
+      if (revSummary) totalRevenue = parseFloat(revSummary.amount) || totalRevenue;
+      if (expSummary) totalExpenses = parseFloat(expSummary.amount) || totalExpenses;
+      const netIncome = netSummary ? (parseFloat(netSummary.amount) || 0) : (totalRevenue - totalExpenses);
+
+      // Get pending invoices (not yet in GL)
+      const { data: pendingInvoices } = await ctx.supabase
+        .from('invoices')
+        .select('total')
+        .eq('company_id', ctx.companyId)
+        .in('status', ['sent', 'draft', 'overdue'])
+        .eq('invoice_type', 'customer')
+        .gte('created_at', startDateStr);
+
+      const pendingRevenue = pendingInvoices?.reduce((sum: number, i: any) => sum + (i.total || 0), 0) || 0;
+
+      return successResult(
+        `📊 **Financial Summary - ${periodLabel}** (from General Ledger)\n\n` +
+        `**Revenue**: ${formatCurrency(totalRevenue)}\n` +
+        (pendingRevenue > 0 ? `- Pending (not yet posted): ${formatCurrency(pendingRevenue)}\n` : '') +
+        `\n**Expenses**: ${formatCurrency(totalExpenses)}\n\n` +
+        `**Net Income**: ${formatCurrency(netIncome)} ${netIncome >= 0 ? '✅' : '⚠️'}`,
+        {
+          period: periodLabel,
+          source: 'general_ledger',
+          revenue: totalRevenue,
+          pendingRevenue,
+          expenses: totalExpenses,
+          netIncome,
+        },
+        '/financeoverview'
+      );
+    }
+
+    // Fallback: COA not initialized — use raw table queries
     const { data: invoices } = await ctx.supabase
       .from('invoices')
       .select('total, status')
       .eq('company_id', ctx.companyId)
       .gte('created_at', startDateStr);
 
-    // Get expense totals
     const { data: expenses } = await ctx.supabase
       .from('expenses')
       .select('amount')
       .eq('company_id', ctx.companyId)
       .gte('date', startDateStr);
 
-    // Calculate metrics
-    const totalRevenue = invoices?.filter(i => i.status === 'paid').reduce((sum, i) => sum + (i.total || 0), 0) || 0;
-    const pendingRevenue = invoices?.filter(i => i.status !== 'paid' && i.status !== 'cancelled').reduce((sum, i) => sum + (i.total || 0), 0) || 0;
-    const totalExpenses = expenses?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
+    const totalRevenue = invoices?.filter((i: any) => i.status === 'paid').reduce((sum: number, i: any) => sum + (i.total || 0), 0) || 0;
+    const pendingRevenue = invoices?.filter((i: any) => i.status !== 'paid' && i.status !== 'cancelled').reduce((sum: number, i: any) => sum + (i.total || 0), 0) || 0;
+    const totalExpenses = expenses?.reduce((sum: number, e: any) => sum + (e.amount || 0), 0) || 0;
     const netIncome = totalRevenue - totalExpenses;
 
-    const periodLabel = data.period === 'year' ? 'This Year' : data.period === 'quarter' ? 'This Quarter' : 'This Month';
-
     return successResult(
-      `📊 **Financial Summary - ${periodLabel}**\n\n` +
+      `📊 **Financial Summary - ${periodLabel}**\n` +
+      `⚠️ *GL not initialized — showing estimates from invoices/expenses*\n\n` +
       `**Revenue**\n` +
       `- Collected: ${formatCurrency(totalRevenue)}\n` +
       `- Pending: ${formatCurrency(pendingRevenue)}\n\n` +
@@ -439,6 +504,7 @@ export async function getFinancialSummary(
       `**Net Income**: ${formatCurrency(netIncome)} ${netIncome >= 0 ? '✅' : '⚠️'}`,
       {
         period: periodLabel,
+        source: 'raw_tables',
         revenue: { collected: totalRevenue, pending: pendingRevenue },
         expenses: totalExpenses,
         netIncome,
