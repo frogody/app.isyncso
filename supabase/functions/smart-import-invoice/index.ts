@@ -60,159 +60,180 @@ interface ExtractionResult {
 
 // ─── LLM Extraction ──────────────────────────────────────────────────────────
 
-const EXTRACTION_PROMPT = `You are an expert invoice data extraction system for a Dutch company. Extract structured data from the invoice text below.
+const SYSTEM_PROMPT = `You are a JSON-only invoice data extraction API. You receive invoice text and return structured JSON. Never output anything except a single valid JSON object. No explanations, no markdown, no echoing of the input text.
 
-CRITICAL RULES:
-1. Extract ONLY what you can clearly see — never guess or infer
-2. For numbers, extract exact values including decimals
-3. For dates, use ISO format (YYYY-MM-DD)
-4. If a field is not visible or unclear, use null
-5. Currency: detect from symbols (€=EUR, $=USD, £=GBP) or text. Default to EUR if unclear.
-6. Tax: Dutch invoices typically have BTW at 21%, 9%, or 0%. Foreign invoices may have different rates.
-7. Reverse charge: If invoice is from outside the Netherlands but the buyer is Dutch, mark is_reverse_charge=true
-8. Recurring: If this looks like a monthly SaaS subscription, cloud service bill, or regular service invoice, mark is_recurring=true and set recurring_frequency
-9. Handle multi-language invoices (Dutch, English, German at minimum)
-10. For expense_category, use one of: software, hosting, office_supplies, professional_services, advertising, travel, telecom, insurance, rent, utilities, other
+Rules:
+- Extract ONLY visible data, use null for missing fields
+- Dates in ISO format (YYYY-MM-DD)
+- Currency: €=EUR, $=USD, £=GBP. Default EUR.
+- Dutch BTW: 21%, 9%, or 0%
+- Reverse charge: true if vendor is outside NL but buyer is Dutch
+- expense_category: software|hosting|office_supplies|professional_services|advertising|travel|telecom|insurance|rent|utilities|other`;
 
-Respond with ONLY a JSON object (no markdown, no explanation) in this exact format:
-{
-  "vendor": {
-    "name": "string",
-    "address": "string or null",
-    "vat_number": "string or null",
-    "website": "string or null",
-    "email": "string or null",
-    "phone": "string or null",
-    "iban": "string or null"
-  },
-  "invoice": {
-    "number": "string or null",
-    "date": "YYYY-MM-DD or null",
-    "due_date": "YYYY-MM-DD or null",
-    "currency": "EUR",
-    "subtotal": 0,
-    "tax_amount": 0,
-    "total": 0
-  },
-  "line_items": [
-    {
-      "description": "string",
-      "quantity": 1,
-      "unit_price": 0,
-      "tax_rate_percent": 21,
-      "line_total": 0,
-      "category_hint": "string or null"
-    }
-  ],
-  "classification": {
-    "is_recurring": false,
-    "recurring_frequency": null,
-    "expense_category": "other",
-    "is_reverse_charge": false
-  },
-  "confidence": {
-    "overall": 0.95,
-    "vendor": 0.9,
-    "amounts": 0.98,
-    "line_items": 0.85
-  }
-}`;
+const JSON_SCHEMA = `{"vendor":{"name":"string","address":"string|null","vat_number":"string|null","website":"string|null","email":"string|null","phone":"string|null","iban":"string|null"},"invoice":{"number":"string|null","date":"YYYY-MM-DD|null","due_date":"YYYY-MM-DD|null","currency":"EUR","subtotal":0,"tax_amount":0,"total":0},"line_items":[{"description":"string","quantity":1,"unit_price":0,"tax_rate_percent":21,"line_total":0,"category_hint":"string|null"}],"classification":{"is_recurring":false,"recurring_frequency":null,"expense_category":"other","is_reverse_charge":false},"confidence":{"overall":0.95,"vendor":0.9,"amounts":0.98,"line_items":0.85}}`;
 
-async function extractInvoiceData(groqApiKey: string, pdfText: string): Promise<{ success: boolean; data?: ExtractionResult; error?: string }> {
-  try {
-    console.log(`[EXTRACT] Calling Groq LLM, text length: ${pdfText.length}`);
+function extractJsonFromText(text: string): string | null {
+  // Remove markdown code fences
+  const cleaned = text
+    .replace(/```json\s*/gi, "")
+    .replace(/```\s*/g, "")
+    .trim();
 
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${groqApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "meta-llama/llama-4-scout-17b-16e-instruct",
-        messages: [
-          {
-            role: "system",
-            content: EXTRACTION_PROMPT,
-          },
-          {
-            role: "user",
-            content: `Here is the invoice text:\n\n${pdfText}`,
-          },
-        ],
-        max_tokens: 4096,
-        temperature: 0,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Groq API error: ${response.status} ${errorText}`);
-    }
-
-    const apiResponse = await response.json();
-    const content = apiResponse.choices?.[0]?.message?.content || "";
-
-    if (!content) {
-      return { success: false, error: "No response from AI" };
-    }
-
-    // Clean up response — remove markdown code blocks if present
-    let cleanedContent = content
-      .replace(/```json\s*/gi, "")
-      .replace(/```\s*/g, "")
-      .trim();
-
-    // Find JSON object — look for the actual structured JSON, not echoed text
-    let jsonString: string | null = null;
-
-    // Strategy 1: Find the JSON block starting with {"vendor" (our expected schema)
-    const vendorStart = cleanedContent.indexOf('{"vendor"');
-    if (vendorStart === -1) {
-      // Strategy 2: Find {"  which is more likely a real JSON object start
-      const jsonObjStart = cleanedContent.indexOf('{\n');
-      if (jsonObjStart !== -1) {
-        const lastBrace = cleanedContent.lastIndexOf("}");
-        if (lastBrace > jsonObjStart) {
-          jsonString = cleanedContent.substring(jsonObjStart, lastBrace + 1);
+  // Strategy 1: Find {"vendor" — our expected schema start
+  const vendorIdx = cleaned.indexOf('"vendor"');
+  if (vendorIdx !== -1) {
+    // Walk back to find the opening brace
+    const before = cleaned.substring(0, vendorIdx);
+    const braceIdx = before.lastIndexOf("{");
+    if (braceIdx !== -1) {
+      const candidate = cleaned.substring(braceIdx);
+      // Find matching closing brace by counting depth
+      let depth = 0;
+      for (let i = 0; i < candidate.length; i++) {
+        if (candidate[i] === "{") depth++;
+        else if (candidate[i] === "}") depth--;
+        if (depth === 0 && i > 0) {
+          return candidate.substring(0, i + 1);
         }
       }
-    } else {
-      const lastBrace = cleanedContent.lastIndexOf("}");
-      if (lastBrace > vendorStart) {
-        jsonString = cleanedContent.substring(vendorStart, lastBrace + 1);
-      }
     }
-
-    // Strategy 3: Fallback to first/last brace
-    if (!jsonString) {
-      const firstBrace = cleanedContent.indexOf("{");
-      const lastBrace = cleanedContent.lastIndexOf("}");
-      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-        jsonString = cleanedContent.substring(firstBrace, lastBrace + 1);
-      }
-    }
-
-    if (!jsonString) {
-      return { success: false, error: "Could not find JSON in AI response" };
-    }
-
-    // Clean up JSON (trailing commas, control chars)
-    jsonString = jsonString
-      .replace(/,\s*}/g, "}")
-      .replace(/,\s*]/g, "]")
-      .replace(/[\x00-\x1F\x7F]/g, " ")
-      .replace(/\n\s*\n/g, "\n");
-
-    const data = JSON.parse(jsonString) as ExtractionResult;
-    console.log(`[EXTRACT] Success — vendor: ${data.vendor?.name}, total: ${data.invoice?.total}, currency: ${data.invoice?.currency}`);
-
-    return { success: true, data };
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
-    console.error("[EXTRACT] Error:", msg);
-    return { success: false, error: msg };
   }
+
+  // Strategy 2: Find the largest balanced {...} block
+  const braces: number[] = [];
+  for (let i = 0; i < cleaned.length; i++) {
+    if (cleaned[i] === "{") braces.push(i);
+  }
+
+  for (const start of braces) {
+    let depth = 0;
+    for (let i = start; i < cleaned.length; i++) {
+      if (cleaned[i] === "{") depth++;
+      else if (cleaned[i] === "}") depth--;
+      if (depth === 0) {
+        const candidate = cleaned.substring(start, i + 1);
+        if (candidate.length > 50 && candidate.includes('"vendor"')) {
+          return candidate;
+        }
+        break;
+      }
+    }
+  }
+
+  // Strategy 3: Simple first/last brace fallback
+  const first = cleaned.indexOf("{");
+  const last = cleaned.lastIndexOf("}");
+  if (first !== -1 && last > first) {
+    return cleaned.substring(first, last + 1);
+  }
+
+  return null;
+}
+
+async function callGroq(
+  groqApiKey: string,
+  model: string,
+  messages: Array<{ role: string; content: string }>,
+  useJsonFormat: boolean
+): Promise<string> {
+  const body: Record<string, unknown> = {
+    model,
+    messages,
+    max_tokens: 4096,
+    temperature: 0,
+  };
+  if (useJsonFormat) {
+    body.response_format = { type: "json_object" };
+  }
+
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${groqApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Groq ${response.status}: ${errorText.substring(0, 200)}`);
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || "";
+}
+
+async function extractInvoiceData(groqApiKey: string, pdfText: string): Promise<{ success: boolean; data?: ExtractionResult; error?: string }> {
+  console.log(`[EXTRACT] Starting extraction, text length: ${pdfText.length}`);
+
+  const userMsg = `Extract invoice data as JSON matching this schema:\n${JSON_SCHEMA}\n\nInvoice text:\n${pdfText}`;
+
+  // Attempt 1: Llama 4 Scout with response_format: json_object
+  try {
+    console.log("[EXTRACT] Attempt 1: Llama 4 Scout + json_object");
+    const content = await callGroq(groqApiKey, "meta-llama/llama-4-scout-17b-16e-instruct", [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: userMsg },
+    ], true);
+
+    if (content) {
+      const jsonStr = extractJsonFromText(content);
+      if (jsonStr) {
+        const data = JSON.parse(jsonStr) as ExtractionResult;
+        console.log(`[EXTRACT] Attempt 1 success — vendor: ${data.vendor?.name}, total: ${data.invoice?.total}`);
+        return { success: true, data };
+      }
+    }
+  } catch (e) {
+    console.warn("[EXTRACT] Attempt 1 failed:", e instanceof Error ? e.message.substring(0, 100) : e);
+  }
+
+  // Attempt 2: Llama 4 Scout WITHOUT response_format (model can output freely, we extract JSON)
+  try {
+    console.log("[EXTRACT] Attempt 2: Llama 4 Scout free-form");
+    const content = await callGroq(groqApiKey, "meta-llama/llama-4-scout-17b-16e-instruct", [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: userMsg },
+    ], false);
+
+    if (content) {
+      const jsonStr = extractJsonFromText(content);
+      if (jsonStr) {
+        const cleaned = jsonStr
+          .replace(/,\s*}/g, "}")
+          .replace(/,\s*]/g, "]")
+          .replace(/[\x00-\x1F\x7F]/g, " ");
+        const data = JSON.parse(cleaned) as ExtractionResult;
+        console.log(`[EXTRACT] Attempt 2 success — vendor: ${data.vendor?.name}, total: ${data.invoice?.total}`);
+        return { success: true, data };
+      }
+    }
+  } catch (e) {
+    console.warn("[EXTRACT] Attempt 2 failed:", e instanceof Error ? e.message.substring(0, 100) : e);
+  }
+
+  // Attempt 3: Fallback to llama-3.1-8b-instant (smaller but follows instructions better)
+  try {
+    console.log("[EXTRACT] Attempt 3: Llama 3.1 8B fallback");
+    const content = await callGroq(groqApiKey, "llama-3.1-8b-instant", [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: userMsg },
+    ], true);
+
+    if (content) {
+      const jsonStr = extractJsonFromText(content);
+      if (jsonStr) {
+        const data = JSON.parse(jsonStr) as ExtractionResult;
+        console.log(`[EXTRACT] Attempt 3 success — vendor: ${data.vendor?.name}, total: ${data.invoice?.total}`);
+        return { success: true, data };
+      }
+    }
+  } catch (e) {
+    console.warn("[EXTRACT] Attempt 3 failed:", e instanceof Error ? e.message.substring(0, 100) : e);
+  }
+
+  return { success: false, error: "All extraction attempts failed. Please try again or use a different file." };
 }
 
 // ─── ECB Currency Conversion ─────────────────────────────────────────────────
