@@ -38,11 +38,12 @@ const TEMPLATES = [
 ];
 
 export default function InvoiceBrandingModal({ open, onOpenChange, onSave }) {
-  const { company, updateCompany } = useUser();
+  const { user, company, updateCompany } = useUser();
   const { ft } = useTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [brandAssets, setBrandAssets] = useState(null);
+  const companyId = company?.id || user?.company_id;
 
   // Form state from invoice_branding JSONB
   const [formData, setFormData] = useState({
@@ -64,16 +65,19 @@ export default function InvoiceBrandingModal({ open, onOpenChange, onSave }) {
   });
 
   useEffect(() => {
-    if (open && company?.id) {
+    if (open && companyId) {
       loadData();
+    } else if (open && !companyId) {
+      // No company available, show form with defaults
+      setLoading(false);
     }
-  }, [open, company?.id]);
+  }, [open, companyId, company]);
 
   const loadData = async () => {
     setLoading(true);
     try {
       // Fetch brand assets
-      const assets = await BrandAssets.filter({ company_id: company.id });
+      const assets = await BrandAssets.filter({ company_id: companyId });
       setBrandAssets(assets?.[0] || null);
 
       // Load existing invoice_branding from company
@@ -85,7 +89,7 @@ export default function InvoiceBrandingModal({ open, onOpenChange, onSave }) {
         logo_type: existing.logo_type || 'primary',
         company_address: existing.company_address || '',
         company_phone: existing.company_phone || '',
-        company_email: existing.company_email || company?.domain ? `billing@${company.domain}` : '',
+        company_email: existing.company_email || (company?.domain ? `billing@${company.domain}` : ''),
         company_vat: existing.company_vat || '',
         bank_name: existing.bank_name || '',
         iban: existing.iban || '',
