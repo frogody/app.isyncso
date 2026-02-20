@@ -428,6 +428,10 @@ import ClientActivity from "./portal/ClientActivity";
 import WholesaleHome from "./portal/WholesaleHome";
 import WholesaleCatalog from "./portal/WholesaleCatalog";
 import WholesaleProduct from "./portal/WholesaleProduct";
+import WholesaleCart from "./portal/WholesaleCart";
+import WholesaleCheckout from "./portal/WholesaleCheckout";
+import WholesaleOrders from "./portal/WholesaleOrders";
+import WholesaleOrderDetail from "./portal/WholesaleOrderDetail";
 
 import { BrowserRouter as Router, Route, Routes, useLocation, useParams, Navigate } from 'react-router-dom';
 
@@ -883,6 +887,10 @@ function PagesContent() {
                     <Route path="/portal/:org/shop" element={<WholesaleHome />} />
                     <Route path="/portal/:org/shop/catalog" element={<WholesaleCatalog />} />
                     <Route path="/portal/:org/shop/product/:productId" element={<WholesaleProduct />} />
+                    <Route path="/portal/:org/shop/cart" element={<WholesaleCart />} />
+                    <Route path="/portal/:org/shop/checkout" element={<WholesaleCheckout />} />
+                    <Route path="/portal/:org/shop/orders" element={<WholesaleOrders />} />
+                    <Route path="/portal/:org/shop/orders/:orderId" element={<WholesaleOrderDetail />} />
 
                     {/* Organization-scoped routes */}
                     <Route path="/portal/:org/login" element={<ClientLogin />} />
