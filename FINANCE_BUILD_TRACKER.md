@@ -1,8 +1,8 @@
 # Finance Module Build Tracker
 
-**Last Updated:** 2026-02-22
-**Current Phase:** Phase 5 complete, ready for Phase 6
-**Overall Score:** ~8/10 (QuickBooks Essentials parity)
+**Last Updated:** 2026-02-20
+**Current Phase:** Smart Invoice Drop complete
+**Overall Score:** ~9/10 (QuickBooks Online+ with AI import)
 
 ---
 
@@ -140,9 +140,73 @@
 
 ---
 
-## Phase 6: Bank Reconciliation (L)
+## Phase 6: Bank Reconciliation (L) — DONE
 
-- **Status:** NOT STARTED
+### 6A — Database Schema
+- **Status:** DONE
+- **Migration:** `supabase/migrations/20260223000000_bank_reconciliation.sql` applied
+  - `bank_accounts` table with RLS (bank_name, account_name, IBAN, linked GL account)
+  - `bank_transactions` table with RLS (amount, date, counterparty, match_status, import_batch_id)
+  - `bank_reconciliations` table with RLS (statement_balance, book_balance, difference, status)
+  - Fixed `journal_entries` source_type CHECK constraint (added `credit_note`, `bank_reconciliation`)
+  - `auto_match_bank_transactions()` RPC — 3-tier matching: exact amount+date → amount±3 days → reference match
+  - `complete_bank_reconciliation()` RPC — marks complete, updates bank account balance
+
+### 6B — FinanceBankAccounts Page
+- **Status:** DONE
+- **Page:** `src/pages/FinanceBankAccounts.jsx` (NEW, 877 lines)
+- **Features:** Bank account CRUD, GL cash account linking, CSV import with Dutch format support (semicolons, comma decimals, Dutch headers), preview before import, batch tracking
+
+### 6C — FinanceBankReconciliation Page
+- **Status:** DONE
+- **Page:** `src/pages/FinanceBankReconciliation.jsx` (NEW, 1130 lines)
+- **Features:** Split-screen matching UI (bank transactions left, GL entries right), auto-match button, manual click-to-pair matching, unmatch/exclude, reconciliation creation/completion workflow, summary bar with statement/book balance/difference
+
+### Commit: 7cb4e31
+
+---
+
+## Phase 7: Smart Invoice Drop (L) — DONE
+
+**Goal:** AI-powered "drop it and forget it" invoice import — extract, classify, match vendors, convert currency, detect recurring.
+
+### 7A — Database Migration
+- **Status:** DONE
+- **Migration:** `supabase/migrations/20260220000000_smart_invoice_drop.sql` applied
+  - `exchange_rates` table with RLS (ECB rate cache: currency_from, currency_to, rate, rate_date)
+  - Added `original_amount`, `original_currency`, `exchange_rate`, `vendor_id` columns to `expenses`
+  - Added `vat_number`, `website`, `iban` columns to `vendors`
+
+### 7B — Edge Function: smart-import-invoice
+- **Status:** DONE (deployed 2026-02-20)
+- **File:** `supabase/functions/smart-import-invoice/index.ts` (NEW)
+- **Features:**
+  - Groq `llama-3.3-70b-versatile` LLM extraction (vendor, invoice, line items, classification, confidence)
+  - Vendor matching: exact VAT → fuzzy name → create new
+  - Tax classification: BTW 0/9/21%, reverse-charge detection for foreign invoices
+  - ECB currency conversion: SDMX CSV API → daily XML fallback → exchange_rates cache
+  - Recurring detection: frequency + next expected date calculation
+
+### 7C — FinanceSmartImport Page
+- **Status:** DONE
+- **Page:** `src/pages/FinanceSmartImport.jsx` (NEW)
+- **Features:**
+  - Drag-and-drop zone (PDF, PNG, JPG)
+  - Client-side PDF text extraction via pdf.js
+  - Processing pipeline visualization (Uploading → Extracting → Analyzing → Done)
+  - Review card with editable fields + confidence badges (green/yellow/red)
+  - Vendor section with match indicator (new/matched by VAT/matched by name)
+  - Invoice details, amounts, tax rate dropdown, category selector
+  - Foreign currency section: original amount + ECB rate + EUR conversion
+  - Reverse charge indicator
+  - Line items table with editable rows
+  - Recurring detection display with frequency selector
+  - "Save & File" creates: expense + line items + GL entry + recurring template
+  - File stored in `attachments` bucket
+
+### Routes & Navigation
+- Route registered in `src/pages/index.jsx` with `<FinanceErrorWrapper>`
+- Sidebar navigation added in `src/pages/Layout.jsx` (Upload icon, "Smart Import")
 
 ---
 
@@ -164,3 +228,5 @@
 | P3 | f003aa0 | CRM contact selector + AR aging customer grouping |
 | P4 | d1ca0ec | React Query + shared hooks + error boundaries |
 | P5 | 1672b46 | Tax management + recurring invoices + credit notes |
+| P6 | 7cb4e31 | Bank reconciliation — accounts, CSV import, split-screen matching |
+| P7 | pending | Smart Invoice Drop — AI extraction, ECB conversion, vendor matching |
