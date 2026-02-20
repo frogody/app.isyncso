@@ -383,7 +383,7 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
                   onDragEnd={handleDragEnd}
                   onClick={() => { setMainIdx(idx); setShowingVideo(false); }}
                   className={cn(
-                    'relative flex-shrink-0 w-11 h-11 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing transition-all group/thumb',
+                    'relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing transition-all group/thumb',
                     'border-2',
                     isViewing
                       ? 'border-cyan-400 shadow-sm shadow-cyan-500/20'
@@ -455,7 +455,7 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
               <button
                 onClick={() => setShowingVideo(true)}
                 className={cn(
-                  'relative flex-shrink-0 w-11 h-11 rounded-lg overflow-hidden transition-all',
+                  'relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden transition-all',
                   'border-2',
                   showingVideo
                     ? 'border-cyan-400 shadow-sm shadow-cyan-500/20'
@@ -1037,6 +1037,23 @@ function AuditReport({ audit, onClose, t }) {
             })}
           </div>
 
+          {/* Missing USP visuals */}
+          {audit.missing_usp_visuals?.length > 0 && (
+            <div className={cn('rounded-lg border p-3', t('bg-red-50/50 border-red-200', 'bg-red-500/5 border-red-500/10'))}>
+              <span className={cn('text-[10px] font-semibold uppercase tracking-wider block mb-1.5', 'text-red-400')}>
+                Features Missing From Images
+              </span>
+              <div className="space-y-1">
+                {audit.missing_usp_visuals.map((f, i) => (
+                  <div key={i} className="flex items-start gap-1.5">
+                    <ImageIcon className="w-3 h-3 text-red-400/70 mt-0.5 flex-shrink-0" />
+                    <span className={cn('text-[11px] leading-snug', t('text-slate-700', 'text-zinc-300'))}>{f}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Top priorities */}
           {audit.top_priorities?.length > 0 && (
             <div className={cn('rounded-lg border p-3', t('bg-cyan-50/50 border-cyan-200', 'bg-cyan-500/5 border-cyan-500/10'))}>
@@ -1218,7 +1235,7 @@ export default function ListingPreview({
       </div>
 
       {/* ── Two-column: Small images left, content right ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr]">
+      <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr]">
         {/* Left: Image Gallery Editor (compact) */}
         <div className={cn('p-3 lg:border-r', t('lg:border-slate-100', 'lg:border-white/[0.03]'))}>
           <ImageGalleryEditor
@@ -1286,7 +1303,7 @@ export default function ListingPreview({
       {/* ── Product Specifications (below images, left-aligned) ── */}
       {specs.length > 0 && (
         <div className={cn('border-t', t('border-slate-100', 'border-white/[0.03]'))}>
-          <div className="p-3 lg:w-[280px]">
+          <div className="p-3 lg:w-[420px]">
             <button
               onClick={() => setSpecsExpanded(!specsExpanded)}
               className={cn(
