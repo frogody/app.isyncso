@@ -21,10 +21,15 @@ import {
   FileText,
   Star,
   Crown,
+  ShieldCheck,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/GlobalThemeContext';
+import { supabase } from '@/api/supabaseClient';
 import ListingGenerationView from './ListingGenerationView';
 
 // ---------------------------------------------------------------------------
@@ -961,6 +966,132 @@ function EmptyState({ onGenerateAll, loading, t }) {
 }
 
 // ---------------------------------------------------------------------------
+// Audit Report Panel
+// ---------------------------------------------------------------------------
+
+const STATUS_CONFIG = {
+  good: { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', label: 'Good' },
+  warning: { icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', label: 'Needs work' },
+  critical: { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', label: 'Critical' },
+};
+
+function AuditReport({ audit, onClose, t }) {
+  if (!audit) return null;
+
+  const scoreColor = audit.overall_score >= 80 ? 'text-emerald-400' : audit.overall_score >= 50 ? 'text-amber-400' : 'text-red-400';
+  const scoreBg = audit.overall_score >= 80 ? 'bg-emerald-500/10' : audit.overall_score >= 50 ? 'bg-amber-500/10' : 'bg-red-500/10';
+
+  return (
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: 'auto', opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="overflow-hidden"
+    >
+      <div className={cn('border-t', t('border-slate-100', 'border-white/5'))}>
+        {/* Header */}
+        <div className={cn('flex items-center justify-between px-4 py-2', t('bg-slate-50', 'bg-white/[0.02]'))}>
+          <div className="flex items-center gap-2">
+            <ShieldCheck className={cn('w-3.5 h-3.5', scoreColor)} />
+            <span className={cn('text-[11px] font-semibold', t('text-slate-700', 'text-zinc-300'))}>AI Audit Report</span>
+            <span className={cn('text-sm font-bold tabular-nums px-1.5 py-0.5 rounded', scoreBg, scoreColor)}>
+              {audit.overall_score}/100
+            </span>
+          </div>
+          <button onClick={onClose} className={cn('p-1 rounded hover:bg-white/5', t('text-slate-400', 'text-zinc-500'))}>
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+
+        <div className="px-4 pb-4 space-y-3">
+          {/* Summary */}
+          {audit.summary && (
+            <p className={cn('text-xs leading-relaxed', t('text-slate-600', 'text-zinc-400'))}>
+              {audit.summary}
+            </p>
+          )}
+
+          {/* Category scores */}
+          <div className="space-y-2">
+            {(audit.categories || []).map((cat, idx) => {
+              const cfg = STATUS_CONFIG[cat.status] || STATUS_CONFIG.warning;
+              const StatusIcon = cfg.icon;
+              const hasDetails = cat.issues?.length > 0 || cat.suggestions?.length > 0;
+
+              return (
+                <details key={idx} className={cn(
+                  'rounded-lg border overflow-hidden group',
+                  t('bg-white border-slate-200', 'bg-white/[0.02] border-white/5')
+                )}>
+                  <summary className={cn(
+                    'flex items-center justify-between px-3 py-2 cursor-pointer select-none',
+                    t('hover:bg-slate-50', 'hover:bg-white/[0.02]')
+                  )}>
+                    <div className="flex items-center gap-2">
+                      <StatusIcon className={cn('w-3.5 h-3.5', cfg.color)} />
+                      <span className={cn('text-xs font-medium', t('text-slate-700', 'text-zinc-300'))}>{cat.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded', cfg.bg, cfg.color)}>
+                        {cat.score}/100
+                      </span>
+                      <ChevronDown className={cn('w-3 h-3 transition-transform group-open:rotate-180', t('text-slate-400', 'text-zinc-600'))} />
+                    </div>
+                  </summary>
+
+                  {hasDetails && (
+                    <div className={cn('px-3 pb-2.5 pt-1 space-y-2 border-t', t('border-slate-100', 'border-white/5'))}>
+                      {cat.issues?.length > 0 && (
+                        <div className="space-y-1">
+                          {cat.issues.map((issue, i) => (
+                            <div key={i} className="flex items-start gap-1.5">
+                              <XCircle className="w-3 h-3 text-red-400/70 mt-0.5 flex-shrink-0" />
+                              <span className={cn('text-[11px] leading-snug', t('text-slate-600', 'text-zinc-400'))}>{issue}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {cat.suggestions?.length > 0 && (
+                        <div className="space-y-1">
+                          {cat.suggestions.map((sug, i) => (
+                            <div key={i} className="flex items-start gap-1.5">
+                              <Sparkles className="w-3 h-3 text-cyan-400/70 mt-0.5 flex-shrink-0" />
+                              <span className={cn('text-[11px] leading-snug', t('text-slate-600', 'text-zinc-400'))}>{sug}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </details>
+              );
+            })}
+          </div>
+
+          {/* Top priorities */}
+          {audit.top_priorities?.length > 0 && (
+            <div className={cn('rounded-lg border p-3', t('bg-cyan-50/50 border-cyan-200', 'bg-cyan-500/5 border-cyan-500/10'))}>
+              <span className={cn('text-[10px] font-semibold uppercase tracking-wider block mb-1.5', 'text-cyan-500')}>
+                Top Priorities
+              </span>
+              <ol className="space-y-1">
+                {audit.top_priorities.map((p, i) => (
+                  <li key={i} className="flex items-start gap-1.5">
+                    <span className={cn('text-[10px] font-bold w-4 flex-shrink-0', 'text-cyan-400')}>{i + 1}.</span>
+                    <span className={cn('text-[11px] leading-snug', t('text-slate-700', 'text-zinc-300'))}>{p}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main Component — Marketplace-Style Layout
 // ---------------------------------------------------------------------------
 
@@ -976,6 +1107,19 @@ export default function ListingPreview({
 }) {
   const { t } = useTheme();
   const [saveStatus, setSaveStatus] = useState('idle');
+  const [auditData, setAuditData] = useState(null);
+  const [auditing, setAuditing] = useState(false);
+  const [specsExpanded, setSpecsExpanded] = useState(false);
+
+  // Build specifications array from details prop
+  const specs = useMemo(() => {
+    const raw = details?.specifications;
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'string') {
+      try { const p = JSON.parse(raw); return Array.isArray(p) ? p : []; } catch { return []; }
+    }
+    return [];
+  }, [details?.specifications]);
 
   const debouncedOnUpdate = useDebounce(async (updates) => {
     if (!onUpdate) return;
@@ -994,6 +1138,38 @@ export default function ListingPreview({
       .then(() => { setSaveStatus('saved'); setTimeout(() => setSaveStatus('idle'), 1500); })
       .catch(() => setSaveStatus('idle'));
   }, [onUpdate]);
+
+  const handleAudit = useCallback(async () => {
+    setAuditing(true);
+    setAuditData(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('audit-listing', {
+        body: {
+          listing_title: listing?.listing_title || '',
+          short_tagline: listing?.short_tagline || '',
+          listing_description: listing?.listing_description || '',
+          bullet_points: listing?.bullet_points || [],
+          seo_title: listing?.seo_title || '',
+          seo_description: listing?.seo_description || '',
+          search_keywords: listing?.search_keywords || [],
+          hero_image_url: listing?.hero_image_url || null,
+          gallery_urls: listing?.gallery_urls || [],
+          video_url: listing?.video_url || null,
+          video_reference_frames: listing?.video_reference_frames || [],
+          product_name: product?.name || '',
+          product_brand: product?.brand || '',
+          product_category: product?.category || details?.category || '',
+          channel: listing?.channel || 'General marketplace',
+        },
+      });
+      if (error) throw error;
+      setAuditData(data);
+    } catch (err) {
+      console.error('[audit] Failed:', err);
+    } finally {
+      setAuditing(false);
+    }
+  }, [listing, product, details]);
 
   // Show generation view
   if (generatingProgress) {
@@ -1044,49 +1220,37 @@ export default function ListingPreview({
             )}
           </AnimatePresence>
         </div>
-        <button
-          onClick={onGenerateAll}
-          disabled={loading}
-          className={cn(
-            'flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all',
-            'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white',
-            loading && 'opacity-60 cursor-not-allowed'
-          )}
-        >
-          {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-          {loading ? 'Generating...' : 'Regenerate'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleAudit}
+            disabled={auditing}
+            className={cn(
+              'flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all border',
+              auditing
+                ? 'opacity-60 cursor-not-allowed'
+                : t('border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-800', 'border-white/10 hover:border-white/20 text-zinc-400 hover:text-zinc-200')
+            )}
+          >
+            {auditing ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
+            {auditing ? 'Auditing...' : 'Audit'}
+          </button>
+          <button
+            onClick={onGenerateAll}
+            disabled={loading}
+            className={cn(
+              'flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all',
+              'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white',
+              loading && 'opacity-60 cursor-not-allowed'
+            )}
+          >
+            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+            {loading ? 'Generating...' : 'Regenerate'}
+          </button>
+        </div>
       </div>
 
-      {/* ── Title (full width, top, like bol.com) ── */}
-      <div className={cn('px-4 pt-3 pb-2 border-b', t('border-slate-100', 'border-white/[0.03]'))}>
-        {product?.brand && (
-          <span className={cn('text-[10px] font-semibold uppercase tracking-wider', 'text-cyan-500')}>
-            {product.brand}
-          </span>
-        )}
-        <EditableText
-          value={listing?.listing_title || product?.name || ''}
-          onChange={(text) => debouncedOnUpdate({ listing_title: text })}
-          placeholder="Product listing title..."
-          className={cn('text-base font-bold leading-snug mt-0.5', t('text-slate-900', 'text-white'))}
-          inputClassName={cn('text-base font-bold leading-snug', t('text-slate-900', 'text-white'))}
-          t={t}
-        />
-        {(listing?.short_tagline || true) && (
-          <EditableText
-            value={listing?.short_tagline || ''}
-            onChange={(text) => debouncedOnUpdate({ short_tagline: text })}
-            placeholder="Short tagline..."
-            className={cn('text-xs mt-1', t('text-slate-500', 'text-zinc-500'))}
-            inputClassName={cn('text-xs', t('text-slate-500', 'text-zinc-500'))}
-            t={t}
-          />
-        )}
-      </div>
-
-      {/* ── Two-column: Images left, Info right ── */}
-      <div className={cn('grid grid-cols-1 lg:grid-cols-2 border-b', t('border-slate-100', 'border-white/[0.03]'))}>
+      {/* ── Two-column: Images left, Title + Features + Description right ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         {/* Left: Image Gallery Editor */}
         <div className={cn('p-4 lg:border-r', t('lg:border-slate-100', 'lg:border-white/[0.03]'))}>
           <ImageGalleryEditor
@@ -1098,9 +1262,34 @@ export default function ListingPreview({
           />
         </div>
 
-        {/* Right: Key Features */}
+        {/* Right: Title + Key Features + Description stacked */}
         <div className="p-4 space-y-4">
-          {/* Key Features / Bullet Points */}
+          {/* Title & Tagline */}
+          <div>
+            {product?.brand && (
+              <span className={cn('text-[10px] font-semibold uppercase tracking-wider', 'text-cyan-500')}>
+                {product.brand}
+              </span>
+            )}
+            <EditableText
+              value={listing?.listing_title || product?.name || ''}
+              onChange={(text) => debouncedOnUpdate({ listing_title: text })}
+              placeholder="Product listing title..."
+              className={cn('text-base font-bold leading-snug mt-0.5', t('text-slate-900', 'text-white'))}
+              inputClassName={cn('text-base font-bold leading-snug', t('text-slate-900', 'text-white'))}
+              t={t}
+            />
+            <EditableText
+              value={listing?.short_tagline || ''}
+              onChange={(text) => debouncedOnUpdate({ short_tagline: text })}
+              placeholder="Short tagline..."
+              className={cn('text-xs mt-1', t('text-slate-500', 'text-zinc-500'))}
+              inputClassName={cn('text-xs', t('text-slate-500', 'text-zinc-500'))}
+              t={t}
+            />
+          </div>
+
+          {/* Key Features */}
           <div className="space-y-1.5">
             <span className={cn('text-[11px] font-semibold uppercase tracking-wider', t('text-slate-400', 'text-zinc-500'))}>
               Key Features
@@ -1112,25 +1301,87 @@ export default function ListingPreview({
             />
           </div>
 
+          {/* Description */}
+          <div>
+            <span className={cn('text-[11px] font-semibold uppercase tracking-wider block mb-1.5', t('text-slate-400', 'text-zinc-500'))}>
+              Product Description
+            </span>
+            <EditableDescription
+              value={listing?.listing_description || ''}
+              onChange={(text) => debouncedOnUpdate({ listing_description: text })}
+              t={t}
+            />
+          </div>
         </div>
       </div>
 
-      {/* ── Description (full width, below fold) ── */}
-      <div className={cn('px-4 py-3 border-b', t('border-slate-100', 'border-white/[0.03]'))}>
-        <span className={cn('text-[11px] font-semibold uppercase tracking-wider block mb-1.5', t('text-slate-400', 'text-zinc-500'))}>
-          Product Description
-        </span>
-        <EditableDescription
-          value={listing?.listing_description || ''}
-          onChange={(text) => debouncedOnUpdate({ listing_description: text })}
-          t={t}
-        />
-      </div>
+      {/* ── Product Specifications (below images, left-aligned) ── */}
+      {specs.length > 0 && (
+        <div className={cn('border-t', t('border-slate-100', 'border-white/[0.03]'))}>
+          <div className="p-4 lg:w-1/2">
+            <button
+              onClick={() => setSpecsExpanded(!specsExpanded)}
+              className={cn(
+                'w-full flex items-center justify-between py-1 transition-colors',
+                t('hover:text-slate-900', 'hover:text-white')
+              )}
+            >
+              <div className="flex items-center gap-1.5">
+                <Package className={cn('w-3 h-3', t('text-slate-400', 'text-zinc-500'))} />
+                <span className={cn('text-[11px] font-semibold uppercase tracking-wider', t('text-slate-500', 'text-zinc-500'))}>
+                  Product Specifications
+                </span>
+                <span className={cn('text-[9px] px-1.5 py-0.5 rounded font-medium', t('bg-slate-100 text-slate-500', 'bg-white/5 text-zinc-500'))}>
+                  {specs.length}
+                </span>
+              </div>
+              {specsExpanded
+                ? <ChevronUp className={cn('w-3 h-3', t('text-slate-400', 'text-zinc-500'))} />
+                : <ChevronDown className={cn('w-3 h-3', t('text-slate-400', 'text-zinc-500'))} />
+              }
+            </button>
+            <AnimatePresence>
+              {specsExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-2 space-y-1">
+                    {specs.map((spec, idx) => (
+                      <div key={idx} className={cn(
+                        'flex items-start justify-between py-1.5 px-2 rounded text-xs',
+                        idx % 2 === 0 ? t('bg-slate-50/50', 'bg-white/[0.02]') : ''
+                      )}>
+                        <span className={cn('font-medium', t('text-slate-500', 'text-zinc-500'))}>
+                          {spec.name || spec.key || spec.label || 'Spec'}
+                        </span>
+                        <span className={cn('text-right ml-4', t('text-slate-700', 'text-zinc-300'))}>
+                          {spec.value || spec.val || '—'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      )}
 
       {/* ── SEO Section (collapsible) ── */}
-      <div className="px-4 py-3">
+      <div className={cn('px-4 py-3 border-t', t('border-slate-100', 'border-white/[0.03]'))}>
         <SEOSection listing={listing} onUpdate={debouncedOnUpdate} t={t} />
       </div>
+
+      {/* ── Audit Report ── */}
+      <AnimatePresence>
+        {auditData && (
+          <AuditReport audit={auditData} onClose={() => setAuditData(null)} t={t} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

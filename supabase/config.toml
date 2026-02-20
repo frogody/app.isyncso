@@ -46,6 +46,9 @@ verify_jwt = false
 [functions.generateCampaignOutreach]
 verify_jwt = false
 
+[functions.audit-listing]
+verify_jwt = false
+
 [functions.analyzeCampaignProject]
 verify_jwt = false
 

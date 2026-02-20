@@ -714,6 +714,7 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
             loading={generating}
             generatingProgress={generatingProgress}
             onTabChange={handleTabChange}
+            onUpdate={saveListingSilent}
           />
         );
       case 'analytics':
