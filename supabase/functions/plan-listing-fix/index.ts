@@ -73,14 +73,14 @@ ANALYSIS METHODOLOGY - follow these steps internally:
 4. COPY ASSESSMENT - Evaluate title, tagline, bullets, and description separately. Check for: brand presence, benefit-led language, emotional hooks, specificity, readability.
 5. SEO ASSESSMENT - Check meta title length (50-60 chars ideal), meta description length (120-160 chars), keyword targeting, search intent alignment.
 6. MISSING USP VISUALS - Each missing USP visual is a lost conversion opportunity. Prioritize visuals that communicate the strongest differentiators.
-7. CREDIT ESTIMATION - Credits correspond to API costs (~10 credits = $0.15). Costs per action: replace_image = 4 credits, copy = 2 credits, seo = 2 credits (0 if bundled with copy action), image (new USP visual) = 4 credits each.
+7. CREDIT ESTIMATION - Credits correspond to API costs (~10 credits = $0.15). Image generation (NanoBanana Pro) costs ~$0.17 per image so each image action = 12 credits. Costs per action: replace_image = 12 credits, copy = 2 credits, seo = 2 credits (0 if bundled with copy action), image (new USP visual) = 12 credits each.
 
 DECISION RULES for which actions to include:
 
 - "replace_image" action: ONLY include if the Visual Content category mentions critical issues like AI artifacts, visible prompt text, unusable images, or extremely poor quality. Do NOT include for minor visual improvements.
 - "copy" action: Include if ANY of these categories scored below 80: Title & Tagline, Description, Bullet Points, Conversion Readiness. The "categories" array on the action should list ONLY the categories that scored below 80.
 - "seo" action: Include if the SEO / Discoverability category scored below 80. Set credits to 0 if a "copy" action already exists (they run together), otherwise 2 credits.
-- "image" actions: Include ONE action per entry in the missing_usp_visuals array. Each generates a professional infographic for that USP. 4 credits each.
+- "image" actions: Include ONE action per entry in the missing_usp_visuals array. Each generates a professional infographic for that USP. 12 credits each.
 
 RESPONSE FORMAT - return valid JSON with this exact structure:
 
@@ -97,7 +97,7 @@ RESPONSE FORMAT - return valid JSON with this exact structure:
       "type": "replace_image" | "copy" | "seo" | "image",
       "label": "string - short human-readable action title",
       "description": "string - detailed explanation of what will be done and why",
-      "credits": 4,
+      "credits": 12,
       "categories": ["string"] // ONLY for type "copy" — which audit categories this fixes
     }
   ],
