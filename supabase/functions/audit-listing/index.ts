@@ -302,7 +302,7 @@ Return a JSON object with this EXACT structure. Be specific and reference actual
 Return ONLY valid JSON.`;
 
     const auditContent = await togetherChat(
-      "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+      "Qwen/Qwen2.5-72B-Instruct-Turbo",
       [
         { role: "system", content: "You are an elite e-commerce listing auditor known for being BRUTALLY honest. Return only valid JSON. Be extremely specific — reference actual content, image numbers, and feature names. CRITICAL: If the vision analysis mentions ANY visible text, prompt artifacts, watermarks, or AI generation flaws in images, the Visual Content score MUST be very low (below 30). A hero image with visible AI text is a deal-breaker — score it as critical. Missing images are also a major issue: having only 5 of 11 recommended images should score below 40." },
         { role: "user", content: auditPrompt },
