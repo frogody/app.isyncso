@@ -9,7 +9,7 @@ function App() {
     <GlobalThemeProvider>
       <Pages />
       <Toaster />
-      <SonnerToaster position="bottom-right" theme="dark" richColors />
+      <SonnerToaster position="bottom-right" theme="dark" richColors duration={45000} />
     </GlobalThemeProvider>
   )
 }
