@@ -1,8 +1,8 @@
 # Finance Module Build Tracker
 
 **Last Updated:** 2026-02-20
-**Current Phase:** Smart Invoice Drop complete
-**Overall Score:** ~9/10 (QuickBooks Online+ with AI import)
+**Current Phase:** Branded Invoice Customization complete
+**Overall Score:** ~9/10 (QuickBooks Online+ with AI import + branded PDFs)
 
 ---
 
@@ -229,4 +229,57 @@
 | P4 | d1ca0ec | React Query + shared hooks + error boundaries |
 | P5 | 1672b46 | Tax management + recurring invoices + credit notes |
 | P6 | 7cb4e31 | Bank reconciliation — accounts, CSV import, split-screen matching |
-| P7 | pending | Smart Invoice Drop — AI extraction, ECB conversion, vendor matching |
+| P7 | 3838507 | Smart Invoice Drop — AI extraction, ECB conversion, vendor matching |
+
+---
+
+## Phase 8: Branded Invoice Customization (M) — DONE
+
+**Goal:** One-click branded invoice PDFs — pull brand assets from Create module, apply to PDF with logo, custom colors, company info, bank details, and 3 template styles.
+
+### 8A — Database Migration
+- **Status:** DONE
+- **Migration:** `supabase/migrations/20260220100000_invoice_branding.sql`
+  - Added `invoice_branding JSONB DEFAULT '{}'` column to `companies` table
+  - Stores template, company details, bank info, logo preference, footer text
+
+### 8B — Brand-Aware PDF Generator
+- **Status:** DONE
+- **File:** `src/utils/generateInvoicePDF.js` (rewritten ~640 lines)
+- **Changes:**
+  - Function signature: `async generateInvoicePDF(invoice, company, brandConfig)` (now async for logo fetch)
+  - 3 template renderers: Modern (dark header + accent), Classic (white + colored line), Minimal (clean whitespace)
+  - Logo embedding via `loadLogoAsBase64()` → `doc.addImage()` with in-memory cache
+  - `hexToRgb()` converter for brand colors
+  - Company FROM section with address, phone, email, VAT
+  - Bank details footer (IBAN, BIC, bank name)
+  - Payment terms section
+  - Custom footer text
+  - **Backward compatible** — null brandConfig renders original hardcoded layout
+
+### 8C — InvoiceBrandingModal Component
+- **Status:** DONE
+- **File:** `src/components/finance/InvoiceBrandingModal.jsx` (NEW)
+- **Features:**
+  - Auto-fetches `BrandAssets` and existing `invoice_branding` on open
+  - Template picker with mini visual previews (Modern/Classic/Minimal)
+  - Logo selector from brand_assets logos (primary/secondary/icon)
+  - Color swatches from brand assets with override option (native color picker)
+  - Company details form (address, phone, email, VAT)
+  - Bank & payment section (IBAN, BIC, bank name, payment terms, toggle)
+  - Footer text customization
+  - Saves to `companies.invoice_branding` JSONB via `updateCompany()`
+
+### 8D — FinanceInvoices Integration
+- **Status:** DONE
+- **File:** `src/pages/FinanceInvoices.jsx`
+- **Changes:**
+  - Added "Customize Invoice" button (Palette icon) in PageHeader actions
+  - `loadBrandConfig()` fetches brand assets + company branding on mount
+  - Pre-loads logo as base64 for instant PDF generation
+  - All 4 PDF call sites updated: dropdown View PDF, Download PDF, detail modal View/Download
+  - `InvoiceBrandingModal` rendered with `onSave` callback to reload brand config
+
+### Verification
+- [x] `npx vite build` passes
+- [x] Backward compatible — no brandConfig = original PDF layout

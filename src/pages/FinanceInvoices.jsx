@@ -6,12 +6,14 @@ import {
   Receipt, Plus, Search, Filter, Download, Send, Check, Clock, AlertCircle,
   FileText, MoreVertical, Eye, Edit2, Trash2, Mail, X, ChevronDown,
   ArrowUpDown, Calendar, Euro, Building2, User, Package, RefreshCw, Zap,
-  FileDown, Printer, Sun, Moon, Briefcase
+  FileDown, Printer, Sun, Moon, Briefcase, Palette
 } from 'lucide-react';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
-import { downloadInvoicePDF, previewInvoicePDF } from '@/utils/generateInvoicePDF';
+import { downloadInvoicePDF, previewInvoicePDF, loadLogoAsBase64 } from '@/utils/generateInvoicePDF';
 import { ProductSelector } from '@/components/finance';
+import InvoiceBrandingModal from '@/components/finance/InvoiceBrandingModal';
+import { BrandAssets } from '@/api/entities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +61,8 @@ export default function FinanceInvoices() {
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [taxRates, setTaxRates] = useState([]);
+  const [showBrandingModal, setShowBrandingModal] = useState(false);
+  const [brandConfig, setBrandConfig] = useState(null);
   const { hasPermission, isLoading: permLoading } = usePermissions();
   const companyId = user?.company_id;
 
@@ -79,6 +83,7 @@ export default function FinanceInvoices() {
     if (companyId) {
       loadInvoices();
       loadTaxRates();
+      loadBrandConfig();
     }
   }, [companyId]);
 
@@ -116,6 +121,43 @@ export default function FinanceInvoices() {
       setTaxRates(data || []);
     } catch (err) {
       console.warn('Could not load tax rates:', err);
+    }
+  };
+
+  const loadBrandConfig = async () => {
+    try {
+      const branding = user?.company_id ? (await supabase.from('companies').select('invoice_branding, name, domain').eq('id', user.company_id).single())?.data : null;
+      const invoiceBranding = branding?.invoice_branding;
+      if (!invoiceBranding?.enabled) { setBrandConfig(null); return; }
+
+      // Fetch brand assets for colors and logos
+      const assets = await BrandAssets.filter({ company_id: user.company_id });
+      const brandAsset = assets?.[0];
+      const colors = brandAsset?.colors || {};
+
+      // Pre-load logo
+      let logoDataUrl = null;
+      let logoFormat = 'PNG';
+      if (brandAsset?.logos?.length) {
+        const selectedLogo = brandAsset.logos.find(l => l.type === invoiceBranding.logo_type) || brandAsset.logos[0];
+        if (selectedLogo?.url) {
+          const logoResult = await loadLogoAsBase64(selectedLogo.url);
+          if (logoResult) { logoDataUrl = logoResult.dataUrl; logoFormat = logoResult.format; }
+        }
+      }
+
+      setBrandConfig({
+        branding: invoiceBranding,
+        colors: {
+          primary: invoiceBranding.color_override_primary || colors.primary,
+          accent: invoiceBranding.color_override_accent || colors.accent || colors.secondary,
+        },
+        logoDataUrl,
+        logoFormat,
+      });
+    } catch (err) {
+      console.warn('Could not load brand config:', err);
+      setBrandConfig(null);
     }
   };
 
@@ -569,6 +611,14 @@ export default function FinanceInvoices() {
                 >
                   {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowBrandingModal(true)}
+                  className={ft('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}
+                >
+                  <Palette className="w-4 h-4 mr-2" />
+                  Customize Invoice
+                </Button>
                 <Button variant="outline" className={ft('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}>
                 <Download className="w-4 h-4 mr-2" />
                 Export
@@ -764,14 +814,14 @@ export default function FinanceInvoices() {
                               View Details
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => previewInvoicePDF(invoice)}
+                              onClick={() => previewInvoicePDF(invoice, { name: user?.company_name }, brandConfig)}
                               className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800')}
                             >
                               <Printer className="w-4 h-4 mr-2" />
                               View PDF
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => downloadInvoicePDF(invoice)}
+                              onClick={() => downloadInvoicePDF(invoice, { name: user?.company_name }, brandConfig)}
                               className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800')}
                             >
                               <FileDown className="w-4 h-4 mr-2" />
@@ -1273,7 +1323,7 @@ export default function FinanceInvoices() {
                 <Button
                   variant="outline"
                   className={`flex-1 ${ft('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}`}
-                  onClick={() => previewInvoicePDF(selectedInvoice)}
+                  onClick={() => previewInvoicePDF(selectedInvoice, { name: user?.company_name }, brandConfig)}
                 >
                   <Printer className="w-4 h-4 mr-2" />
                   View PDF
@@ -1281,7 +1331,7 @@ export default function FinanceInvoices() {
                 <Button
                   variant="outline"
                   className={`flex-1 ${ft('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}`}
-                  onClick={() => downloadInvoicePDF(selectedInvoice)}
+                  onClick={() => downloadInvoicePDF(selectedInvoice, { name: user?.company_name }, brandConfig)}
                 >
                   <FileDown className="w-4 h-4 mr-2" />
                   Download PDF
@@ -1422,6 +1472,13 @@ export default function FinanceInvoices() {
         onClose={() => setShowProductSelector(false)}
         onSelect={handleAddProduct}
         currency="EUR"
+      />
+
+      {/* Invoice Branding Modal */}
+      <InvoiceBrandingModal
+        open={showBrandingModal}
+        onOpenChange={setShowBrandingModal}
+        onSave={() => loadBrandConfig()}
       />
     </div>
     </FinancePageTransition>

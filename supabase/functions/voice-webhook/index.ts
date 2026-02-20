@@ -128,7 +128,7 @@ async function callGatekeeperLLM(
     ...(GROQ_API_KEY ? [{
       url: "https://api.groq.com/openai/v1/chat/completions",
       key: GROQ_API_KEY,
-      model: "llama-3.3-70b-versatile",
+      model: "meta-llama/llama-4-scout-17b-16e-instruct",
       name: "Groq",
     }] : []),
     ...(TOGETHER_API_KEY ? [{
