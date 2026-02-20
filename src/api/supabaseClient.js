@@ -114,6 +114,22 @@ const tableNameMap = {
   'Invoice': 'invoices',
   'Subscription': 'subscriptions',
 
+  // === Bookkeeping (Chart of Accounts & General Ledger) ===
+  'AccountType': 'account_types',
+  'Account': 'accounts',
+  'FiscalPeriod': 'fiscal_periods',
+  'JournalEntry': 'journal_entries',
+  'JournalEntryLine': 'journal_entry_lines',
+
+  // === Accounts Payable (Vendors & Bills) ===
+  'Vendor': 'vendors',
+  'Bill': 'bills',
+  'BillLineItem': 'bill_line_items',
+  'BillPayment': 'bill_payments',
+
+  // === Financial Reports ===
+  'SavedReport': 'saved_reports',
+
   // === Raise (Fundraising) ===
   'RaiseCampaign': 'raise_campaigns',
   'RaiseInvestor': 'raise_investors',
@@ -450,6 +466,22 @@ export const entities = {
   Expense: createEntityWrapper('Expense'),
   Invoice: createEntityWrapper('Invoice'),
   Subscription: createEntityWrapper('Subscription'),
+
+  // === Bookkeeping (Chart of Accounts & General Ledger) ===
+  AccountType: createEntityWrapper('AccountType'),
+  Account: createEntityWrapper('Account'),
+  FiscalPeriod: createEntityWrapper('FiscalPeriod'),
+  JournalEntry: createEntityWrapper('JournalEntry'),
+  JournalEntryLine: createEntityWrapper('JournalEntryLine'),
+
+  // === Accounts Payable (Vendors & Bills) ===
+  Vendor: createEntityWrapper('Vendor'),
+  Bill: createEntityWrapper('Bill'),
+  BillLineItem: createEntityWrapper('BillLineItem'),
+  BillPayment: createEntityWrapper('BillPayment'),
+
+  // === Financial Reports ===
+  SavedReport: createEntityWrapper('SavedReport'),
 
   // === Raise (Fundraising) ===
   RaiseCampaign: createEntityWrapper('RaiseCampaign'),
