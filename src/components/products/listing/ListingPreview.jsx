@@ -1216,7 +1216,65 @@ function AuditSidebar({ audit, auditing, onRunAudit, onBuildFixPlan, onApproveFi
 }
 
 // ---------------------------------------------------------------------------
-// Fix with AI — Full-Screen Modal
+// AI Magic Glow — animated overlay when AI edits a section
+// ---------------------------------------------------------------------------
+
+function AiMagicGlow({ active, children, className }) {
+  return (
+    <div className={cn('relative', className)}>
+      {children}
+      <AnimatePresence>
+        {active && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 1.5 } }}
+            className="absolute inset-0 pointer-events-none z-10 rounded-lg overflow-hidden"
+          >
+            {/* Pulsing border glow */}
+            <motion.div
+              className="absolute inset-0 rounded-lg"
+              style={{
+                boxShadow: '0 0 0 1px rgba(34, 211, 238, 0.4), 0 0 12px rgba(34, 211, 238, 0.15), inset 0 0 12px rgba(34, 211, 238, 0.05)',
+              }}
+              animate={{
+                boxShadow: [
+                  '0 0 0 1px rgba(34, 211, 238, 0.4), 0 0 12px rgba(34, 211, 238, 0.15), inset 0 0 12px rgba(34, 211, 238, 0.05)',
+                  '0 0 0 1px rgba(34, 211, 238, 0.6), 0 0 20px rgba(34, 211, 238, 0.25), inset 0 0 20px rgba(34, 211, 238, 0.08)',
+                  '0 0 0 1px rgba(34, 211, 238, 0.4), 0 0 12px rgba(34, 211, 238, 0.15), inset 0 0 12px rgba(34, 211, 238, 0.05)',
+                ],
+              }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            {/* Sparkle sweep — a light line that sweeps across */}
+            <motion.div
+              className="absolute inset-y-0 w-20"
+              style={{
+                background: 'linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.12), transparent)',
+              }}
+              initial={{ left: '-80px' }}
+              animate={{ left: 'calc(100% + 80px)' }}
+              transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1.5, ease: 'easeInOut' }}
+            />
+            {/* Small wand icon badge */}
+            <motion.div
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-500/30"
+              initial={{ scale: 0, rotate: -90 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0, rotate: 90 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+            >
+              <Wand2 className="w-2.5 h-2.5 text-white" />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Fix with AI — Modal & Floating Progress Card
 // ---------------------------------------------------------------------------
 
 function FixWithAIModal({ fixing, fixPlan, onApprove, onCancel, onReaudit, t }) {
@@ -1636,6 +1694,35 @@ export default function ListingPreview({
   const [generatingSlot, setGeneratingSlot] = useState(null);
   const [fixing, setFixing] = useState(null); // null | 'planning' | 'executing' | 'done'
   const [fixPlan, setFixPlan] = useState(null);
+  const [aiGlow, setAiGlow] = useState({}); // { title: true, tagline: true, bullets: true, description: true, gallery: true }
+  const prevListingRef = useRef(null);
+
+  // Detect AI-driven field changes during execution → trigger glow effect
+  useEffect(() => {
+    if (fixing !== 'executing' && fixing !== 'done') {
+      if (Object.keys(aiGlow).length > 0) {
+        // Keep glow for 3s after done, then clear
+        const timer = setTimeout(() => setAiGlow({}), 3000);
+        return () => clearTimeout(timer);
+      }
+      prevListingRef.current = listing;
+      return;
+    }
+
+    const prev = prevListingRef.current;
+    if (!prev || !listing) { prevListingRef.current = listing; return; }
+
+    const newGlow = { ...aiGlow };
+    if (listing.listing_title !== prev.listing_title) newGlow.title = true;
+    if (listing.short_tagline !== prev.short_tagline) newGlow.tagline = true;
+    if (JSON.stringify(listing.bullet_points) !== JSON.stringify(prev.bullet_points)) newGlow.bullets = true;
+    if (listing.listing_description !== prev.listing_description) newGlow.description = true;
+    if (JSON.stringify(listing.gallery_urls) !== JSON.stringify(prev.gallery_urls)) newGlow.gallery = true;
+    if (listing.hero_image_url !== prev.hero_image_url) newGlow.gallery = true;
+
+    setAiGlow(newGlow);
+    prevListingRef.current = listing;
+  }, [listing, fixing]);
 
   const handleGenerateSlot = useCallback(async (slot) => {
     if (!onGenerateSlotImage || generatingSlot) return;
@@ -1810,67 +1897,75 @@ export default function ListingPreview({
       <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr_280px]">
         {/* Left: Image Gallery Editor */}
         <div className={cn('p-4 lg:border-r', t('lg:border-slate-100', 'lg:border-white/[0.03]'))}>
-          <ImageGalleryEditor
-            product={product}
-            listing={listing}
-            onUpdate={handleImageUpdate}
-            onTabChange={onTabChange}
-            onGenerateSlotImage={handleGenerateSlot}
-            generatingSlot={generatingSlot}
-            t={t}
-          />
+          <AiMagicGlow active={aiGlow.gallery}>
+            <ImageGalleryEditor
+              product={product}
+              listing={listing}
+              onUpdate={handleImageUpdate}
+              onTabChange={onTabChange}
+              onGenerateSlotImage={handleGenerateSlot}
+              generatingSlot={generatingSlot}
+              t={t}
+            />
+          </AiMagicGlow>
         </div>
 
         {/* Middle: Title + Key Features + Description */}
         <div className={cn('p-5 lg:p-6 space-y-5', t('', ''))}>
           {/* Title & Tagline */}
-          <div>
-            {product?.brand && (
-              <span className={cn('text-[10px] font-semibold uppercase tracking-wider', 'text-cyan-500')}>
-                {product.brand}
-              </span>
-            )}
-            <EditableText
-              value={listing?.listing_title || product?.name || ''}
-              onChange={(text) => debouncedOnUpdate({ listing_title: text })}
-              placeholder="Product listing title..."
-              className={cn('text-base font-bold leading-snug mt-0.5', t('text-slate-900', 'text-white'))}
-              inputClassName={cn('text-base font-bold leading-snug', t('text-slate-900', 'text-white'))}
-              t={t}
-            />
-            <EditableText
-              value={listing?.short_tagline || ''}
-              onChange={(text) => debouncedOnUpdate({ short_tagline: text })}
-              placeholder="Short tagline..."
-              className={cn('text-xs mt-1', t('text-slate-500', 'text-zinc-500'))}
-              inputClassName={cn('text-xs', t('text-slate-500', 'text-zinc-500'))}
-              t={t}
-            />
-          </div>
+          <AiMagicGlow active={aiGlow.title || aiGlow.tagline}>
+            <div>
+              {product?.brand && (
+                <span className={cn('text-[10px] font-semibold uppercase tracking-wider', 'text-cyan-500')}>
+                  {product.brand}
+                </span>
+              )}
+              <EditableText
+                value={listing?.listing_title || product?.name || ''}
+                onChange={(text) => debouncedOnUpdate({ listing_title: text })}
+                placeholder="Product listing title..."
+                className={cn('text-base font-bold leading-snug mt-0.5', t('text-slate-900', 'text-white'))}
+                inputClassName={cn('text-base font-bold leading-snug', t('text-slate-900', 'text-white'))}
+                t={t}
+              />
+              <EditableText
+                value={listing?.short_tagline || ''}
+                onChange={(text) => debouncedOnUpdate({ short_tagline: text })}
+                placeholder="Short tagline..."
+                className={cn('text-xs mt-1', t('text-slate-500', 'text-zinc-500'))}
+                inputClassName={cn('text-xs', t('text-slate-500', 'text-zinc-500'))}
+                t={t}
+              />
+            </div>
+          </AiMagicGlow>
 
           {/* Key Features */}
-          <div className="space-y-1.5">
-            <span className={cn('text-[11px] font-semibold uppercase tracking-wider', t('text-slate-400', 'text-zinc-500'))}>
-              Key Features
-            </span>
-            <EditableBullets
-              bullets={listing?.bullet_points || []}
-              onChange={(bullets) => debouncedOnUpdate({ bullet_points: bullets })}
-              t={t}
-            />
-          </div>
+          <AiMagicGlow active={aiGlow.bullets}>
+            <div className="space-y-1.5">
+              <span className={cn('text-[11px] font-semibold uppercase tracking-wider', t('text-slate-400', 'text-zinc-500'))}>
+                Key Features
+              </span>
+              <EditableBullets
+                bullets={listing?.bullet_points || []}
+                onChange={(bullets) => debouncedOnUpdate({ bullet_points: bullets })}
+                t={t}
+              />
+            </div>
+          </AiMagicGlow>
 
           {/* Description */}
-          <div>
-            <span className={cn('text-[11px] font-semibold uppercase tracking-wider block mb-1.5', t('text-slate-400', 'text-zinc-500'))}>
-              Product Description
-            </span>
-            <EditableDescription
-              value={listing?.listing_description || ''}
-              onChange={(text) => debouncedOnUpdate({ listing_description: text })}
-              t={t}
-            />
-          </div>
+          <AiMagicGlow active={aiGlow.description}>
+            <div>
+              <span className={cn('text-[11px] font-semibold uppercase tracking-wider block mb-1.5', t('text-slate-400', 'text-zinc-500'))}>
+                Product Description
+              </span>
+              <EditableDescription
+                value={listing?.listing_description || ''}
+                onChange={(text) => debouncedOnUpdate({ listing_description: text })}
+                t={t}
+              />
+            </div>
+          </AiMagicGlow>
         </div>
 
         {/* Right: Audit Sidebar */}

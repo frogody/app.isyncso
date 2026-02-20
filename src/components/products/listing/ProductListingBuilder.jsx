@@ -916,11 +916,39 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
   }, [product, details, user, listing]);
 
   // ── Fix with AI — Step 2: Execute the approved plan ──
+  // Uses direct DB upsert instead of saveListingSilent to avoid stale closure issues
   const handleExecuteFixPlan = useCallback(async (fixPlan, { setFixing, setFixPlan }) => {
     if (!product?.id || !user?.company_id || !fixPlan?.actions) return;
 
     const toastId = toast.loading('Executing fix plan...');
     setFixing('executing');
+
+    // Track the latest listing state locally so sequential saves don't overwrite each other
+    let currentListing = { ...listing };
+
+    // Direct DB save that uses our local tracker instead of the stale closure
+    const saveFix = async (updates) => {
+      const payload = {
+        ...currentListing,
+        ...updates,
+        product_id: product.id,
+        company_id: user.company_id,
+        channel: selectedChannel,
+        updated_at: new Date().toISOString(),
+      };
+      if (!payload.id) delete payload.id;
+
+      const { data, error } = await supabase
+        .from('product_listings')
+        .upsert(payload, { onConflict: 'product_id,channel' })
+        .select()
+        .single();
+
+      if (error) throw error;
+      currentListing = data;   // update local tracker
+      setListing(data);        // update React state (triggers UI re-render)
+      return data;
+    };
 
     try {
       const actions = fixPlan.actions;
@@ -941,8 +969,8 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
       const seoAction = actions.find((a) => a.type === 'seo');
 
       if (copyAction || seoAction) {
-        const activeId = copyAction?.id || seoAction?.id;
-        updateAction(activeId, { status: 'active' });
+        if (copyAction) updateAction(copyAction.id, { status: 'active' });
+        if (seoAction && !copyAction) updateAction(seoAction.id, { status: 'active' });
         toast.loading('Rewriting listing copy & SEO...', { id: toastId });
 
         try {
@@ -977,11 +1005,13 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
           const ai = copyData?.listing;
           if (!ai) throw new Error('No copy data returned');
 
+          console.log('[handleExecuteFixPlan] AI copy response keys:', Object.keys(ai));
+
           const firstTitle = ai.titles?.[0]
             ? (typeof ai.titles[0] === 'string' ? ai.titles[0] : ai.titles[0].text || '')
-            : listing?.listing_title || '';
+            : currentListing?.listing_title || '';
 
-          // Always save ALL available copy + SEO fields (don't rely on LLM category names)
+          // Always save ALL available copy + SEO fields
           const updates = {};
           if (copyAction) {
             if (firstTitle) updates.listing_title = firstTitle;
@@ -989,20 +1019,20 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
             if (ai.bullet_points?.length) updates.bullet_points = ai.bullet_points;
             if (ai.description) updates.listing_description = ai.description;
           }
-          // Always include SEO fields when either copy or seo action ran
           if (copyAction || seoAction) {
             if (ai.seo_title) updates.seo_title = ai.seo_title;
             if (ai.seo_description) updates.seo_description = ai.seo_description;
             if (ai.search_keywords?.length) updates.search_keywords = ai.search_keywords;
           }
 
-          await saveListingSilent(updates);
-          if (copyAction) updateAction('copy', { status: 'done' });
-          if (seoAction) updateAction('seo', { status: 'done' });
+          console.log('[handleExecuteFixPlan] Copy updates to save:', Object.keys(updates));
+          await saveFix(updates);
+          if (copyAction) updateAction(copyAction.id, { status: 'done' });
+          if (seoAction) updateAction(seoAction.id, { status: 'done' });
         } catch (err) {
           console.error('[handleExecuteFixPlan] Copy/SEO failed:', err);
-          if (copyAction) updateAction('copy', { status: 'failed' });
-          if (seoAction) updateAction('seo', { status: 'failed' });
+          if (copyAction) updateAction(copyAction.id, { status: 'failed' });
+          if (seoAction) updateAction(seoAction.id, { status: 'failed' });
         }
       }
 
@@ -1026,8 +1056,7 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
 
           const url = await generateImage(prompt, 'product_scene');
 
-          // Replace hero image
-          await saveListingSilent({ hero_image_url: url });
+          await saveFix({ hero_image_url: url });
           saveToLibrary(url, {
             companyId: user.company_id, userId: user.id, productId: product.id,
             productName: product.name, label: 'Fix: Replacement hero image', prompt,
@@ -1092,8 +1121,8 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
 
           const url = await generateImage(prompt, 'product_scene');
 
-          const currentGallery = listing?.gallery_urls || [];
-          await saveListingSilent({ gallery_urls: [...currentGallery, url] });
+          const gallery = currentListing?.gallery_urls || [];
+          await saveFix({ gallery_urls: [...gallery, url] });
           saveToLibrary(url, {
             companyId: user.company_id, userId: user.id, productId: product.id,
             productName: product.name, label: `Fix: ${imgAction.description.substring(0, 60)}`, prompt,
