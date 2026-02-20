@@ -143,16 +143,14 @@ function ConfirmDialog({ open, onClose, onConfirm, title, description, confirmLa
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           className={cn(
-            'rounded-2xl border w-full max-w-md shadow-2xl',
+            'rounded-xl border w-full max-w-md shadow-2xl',
             t('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800/60')
           )}
         >
-          <div className="p-6 space-y-4">
-            <div className="flex items-center gap-3">
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-2">
               {Icon && (
-                <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', `${color}/10`)}>
-                  <Icon className={cn('w-5 h-5', color)} />
-                </div>
+                <Icon className={cn('w-4 h-4', color)} />
               )}
               <div>
                 <h3 className={cn('text-base font-semibold', t('text-slate-900', 'text-white'))}>{title}</h3>
@@ -161,14 +159,14 @@ function ConfirmDialog({ open, onClose, onConfirm, title, description, confirmLa
             </div>
           </div>
           <div className={cn(
-            'flex items-center justify-end gap-3 px-6 py-4 border-t',
+            'flex items-center justify-end gap-3 px-4 py-3 border-t',
             t('border-slate-100', 'border-zinc-800/50')
           )}>
             <button
               onClick={onClose}
               disabled={loading}
               className={cn(
-                'px-4 py-2 text-sm font-medium rounded-xl transition-colors',
+                'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                 t('text-slate-600 hover:bg-slate-100', 'text-zinc-400 hover:text-white hover:bg-zinc-800')
               )}
             >
@@ -178,7 +176,7 @@ function ConfirmDialog({ open, onClose, onConfirm, title, description, confirmLa
               onClick={onConfirm}
               disabled={loading}
               className={cn(
-                'inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-all',
+                'inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg transition-all',
                 'text-white disabled:opacity-50',
                 color === 'text-green-400'
                   ? 'bg-green-600 hover:bg-green-500'
@@ -215,7 +213,7 @@ function ShopifyPreview({ listing, product }) {
 
   return (
     <div className={cn(
-      'rounded-2xl border overflow-hidden',
+      'rounded-xl border overflow-hidden',
       t('bg-white border-slate-200', 'bg-white border-slate-200')
     )}>
       {/* Shopify-style top bar */}
@@ -239,7 +237,7 @@ function ShopifyPreview({ listing, product }) {
       {/* Product page content */}
       <div className="grid md:grid-cols-2 gap-0">
         {/* Left: Image + Gallery Thumbnails */}
-        <div className="bg-slate-50 p-6 flex flex-col items-center justify-center min-h-[320px] border-r border-slate-100">
+        <div className="bg-slate-50 p-4 flex flex-col items-center justify-center min-h-[320px] border-r border-slate-100">
           {allImages.length > 0 ? (
             <>
               <img
@@ -276,7 +274,7 @@ function ShopifyPreview({ listing, product }) {
         </div>
 
         {/* Right: Details */}
-        <div className="p-6 space-y-4">
+        <div className="p-4 space-y-4">
           <div>
             <p className="text-xs text-slate-400 uppercase tracking-wider font-medium mb-1">
               {product?.brand || 'Your Brand'}
@@ -349,7 +347,7 @@ function BolcomPreview({ listing, product }) {
   const allBolImages = [heroImage, ...galleryImages].filter(Boolean);
 
   return (
-    <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white">
+    <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
       {/* bol.com header */}
       <div className="bg-[#0000A4] px-4 py-2.5 flex items-center gap-3">
         <span className="text-white font-bold text-sm tracking-tight">bol</span>
@@ -370,7 +368,7 @@ function BolcomPreview({ listing, product }) {
       {/* Product content */}
       <div className="grid md:grid-cols-2 gap-0">
         {/* Left: Image + Thumbnails */}
-        <div className="p-6 flex flex-col items-center justify-center min-h-[300px] border-r border-slate-100">
+        <div className="p-4 flex flex-col items-center justify-center min-h-[300px] border-r border-slate-100">
           {allBolImages.length > 0 ? (
             <>
               <img
@@ -404,7 +402,7 @@ function BolcomPreview({ listing, product }) {
         </div>
 
         {/* Right: Details */}
-        <div className="p-5 space-y-3">
+        <div className="p-4 space-y-3">
           <h2 className="text-base font-semibold text-slate-900 leading-snug">{title}</h2>
 
           {/* Rating */}
@@ -480,12 +478,12 @@ function GenericPreview({ listing, product }) {
 
   return (
     <div className={cn(
-      'rounded-2xl border overflow-hidden',
+      'rounded-xl border overflow-hidden',
       t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/5')
     )}>
       {/* Header band */}
       <div className={cn(
-        'px-5 py-3 border-b flex items-center gap-2',
+        'px-4 py-3 border-b flex items-center gap-2',
         t('bg-slate-50 border-slate-100', 'bg-white/[0.02] border-white/5')
       )}>
         <Eye className={cn('w-4 h-4', t('text-slate-400', 'text-zinc-500'))} />
@@ -494,7 +492,7 @@ function GenericPreview({ listing, product }) {
         </span>
       </div>
 
-      <div className="p-6 space-y-5">
+      <div className="p-4 space-y-4">
         {/* Hero Image Large */}
         {heroImage && (
           <div className={cn('rounded-xl overflow-hidden border', t('border-slate-200', 'border-white/10'))}>
@@ -658,11 +656,11 @@ function ChecklistSection({ checklist, onNavigate }) {
         <div
           key={item.key}
           className={cn(
-            'flex items-center justify-between py-2 px-3 rounded-xl transition-colors',
+            'flex items-center justify-between py-2 px-3 rounded-lg transition-colors',
             t('hover:bg-slate-50', 'hover:bg-white/[0.02]')
           )}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {item.completed ? (
               <div className="w-5 h-5 rounded-full bg-cyan-500/15 flex items-center justify-center flex-shrink-0">
                 <Check className="w-3 h-3 text-cyan-400" />
@@ -790,7 +788,7 @@ function SyncStatus({ channel, listing }) {
   if (!lastPublished) {
     return (
       <div className={cn(
-        'flex items-center gap-2 px-3 py-2 rounded-xl text-xs',
+        'flex items-center gap-2 px-3 py-2 rounded-lg text-xs',
         t('bg-slate-50 text-slate-500', 'bg-white/[0.02] text-zinc-500')
       )}>
         <Info className="w-3.5 h-3.5" />
@@ -801,7 +799,7 @@ function SyncStatus({ channel, listing }) {
 
   return (
     <div className={cn(
-      'flex items-center justify-between px-3 py-2 rounded-xl text-xs',
+      'flex items-center justify-between px-3 py-2 rounded-lg text-xs',
       updatedAfterPublish
         ? t('bg-amber-50 text-amber-700', 'bg-amber-500/10 text-amber-400')
         : t('bg-cyan-50 text-cyan-700', 'bg-cyan-500/10 text-cyan-400')
@@ -1016,7 +1014,7 @@ export default function ListingPublish({ product, details, listing, onUpdate, ch
   }, [channel, listing, product]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Channel Preview */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -1067,7 +1065,7 @@ export default function ListingPublish({ product, details, listing, onUpdate, ch
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              'flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-sm',
+              'flex items-center justify-between gap-3 px-4 py-3 rounded-lg text-sm',
               publishResult.success
                 ? t('bg-cyan-50 text-cyan-800 border border-cyan-200', 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20')
                 : t('bg-red-50 text-red-800 border border-red-200', 'bg-red-500/10 text-red-300 border border-red-500/20')
@@ -1097,7 +1095,7 @@ export default function ListingPublish({ product, details, listing, onUpdate, ch
 
       {/* Completeness Checklist */}
       <div className={cn(
-        'rounded-2xl border p-5 space-y-4',
+        'rounded-xl border p-4 space-y-4',
         t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/5')
       )}>
         <CompletenessBar checklist={checklist} />
@@ -1108,7 +1106,7 @@ export default function ListingPublish({ product, details, listing, onUpdate, ch
 
       {/* Field Mapping */}
       <div className={cn(
-        'rounded-2xl border p-5',
+        'rounded-xl border p-4',
         t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/5')
       )}>
         <button
@@ -1156,7 +1154,7 @@ export default function ListingPublish({ product, details, listing, onUpdate, ch
 
       {/* Publish Actions */}
       <div className={cn(
-        'rounded-2xl border p-5',
+        'rounded-xl border p-4',
         t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/5')
       )}>
         <h3 className={cn('text-sm font-semibold mb-4', t('text-slate-900', 'text-white'))}>
@@ -1168,16 +1166,14 @@ export default function ListingPublish({ product, details, listing, onUpdate, ch
           <button
             onClick={() => setConfirmDialog('shopify')}
             className={cn(
-              'group relative overflow-hidden flex items-center gap-3 rounded-xl border p-4 text-left transition-all duration-200',
+              'group relative overflow-hidden flex items-center gap-3 rounded-lg border p-4 text-left transition-all duration-200',
               t(
                 'bg-slate-50 border-slate-200 hover:border-green-300 hover:bg-green-50/50',
                 'bg-white/[0.03] border-white/5 hover:border-green-500/30 hover:bg-green-500/[0.03]'
               )
             )}
           >
-            <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center flex-shrink-0">
-              <ShoppingBag className="w-5 h-5 text-green-400" />
-            </div>
+            <ShoppingBag className="w-4 h-4 text-green-400 flex-shrink-0" />
             <div>
               <p className={cn('text-sm font-semibold', t('text-slate-800', 'text-zinc-200'))}>
                 Push to Shopify
@@ -1196,16 +1192,14 @@ export default function ListingPublish({ product, details, listing, onUpdate, ch
           <button
             onClick={() => setConfirmDialog('bolcom')}
             className={cn(
-              'group relative overflow-hidden flex items-center gap-3 rounded-xl border p-4 text-left transition-all duration-200',
+              'group relative overflow-hidden flex items-center gap-3 rounded-lg border p-4 text-left transition-all duration-200',
               t(
                 'bg-slate-50 border-slate-200 hover:border-orange-300 hover:bg-orange-50/50',
                 'bg-white/[0.03] border-white/5 hover:border-orange-500/30 hover:bg-orange-500/[0.03]'
               )
             )}
           >
-            <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-              <Store className="w-5 h-5 text-orange-400" />
-            </div>
+            <Store className="w-4 h-4 text-orange-400 flex-shrink-0" />
             <div>
               <p className={cn('text-sm font-semibold', t('text-slate-800', 'text-zinc-200'))}>
                 Push to bol.com
@@ -1224,19 +1218,14 @@ export default function ListingPublish({ product, details, listing, onUpdate, ch
           <button
             onClick={() => setConfirmDialog('export')}
             className={cn(
-              'group relative overflow-hidden flex items-center gap-3 rounded-xl border p-4 text-left transition-all duration-200',
+              'group relative overflow-hidden flex items-center gap-3 rounded-lg border p-4 text-left transition-all duration-200',
               t(
                 'bg-slate-50 border-slate-200 hover:border-slate-300',
                 'bg-white/[0.03] border-white/5 hover:border-white/10'
               )
             )}
           >
-            <div className={cn(
-              'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0',
-              t('bg-slate-100', 'bg-white/[0.06]')
-            )}>
-              <Download className={cn('w-5 h-5', t('text-slate-500', 'text-zinc-400'))} />
-            </div>
+            <Download className={cn('w-4 h-4 flex-shrink-0', t('text-slate-500', 'text-zinc-400'))} />
             <div>
               <p className={cn('text-sm font-semibold', t('text-slate-800', 'text-zinc-200'))}>
                 Export as ZIP

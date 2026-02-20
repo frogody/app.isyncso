@@ -112,7 +112,7 @@ function FilmStripLoader() {
   );
 }
 
-function PresetCard({ preset, isSelected, isGenerating, onSelect, onGenerate }) {
+function PresetCard({ preset, isSelected, isGenerating, onSelect, onGenerate, t }) {
   const Icon = preset.icon;
   return (
     <motion.button
@@ -121,10 +121,10 @@ function PresetCard({ preset, isSelected, isGenerating, onSelect, onGenerate }) 
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
       className={cn(
-        'relative w-full text-left rounded-2xl border p-5 transition-all duration-200 overflow-hidden group',
+        'relative w-full text-left rounded-xl border p-3 transition-all duration-200 overflow-hidden group',
         isSelected
-          ? 'border-cyan-500/50 bg-cyan-500/[0.04] shadow-[0_0_20px_rgba(6,182,212,0.06)]'
-          : 'border-white/[0.06] bg-zinc-900/40 hover:border-white/10 hover:bg-zinc-900/60'
+          ? cn('border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.06)]', t('bg-cyan-50/60', 'bg-cyan-500/[0.04]'))
+          : cn('hover:border-opacity-100', t('border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50', 'border-white/[0.06] bg-zinc-900/40 hover:border-white/10 hover:bg-zinc-900/60'))
       )}
     >
       {/* Gradient overlay */}
@@ -137,16 +137,12 @@ function PresetCard({ preset, isSelected, isGenerating, onSelect, onGenerate }) 
       />
 
       <div className="relative z-10">
-        <div className="flex items-start justify-between mb-3">
-          <div
-            className={cn(
-              'w-10 h-10 rounded-xl flex items-center justify-center border',
-              isSelected
-                ? 'bg-cyan-500/15 border-cyan-500/30'
-                : 'bg-white/[0.04] border-white/[0.06]'
-            )}
-          >
-            <Icon className={cn('w-5 h-5', isSelected ? 'text-cyan-400' : 'text-zinc-400')} />
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Icon className={cn('w-4 h-4', isSelected ? 'text-cyan-400' : t('text-slate-400', 'text-zinc-400'))} />
+            <h3 className={cn('text-sm font-semibold', isSelected ? t('text-slate-900', 'text-white') : t('text-slate-700', 'text-zinc-200'))}>
+              {preset.label}
+            </h3>
           </div>
           <Badge
             variant="outline"
@@ -154,7 +150,7 @@ function PresetCard({ preset, isSelected, isGenerating, onSelect, onGenerate }) 
               'text-[10px] font-mono',
               isSelected
                 ? 'border-cyan-500/30 text-cyan-400 bg-cyan-500/10'
-                : 'border-white/10 text-zinc-500 bg-white/[0.02]'
+                : cn(t('border-slate-200 text-slate-500 bg-slate-50', 'border-white/10 text-zinc-500 bg-white/[0.02]'))
             )}
           >
             <Clock className="w-2.5 h-2.5 mr-1" />
@@ -162,10 +158,7 @@ function PresetCard({ preset, isSelected, isGenerating, onSelect, onGenerate }) 
           </Badge>
         </div>
 
-        <h3 className={cn('text-sm font-semibold mb-1', isSelected ? 'text-white' : 'text-zinc-200')}>
-          {preset.label}
-        </h3>
-        <p className="text-xs text-zinc-500 leading-relaxed mb-4">
+        <p className={cn('text-xs leading-relaxed mb-3', t('text-slate-500', 'text-zinc-500'))}>
           {preset.description}
         </p>
 
@@ -186,7 +179,7 @@ function PresetCard({ preset, isSelected, isGenerating, onSelect, onGenerate }) 
               className={cn(
                 'w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
                 isGenerating
-                  ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                  ? cn(t('bg-slate-100 text-slate-400', 'bg-zinc-800 text-zinc-500'), 'cursor-not-allowed')
                   : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-500/20'
               )}
             >
@@ -209,7 +202,7 @@ function PresetCard({ preset, isSelected, isGenerating, onSelect, onGenerate }) 
   );
 }
 
-function VideoPlayer({ videoUrl, thumbnail, onUseAsListing, onDownload, isPlaying, setIsPlaying }) {
+function VideoPlayer({ videoUrl, thumbnail, onUseAsListing, onDownload, isPlaying, setIsPlaying, t }) {
   const videoRef = useRef(null);
 
   const togglePlayPause = useCallback(() => {
@@ -231,7 +224,10 @@ function VideoPlayer({ videoUrl, thumbnail, onUseAsListing, onDownload, isPlayin
     <div className="space-y-3">
       {/* Player container */}
       <div
-        className="relative rounded-2xl overflow-hidden border border-white/[0.06] bg-black group cursor-pointer"
+        className={cn(
+          'relative rounded-xl overflow-hidden border bg-black group cursor-pointer',
+          t('border-slate-200', 'border-white/[0.06]')
+        )}
         onClick={togglePlayPause}
       >
         <video
@@ -254,8 +250,8 @@ function VideoPlayer({ videoUrl, thumbnail, onUseAsListing, onDownload, isPlayin
               exit={{ opacity: 0 }}
               className="absolute inset-0 flex items-center justify-center bg-black/40"
             >
-              <div className="w-16 h-16 rounded-full bg-cyan-600/90 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-cyan-500/30">
-                <Play className="w-7 h-7 text-white ml-1" />
+              <div className="w-14 h-14 rounded-full bg-cyan-600/90 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                <Play className="w-6 h-6 text-white ml-1" />
               </div>
             </motion.div>
           )}
@@ -275,7 +271,10 @@ function VideoPlayer({ videoUrl, thumbnail, onUseAsListing, onDownload, isPlayin
         <button
           type="button"
           onClick={onDownload}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 text-sm font-medium transition-colors"
+          className={cn(
+            'flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors',
+            t('border-slate-200 bg-white hover:bg-slate-50 text-slate-600', 'border-white/10 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-300')
+          )}
         >
           <Download className="w-4 h-4" />
         </button>
@@ -284,25 +283,28 @@ function VideoPlayer({ videoUrl, thumbnail, onUseAsListing, onDownload, isPlayin
   );
 }
 
-function GenerationProgress({ statusMessage, elapsedSeconds }) {
+function GenerationProgress({ statusMessage, elapsedSeconds, t }) {
   const progressPercent = useMemo(() => {
     return Math.min(95, (elapsedSeconds / 60) * 100);
   }, [elapsedSeconds]);
 
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-zinc-900/60 backdrop-blur-sm overflow-hidden">
-      <div className="aspect-video flex flex-col items-center justify-center gap-5 px-6">
+    <div className={cn(
+      'rounded-xl border overflow-hidden',
+      t('border-slate-200 bg-white', 'border-white/[0.06] bg-zinc-900/50')
+    )}>
+      <div className="aspect-video flex flex-col items-center justify-center gap-4 px-6">
         <FilmStripLoader />
 
         <div className="text-center space-y-1.5">
-          <p className="text-sm font-medium text-zinc-200">{statusMessage}</p>
-          <p className="text-xs text-zinc-500">
+          <p className={cn('text-sm font-medium', t('text-slate-700', 'text-zinc-200'))}>{statusMessage}</p>
+          <p className={cn('text-xs', t('text-slate-500', 'text-zinc-500'))}>
             This may take 30-60 seconds
           </p>
         </div>
 
         {/* Progress bar */}
-        <div className="w-56 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+        <div className={cn('w-56 h-1.5 rounded-full overflow-hidden', t('bg-slate-200', 'bg-zinc-800'))}>
           <motion.div
             className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"
             initial={{ width: '0%' }}
@@ -311,7 +313,7 @@ function GenerationProgress({ statusMessage, elapsedSeconds }) {
           />
         </div>
 
-        <p className="text-[10px] text-zinc-600 font-mono tabular-nums">
+        <p className={cn('text-[10px] font-mono tabular-nums', t('text-slate-400', 'text-zinc-600'))}>
           {elapsedSeconds}s elapsed
         </p>
       </div>
@@ -319,7 +321,7 @@ function GenerationProgress({ statusMessage, elapsedSeconds }) {
   );
 }
 
-function HistoryCard({ video, onPreview, onUse, isActive }) {
+function HistoryCard({ video, onPreview, onUse, isActive, t }) {
   return (
     <motion.button
       type="button"
@@ -328,12 +330,12 @@ function HistoryCard({ video, onPreview, onUse, isActive }) {
       className={cn(
         'relative rounded-xl border overflow-hidden text-left transition-all duration-200 group',
         isActive
-          ? 'border-cyan-500/40 bg-cyan-500/[0.04]'
-          : 'border-white/[0.06] bg-zinc-900/40 hover:border-white/10'
+          ? cn('border-cyan-500/40', t('bg-cyan-50/60', 'bg-cyan-500/[0.04]'))
+          : cn(t('border-slate-200 bg-white hover:border-slate-300', 'border-white/[0.06] bg-zinc-900/40 hover:border-white/10'))
       )}
     >
       {/* Thumbnail */}
-      <div className="relative aspect-video bg-zinc-950">
+      <div className={cn('relative aspect-video', t('bg-slate-100', 'bg-zinc-950'))}>
         {video.thumbnail_url ? (
           <img
             src={video.thumbnail_url}
@@ -342,7 +344,7 @@ function HistoryCard({ video, onPreview, onUse, isActive }) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Film className="w-6 h-6 text-zinc-800" />
+            <Film className={cn('w-6 h-6', t('text-slate-300', 'text-zinc-800'))} />
           </div>
         )}
 
@@ -361,10 +363,10 @@ function HistoryCard({ video, onPreview, onUse, isActive }) {
 
       {/* Info */}
       <div className="p-2.5">
-        <p className="text-xs text-zinc-400 line-clamp-1">
+        <p className={cn('text-xs line-clamp-1', t('text-slate-500', 'text-zinc-400'))}>
           {video.preset_label || video.prompt?.slice(0, 60) || 'Generated video'}
         </p>
-        <p className="text-[10px] text-zinc-600 mt-1">
+        <p className={cn('text-[10px] mt-1', t('text-slate-400', 'text-zinc-600'))}>
           {video.created_at
             ? new Date(video.created_at).toLocaleDateString(undefined, {
                 month: 'short',
@@ -677,16 +679,14 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-            <Clapperboard className="w-5 h-5 text-cyan-400" />
-          </div>
+      <div className={cn('flex items-center justify-between px-4 py-3', t('', ''))}>
+        <div className="flex items-center gap-2">
+          <Clapperboard className="w-4 h-4 text-cyan-400" />
           <div>
-            <h3 className="text-base font-semibold text-zinc-100">Video Studio</h3>
-            <p className="text-xs text-zinc-500">
+            <h3 className={cn('text-base font-semibold', t('text-slate-900', 'text-zinc-100'))}>Video Studio</h3>
+            <p className={cn('text-xs', t('text-slate-500', 'text-zinc-500'))}>
               AI-powered video generation for your listing
             </p>
           </div>
@@ -700,7 +700,7 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
               'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors',
               showHistory
                 ? 'border-cyan-500/30 text-cyan-400 bg-cyan-500/10'
-                : 'border-white/10 text-zinc-400 hover:text-zinc-200 hover:border-white/20 bg-zinc-900/60'
+                : cn(t('border-slate-200 text-slate-500 hover:text-slate-700 hover:border-slate-300 bg-white', 'border-white/10 text-zinc-400 hover:text-zinc-200 hover:border-white/20 bg-zinc-900/50'))
             )}
           >
             <Clock className="w-3.5 h-3.5" />
@@ -728,6 +728,7 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
               <GenerationProgress
                 statusMessage={statusMessage}
                 elapsedSeconds={elapsedSeconds}
+                t={t}
               />
             ) : activeVideo ? (
               <VideoPlayer
@@ -741,6 +742,7 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
                 onDownload={() =>
                   handleDownload(activeVideo.url || activeVideo.video_url)
                 }
+                t={t}
               />
             ) : null}
           </motion.div>
@@ -789,7 +791,7 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
 
       {/* Template Presets */}
       <div className="space-y-3">
-        <Label className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+        <Label className={cn('text-xs font-medium uppercase tracking-wider', t('text-slate-500', 'text-zinc-500'))}>
           Video Templates
         </Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -801,6 +803,7 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
               isGenerating={isGenerating}
               onSelect={setSelectedPreset}
               onGenerate={handlePresetGenerate}
+              t={t}
             />
           ))}
         </div>
@@ -809,14 +812,14 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
       {/* Custom Prompt */}
       <div
         className={cn(
-          'rounded-2xl border p-5 space-y-4',
-          'border-white/[0.06] bg-zinc-900/40 backdrop-blur-sm'
+          'rounded-xl border p-4 space-y-4',
+          t('border-slate-200 bg-white', 'border-white/[0.06] bg-zinc-900/40')
         )}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wand2 className="w-4 h-4 text-cyan-400" />
-            <Label className="text-sm font-semibold text-zinc-200">Custom Prompt</Label>
+            <Label className={cn('text-sm font-semibold', t('text-slate-700', 'text-zinc-200'))}>Custom Prompt</Label>
           </div>
           <button
             type="button"
@@ -825,7 +828,7 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
             className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
               isEnhancing || !customPrompt.trim()
-                ? 'text-zinc-600 cursor-not-allowed'
+                ? cn(t('text-slate-400', 'text-zinc-600'), 'cursor-not-allowed')
                 : 'text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/15 border border-cyan-500/20'
             )}
           >
@@ -848,15 +851,17 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
           onChange={(e) => setCustomPrompt(e.target.value)}
           placeholder="Describe the video you want to create for this product..."
           className={cn(
-            'min-h-[100px] bg-zinc-950/60 border-white/[0.06] text-zinc-200 text-sm',
-            'placeholder:text-zinc-600 focus:border-cyan-500/40 focus:ring-cyan-500/20',
-            'resize-none rounded-xl'
+            'min-h-[100px] text-sm resize-none rounded-xl',
+            t(
+              'bg-slate-50 border-slate-200 text-slate-800 placeholder:text-slate-400 focus:border-cyan-500/40 focus:ring-cyan-500/20',
+              'bg-zinc-950/60 border-white/[0.06] text-zinc-200 placeholder:text-zinc-600 focus:border-cyan-500/40 focus:ring-cyan-500/20'
+            )
           )}
           maxLength={1000}
         />
 
         <div className="flex items-center justify-between">
-          <span className="text-[10px] text-zinc-600 font-mono tabular-nums">
+          <span className={cn('text-[10px] font-mono tabular-nums', t('text-slate-400', 'text-zinc-600'))}>
             {customPrompt.length}/1000
           </span>
           <button
@@ -866,7 +871,7 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
             className={cn(
               'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
               isGenerating || !customPrompt.trim()
-                ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+                ? cn(t('bg-slate-100 text-slate-400', 'bg-zinc-800 text-zinc-600'), 'cursor-not-allowed')
                 : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-500/15'
             )}
           >
@@ -895,7 +900,7 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
             transition={{ duration: 0.25 }}
             className="space-y-3 overflow-hidden"
           >
-            <Label className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+            <Label className={cn('text-xs font-medium uppercase tracking-wider', t('text-slate-500', 'text-zinc-500'))}>
               Previously Generated
             </Label>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -908,6 +913,7 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
                   onUse={() =>
                     handleUseAsListingVideo(video.video_url || video.url)
                   }
+                  t={t}
                 />
               ))}
             </div>
@@ -917,10 +923,13 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
 
       {/* Current listing video indicator */}
       {listing?.video_url && !isGenerating && !activeVideo && (
-        <div className="rounded-2xl border border-white/[0.06] bg-zinc-900/40 p-4">
-          <div className="flex items-center gap-3 mb-3">
+        <div className={cn(
+          'rounded-xl border p-4',
+          t('border-slate-200 bg-white', 'border-white/[0.06] bg-zinc-900/40')
+        )}>
+          <div className="flex items-center gap-2 mb-3">
             <Check className="w-4 h-4 text-cyan-400" />
-            <span className="text-sm font-medium text-zinc-200">Current Listing Video</span>
+            <span className={cn('text-sm font-medium', t('text-slate-700', 'text-zinc-200'))}>Current Listing Video</span>
           </div>
           <video
             src={listing.video_url}

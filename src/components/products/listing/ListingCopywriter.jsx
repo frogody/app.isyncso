@@ -63,12 +63,13 @@ function useCopyToClipboard(timeout = 2000) {
 // ---------------------------------------------------------------------------
 
 function PillSelector({ options, value, onChange, label }) {
+  const { t } = useTheme();
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <span className="text-xs font-medium text-zinc-400">{label}</span>
+        <span className={cn('text-xs font-medium', t('text-slate-500', 'text-zinc-400'))}>{label}</span>
       )}
-      <div className="flex items-center gap-1 rounded-lg bg-zinc-900/60 border border-white/10 p-0.5">
+      <div className={cn('flex items-center gap-1 rounded-lg p-0.5', cn('border', t('bg-slate-100 border-slate-200', 'bg-zinc-900/60 border-white/10')))}>
         {options.map((opt) => (
           <button
             key={opt.code}
@@ -121,11 +122,12 @@ function WordCount({ text }) {
 }
 
 function SectionHeader({ icon: Icon, label, right, className }) {
+  const { t } = useTheme();
   return (
     <div className={cn('flex items-center justify-between', className)}>
       <div className="flex items-center gap-2">
         <Icon className="w-4 h-4 text-cyan-400" />
-        <Label className="text-sm font-semibold text-zinc-200">{label}</Label>
+        <Label className={cn('text-sm font-semibold', t('text-slate-900', 'text-zinc-200'))}>{label}</Label>
       </div>
       {right && <div className="flex items-center gap-2">{right}</div>}
     </div>
@@ -133,6 +135,7 @@ function SectionHeader({ icon: Icon, label, right, className }) {
 }
 
 function TitleVariantCard({ variant, isSelected, onClick }) {
+  const { t } = useTheme();
   const text = typeof variant === 'string' ? variant : variant.text || variant.title || '';
   return (
     <button
@@ -140,13 +143,13 @@ function TitleVariantCard({ variant, isSelected, onClick }) {
       onClick={() => onClick(text)}
       className={cn(
         'w-full text-left p-3 rounded-lg border transition-all duration-200',
-        'bg-zinc-900/40 backdrop-blur-sm',
+        cn(t('bg-slate-50', 'bg-zinc-900/40 backdrop-blur-sm')),
         isSelected
           ? 'border-cyan-500/60 bg-cyan-500/5 shadow-[0_0_12px_rgba(6,182,212,0.1)]'
           : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
       )}
     >
-      <p className="text-sm text-zinc-200 leading-relaxed">{text}</p>
+      <p className={cn('text-sm leading-relaxed', t('text-slate-700', 'text-zinc-200'))}>{text}</p>
       <div className="mt-1.5 flex items-center justify-between">
         <CharCount current={text.length} max={SEO_TITLE_MAX} />
         {isSelected && (
@@ -158,13 +161,14 @@ function TitleVariantCard({ variant, isSelected, onClick }) {
 }
 
 function SeoScoreBar({ label, value, min, max, unit = 'chars' }) {
+  const { t } = useTheme();
   const isGood = value >= min && value <= max;
   const isOver = value > max;
   const percentage = Math.min((value / max) * 100, 100);
   return (
     <div className="flex items-center gap-3">
-      <span className="text-xs text-zinc-400 w-24 shrink-0">{label}</span>
-      <div className="flex-1 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+      <span className={cn('text-xs w-24 shrink-0', t('text-slate-500', 'text-zinc-400'))}>{label}</span>
+      <div className={cn('flex-1 h-1.5 rounded-full overflow-hidden', t('bg-slate-100', 'bg-zinc-800'))}>
         <div
           className={cn(
             'h-full rounded-full transition-all duration-500',
@@ -478,11 +482,11 @@ export default function ListingCopywriter({
   // -----------------------------------------------------------------------
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {/* ================================================================
           1. Controls Bar
           ================================================================ */}
-      <div className="flex flex-wrap items-end gap-4 rounded-xl bg-zinc-900/60 backdrop-blur-xl border border-white/10 p-4">
+      <div className={cn('flex flex-wrap items-end gap-4', cn('rounded-xl border p-3', t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/5')))}>
         <PillSelector
           label="Language"
           options={LANGUAGES}
@@ -515,7 +519,7 @@ export default function ListingCopywriter({
       {/* ================================================================
           2. Title Section
           ================================================================ */}
-      <div className="rounded-xl bg-zinc-900/60 backdrop-blur-xl border border-white/10 p-5 space-y-4">
+      <div className={cn('rounded-xl border p-4 space-y-3', t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/5'))}>
         <SectionHeader
           icon={Type}
           label="Product Title"
@@ -556,13 +560,13 @@ export default function ListingCopywriter({
           value={title}
           onChange={(e) => { setTitle(e.target.value); markChanged(); }}
           placeholder="Enter product title..."
-          className="bg-zinc-900/40 border-white/10 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-cyan-500/40"
+          className={cn(t('bg-white border-slate-200 text-slate-900 placeholder:text-slate-400', 'bg-zinc-900/40 border-white/10 text-zinc-100 placeholder:text-zinc-600'), 'focus-visible:ring-cyan-500/40')}
         />
 
         {/* Title Variants */}
         {titleVariants.length > 0 && (
           <div className="space-y-2 pt-1">
-            <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+            <span className={cn('text-xs font-medium uppercase tracking-wider', t('text-slate-400', 'text-zinc-500'))}>
               AI Suggestions
             </span>
             <div className="grid gap-2">
@@ -585,14 +589,14 @@ export default function ListingCopywriter({
       {/* ================================================================
           3. Description Section
           ================================================================ */}
-      <div className="rounded-xl bg-zinc-900/60 backdrop-blur-xl border border-white/10 p-5 space-y-4">
+      <div className={cn('rounded-xl border p-4 space-y-3', t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/5'))}>
         <SectionHeader
           icon={AlignLeft}
           label="Product Description"
           right={
             <div className="flex items-center gap-2">
               <WordCount text={description} />
-              <div className="flex items-center rounded-md bg-zinc-800/60 border border-white/10 p-0.5">
+              <div className={cn('flex items-center rounded-md p-0.5', cn('border', t('bg-slate-100 border-slate-200', 'bg-zinc-800/60 border-white/10')))}>
                 <button
                   type="button"
                   onClick={() => setDescriptionMode('edit')}
@@ -600,7 +604,7 @@ export default function ListingCopywriter({
                     'px-2.5 py-1 rounded text-xs font-medium transition-colors',
                     descriptionMode === 'edit'
                       ? 'bg-cyan-600 text-white'
-                      : 'text-zinc-400 hover:text-white'
+                      : cn(t('text-slate-500 hover:text-slate-700', 'text-zinc-400 hover:text-white'))
                   )}
                 >
                   <Code className="w-3.5 h-3.5 inline mr-1" />
@@ -613,7 +617,7 @@ export default function ListingCopywriter({
                     'px-2.5 py-1 rounded text-xs font-medium transition-colors',
                     descriptionMode === 'preview'
                       ? 'bg-cyan-600 text-white'
-                      : 'text-zinc-400 hover:text-white'
+                      : cn(t('text-slate-500 hover:text-slate-700', 'text-zinc-400 hover:text-white'))
                   )}
                 >
                   <Eye className="w-3.5 h-3.5 inline mr-1" />
@@ -656,11 +660,11 @@ export default function ListingCopywriter({
             onChange={(e) => { setDescription(e.target.value); markChanged(); }}
             placeholder="Enter product description..."
             rows={6}
-            className="bg-zinc-900/40 border-white/10 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-cyan-500/40 min-h-[160px]"
+            className={cn(t('bg-white border-slate-200 text-slate-900 placeholder:text-slate-400', 'bg-zinc-900/40 border-white/10 text-zinc-100 placeholder:text-zinc-600'), 'focus-visible:ring-cyan-500/40 min-h-[160px]')}
           />
         ) : (
           <div
-            className="prose prose-invert prose-sm max-w-none rounded-lg bg-zinc-900/40 border border-white/10 p-4 min-h-[160px]"
+            className={cn('prose prose-sm max-w-none rounded-lg border p-4 min-h-[160px]', t('bg-white border-slate-200', 'bg-zinc-900/40 border-white/10'), t('prose-slate', 'prose-invert'))}
             dangerouslySetInnerHTML={{ __html: description || '<p class="text-zinc-500">No description yet.</p>' }}
           />
         )}
@@ -669,7 +673,7 @@ export default function ListingCopywriter({
       {/* ================================================================
           4. Bullet Points Section
           ================================================================ */}
-      <div className="rounded-xl bg-zinc-900/60 backdrop-blur-xl border border-white/10 p-5 space-y-4">
+      <div className={cn('rounded-xl border p-4 space-y-3', t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/5'))}>
         <SectionHeader
           icon={List}
           label="Key Features"
@@ -704,7 +708,7 @@ export default function ListingCopywriter({
                 value={bullet}
                 onChange={(e) => updateBullet(index, e.target.value)}
                 placeholder={`Feature ${index + 1}...`}
-                className="bg-zinc-900/40 border-white/10 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-cyan-500/40"
+                className={cn(t('bg-white border-slate-200 text-slate-900 placeholder:text-slate-400', 'bg-zinc-900/40 border-white/10 text-zinc-100 placeholder:text-zinc-600'), 'focus-visible:ring-cyan-500/40')}
               />
               <button
                 type="button"
@@ -733,15 +737,15 @@ export default function ListingCopywriter({
       {/* ================================================================
           5. SEO Section (Collapsible)
           ================================================================ */}
-      <div className="rounded-xl bg-zinc-900/60 backdrop-blur-xl border border-white/10 overflow-hidden">
+      <div className={cn('rounded-xl border overflow-hidden', t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/5'))}>
         <button
           type="button"
           onClick={() => setSeoExpanded((prev) => !prev)}
-          className="w-full flex items-center justify-between p-5 text-left hover:bg-white/[0.02] transition-colors"
+          className={cn('w-full flex items-center justify-between p-5 text-left transition-colors', t('hover:bg-slate-50', 'hover:bg-white/[0.02]'))}
         >
           <div className="flex items-center gap-2">
             <Search className="w-4 h-4 text-cyan-400" />
-            <span className="text-sm font-semibold text-zinc-200">
+            <span className={cn('text-sm font-semibold', t('text-slate-900', 'text-zinc-200'))}>
               SEO Optimization
             </span>
           </div>
@@ -787,7 +791,7 @@ export default function ListingCopywriter({
                 onChange={(e) => { setSeoTitle(e.target.value); markChanged(); }}
                 placeholder="SEO title for search engines..."
                 className={cn(
-                  'bg-zinc-900/40 border-white/10 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-cyan-500/40',
+                  cn(t('bg-white border-slate-200 text-slate-900 placeholder:text-slate-400', 'bg-zinc-900/40 border-white/10 text-zinc-100 placeholder:text-zinc-600'), 'focus-visible:ring-cyan-500/40'),
                   seoTitle.length > SEO_TITLE_MAX && 'border-red-500/50 focus-visible:ring-red-500/40'
                 )}
               />
@@ -809,7 +813,7 @@ export default function ListingCopywriter({
                 placeholder="Meta description for search results..."
                 rows={3}
                 className={cn(
-                  'bg-zinc-900/40 border-white/10 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-cyan-500/40',
+                  cn(t('bg-white border-slate-200 text-slate-900 placeholder:text-slate-400', 'bg-zinc-900/40 border-white/10 text-zinc-100 placeholder:text-zinc-600'), 'focus-visible:ring-cyan-500/40'),
                   seoDescription.length > SEO_DESC_MAX && 'border-red-500/50 focus-visible:ring-red-500/40'
                 )}
               />
@@ -826,7 +830,7 @@ export default function ListingCopywriter({
                   {keywords.length} keyword{keywords.length !== 1 ? 's' : ''}
                 </span>
               </div>
-              <div className="flex flex-wrap items-center gap-1.5 p-2.5 rounded-lg bg-zinc-900/40 border border-white/10 min-h-[44px]">
+              <div className={cn('flex flex-wrap items-center gap-1.5 p-2.5 rounded-lg min-h-[44px]', cn('border', t('bg-slate-50 border-slate-200', 'bg-zinc-900/40 border-white/10')))}>
                 {keywords.map((kw, index) => (
                   <Badge
                     key={index}
@@ -851,14 +855,14 @@ export default function ListingCopywriter({
                   onKeyDown={handleKeywordKeyDown}
                   onBlur={() => { if (keywordInput.trim()) addKeyword(keywordInput); }}
                   placeholder={keywords.length === 0 ? 'Add keywords...' : ''}
-                  className="flex-1 min-w-[120px] bg-transparent border-none outline-none text-sm text-zinc-200 placeholder:text-zinc-600"
+                  className={cn('flex-1 min-w-[120px] bg-transparent border-none outline-none text-sm', t('text-slate-700 placeholder:text-slate-400', 'text-zinc-200 placeholder:text-zinc-600'))}
                 />
               </div>
             </div>
 
             {/* SEO Score Preview */}
             <div className="space-y-3 pt-2">
-              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+              <span className={cn('text-xs font-medium uppercase tracking-wider', t('text-slate-400', 'text-zinc-500'))}>
                 SEO Score
               </span>
               <SeoScoreBar
@@ -889,10 +893,10 @@ export default function ListingCopywriter({
           6. Save Bar (sticky)
           ================================================================ */}
       {hasChanges && (
-        <div className="sticky bottom-0 z-10 flex items-center justify-between gap-3 rounded-xl bg-zinc-900/80 backdrop-blur-xl border border-white/10 p-4 shadow-lg shadow-black/20">
+        <div className={cn('sticky bottom-0 z-10 flex items-center justify-between gap-3', cn('rounded-xl border p-3 shadow-lg', t('bg-white border-slate-200 shadow-slate-200/50', 'bg-zinc-900/80 backdrop-blur-xl border-white/10 shadow-black/20')))}>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            <span className="text-sm text-zinc-300">Unsaved changes</span>
+            <span className={cn('text-sm', t('text-slate-600', 'text-zinc-300'))}>Unsaved changes</span>
           </div>
           <div className="flex items-center gap-2">
             <Button

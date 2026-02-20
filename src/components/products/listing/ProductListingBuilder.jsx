@@ -1233,10 +1233,10 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
   }, [activeTab, product, details, listing, generating, generatingProgress, handleGenerateAll, handleTabChange, saveListing, selectedChannel]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header: Sub-nav + Channel Selector */}
       <div className={cn(
-        'flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border p-4',
+        'flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border p-3',
         t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/5')
       )}>
         {/* Sub-navigation pills */}
@@ -1297,7 +1297,7 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
       {/* Loading state */}
       {loading ? (
         <div className={cn(
-          'flex items-center justify-center py-20 rounded-2xl border',
+          'flex items-center justify-center py-20 rounded-xl border',
           t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/5')
         )}>
           <Loader2 className={cn('w-8 h-8 animate-spin', t('text-slate-400', 'text-zinc-500'))} />

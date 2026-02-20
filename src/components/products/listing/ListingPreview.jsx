@@ -725,7 +725,7 @@ function EditableDescription({ value, onChange, t }) {
         placeholder="Product description (supports HTML)..."
         className={cn(
           'w-full bg-transparent border border-cyan-400/30 rounded-lg p-3 outline-none resize-y',
-          'text-[13px] leading-relaxed placeholder:text-zinc-600',
+          'text-sm leading-relaxed placeholder:text-zinc-600',
           t('text-slate-700', 'text-zinc-300')
         )}
       />
@@ -757,7 +757,7 @@ function EditableDescription({ value, onChange, t }) {
     >
       <div
         className={cn(
-          'prose prose-sm max-w-none text-[13px] leading-relaxed',
+          'prose prose-sm max-w-none text-sm leading-relaxed',
           t(
             'prose-slate',
             'prose-invert prose-p:text-zinc-300 prose-strong:text-white prose-li:text-zinc-300 prose-headings:text-white'
@@ -943,7 +943,7 @@ function SEOSection({ listing, onUpdate, t }) {
                   <div className={cn('text-xs font-medium leading-snug truncate', t('text-blue-700', 'text-blue-400'))}>
                     {seoTitle || 'Product Title'}
                   </div>
-                  <div className={cn('text-[11px] leading-relaxed line-clamp-2', t('text-slate-500', 'text-zinc-400'))}>
+                  <div className={cn('text-xs leading-relaxed line-clamp-2', t('text-slate-500', 'text-zinc-400'))}>
                     {seoDescription || 'Description appears here.'}
                   </div>
                 </div>
@@ -1943,16 +1943,16 @@ export default function ListingPreview({
                 value={listing?.listing_title || product?.name || ''}
                 onChange={(text) => debouncedOnUpdate({ listing_title: text })}
                 placeholder="Product listing title..."
-                className={cn('text-base font-bold leading-snug mt-0.5', t('text-slate-900', 'text-white'))}
-                inputClassName={cn('text-base font-bold leading-snug', t('text-slate-900', 'text-white'))}
+                className={cn('text-xl font-semibold leading-snug mt-0.5', t('text-slate-900', 'text-white'))}
+                inputClassName={cn('text-xl font-semibold leading-snug', t('text-slate-900', 'text-white'))}
                 t={t}
               />
               <EditableText
                 value={listing?.short_tagline || ''}
                 onChange={(text) => debouncedOnUpdate({ short_tagline: text })}
                 placeholder="Short tagline..."
-                className={cn('text-xs mt-1', t('text-slate-500', 'text-zinc-500'))}
-                inputClassName={cn('text-xs', t('text-slate-500', 'text-zinc-500'))}
+                className={cn('text-sm mt-1', t('text-slate-400', 'text-zinc-500'))}
+                inputClassName={cn('text-sm', t('text-slate-400', 'text-zinc-500'))}
                 t={t}
               />
             </div>

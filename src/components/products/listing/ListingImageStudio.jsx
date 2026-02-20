@@ -615,25 +615,20 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
   // -----------------------------------------------------------------------
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
 
       {/* ================= 1. HERO IMAGE GENERATOR ================= */}
       <section className={cn(
-        'rounded-2xl border overflow-hidden',
+        'rounded-xl border overflow-hidden',
         t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/5')
       )}>
         {/* Section header */}
         <div className={cn(
-          'px-6 py-4 border-b flex items-center justify-between',
+          'px-4 py-3 border-b flex items-center justify-between',
           t('border-slate-100', 'border-white/5')
         )}>
-          <div className="flex items-center gap-3">
-            <div className={cn(
-              'p-2 rounded-xl',
-              t('bg-cyan-50', 'bg-cyan-500/10')
-            )}>
-              <Camera className="w-5 h-5 text-cyan-500" />
-            </div>
+          <div className="flex items-center gap-2">
+            <Camera className="w-4 h-4 text-cyan-500" />
             <div>
               <h3 className={cn('text-sm font-semibold', t('text-slate-900', 'text-white'))}>
                 Hero Image
@@ -653,9 +648,9 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
           )}
         </div>
 
-        <div className="p-6">
+        <div className="p-4">
           {/* Before / After row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             {/* Original */}
             <div>
               <p className={cn('text-xs font-medium mb-2 uppercase tracking-wider', t('text-slate-400', 'text-zinc-500'))}>
@@ -789,17 +784,15 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
 
       {/* ================= 2. LIFESTYLE SCENE GENERATOR ================= */}
       <section className={cn(
-        'rounded-2xl border overflow-hidden',
+        'rounded-xl border overflow-hidden',
         t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/5')
       )}>
         <div className={cn(
-          'px-6 py-4 border-b flex items-center justify-between',
+          'px-4 py-3 border-b flex items-center justify-between',
           t('border-slate-100', 'border-white/5')
         )}>
-          <div className="flex items-center gap-3">
-            <div className={cn('p-2 rounded-xl', t('bg-blue-50', 'bg-blue-500/10'))}>
-              <Sparkles className="w-5 h-5 text-blue-500" />
-            </div>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-blue-500" />
             <div>
               <h3 className={cn('text-sm font-semibold', t('text-slate-900', 'text-white'))}>
                 Lifestyle Scenes
@@ -819,7 +812,7 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
           )}
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="p-4 space-y-4">
           {/* Scene preset buttons */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {SCENE_PRESETS.map((preset) => {
@@ -983,17 +976,15 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
 
       {/* ================= 3. BATCH GENERATE ================= */}
       <section className={cn(
-        'rounded-2xl border overflow-hidden',
+        'rounded-xl border overflow-hidden',
         t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/5')
       )}>
         <div className={cn(
-          'px-6 py-4 border-b flex items-center justify-between',
+          'px-4 py-3 border-b flex items-center justify-between',
           t('border-slate-100', 'border-white/5')
         )}>
-          <div className="flex items-center gap-3">
-            <div className={cn('p-2 rounded-xl', t('bg-violet-50', 'bg-violet-500/10'))}>
-              <Grid3X3 className="w-5 h-5 text-violet-500" />
-            </div>
+          <div className="flex items-center gap-2">
+            <Grid3X3 className="w-4 h-4 text-violet-500" />
             <div>
               <h3 className={cn('text-sm font-semibold', t('text-slate-900', 'text-white'))}>
                 Batch Generate
@@ -1005,7 +996,7 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
           </div>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="p-4 space-y-4">
           <button
             onClick={handleBatchGenerate}
             disabled={isGeneratingBatch}
@@ -1147,17 +1138,15 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
 
       {/* ================= 4. GALLERY MANAGER ================= */}
       <section className={cn(
-        'rounded-2xl border overflow-hidden',
+        'rounded-xl border overflow-hidden',
         t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/5')
       )}>
         <div className={cn(
-          'px-6 py-4 border-b flex items-center justify-between',
+          'px-4 py-3 border-b flex items-center justify-between',
           t('border-slate-100', 'border-white/5')
         )}>
-          <div className="flex items-center gap-3">
-            <div className={cn('p-2 rounded-xl', t('bg-emerald-50', 'bg-emerald-500/10'))}>
-              <Layers className="w-5 h-5 text-emerald-500" />
-            </div>
+          <div className="flex items-center gap-2">
+            <Layers className="w-4 h-4 text-emerald-500" />
             <div>
               <h3 className={cn('text-sm font-semibold', t('text-slate-900', 'text-white'))}>
                 Gallery Manager
@@ -1175,7 +1164,7 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
           </span>
         </div>
 
-        <div className="p-6">
+        <div className="p-4">
           {galleryUrls.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               <AnimatePresence mode="popLayout">
@@ -1200,7 +1189,7 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
             </div>
           ) : (
             <div className={cn(
-              'flex flex-col items-center justify-center py-12 rounded-xl border border-dashed',
+              'flex flex-col items-center justify-center py-8 rounded-xl border border-dashed',
               t('border-slate-200', 'border-white/5')
             )}>
               <ImageIcon className={cn('w-10 h-10 mb-3', t('text-slate-300', 'text-zinc-700'))} />
@@ -1217,17 +1206,15 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
 
       {/* ================= 5. PLATFORM EXPORT INFO ================= */}
       <section className={cn(
-        'rounded-2xl border overflow-hidden',
+        'rounded-xl border overflow-hidden',
         t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/5')
       )}>
         <div className={cn(
-          'px-6 py-4 border-b',
+          'px-4 py-3 border-b',
           t('border-slate-100', 'border-white/5')
         )}>
-          <div className="flex items-center gap-3">
-            <div className={cn('p-2 rounded-xl', t('bg-amber-50', 'bg-amber-500/10'))}>
-              <Monitor className="w-5 h-5 text-amber-500" />
-            </div>
+          <div className="flex items-center gap-2">
+            <Monitor className="w-4 h-4 text-amber-500" />
             <div>
               <h3 className={cn('text-sm font-semibold', t('text-slate-900', 'text-white'))}>
                 Platform Export Info
@@ -1239,7 +1226,7 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {Object.entries(PLATFORM_SPECS).map(([key, spec]) => {
               const isActive = channel === key;
@@ -1247,7 +1234,7 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
                 <div
                   key={key}
                   className={cn(
-                    'rounded-xl border p-4 transition-all duration-200',
+                    'rounded-lg border p-3 transition-all duration-200',
                     isActive
                       ? cn(
                           'ring-1',
@@ -1284,7 +1271,7 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
           </div>
 
           <div className={cn(
-            'flex items-center gap-2 mt-4 px-3 py-2.5 rounded-xl',
+            'flex items-center gap-2 mt-3 px-3 py-2 rounded-lg',
             t('bg-slate-50 border border-slate-100', 'bg-white/[0.02] border border-white/5')
           )}>
             <Info className={cn('w-4 h-4 flex-shrink-0', t('text-slate-400', 'text-zinc-500'))} />
