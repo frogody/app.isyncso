@@ -383,7 +383,7 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
                   onDragEnd={handleDragEnd}
                   onClick={() => { setMainIdx(idx); setShowingVideo(false); }}
                   className={cn(
-                    'relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing transition-all group/thumb',
+                    'relative flex-shrink-0 w-11 h-11 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing transition-all group/thumb',
                     'border-2',
                     isViewing
                       ? 'border-cyan-400 shadow-sm shadow-cyan-500/20'
@@ -455,7 +455,7 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
               <button
                 onClick={() => setShowingVideo(true)}
                 className={cn(
-                  'relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden transition-all',
+                  'relative flex-shrink-0 w-11 h-11 rounded-lg overflow-hidden transition-all',
                   'border-2',
                   showingVideo
                     ? 'border-cyan-400 shadow-sm shadow-cyan-500/20'
@@ -487,7 +487,7 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
                 key={idx}
                 onClick={() => toggleImage(url)}
                 className={cn(
-                  'relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border transition-all opacity-50 hover:opacity-100',
+                  'relative flex-shrink-0 w-10 h-10 rounded-md overflow-hidden border transition-all opacity-50 hover:opacity-100',
                   t('border-slate-200 hover:border-slate-400', 'border-white/5 hover:border-white/20')
                 )}
               >
@@ -1217,10 +1217,10 @@ export default function ListingPreview({
         </div>
       </div>
 
-      {/* ── Two-column: Images left, Title + Features + Description right ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        {/* Left: Image Gallery Editor */}
-        <div className={cn('p-4 lg:border-r', t('lg:border-slate-100', 'lg:border-white/[0.03]'))}>
+      {/* ── Two-column: Small images left, content right ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr]">
+        {/* Left: Image Gallery Editor (compact) */}
+        <div className={cn('p-3 lg:border-r', t('lg:border-slate-100', 'lg:border-white/[0.03]'))}>
           <ImageGalleryEditor
             product={product}
             listing={listing}
@@ -1286,7 +1286,7 @@ export default function ListingPreview({
       {/* ── Product Specifications (below images, left-aligned) ── */}
       {specs.length > 0 && (
         <div className={cn('border-t', t('border-slate-100', 'border-white/[0.03]'))}>
-          <div className="p-4 lg:w-1/2">
+          <div className="p-3 lg:w-[280px]">
             <button
               onClick={() => setSpecsExpanded(!specsExpanded)}
               className={cn(
