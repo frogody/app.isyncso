@@ -142,7 +142,6 @@ async function extractInvoiceData(groqApiKey: string, pdfText: string): Promise<
         ],
         max_tokens: 4096,
         temperature: 0,
-        response_format: { type: "json_object" },
       }),
     });
 
@@ -164,12 +163,34 @@ async function extractInvoiceData(groqApiKey: string, pdfText: string): Promise<
       .replace(/```\s*/g, "")
       .trim();
 
-    // Find JSON object
+    // Find JSON object — look for the actual structured JSON, not echoed text
     let jsonString: string | null = null;
-    const firstBrace = cleanedContent.indexOf("{");
-    const lastBrace = cleanedContent.lastIndexOf("}");
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      jsonString = cleanedContent.substring(firstBrace, lastBrace + 1);
+
+    // Strategy 1: Find the JSON block starting with {"vendor" (our expected schema)
+    const vendorStart = cleanedContent.indexOf('{"vendor"');
+    if (vendorStart === -1) {
+      // Strategy 2: Find {"  which is more likely a real JSON object start
+      const jsonObjStart = cleanedContent.indexOf('{\n');
+      if (jsonObjStart !== -1) {
+        const lastBrace = cleanedContent.lastIndexOf("}");
+        if (lastBrace > jsonObjStart) {
+          jsonString = cleanedContent.substring(jsonObjStart, lastBrace + 1);
+        }
+      }
+    } else {
+      const lastBrace = cleanedContent.lastIndexOf("}");
+      if (lastBrace > vendorStart) {
+        jsonString = cleanedContent.substring(vendorStart, lastBrace + 1);
+      }
+    }
+
+    // Strategy 3: Fallback to first/last brace
+    if (!jsonString) {
+      const firstBrace = cleanedContent.indexOf("{");
+      const lastBrace = cleanedContent.lastIndexOf("}");
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        jsonString = cleanedContent.substring(firstBrace, lastBrace + 1);
+      }
     }
 
     if (!jsonString) {
