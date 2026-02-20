@@ -685,6 +685,23 @@ function EditableBullets({ bullets = [], onChange, t }) {
 // Editable Description (HTML view / textarea edit)
 // ---------------------------------------------------------------------------
 
+function formatDescriptionHtml(raw) {
+  if (!raw) return '';
+  // If it already has block-level HTML, return as-is
+  if (/<(p|div|ul|ol|h[1-6]|br)\b/i.test(raw)) return raw;
+  // Convert markdown-style bold **text** to <strong>
+  let html = raw.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Split into paragraphs by double newlines, wrap each in <p>
+  const paragraphs = html.split(/\n{2,}/);
+  if (paragraphs.length > 1) {
+    return paragraphs
+      .map((p) => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
+      .join('');
+  }
+  // Single block — just convert newlines to <br>
+  return html.replace(/\n/g, '<br/>');
+}
+
 function EditableDescription({ value, onChange, t }) {
   const [editing, setEditing] = useState(false);
   const [localValue, setLocalValue] = useState(value || '');
@@ -695,6 +712,8 @@ function EditableDescription({ value, onChange, t }) {
     if (localValue !== (value || '')) onChange(localValue);
   };
 
+  const displayHtml = useMemo(() => formatDescriptionHtml(localValue), [localValue]);
+
   if (editing) {
     return (
       <textarea
@@ -702,7 +721,7 @@ function EditableDescription({ value, onChange, t }) {
         onChange={(e) => setLocalValue(e.target.value)}
         onBlur={handleBlur}
         autoFocus
-        rows={6}
+        rows={8}
         placeholder="Product description (supports HTML)..."
         className={cn(
           'w-full bg-transparent border border-cyan-400/30 rounded-lg p-3 outline-none resize-y',
@@ -738,13 +757,13 @@ function EditableDescription({ value, onChange, t }) {
     >
       <div
         className={cn(
-          'prose prose-sm max-w-none text-[13px]',
+          'prose prose-sm max-w-none text-[13px] leading-relaxed',
           t(
             'prose-slate',
             'prose-invert prose-p:text-zinc-300 prose-strong:text-white prose-li:text-zinc-300 prose-headings:text-white'
           )
         )}
-        dangerouslySetInnerHTML={{ __html: localValue }}
+        dangerouslySetInnerHTML={{ __html: displayHtml }}
       />
       <div className={cn(
         'absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity',
