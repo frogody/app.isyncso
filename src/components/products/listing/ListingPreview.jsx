@@ -18,11 +18,10 @@ import {
   ChevronRight,
   Check,
   GripVertical,
-  Video,
   FileText,
   Star,
   Crown,
-  ArrowLeftRight,
+
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/GlobalThemeContext';
@@ -51,6 +50,8 @@ function useDebounce(callback, delay) {
 // ---------------------------------------------------------------------------
 
 function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
+  const videoUrl = listing?.video_url || null;
+
   // Build image pool from all sources
   const imagePool = useMemo(() => {
     const pool = [];
@@ -58,7 +59,7 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
     const addUrl = (url, source) => {
       if (!url || seen.has(url)) return;
       seen.add(url);
-      pool.push({ url, source });
+      pool.push({ url, source, type: 'image' });
     };
 
     const featured = typeof product?.featured_image === 'string'
@@ -105,10 +106,13 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
   }, [listing?.hero_image_url, listing?.gallery_urls]);
 
   const [mainIdx, setMainIdx] = useState(0);
+  const [showingVideo, setShowingVideo] = useState(false);
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
 
   const mainImage = selectedUrls[mainIdx] || selectedUrls[0] || null;
+  // Total media count (images + video)
+  const totalMedia = selectedUrls.length + (videoUrl ? 1 : 0);
 
   const persistOrder = useCallback((urls) => {
     const hero = urls[0] || null;
@@ -188,85 +192,94 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
 
   return (
     <div className="space-y-2">
-      {/* Main image display */}
-      {mainImage ? (
+      {/* Main preview — image or video, compact 4:3 aspect */}
+      {(mainImage || showingVideo) ? (
         <div className={cn(
           'relative rounded-xl overflow-hidden border group',
           t('bg-slate-50 border-slate-200', 'bg-zinc-800/30 border-white/5')
         )}>
-          <AnimatePresence mode="wait">
-            <motion.img
-              key={mainImage}
-              src={mainImage}
-              alt="Main product"
-              className="w-full aspect-square object-contain"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
+          {showingVideo && videoUrl ? (
+            <video
+              src={videoUrl}
+              controls
+              playsInline
+              className="w-full aspect-[4/3] object-contain bg-black"
             />
-          </AnimatePresence>
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={mainImage}
+                src={mainImage}
+                alt="Main product"
+                className="w-full aspect-[4/3] object-contain"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              />
+            </AnimatePresence>
+          )}
 
-          {/* Nav arrows */}
-          {selectedUrls.length > 1 && (
+          {/* Nav arrows (images only) */}
+          {!showingVideo && selectedUrls.length > 1 && (
             <>
               <button
                 onClick={prevMain}
                 className={cn(
-                  'absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center',
+                  'absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center',
                   'opacity-0 group-hover:opacity-100 transition-opacity',
                   t('bg-white/90 shadow', 'bg-zinc-900/80 border border-white/10')
                 )}
               >
-                <ChevronLeft className={cn('w-3.5 h-3.5', t('text-slate-600', 'text-zinc-300'))} />
+                <ChevronLeft className={cn('w-3 h-3', t('text-slate-600', 'text-zinc-300'))} />
               </button>
               <button
                 onClick={nextMain}
                 className={cn(
-                  'absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center',
+                  'absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center',
                   'opacity-0 group-hover:opacity-100 transition-opacity',
                   t('bg-white/90 shadow', 'bg-zinc-900/80 border border-white/10')
                 )}
               >
-                <ChevronRight className={cn('w-3.5 h-3.5', t('text-slate-600', 'text-zinc-300'))} />
+                <ChevronRight className={cn('w-3 h-3', t('text-slate-600', 'text-zinc-300'))} />
               </button>
             </>
           )}
 
           {/* Counter */}
-          {selectedUrls.length > 1 && (
+          {totalMedia > 1 && (
             <div className={cn(
-              'absolute bottom-2 right-2 px-2 py-0.5 rounded-md text-[10px] font-medium',
+              'absolute bottom-2 right-2 px-1.5 py-0.5 rounded text-[9px] font-medium',
               t('bg-white/90 text-slate-600', 'bg-zinc-900/80 text-zinc-400 border border-white/10')
             )}>
-              {mainIdx + 1} / {selectedUrls.length}
+              {showingVideo ? 'Video' : `${mainIdx + 1} / ${selectedUrls.length}`}
             </div>
           )}
         </div>
       ) : (
         <div className={cn(
-          'aspect-square rounded-xl border border-dashed flex items-center justify-center',
+          'aspect-[4/3] rounded-xl border border-dashed flex items-center justify-center',
           t('bg-slate-50 border-slate-300', 'bg-white/[0.02] border-white/10')
         )}>
           <span className={cn('text-xs', t('text-slate-400', 'text-zinc-600'))}>Select images below</span>
         </div>
       )}
 
-      {/* Selected image strip — draggable reorder */}
-      {selectedUrls.length > 0 && (
+      {/* Selected media strip — draggable images + video thumbnail */}
+      {(selectedUrls.length > 0 || videoUrl) && (
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <span className={cn('text-[10px] font-medium uppercase tracking-wider', t('text-slate-400', 'text-zinc-600'))}>
-              Listing images · Drag to reorder
+              Listing media · Drag to reorder
             </span>
             <span className={cn('text-[10px]', t('text-slate-400', 'text-zinc-600'))}>
-              {selectedUrls.length} selected
+              {selectedUrls.length} img{videoUrl ? ' + video' : ''}
             </span>
           </div>
           <div className="flex gap-1.5 overflow-x-auto pb-1">
             {selectedUrls.map((url, idx) => {
               const isHero = idx === 0;
-              const isViewing = idx === mainIdx;
+              const isViewing = idx === mainIdx && !showingVideo;
 
               return (
                 <div
@@ -275,7 +288,7 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
                   onDragStart={() => handleDragStart(idx)}
                   onDragOver={(e) => handleDragOver(e, idx)}
                   onDragEnd={handleDragEnd}
-                  onClick={() => setMainIdx(idx)}
+                  onClick={() => { setMainIdx(idx); setShowingVideo(false); }}
                   className={cn(
                     'relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing transition-all group/thumb',
                     'border-2',
@@ -343,6 +356,28 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
                 </div>
               );
             })}
+
+            {/* Video thumbnail at end of strip */}
+            {videoUrl && (
+              <button
+                onClick={() => setShowingVideo(true)}
+                className={cn(
+                  'relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden transition-all',
+                  'border-2',
+                  showingVideo
+                    ? 'border-cyan-400 shadow-sm shadow-cyan-500/20'
+                    : cn(t('border-slate-200', 'border-white/10'))
+                )}
+              >
+                <video src={videoUrl} muted className="w-full h-full object-cover" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                  <Play className="w-3.5 h-3.5 text-white fill-white" />
+                </div>
+                <div className="absolute bottom-0 inset-x-0 bg-zinc-900/80 text-[7px] font-bold text-zinc-300 text-center py-px leading-none">
+                  VIDEO
+                </div>
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -940,7 +975,7 @@ export default function ListingPreview({
           />
         </div>
 
-        {/* Right: Bullets + Video */}
+        {/* Right: Key Features */}
         <div className="p-4 space-y-4">
           {/* Key Features / Bullet Points */}
           <div className="space-y-1.5">
@@ -954,41 +989,6 @@ export default function ListingPreview({
             />
           </div>
 
-          {/* Video */}
-          <div className="space-y-1.5">
-            <span className={cn('text-[11px] font-semibold uppercase tracking-wider', t('text-slate-400', 'text-zinc-500'))}>
-              Product Video
-            </span>
-            {listing?.video_url ? (
-              <div className={cn(
-                'rounded-lg overflow-hidden border',
-                t('bg-black border-slate-200', 'bg-black border-white/5')
-              )}>
-                <video
-                  src={listing.video_url}
-                  controls
-                  playsInline
-                  className="w-full max-h-[160px] object-contain"
-                />
-              </div>
-            ) : (
-              <div className={cn(
-                'flex items-center justify-between rounded-lg border border-dashed px-3 py-2',
-                t('border-slate-300 bg-slate-50', 'border-white/10 bg-white/[0.02]')
-              )}>
-                <div className="flex items-center gap-1.5">
-                  <Video className={cn('w-3.5 h-3.5', t('text-slate-400', 'text-zinc-600'))} />
-                  <span className={cn('text-xs', t('text-slate-400', 'text-zinc-500'))}>No video</span>
-                </div>
-                {onTabChange && (
-                  <button onClick={() => onTabChange('video')}
-                    className="text-[10px] font-medium text-cyan-500 hover:text-cyan-400">
-                    Video Studio
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
