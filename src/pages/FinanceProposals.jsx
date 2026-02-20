@@ -27,6 +27,7 @@ import { usePermissions } from '@/components/context/PermissionContext';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { useUser } from '@/components/context/UserContext';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
@@ -55,6 +56,7 @@ export default function FinanceProposals() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // Modal states
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -164,16 +166,21 @@ export default function FinanceProposals() {
     }
   };
 
-  const handleDeleteProposal = async (proposal) => {
-    if (!confirm('Are you sure you want to delete this proposal?')) return;
+  const handleDeleteProposal = (proposal) => {
+    setDeleteTarget(proposal);
+  };
 
+  const confirmDeleteProposal = async () => {
+    if (!deleteTarget) return;
     try {
-      await Proposal.delete(proposal.id);
-      setProposals(prev => prev.filter(p => p.id !== proposal.id));
+      await Proposal.delete(deleteTarget.id);
+      setProposals(prev => prev.filter(p => p.id !== deleteTarget.id));
       toast.success('Proposal deleted');
     } catch (error) {
       console.error('Error deleting proposal:', error);
       toast.error('Failed to delete proposal');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -777,6 +784,16 @@ export default function FinanceProposals() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <ConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete Proposal"
+        description={`Are you sure you want to delete this proposal? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={confirmDeleteProposal}
+      />
     </FinancePageTransition>
   );
 }

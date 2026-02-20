@@ -85,6 +85,14 @@ export default function FinanceReportAging({ embedded = false }) {
     setGenerated(false);
     setExpanded({});
     try {
+      // Check if COA is initialized (needed for aging data to exist)
+      const { count } = await supabase.from('accounts').select('id', { count: 'exact', head: true }).eq('company_id', user.company_id);
+      if (!count || count === 0) {
+        toast.error('Initialize your Chart of Accounts first (Ledger > Chart of Accounts)');
+        setLoading(false);
+        return;
+      }
+
       const rpcName = activeTab === 'payable' ? 'get_aged_payables' : 'get_aged_receivables';
       const { data, error } = await supabase.rpc(rpcName, {
         p_company_id: user.company_id,

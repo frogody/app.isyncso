@@ -75,7 +75,7 @@ const SPECIALIZED_AGENTS = [
     color: 'amber',
     status: 'coming_soon',
     capabilities: ['Invoice processing', 'Expense categorization', 'Budget forecasting', 'Financial insights'],
-    link: createPageUrl('FinanceOverview'),
+    link: createPageUrl('FinanceDashboard'),
   },
 ];
 

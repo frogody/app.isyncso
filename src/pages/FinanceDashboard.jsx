@@ -82,6 +82,7 @@ export default function FinanceDashboard() {
   const [recentEntries, setRecentEntries] = useState([]);
   const [billsDueSoon, setBillsDueSoon] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [showGLBanner, setShowGLBanner] = useState(false);
 
   const navigate = useNavigate();
   const { hasPermission, isLoading: permLoading } = usePermissions();
@@ -101,40 +102,44 @@ export default function FinanceDashboard() {
     const today = new Date().toISOString().slice(0, 10);
 
     try {
-      const [plResult, tbResult, agingResult, entriesResult, billsResult] = await Promise.all([
+      const [plResult, tbResult, agingResult, entriesResult, billsResult, invoiceCountResult, expenseCountResult] = await Promise.all([
         // P&L for the selected period
         supabase.rpc('get_profit_loss', { p_company_id: companyId, p_start_date: dateRange.from, p_end_date: dateRange.to })
-          .then(r => r, (err) => {
-            console.warn('[FinanceDashboard] get_profit_loss not available:', err.message);
-            return { data: [], error: null };
-          }),
+          .then(r => { if (r.error) console.warn('P&L RPC error:', r.error.message); return r; }, (err) => { console.warn('P&L RPC failed:', err); return { data: [], error: err }; }),
         // Trial Balance as of today
         supabase.rpc('get_trial_balance', { p_company_id: companyId, p_as_of_date: today })
-          .then(r => r, (err) => {
-            console.warn('[FinanceDashboard] get_trial_balance not available:', err.message);
-            return { data: [], error: null };
-          }),
+          .then(r => { if (r.error) console.warn('TB RPC error:', r.error.message); return r; }, (err) => { console.warn('TB RPC failed:', err); return { data: [], error: err }; }),
         // AP Aging
         supabase.rpc('get_aged_payables', { p_company_id: companyId, p_as_of_date: today })
-          .then(r => r, (err) => {
-            console.warn('[FinanceDashboard] get_aged_payables not available:', err.message);
-            return { data: [], error: null };
-          }),
+          .then(r => { if (r.error) console.warn('Aging RPC error:', r.error.message); return r; }, (err) => { console.warn('Aging RPC failed:', err); return { data: [], error: err }; }),
         // Recent journal entries
         Promise.resolve(db.entities.JournalEntry?.list?.({ limit: 10, sort_by: 'entry_date', sort_order: 'desc' })).catch(() => []),
         // Bills due in next 7 days
         Promise.resolve(db.entities.Bill?.list?.({ limit: 10 })).catch(() => []),
+        // Check if invoices exist (for GL banner)
+        supabase.from('invoices').select('id', { count: 'exact', head: true }).eq('company_id', companyId).then(r => r, () => ({ count: 0 })),
+        // Check if expenses exist (for GL banner)
+        supabase.from('expenses').select('id', { count: 'exact', head: true }).eq('company_id', companyId).then(r => r, () => ({ count: 0 })),
       ]);
 
-      // Process P&L
+      // Process P&L — handle both old (row_type/section) and new (category/is_summary) field names
       const plRows = plResult?.data || [];
       let totalRevenue = 0, totalExpenses = 0, netIncome = 0;
       for (const row of plRows) {
-        if (row.row_type === 'subtotal' && row.section === 'Revenue') totalRevenue = parseFloat(row.amount) || 0;
-        else if (row.row_type === 'subtotal' && row.section === 'Expenses') totalExpenses = parseFloat(row.amount) || 0;
-        else if (row.row_type === 'summary') netIncome = parseFloat(row.amount) || 0;
+        const isSubtotal = row.row_type === 'subtotal' || (row.is_summary === true && row.category !== 'Net Income');
+        const isSummary = row.row_type === 'summary' || (row.is_summary === true && row.category === 'Net Income');
+        const section = row.section || row.category;
+        if (isSubtotal && section === 'Revenue') totalRevenue = parseFloat(row.amount) || 0;
+        else if (isSubtotal && (section === 'Expenses' || section === 'Expense')) totalExpenses = parseFloat(row.amount) || 0;
+        else if (isSummary) netIncome = parseFloat(row.amount) || 0;
       }
       setPLData({ revenue: totalRevenue, expenses: totalExpenses, netIncome });
+
+      // Detect if financial data exists but GL is empty (show info banner)
+      const hasInvoices = (invoiceCountResult?.count || 0) > 0;
+      const hasExpenses = (expenseCountResult?.count || 0) > 0;
+      const glIsEmpty = plRows.length === 0 && (tbResult?.data || []).length === 0;
+      setShowGLBanner(glIsEmpty && (hasInvoices || hasExpenses));
 
       // Process Trial Balance
       const tbRows = tbResult?.data || [];
@@ -286,6 +291,31 @@ export default function FinanceDashboard() {
               </Card>
             ))}
           </div>
+
+          {/* GL Info Banner */}
+          {showGLBanner && (
+            <Card className={`${ft('bg-amber-50 border-amber-200', 'bg-amber-500/5 border-amber-500/20')} border`}>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${ft('text-amber-800', 'text-amber-300')}`}>
+                      Financial data hasn't been posted to the General Ledger
+                    </p>
+                    <p className={`text-xs mt-1 ${ft('text-amber-600', 'text-amber-400/70')}`}>
+                      You have invoices and/or expenses that aren't reflected in the GL yet. Dashboard KPIs and reports read from the ledger.
+                      Visit Ledger &gt; Chart of Accounts to initialize, then mark invoices as paid or save expenses to auto-post.
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm"
+                    className={ft('border-amber-300 text-amber-700 hover:bg-amber-100', 'border-amber-500/30 text-amber-400 hover:bg-amber-500/10')}
+                    onClick={() => navigate(createPageUrl('FinanceAccounts'))}>
+                    Initialize COA
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Quick Actions */}
           <Card className={ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>

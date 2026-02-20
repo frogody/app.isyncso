@@ -232,9 +232,9 @@ import MCPIntegrations from "./MCPIntegrations";
 
 import OAuthCallback from "./OAuthCallback";
 
-import Finance from "./Finance";
+// Finance.jsx removed — /Finance route redirects to FinanceDashboard
 
-import FinanceOverview from "./FinanceOverview";
+// FinanceOverview.jsx is legacy — /FinanceOverview route redirects to FinanceDashboard
 
 import FinanceDashboard from "./FinanceDashboard";
 
@@ -628,9 +628,9 @@ const PAGES = {
     
     OAuthCallback: OAuthCallback,
 
-    Finance: Finance,
+    Finance: FinanceDashboard,
 
-    FinanceOverview: FinanceOverview,
+    FinanceOverview: FinanceDashboard,
 
     FinanceDashboard: FinanceDashboard,
 
@@ -1148,9 +1148,9 @@ function PagesContent() {
                 
                 <Route path="/OAuthCallback" element={<OAuthCallback />} />
 
-                <Route path="/Finance" element={<Finance />} />
+                <Route path="/Finance" element={<FinanceDashboard />} />
 
-                <Route path="/FinanceOverview" element={<FinanceOverview />} />
+                <Route path="/FinanceOverview" element={<FinanceDashboard />} />
 
                 <Route path="/FinanceDashboard" element={<FinanceDashboard />} />
 

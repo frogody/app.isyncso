@@ -23,6 +23,7 @@ import { Subscription } from '@/api/entities';
 import { usePermissions } from '@/components/context/PermissionContext';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 
@@ -54,6 +55,7 @@ export default function FinanceSubscriptions({ embedded = false }) {
   const [sortBy, setSortBy] = useState('name');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -208,14 +210,20 @@ export default function FinanceSubscriptions({ embedded = false }) {
     setShowCreateModal(true);
   };
 
-  const handleDelete = async (subscription) => {
-    if (!confirm('Delete this subscription?')) return;
+  const handleDelete = (subscription) => {
+    setDeleteTarget(subscription);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await Subscription.delete(subscription.id);
+      await Subscription.delete(deleteTarget.id);
       toast.success('Subscription deleted');
       loadSubscriptions();
     } catch (error) {
       toast.error('Failed to delete subscription');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -606,6 +614,15 @@ export default function FinanceSubscriptions({ embedded = false }) {
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
         {content}
       </div>
+      <ConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete Subscription"
+        description={`Are you sure you want to delete this subscription? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={confirmDelete}
+      />
     </FinancePageTransition>
   );
 }

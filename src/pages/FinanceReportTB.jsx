@@ -81,6 +81,14 @@ export default function FinanceReportTB({ embedded = false }) {
     setLoading(true);
     setGenerated(false);
     try {
+      // Check if COA is initialized
+      const { count } = await supabase.from('accounts').select('id', { count: 'exact', head: true }).eq('company_id', user.company_id);
+      if (!count || count === 0) {
+        toast.error('Initialize your Chart of Accounts first (Ledger > Chart of Accounts)');
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.rpc('get_trial_balance', {
         p_company_id: user.company_id,
         p_as_of_date: asOfDate,

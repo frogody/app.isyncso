@@ -816,7 +816,7 @@ export default function Dashboard() {
                           <p className="text-xs text-zinc-400">Expenses</p>
                         </div>
                       </div>
-                      <Link to={createPageUrl("FinanceOverview")} className="mt-4 block">
+                      <Link to={createPageUrl("FinanceDashboard")} className="mt-4 block">
                         <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
                           View Financials
                         </Button>
@@ -860,7 +860,7 @@ export default function Dashboard() {
                           Compliance
                         </Button>
                       </Link>
-                      <Link to={createPageUrl("FinanceOverview")}>
+                      <Link to={createPageUrl("FinanceDashboard")}>
                         <Button variant="outline" size="sm" className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white text-xs">
                           <Euro className="w-4 h-4 mr-1.5" />
                           Finance

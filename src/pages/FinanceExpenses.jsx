@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { db } from '@/api/supabaseClient';
+import { db, supabase } from '@/api/supabaseClient';
 import { motion } from 'framer-motion';
 import {
   CreditCard, Plus, Search, Filter, Download, Calendar, Tag, Building,
@@ -25,6 +25,7 @@ import { usePermissions } from '@/components/context/PermissionContext';
 import { useUser } from '@/components/context/UserContext';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 
@@ -49,6 +50,7 @@ export default function FinanceExpenses({ embedded = false }) {
   const [dateRange, setDateRange] = useState('all');
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -235,10 +237,30 @@ export default function FinanceExpenses({ embedded = false }) {
       if (editMode && selectedExpense) {
         await db.entities.Expense.update(selectedExpense.id, expenseData);
         toast.success('Expense updated successfully');
+
+        // Post updated expense to GL
+        try {
+          const { data: glResult } = await supabase.rpc('post_expense', { p_expense_id: selectedExpense.id });
+          if (glResult?.success && glResult?.message !== 'Expense already posted to GL') {
+            toast.success('Posted to General Ledger');
+          }
+        } catch (glErr) { console.warn('GL posting (non-critical):', glErr); }
       } else {
         const newExpense = await db.entities.Expense.create(expenseData);
         setExpenses(prev => [newExpense, ...prev]);
         toast.success('Expense added successfully');
+
+        // Post new expense to GL
+        if (newExpense?.id) {
+          try {
+            const { data: glResult } = await supabase.rpc('post_expense', { p_expense_id: newExpense.id });
+            if (glResult?.success) {
+              toast.success('Posted to General Ledger');
+            } else if (glResult?.error) {
+              toast.info(glResult.error);
+            }
+          } catch (glErr) { console.warn('GL posting (non-critical):', glErr); }
+        }
       }
 
       setShowCreateModal(false);
@@ -252,16 +274,21 @@ export default function FinanceExpenses({ embedded = false }) {
     }
   };
 
-  const handleDeleteExpense = async (expense) => {
-    if (!confirm('Are you sure you want to delete this expense?')) return;
+  const handleDeleteExpense = (expense) => {
+    setDeleteTarget(expense);
+  };
 
+  const confirmDeleteExpense = async () => {
+    if (!deleteTarget) return;
     try {
-      await db.entities.Expense.delete(expense.id);
-      setExpenses(prev => prev.filter(e => e.id !== expense.id));
+      await db.entities.Expense.delete(deleteTarget.id);
+      setExpenses(prev => prev.filter(e => e.id !== deleteTarget.id));
       toast.success('Expense deleted');
     } catch (error) {
       console.error('Error deleting expense:', error);
       toast.error('Failed to delete expense');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -747,6 +774,15 @@ export default function FinanceExpenses({ embedded = false }) {
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
         {content}
       </div>
+      <ConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete Expense"
+        description={`Are you sure you want to delete this expense (€${(deleteTarget?.amount || 0).toLocaleString()})? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={confirmDeleteExpense}
+      />
     </FinancePageTransition>
   );
 }
