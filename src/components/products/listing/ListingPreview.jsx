@@ -46,6 +46,126 @@ function useDebounce(callback, delay) {
 }
 
 // ---------------------------------------------------------------------------
+// Image Template Guide — advised marketplace image order
+// ---------------------------------------------------------------------------
+
+const IMAGE_TEMPLATE = [
+  { slot: 1, type: 'studio', label: 'Studio', desc: 'Front view, white BG' },
+  { slot: 2, type: 'studio', label: 'Studio', desc: 'Angle view, white BG' },
+  { slot: 3, type: 'studio', label: 'Studio', desc: 'Detail/close-up, white BG' },
+  { slot: 4, type: 'lifestyle', label: 'Lifestyle', desc: 'Product in use' },
+  { slot: 5, type: 'lifestyle', label: 'Lifestyle', desc: 'Context / setting' },
+  { slot: 6, type: 'lifestyle', label: 'Lifestyle', desc: 'Scale / hands' },
+  { slot: 7, type: 'lifestyle', label: 'Lifestyle', desc: 'Styled flat lay' },
+  { slot: 8, type: 'graphic', label: 'USP', desc: 'Feature highlight #1' },
+  { slot: 9, type: 'graphic', label: 'USP', desc: 'Feature highlight #2' },
+  { slot: 10, type: 'graphic', label: 'USP', desc: 'Specs / comparison' },
+  { slot: 11, type: 'graphic', label: 'USP', desc: 'Awards / certifications' },
+];
+
+const TYPE_COLORS = {
+  studio: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' },
+  lifestyle: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
+  graphic: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
+};
+
+function ImageTemplateGuide({ selectedCount, hasVideo, t }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className={cn(
+      'rounded-lg border overflow-hidden',
+      t('bg-slate-50/50 border-slate-200', 'bg-white/[0.015] border-white/5')
+    )}>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className={cn(
+          'w-full flex items-center justify-between px-2.5 py-1.5 transition-colors',
+          t('hover:bg-slate-100', 'hover:bg-white/[0.03]')
+        )}
+      >
+        <div className="flex items-center gap-1.5">
+          <Star className={cn('w-3 h-3', t('text-slate-400', 'text-amber-500/60'))} />
+          <span className={cn('text-[10px] font-semibold', t('text-slate-500', 'text-zinc-500'))}>
+            Advised template
+          </span>
+          <span className={cn(
+            'text-[9px] font-medium px-1 py-px rounded',
+            selectedCount >= 11 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-500/10 text-zinc-500'
+          )}>
+            {selectedCount}/11 images{hasVideo ? ' + video' : ''}
+          </span>
+        </div>
+        {expanded
+          ? <ChevronUp className={cn('w-3 h-3', t('text-slate-400', 'text-zinc-500'))} />
+          : <ChevronDown className={cn('w-3 h-3', t('text-slate-400', 'text-zinc-500'))} />
+        }
+      </button>
+
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden"
+          >
+            <div className={cn('px-2.5 pb-2.5 pt-1 border-t', t('border-slate-100', 'border-white/5'))}>
+              <div className="grid grid-cols-11 gap-1">
+                {IMAGE_TEMPLATE.map((slot) => {
+                  const colors = TYPE_COLORS[slot.type];
+                  const isFilled = slot.slot <= selectedCount;
+
+                  return (
+                    <div
+                      key={slot.slot}
+                      className={cn(
+                        'flex flex-col items-center rounded-md border p-1 transition-all',
+                        isFilled
+                          ? cn(colors.bg, colors.border)
+                          : cn(t('border-slate-200 bg-white', 'border-white/5 bg-white/[0.02]'))
+                      )}
+                    >
+                      <span className={cn(
+                        'text-[8px] font-bold leading-none',
+                        isFilled ? colors.text : t('text-slate-300', 'text-zinc-700')
+                      )}>
+                        {slot.slot}
+                      </span>
+                      <span className={cn(
+                        'text-[7px] font-medium leading-tight mt-0.5 text-center',
+                        isFilled ? colors.text : t('text-slate-400', 'text-zinc-600')
+                      )}>
+                        {slot.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Legend */}
+              <div className="flex items-center gap-3 mt-1.5">
+                {[
+                  { type: 'studio', label: '3 Studio (white BG)' },
+                  { type: 'lifestyle', label: '4 Lifestyle' },
+                  { type: 'graphic', label: '4 USP Graphics' },
+                ].map(({ type, label }) => (
+                  <div key={type} className="flex items-center gap-1">
+                    <div className={cn('w-1.5 h-1.5 rounded-full', TYPE_COLORS[type].bg, 'ring-1', TYPE_COLORS[type].border)} />
+                    <span className={cn('text-[9px]', t('text-slate-400', 'text-zinc-500'))}>{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Draggable Image Strip — marketplace-style main image + reorderable thumbs
 // ---------------------------------------------------------------------------
 
@@ -407,6 +527,9 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, t }) {
           </div>
         </div>
       )}
+
+      {/* Advised image template */}
+      <ImageTemplateGuide selectedCount={selectedUrls.length} hasVideo={!!videoUrl} t={t} />
     </div>
   );
 }
