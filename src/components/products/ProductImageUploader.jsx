@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useMemo } from 'react';
-import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { storage, supabase } from '@/api/supabaseClient';
@@ -59,7 +59,7 @@ export default function ProductImageUploader({
   featuredImage = null,
   onImagesChange,
   onFeaturedChange,
-  maxImages = 10,
+  maxImages = 50,
   className,
 }) {
   const { t } = useTheme();
@@ -74,12 +74,18 @@ export default function ProductImageUploader({
   const [libraryItems, setLibraryItems] = useState([]);
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [selectedLibrary, setSelectedLibrary] = useState(new Set());
+  const [dragIdx, setDragIdx] = useState(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
 
   const safeImages = Array.isArray(images) ? images : [];
-  const allImages = [
-    ...(featuredImage ? [{ ...(typeof featuredImage === 'string' ? { url: featuredImage } : featuredImage), isFeatured: true }] : []),
-    ...safeImages.filter(img => img.url !== featuredImage?.url)
-  ];
+  const featuredUrl = typeof featuredImage === 'string' ? featuredImage : featuredImage?.url;
+  const allImages = useMemo(() => {
+    const featured = featuredUrl
+      ? [{ ...(typeof featuredImage === 'string' ? { url: featuredImage } : featuredImage), isFeatured: true }]
+      : [];
+    const gallery = safeImages.filter(img => img.url !== featuredUrl);
+    return [...featured, ...gallery];
+  }, [featuredImage, featuredUrl, safeImages]);
 
   const hiddenCount = Math.max(0, allImages.length - (MAX_VISIBLE - 1));
   const showMoreTile = allImages.length > MAX_VISIBLE;
@@ -247,20 +253,39 @@ export default function ProductImageUploader({
   };
 
   const handleDelete = (imageToDelete) => {
-    const newImages = images.filter(img => img.url !== imageToDelete.url);
-    onImagesChange?.(newImages);
-
-    if (featuredImage?.url === imageToDelete.url) {
-      onFeaturedChange?.(newImages[0] || null);
+    if (imageToDelete.url === featuredUrl) {
+      // Deleting the featured image — promote first gallery image
+      const remaining = safeImages.filter(img => img.url !== imageToDelete.url);
+      onFeaturedChange?.(remaining[0] || null);
+      onImagesChange?.(remaining.slice(1));
+    } else {
+      const newImages = safeImages.filter(img => img.url !== imageToDelete.url);
+      onImagesChange?.(newImages);
     }
   };
 
   const handleSetFeatured = (image) => {
-    onFeaturedChange?.(image);
+    // Move old featured back into gallery, remove new featured from gallery
+    const oldFeatured = featuredImage;
+    const cleanImage = { url: image.url, alt: image.alt || '', size: image.size || null, type: image.type || 'image/png' };
+
+    // Build updated gallery: remove the new featured, add the old featured back
+    let updatedGallery = safeImages.filter(img => img.url !== image.url);
+    if (oldFeatured && oldFeatured.url && oldFeatured.url !== image.url) {
+      // Add old featured to beginning of gallery so it doesn't disappear
+      const oldClean = { url: oldFeatured.url || oldFeatured, alt: oldFeatured.alt || '', size: oldFeatured.size || null, type: oldFeatured.type || 'image/png' };
+      updatedGallery = [oldClean, ...updatedGallery];
+    }
+
+    onImagesChange?.(updatedGallery);
+    onFeaturedChange?.(cleanImage);
   };
 
   const handleReorder = (reorderedImages) => {
-    const galleryImages = reorderedImages.filter(img => !img.isFeatured);
+    // Filter out the featured image marker, keep gallery order intact
+    const galleryImages = reorderedImages
+      .filter(img => !img.isFeatured)
+      .map(img => ({ url: img.url, alt: img.alt || '', size: img.size || null, type: img.type || 'image/png' }));
     onImagesChange?.(galleryImages);
   };
 
@@ -436,22 +461,32 @@ export default function ProductImageUploader({
             )}
           </div>
 
-          <Reorder.Group
-            axis="x"
-            values={allImages}
-            onReorder={handleReorder}
-            className="grid grid-cols-4 gap-3"
-          >
-            {visibleImages.map((image) => (
-              <Reorder.Item
+          <div className="grid grid-cols-4 gap-3">
+            {visibleImages.map((image, idx) => (
+              <div
                 key={image.url}
-                value={image}
                 className="relative group"
+                draggable
+                onDragStart={() => setDragIdx(idx)}
+                onDragOver={(e) => { e.preventDefault(); setDragOverIdx(idx); }}
+                onDragEnd={() => {
+                  if (dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
+                    const reordered = [...allImages];
+                    const [moved] = reordered.splice(dragIdx, 1);
+                    reordered.splice(dragOverIdx, 0, moved);
+                    handleReorder(reordered);
+                  }
+                  setDragIdx(null);
+                  setDragOverIdx(null);
+                }}
+                onDragLeave={() => setDragOverIdx(null)}
               >
                 <div
                   className={cn(
                     "relative aspect-square rounded-lg overflow-hidden border-2 transition-all",
                     `${t('bg-slate-100', 'bg-zinc-800')} cursor-grab active:cursor-grabbing`,
+                    dragOverIdx === idx && dragIdx !== idx && 'ring-2 ring-cyan-400/50 scale-[1.03]',
+                    dragIdx === idx && 'opacity-40',
                     image.isFeatured
                       ? "border-cyan-500 ring-2 ring-cyan-500/30"
                       : `${t('border-slate-300', 'border-zinc-700')} ${t('hover:border-slate-400', 'hover:border-zinc-600')}`
@@ -520,7 +555,7 @@ export default function ProductImageUploader({
                     </Button>
                   </div>
                 </div>
-              </Reorder.Item>
+              </div>
             ))}
 
             {/* "+X more" tile */}
@@ -560,7 +595,7 @@ export default function ProductImageUploader({
                 </button>
               </div>
             )}
-          </Reorder.Group>
+          </div>
         </div>
       )}
 

@@ -857,30 +857,30 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
     }
   }, [product, details, user, listing, generateImage, saveListingSilent, fetchListing]);
 
-  // Fix with AI — audit-driven auto-fix orchestrator
-  const handleFixWithAI = useCallback(async (auditData, { setFixing, setFixPlan }) => {
+  // ── Fix with AI — Step 1: Build a detailed plan from audit data ──
+  // This ONLY builds the plan and stops. The user must approve before execution.
+  const handleBuildFixPlan = useCallback(async (auditData, { setFixing, setFixPlan }) => {
     if (!product?.id || !user?.company_id || !auditData) return;
 
-    const toastId = toast.loading('Building fix plan...');
+    setFixing('planning');
 
     try {
-      // ── Step 1: Build plan from audit data ──
-      setFixing('planning');
-
       const cats = auditData.categories || [];
       const catByName = {};
       cats.forEach((c) => { catByName[c.name] = c; });
 
       const actions = [];
 
-      // Copy fix: combine title/tagline + bullets + description into one action
+      // ── Copy fix: combine title/tagline + bullets + description ──
       const copyCategories = [];
       const copyIssues = [];
+      const copySuggestions = [];
       ['Title & Tagline', 'Bullet Points', 'Description'].forEach((name) => {
         const cat = catByName[name];
         if (cat && cat.score < 80) {
           copyCategories.push(name);
           (cat.issues || []).forEach((i) => copyIssues.push(i));
+          (cat.suggestions || []).forEach((s) => copySuggestions.push(s));
         }
       });
 
@@ -889,46 +889,107 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
           id: 'copy',
           type: 'copy',
           label: `Rewrite ${copyCategories.map((c) => c.split(' ')[0].toLowerCase()).join(', ')}`,
-          description: copyIssues.slice(0, 3).join('; ') || 'Improve listing copy quality',
+          description: copyIssues.slice(0, 4).join(' | ') || 'Improve listing copy quality',
+          details: copySuggestions.slice(0, 4),
           status: 'pending',
           categories: copyCategories,
+          credits: 1,
         });
       }
 
-      // SEO fix
+      // ── SEO fix ──
       const seoCat = catByName['SEO & Discoverability'];
       if (seoCat && seoCat.score < 80) {
         actions.push({
           id: 'seo',
           type: 'seo',
           label: 'Fix SEO & keywords',
-          description: (seoCat.issues || []).slice(0, 2).join('; ') || 'Improve search visibility',
+          description: (seoCat.issues || []).slice(0, 3).join(' | ') || 'Improve search visibility',
+          details: (seoCat.suggestions || []).slice(0, 3),
           status: 'pending',
+          credits: copyCategories.length > 0 ? 0 : 1, // bundled with copy if both exist
         });
       }
 
-      // Image fixes from missing_usp_visuals
+      // ── Visual Content issues (hero image problems, AI artifacts, etc.) ──
+      const visualCat = catByName['Visual Content'];
+      const visualIssues = visualCat?.issues || [];
+      const criticalImageIssues = visualIssues.filter((i) =>
+        /critical|unusable|replace|artifact|garbled|text|prompt/i.test(i)
+      );
+      if (criticalImageIssues.length > 0) {
+        actions.push({
+          id: 'replace_hero',
+          type: 'replace_image',
+          label: 'Replace problematic hero/gallery images',
+          description: criticalImageIssues.slice(0, 2).join(' | '),
+          details: (visualCat?.suggestions || []).slice(0, 3),
+          status: 'pending',
+          credits: criticalImageIssues.length,
+        });
+      }
+
+      // ── Missing USP visuals ──
       const missingVisuals = auditData.missing_usp_visuals || [];
       missingVisuals.forEach((desc, i) => {
         actions.push({
           id: `image_${i}`,
           type: 'image',
-          label: `Generate: ${desc.length > 50 ? desc.substring(0, 50) + '...' : desc}`,
+          label: `Generate USP: ${desc.length > 50 ? desc.substring(0, 50) + '...' : desc}`,
           description: desc,
+          details: [],
           status: 'pending',
           imageUrl: null,
+          credits: 1,
         });
       });
 
+      // ── Conversion readiness suggestions (if critical) ──
+      const convCat = catByName['Conversion Readiness'];
+      if (convCat && convCat.score < 60) {
+        // Conversion issues get addressed by the copy rewrite — add note
+        if (!actions.find((a) => a.type === 'copy')) {
+          actions.push({
+            id: 'conversion_copy',
+            type: 'copy',
+            label: 'Improve conversion copy',
+            description: (convCat.issues || []).slice(0, 2).join(' | ') || 'Make copy more persuasive',
+            details: (convCat.suggestions || []).slice(0, 3),
+            status: 'pending',
+            categories: ['Title & Tagline', 'Bullet Points', 'Description'],
+            credits: 1,
+          });
+        }
+      }
+
       if (actions.length === 0) {
-        toast.success('Nothing to fix — listing looks great!', { id: toastId });
+        toast.success('Nothing to fix — listing looks great!');
         setFixing(null);
         return;
       }
 
-      setFixPlan({ actions });
-      setFixing('executing');
-      toast.loading(`Executing ${actions.length} fixes...`, { id: toastId });
+      // Calculate total estimated credits
+      const totalCredits = actions.reduce((sum, a) => sum + (a.credits || 0), 0);
+
+      setFixPlan({ actions, totalCredits, auditData });
+      setFixing('review'); // STOP HERE — user sees the plan and must click approve
+    } catch (err) {
+      console.error('[handleBuildFixPlan] Error:', err);
+      toast.error('Failed to build fix plan: ' + (err.message || 'Unknown error'));
+      setFixing(null);
+    }
+  }, [product, user]);
+
+  // ── Fix with AI — Step 2: Execute the approved plan ──
+  const handleExecuteFixPlan = useCallback(async (fixPlan, { setFixing, setFixPlan }) => {
+    if (!product?.id || !user?.company_id || !fixPlan?.actions) return;
+
+    const toastId = toast.loading('Executing fix plan...');
+    setFixing('executing');
+
+    try {
+      const actions = fixPlan.actions;
+      const cats = fixPlan.auditData?.categories || [];
 
       // Helper to update a single action's status
       const updateAction = (actionId, updates) => {
@@ -940,18 +1001,16 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
         }));
       };
 
-      // ── Step 2: Execute copy fix ──
+      // ── Execute copy + SEO fix ──
       const copyAction = actions.find((a) => a.type === 'copy');
       const seoAction = actions.find((a) => a.type === 'seo');
-      let copyCalled = false;
 
       if (copyAction || seoAction) {
-        const activeAction = copyAction || seoAction;
-        updateAction(activeAction.id, { status: 'active' });
-        toast.loading(`Rewriting listing copy...`, { id: toastId });
+        const activeId = copyAction?.id || seoAction?.id;
+        updateAction(activeId, { status: 'active' });
+        toast.loading('Rewriting listing copy & SEO...', { id: toastId });
 
         try {
-          // Gather audit suggestions as fix context
           const allSuggestions = cats.flatMap((c) => c.suggestions || []);
           const allIssues = cats.flatMap((c) => c.issues || []);
 
@@ -971,9 +1030,9 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
               tone: 'professional',
               research_context: {
                 findings: product?.description || '',
-                valuePropositions: allSuggestions.slice(0, 8),
+                valuePropositions: allSuggestions.slice(0, 10),
                 targetAudience: 'General consumers',
-                competitorInsights: `Audit found these issues to fix: ${allIssues.slice(0, 5).join('. ')}`,
+                competitorInsights: `AUDIT FIX MODE — the previous copy was audited and scored poorly. Fix these specific issues:\n${allIssues.slice(0, 8).join('\n')}`,
                 keyFeatures: [],
               },
             },
@@ -987,47 +1046,76 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
             ? (typeof ai.titles[0] === 'string' ? ai.titles[0] : ai.titles[0].text || '')
             : listing?.listing_title || '';
 
+          // Always save ALL copy + SEO fields when either is needed
           const updates = {};
           if (copyAction) {
-            if (copyAction.categories.includes('Title & Tagline')) {
+            const cc = copyAction.categories || [];
+            if (cc.includes('Title & Tagline')) {
               updates.listing_title = firstTitle;
               if (ai.short_tagline) updates.short_tagline = ai.short_tagline;
             }
-            if (copyAction.categories.includes('Bullet Points')) {
-              updates.bullet_points = ai.bullet_points || [];
+            if (cc.includes('Bullet Points') && ai.bullet_points?.length) {
+              updates.bullet_points = ai.bullet_points;
             }
-            if (copyAction.categories.includes('Description')) {
-              updates.listing_description = ai.description || '';
+            if (cc.includes('Description') && ai.description) {
+              updates.listing_description = ai.description;
             }
           }
-
-          if (seoAction || copyAction) {
-            if (seoAction) {
-              updates.seo_title = ai.seo_title || '';
-              updates.seo_description = ai.seo_description || '';
-              updates.search_keywords = ai.search_keywords || [];
-            }
+          if (seoAction) {
+            if (ai.seo_title) updates.seo_title = ai.seo_title;
+            if (ai.seo_description) updates.seo_description = ai.seo_description;
+            if (ai.search_keywords?.length) updates.search_keywords = ai.search_keywords;
           }
 
           await saveListingSilent(updates);
-          copyCalled = true;
-
           if (copyAction) updateAction('copy', { status: 'done' });
-          if (seoAction && (copyAction || true)) updateAction('seo', { status: 'done' });
+          if (seoAction) updateAction('seo', { status: 'done' });
         } catch (err) {
-          console.error('[handleFixWithAI] Copy fix failed:', err);
+          console.error('[handleExecuteFixPlan] Copy/SEO failed:', err);
           if (copyAction) updateAction('copy', { status: 'failed' });
           if (seoAction) updateAction('seo', { status: 'failed' });
         }
       }
 
-      // If only SEO needed fixing and copy wasn't called, the above handles it
+      // ── Execute hero/gallery image replacement ──
+      const replaceAction = actions.find((a) => a.type === 'replace_image');
+      if (replaceAction) {
+        updateAction(replaceAction.id, { status: 'active' });
+        toast.loading('Replacing problematic images...', { id: toastId });
 
-      // ── Step 3: Execute image generation (USP infographics via NanoBanana Pro) ──
+        try {
+          const pName = product?.name || 'Product';
+          const pBrand = product?.brand || '';
+          const prompt = [
+            `Professional e-commerce product photography of ${pBrand ? pBrand + ' ' : ''}${pName}.`,
+            `CRITICAL: The product in this image must be an EXACT visual match to the reference image(s). Do NOT change the product shape, color, proportions, design, branding, or any physical detail. The product identity must be 100% preserved.`,
+            `Clean white/light background, professional studio lighting, sharp focus, high resolution.`,
+            `The product should be the hero of the image — centered, well-lit, no distractions.`,
+            `ABSOLUTELY NO text, NO watermarks, NO overlays, NO captions, NO labels of any kind on the image.`,
+            `This must look like a professional product photo taken by a commercial photographer.`,
+          ].join('\n');
+
+          const url = await generateImage(prompt, 'product_scene');
+
+          // Replace hero image
+          await saveListingSilent({ hero_image_url: url });
+          saveToLibrary(url, {
+            companyId: user.company_id, userId: user.id, productId: product.id,
+            productName: product.name, label: 'Fix: Replacement hero image', prompt,
+          });
+
+          updateAction(replaceAction.id, { status: 'done', imageUrl: url });
+        } catch (err) {
+          console.error('[handleExecuteFixPlan] Image replace failed:', err);
+          updateAction(replaceAction.id, { status: 'failed' });
+        }
+      }
+
+      // ── Execute USP image generation ──
       const imageActions = actions.filter((a) => a.type === 'image');
       for (const imgAction of imageActions) {
         updateAction(imgAction.id, { status: 'active' });
-        toast.loading(`Generating USP graphic: ${imgAction.label.substring(0, 40)}...`, { id: toastId });
+        toast.loading(`Generating: ${imgAction.label.substring(0, 40)}...`, { id: toastId });
 
         try {
           const pName = product?.name || 'Product';
@@ -1038,52 +1126,46 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
           const prompt = [
             `Create a professional e-commerce USP infographic image for ${pIdentity}.`,
             pDesc ? `Product description: ${pDesc.substring(0, 200)}.` : '',
-            `The product must look EXACTLY like the reference image(s) — preserve every detail of shape, color, material, branding, and proportions.`,
+            ``,
+            `PRODUCT CONSISTENCY — CRITICAL:`,
+            `The product shown in this image MUST be an EXACT visual replica of the reference image(s). Do NOT alter the product shape, color, material, texture, branding, logo placement, or proportions in any way. The viewer must instantly recognize it as the same physical product. This is non-negotiable.`,
             ``,
             `DESIGN LAYOUT:`,
             `- Dark navy blue gradient background (#0f172a to #1e293b)`,
             `- Product photograph shown large and prominently with dramatic studio lighting and drop shadow`,
             `- This image must specifically showcase and highlight: "${imgAction.description}"`,
-            `- Include visual callout elements (arrows, badges, icons, or highlight zones) that draw attention to this specific feature`,
-            `- Bold headline text describing the feature at the top of the image`,
+            `- Include visual callout elements (arrows, badges, icons, or highlight zones) pointing to this specific feature`,
+            `- Bold headline text about the feature at the top`,
             `- Modern, clean graphic design typography in white on the dark background`,
             ``,
-            `STYLE: Premium Amazon/bol.com product listing USP graphic. Professional e-commerce infographic design. Clean, modern, trustworthy.`,
-            `NO watermarks, NO AI artifacts. The product and graphic elements must look premium and commercial-grade.`,
+            `STYLE: Premium Amazon/bol.com product listing USP graphic. Professional e-commerce infographic.`,
+            `ABSOLUTELY NO garbled text, NO AI prompt text, NO watermarks. Clean, readable text only.`,
           ].filter(Boolean).join('\n');
 
           const url = await generateImage(prompt, 'product_scene');
 
-          // Append to gallery
           const currentGallery = listing?.gallery_urls || [];
           await saveListingSilent({ gallery_urls: [...currentGallery, url] });
-
-          // Save to library
           saveToLibrary(url, {
-            companyId: user.company_id,
-            userId: user.id,
-            productId: product.id,
-            productName: product.name,
-            label: `Fix: ${imgAction.description.substring(0, 60)}`,
-            prompt,
+            companyId: user.company_id, userId: user.id, productId: product.id,
+            productName: product.name, label: `Fix: ${imgAction.description.substring(0, 60)}`, prompt,
           });
 
           updateAction(imgAction.id, { status: 'done', imageUrl: url });
         } catch (err) {
-          console.error(`[handleFixWithAI] Image fix failed:`, err);
+          console.error('[handleExecuteFixPlan] Image gen failed:', err);
           updateAction(imgAction.id, { status: 'failed' });
         }
       }
 
-      // ── Step 4: Done ──
+      // ── Done ──
       await fetchListing();
       setFixing('done');
-      const doneCount = actions.length; // approximate
-      toast.success(`Applied ${doneCount} fixes! Run audit to check improvement.`, { id: toastId, duration: 4000 });
-
+      const doneCount = actions.filter((a) => a.status !== 'failed').length;
+      toast.success(`Applied ${doneCount} fixes! Re-audit to check improvement.`, { id: toastId, duration: 4000 });
     } catch (err) {
-      console.error('[handleFixWithAI] Error:', err);
-      toast.error('Fix failed: ' + (err.message || 'Unknown error'), { id: toastId });
+      console.error('[handleExecuteFixPlan] Error:', err);
+      toast.error('Fix execution failed: ' + (err.message || 'Unknown error'), { id: toastId });
       setFixing(null);
     }
   }, [product, details, user, listing, selectedChannel, generateImage, saveListingSilent, fetchListing]);
@@ -1111,7 +1193,8 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
             onTabChange={handleTabChange}
             onUpdate={saveListingSilent}
             onGenerateSlotImage={handleGenerateSlotImage}
-            onFixWithAI={handleFixWithAI}
+            onBuildFixPlan={handleBuildFixPlan}
+            onExecuteFixPlan={handleExecuteFixPlan}
           />
         );
       case 'analytics':

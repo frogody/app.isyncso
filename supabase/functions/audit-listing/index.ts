@@ -113,14 +113,20 @@ For EACH image, describe:
 3. **Quality**: Lighting, composition, resolution assessment, professionalism
 4. **Features visible**: Which specific product features/USPs are highlighted or visible?
 5. **CRITICAL — Issues**: Look VERY carefully for these problems and report ALL you find:
-   - **Visible text/watermarks**: ANY text overlaid on the image that looks like AI generation prompts, gibberish text, garbled characters, or debug text. This is a CRITICAL flaw — an image with visible AI prompt text is UNUSABLE.
-   - **AI artifacts**: Distorted hands, impossible geometry, melted/morphed surfaces, unrealistic reflections, extra limbs or fingers, text that doesn't make sense
+   - **LEAKED PROMPT TEXT / GARBLED TEXT (HIGHEST PRIORITY)**: Look at the BOTTOM, TOP, and EDGES of every image for blocks of text that look like AI generation instructions, garbled sentences, or technical descriptions. Examples of what to look for:
+     * Sentences like "Professional e-commerce product photography..." or "Create a photo of..."
+     * Garbled/nonsensical text like "beombe al texk fight" or "exitesing all text logas"
+     * Any paragraph of text overlaid on the product image that describes what the image should contain
+     * Words like "prompt", "generate", "lighting", "composition" appearing as overlaid text
+     * ANY visible text in the image area that is NOT a brand name or product label that belongs on the physical product
+     This is the #1 most critical defect. An image with leaked AI prompt text is COMPLETELY UNUSABLE for e-commerce. Flag with: "CRITICAL: Image X has visible AI-generated prompt/instruction text — UNUSABLE, must be replaced immediately."
+   - **AI artifacts**: Distorted hands, impossible geometry, melted/morphed surfaces, unrealistic reflections, extra limbs or fingers, nonsensical text
    - **Blurry/low-res**: Soft focus where it shouldn't be, pixelation, compression artifacts
-   - **Wrong product**: Product looks different from the described product
+   - **Wrong product**: Product looks different from the described product — shape, color, or design doesn't match
    - **Poor composition**: Product cut off, awkward angle, too much empty space, distracting background
    - **Unprofessional**: Poor lighting, shadows in wrong direction, floating objects, unrealistic scale
 
-IMPORTANT: Be RUTHLESS about image quality. A marketplace image with visible AI prompt text, gibberish, or watermarks is a ZERO — it CANNOT be used. Flag it clearly as "CRITICAL: Image has visible AI-generated text/prompt artifacts — must be replaced."
+IMPORTANT: Be ABSOLUTELY RUTHLESS. Check EVERY image for text overlays — many AI-generated images have their generation prompt leaked as visible text at the bottom of the image. This is the most common and most damaging defect. Even a single image with visible prompt text should be flagged as CRITICAL. A marketplace listing with a hero image showing garbled text will destroy customer trust instantly.
 
 Then provide an OVERALL VISUAL ASSESSMENT:
 - Image variety: Do images cover studio, lifestyle, and USP graphic types? The ideal set is 3 studio + 4 lifestyle + 4 USP graphics = 11 total.

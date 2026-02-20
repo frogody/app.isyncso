@@ -992,7 +992,7 @@ const STATUS_CONFIG = {
   critical: { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', label: 'Critical' },
 };
 
-function AuditSidebar({ audit, auditing, onRunAudit, onFixWithAI, fixing, fixPlan, t }) {
+function AuditSidebar({ audit, auditing, onRunAudit, onBuildFixPlan, onApproveFixPlan, fixing, fixPlan, t }) {
   const scoreColor = audit?.overall_score >= 80 ? 'text-emerald-400' : audit?.overall_score >= 50 ? 'text-amber-400' : 'text-red-400';
   const scoreBg = audit?.overall_score >= 80 ? 'bg-emerald-500/10' : audit?.overall_score >= 50 ? 'bg-amber-500/10' : 'bg-red-500/10';
   const scoreRingColor = audit?.overall_score >= 80 ? 'stroke-emerald-400' : audit?.overall_score >= 50 ? 'stroke-amber-400' : 'stroke-red-400';
@@ -1182,14 +1182,90 @@ function AuditSidebar({ audit, auditing, onRunAudit, onFixWithAI, fixing, fixPla
             {fixing === 'planning' && (
               <div className={cn('rounded-lg border p-3 text-center', t('bg-cyan-50/50 border-cyan-200', 'bg-cyan-500/5 border-cyan-500/10'))}>
                 <Loader2 className="w-4 h-4 animate-spin text-cyan-400 mx-auto mb-1.5" />
-                <span className={cn('text-[11px] font-medium', 'text-cyan-400')}>Analyzing issues...</span>
+                <span className={cn('text-[11px] font-medium', 'text-cyan-400')}>Building fix plan...</span>
               </div>
             )}
 
+            {/* Plan review — user must approve before execution */}
+            {fixPlan && fixing === 'review' && (
+              <div className="space-y-2.5">
+                <div className={cn('rounded-lg border p-2.5', t('bg-cyan-50/50 border-cyan-200', 'bg-cyan-500/5 border-cyan-500/10'))}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={cn('text-[9px] font-semibold uppercase tracking-wider', 'text-cyan-500')}>Fix Plan</span>
+                    <span className={cn('text-[9px] font-medium', t('text-slate-400', 'text-zinc-600'))}>
+                      {fixPlan.actions.length} action{fixPlan.actions.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {fixPlan.actions.map((action) => (
+                      <div key={action.id} className={cn(
+                        'p-2 rounded-lg border',
+                        t('bg-white/60 border-slate-200', 'bg-white/[0.03] border-white/5')
+                      )}>
+                        <div className="flex items-start gap-1.5">
+                          <Circle className={cn('w-2.5 h-2.5 flex-shrink-0 mt-0.5', t('text-slate-300', 'text-zinc-600'))} />
+                          <div className="min-w-0 flex-1">
+                            <span className={cn('text-[10px] font-semibold block', t('text-slate-700', 'text-zinc-200'))}>
+                              {action.label}
+                            </span>
+                            <span className={cn('text-[9px] block mt-0.5 leading-snug', t('text-slate-500', 'text-zinc-500'))}>
+                              {action.description}
+                            </span>
+                            {action.details?.length > 0 && (
+                              <div className="mt-1 space-y-0.5">
+                                {action.details.map((d, i) => (
+                                  <div key={i} className="flex items-start gap-1">
+                                    <Sparkles className="w-2 h-2 text-cyan-400/60 mt-0.5 flex-shrink-0" />
+                                    <span className={cn('text-[8px] leading-snug', t('text-slate-400', 'text-zinc-600'))}>{d}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {action.credits > 0 && (
+                            <span className={cn('text-[8px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0', t('bg-cyan-100 text-cyan-700', 'bg-cyan-500/10 text-cyan-400'))}>
+                              {action.credits} cr
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Credit estimate */}
+                  <div className={cn('mt-2 pt-2 border-t flex items-center justify-between', t('border-slate-200', 'border-white/5'))}>
+                    <span className={cn('text-[9px] font-medium', t('text-slate-500', 'text-zinc-500'))}>Estimated cost</span>
+                    <span className={cn('text-[11px] font-bold', 'text-cyan-400')}>{fixPlan.totalCredits || 0} credits</span>
+                  </div>
+                </div>
+                {/* Approve / Cancel */}
+                <button
+                  onClick={onApproveFixPlan}
+                  className={cn(
+                    'w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-[11px] font-semibold transition-all',
+                    'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white',
+                    'shadow-sm shadow-cyan-500/10'
+                  )}
+                >
+                  <Wand2 className="w-3.5 h-3.5" />
+                  Approve & Execute ({fixPlan.totalCredits || 0} credits)
+                </button>
+                <button
+                  onClick={() => { onBuildFixPlan && onBuildFixPlan('cancel'); }}
+                  className={cn(
+                    'w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium transition-all border',
+                    t('border-slate-200 text-slate-500 hover:text-slate-700', 'border-white/10 text-zinc-500 hover:text-zinc-300')
+                  )}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {/* Executing — show progress */}
             {fixPlan && fixing === 'executing' && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className={cn('text-[9px] font-semibold uppercase tracking-wider', 'text-cyan-500')}>Fix Plan</span>
+                  <span className={cn('text-[9px] font-semibold uppercase tracking-wider', 'text-cyan-500')}>Executing</span>
                   <span className={cn('text-[9px] font-medium', t('text-slate-400', 'text-zinc-600'))}>
                     {fixPlan.actions.filter((a) => a.status === 'done').length}/{fixPlan.actions.length}
                   </span>
@@ -1216,15 +1292,14 @@ function AuditSidebar({ audit, auditing, onRunAudit, onFixWithAI, fixing, fixPla
                         'flex items-start gap-2 p-2 rounded-lg border transition-colors',
                         action.status === 'active'
                           ? t('bg-cyan-50/60 border-cyan-200', 'bg-cyan-500/5 border-cyan-500/15')
-                          : t('bg-slate-50/50 border-slate-100', 'bg-white/[0.02] border-white/5')
+                          : action.status === 'done'
+                            ? t('bg-emerald-50/30 border-emerald-200', 'bg-emerald-500/5 border-emerald-500/10')
+                            : t('bg-slate-50/50 border-slate-100', 'bg-white/[0.02] border-white/5')
                       )}>
                         <StatusIcon className={cn('w-3 h-3 flex-shrink-0 mt-0.5', statusColor)} />
                         <div className="min-w-0 flex-1">
                           <span className={cn('text-[10px] font-medium block truncate', t('text-slate-700', 'text-zinc-300'))}>
                             {action.label}
-                          </span>
-                          <span className={cn('text-[9px] block truncate', t('text-slate-400', 'text-zinc-600'))}>
-                            {action.description}
                           </span>
                           {action.imageUrl && (
                             <img src={action.imageUrl} alt="" className="w-10 h-10 rounded mt-1 object-cover border border-white/10" />
@@ -1245,10 +1320,10 @@ function AuditSidebar({ audit, auditing, onRunAudit, onFixWithAI, fixing, fixPla
               </div>
             )}
 
-            {/* Fix with AI button — only when audit done and score < 90 */}
+            {/* Fix with AI button — only when audit done, score < 90, not fixing */}
             {!fixing && audit.overall_score < 90 && (
               <button
-                onClick={onFixWithAI}
+                onClick={onBuildFixPlan}
                 className={cn(
                   'w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all',
                   'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white',
@@ -1294,7 +1369,8 @@ export default function ListingPreview({
   onTabChange,
   onUpdate,
   onGenerateSlotImage,
-  onFixWithAI,
+  onBuildFixPlan,
+  onExecuteFixPlan,
 }) {
   const { t } = useTheme();
   const [saveStatus, setSaveStatus] = useState('idle');
@@ -1377,18 +1453,33 @@ export default function ListingPreview({
     }
   }, [listing, product, details]);
 
-  const handleFixWithAI = useCallback(async () => {
-    if (!onFixWithAI || !auditData) return;
+  const handleBuildFixPlan = useCallback(async (cancelSignal) => {
+    if (cancelSignal === 'cancel') {
+      setFixing(null);
+      setFixPlan(null);
+      return;
+    }
+    if (!onBuildFixPlan || !auditData) return;
     setFixing('planning');
     setFixPlan(null);
     try {
-      await onFixWithAI(auditData, { setFixing, setFixPlan });
+      await onBuildFixPlan(auditData, { setFixing, setFixPlan });
     } catch (err) {
-      console.error('[ListingPreview] Fix failed:', err);
+      console.error('[ListingPreview] Build plan failed:', err);
       setFixing(null);
       setFixPlan(null);
     }
-  }, [onFixWithAI, auditData]);
+  }, [onBuildFixPlan, auditData]);
+
+  const handleApproveFixPlan = useCallback(async () => {
+    if (!onExecuteFixPlan || !fixPlan) return;
+    try {
+      await onExecuteFixPlan(fixPlan, { setFixing, setFixPlan });
+    } catch (err) {
+      console.error('[ListingPreview] Execute plan failed:', err);
+      setFixing(null);
+    }
+  }, [onExecuteFixPlan, fixPlan]);
 
   // Show generation view
   if (generatingProgress) {
@@ -1525,7 +1616,8 @@ export default function ListingPreview({
           audit={auditData}
           auditing={auditing}
           onRunAudit={handleAudit}
-          onFixWithAI={handleFixWithAI}
+          onBuildFixPlan={handleBuildFixPlan}
+          onApproveFixPlan={handleApproveFixPlan}
           fixing={fixing}
           fixPlan={fixPlan}
           t={t}

@@ -258,7 +258,7 @@ function OverviewSection({
             featuredImage={localFeatured}
             onImagesChange={handleImagesChange}
             onFeaturedChange={handleFeaturedChange}
-            maxImages={10}
+            maxImages={50}
           />
         </div>
 

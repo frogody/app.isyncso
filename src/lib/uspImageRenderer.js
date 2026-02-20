@@ -34,7 +34,7 @@ function buildFeatureGridPrompt({ productIdentity, productDesc, features, brandN
   return [
     `Create a professional e-commerce USP infographic image for ${productIdentity}.`,
     productDesc ? `Product description: ${productDesc.substring(0, 200)}.` : '',
-    `The product must look EXACTLY like the reference image(s) — preserve every detail of shape, color, material, branding, and proportions.`,
+    `PRODUCT CONSISTENCY IS CRITICAL: The product shown MUST be an EXACT visual replica of the reference image(s). Do NOT alter the product shape, color, material, texture, branding, logo placement, or proportions in ANY way. The viewer must instantly recognize it as the same physical product. This is non-negotiable.`,
     ``,
     `DESIGN LAYOUT:`,
     `- Dark navy blue gradient background (#0f172a to #1e293b)`,
@@ -55,7 +55,7 @@ function buildSpecsCalloutPrompt({ productIdentity, productDesc, features, headl
   return [
     `Create a professional e-commerce specifications callout infographic for ${productIdentity}.`,
     productDesc ? `Product description: ${productDesc.substring(0, 200)}.` : '',
-    `The product must look EXACTLY like the reference image(s) — preserve every detail.`,
+    `PRODUCT CONSISTENCY IS CRITICAL: The product shown MUST be an EXACT visual replica of the reference image(s). Do NOT change its shape, color, material, texture, branding, or proportions. The product identity must be 100% preserved.`,
     ``,
     `DESIGN LAYOUT:`,
     `- Dark blue-black background with subtle radial gradient`,
@@ -76,7 +76,7 @@ function buildBenefitHighlightPrompt({ productIdentity, productDesc, headline, d
   return [
     `Create a professional e-commerce benefit highlight infographic for ${productIdentity}.`,
     productDesc ? `Product description: ${productDesc.substring(0, 200)}.` : '',
-    `The product must look EXACTLY like the reference image(s) — preserve every detail.`,
+    `PRODUCT CONSISTENCY IS CRITICAL: The product shown MUST be an EXACT visual replica of the reference image(s). Do NOT change its shape, color, material, texture, branding, or proportions. The product identity must be 100% preserved.`,
     ``,
     `DESIGN LAYOUT:`,
     `- Dark navy gradient background with a subtle accent color stripe at the top edge`,
@@ -96,7 +96,7 @@ function buildMultiFeaturePrompt({ productIdentity, productDesc, features, headl
   return [
     `Create a professional e-commerce multi-feature showcase infographic for ${productIdentity}.`,
     productDesc ? `Product description: ${productDesc.substring(0, 200)}.` : '',
-    `The product must look EXACTLY like the reference image(s) — preserve every detail.`,
+    `PRODUCT CONSISTENCY IS CRITICAL: The product shown MUST be an EXACT visual replica of the reference image(s). Do NOT change its shape, color, material, texture, branding, or proportions. The product identity must be 100% preserved.`,
     ``,
     `DESIGN LAYOUT:`,
     `- Dark navy background with subtle concentric circle decorative elements`,

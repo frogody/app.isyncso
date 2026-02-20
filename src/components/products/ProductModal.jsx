@@ -1103,7 +1103,7 @@ export default function ProductModal({
                     featuredImage={formData.featured_image}
                     onImagesChange={(images) => setFormData(prev => ({ ...prev, gallery: images }))}
                     onFeaturedChange={(image) => setFormData(prev => ({ ...prev, featured_image: image }))}
-                    maxImages={10}
+                    maxImages={50}
                   />
                 </div>
 
