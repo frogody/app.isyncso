@@ -109,33 +109,14 @@ DECLARE
   v_5b_btw NUMERIC(15,2) := 0;
 BEGIN
   -- ── SALES RUBRICS (from invoices) ──────────────────────────────────────
-
-  -- 1a: Hoog tarief (21%)
-  SELECT COALESCE(SUM(COALESCE(subtotal, total - COALESCE(tax_amount, tax, 0), 0)), 0),
-         COALESCE(SUM(COALESCE(tax_amount, tax, 0)), 0)
-  INTO v_row
-  FROM invoices
-  WHERE company_id = p_company_id
-    AND btw_rubric = '1a'
-    AND COALESCE(issued_at::date, created_at::date) BETWEEN p_start_date AND p_end_date
-    AND status NOT IN ('canceled', 'void', 'draft');
-  v_result := v_result || jsonb_build_object('1a', jsonb_build_object('omzet', v_row.sum, 'btw', v_row.sum));
-
-  -- Re-query properly (the above INTO doesn't work with two columns into RECORD like that)
-  -- Let me use a cleaner approach with CTEs
-
-  -- Start fresh with a proper approach
-  v_result := '{}'::JSONB;
-
-  -- Collect all invoice rubrics
   FOR v_row IN
     SELECT btw_rubric,
-           COALESCE(SUM(COALESCE(subtotal, total - COALESCE(tax_amount, tax, 0), 0)), 0) AS omzet,
-           COALESCE(SUM(COALESCE(tax_amount, tax, 0)), 0) AS btw
+           COALESCE(SUM(COALESCE(subtotal, total - COALESCE(tax_amount, 0), 0)), 0) AS omzet,
+           COALESCE(SUM(COALESCE(tax_amount, 0)), 0) AS btw
     FROM invoices
     WHERE company_id = p_company_id
       AND btw_rubric IS NOT NULL
-      AND COALESCE(issued_at::date, created_at::date) BETWEEN p_start_date AND p_end_date
+      AND created_at::date BETWEEN p_start_date AND p_end_date
       AND status NOT IN ('canceled', 'void', 'draft')
     GROUP BY btw_rubric
   LOOP
@@ -195,18 +176,18 @@ BEGIN
 
   FOR v_row IN
     SELECT btw_rubric,
-           COALESCE(SUM(COALESCE(subtotal, total_amount - COALESCE(tax_amount, 0), 0)), 0) AS omzet,
+           COALESCE(SUM(COALESCE(amount, 0)), 0) AS omzet,
            COALESCE(SUM(
              CASE
                WHEN tax_mechanism IN ('reverse_charge_eu','reverse_charge_non_eu','reverse_charge_domestic')
-               THEN ROUND(COALESCE(subtotal, total_amount - COALESCE(tax_amount, 0), 0) * COALESCE(self_assess_rate, 21) / 100, 2)
-               ELSE COALESCE(tax_amount, 0)
+               THEN ROUND(COALESCE(amount, 0) * COALESCE(self_assess_rate, 21) / 100, 2)
+               ELSE 0
              END
            ), 0) AS btw
     FROM bills
     WHERE company_id = p_company_id
       AND btw_rubric IS NOT NULL
-      AND bill_date BETWEEN p_start_date AND p_end_date
+      AND COALESCE(issued_date, created_at::date) BETWEEN p_start_date AND p_end_date
       AND status NOT IN ('draft', 'void')
     GROUP BY btw_rubric
   LOOP
@@ -248,19 +229,17 @@ BEGIN
     AND status NOT IN ('draft', 'archived')
     AND COALESCE(tax_mechanism, 'standard_btw') NOT IN ('exempt', 'import_no_vat');
 
-  -- From bills: same logic
+  -- From bills: same logic (bills only has amount, no separate tax_amount)
   SELECT v_5b_btw + COALESCE(SUM(
     CASE
       WHEN tax_mechanism IN ('reverse_charge_eu','reverse_charge_non_eu','reverse_charge_domestic')
-      THEN ROUND(COALESCE(subtotal, total_amount - COALESCE(tax_amount, 0), 0) * COALESCE(self_assess_rate, 21) / 100, 2)
-      WHEN tax_mechanism = 'standard_btw' OR tax_mechanism IS NULL
-      THEN COALESCE(tax_amount, 0)
+      THEN ROUND(COALESCE(amount, 0) * COALESCE(self_assess_rate, 21) / 100, 2)
       ELSE 0
     END
   ), 0) INTO v_5b_btw
   FROM bills
   WHERE company_id = p_company_id
-    AND bill_date BETWEEN p_start_date AND p_end_date
+    AND COALESCE(issued_date, created_at::date) BETWEEN p_start_date AND p_end_date
     AND status NOT IN ('draft', 'void')
     AND COALESCE(tax_mechanism, 'standard_btw') NOT IN ('exempt', 'import_no_vat');
 
