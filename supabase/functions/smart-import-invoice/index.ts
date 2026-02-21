@@ -88,7 +88,7 @@ interface ExtractionResult {
 
 // ─── LLM Extraction (stock-purchases pattern) ──────────────────────────────
 
-const EXTRACTION_PROMPT = `You are an expert invoice data extraction system. Extract structured data from the invoice text below.
+const EXTRACTION_PROMPT = `You are an expert invoice data extraction system. Extract structured data from this invoice text.
 
 CRITICAL RULES:
 1. Extract ONLY what you can clearly see in the text - NEVER guess or infer
@@ -96,11 +96,11 @@ CRITICAL RULES:
 3. For dates, use ISO format (YYYY-MM-DD)
 4. If a field is not visible or unclear, use null
 5. Line items must have description, quantity, unit_price, and line_total
-6. The supplier/vendor is the company that SENT the invoice (NOT the "Bill to" / "Factuur aan" recipient)
+6. IMPORTANT — Identifying the supplier: The supplier is the company that ISSUED/SENT the invoice. It is NOT the "Bill to" / "Factuur aan" company (that is the buyer/recipient). In invoice text the sender is usually listed FIRST (top-left) with their address, and the "Bill to" section contains the recipient. Look for patterns like "Company A ... Bill to ... Company B" — Company A is the supplier.
 7. For IBAN, extract the full bank account number if present
 8. For VAT numbers, extract exactly as shown (e.g., NL123456789B01, DE123456789)
 
-Respond with ONLY a JSON object (no markdown, no explanation) in this exact format:
+Return ONLY a valid JSON object in this exact format:
 {
   "supplier_name": "string or null",
   "supplier_address": "string or null",
@@ -152,10 +152,15 @@ async function extractFromText(
         model: "llama-3.1-8b-instant",
         messages: [
           {
+            role: "system",
+            content: "You are a data extraction tool. You ONLY output valid JSON. You extract data from the provided text. You NEVER invent data.",
+          },
+          {
             role: "user",
             content: EXTRACTION_PROMPT + `\n\nHere is the invoice text:\n\n${pdfText}`,
           },
         ],
+        response_format: { type: "json_object" },
         max_tokens: 4096,
         temperature: 0,
       }),
