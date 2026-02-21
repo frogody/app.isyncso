@@ -285,3 +285,9 @@ verify_jwt = false
 
 [functions.store-builder-ai]
 verify_jwt = false
+
+[functions.manage-custom-domain]
+verify_jwt = false
+
+[functions.b2b-order-webhook]
+verify_jwt = false
