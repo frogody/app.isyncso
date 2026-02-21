@@ -169,11 +169,21 @@ const GL_CODES: Record<string, string> = {
 // ─── LLM Extraction ──────────────────────────────────────────────────────────
 
 const EXTRACTION_PROMPT = `You are a data-copying machine. Copy text from the invoice into JSON fields.
-Rules:
+
+CRITICAL RULES for identifying SUPPLIER vs BUYER:
+- The SUPPLIER (vendor) is the company that ISSUED/SENT this invoice. They are the seller.
+- The BUYER is the company being BILLED. They appear after "Bill to", "Billed to", "Factuur aan", "Invoice to", "Customer", "Client".
+- The supplier name usually appears FIRST on the invoice, often at the top-left, BEFORE any "Bill to" section.
+- The buyer's address, email, and VAT number appear AFTER the "Bill to" label.
+- NEVER put the buyer's name in supplier_name or the buyer's details in supplier fields.
+- If you see "Bill to: ACME Corp", then ACME Corp is the BUYER, not the supplier.
+
+Other rules:
 - Copy ONLY text you see. If a field is not visible, use null.
-- The SUPPLIER is who SENT the invoice (usually first/top). NOT the "Bill to" entity.
 - Do not interpret, classify, or add information not present.
 - Dates: YYYY-MM-DD. Amounts: numbers only (no currency symbols).
+- For buyer_vat: copy the VAT number that appears in the "Bill to" section.
+- For supplier_vat: copy the VAT number that appears near the supplier's name/address (NOT in "Bill to").
 
 Respond with ONLY a JSON object (no markdown, no explanation):
 {"supplier_name":null,"supplier_address":null,"supplier_country":null,"supplier_vat":null,"supplier_kvk":null,"supplier_email":null,"supplier_phone":null,"supplier_website":null,"supplier_iban":null,"buyer_name":null,"buyer_vat":null,"document_label":null,"invoice_number":null,"invoice_date":null,"due_date":null,"payment_terms_days":null,"subtotal":null,"tax_lines":[{"rate_percent":0,"base_amount":0,"tax_amount":0}],"total":null,"currency":null,"line_items":[{"description":"","quantity":1,"unit_price":0,"tax_rate_percent":null,"line_total":0}],"payment_reference":null,"notes_on_invoice":null,"confidence":0.9}`;
@@ -384,6 +394,123 @@ function sanitizeExtraction(data: FlatExtraction, pdfText: string): FlatExtracti
     }
   }
 
+  // ── Supplier/Buyer swap detection ──────────────────────────────────────────
+  // If the LLM confused supplier and buyer (common in two-column PDF layouts),
+  // detect and fix it.
+  if (data.supplier_name && data.buyer_name) {
+    const pdfLower = pdfText.toLowerCase();
+    const supplierLower = data.supplier_name.toLowerCase().trim();
+    const buyerLower = data.buyer_name.toLowerCase().trim();
+
+    // Find "Bill to" / "Billed to" / "Invoice to" / "Factuur aan" marker
+    const billToMatch = pdfLower.match(/\b(bill\s*to|billed\s*to|invoice\s*to|factuur\s*aan|customer|client)\b/);
+    const billToIdx = billToMatch ? pdfLower.indexOf(billToMatch[0]) : -1;
+
+    let shouldSwap = false;
+
+    if (billToIdx !== -1) {
+      // Check if supplier_name appears AFTER "Bill to" (it shouldn't)
+      const afterBillTo = pdfLower.substring(billToIdx);
+      const supplierInBuyerSection = afterBillTo.indexOf(supplierLower) !== -1;
+      const buyerBeforeBillTo = pdfLower.substring(0, billToIdx).includes(buyerLower);
+
+      if (supplierInBuyerSection && buyerBeforeBillTo) {
+        shouldSwap = true;
+        console.log(`[SANITIZE] Supplier "${data.supplier_name}" found in Bill-to section, buyer "${data.buyer_name}" found before it — swapping`);
+      } else if (supplierInBuyerSection && !pdfLower.substring(0, billToIdx).includes(supplierLower)) {
+        // supplier_name only appears after "Bill to", not before
+        shouldSwap = true;
+        console.log(`[SANITIZE] Supplier "${data.supplier_name}" only found after Bill-to — swapping`);
+      }
+    }
+
+    // Additional heuristic: if supplier has the buyer's email domain or vice versa
+    if (!shouldSwap && data.supplier_email && data.buyer_name) {
+      const supplierEmailDomain = data.supplier_email.split("@")[1]?.toLowerCase() || "";
+      if (supplierEmailDomain && buyerLower.includes(supplierEmailDomain.split(".")[0])) {
+        // supplier_email domain matches buyer_name — likely swapped
+        shouldSwap = true;
+        console.log(`[SANITIZE] Supplier email domain matches buyer name — swapping`);
+      }
+    }
+
+    if (shouldSwap) {
+      const tmpName = data.supplier_name;
+      const tmpAddress = data.supplier_address;
+      const tmpCountry = data.supplier_country;
+      const tmpVat = data.supplier_vat;
+      const tmpKvk = data.supplier_kvk;
+      const tmpEmail = data.supplier_email;
+      const tmpPhone = data.supplier_phone;
+      const tmpWebsite = data.supplier_website;
+      const tmpIban = data.supplier_iban;
+
+      data.supplier_name = data.buyer_name;
+      data.buyer_name = tmpName;
+
+      // Try to extract supplier details from the text before "Bill to"
+      // For now, swap what we have and try to recover from the PDF text
+      if (billToIdx !== -1) {
+        const beforeBillTo = pdfText.substring(0, billToIdx).trim();
+        // Look for an email in the supplier section
+        const emailMatch = beforeBillTo.match(/[\w.+-]+@[\w.-]+\.\w+/);
+        if (emailMatch) {
+          data.supplier_email = emailMatch[0];
+        } else {
+          data.supplier_email = null;
+        }
+        // Look for an address (lines with numbers, streets, cities)
+        const addressLines = beforeBillTo.split(/\n/).filter(l => l.trim().length > 5);
+        // The supplier name is buyer_name (swapped), find address lines after the name
+        const nameIdx = beforeBillTo.toLowerCase().indexOf(data.supplier_name!.toLowerCase());
+        if (nameIdx !== -1) {
+          const afterName = beforeBillTo.substring(nameIdx + data.supplier_name!.length).trim();
+          const addrLines = afterName.split(/\n/).map(l => l.trim()).filter(l => l.length > 3 && !l.match(/^(invoice|date|due|number)/i));
+          if (addrLines.length > 0) {
+            data.supplier_address = addrLines.join(", ");
+          }
+        }
+      }
+
+      // Buyer gets the old supplier's details
+      data.buyer_vat = tmpVat || data.buyer_vat;
+
+      // Clear fields that belonged to the buyer but got placed on supplier
+      data.supplier_vat = null; // Will be re-evaluated by validateSupplierVat
+      data.supplier_kvk = null;
+      data.supplier_iban = null;
+
+      // Try to find supplier's country from their address
+      if (data.supplier_address) {
+        const addr = data.supplier_address.toLowerCase();
+        if (/united states|usa|\bca\s+\d{5}|\bny\s+\d{5}/.test(addr)) data.supplier_country = "US";
+        else if (/netherlands|nederland/.test(addr)) data.supplier_country = "NL";
+        else if (/germany|deutschland/.test(addr)) data.supplier_country = "DE";
+        else if (/united kingdom|uk\b/.test(addr)) data.supplier_country = "GB";
+        else if (/france/.test(addr)) data.supplier_country = "FR";
+        else data.supplier_country = tmpCountry;
+      }
+    }
+  }
+
+  // If supplier_name is still empty but buyer_name exists, check if the PDF has a clear
+  // company name before any "Bill to" marker
+  if (!data.supplier_name && data.buyer_name) {
+    const pdfLower = pdfText.toLowerCase();
+    const billToMatch = pdfLower.match(/\b(bill\s*to|billed\s*to|invoice\s*to|factuur\s*aan)\b/);
+    if (billToMatch) {
+      const beforeBillTo = pdfText.substring(0, pdfLower.indexOf(billToMatch[0])).trim();
+      // First substantial line that isn't "Invoice" or a date
+      const lines = beforeBillTo.split(/\n/).map(l => l.trim()).filter(l =>
+        l.length > 2 && !/^(invoice|date|due|number|page|\d)/i.test(l)
+      );
+      if (lines.length > 0) {
+        data.supplier_name = lines[0];
+        console.log(`[SANITIZE] Recovered supplier name from pre-Bill-to text: "${data.supplier_name}"`);
+      }
+    }
+  }
+
   // Normalize currency
   if (data.currency) {
     const c = data.currency.trim();
@@ -538,7 +665,7 @@ function isReducedRateCategory(text: string): boolean {
 }
 
 function isLikelyService(text: string): boolean {
-  return /\b(subscription|abonnement|license|licentie|hosting|saas|cloud|platform|consult|advies|support|maintenance|onderhoud|service|dienst)\b/i.test(text);
+  return /\b(subscription|abonnement|license|licentie|hosting|saas|cloud|platform|consult|advies|support|maintenance|onderhoud|service|dienst|plan\b|api|credits?\b|seats?\b|per\s*(month|year|maand|jaar))\b/i.test(text);
 }
 
 function determineTaxDecision(
@@ -697,9 +824,13 @@ function detectRecurringFromText(
     .toLowerCase();
 
   const recurringKeywords =
-    /\b(subscri|monthly plan|annual plan|yearly plan|quarterly plan|recurring|membership|licentie|abonnement|maandelijks|jaarlijks|per maand|per jaar|per kwartaal)\b/;
+    /\b(subscri|plan\b|monthly plan|annual plan|yearly plan|quarterly plan|recurring|membership|licentie|abonnement|maandelijks|jaarlijks|per maand|per jaar|per kwartaal)\b/;
 
-  if (!recurringKeywords.test(text)) {
+  // Date range pattern like "Feb 10–Mar 10" or "Jan 1 - Feb 1" = subscription period
+  const dateRangePattern = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d{1,2}\s*[–—-]\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d{1,2}/i;
+  const hasDateRange = dateRangePattern.test(text);
+
+  if (!recurringKeywords.test(text) && !hasDateRange) {
     return { is_recurring: false, frequency: null };
   }
 
