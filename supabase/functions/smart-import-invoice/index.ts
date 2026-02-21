@@ -123,6 +123,7 @@ interface TaxDecision {
   self_assess_rate: number;
   explanation: string;
   supplier_country: string;
+  btw_rubric: string | null;
 }
 
 type DocumentType = "expense" | "bill" | "credit_note" | "proforma";
@@ -747,6 +748,7 @@ function determineTaxDecision(
       self_assess_rate: 0,
       explanation: `Standaard BTW (${invoiceRate}%) — binnenlandse leverancier`,
       supplier_country: "NL",
+      btw_rubric: null, // NL purchase: no rubric, contributes to 5b only
     };
   }
 
@@ -758,6 +760,7 @@ function determineTaxDecision(
       self_assess_rate: selfAssessRate,
       explanation: `Intracommunautaire verwerving — verlegde BTW (${selfAssessRate}%) — leverancier ${country.code}`,
       supplier_country: country.code,
+      btw_rubric: "4b", // EU non-NL service → rubriek 4b
     };
   }
 
@@ -775,6 +778,7 @@ function determineTaxDecision(
         self_assess_rate: selfAssessRate,
         explanation: `Dienst van buiten de EU — verlegde BTW (${selfAssessRate}%) — leverancier ${country.code}. Aangeven in rubriek 4a BTW-aangifte, aftrekbaar als voorbelasting.`,
         supplier_country: country.code,
+        btw_rubric: "4a", // Non-EU service → rubriek 4a
       };
     }
     return {
@@ -783,6 +787,7 @@ function determineTaxDecision(
       self_assess_rate: 0,
       explanation: `Import van buiten de EU — geen BTW (douane apart) — leverancier ${country.code}`,
       supplier_country: country.code,
+      btw_rubric: null, // Import goods: customs handles VAT
     };
   }
 
@@ -802,6 +807,7 @@ function determineTaxDecision(
         ? `Vermoedelijk buitenlandse dienst (geen BTW-nr, geen BTW op factuur) — verlegde BTW (${selfAssessRate}%). Aangeven in rubriek 4a.`
         : `Vermoedelijk buitenlandse dienst — verlegde BTW (${selfAssessRate}%)`,
       supplier_country: "UNKNOWN",
+      btw_rubric: "4a", // Likely non-EU service → rubriek 4a
     };
   }
 
@@ -813,6 +819,7 @@ function determineTaxDecision(
       self_assess_rate: selfAssessRate,
       explanation: `Geen BTW-nummer en geen BTW op factuur — vermoedelijk buitenlandse leverancier — verlegde BTW (${selfAssessRate}%)`,
       supplier_country: "UNKNOWN",
+      btw_rubric: "4a", // No VAT info → assume non-EU → rubriek 4a
     };
   }
 
@@ -823,6 +830,7 @@ function determineTaxDecision(
     self_assess_rate: 0,
     explanation: "Standaard BTW (21%) — land onbekend",
     supplier_country: "UNKNOWN",
+    btw_rubric: null, // Standard BTW fallback: contributes to 5b only
   };
 }
 

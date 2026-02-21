@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/api/supabaseClient';
-import { Percent, Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, Calendar, FileText, Check, X, Sun, Moon, MoreVertical, AlertCircle } from 'lucide-react';
+import { Percent, Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, Calendar, FileText, Check, X, Sun, Moon, MoreVertical, AlertCircle, Calculator } from 'lucide-react';
+import FinanceBTWAangifte from './FinanceBTWAangifte';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -657,10 +658,23 @@ export default function FinanceTaxRates({ embedded = false }) {
             <Calendar className="w-4 h-4 inline-block mr-2 -mt-0.5" />
             Tax Periods
           </button>
+          <button
+            onClick={() => setActiveTab('btw')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'btw'
+                ? 'bg-blue-600 text-white'
+                : ft('text-slate-500 hover:text-slate-700 hover:bg-slate-100', 'text-zinc-400 hover:text-white hover:bg-white/[0.06]')
+            }`}
+          >
+            <Calculator className="w-4 h-4 inline-block mr-2 -mt-0.5" />
+            BTW Aangifte
+          </button>
         </div>
 
         {/* Tab Content */}
-        {activeTab === 'rates' ? renderTaxRatesTab() : renderTaxPeriodsTab()}
+        {activeTab === 'rates' && renderTaxRatesTab()}
+        {activeTab === 'periods' && renderTaxPeriodsTab()}
+        {activeTab === 'btw' && <FinanceBTWAangifte embedded />}
 
         {/* ── Tax Rate Modal ──────────────────────────────────────────── */}
         <Dialog open={rateModalOpen} onOpenChange={setRateModalOpen}>

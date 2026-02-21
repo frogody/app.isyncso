@@ -28,6 +28,8 @@ import { toast } from 'sonner';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
+import CountrySelector from '@/components/finance/CountrySelector';
+import { determineTaxRulesForPurchase } from '@/lib/btwRules';
 
 const EXPENSE_CATEGORIES = [
   { value: 'software', label: 'Software & Tools', color: 'blue', icon: Monitor, bgClass: 'bg-blue-500/10' },
@@ -74,7 +76,11 @@ export default function FinanceExpenses({ embedded = false }) {
     receipt_url: '',
     is_recurring: false,
     tax_deductible: false,
-    tax_rate: 21
+    tax_rate: 21,
+    supplier_country: 'NL',
+    tax_mechanism: 'standard_btw',
+    self_assess_rate: 0,
+    btw_rubric: null,
   });
 
   useEffect(() => {
@@ -224,7 +230,11 @@ export default function FinanceExpenses({ embedded = false }) {
       receipt_url: '',
       is_recurring: false,
       tax_deductible: false,
-      tax_rate: 21
+      tax_rate: 21,
+      supplier_country: 'NL',
+      tax_mechanism: 'standard_btw',
+      self_assess_rate: 0,
+      btw_rubric: null,
     });
     setEditMode(false);
     setSelectedExpense(null);
@@ -255,7 +265,12 @@ export default function FinanceExpenses({ embedded = false }) {
         receipt_url: formData.receipt_url,
         is_recurring: formData.is_recurring,
         tax_deductible: formData.tax_deductible,
-        tax_amount: taxAmount
+        tax_amount: taxAmount,
+        // BTW classification
+        supplier_country: formData.supplier_country || 'NL',
+        tax_mechanism: formData.tax_mechanism || 'standard_btw',
+        self_assess_rate: formData.self_assess_rate || 0,
+        btw_rubric: formData.btw_rubric || null,
       };
 
       if (editMode && selectedExpense) {
@@ -264,7 +279,7 @@ export default function FinanceExpenses({ embedded = false }) {
 
         // Post updated expense to GL
         try {
-          const { data: glResult } = await supabase.rpc('post_expense', { p_expense_id: selectedExpense.id });
+          const { data: glResult } = await supabase.rpc('post_expense_with_tax', { p_expense_id: selectedExpense.id });
           if (glResult?.success && glResult?.message !== 'Expense already posted to GL') {
             toast.success('Posted to General Ledger');
           }
@@ -277,7 +292,7 @@ export default function FinanceExpenses({ embedded = false }) {
         // Post new expense to GL
         if (newExpense?.id) {
           try {
-            const { data: glResult } = await supabase.rpc('post_expense', { p_expense_id: newExpense.id });
+            const { data: glResult } = await supabase.rpc('post_expense_with_tax', { p_expense_id: newExpense.id });
             if (glResult?.success) {
               toast.success('Posted to General Ledger');
             } else if (glResult?.error) {
@@ -328,7 +343,11 @@ export default function FinanceExpenses({ embedded = false }) {
       receipt_url: expense.receipt_url || '',
       is_recurring: expense.is_recurring || false,
       tax_deductible: expense.tax_deductible || false,
-      tax_rate: expense.tax_rate ?? 21
+      tax_rate: expense.tax_rate ?? 21,
+      supplier_country: expense.supplier_country || 'NL',
+      tax_mechanism: expense.tax_mechanism || 'standard_btw',
+      self_assess_rate: expense.self_assess_rate || 0,
+      btw_rubric: expense.btw_rubric || null,
     });
     setEditMode(true);
     setShowCreateModal(true);
@@ -726,14 +745,34 @@ export default function FinanceExpenses({ embedded = false }) {
                 </select>
               </div>
 
-              <div>
-                <Label className={ft('text-slate-600', 'text-zinc-300')}>Vendor</Label>
-                <Input
-                  value={formData.vendor}
-                  onChange={(e) => setFormData(prev => ({ ...prev, vendor: e.target.value }))}
-                  className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
-                  placeholder="Vendor or merchant name"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className={ft('text-slate-600', 'text-zinc-300')}>Vendor</Label>
+                  <Input
+                    value={formData.vendor}
+                    onChange={(e) => setFormData(prev => ({ ...prev, vendor: e.target.value }))}
+                    className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
+                    placeholder="Vendor or merchant name"
+                  />
+                </div>
+                <div>
+                  <CountrySelector
+                    label="Supplier Country"
+                    value={formData.supplier_country}
+                    onChange={(code) => setFormData(prev => ({ ...prev, supplier_country: code }))}
+                    onTaxRulesChange={(rules) => {
+                      if (rules) {
+                        setFormData(prev => ({
+                          ...prev,
+                          tax_mechanism: rules.mechanism,
+                          self_assess_rate: rules.selfAssessRate,
+                          btw_rubric: rules.rubric,
+                        }));
+                      }
+                    }}
+                    mode="purchase"
+                  />
+                </div>
               </div>
 
               <div>

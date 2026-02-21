@@ -27,6 +27,8 @@ import { toast } from 'sonner';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 import { createPageUrl } from '@/utils';
+import CountrySelector from '@/components/finance/CountrySelector';
+import { determineTaxRulesForPurchase } from '@/lib/btwRules';
 
 // PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -426,6 +428,11 @@ export default function FinanceSmartImport() {
             attachment_url: formData.file_url || null,
             notes: formData.notes || null,
             created_by: user.id,
+            // BTW classification
+            tax_mechanism: taxDecision?.mechanism || 'standard_btw',
+            self_assess_rate: taxDecision?.self_assess_rate || 0,
+            supplier_country: formData.vendor_country || taxDecision?.supplier_country || null,
+            btw_rubric: taxDecision?.btw_rubric || null,
           })
           .select('id')
           .single();
@@ -455,6 +462,10 @@ export default function FinanceSmartImport() {
             status: 'issued',
             issued_at: new Date().toISOString(),
             created_by: user.id,
+            // BTW classification
+            btw_rubric: taxDecision?.btw_rubric || null,
+            tax_mechanism: taxDecision?.mechanism || null,
+            counterparty_country: formData.vendor_country || taxDecision?.supplier_country || null,
           })
           .select('id')
           .single();
@@ -506,6 +517,11 @@ export default function FinanceSmartImport() {
         review_status: documentType === 'proforma' ? 'pending' : 'approved',
         reviewed_by: documentType === 'proforma' ? null : user.id,
         reviewed_at: documentType === 'proforma' ? null : new Date().toISOString(),
+        // BTW classification
+        tax_mechanism: taxDecision?.mechanism || 'standard_btw',
+        self_assess_rate: taxDecision?.self_assess_rate || 0,
+        supplier_country: formData.vendor_country || taxDecision?.supplier_country || null,
+        btw_rubric: taxDecision?.btw_rubric || null,
       };
 
       const newExpense = await db.entities.Expense.create(expenseData);
@@ -889,12 +905,34 @@ export default function FinanceSmartImport() {
                       placeholder="e.g. NL91ABNA0417164300"
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div>
                     <Label className="text-xs text-zinc-500">Address</Label>
                     <Input
                       value={formData.vendor_address}
                       onChange={(e) => updateFormField('vendor_address', e.target.value)}
                       className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <CountrySelector
+                      label="Country"
+                      value={formData.vendor_country || taxDecision?.supplier_country || ''}
+                      onChange={(code) => {
+                        updateFormField('vendor_country', code);
+                        // Recompute tax rules when country changes
+                        if (code) {
+                          const rules = determineTaxRulesForPurchase(code);
+                          setTaxDecision(prev => ({
+                            ...prev,
+                            mechanism: rules.mechanism,
+                            self_assess_rate: rules.selfAssessRate,
+                            btw_rubric: rules.rubric,
+                            supplier_country: code,
+                            explanation: rules.explanation,
+                          }));
+                        }
+                      }}
+                      mode="purchase"
                     />
                   </div>
                 </CardContent>

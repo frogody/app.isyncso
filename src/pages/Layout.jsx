@@ -105,6 +105,7 @@ import {
   Signal,
   Upload,
   Store,
+  Calculator,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -479,6 +480,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Ledger', path: createPageUrl('FinanceLedger'), icon: BookOpen },
         { label: 'Payables', path: createPageUrl('FinancePayables'), icon: ScrollText },
         { label: 'Tax Rates', path: createPageUrl('FinanceTaxRates'), icon: Percent },
+        { label: 'BTW Aangifte', path: createPageUrl('FinanceBTWAangifte'), icon: Calculator },
         { label: 'Recurring', path: createPageUrl('FinanceRecurringInvoices'), icon: Repeat },
         { label: 'Credit Notes', path: createPageUrl('FinanceCreditNotes'), icon: ReceiptText },
         { label: 'Bank Accounts', path: createPageUrl('FinanceBankAccounts'), icon: Landmark },

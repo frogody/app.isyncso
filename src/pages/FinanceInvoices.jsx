@@ -32,6 +32,8 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import ContactSelector from '@/components/shared/ContactSelector';
+import CountrySelector from '@/components/finance/CountrySelector';
+import { determineTaxRulesForSale } from '@/lib/btwRules';
 
 export default function FinanceInvoices() {
   const { user, company: userCompany } = useUser();
@@ -76,7 +78,10 @@ export default function FinanceInvoices() {
     due_date: '',
     description: '',
     tax_rate: 21,
-    items: [{ description: '', quantity: 1, unit_price: '' }]
+    items: [{ description: '', quantity: 1, unit_price: '' }],
+    client_country: 'NL',
+    btw_rubric: null,
+    tax_mechanism: 'standard_btw',
   });
 
   useEffect(() => {
@@ -229,7 +234,10 @@ export default function FinanceInvoices() {
       due_date: '',
       description: '',
       tax_rate: 21,
-      items: [{ description: '', quantity: 1, unit_price: '' }]
+      items: [{ description: '', quantity: 1, unit_price: '' }],
+      client_country: 'NL',
+      btw_rubric: null,
+      tax_mechanism: 'standard_btw',
     });
     setEditMode(false);
   };
@@ -302,7 +310,11 @@ export default function FinanceInvoices() {
         status: 'draft',
         due_date: formData.due_date || null,
         description: formData.description,
-        items: validItems
+        items: validItems,
+        // BTW classification
+        client_country: formData.client_country || 'NL',
+        btw_rubric: formData.btw_rubric || null,
+        tax_mechanism: formData.tax_mechanism || 'standard_btw',
       };
 
       if (editMode && selectedInvoice) {
@@ -563,7 +575,10 @@ export default function FinanceInvoices() {
       due_date: invoice.due_date || '',
       description: invoice.description || '',
       tax_rate: invoice.tax_rate ?? 21,
-      items: invoice.items || [{ description: '', quantity: 1, unit_price: '' }]
+      items: invoice.items || [{ description: '', quantity: 1, unit_price: '' }],
+      client_country: invoice.client_country || 'NL',
+      btw_rubric: invoice.btw_rubric || null,
+      tax_mechanism: invoice.tax_mechanism || 'standard_btw',
     });
     setEditMode(true);
     setShowCreateModal(true);
@@ -933,7 +948,7 @@ export default function FinanceInvoices() {
                 />
               </div>
 
-              <div className="col-span-2">
+              <div>
                 <Label className={ft('text-slate-600', 'text-zinc-300')}>Client Address</Label>
                 <Textarea
                   value={formData.client_address}
@@ -941,6 +956,24 @@ export default function FinanceInvoices() {
                   className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
                   placeholder="Enter billing address"
                   rows={2}
+                />
+              </div>
+              <div>
+                <CountrySelector
+                  label="Client Country"
+                  value={formData.client_country}
+                  onChange={(code) => setFormData(prev => ({ ...prev, client_country: code }))}
+                  onTaxRulesChange={(rules) => {
+                    if (rules) {
+                      setFormData(prev => ({
+                        ...prev,
+                        btw_rubric: rules.rubric,
+                        tax_mechanism: rules.mechanism,
+                      }));
+                    }
+                  }}
+                  mode="sale"
+                  taxRate={parseFloat(formData.tax_rate) || 21}
                 />
               </div>
 
