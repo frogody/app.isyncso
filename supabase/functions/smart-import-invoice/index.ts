@@ -98,7 +98,8 @@ CRITICAL RULES:
 5. Line items must have description, quantity, unit_price, and line_total
 6. IMPORTANT — Identifying the supplier: The supplier is the company that ISSUED/SENT the invoice. It is NOT the "Bill to" / "Factuur aan" company (that is the buyer/recipient). In invoice text the sender is usually listed FIRST (top-left) with their address, and the "Bill to" section contains the recipient. Look for patterns like "Company A ... Bill to ... Company B" — Company A is the supplier.
 7. For IBAN, extract the full bank account number if present
-8. For VAT numbers, extract exactly as shown (e.g., NL123456789B01, DE123456789)
+8. IMPORTANT — VAT numbers: Only set supplier_vat to the VAT number that belongs to the SUPPLIER. If a VAT number appears in or near the "Bill to" / recipient section, it belongs to the BUYER — do NOT put it in supplier_vat. If the only VAT number visible belongs to the buyer, set supplier_vat to null.
+9. For VAT numbers, extract exactly as shown (e.g., NL123456789B01, DE123456789)
 
 Return ONLY a valid JSON object in this exact format:
 {
@@ -386,6 +387,44 @@ function detectCurrency(invoiceText: string, extractedCurrency: string | null | 
   return "EUR"; // default for NL company
 }
 
+// ─── VAT Validation ─────────────────────────────────────────────────────────
+
+/**
+ * Validate that the extracted VAT number actually belongs to the supplier.
+ * If the supplier address indicates a non-EU country (US, UK, etc.) but the
+ * VAT number starts with an EU country code, the LLM likely grabbed the
+ * buyer's VAT number by mistake → return null.
+ */
+function validateSupplierVat(
+  vat: string | null | undefined,
+  supplierAddress: string | null | undefined
+): string | null {
+  if (!vat) return null;
+
+  const vatClean = vat.replace(/[\s.-]/g, "").toUpperCase();
+  const vatCountry = vatClean.substring(0, 2);
+  const addr = (supplierAddress || "").toLowerCase();
+
+  // If supplier address clearly indicates a non-EU country,
+  // but VAT starts with an EU prefix, it's the buyer's VAT.
+  const nonEuCountryPatterns =
+    /\b(united states|usa|u\.s\.a|california|new york|texas|florida|illinois|washington|canada|australia|japan|china|india|brazil|united kingdom|uk|england|scotland|switzerland)\b/;
+
+  if (nonEuCountryPatterns.test(addr)) {
+    const euPrefixes = [
+      "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
+      "DE", "GR", "EL", "HU", "IE", "IT", "LV", "LT", "LU", "MT",
+      "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE",
+    ];
+    if (euPrefixes.includes(vatCountry)) {
+      console.log(`[VAT] Discarding VAT ${vat} — supplier address is non-EU ("${addr.substring(0, 60)}") but VAT prefix is ${vatCountry}`);
+      return null;
+    }
+  }
+
+  return vat;
+}
+
 // ─── Map flat extraction → nested ExtractionResult ──────────────────────────
 
 function buildExtractionResult(
@@ -406,11 +445,14 @@ function buildExtractionResult(
     pdfText
   );
 
+  // Validate that the VAT actually belongs to the supplier (not the buyer)
+  const validatedVat = validateSupplierVat(flat.supplier_vat, flat.supplier_address);
+
   return {
     vendor: {
       name: flat.supplier_name || "",
       address: flat.supplier_address || undefined,
-      vat_number: flat.supplier_vat || undefined,
+      vat_number: validatedVat || undefined,
       website: flat.supplier_website || undefined,
       email: flat.supplier_email || undefined,
       phone: flat.supplier_phone || undefined,
@@ -430,7 +472,7 @@ function buildExtractionResult(
       is_recurring: recurringResult.is_recurring,
       recurring_frequency: recurringResult.frequency,
       expense_category: classifyExpenseCategory(flat.supplier_name, lineItems, pdfText),
-      is_reverse_charge: detectReverseCharge(flat.supplier_vat),
+      is_reverse_charge: detectReverseCharge(validatedVat),
     },
     confidence: calculateConfidence(flat),
   };
