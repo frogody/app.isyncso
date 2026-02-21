@@ -72,7 +72,7 @@ export default function StorefrontRenderer() {
 
   const isPreview = searchParams.get('preview') === 'true';
 
-  // Effective config: override from builder postMessage takes priority
+  // Effective config: override from builder postMessage takes priority, then DB config
   const config = overrideConfig || providerConfig;
 
   // Listen for CONFIG_UPDATE from the parent builder window
@@ -88,14 +88,25 @@ export default function StorefrontRenderer() {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  // Signal to parent builder that preview content is loaded
+  // In preview mode, immediately signal readiness so the builder sends config
   useEffect(() => {
+    if (!isPreview) return;
+    const isInIframe = window.parent && window.parent !== window;
+    if (isInIframe) {
+      // Signal immediately — builder will send CONFIG_UPDATE in response
+      window.parent.postMessage({ type: 'PREVIEW_LOADED' }, '*');
+    }
+  }, [isPreview]);
+
+  // Also signal when config changes (for non-preview mode)
+  useEffect(() => {
+    if (isPreview) return; // handled above
     if (!config || (!providerConfig && !overrideConfig)) return;
     const isInIframe = window.parent && window.parent !== window;
     if (isInIframe) {
       window.parent.postMessage({ type: 'PREVIEW_LOADED' }, '*');
     }
-  }, [config, configLoading]);
+  }, [config, configLoading, isPreview, providerConfig, overrideConfig]);
 
   // Post section click back to parent in preview mode
   const handleSectionClick = useCallback(
@@ -117,10 +128,9 @@ export default function StorefrontRenderer() {
   const theme = config?.theme ?? {};
 
   // --- Loading state ---
-  // In preview mode, wait for CONFIG_UPDATE from the builder parent window
-  const isWaitingForBuilder = isPreview && !overrideConfig && (configLoading || sections.length === 0);
-
-  if ((configLoading && !config) || isWaitingForBuilder) {
+  // In preview mode, don't block — the builder will send config via postMessage.
+  // Only show loading spinner for real storefront visitors.
+  if (!isPreview && configLoading && !overrideConfig) {
     return (
       <div
         className="min-h-[60vh] flex items-center justify-center"
@@ -143,6 +153,29 @@ export default function StorefrontRenderer() {
   }
 
   if (!config) return null;
+
+  // In preview mode waiting for first config from builder
+  if (isPreview && !overrideConfig && sections.length === 0) {
+    return (
+      <div
+        className="min-h-[60vh] flex items-center justify-center"
+        style={{ backgroundColor: 'var(--ws-bg, #09090b)' }}
+      >
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: 'var(--ws-primary, #06b6d4)', borderTopColor: 'transparent' }}
+          />
+          <span
+            className="text-sm"
+            style={{ color: 'var(--ws-muted, rgba(255,255,255,0.5))' }}
+          >
+            Connecting to builder...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   if (sections.length === 0) {
     return (

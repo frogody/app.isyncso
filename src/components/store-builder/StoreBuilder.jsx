@@ -1,8 +1,8 @@
 // ---------------------------------------------------------------------------
 // StoreBuilder.jsx -- B2B Store Builder with AI chat
 //
-// Preview mode:  Content (full width)  |  Chat (320px)
-// Settings mode: Nav (220px) | Content  |  Chat (320px)
+// Preview mode:  Chat (320px) | Content (full width)
+// Settings mode: Chat (320px) | Nav (220px) | Content
 // ---------------------------------------------------------------------------
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
@@ -899,6 +899,15 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
     }
   }, [builder.config, preview.sendConfigToPreview]);
 
+  // Resend config when preview finishes loading (iframe may have missed initial send)
+  const prevPreviewLoading = useRef(true);
+  useEffect(() => {
+    if (prevPreviewLoading.current && !preview.previewLoading && builder.config) {
+      preview.sendConfigToPreview(builder.config);
+    }
+    prevPreviewLoading.current = preview.previewLoading;
+  }, [preview.previewLoading, builder.config, preview.sendConfigToPreview]);
+
   // Auto-scroll chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -1088,18 +1097,8 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
 
       {/* Main area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Zone 1: Nav Sidebar (hidden in preview mode for max space) */}
-        {!isPreviewMode && (
-          <NavSidebar activeView={activeView} onChangeView={handleChangeView} sectionCount={sectionCount} />
-        )}
-
-        {/* Zone 2: Content / Preview */}
-        <div className="flex-1 flex overflow-hidden bg-zinc-950/50">
-          {renderContent()}
-        </div>
-
-        {/* Zone 3: AI Chat (right side) */}
-        <div className="w-[320px] flex-shrink-0 flex flex-col bg-zinc-900 border-l border-zinc-800/60">
+        {/* Zone 1: AI Chat (left side) */}
+        <div className="w-[320px] flex-shrink-0 flex flex-col bg-zinc-900 border-r border-zinc-800/60">
           {/* Messages */}
           <div className="flex-1 overflow-y-auto py-3 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
             {ai.messages.length === 0 && !ai.isProcessing && (
@@ -1184,6 +1183,16 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Zone 2: Nav Sidebar (hidden in preview mode for max space) */}
+        {!isPreviewMode && (
+          <NavSidebar activeView={activeView} onChangeView={handleChangeView} sectionCount={sectionCount} />
+        )}
+
+        {/* Zone 3: Content / Preview */}
+        <div className="flex-1 flex overflow-hidden bg-zinc-950/50">
+          {renderContent()}
         </div>
       </div>
     </div>

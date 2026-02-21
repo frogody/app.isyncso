@@ -468,7 +468,12 @@ function Footer({ config }) {
 export default function WholesaleLayout({ children }) {
   const { config, configLoading } = useWholesale();
 
-  if (configLoading || !config) {
+  // In preview mode (builder iframe), skip the loading gate entirely.
+  // The StorefrontRenderer handles its own config via postMessage from the builder.
+  const isPreview = typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('preview') === 'true';
+
+  if (!isPreview && (configLoading || !config)) {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
