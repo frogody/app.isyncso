@@ -255,10 +255,10 @@ const navigationItems = [
   },
   {
     title: "B2B Store",
-    url: createPageUrl("B2BStoreBuilder"),
+    url: createPageUrl("StoreDashboard"),
     icon: Store,
     permission: "products.manage",
-    matchPatterns: ["/b2bstorebuilder", "/b2b"],
+    matchPatterns: ["/storedashboard", "/b2bstorebuilder", "/b2b"],
   },
   {
     title: "Inbox",

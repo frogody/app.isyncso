@@ -410,6 +410,7 @@ import DemoExperience from "./DemoExperience";
 import RequestDemo from "./RequestDemo";
 
 import B2BStoreBuilder from "./B2BStoreBuilder";
+import StoreDashboard from "./StoreDashboard";
 
 // Providers needed for admin routes (since they don't use main Layout)
 import { UserProvider } from "@/components/context/UserContext";
@@ -1278,6 +1279,7 @@ function PagesContent() {
 
                 <Route path="/AgentDetail" element={<AgentDetail />} />
 
+                <Route path="/storedashboard" element={<StoreDashboard />} />
                 <Route path="/b2b/dashboard" element={<B2BDashboard />} />
                 <Route path="/b2b/orders" element={<B2BOrdersManager />} />
                 <Route path="/b2b/orders/:orderId" element={<B2BOrderDetail />} />

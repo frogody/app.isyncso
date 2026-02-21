@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { WholesaleContext } from '@/components/portal/wholesale/WholesaleProvider';
 
 // Section renderers
 import HeroRenderer from '@/components/portal/wholesale/sections/HeroRenderer';
@@ -111,6 +112,16 @@ export default function StorePreview() {
   const theme = config?.theme ?? {};
   const themeVars = useMemo(() => buildThemeVars(theme), [theme]);
 
+  // Mock WholesaleContext so FeaturedProductsRenderer doesn't crash.
+  // With orgId: null it falls back to placeholder products (no DB calls).
+  const mockWholesaleValue = useMemo(() => ({
+    config: config || { theme: {}, sections: [], navigation: [], footer: {} },
+    storePublished: true, configLoading: false, configError: null,
+    orgId: null, client: null, clientLoading: false, isAuthenticated: false,
+    themeVars, cartItems: [], addToCart: () => {}, removeFromCart: () => {},
+    updateQuantity: () => {}, clearCart: () => {}, cartTotal: 0, cartCount: 0,
+  }), [config, themeVars]);
+
   // Waiting for config from builder
   if (!config) {
     return (
@@ -143,45 +154,47 @@ export default function StorePreview() {
   }
 
   return (
-    <div style={{ ...themeVars, backgroundColor: 'var(--ws-bg, #09090b)', minHeight: '100vh' }}>
-      {sections.map((section) => {
-        const Component = SECTION_MAP[section.type];
-        if (!Component) return null;
+    <WholesaleContext.Provider value={mockWholesaleValue}>
+      <div style={{ ...themeVars, backgroundColor: 'var(--ws-bg, #09090b)', minHeight: '100vh' }}>
+        {sections.map((section) => {
+          const Component = SECTION_MAP[section.type];
+          if (!Component) return null;
 
-        const paddingClass = PADDING_MAP[section.padding] || PADDING_MAP.md;
-        const bgStyle = getBackgroundStyle(section.background);
-        const isHovered = hoveredSectionId === section.id;
+          const paddingClass = PADDING_MAP[section.padding] || PADDING_MAP.md;
+          const bgStyle = getBackgroundStyle(section.background);
+          const isHovered = hoveredSectionId === section.id;
 
-        return (
-          <div
-            key={section.id}
-            className={`relative ${paddingClass} transition-all cursor-pointer`}
-            style={{
-              ...bgStyle,
-              ...(isHovered
-                ? { outline: '2px solid var(--ws-primary, #06b6d4)', outlineOffset: '-2px' }
-                : {}),
-            }}
-            onClick={() => handleSectionClick(section.id)}
-            onMouseEnter={() => setHoveredSectionId(section.id)}
-            onMouseLeave={() => setHoveredSectionId(null)}
-          >
-            {isHovered && (
-              <div
-                className="absolute top-2 left-2 z-20 px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-wider"
-                style={{
-                  backgroundColor: 'var(--ws-primary, #06b6d4)',
-                  color: 'var(--ws-bg, #000)',
-                }}
-              >
-                {section.type.replace(/_/g, ' ')}
-              </div>
-            )}
+          return (
+            <div
+              key={section.id}
+              className={`relative ${paddingClass} transition-all cursor-pointer`}
+              style={{
+                ...bgStyle,
+                ...(isHovered
+                  ? { outline: '2px solid var(--ws-primary, #06b6d4)', outlineOffset: '-2px' }
+                  : {}),
+              }}
+              onClick={() => handleSectionClick(section.id)}
+              onMouseEnter={() => setHoveredSectionId(section.id)}
+              onMouseLeave={() => setHoveredSectionId(null)}
+            >
+              {isHovered && (
+                <div
+                  className="absolute top-2 left-2 z-20 px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-wider"
+                  style={{
+                    backgroundColor: 'var(--ws-primary, #06b6d4)',
+                    color: 'var(--ws-bg, #000)',
+                  }}
+                >
+                  {section.type.replace(/_/g, ' ')}
+                </div>
+              )}
 
-            <Component section={section} theme={theme} />
-          </div>
-        );
-      })}
-    </div>
+              <Component section={section} theme={theme} />
+            </div>
+          );
+        })}
+      </div>
+    </WholesaleContext.Provider>
   );
 }
