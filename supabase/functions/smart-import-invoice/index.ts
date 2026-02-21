@@ -435,61 +435,113 @@ function sanitizeExtraction(data: FlatExtraction, pdfText: string): FlatExtracti
     }
 
     if (shouldSwap) {
-      const tmpName = data.supplier_name;
-      const tmpAddress = data.supplier_address;
-      const tmpCountry = data.supplier_country;
-      const tmpVat = data.supplier_vat;
-      const tmpKvk = data.supplier_kvk;
-      const tmpEmail = data.supplier_email;
-      const tmpPhone = data.supplier_phone;
-      const tmpWebsite = data.supplier_website;
-      const tmpIban = data.supplier_iban;
+      // Save the OLD (wrong) supplier data — these are actually the buyer's details
+      const oldSupplier = {
+        name: data.supplier_name,
+        address: data.supplier_address,
+        country: data.supplier_country,
+        vat: data.supplier_vat,
+        kvk: data.supplier_kvk,
+        email: data.supplier_email,
+        phone: data.supplier_phone,
+        website: data.supplier_website,
+        iban: data.supplier_iban,
+      };
 
+      // The real supplier name is what the LLM put as buyer_name
       data.supplier_name = data.buyer_name;
-      data.buyer_name = tmpName;
+      data.buyer_name = oldSupplier.name;
 
-      // Try to extract supplier details from the text before "Bill to"
-      // For now, swap what we have and try to recover from the PDF text
+      // Move old supplier fields (which are actually buyer's) to buyer
+      data.buyer_vat = oldSupplier.vat || data.buyer_vat;
+
+      // Now recover the REAL supplier's details from the PDF text
+      // The real supplier's info is in the text BEFORE "Bill to"
+      data.supplier_vat = null;
+      data.supplier_kvk = null;
+      data.supplier_iban = null;
+      data.supplier_address = null;
+      data.supplier_country = null;
+      data.supplier_email = null;
+      data.supplier_phone = null;
+      data.supplier_website = null;
+
       if (billToIdx !== -1) {
         const beforeBillTo = pdfText.substring(0, billToIdx).trim();
-        // Look for an email in the supplier section
-        const emailMatch = beforeBillTo.match(/[\w.+-]+@[\w.-]+\.\w+/);
-        if (emailMatch) {
-          data.supplier_email = emailMatch[0];
-        } else {
-          data.supplier_email = null;
-        }
-        // Look for an address (lines with numbers, streets, cities)
-        const addressLines = beforeBillTo.split(/\n/).filter(l => l.trim().length > 5);
-        // The supplier name is buyer_name (swapped), find address lines after the name
-        const nameIdx = beforeBillTo.toLowerCase().indexOf(data.supplier_name!.toLowerCase());
+        const pdfLowerBefore = beforeBillTo.toLowerCase();
+
+        // Find the real supplier name in the pre-Bill-to text
+        const realNameLower = data.supplier_name!.toLowerCase();
+        const nameIdx = pdfLowerBefore.indexOf(realNameLower);
+
         if (nameIdx !== -1) {
+          // Everything after the supplier name until end of pre-Bill-to section = supplier details
           const afterName = beforeBillTo.substring(nameIdx + data.supplier_name!.length).trim();
-          const addrLines = afterName.split(/\n/).map(l => l.trim()).filter(l => l.length > 3 && !l.match(/^(invoice|date|due|number)/i));
-          if (addrLines.length > 0) {
-            data.supplier_address = addrLines.join(", ");
+
+          // Extract email
+          const emailMatch = afterName.match(/[\w.+-]+@[\w.-]+\.\w{2,}/);
+          if (emailMatch) data.supplier_email = emailMatch[0];
+
+          // Extract phone
+          const phoneMatch = afterName.match(/(?:\+\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}/);
+          if (phoneMatch) data.supplier_phone = phoneMatch[0];
+
+          // Extract website
+          const webMatch = afterName.match(/(?:www\.[\w.-]+\.\w{2,}|https?:\/\/[\w.-]+\.\w{2,})/i);
+          if (webMatch) data.supplier_website = webMatch[0];
+
+          // Extract IBAN
+          const ibanMatch = afterName.match(/[A-Z]{2}\d{2}[A-Z0-9]{4,30}/);
+          if (ibanMatch) data.supplier_iban = ibanMatch[0];
+
+          // Build address from remaining lines (filter out metadata lines)
+          const metadataPattern = /^(invoice|date|due|number|page|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|amount|total|subtotal|qty|description|tax)/i;
+          const lines = afterName
+            .split(/[\n,]/)
+            .map(l => l.trim())
+            .filter(l =>
+              l.length > 2 &&
+              !metadataPattern.test(l) &&
+              !l.match(/^[\w.+-]+@/) && // not email
+              !l.match(/^(?:www\.|https?:)/) && // not website
+              !l.match(/^[A-Z]{2}\d{2}[A-Z0-9]/) // not IBAN
+            );
+
+          if (lines.length > 0) {
+            data.supplier_address = lines.join(", ");
+          }
+        }
+
+        // Detect country from the full pre-Bill-to text (more reliable)
+        const countryPatterns: [RegExp, string][] = [
+          [/\bunited\s+states\b/i, "US"],
+          [/\busa\b/i, "US"],
+          [/\bu\.s\.a\.?\b/i, "US"],
+          [/\b[a-z]{2,}\s*,\s*(?:california|ca|new york|ny|texas|tx|florida|fl|illinois|il|washington|wa|massachusetts|ma|pennsylvania|pa|ohio|oh|georgia|ga|virginia|va|colorado|co|arizona|az|oregon|or|connecticut|ct|maryland|md|new jersey|nj|north carolina|nc)\s+\d{5}/i, "US"],
+          [/\bca\s+\d{5}\b/, "US"],
+          [/\bnetherlands\b/i, "NL"], [/\bnederland\b/i, "NL"],
+          [/\bgermany\b/i, "DE"], [/\bdeutschland\b/i, "DE"],
+          [/\bfrance\b/i, "FR"],
+          [/\bunited\s+kingdom\b/i, "GB"], [/\bengland\b/i, "GB"],
+          [/\bbelgi[ëu]m?\b/i, "BE"],
+          [/\bswitzerland\b/i, "CH"], [/\bschweiz\b/i, "CH"],
+          [/\bcanada\b/i, "CA"],
+          [/\baustralia\b/i, "AU"],
+          [/\bjapan\b/i, "JP"],
+          [/\bsingapore\b/i, "SG"],
+          [/\bisrael\b/i, "IL"],
+          [/\bireland\b/i, "IE"],
+        ];
+
+        for (const [pattern, code] of countryPatterns) {
+          if (pattern.test(pdfLowerBefore) || (data.supplier_address && pattern.test(data.supplier_address.toLowerCase()))) {
+            data.supplier_country = code;
+            break;
           }
         }
       }
 
-      // Buyer gets the old supplier's details
-      data.buyer_vat = tmpVat || data.buyer_vat;
-
-      // Clear fields that belonged to the buyer but got placed on supplier
-      data.supplier_vat = null; // Will be re-evaluated by validateSupplierVat
-      data.supplier_kvk = null;
-      data.supplier_iban = null;
-
-      // Try to find supplier's country from their address
-      if (data.supplier_address) {
-        const addr = data.supplier_address.toLowerCase();
-        if (/united states|usa|\bca\s+\d{5}|\bny\s+\d{5}/.test(addr)) data.supplier_country = "US";
-        else if (/netherlands|nederland/.test(addr)) data.supplier_country = "NL";
-        else if (/germany|deutschland/.test(addr)) data.supplier_country = "DE";
-        else if (/united kingdom|uk\b/.test(addr)) data.supplier_country = "GB";
-        else if (/france/.test(addr)) data.supplier_country = "FR";
-        else data.supplier_country = tmpCountry;
-      }
+      console.log(`[SANITIZE] After swap — supplier: ${data.supplier_name}, address: ${data.supplier_address}, country: ${data.supplier_country}, email: ${data.supplier_email}`);
     }
   }
 
@@ -712,12 +764,16 @@ function determineTaxDecision(
   // Non-EU
   if (country.code !== "UNKNOWN") {
     // Determine if service or goods
+    // Per Belastingdienst: diensten van buiten de EU → verlegde BTW
+    // Report in rubric 4a of BTW aangifte. Claim back as voorbelasting.
+    // Non-EU suppliers do NOT need an EU VAT number.
+    // Invoice correctly shows €0 tax — Dutch buyer self-assesses.
     if (isLikelyService(allText)) {
       return {
         mechanism: "reverse_charge_non_eu",
         rate: 0,
         self_assess_rate: selfAssessRate,
-        explanation: `Dienst van buiten de EU — verlegde BTW (${selfAssessRate}%) — leverancier ${country.code}`,
+        explanation: `Dienst van buiten de EU — verlegde BTW (${selfAssessRate}%) — leverancier ${country.code}. Aangeven in rubriek 4a BTW-aangifte, aftrekbaar als voorbelasting.`,
         supplier_country: country.code,
       };
     }
@@ -730,23 +786,42 @@ function determineTaxDecision(
     };
   }
 
-  // Unknown country — assume service, reverse charge non-EU
+  // Unknown country — check if supplier has NO VAT number AND the invoice shows no tax.
+  // This is a strong signal for a non-EU service provider.
+  const invoiceHasNoTax = !flat.tax_lines || flat.tax_lines.length === 0 ||
+    flat.tax_lines.every(tl => tl.tax_amount === 0 && tl.rate_percent === 0);
+  const noSupplierVat = !flat.supplier_vat;
+
   if (isLikelyService(allText)) {
+    // Service without VAT number and no tax on invoice → likely non-EU
     return {
       mechanism: "reverse_charge_non_eu",
       rate: 0,
       self_assess_rate: selfAssessRate,
-      explanation: `Vermoedelijk buitenlandse dienst — verlegde BTW (${selfAssessRate}%)`,
+      explanation: noSupplierVat && invoiceHasNoTax
+        ? `Vermoedelijk buitenlandse dienst (geen BTW-nr, geen BTW op factuur) — verlegde BTW (${selfAssessRate}%). Aangeven in rubriek 4a.`
+        : `Vermoedelijk buitenlandse dienst — verlegde BTW (${selfAssessRate}%)`,
       supplier_country: "UNKNOWN",
     };
   }
 
-  // Fallback: standard BTW
+  // Fallback: if no VAT number and no tax on invoice, assume non-EU
+  if (noSupplierVat && invoiceHasNoTax) {
+    return {
+      mechanism: "reverse_charge_non_eu",
+      rate: 0,
+      self_assess_rate: selfAssessRate,
+      explanation: `Geen BTW-nummer en geen BTW op factuur — vermoedelijk buitenlandse leverancier — verlegde BTW (${selfAssessRate}%)`,
+      supplier_country: "UNKNOWN",
+    };
+  }
+
+  // True fallback: standard BTW
   return {
     mechanism: "standard_btw",
     rate: 21,
     self_assess_rate: 0,
-    explanation: "Standaard BTW (21%) — land onbekend, geen BTW-nummer",
+    explanation: "Standaard BTW (21%) — land onbekend",
     supplier_country: "UNKNOWN",
   };
 }
