@@ -38,17 +38,7 @@ import {
   Tablet,
   ArrowLeft,
   Info,
-  BarChart3,
-  ShoppingCart,
-  Package,
-  Users,
-  UsersRound,
-  Tag,
-  MessageSquare,
   Settings,
-  Paintbrush,
-  Link2,
-  ToggleLeft,
 } from 'lucide-react';
 
 import BuilderCanvas from './BuilderCanvas';
@@ -57,15 +47,6 @@ import { useStoreBuilder } from './hooks/useStoreBuilder';
 import { useBuilderHistory } from './hooks/useBuilderHistory';
 import { useBuilderPreview } from './hooks/useBuilderPreview';
 import { useBuilderAI } from './hooks/useBuilderAI';
-
-// B2B Admin components (all self-contained, no props needed)
-import B2BDashboard from '../b2b-admin/B2BDashboard';
-import B2BOrdersManager from '../b2b-admin/B2BOrdersManager';
-import B2BCatalogManager from '../b2b-admin/B2BCatalogManager';
-import B2BClientManager from '../b2b-admin/B2BClientManager';
-import ClientGroupManager from '../b2b-admin/ClientGroupManager';
-import PriceListManager from '../b2b-admin/PriceListManager';
-import B2BInquiryManager from '../b2b-admin/B2BInquiryManager';
 
 // ---------------------------------------------------------------------------
 // Time helper
@@ -126,8 +107,15 @@ function Bubble({ message }) {
           }`}
         >
           {message.content}
+          {message.streaming && (
+            <motion.span
+              className="inline-block ml-0.5"
+              animate={{ opacity: [1, 0] }}
+              transition={{ duration: 0.5, repeat: Infinity }}
+            >|</motion.span>
+          )}
         </div>
-        {message.timestamp && (
+        {message.timestamp && !message.streaming && (
           <span className="text-[10px] text-zinc-600 mt-0.5 px-1 select-none">{timeAgo(message.timestamp)}</span>
         )}
       </div>
@@ -141,31 +129,13 @@ function Bubble({ message }) {
 
 const NAV_SECTIONS = [
   {
-    label: null, // No header for top-level items
+    label: null,
     items: [
       { key: 'preview', icon: Monitor, label: 'Preview' },
-      { key: 'dashboard', icon: BarChart3, label: 'Dashboard' },
-    ],
-  },
-  {
-    label: 'Commerce',
-    items: [
-      { key: 'orders', icon: ShoppingCart, label: 'Orders' },
-      { key: 'catalog', icon: Package, label: 'Catalog' },
-      { key: 'price-lists', icon: Tag, label: 'Price Lists' },
-    ],
-  },
-  {
-    label: 'Customers',
-    items: [
-      { key: 'clients', icon: Users, label: 'Clients' },
-      { key: 'client-groups', icon: UsersRound, label: 'Client Groups' },
-      { key: 'inquiries', icon: MessageSquare, label: 'Inquiries' },
     ],
   },
   {
     label: 'Design',
-    collapsible: true,
     items: [
       { key: 'theme', icon: Palette, label: 'Theme' },
       { key: 'sections', icon: LayoutGrid, label: 'Sections' },
@@ -871,20 +841,6 @@ function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPubl
 }
 
 // ---------------------------------------------------------------------------
-// Admin content wrapper — gives embedded components a dark bg context
-// ---------------------------------------------------------------------------
-
-function AdminPanel({ children }) {
-  return (
-    <div className="flex-1 overflow-y-auto bg-[#09090b] min-h-0">
-      <div className="min-h-full">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Main StoreBuilder
 // ---------------------------------------------------------------------------
 
@@ -1018,22 +974,6 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
             onIframeLoad={preview.onIframeLoad}
           />
         );
-
-      // -- Admin panels (self-contained components) --
-      case 'dashboard':
-        return <AdminPanel><B2BDashboard /></AdminPanel>;
-      case 'orders':
-        return <AdminPanel><B2BOrdersManager /></AdminPanel>;
-      case 'catalog':
-        return <AdminPanel><B2BCatalogManager /></AdminPanel>;
-      case 'clients':
-        return <AdminPanel><B2BClientManager /></AdminPanel>;
-      case 'client-groups':
-        return <AdminPanel><ClientGroupManager /></AdminPanel>;
-      case 'price-lists':
-        return <AdminPanel><PriceListManager /></AdminPanel>;
-      case 'inquiries':
-        return <AdminPanel><B2BInquiryManager /></AdminPanel>;
 
       // -- Design pages --
       case 'theme':

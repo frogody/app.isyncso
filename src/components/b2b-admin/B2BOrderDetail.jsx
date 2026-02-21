@@ -484,7 +484,7 @@ export default function B2BOrderDetail() {
           .from('b2b_orders')
           .select(`
             *,
-            portal_clients (id, name, email, phone, company_name, address, city, country)
+            portal_clients (id, full_name, email, company_name)
           `)
           .eq('id', orderId)
           .eq('organization_id', organizationId)

@@ -108,7 +108,7 @@ export interface B2BOrder {
   cancelled_at: string | null;
   created_at: string;
   updated_at: string;
-  portal_clients?: { id: string; name: string; email: string };
+  portal_clients?: { id: string; full_name: string; email: string };
   b2b_order_items?: B2BOrderItem[];
 }
 
@@ -166,7 +166,7 @@ export interface B2BProductInquiry {
   created_at: string;
   updated_at: string;
   products?: { id: string; name: string; featured_image: string };
-  portal_clients?: { id: string; name: string; email: string };
+  portal_clients?: { id: string; full_name: string; email: string };
 }
 
 export interface B2BStoreTemplate {
@@ -596,7 +596,7 @@ export async function listB2BOrders(
     .from('b2b_orders')
     .select(`
       *,
-      portal_clients (id, name, email),
+      portal_clients (id, full_name, email),
       b2b_order_items (*)
     `)
     .eq('organization_id', organizationId)
@@ -616,7 +616,7 @@ export async function getB2BOrder(orderId: string): Promise<B2BOrder | null> {
     .from('b2b_orders')
     .select(`
       *,
-      portal_clients (id, name, email),
+      portal_clients (id, full_name, email),
       b2b_order_items (*)
     `)
     .eq('id', orderId)
@@ -710,7 +710,7 @@ export async function listPreorderReservations(
     .select(`
       *,
       products (id, name, sku),
-      portal_clients (id, name, email),
+      portal_clients (id, full_name, email),
       expected_deliveries (id, expected_date, quantity_expected, quantity_remaining)
     `)
     .eq('company_id', companyId)
@@ -764,7 +764,7 @@ export async function listInquiries(
     .select(`
       *,
       products (id, name, featured_image),
-      portal_clients (id, name, email)
+      portal_clients (id, full_name, email)
     `)
     .eq('organization_id', organizationId)
     .order('created_at', { ascending: false });

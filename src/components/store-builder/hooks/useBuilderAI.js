@@ -1,10 +1,10 @@
 // ---------------------------------------------------------------------------
 // useBuilderAI.js -- Manages AI communication between the Store Builder and
-// the store-builder-ai edge function. Maintains chat history, processing
-// state, and contextual suggestions.
+// the store-builder-ai edge function. Streams responses token-by-token for
+// real-time chat UX, then extracts the JSON config from a ```json fence.
 // ---------------------------------------------------------------------------
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -85,6 +85,39 @@ function deriveContextualSuggestions(changes) {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Extracts JSON from ```json ... ``` fenced block in the accumulated text.
+ * Returns { updatedConfig, changes } or null if not found / parse error.
+ */
+function extractConfigFromText(fullText) {
+  const fenceMatch = fullText.match(/```json\s*([\s\S]*?)```/);
+  if (!fenceMatch) return null;
+
+  try {
+    const parsed = JSON.parse(fenceMatch[1].trim());
+    return {
+      updatedConfig: parsed.updatedConfig || null,
+      changes: parsed.changes || [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Returns the explanation portion of the AI response (everything before the
+ * json fence), cleaned up. If no fence is found, returns the full text.
+ */
+function extractExplanation(fullText) {
+  const fenceStart = fullText.indexOf('```json');
+  const text = fenceStart !== -1 ? fullText.slice(0, fenceStart) : fullText;
+  return text.replace(/\n{3,}/g, '\n\n').trim();
+}
+
+// ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
 
@@ -94,16 +127,35 @@ export function useBuilderAI() {
   const [error, setError] = useState(null);
   const [suggestions, setSuggestions] = useState(DEFAULT_SUGGESTIONS);
 
-  // ---- Send prompt to AI edge function ------------------------------------
+  // Used to allow cancellation of in-flight streams
+  const abortRef = useRef(null);
+
+  // ---- Send prompt to AI edge function (streaming) --------------------------
 
   const sendPrompt = useCallback(async (prompt, currentConfig, businessContext) => {
-    // Add user message to chat history
+    // Cancel any in-flight stream
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    // Add user message
     setMessages((prev) => [
       ...prev,
       { role: 'user', content: prompt, timestamp: new Date() },
     ]);
     setIsProcessing(true);
     setError(null);
+
+    // Create a placeholder assistant message that we'll update while streaming
+    const assistantMsgId = Date.now();
+    setMessages((prev) => [
+      ...prev,
+      { role: 'assistant', content: '', timestamp: null, streaming: true, _id: assistantMsgId },
+    ]);
+
+    let accumulated = '';
 
     try {
       const response = await fetch(
@@ -115,6 +167,7 @@ export function useBuilderAI() {
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({ prompt, currentConfig, businessContext }),
+          signal: controller.signal,
         },
       );
 
@@ -123,68 +176,94 @@ export function useBuilderAI() {
         throw new Error(`AI request failed (${response.status}): ${errorText}`);
       }
 
-      const data = await response.json();
+      // Read the streaming response
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
 
-      // AI returned an updated config
-      if (data.updatedConfig) {
-        const summary =
-          data.changes && Array.isArray(data.changes) && data.changes.length > 0
-            ? `Done! I made these changes:\n${data.changes.map((c) => `- ${c}`).join('\n')}`
-            : 'Done! I updated the store configuration.';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-        setMessages((prev) => [
-          ...prev,
-          { role: 'assistant', content: summary, timestamp: new Date() },
-        ]);
+        const chunk = decoder.decode(value, { stream: true });
+        accumulated += chunk;
 
-        // Update suggestions based on what was just changed
-        setSuggestions(deriveContextualSuggestions(data.changes));
+        // Show only the explanation part (before any ```json fence) in the chat
+        const displayText = extractExplanation(accumulated);
 
-        return { updatedConfig: data.updatedConfig, changes: data.changes };
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg._id === assistantMsgId
+              ? { ...msg, content: displayText }
+              : msg,
+          ),
+        );
       }
 
-      // AI returned a plain message (e.g. clarification needed)
-      if (data.message) {
-        setMessages((prev) => [
-          ...prev,
-          { role: 'assistant', content: data.message, timestamp: new Date() },
-        ]);
+      // Stream finished — finalize the message
+      const explanation = extractExplanation(accumulated);
+      const result = extractConfigFromText(accumulated);
 
-        return null;
+      // Build final display text
+      let finalContent = explanation;
+      if (result?.changes?.length) {
+        const changeList = result.changes.map((c) => `- ${c}`).join('\n');
+        finalContent = finalContent
+          ? `${finalContent}\n\n${changeList}`
+          : `Done! I made these changes:\n${changeList}`;
+      } else if (!finalContent && result?.updatedConfig) {
+        finalContent = 'Done! I updated the store configuration.';
+      } else if (!finalContent) {
+        finalContent = 'I processed your request but couldn\'t generate a config update. Please try rephrasing.';
       }
 
-      // Unexpected response shape
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: 'I received an unexpected response. Please try again.',
-          timestamp: new Date(),
-        },
-      ]);
+      // Finalize the assistant message (remove streaming flag)
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === assistantMsgId
+            ? { ...msg, content: finalContent, timestamp: new Date(), streaming: false }
+            : msg,
+        ),
+      );
+
+      if (result?.updatedConfig) {
+        setSuggestions(deriveContextualSuggestions(result.changes));
+        return { updatedConfig: result.updatedConfig, changes: result.changes };
+      }
 
       return null;
     } catch (err) {
+      // Don't treat abort as an error
+      if (err.name === 'AbortError') {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg._id === assistantMsgId
+              ? { ...msg, content: 'Request cancelled.', timestamp: new Date(), streaming: false }
+              : msg,
+          ),
+        );
+        return null;
+      }
+
       const errorMessage =
         err instanceof Error ? err.message : 'Something went wrong while contacting AI.';
 
       setError(errorMessage);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: `Sorry, an error occurred: ${errorMessage}`,
-          timestamp: new Date(),
-        },
-      ]);
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === assistantMsgId
+            ? { ...msg, content: `Sorry, an error occurred: ${errorMessage}`, timestamp: new Date(), streaming: false }
+            : msg,
+        ),
+      );
 
       return null;
     } finally {
       setIsProcessing(false);
+      abortRef.current = null;
     }
   }, []);
 
-  // ---- Clear helpers ------------------------------------------------------
+  // ---- Clear helpers --------------------------------------------------------
 
   const clearMessages = useCallback(() => {
     setMessages([]);
@@ -195,7 +274,7 @@ export function useBuilderAI() {
     setError(null);
   }, []);
 
-  // ---- Return -------------------------------------------------------------
+  // ---- Return ---------------------------------------------------------------
 
   return {
     messages,

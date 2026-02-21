@@ -123,7 +123,7 @@ export default function B2BDashboard() {
             total,
             currency,
             created_at,
-            portal_clients (id, name, email)
+            portal_clients (id, full_name, email)
           `)
           .eq('organization_id', organizationId)
           .order('created_at', { ascending: false })
@@ -307,7 +307,7 @@ export default function B2BDashboard() {
                           {order.order_number || `#${order.id.slice(0, 8)}`}
                         </p>
                         <p className="text-xs text-zinc-500 truncate">
-                          {order.portal_clients?.name || 'Unknown client'} &middot;{' '}
+                          {order.portal_clients?.full_name || 'Unknown client'} &middot;{' '}
                           {formatDate(order.created_at)}
                         </p>
                       </div>

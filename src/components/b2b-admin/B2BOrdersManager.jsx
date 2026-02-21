@@ -88,7 +88,7 @@ export default function B2BOrdersManager() {
           currency,
           created_at,
           client_id,
-          portal_clients (id, name, email, company_name),
+          portal_clients (id, full_name, email, company_name),
           b2b_order_items (id)
         `,
           { count: 'exact' }
@@ -123,7 +123,7 @@ export default function B2BOrdersManager() {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         filteredData = filteredData.filter((order) => {
-          const clientName = (order.portal_clients?.name || '').toLowerCase();
+          const clientName = (order.portal_clients?.full_name || '').toLowerCase();
           const clientEmail = (order.portal_clients?.email || '').toLowerCase();
           const clientCompany = (order.portal_clients?.company_name || '').toLowerCase();
           const orderNum = (order.order_number || '').toLowerCase();
@@ -376,7 +376,7 @@ export default function B2BOrdersManager() {
                     </div>
                     <div className="col-span-3 min-w-0">
                       <p className="text-sm text-white truncate">
-                        {order.portal_clients?.name ||
+                        {order.portal_clients?.full_name ||
                           order.portal_clients?.company_name ||
                           'Unknown'}
                       </p>
