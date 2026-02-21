@@ -17,6 +17,34 @@ interface SmartImportRequest {
   paymentDate?: string; // Override date for ECB rate lookup
 }
 
+/** Flat shape returned by the LLM — pure extraction, no classification */
+interface FlatExtraction {
+  supplier_name?: string | null;
+  supplier_address?: string | null;
+  supplier_vat?: string | null;
+  supplier_email?: string | null;
+  supplier_phone?: string | null;
+  supplier_website?: string | null;
+  supplier_iban?: string | null;
+  invoice_number?: string | null;
+  invoice_date?: string | null;
+  due_date?: string | null;
+  subtotal?: number | null;
+  tax_amount?: number | null;
+  tax_percent?: number | null;
+  total?: number | null;
+  currency?: string | null;
+  line_items?: Array<{
+    description: string;
+    quantity: number;
+    unit_price: number;
+    tax_rate_percent?: number | null;
+    line_total: number;
+  }>;
+  confidence?: number;
+}
+
+/** Nested shape expected by the frontend (FinanceSmartImport.jsx) */
 interface ExtractionResult {
   vendor: {
     name: string;
@@ -58,54 +86,60 @@ interface ExtractionResult {
   };
 }
 
-// ─── LLM Extraction ──────────────────────────────────────────────────────────
+// ─── LLM Extraction (stock-purchases pattern) ──────────────────────────────
 
-async function extractInvoiceData(groqApiKey: string, pdfText: string): Promise<{ success: boolean; data?: ExtractionResult; error?: string }> {
-  console.log(`[EXTRACT] Starting extraction, text length: ${pdfText.length}`);
-  console.log(`[EXTRACT] First 500 chars of input: ${pdfText.substring(0, 500)}`);
+const EXTRACTION_PROMPT = `You are an expert invoice data extraction system. Extract structured data from the invoice text below.
 
-  // The PDF text is already clean (extracted by pdf.js client-side).
-  // We use the LLM purely to structure it into JSON — NOT to generate content.
-  const userMessage = `Below is the EXACT text extracted from a PDF invoice. Parse it into the JSON schema below.
+CRITICAL RULES:
+1. Extract ONLY what you can clearly see in the text - NEVER guess or infer
+2. For numbers, extract exact values including decimals
+3. For dates, use ISO format (YYYY-MM-DD)
+4. If a field is not visible or unclear, use null
+5. Line items must have description, quantity, unit_price, and line_total
+6. The supplier/vendor is the company that SENT the invoice (NOT the "Bill to" / "Factuur aan" recipient)
+7. For IBAN, extract the full bank account number if present
+8. For VAT numbers, extract exactly as shown (e.g., NL123456789B01, DE123456789)
 
-CRITICAL: Every value you return MUST come directly from the text. If a field is not present in the text, use null. Do NOT invent, guess, or hallucinate ANY values. The vendor name, amounts, dates — everything must be a direct copy from the text.
-
-JSON schema to fill:
+Respond with ONLY a JSON object (no markdown, no explanation) in this exact format:
 {
-  "vendor": { "name": "", "address": "", "vat_number": null, "website": null, "email": null, "phone": null, "iban": null },
-  "invoice": { "number": "", "date": "YYYY-MM-DD", "due_date": "YYYY-MM-DD or null", "currency": "EUR", "subtotal": 0, "tax_amount": 0, "total": 0 },
-  "line_items": [{ "description": "", "quantity": 1, "unit_price": 0, "tax_rate_percent": 0, "line_total": 0, "category_hint": null }],
-  "classification": { "is_recurring": false, "recurring_frequency": null, "expense_category": "other", "is_reverse_charge": false },
-  "confidence": { "overall": 0.0, "vendor": 0.0, "amounts": 0.0, "line_items": 0.0 }
-}
+  "supplier_name": "string or null",
+  "supplier_address": "string or null",
+  "supplier_vat": "string or null",
+  "supplier_email": "string or null",
+  "supplier_phone": "string or null",
+  "supplier_website": "string or null",
+  "supplier_iban": "string or null",
+  "invoice_number": "string or null",
+  "invoice_date": "YYYY-MM-DD or null",
+  "due_date": "YYYY-MM-DD or null",
+  "subtotal": number or null,
+  "tax_amount": number or null,
+  "tax_percent": number or null,
+  "total": number or null,
+  "currency": "EUR" or "USD" or "GBP" or null,
+  "line_items": [
+    {
+      "description": "exact text from invoice",
+      "quantity": number,
+      "unit_price": number,
+      "tax_rate_percent": number or null,
+      "line_total": number
+    }
+  ],
+  "confidence": 0.0 to 1.0
+}`;
 
-Rules:
-- vendor = the company that SENT the invoice (not the "Bill to" recipient)
-- Dates must be ISO format YYYY-MM-DD
-- Currency: detect from € = EUR, $ = USD, £ = GBP
-- If tax is not explicitly listed, set tax_amount to 0 and tax_rate_percent to 0
-- is_reverse_charge = true if vendor is outside Netherlands but buyer is Dutch
-- is_recurring = true if it looks like a subscription (SaaS, monthly plan, etc.)
-- expense_category: software|hosting|office_supplies|professional_services|advertising|travel|telecom|insurance|rent|utilities|other
+async function extractFromText(
+  groqApiKey: string,
+  pdfText: string,
+  retryCount = 0
+): Promise<{ success: boolean; data?: FlatExtraction; error?: string; usage?: any }> {
+  const MAX_RETRIES = 2;
 
-=== INVOICE TEXT START ===
-${pdfText}
-=== INVOICE TEXT END ===
-
-Return ONLY the JSON object. No explanation, no markdown.`;
-
-  const callGroq = async (model: string, useJsonFormat: boolean): Promise<ExtractionResult | null> => {
-    const body: Record<string, unknown> = {
-      model,
-      messages: [
-        { role: "system", content: "You are a data extraction tool. You ONLY output valid JSON. You extract data from the provided text. You NEVER invent data." },
-        { role: "user", content: userMessage },
-      ],
-      max_tokens: 4096,
-      temperature: 0,
-    };
-    if (useJsonFormat) {
-      body.response_format = { type: "json_object" };
+  try {
+    console.log(`[EXTRACT] Calling Groq LLM (attempt ${retryCount + 1}/${MAX_RETRIES + 1}), text length: ${pdfText.length}`);
+    if (retryCount === 0) {
+      console.log(`[EXTRACT] First 500 chars: ${pdfText.substring(0, 500)}`);
     }
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -114,85 +148,287 @@ Return ONLY the JSON object. No explanation, no markdown.`;
         Authorization: `Bearer ${groqApiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        messages: [
+          {
+            role: "user",
+            content: EXTRACTION_PROMPT + `\n\nHere is the invoice text:\n\n${pdfText}`,
+          },
+        ],
+        max_tokens: 4096,
+        temperature: 0,
+      }),
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      console.warn(`[EXTRACT] ${model} returned ${response.status}: ${errText.substring(0, 200)}`);
-      return null;
+      const errorText = await response.text();
+      throw new Error(`Groq API error: ${response.status} ${errorText}`);
     }
 
-    const apiData = await response.json();
-    const content = apiData.choices?.[0]?.message?.content || "";
-    console.log(`[EXTRACT] ${model} raw response (first 300): ${content.substring(0, 300)}`);
+    const apiResponse = await response.json();
+    const content = apiResponse.choices?.[0]?.message?.content || "";
+    console.log(`[EXTRACT] Response length: ${content.length}`);
 
-    if (!content) return null;
+    if (!content) {
+      return { success: false, error: "No response from AI" };
+    }
 
-    // Clean and extract JSON
-    let jsonStr = content
+    // Clean up response — strip markdown code blocks
+    let cleanedContent = content
       .replace(/```json\s*/gi, "")
       .replace(/```\s*/g, "")
       .trim();
 
-    // Find balanced JSON object containing "vendor"
-    const vendorIdx = jsonStr.indexOf('"vendor"');
-    if (vendorIdx !== -1) {
-      const before = jsonStr.substring(0, vendorIdx);
-      const braceIdx = before.lastIndexOf("{");
-      if (braceIdx !== -1) {
-        const candidate = jsonStr.substring(braceIdx);
-        let depth = 0;
-        for (let i = 0; i < candidate.length; i++) {
-          if (candidate[i] === "{") depth++;
-          else if (candidate[i] === "}") depth--;
-          if (depth === 0 && i > 0) {
-            jsonStr = candidate.substring(0, i + 1);
+    // Find JSON object
+    let jsonString: string | null = null;
+    const firstBrace = cleanedContent.indexOf("{");
+    const lastBrace = cleanedContent.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      jsonString = cleanedContent.substring(firstBrace, lastBrace + 1);
+    }
+
+    // Fallback: find JSON containing "supplier_name"
+    if (!jsonString) {
+      const match = content.match(/\{[\s\S]*?"supplier_name"[\s\S]*?\}/);
+      if (match) {
+        const startIdx = content.indexOf(match[0]);
+        let braceCount = 0;
+        let endIdx = startIdx;
+        for (let i = startIdx; i < content.length; i++) {
+          if (content[i] === "{") braceCount++;
+          if (content[i] === "}") braceCount--;
+          if (braceCount === 0) {
+            endIdx = i + 1;
             break;
           }
         }
+        jsonString = content.substring(startIdx, endIdx);
       }
     }
 
-    // Clean trailing commas and control chars
-    jsonStr = jsonStr
+    if (!jsonString) {
+      return { success: false, error: "Could not parse AI response — no JSON found" };
+    }
+
+    // Clean up JSON
+    jsonString = jsonString
       .replace(/,\s*}/g, "}")
       .replace(/,\s*]/g, "]")
-      .replace(/[\x00-\x1F\x7F]/g, " ");
+      .replace(/[\x00-\x1F\x7F]/g, " ")
+      .replace(/\n\s*\n/g, "\n");
 
-    const parsed = JSON.parse(jsonStr) as ExtractionResult;
-    console.log(`[EXTRACT] ${model} parsed — vendor: ${parsed.vendor?.name}, total: ${parsed.invoice?.total}`);
-    return parsed;
+    let data: FlatExtraction;
+    try {
+      data = JSON.parse(jsonString) as FlatExtraction;
+    } catch (parseError) {
+      console.error("[EXTRACT] JSON parse error:", parseError);
+      return { success: false, error: "Could not parse AI response — invalid JSON" };
+    }
+
+    console.log(`[EXTRACT] Parsed — supplier: ${data.supplier_name}, total: ${data.total}, confidence: ${data.confidence}`);
+    return { success: true, data, usage: apiResponse.usage };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error(`[EXTRACT] Error (attempt ${retryCount + 1}):`, errorMessage);
+
+    // Retry on timeout or server errors only
+    const isRetryable =
+      errorMessage.includes("timeout") ||
+      errorMessage.includes("timed out") ||
+      errorMessage.includes("ETIMEDOUT") ||
+      errorMessage.includes("502") ||
+      errorMessage.includes("503") ||
+      errorMessage.includes("504");
+
+    if (isRetryable && retryCount < MAX_RETRIES) {
+      console.log("[EXTRACT] Retrying in 2 seconds...");
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      return extractFromText(groqApiKey, pdfText, retryCount + 1);
+    }
+
+    return { success: false, error: errorMessage };
+  }
+}
+
+// ─── Deterministic Classification (code, NOT LLM) ──────────────────────────
+
+function classifyExpenseCategory(
+  vendorName: string | null | undefined,
+  lineItems: Array<{ description: string }>,
+  invoiceText: string
+): string {
+  const text = [vendorName, ...lineItems.map((li) => li.description), invoiceText]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  const rules: [string, RegExp][] = [
+    ["software", /\b(saas|software|license|licence|licentie|subscription|abonnement|api|cloud|platform|github|gitlab|aws|azure|gcp|claude|anthropic|openai|notion|slack|figma|vercel|netlify|jira|atlassian|adobe|microsoft 365|office 365|google workspace|dropbox|zoom|hubspot|salesforce|stripe|twilio)\b/],
+    ["hosting", /\b(hosting|server|domain|dns|cdn|cloudflare|heroku|digitalocean|hetzner|ovh|strato|webhosting|vps|dedicated|compute|s3|storage bucket)\b/],
+    ["advertising", /\b(adverti|marketing|campaign|google ads|meta ads|facebook ads|linkedin ads|adwords|ad spend|promot|sponsor)\b/],
+    ["telecom", /\b(telecom|telefoon|phone plan|mobile plan|internet|wifi|vodafone|kpn|t-mobile|ziggo|tele2|provider|data bundle|sim)\b/],
+    ["travel", /\b(travel|reis|flight|vlucht|hotel|airbnb|booking\.com|transport|taxi|uber|train|trein|ns\.nl|klm|schiphol)\b/],
+    ["professional_services", /\b(consult|advies|legal|juridisch|account|audit|notaris|lawyer|attorney|advocaat|boekhouder|adviseur|interim)\b/],
+    ["office_supplies", /\b(office supplies|kantoorartikelen|stationery|furniture|meubel|desk|bureau|chair|stoel|equipment|printer|papier|toner|inkt)\b/],
+    ["insurance", /\b(insurance|verzekering|polis|premie|dekking|aansprakelijkheid|liability)\b/],
+    ["rent", /\b(rent|huur|lease|office space|workspace|kantoor|bedrijfsruimte|werkplek)\b/],
+    ["utilities", /\b(utilit|gas|electric|elektr|water|energy|energie|nutsvoorziening|eneco|vattenfall|essent|greenchoice)\b/],
+  ];
+
+  for (const [category, pattern] of rules) {
+    if (pattern.test(text)) return category;
+  }
+  return "other";
+}
+
+function detectReverseCharge(vendorVat: string | null | undefined): boolean {
+  if (!vendorVat) return false;
+  const vatClean = vendorVat.replace(/[\s.-]/g, "").toUpperCase();
+  if (vatClean.length < 4) return false;
+
+  // Company is Dutch (NL). If vendor VAT starts with non-NL EU country code → reverse charge.
+  const vendorCountry = vatClean.substring(0, 2);
+  if (vendorCountry === "NL") return false; // Same country, no reverse charge
+
+  const euPrefixes = [
+    "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
+    "DE", "GR", "EL", "HU", "IE", "IT", "LV", "LT", "LU", "MT",
+    "PL", "PT", "RO", "SK", "SI", "ES", "SE",
+  ];
+  return euPrefixes.includes(vendorCountry);
+}
+
+function detectRecurringFromText(
+  vendorName: string | null | undefined,
+  lineItems: Array<{ description: string }>,
+  invoiceText: string
+): { is_recurring: boolean; frequency: string | null } {
+  const text = [vendorName, ...lineItems.map((li) => li.description), invoiceText]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  const recurringKeywords =
+    /\b(subscri|monthly plan|annual plan|yearly plan|quarterly plan|recurring|membership|licentie|abonnement|maandelijks|jaarlijks|per maand|per jaar|per kwartaal)\b/;
+
+  if (!recurringKeywords.test(text)) {
+    return { is_recurring: false, frequency: null };
+  }
+
+  // Detect frequency
+  if (/\b(annual|yearly|per year|per jaar|jaarlijks|jaarbasis)\b/.test(text))
+    return { is_recurring: true, frequency: "annual" };
+  if (/\b(quarterly|per quarter|per kwartaal|kwartaal)\b/.test(text))
+    return { is_recurring: true, frequency: "quarterly" };
+  if (/\b(weekly|per week|wekelijks)\b/.test(text))
+    return { is_recurring: true, frequency: "weekly" };
+  return { is_recurring: true, frequency: "monthly" }; // default
+}
+
+function calculateConfidence(flat: FlatExtraction): {
+  overall: number;
+  vendor: number;
+  amounts: number;
+  line_items: number;
+} {
+  // Vendor confidence: based on how many vendor fields are filled
+  const vendorFields = [
+    flat.supplier_name,
+    flat.supplier_address,
+    flat.supplier_vat,
+    flat.supplier_email,
+    flat.supplier_iban,
+  ].filter(Boolean);
+  const vendorScore = Math.min(1.0, vendorFields.length / 2); // 2+ fields = 1.0
+
+  // Amounts confidence: based on total, subtotal, tax consistency
+  let amountsScore = 0;
+  if (flat.total != null && flat.total > 0) amountsScore += 0.5;
+  if (flat.subtotal != null && flat.subtotal > 0) amountsScore += 0.25;
+  if (flat.tax_amount != null) amountsScore += 0.15;
+  if (flat.subtotal && flat.tax_amount != null && flat.total) {
+    const calculatedTotal = flat.subtotal + flat.tax_amount;
+    if (Math.abs(calculatedTotal - flat.total) < 0.05) amountsScore += 0.1; // consistency bonus
+  }
+  amountsScore = Math.min(1.0, amountsScore);
+
+  // Line items confidence
+  const items = flat.line_items || [];
+  let lineScore = 0;
+  if (items.length > 0) {
+    const validItems = items.filter(
+      (li) => li.description && li.description.length > 1 && li.line_total != null
+    );
+    lineScore = validItems.length / items.length;
+  }
+
+  const overall = vendorScore * 0.3 + amountsScore * 0.4 + lineScore * 0.3;
+
+  return {
+    overall: Math.round(overall * 100) / 100,
+    vendor: Math.round(vendorScore * 100) / 100,
+    amounts: Math.round(amountsScore * 100) / 100,
+    line_items: Math.round(lineScore * 100) / 100,
   };
+}
 
-  // Attempt 1: Llama 4 Scout with json_object mode
-  try {
-    console.log("[EXTRACT] Attempt 1: llama-4-scout + json_object");
-    const result = await callGroq("meta-llama/llama-4-scout-17b-16e-instruct", true);
-    if (result?.vendor?.name) return { success: true, data: result };
-  } catch (e) {
-    console.warn("[EXTRACT] Attempt 1 error:", (e as Error).message?.substring(0, 150));
-  }
+function detectCurrency(invoiceText: string, extractedCurrency: string | null | undefined): string {
+  if (extractedCurrency) return extractedCurrency.toUpperCase();
+  // Regex fallback: look for currency symbols followed by digits
+  if (/\$\s*\d/.test(invoiceText)) return "USD";
+  if (/\u00a3\s*\d/.test(invoiceText)) return "GBP"; // £
+  return "EUR"; // default for NL company
+}
 
-  // Attempt 2: Llama 4 Scout free-form (extract JSON from mixed output)
-  try {
-    console.log("[EXTRACT] Attempt 2: llama-4-scout free-form");
-    const result = await callGroq("meta-llama/llama-4-scout-17b-16e-instruct", false);
-    if (result?.vendor?.name) return { success: true, data: result };
-  } catch (e) {
-    console.warn("[EXTRACT] Attempt 2 error:", (e as Error).message?.substring(0, 150));
-  }
+// ─── Map flat extraction → nested ExtractionResult ──────────────────────────
 
-  // Attempt 3: Gemma 2 9B — small but excellent at instruction following
-  try {
-    console.log("[EXTRACT] Attempt 3: gemma2-9b-it");
-    const result = await callGroq("gemma2-9b-it", true);
-    if (result?.vendor?.name) return { success: true, data: result };
-  } catch (e) {
-    console.warn("[EXTRACT] Attempt 3 error:", (e as Error).message?.substring(0, 150));
-  }
+function buildExtractionResult(
+  flat: FlatExtraction,
+  pdfText: string
+): ExtractionResult {
+  const lineItems = (flat.line_items || []).map((li) => ({
+    description: li.description || "",
+    quantity: li.quantity || 1,
+    unit_price: li.unit_price || 0,
+    tax_rate_percent: li.tax_rate_percent || 0,
+    line_total: li.line_total || 0,
+  }));
 
-  return { success: false, error: "Extraction failed — the AI could not parse this invoice. Please try again." };
+  const recurringResult = detectRecurringFromText(
+    flat.supplier_name,
+    lineItems,
+    pdfText
+  );
+
+  return {
+    vendor: {
+      name: flat.supplier_name || "",
+      address: flat.supplier_address || undefined,
+      vat_number: flat.supplier_vat || undefined,
+      website: flat.supplier_website || undefined,
+      email: flat.supplier_email || undefined,
+      phone: flat.supplier_phone || undefined,
+      iban: flat.supplier_iban || undefined,
+    },
+    invoice: {
+      number: flat.invoice_number || undefined,
+      date: flat.invoice_date || undefined,
+      due_date: flat.due_date || undefined,
+      currency: detectCurrency(pdfText, flat.currency),
+      subtotal: flat.subtotal ?? undefined,
+      tax_amount: flat.tax_amount ?? undefined,
+      total: flat.total || 0,
+    },
+    line_items: lineItems,
+    classification: {
+      is_recurring: recurringResult.is_recurring,
+      recurring_frequency: recurringResult.frequency,
+      expense_category: classifyExpenseCategory(flat.supplier_name, lineItems, pdfText),
+      is_reverse_charge: detectReverseCharge(flat.supplier_vat),
+    },
+    confidence: calculateConfidence(flat),
+  };
 }
 
 // ─── ECB Currency Conversion ─────────────────────────────────────────────────
@@ -227,7 +463,6 @@ async function getECBRate(
     if (resp.ok) {
       const csv = await resp.text();
       const lines = csv.trim().split("\n");
-      // CSV header is first line, data is second line
       if (lines.length >= 2) {
         const headers = lines[0].split(",");
         const values = lines[1].split(",");
@@ -235,12 +470,9 @@ async function getECBRate(
         if (obsValueIdx !== -1 && values[obsValueIdx]) {
           const rate = parseFloat(values[obsValueIdx]);
           if (!isNaN(rate) && rate > 0) {
-            // ECB returns how many units of foreign currency per 1 EUR
-            // We need: 1 foreign currency unit = X EUR → invert
             const invertedRate = 1 / rate;
             console.log(`[ECB] Got rate: 1 ${currency} = ${invertedRate.toFixed(6)} EUR (raw: ${rate})`);
 
-            // Cache it
             await supabase.from("exchange_rates").upsert(
               {
                 currency_from: currency,
@@ -266,7 +498,6 @@ async function getECBRate(
     const xmlResp = await fetch("https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml");
     if (xmlResp.ok) {
       const xml = await xmlResp.text();
-      // Parse XML for the currency rate
       const regex = new RegExp(`currency='${currency}'\\s+rate='([\\d.]+)'`);
       const match = xml.match(regex);
       if (match && match[1]) {
@@ -274,7 +505,6 @@ async function getECBRate(
         const invertedRate = 1 / rate;
         console.log(`[ECB] Daily XML rate: 1 ${currency} = ${invertedRate.toFixed(6)} EUR`);
 
-        // Cache with today's date
         await supabase.from("exchange_rates").upsert(
           {
             currency_from: currency,
@@ -334,7 +564,7 @@ async function matchOrCreateVendor(
       return { id: nameMatches[0].id, match_type: "fuzzy_name", confidence: 0.85 };
     }
 
-    // Also check with reversed pattern (vendor name contains our search)
+    // Also check with first word of vendor name
     const { data: reverseMatches } = await supabase
       .from("vendors")
       .select("id, name")
@@ -390,7 +620,9 @@ async function classifyTax(
   } else if (extraction.line_items.length > 0) {
     // Use the most common tax rate from line items
     const rates = extraction.line_items.map((li) => li.tax_rate_percent);
-    const mode = rates.sort((a, b) => rates.filter((v) => v === a).length - rates.filter((v) => v === b).length).pop() || 21;
+    const mode = rates
+      .sort((a, b) => rates.filter((v) => v === a).length - rates.filter((v) => v === b).length)
+      .pop() || 21;
     targetRate = mode;
   }
 
@@ -403,19 +635,17 @@ async function classifyTax(
     .order("is_default", { ascending: false });
 
   if (taxRates && taxRates.length > 0) {
-    // Find exact rate match
     const exactMatch = taxRates.find((tr: any) => Number(tr.rate) === targetRate);
     if (exactMatch) {
       return { rate_id: exactMatch.id, rate: targetRate, is_reverse_charge: isReverseCharge };
     }
-    // Fallback to default rate
     return { rate_id: taxRates[0].id, rate: Number(taxRates[0].rate), is_reverse_charge: isReverseCharge };
   }
 
   return { rate_id: null, rate: targetRate, is_reverse_charge: isReverseCharge };
 }
 
-// ─── Recurring Detection ─────────────────────────────────────────────────────
+// ─── Recurring Detection (next-date calculator) ─────────────────────────────
 
 function detectRecurring(extraction: ExtractionResult): {
   detected: boolean;
@@ -484,8 +714,8 @@ Deno.serve(async (req) => {
 
     console.log(`[SMART-IMPORT] Processing "${fileName}" for company ${companyId}`);
 
-    // Step 1: LLM extraction
-    const extraction = await extractInvoiceData(groqApiKey, pdfText);
+    // Step 1: Pure LLM extraction (no classification — just extract what's in the text)
+    const extraction = await extractFromText(groqApiKey, pdfText);
     if (!extraction.success || !extraction.data) {
       return new Response(
         JSON.stringify({ success: false, error: extraction.error || "Extraction failed" }),
@@ -493,9 +723,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    const data = extraction.data;
+    // Step 2: Build nested result with deterministic classification (code, not LLM)
+    const data = buildExtractionResult(extraction.data, pdfText);
 
-    // Step 2: Vendor matching
+    console.log(`[SMART-IMPORT] Extraction done — vendor: ${data.vendor.name}, total: ${data.invoice.total}, category: ${data.classification.expense_category}, reverse_charge: ${data.classification.is_reverse_charge}, recurring: ${data.classification.is_recurring}`);
+
+    // Step 3: Vendor matching
     let vendorMatch: { id: string; match_type: string; confidence: number } | null = null;
     try {
       vendorMatch = await matchOrCreateVendor(supabase, companyId, data.vendor);
@@ -503,10 +736,10 @@ Deno.serve(async (req) => {
       console.warn("[SMART-IMPORT] Vendor matching failed:", e);
     }
 
-    // Step 3: Tax classification
+    // Step 4: Tax classification
     const taxResult = await classifyTax(supabase, companyId, data);
 
-    // Step 4: Currency conversion
+    // Step 5: Currency conversion
     let currencyConversion: {
       original_currency: string;
       original_amount: number;
@@ -534,8 +767,37 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Step 5: Recurring detection
+    // Step 6: Recurring detection (next-date calculation)
     const recurring = detectRecurring(data);
+
+    // Step 7: Log AI usage
+    if (extraction.usage) {
+      try {
+        const promptTokens = extraction.usage.prompt_tokens || 0;
+        const completionTokens = extraction.usage.completion_tokens || 0;
+        const cost = (promptTokens / 1000000) * 0.05 + (completionTokens / 1000000) * 0.08;
+
+        await supabase.from("ai_usage_logs").insert({
+          organization_id: companyId,
+          user_id: userId,
+          prompt_tokens: promptTokens,
+          completion_tokens: completionTokens,
+          total_tokens: extraction.usage.total_tokens || promptTokens + completionTokens,
+          cost,
+          request_type: "invoice_processing",
+          endpoint: "/openai/v1/chat/completions",
+          metadata: {
+            model_name: "llama-3.1-8b-instant",
+            provider: "groq",
+            function: "smart-import-invoice",
+            extraction_success: true,
+            confidence: data.confidence.overall,
+          },
+        });
+      } catch (logError) {
+        console.warn("[SMART-IMPORT] Failed to log AI usage:", logError);
+      }
+    }
 
     // Return all analysis results for frontend review
     const result = {
@@ -547,7 +809,9 @@ Deno.serve(async (req) => {
       recurring,
     };
 
-    console.log(`[SMART-IMPORT] Done — vendor: ${vendorMatch?.match_type}, tax: ${taxResult.rate}%, recurring: ${recurring.detected}`);
+    console.log(
+      `[SMART-IMPORT] Done — vendor: ${vendorMatch?.match_type}, tax: ${taxResult.rate}%, recurring: ${recurring.detected}, confidence: ${data.confidence.overall}`
+    );
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
