@@ -71,8 +71,21 @@ export function useStoreBuilder(organizationId) {
           setStoreVersion(result.store_version || 0);
           setIsPublished(result.store_published === true);
         } else {
-          setConfig({ ...DEFAULT_STORE_CONFIG });
+          // No config exists yet — seed with full default B2B template
+          const seedConfig = { ...DEFAULT_STORE_CONFIG };
+          setConfig(seedConfig);
           setStoreVersion(0);
+          // Persist immediately so the preview iframe can load it
+          try {
+            await updateStoreConfig(organizationId, {
+              store_config: seedConfig,
+              store_version: 1,
+              enable_wholesale: true,
+            });
+            setStoreVersion(1);
+          } catch (seedErr) {
+            console.error('[useStoreBuilder] Failed to seed default config:', seedErr);
+          }
         }
       } catch (err) {
         console.error('[useStoreBuilder] Failed to load store config:', err);

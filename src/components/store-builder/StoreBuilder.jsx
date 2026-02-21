@@ -1,12 +1,8 @@
 // ---------------------------------------------------------------------------
-// StoreBuilder.jsx -- Three-zone B2B Store Builder with Admin Backend
+// StoreBuilder.jsx -- B2B Store Builder with AI chat
 //
-// Layout:
-// +----------+--------------+----------------------------------+
-// |  Chat    |  Nav Sidebar  |  Content (Preview | Admin | Cfg) |
-// |  (fixed) |  (fixed)      |  (flex-1)                        |
-// |  ~320px  |  ~220px       |                                  |
-// +----------+--------------+----------------------------------+
+// Preview mode:  Content (full width)  |  Chat (320px)
+// Settings mode: Nav (220px) | Content  |  Chat (320px)
 // ---------------------------------------------------------------------------
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
@@ -1090,10 +1086,20 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
         onToggleMode={handleToggleMode}
       />
 
-      {/* Three-zone main area */}
+      {/* Main area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Zone 1: Chat */}
-        <div className="w-[320px] flex-shrink-0 flex flex-col bg-zinc-900 border-r border-zinc-800/60">
+        {/* Zone 1: Nav Sidebar (hidden in preview mode for max space) */}
+        {!isPreviewMode && (
+          <NavSidebar activeView={activeView} onChangeView={handleChangeView} sectionCount={sectionCount} />
+        )}
+
+        {/* Zone 2: Content / Preview */}
+        <div className="flex-1 flex overflow-hidden bg-zinc-950/50">
+          {renderContent()}
+        </div>
+
+        {/* Zone 3: AI Chat (right side) */}
+        <div className="w-[320px] flex-shrink-0 flex flex-col bg-zinc-900 border-l border-zinc-800/60">
           {/* Messages */}
           <div className="flex-1 overflow-y-auto py-3 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
             {ai.messages.length === 0 && !ai.isProcessing && (
@@ -1178,16 +1184,6 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
               )}
             </div>
           </div>
-        </div>
-
-        {/* Zone 2: Nav Sidebar (hidden in preview mode for max space) */}
-        {!isPreviewMode && (
-          <NavSidebar activeView={activeView} onChangeView={handleChangeView} sectionCount={sectionCount} />
-        )}
-
-        {/* Zone 3: Content */}
-        <div className="flex-1 flex overflow-hidden bg-zinc-950/50">
-          {renderContent()}
         </div>
       </div>
     </div>

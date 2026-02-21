@@ -117,7 +117,10 @@ export default function StorefrontRenderer() {
   const theme = config?.theme ?? {};
 
   // --- Loading state ---
-  if (configLoading && !config) {
+  // In preview mode, wait for CONFIG_UPDATE from the builder parent window
+  const isWaitingForBuilder = isPreview && !overrideConfig && (configLoading || sections.length === 0);
+
+  if ((configLoading && !config) || isWaitingForBuilder) {
     return (
       <div
         className="min-h-[60vh] flex items-center justify-center"
@@ -132,7 +135,7 @@ export default function StorefrontRenderer() {
             className="text-sm"
             style={{ color: 'var(--ws-muted, rgba(255,255,255,0.5))' }}
           >
-            Loading...
+            Loading storefront...
           </span>
         </div>
       </div>

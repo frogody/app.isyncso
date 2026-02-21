@@ -953,8 +953,10 @@ export async function updateStoreConfig(
 ): Promise<void> {
   const { error } = await supabase
     .from('portal_settings')
-    .update(updates)
-    .eq('organization_id', organizationId);
+    .upsert(
+      { organization_id: organizationId, ...updates },
+      { onConflict: 'organization_id' },
+    );
 
   if (error) throw error;
 }
