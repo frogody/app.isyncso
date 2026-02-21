@@ -1,15 +1,15 @@
 // ---------------------------------------------------------------------------
-// StoreBuilder.jsx -- Three-zone B2B Store Builder (Base44-inspired)
+// StoreBuilder.jsx -- Three-zone B2B Store Builder with Admin Backend
 //
 // Layout:
-// ┌──────────┬──────────────┬──────────────────────────────────┐
-// │  Chat    │  Nav Sidebar  │  Content (Preview OR Settings)   │
-// │  (fixed) │  (fixed)      │  (flex-1)                        │
-// │  ~320px  │  ~200px       │                                  │
-// └──────────┴──────────────┴──────────────────────────────────┘
+// +----------+--------------+----------------------------------+
+// |  Chat    |  Nav Sidebar  |  Content (Preview | Admin | Cfg) |
+// |  (fixed) |  (fixed)      |  (flex-1)                        |
+// |  ~320px  |  ~220px       |                                  |
+// +----------+--------------+----------------------------------+
 // ---------------------------------------------------------------------------
 
-import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
@@ -28,6 +28,7 @@ import {
   GripVertical,
   ChevronUp,
   ChevronDown,
+  ChevronRight,
   Save,
   Globe,
   Check,
@@ -37,6 +38,17 @@ import {
   Tablet,
   ArrowLeft,
   Info,
+  BarChart3,
+  ShoppingCart,
+  Package,
+  Users,
+  UsersRound,
+  Tag,
+  MessageSquare,
+  Settings,
+  Paintbrush,
+  Link2,
+  ToggleLeft,
 } from 'lucide-react';
 
 import BuilderCanvas from './BuilderCanvas';
@@ -45,6 +57,15 @@ import { useStoreBuilder } from './hooks/useStoreBuilder';
 import { useBuilderHistory } from './hooks/useBuilderHistory';
 import { useBuilderPreview } from './hooks/useBuilderPreview';
 import { useBuilderAI } from './hooks/useBuilderAI';
+
+// B2B Admin components (all self-contained, no props needed)
+import B2BDashboard from '../b2b-admin/B2BDashboard';
+import B2BOrdersManager from '../b2b-admin/B2BOrdersManager';
+import B2BCatalogManager from '../b2b-admin/B2BCatalogManager';
+import B2BClientManager from '../b2b-admin/B2BClientManager';
+import ClientGroupManager from '../b2b-admin/ClientGroupManager';
+import PriceListManager from '../b2b-admin/PriceListManager';
+import B2BInquiryManager from '../b2b-admin/B2BInquiryManager';
 
 // ---------------------------------------------------------------------------
 // Time helper
@@ -115,25 +136,90 @@ function Bubble({ message }) {
 }
 
 // ---------------------------------------------------------------------------
-// Nav Sidebar
+// Nav Sidebar with categories
 // ---------------------------------------------------------------------------
 
-const NAV_ITEMS = [
-  { key: 'preview', icon: Monitor, label: 'Preview' },
-  { key: 'theme', icon: Palette, label: 'Theme' },
-  { key: 'sections', icon: LayoutGrid, label: 'Sections' },
-  { key: 'navigation', icon: Navigation, label: 'Navigation' },
-  { key: 'footer', icon: PanelBottom, label: 'Footer' },
+const NAV_SECTIONS = [
+  {
+    label: null, // No header for top-level items
+    items: [
+      { key: 'preview', icon: Monitor, label: 'Preview' },
+      { key: 'dashboard', icon: BarChart3, label: 'Dashboard' },
+    ],
+  },
+  {
+    label: 'Commerce',
+    items: [
+      { key: 'orders', icon: ShoppingCart, label: 'Orders' },
+      { key: 'catalog', icon: Package, label: 'Catalog' },
+      { key: 'price-lists', icon: Tag, label: 'Price Lists' },
+    ],
+  },
+  {
+    label: 'Customers',
+    items: [
+      { key: 'clients', icon: Users, label: 'Clients' },
+      { key: 'client-groups', icon: UsersRound, label: 'Client Groups' },
+      { key: 'inquiries', icon: MessageSquare, label: 'Inquiries' },
+    ],
+  },
+  {
+    label: 'Design',
+    collapsible: true,
+    items: [
+      { key: 'theme', icon: Palette, label: 'Theme' },
+      { key: 'sections', icon: LayoutGrid, label: 'Sections' },
+      { key: 'navigation', icon: Navigation, label: 'Navigation' },
+      { key: 'footer', icon: PanelBottom, label: 'Footer' },
+    ],
+  },
+  {
+    label: 'Settings',
+    items: [
+      { key: 'store-settings', icon: Settings, label: 'Store Config' },
+      { key: 'domain', icon: Globe, label: 'Domain' },
+    ],
+  },
 ];
 
 function NavSidebar({ activeView, onChangeView, sectionCount }) {
   const [search, setSearch] = useState('');
+  const [collapsed, setCollapsed] = useState({});
+
+  const allItems = NAV_SECTIONS.flatMap((s) => s.items);
   const filtered = search
-    ? NAV_ITEMS.filter((n) => n.label.toLowerCase().includes(search.toLowerCase()))
-    : NAV_ITEMS;
+    ? allItems.filter((n) => n.label.toLowerCase().includes(search.toLowerCase()))
+    : null;
+
+  const toggleCollapse = (label) => {
+    setCollapsed((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  const renderNavButton = ({ key, icon: Icon, label }) => {
+    const isActive = activeView === key;
+    return (
+      <button
+        key={key}
+        onClick={() => onChangeView(key)}
+        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-colors mb-0.5 ${
+          isActive
+            ? 'bg-cyan-500/10 text-cyan-400'
+            : 'text-zinc-400 hover:text-white hover:bg-zinc-800/40'
+        }`}
+      >
+        <Icon className="w-4 h-4 shrink-0" />
+        <span className="flex-1 text-left truncate">{label}</span>
+        {key === 'sections' && sectionCount > 0 && (
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isActive ? 'bg-cyan-500/20 text-cyan-300' : 'bg-zinc-800 text-zinc-500'}`}>
+            {sectionCount}
+          </span>
+        )}
+      </button>
+    );
+  };
 
   return (
-    <div className="w-[200px] flex-shrink-0 bg-zinc-950 border-r border-zinc-800/60 flex flex-col h-full">
+    <div className="w-[220px] flex-shrink-0 bg-zinc-950 border-r border-zinc-800/60 flex flex-col h-full">
       {/* Search */}
       <div className="px-3 pt-3 pb-2">
         <div className="relative">
@@ -150,35 +236,41 @@ function NavSidebar({ activeView, onChangeView, sectionCount }) {
 
       {/* Nav items */}
       <nav className="flex-1 overflow-y-auto px-2 pb-4">
-        {filtered.map(({ key, icon: Icon, label }) => {
-          const isActive = activeView === key;
-          return (
-            <button
-              key={key}
-              onClick={() => onChangeView(key)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors mb-0.5 ${
-                isActive
-                  ? 'bg-cyan-500/10 text-cyan-400'
-                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/40'
-              }`}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span className="flex-1 text-left truncate">{label}</span>
-              {key === 'sections' && sectionCount > 0 && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isActive ? 'bg-cyan-500/20 text-cyan-300' : 'bg-zinc-800 text-zinc-500'}`}>
-                  {sectionCount}
-                </span>
-              )}
-            </button>
-          );
-        })}
+        {filtered ? (
+          // Search mode: flat list
+          filtered.map(renderNavButton)
+        ) : (
+          // Normal mode: grouped with headers
+          NAV_SECTIONS.map((section, sIdx) => {
+            const isCollapsed = section.collapsible && collapsed[section.label];
+
+            return (
+              <div key={sIdx} className={sIdx > 0 ? 'mt-3' : ''}>
+                {section.label && (
+                  <div
+                    className={`flex items-center gap-1 px-3 mb-1 ${section.collapsible ? 'cursor-pointer hover:text-zinc-300' : ''}`}
+                    onClick={section.collapsible ? () => toggleCollapse(section.label) : undefined}
+                  >
+                    {section.collapsible && (
+                      <ChevronRight className={`w-3 h-3 text-zinc-600 transition-transform ${isCollapsed ? '' : 'rotate-90'}`} />
+                    )}
+                    <span className="text-[10px] uppercase tracking-wider text-zinc-600 font-medium select-none">
+                      {section.label}
+                    </span>
+                  </div>
+                )}
+                {!isCollapsed && section.items.map(renderNavButton)}
+              </div>
+            );
+          })
+        )}
       </nav>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Settings Pages
+// Settings Pages (Design)
 // ---------------------------------------------------------------------------
 
 function PageHeader({ title, description }) {
@@ -216,18 +308,52 @@ function ColorInput({ label, value, onChange }) {
   );
 }
 
-function TextInput({ label, value, onChange, placeholder }) {
+function TextInput({ label, value, onChange, placeholder, type = 'text' }) {
   return (
     <label className="block">
       <span className="text-xs text-zinc-500 mb-1.5 block">{label}</span>
       <input
-        type="text"
+        type={type}
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
       />
     </label>
+  );
+}
+
+function SelectInput({ label, value, onChange, options }) {
+  return (
+    <label className="block">
+      <span className="text-xs text-zinc-500 mb-1.5 block">{label}</span>
+      <select
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
+      >
+        {options.map(({ value: v, label: l }) => (
+          <option key={v} value={v}>{l}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function ToggleInput({ label, description, value, onChange }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex-1 min-w-0">
+        <span className="text-sm text-zinc-300 block">{label}</span>
+        {description && <span className="text-[11px] text-zinc-600 block mt-0.5">{description}</span>}
+      </div>
+      <button
+        onClick={() => onChange(!value)}
+        className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${value ? 'bg-cyan-500' : 'bg-zinc-700'}`}
+      >
+        <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${value ? 'translate-x-5' : ''}`} />
+      </button>
+    </div>
   );
 }
 
@@ -306,7 +432,6 @@ function SectionsPage({ config, onAddSection, onRemoveSection, onToggleVisibilit
     <div>
       <PageHeader title="Sections" description="Add, remove, and reorder your store sections." />
 
-      {/* Section list */}
       <SettingsCard>
         {sections.length === 0 ? (
           <div className="text-center py-8">
@@ -328,7 +453,6 @@ function SectionsPage({ config, onAddSection, onRemoveSection, onToggleVisibilit
                   </span>
                 </div>
 
-                {/* Move up/down */}
                 <button
                   onClick={() => onMoveSection(idx, idx - 1)}
                   disabled={idx === 0}
@@ -344,7 +468,6 @@ function SectionsPage({ config, onAddSection, onRemoveSection, onToggleVisibilit
                   <ChevronDown className="w-3.5 h-3.5" />
                 </button>
 
-                {/* Toggle visibility */}
                 <button
                   onClick={() => onToggleVisibility(section.id)}
                   className="p-1 text-zinc-600 hover:text-white transition-colors"
@@ -353,7 +476,6 @@ function SectionsPage({ config, onAddSection, onRemoveSection, onToggleVisibilit
                   {section.visible === false ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
 
-                {/* Remove */}
                 <button
                   onClick={() => onRemoveSection(section.id)}
                   className="p-1 text-zinc-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
@@ -365,7 +487,6 @@ function SectionsPage({ config, onAddSection, onRemoveSection, onToggleVisibilit
           </div>
         )}
 
-        {/* Add section */}
         <div className="mt-3">
           {showAdd ? (
             <div className="bg-zinc-950 border border-zinc-800/60 rounded-xl p-3">
@@ -493,7 +614,7 @@ function FooterPage({ config, onUpdateFooter }) {
         <div className="space-y-4">
           <TextInput label="Company Name" value={footer.companyName} onChange={(v) => update('companyName', v)} placeholder="Your Company" />
           <TextInput label="Tagline" value={footer.tagline} onChange={(v) => update('tagline', v)} placeholder="Your company tagline" />
-          <TextInput label="Copyright Text" value={footer.copyright} onChange={(v) => update('copyright', v)} placeholder="© 2026 Company. All rights reserved." />
+          <TextInput label="Copyright Text" value={footer.copyright} onChange={(v) => update('copyright', v)} placeholder="2026 Company. All rights reserved." />
         </div>
       </SettingsCard>
 
@@ -508,8 +629,163 @@ function FooterPage({ config, onUpdateFooter }) {
   );
 }
 
+// -- Store Settings Page --
+
+function StoreSettingsPage({ config, onUpdateConfig }) {
+  const settings = config?.storeSettings || {};
+
+  const update = (field, value) => {
+    onUpdateConfig({
+      ...config,
+      storeSettings: { ...settings, [field]: value },
+    });
+  };
+
+  return (
+    <div>
+      <PageHeader title="Store Configuration" description="Control how your B2B store operates." />
+
+      <SettingsCard title="Visibility & Access">
+        <div className="space-y-5">
+          <SelectInput
+            label="Catalog Visibility"
+            value={settings.catalog_visibility || 'all'}
+            onChange={(v) => update('catalog_visibility', v)}
+            options={[
+              { value: 'all', label: 'Public - Anyone can browse' },
+              { value: 'authenticated', label: 'Authenticated - Login required' },
+            ]}
+          />
+          <ToggleInput
+            label="Order Approval Required"
+            description="New orders need manual approval before processing."
+            value={settings.order_requires_approval ?? false}
+            onChange={(v) => update('order_requires_approval', v)}
+          />
+          <ToggleInput
+            label="Enable Pre-orders"
+            description="Allow customers to order out-of-stock products."
+            value={settings.enable_preorders ?? false}
+            onChange={(v) => update('enable_preorders', v)}
+          />
+          <ToggleInput
+            label="Enable Inquiries"
+            description="Let customers send product inquiries."
+            value={settings.enable_inquiries ?? true}
+            onChange={(v) => update('enable_inquiries', v)}
+          />
+          <ToggleInput
+            label="Enable Chat"
+            description="Live chat widget on your storefront."
+            value={settings.enable_chat ?? false}
+            onChange={(v) => update('enable_chat', v)}
+          />
+        </div>
+      </SettingsCard>
+
+      <SettingsCard title="Orders & Pricing">
+        <div className="space-y-4">
+          <TextInput
+            label="Minimum Order Amount"
+            value={settings.min_order_amount}
+            onChange={(v) => update('min_order_amount', v)}
+            placeholder="0"
+            type="number"
+          />
+          <SelectInput
+            label="Default Currency"
+            value={settings.default_currency || 'EUR'}
+            onChange={(v) => update('default_currency', v)}
+            options={[
+              { value: 'EUR', label: 'EUR - Euro' },
+              { value: 'USD', label: 'USD - US Dollar' },
+              { value: 'GBP', label: 'GBP - British Pound' },
+            ]}
+          />
+        </div>
+      </SettingsCard>
+    </div>
+  );
+}
+
+// -- Domain Page --
+
+function DomainPage({ config, onUpdateConfig }) {
+  const settings = config?.storeSettings || {};
+
+  const update = (field, value) => {
+    onUpdateConfig({
+      ...config,
+      storeSettings: { ...settings, [field]: value },
+    });
+  };
+
+  return (
+    <div>
+      <PageHeader title="Domain" description="Configure your store's web address." />
+
+      <SettingsCard title="Subdomain">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={settings.store_subdomain || ''}
+              onChange={(e) => update('store_subdomain', e.target.value)}
+              placeholder="your-store"
+              className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
+            />
+            <span className="text-sm text-zinc-500 shrink-0">.isyncso.com</span>
+          </div>
+          <p className="text-[11px] text-zinc-600">Your store will be accessible at this subdomain.</p>
+        </div>
+      </SettingsCard>
+
+      <SettingsCard title="Custom Domain">
+        <div className="space-y-4">
+          <TextInput
+            label="Domain Name"
+            value={settings.custom_domain}
+            onChange={(v) => update('custom_domain', v)}
+            placeholder="store.yourcompany.com"
+          />
+          {settings.custom_domain && (
+            <div className="bg-zinc-950 border border-zinc-800/60 rounded-lg p-3">
+              <p className="text-xs text-zinc-500 mb-2">DNS Configuration</p>
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-zinc-600 w-12">Type:</span>
+                  <span className="text-zinc-300 font-mono">CNAME</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-zinc-600 w-12">Host:</span>
+                  <span className="text-zinc-300 font-mono">{settings.custom_domain?.split('.')[0] || 'store'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-zinc-600 w-12">Value:</span>
+                  <span className="text-zinc-300 font-mono">cname.isyncso.com</span>
+                </div>
+              </div>
+              {settings.custom_domain_verified ? (
+                <div className="flex items-center gap-1.5 mt-3 text-xs text-cyan-400">
+                  <Check className="w-3.5 h-3.5" />
+                  Domain verified
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 mt-3 text-xs text-zinc-500">
+                  <Loader2 className="w-3.5 h-3.5" />
+                  Awaiting DNS verification
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </SettingsCard>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
-// Toolbar (simplified inline)
+// Toolbar
 // ---------------------------------------------------------------------------
 
 const DEVICES = [
@@ -575,7 +851,7 @@ function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPubl
         {isPublished ? (
           <button
             onClick={onPublish}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-600/25 rounded-lg text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600/15 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-600/25 rounded-lg text-xs font-medium transition-colors"
           >
             <Check className="w-3.5 h-3.5" />
             Published
@@ -589,6 +865,20 @@ function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPubl
             Publish
           </button>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Admin content wrapper — gives embedded components a dark bg context
+// ---------------------------------------------------------------------------
+
+function AdminPanel({ children }) {
+  return (
+    <div className="flex-1 overflow-y-auto bg-[#09090b] min-h-0">
+      <div className="min-h-full">
+        {children}
       </div>
     </div>
   );
@@ -679,6 +969,11 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   const handleUpdateNavigation = useCallback((nav) => { history.pushState(); builder.updateNavigation(nav); }, [history.pushState, builder.updateNavigation]);
   const handleUpdateFooter = useCallback((f) => { history.pushState(); builder.updateFooter(f); }, [history.pushState, builder.updateFooter]);
 
+  const handleUpdateConfig = useCallback((newConfig) => {
+    history.pushState();
+    builder.updateConfig(newConfig);
+  }, [history.pushState, builder.updateConfig]);
+
   const handleAIPrompt = useCallback(async (prompt) => {
     try {
       const ctx = { storeName: storeName || 'B2B Store', organizationId };
@@ -711,6 +1006,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   // Content area render
   const renderContent = () => {
     switch (activeView) {
+      // -- Preview --
       case 'preview':
         return (
           <BuilderCanvas
@@ -722,6 +1018,24 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
             onIframeLoad={preview.onIframeLoad}
           />
         );
+
+      // -- Admin panels (self-contained components) --
+      case 'dashboard':
+        return <AdminPanel><B2BDashboard /></AdminPanel>;
+      case 'orders':
+        return <AdminPanel><B2BOrdersManager /></AdminPanel>;
+      case 'catalog':
+        return <AdminPanel><B2BCatalogManager /></AdminPanel>;
+      case 'clients':
+        return <AdminPanel><B2BClientManager /></AdminPanel>;
+      case 'client-groups':
+        return <AdminPanel><ClientGroupManager /></AdminPanel>;
+      case 'price-lists':
+        return <AdminPanel><PriceListManager /></AdminPanel>;
+      case 'inquiries':
+        return <AdminPanel><B2BInquiryManager /></AdminPanel>;
+
+      // -- Design pages --
       case 'theme':
         return (
           <div className="flex-1 overflow-y-auto p-8 max-w-2xl">
@@ -752,6 +1066,21 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
             <FooterPage config={builder.config} onUpdateFooter={handleUpdateFooter} />
           </div>
         );
+
+      // -- Settings pages --
+      case 'store-settings':
+        return (
+          <div className="flex-1 overflow-y-auto p-8 max-w-2xl">
+            <StoreSettingsPage config={builder.config} onUpdateConfig={handleUpdateConfig} />
+          </div>
+        );
+      case 'domain':
+        return (
+          <div className="flex-1 overflow-y-auto p-8 max-w-2xl">
+            <DomainPage config={builder.config} onUpdateConfig={handleUpdateConfig} />
+          </div>
+        );
+
       default:
         return null;
     }
