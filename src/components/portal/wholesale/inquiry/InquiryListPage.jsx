@@ -172,7 +172,7 @@ export default function InquiryListPage() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('b2b_inquiries')
+        .from('b2b_product_inquiries')
         .select('*')
         .eq('client_id', client.id)
         .order('created_at', { ascending: false });

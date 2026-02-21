@@ -438,6 +438,11 @@ import WholesaleAccount from "./portal/WholesaleAccount";
 import B2BOrderDetail from "@/components/b2b-admin/B2BOrderDetail";
 import B2BCatalogManager from "@/components/b2b-admin/B2BCatalogManager";
 import B2BInquiryManager from "@/components/b2b-admin/B2BInquiryManager";
+import B2BDashboard from "@/components/b2b-admin/B2BDashboard";
+import PriceListManager from "@/components/b2b-admin/PriceListManager";
+import B2BOrdersManager from "@/components/b2b-admin/B2BOrdersManager";
+import PriceListEditor from "@/components/b2b-admin/PriceListEditor";
+import ClientGroupManager from "@/components/b2b-admin/ClientGroupManager";
 
 import { BrowserRouter as Router, Route, Routes, useLocation, useParams, Navigate } from 'react-router-dom';
 
@@ -1261,7 +1266,12 @@ function PagesContent() {
 
                 <Route path="/AgentDetail" element={<AgentDetail />} />
 
-                <Route path="/b2b/orders/:id" element={<B2BOrderDetail />} />
+                <Route path="/b2b/dashboard" element={<B2BDashboard />} />
+                <Route path="/b2b/orders" element={<B2BOrdersManager />} />
+                <Route path="/b2b/orders/:orderId" element={<B2BOrderDetail />} />
+                <Route path="/b2b/price-lists" element={<PriceListManager />} />
+                <Route path="/b2b/price-lists/:id" element={<PriceListEditor />} />
+                <Route path="/b2b/client-groups" element={<ClientGroupManager />} />
                 <Route path="/b2b/catalog" element={<B2BCatalogManager />} />
                 <Route path="/b2b/inquiries" element={<B2BInquiryManager />} />
 

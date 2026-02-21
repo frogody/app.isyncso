@@ -231,7 +231,7 @@ serve(async (req: Request) => {
 
     // Fetch client email
     const { data: client } = await supabase
-      .from("b2b_clients")
+      .from("portal_clients")
       .select("email, contact_name, company_name")
       .eq("organization_id", organizationId)
       .single();
@@ -290,22 +290,29 @@ serve(async (req: Request) => {
         );
     }
 
-    // Log notification to b2b_order_notifications table
-    const { error: logError } = await supabase
-      .from("b2b_order_notifications")
-      .insert({
-        order_id: orderId,
-        organization_id: organizationId,
-        event,
-        recipient_email: client.email,
-        subject,
-        html_body: emailHtml,
-        status: "logged",
-        created_at: new Date().toISOString(),
-      });
+    // Log notification - wrapped in try/catch since table may not exist yet
+    let notificationLogged = false;
+    try {
+      const { error: logError } = await supabase
+        .from("b2b_order_notifications")
+        .insert({
+          order_id: orderId,
+          organization_id: organizationId,
+          event,
+          recipient_email: client.email,
+          subject,
+          html_body: emailHtml,
+          status: "logged",
+          created_at: new Date().toISOString(),
+        });
 
-    if (logError) {
-      console.error("[b2b-order-webhook] Failed to log notification:", logError);
+      if (logError) {
+        console.warn("[b2b-order-webhook] Notification table not available, skipping log:", logError.message);
+      } else {
+        notificationLogged = true;
+      }
+    } catch (notifErr) {
+      console.warn("[b2b-order-webhook] Could not log notification:", (notifErr as Error).message);
     }
 
     return new Response(
@@ -315,7 +322,7 @@ serve(async (req: Request) => {
         orderId,
         recipientEmail: client.email,
         subject,
-        notificationLogged: !logError,
+        notificationLogged,
       }),
       { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
     );

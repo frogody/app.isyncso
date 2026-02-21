@@ -52,7 +52,7 @@ export default function InquiryModal({ isOpen, onClose, product }) {
     setError(null);
 
     try {
-      const { error: insertError } = await supabase.from('b2b_inquiries').insert({
+      const { error: insertError } = await supabase.from('b2b_product_inquiries').insert({
         organization_id: organizationId,
         client_id: client?.id || null,
         client_name: client?.name || client?.company_name || null,

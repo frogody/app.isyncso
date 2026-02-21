@@ -71,12 +71,12 @@ Deno.serve(async (req: Request) => {
       }
 
       if (verified) {
-        // Update store config with verified domain
+        // Update portal settings with verified domain
         await supabase
-          .from('b2b_store_configs')
+          .from('portal_settings')
           .update({
-            custom_domain: domain.toLowerCase(),
-            ssl_status: 'pending',
+            custom_domain_verified: true,
+            custom_domain_ssl_status: 'pending',
             updated_at: new Date().toISOString(),
           })
           .eq('organization_id', organizationId);
@@ -98,8 +98,8 @@ Deno.serve(async (req: Request) => {
     // ----- STATUS -----
     if (action === 'status') {
       const { data, error } = await supabase
-        .from('b2b_store_configs')
-        .select('custom_domain, ssl_status')
+        .from('portal_settings')
+        .select('store_config, custom_domain_ssl_status')
         .eq('organization_id', organizationId)
         .single();
 
@@ -112,8 +112,8 @@ Deno.serve(async (req: Request) => {
 
       return new Response(
         JSON.stringify({
-          domain: data?.custom_domain,
-          ssl_status: data?.ssl_status || 'none',
+          domain: data?.store_config?.custom_domain || null,
+          ssl_status: data?.custom_domain_ssl_status || 'none',
         }),
         { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
       );
@@ -122,10 +122,10 @@ Deno.serve(async (req: Request) => {
     // ----- REMOVE -----
     if (action === 'remove') {
       await supabase
-        .from('b2b_store_configs')
+        .from('portal_settings')
         .update({
-          custom_domain: null,
-          ssl_status: null,
+          custom_domain_verified: false,
+          custom_domain_ssl_status: null,
           updated_at: new Date().toISOString(),
         })
         .eq('organization_id', organizationId);

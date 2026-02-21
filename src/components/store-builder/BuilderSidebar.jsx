@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import NavigationEditor from './NavigationEditor';
+import FooterEditor from './FooterEditor';
+import CatalogSettingsEditor from './CatalogSettingsEditor';
 import {
   GripVertical,
   Image,
@@ -608,15 +611,30 @@ export default function BuilderSidebar({
       )}
 
       {activePanel === 'navigation' && (
-        <PlaceholderPanel title="Navigation Editor" />
+        <div className="flex-1 overflow-y-auto p-4">
+          <NavigationEditor
+            navigation={config?.navigation || {}}
+            onUpdate={onUpdateNavigation}
+          />
+        </div>
       )}
 
       {activePanel === 'footer' && (
-        <PlaceholderPanel title="Footer Editor" />
+        <div className="flex-1 overflow-y-auto p-4">
+          <FooterEditor
+            footer={config?.footer || {}}
+            onUpdate={onUpdateFooter}
+          />
+        </div>
       )}
 
       {activePanel === 'catalog' && (
-        <PlaceholderPanel title="Catalog Settings" />
+        <div className="flex-1 overflow-y-auto p-4">
+          <CatalogSettingsEditor
+            catalog={config?.catalog || {}}
+            onUpdate={onUpdateCatalog}
+          />
+        </div>
       )}
     </div>
   );

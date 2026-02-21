@@ -104,6 +104,7 @@ import {
   Volume2,
   Signal,
   Upload,
+  Store,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -251,6 +252,13 @@ const navigationItems = [
     icon: Package,
     permission: null, // Always visible - core feature
     matchPatterns: ["/product", "/inventory", "/stockpurchases", "/emailpoolsettings"], // Matches /products, /productdetail, /inventory*, /emailpool*, etc.
+  },
+  {
+    title: "B2B Store",
+    url: createPageUrl("B2BStoreBuilder"),
+    icon: Store,
+    permission: "products.manage",
+    matchPatterns: ["/store-builder", "/b2b"],
   },
   {
     title: "Inbox",

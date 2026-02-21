@@ -238,7 +238,7 @@ export default function B2BInquiryManager() {
 
     try {
       let query = supabase
-        .from('b2b_inquiries')
+        .from('b2b_product_inquiries')
         .select('*')
         .eq('organization_id', organizationId)
         .order('created_at', { ascending: false });
@@ -277,7 +277,7 @@ export default function B2BInquiryManager() {
       setReplyingId(inquiryId);
       try {
         const { error: updateErr } = await supabase
-          .from('b2b_inquiries')
+          .from('b2b_product_inquiries')
           .update({
             reply: replyText,
             status: 'replied',
@@ -305,7 +305,7 @@ export default function B2BInquiryManager() {
     async (inquiryId) => {
       try {
         const { error: updateErr } = await supabase
-          .from('b2b_inquiries')
+          .from('b2b_product_inquiries')
           .update({ status: 'closed' })
           .eq('id', inquiryId);
 
