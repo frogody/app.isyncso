@@ -258,7 +258,7 @@ const navigationItems = [
     url: createPageUrl("B2BStoreBuilder"),
     icon: Store,
     permission: "products.manage",
-    matchPatterns: ["/store-builder", "/b2b"],
+    matchPatterns: ["/b2bstorebuilder", "/b2b"],
   },
   {
     title: "Inbox",

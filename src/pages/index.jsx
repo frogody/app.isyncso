@@ -870,13 +870,13 @@ function PagesContent() {
     }
 
     // B2B Store Builder - full-screen IDE experience (no main Layout)
-    const isStoreBuilderRoute = location.pathname.startsWith('/store-builder');
+    const isStoreBuilderRoute = location.pathname.startsWith('/b2bstorebuilder');
     if (isStoreBuilderRoute) {
         return (
             <UserProvider>
                 <PermissionProvider>
                     <Routes>
-                        <Route path="/store-builder" element={<B2BStoreBuilder />} />
+                        <Route path="/b2bstorebuilder" element={<B2BStoreBuilder />} />
                     </Routes>
                 </PermissionProvider>
             </UserProvider>
