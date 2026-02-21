@@ -109,6 +109,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   const [showAddSection, setShowAddSection] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
   // ---- Sync config to preview iframe when it changes -----------------------
   const prevConfigRef = useRef(null);
@@ -153,14 +154,17 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   // ---- Handlers (wrap builder methods with history pushes) -----------------
 
   const handleSave = useCallback(async () => {
+    setSaveError(null);
     try {
       await builder.saveConfig();
     } catch (err) {
       console.error('Save failed:', err);
+      setSaveError(err.message || 'Failed to save. Please try again.');
     }
   }, [builder.saveConfig]);
 
   const handlePublish = useCallback(async () => {
+    setSaveError(null);
     try {
       if (isPublished) {
         await builder.unpublishStore();
@@ -234,10 +238,15 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
 
   const handleAIPrompt = useCallback(
     async (prompt) => {
-      const result = await ai.sendPrompt(prompt, builder.config);
-      if (result?.updatedConfig) {
-        history.pushState();
-        builder.updateConfig(result.updatedConfig);
+      try {
+        const result = await ai.sendPrompt(prompt, builder.config);
+        if (result?.updatedConfig) {
+          history.pushState();
+          builder.updateConfig(result.updatedConfig);
+        }
+      } catch (err) {
+        console.error('AI prompt failed:', err);
+        throw err; // re-throw so AIPromptBar can restore the input
       }
     },
     [ai.sendPrompt, builder.config, builder.updateConfig, history.pushState],
@@ -259,6 +268,19 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   // ---- Render --------------------------------------------------------------
   return (
     <div className="flex flex-col h-screen bg-[#09090b] overflow-hidden">
+      {/* ---- Save/Publish Error Banner ---- */}
+      {saveError && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 text-sm">
+          <span className="flex-1">{saveError}</span>
+          <button
+            onClick={() => setSaveError(null)}
+            className="text-red-400 hover:text-red-300 font-medium"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* ---- Top Toolbar ---- */}
       <BuilderToolbar
         onBack={onBack}

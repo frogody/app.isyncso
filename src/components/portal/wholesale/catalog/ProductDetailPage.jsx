@@ -74,6 +74,23 @@ function collectImages(product) {
 }
 
 /**
+ * Sanitize HTML content to prevent XSS attacks.
+ * Strips <script> tags, event handler attributes (on*), and javascript: URIs.
+ */
+function sanitizeHtml(html) {
+  if (!html || typeof html !== 'string') return '';
+  return html
+    // Remove <script> tags and their content
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    // Remove event handler attributes (onclick, onerror, onload, etc.)
+    .replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    // Remove javascript: URIs in href/src/action attributes
+    .replace(/(href|src|action)\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, '$1=""')
+    // Remove data: URIs that could execute scripts (keep data:image)
+    .replace(/(href|src|action)\s*=\s*(?:"data:(?!image)[^"]*"|'data:(?!image)[^']*')/gi, '$1=""');
+}
+
+/**
  * Parse specifications JSONB into a flat array of { key, value } pairs.
  */
 function parseSpecifications(specs) {
@@ -864,7 +881,7 @@ export default function ProductDetailPage() {
               <div
                 className="prose prose-sm prose-invert max-w-none text-sm leading-relaxed"
                 style={{ color: 'var(--ws-muted)' }}
-                dangerouslySetInnerHTML={{ __html: product.description }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }}
               />
             ) : (
               <p

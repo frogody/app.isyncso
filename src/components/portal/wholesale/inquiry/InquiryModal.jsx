@@ -7,7 +7,7 @@
  * Submit to b2b_inquiries. framer-motion animations. Success state with checkmark.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/api/supabaseClient';
 import { useWholesale } from '../WholesaleProvider';
@@ -33,8 +33,37 @@ const CONTACT_METHODS = [
 ];
 
 export default function InquiryModal({ isOpen, onClose, product }) {
-  const { client, config } = useWholesale();
-  const organizationId = config?.organization_id;
+  const { config, orgId } = useWholesale();
+  const organizationId = config?.organization_id || orgId;
+
+  // Fetch portal client data independently since WholesaleProvider does not expose it
+  const [client, setClient] = useState(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+
+    const fetchClient = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user || cancelled) return;
+
+        let query = supabase
+          .from('portal_clients')
+          .select('id, name, company_name, email')
+          .eq('auth_user_id', session.user.id)
+          .in('status', ['active', 'invited']);
+        if (organizationId) query = query.eq('organization_id', organizationId);
+
+        const { data } = await query.maybeSingle();
+        if (!cancelled) setClient(data || null);
+      } catch {
+        // Client data is optional -- inquiry can be submitted without it
+      }
+    };
+
+    fetchClient();
+    return () => { cancelled = true; };
+  }, [isOpen, organizationId]);
 
   const [subject, setSubject] = useState(product?.name ? `Inquiry about ${product.name}` : '');
   const [message, setMessage] = useState('');

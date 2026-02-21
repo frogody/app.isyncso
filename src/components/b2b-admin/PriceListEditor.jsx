@@ -269,6 +269,11 @@ export default function PriceListEditor() {
       return;
     }
 
+    const productName = item.products?.name || 'this product';
+    if (!window.confirm(`Remove ${productName} from this price list? This cannot be undone.`)) {
+      return;
+    }
+
     try {
       const { error: delErr } = await supabase
         .from('b2b_price_list_items')

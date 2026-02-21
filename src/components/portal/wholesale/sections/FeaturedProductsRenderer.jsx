@@ -1,5 +1,7 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Plus } from 'lucide-react';
+import { useWholesale } from '../WholesaleProvider';
 
 /**
  * FeaturedProductsRenderer
@@ -39,14 +41,15 @@ function getGridClasses(columns) {
 /**
  * Detailed product card: image, name, sku, price, button.
  */
-function DetailedCard({ product, showPricing, showQuickInquiry }) {
+function DetailedCard({ product, showPricing, showQuickInquiry, onAddToCart, onNavigate }) {
   return (
     <div
-      className="group flex flex-col rounded-xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5"
+      className="group flex flex-col rounded-xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
       style={{
         backgroundColor: 'var(--ws-surface)',
         border: '1px solid var(--ws-border)',
       }}
+      onClick={() => onNavigate?.(product.id)}
     >
       {/* Image placeholder */}
       <div
@@ -79,12 +82,13 @@ function DetailedCard({ product, showPricing, showQuickInquiry }) {
             className="text-lg font-bold mt-auto pt-2"
             style={{ color: 'var(--ws-primary)' }}
           >
-            ${product.price.toFixed(2)}
+            ${(product.price || 0).toFixed(2)}
           </p>
         )}
 
         {showQuickInquiry ? (
           <button
+            onClick={(e) => { e.stopPropagation(); onNavigate?.(product.id); }}
             className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors duration-200 hover:opacity-90"
             style={{
               backgroundColor: 'var(--ws-primary)',
@@ -96,6 +100,7 @@ function DetailedCard({ product, showPricing, showQuickInquiry }) {
           </button>
         ) : (
           <button
+            onClick={(e) => { e.stopPropagation(); onAddToCart?.(product); }}
             className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors duration-200 hover:opacity-90"
             style={{
               backgroundColor: 'var(--ws-primary)',
@@ -114,14 +119,15 @@ function DetailedCard({ product, showPricing, showQuickInquiry }) {
 /**
  * Compact card: smaller image, inline layout.
  */
-function CompactCard({ product, showPricing, showQuickInquiry }) {
+function CompactCard({ product, showPricing, showQuickInquiry, onAddToCart, onNavigate }) {
   return (
     <div
-      className="group flex items-center gap-4 rounded-xl p-3 transition-all duration-200 hover:-translate-y-0.5"
+      className="group flex items-center gap-4 rounded-xl p-3 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
       style={{
         backgroundColor: 'var(--ws-surface)',
         border: '1px solid var(--ws-border)',
       }}
+      onClick={() => onNavigate?.(product.id)}
     >
       {/* Small image placeholder */}
       <div
@@ -141,13 +147,14 @@ function CompactCard({ product, showPricing, showQuickInquiry }) {
         </h3>
         {showPricing && (
           <p className="text-sm font-bold mt-0.5" style={{ color: 'var(--ws-primary)' }}>
-            ${product.price.toFixed(2)}
+            ${(product.price || 0).toFixed(2)}
           </p>
         )}
       </div>
 
       {/* Action */}
       <button
+        onClick={(e) => { e.stopPropagation(); onAddToCart?.(product); }}
         className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg transition-colors duration-200 hover:opacity-90"
         style={{
           backgroundColor: 'var(--ws-primary)',
@@ -163,7 +170,7 @@ function CompactCard({ product, showPricing, showQuickInquiry }) {
 /**
  * Minimal card: text only, very clean.
  */
-function MinimalCard({ product, showPricing }) {
+function MinimalCard({ product, showPricing, onNavigate }) {
   return (
     <div
       className="group flex items-center justify-between gap-4 rounded-lg px-4 py-3 transition-all duration-200 cursor-pointer"
@@ -171,6 +178,7 @@ function MinimalCard({ product, showPricing }) {
         border: '1px solid var(--ws-border)',
         backgroundColor: 'transparent',
       }}
+      onClick={() => onNavigate?.(product.id)}
     >
       <div className="min-w-0">
         <h3
@@ -186,7 +194,7 @@ function MinimalCard({ product, showPricing }) {
 
       {showPricing && (
         <span className="text-sm font-bold flex-shrink-0" style={{ color: 'var(--ws-primary)' }}>
-          ${product.price.toFixed(2)}
+          ${(product.price || 0).toFixed(2)}
         </span>
       )}
     </div>
@@ -200,6 +208,9 @@ const CARD_COMPONENTS = {
 };
 
 export default function FeaturedProductsRenderer({ section, theme }) {
+  const navigate = useNavigate();
+  const { addToCart } = useWholesale();
+
   const {
     heading = '',
     subheading = '',
@@ -216,6 +227,20 @@ export default function FeaturedProductsRenderer({ section, theme }) {
 
   const CardComponent = CARD_COMPONENTS[cardStyle] || DetailedCard;
   const gridClasses = getGridClasses(columns);
+
+  const handleNavigate = (productId) => {
+    navigate(`product/${productId}`);
+  };
+
+  const handleAddToCart = (product) => {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price || 0,
+      sku: product.sku,
+      quantity: 1,
+    });
+  };
 
   return (
     <section
@@ -253,6 +278,8 @@ export default function FeaturedProductsRenderer({ section, theme }) {
             product={product}
             showPricing={showPricing}
             showQuickInquiry={showQuickInquiry}
+            onAddToCart={handleAddToCart}
+            onNavigate={handleNavigate}
           />
         ))}
       </div>

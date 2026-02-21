@@ -61,7 +61,12 @@ export default function PortalChatWidget() {
       {/* Floating button */}
       <motion.button
         onClick={() => setIsOpen((prev) => !prev)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-600/20 flex items-center justify-center transition-colors"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-opacity hover:opacity-90"
+        style={{
+          backgroundColor: 'var(--ws-primary)',
+          color: 'var(--ws-bg, #fff)',
+          boxShadow: '0 10px 15px -3px color-mix(in srgb, var(--ws-primary) 20%, transparent)',
+        }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >

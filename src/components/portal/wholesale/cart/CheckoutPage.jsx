@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { useWholesale } from '../WholesaleProvider';
 import { supabase } from '@/api/supabaseClient';
+import { reserveB2BInventory } from '@/lib/db/queries/b2b';
+import { AlertCircle } from 'lucide-react';
 
 /**
  * EUR currency formatter.
@@ -601,9 +603,10 @@ function ConfirmationStep({ orderId }) {
  * then clears the cart.
  */
 export default function CheckoutPage() {
-  const { cartItems, clearCart, orgId } = useWholesale();
+  const { cartItems, clearCart, orgId, config } = useWholesale();
   const navigate = useNavigate();
   const { org } = useParams();
+  const minOrderAmount = Number(config?.min_order_amount) || 0;
 
   const [step, setStep] = useState(1);
   const [shippingAddress, setShippingAddress] = useState({
@@ -646,6 +649,8 @@ export default function CheckoutPage() {
     [normalizedItems],
   );
 
+  const belowMinimum = minOrderAmount > 0 && subtotal < minOrderAmount;
+
   const handleNextStep = useCallback(() => {
     setStep((prev) => Math.min(prev + 1, 3));
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -661,6 +666,10 @@ export default function CheckoutPage() {
    * Creates a b2b_orders row and corresponding b2b_order_items rows.
    */
   const handlePlaceOrder = useCallback(async () => {
+    if (belowMinimum) {
+      setError(`Minimum order amount is ${eurFormatter.format(minOrderAmount)}. Your current subtotal is ${eurFormatter.format(subtotal)}.`);
+      return;
+    }
     setSubmitting(true);
     setError(null);
 
@@ -715,6 +724,23 @@ export default function CheckoutPage() {
         console.error('[CheckoutPage] Order items creation failed:', itemsError);
         // Order was created but items failed -- still show confirmation
         // so the user knows something went through.
+      }
+
+      // Reserve inventory for each order item
+      // Failures are non-blocking -- the order is still valid, inventory can be
+      // reconciled by an admin later.
+      try {
+        await Promise.allSettled(
+          normalizedItems.map((item) =>
+            reserveB2BInventory(
+              item.productId ?? item.id,
+              organizationId,
+              item.quantity,
+            )
+          )
+        );
+      } catch (reserveErr) {
+        console.error('[CheckoutPage] Inventory reservation error:', reserveErr);
       }
 
       // Success -- clear cart and advance to confirmation

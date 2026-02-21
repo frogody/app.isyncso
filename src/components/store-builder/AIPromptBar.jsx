@@ -39,11 +39,14 @@ export default function AIPromptBar({
     const prompt = value.trim();
     if (!prompt || isProcessing) return;
 
+    const savedPrompt = prompt;
     setValue('');
     try {
       await onSendPrompt(prompt);
     } catch (err) {
       console.error('AIPromptBar: send failed', err);
+      // Restore prompt so user doesn't lose their input
+      setValue(savedPrompt);
     }
   }, [value, isProcessing, onSendPrompt]);
 
