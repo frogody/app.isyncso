@@ -81,6 +81,7 @@ export default function BuilderCanvas({
   previewDevice = 'desktop',
   iframeRef,
   previewLoading = false,
+  onIframeLoad,
 }) {
   const frame = DEVICE_FRAMES[previewDevice] || DEVICE_FRAMES.desktop;
   const hasConfig = config && Object.keys(config).length > 0;
@@ -130,6 +131,7 @@ export default function BuilderCanvas({
                 src={previewUrl}
                 className="w-full h-full border-0"
                 title="Store preview"
+                onLoad={onIframeLoad}
               />
             </DeviceBezel>
 

@@ -100,15 +100,17 @@ export function useBuilderPreview() {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  // Mark loading false when the iframe fires its native load event
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-
-    const onLoad = () => setPreviewLoading(false);
-    iframe.addEventListener('load', onLoad);
-    return () => iframe.removeEventListener('load', onLoad);
+  // Callback to pass as onLoad prop to the iframe element
+  const onIframeLoad = useCallback(() => {
+    setPreviewLoading(false);
   }, []);
+
+  // Safety timeout: if preview hasn't signaled after 8s, clear loading
+  useEffect(() => {
+    if (!previewLoading) return;
+    const timer = setTimeout(() => setPreviewLoading(false), 8000);
+    return () => clearTimeout(timer);
+  }, [previewLoading]);
 
   // ---- Computed dimensions for the current device ---------------------------
 
@@ -126,6 +128,7 @@ export function useBuilderPreview() {
     setPreviewDevice,
     sendConfigToPreview,
     refreshPreview,
+    onIframeLoad,
     deviceDimensions,
   };
 }
