@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { db, supabase } from '@/api/supabaseClient';
@@ -7,7 +8,8 @@ import {
   Upload, FileText, CheckCircle2, XCircle, Loader2, AlertTriangle,
   Building, Calendar, Receipt, CreditCard, Repeat, ArrowRight,
   Edit2, Trash2, Plus, X, ChevronDown, ChevronUp, RefreshCw,
-  DollarSign, Euro, Percent, Globe, FileUp, Sparkles, Check, Clock
+  DollarSign, Euro, Percent, Globe, FileUp, Sparkles, Check, Clock,
+  Flag, Info
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +26,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
+import { createPageUrl } from '@/utils';
 
 // PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -41,27 +44,22 @@ async function extractPdfText(pdfFile) {
     const page = await pdf.getPage(pageNum);
     const textContent = await page.getTextContent();
 
-    // Sort items by Y position (top-to-bottom), then X (left-to-right)
-    // Transform: [scaleX, skewX, skewY, scaleY, translateX, translateY]
     const items = textContent.items
       .filter(item => item.str && item.str.trim())
       .sort((a, b) => {
         const yA = a.transform?.[5] ?? 0;
         const yB = b.transform?.[5] ?? 0;
-        // PDF Y-axis goes bottom-to-top, so higher Y = higher on page
-        if (Math.abs(yA - yB) > 3) return yB - yA; // different lines (3px threshold)
+        if (Math.abs(yA - yB) > 3) return yB - yA;
         const xA = a.transform?.[4] ?? 0;
         const xB = b.transform?.[4] ?? 0;
-        return xA - xB; // same line, sort left-to-right
+        return xA - xB;
       });
 
-    // Group items into lines based on Y position proximity
     let lastY = null;
     let lineTexts = [];
     for (const item of items) {
       const y = item.transform?.[5] ?? 0;
       if (lastY !== null && Math.abs(y - lastY) > 3) {
-        // New line — flush current line
         fullText += lineTexts.join('  ') + '\n';
         lineTexts = [];
       }
@@ -71,7 +69,7 @@ async function extractPdfText(pdfFile) {
     if (lineTexts.length > 0) {
       fullText += lineTexts.join('  ') + '\n';
     }
-    fullText += '\n'; // page separator
+    fullText += '\n';
   }
   return fullText.trim();
 }
@@ -99,6 +97,15 @@ const EXPENSE_CATEGORIES = [
   { value: 'rent', label: 'Rent' },
   { value: 'utilities', label: 'Utilities' },
   { value: 'other', label: 'Other' },
+];
+
+// ─── Document Type Options ────────────────────────────────────────────────────
+
+const DOC_TYPES = [
+  { value: 'expense', label: 'Expense', icon: CreditCard },
+  { value: 'bill', label: 'Bill (AP)', icon: Receipt },
+  { value: 'credit_note', label: 'Credit Note', icon: FileText },
+  { value: 'proforma', label: 'Proforma', icon: FileUp },
 ];
 
 // ─── Confidence Badge ─────────────────────────────────────────────────────────
@@ -163,6 +170,7 @@ function ProcessingPipeline({ currentStep, error }) {
 export default function FinanceSmartImport() {
   const { user } = useUser();
   const { theme, ft } = useTheme();
+  const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
   // Processing state
@@ -177,6 +185,9 @@ export default function FinanceSmartImport() {
   const [taxClassification, setTaxClassification] = useState(null);
   const [currencyConversion, setCurrencyConversion] = useState(null);
   const [recurring, setRecurring] = useState(null);
+  const [documentType, setDocumentType] = useState('expense');
+  const [taxDecision, setTaxDecision] = useState(null);
+  const [confidenceData, setConfidenceData] = useState(null);
 
   // Editable form (populated from extraction, user can modify)
   const [formData, setFormData] = useState(null);
@@ -239,6 +250,9 @@ export default function FinanceSmartImport() {
     setExtraction(null);
     setFormData(null);
     setLineItems([]);
+    setDocumentType('expense');
+    setTaxDecision(null);
+    setConfidenceData(null);
 
     try {
       // Step 1: Upload to storage
@@ -260,10 +274,7 @@ export default function FinanceSmartImport() {
       if (isPDF) {
         pdfText = await extractPdfText(file);
         console.log(`[SmartImport] PDF text extracted — length: ${pdfText.length}`);
-        console.log(`[SmartImport] First 500 chars:\n${pdfText.substring(0, 500)}`);
-        console.log(`[SmartImport] Last 200 chars:\n${pdfText.substring(pdfText.length - 200)}`);
       } else {
-        // For images, we can't extract text client-side — send empty and let LLM handle via description
         pdfText = `[Image file: ${file.name}]`;
         toast.info('Image files have lower extraction accuracy than PDFs');
       }
@@ -280,7 +291,6 @@ export default function FinanceSmartImport() {
         companyId,
         userId: user.id,
       };
-      console.log(`[SmartImport] Sending to edge function — pdfText length: ${requestBody.pdfText.length}, keys:`, Object.keys(requestBody));
 
       const response = await fetch(`${SUPABASE_URL}/functions/v1/smart-import-invoice`, {
         method: 'POST',
@@ -292,7 +302,6 @@ export default function FinanceSmartImport() {
       });
 
       const result = await response.json();
-      console.log(`[SmartImport] Edge function response — status: ${response.status}, success: ${result.success}`, result.error || '');
       if (!result.success) {
         throw new Error(result.error || 'AI extraction failed');
       }
@@ -304,6 +313,9 @@ export default function FinanceSmartImport() {
       setTaxClassification(result.tax_classification);
       setCurrencyConversion(result.currency_conversion);
       setRecurring(result.recurring);
+      setDocumentType(result.document_type || 'expense');
+      setTaxDecision(result.tax_decision || null);
+      setConfidenceData(result.confidence || result.extraction?.confidence || null);
 
       const ext = result.extraction;
       const conv = result.currency_conversion;
@@ -311,6 +323,7 @@ export default function FinanceSmartImport() {
       setFormData({
         vendor_name: ext.vendor?.name || '',
         vendor_address: ext.vendor?.address || '',
+        vendor_country: ext.vendor?.country || '',
         vendor_vat: ext.vendor?.vat_number || '',
         vendor_email: ext.vendor?.email || '',
         vendor_website: ext.vendor?.website || '',
@@ -323,6 +336,7 @@ export default function FinanceSmartImport() {
         tax_amount: ext.invoice?.tax_amount || 0,
         total: ext.invoice?.total || 0,
         category: ext.classification?.expense_category || 'other',
+        gl_code: ext.classification?.gl_code || '6900',
         is_reverse_charge: ext.classification?.is_reverse_charge || false,
         is_recurring: ext.classification?.is_recurring || false,
         recurring_frequency: ext.classification?.recurring_frequency || 'monthly',
@@ -353,7 +367,7 @@ export default function FinanceSmartImport() {
     }
   };
 
-  // ─── Save & File ──────────────────────────────────────────────────────────
+  // ─── Save & File (routed by document type) ─────────────────────────────────
 
   const handleSave = async () => {
     if (!formData || !companyId || !user?.id) return;
@@ -387,7 +401,74 @@ export default function FinanceSmartImport() {
       const taxAmount = formData.tax_amount || 0;
       const taxRate = formData.tax_rate || 0;
 
-      // 3. Create expense
+      // ── Route by document type ──────────────────────────────────────────
+
+      if (documentType === 'bill') {
+        // Save as bill (Accounts Payable)
+        if (!vendorId) throw new Error('A vendor is required to create a bill');
+
+        const billNumber = `BILL-${Date.now().toString(36).toUpperCase()}`;
+        const { data: newBill, error: billErr } = await supabase
+          .from('bills')
+          .insert({
+            company_id: companyId,
+            vendor_id: vendorId,
+            bill_number: billNumber,
+            vendor_invoice_number: formData.invoice_number || null,
+            bill_date: formData.invoice_date,
+            due_date: formData.due_date || formData.invoice_date,
+            status: 'pending',
+            subtotal: isEUR ? formData.subtotal : Math.round((formData.subtotal || 0) * (formData.exchange_rate || 1) * 100) / 100,
+            tax_amount: isEUR ? taxAmount : Math.round(taxAmount * (formData.exchange_rate || 1) * 100) / 100,
+            total_amount: amount,
+            balance_due: amount,
+            currency: 'EUR',
+            attachment_url: formData.file_url || null,
+            notes: formData.notes || null,
+            created_by: user.id,
+          })
+          .select('id')
+          .single();
+
+        if (billErr) throw new Error(`Failed to create bill: ${billErr.message}`);
+
+        toast.success('Bill created successfully!');
+        resetState();
+        navigate(createPageUrl('FinanceBills'));
+        return;
+
+      } else if (documentType === 'credit_note') {
+        // Save as credit note
+        const cnNumber = `CN-${Date.now().toString(36).toUpperCase()}`;
+        const { data: newCN, error: cnErr } = await supabase
+          .from('credit_notes')
+          .insert({
+            company_id: companyId,
+            credit_note_number: cnNumber,
+            client_name: formData.vendor_name,
+            client_email: formData.vendor_email || null,
+            amount: Math.abs(isEUR ? formData.subtotal : Math.round((formData.subtotal || 0) * (formData.exchange_rate || 1) * 100) / 100),
+            tax_rate: taxRate,
+            tax_amount: Math.abs(isEUR ? taxAmount : Math.round(taxAmount * (formData.exchange_rate || 1) * 100) / 100),
+            total: Math.abs(amount),
+            reason: formData.notes || `Credit note from ${formData.vendor_name}`,
+            status: 'issued',
+            issued_at: new Date().toISOString(),
+            created_by: user.id,
+          })
+          .select('id')
+          .single();
+
+        if (cnErr) throw new Error(`Failed to create credit note: ${cnErr.message}`);
+
+        toast.success('Credit note created!');
+        resetState();
+        navigate(createPageUrl('FinanceCreditNotes'));
+        return;
+      }
+
+      // ── Default: expense (also handles proforma as draft) ───────────────
+
       const expenseData = {
         user_id: user.id,
         company_id: companyId,
@@ -396,7 +477,9 @@ export default function FinanceSmartImport() {
         category: formData.category,
         vendor: formData.vendor_name,
         date: formData.invoice_date,
-        notes: formData.notes || (formData.is_reverse_charge ? 'Reverse charge (intracommunautaire verwerving / dienst)' : ''),
+        notes: formData.notes || (formData.is_reverse_charge
+          ? (taxDecision?.explanation || 'Reverse charge (verlegde BTW)')
+          : ''),
         receipt_url: formData.file_url || '',
         original_file_url: formData.file_url || '',
         is_recurring: formData.is_recurring,
@@ -410,7 +493,7 @@ export default function FinanceSmartImport() {
         currency: 'EUR',
         subtotal: isEUR ? formData.subtotal : Math.round((formData.subtotal || 0) * (formData.exchange_rate || 1) * 100) / 100,
         total: amount,
-        status: 'approved',
+        status: documentType === 'proforma' ? 'draft' : 'approved',
         payment_status: 'pending',
         source_type: 'smart_import',
         vendor_id: vendorId,
@@ -420,15 +503,15 @@ export default function FinanceSmartImport() {
         ai_extracted_data: extraction || {},
         ai_confidence: extraction?.confidence?.overall || null,
         needs_review: false,
-        review_status: 'approved',
-        reviewed_by: user.id,
-        reviewed_at: new Date().toISOString(),
+        review_status: documentType === 'proforma' ? 'pending' : 'approved',
+        reviewed_by: documentType === 'proforma' ? null : user.id,
+        reviewed_at: documentType === 'proforma' ? null : new Date().toISOString(),
       };
 
       const newExpense = await db.entities.Expense.create(expenseData);
       if (!newExpense?.id) throw new Error('Failed to create expense');
 
-      // 4. Create line items
+      // Create line items
       if (lineItems.length > 0) {
         const lineItemRows = lineItems.map((li, i) => ({
           expense_id: newExpense.id,
@@ -448,19 +531,37 @@ export default function FinanceSmartImport() {
         if (liErr) console.warn('Line items error:', liErr);
       }
 
-      // 5. Post to GL
-      try {
-        const { data: glResult } = await supabase.rpc('post_expense', { p_expense_id: newExpense.id });
-        if (glResult?.success) {
-          toast.success('Posted to General Ledger');
-        } else if (glResult?.error) {
-          toast.info(glResult.error);
+      // Post to GL (use post_expense_with_tax for reverse charge support)
+      if (documentType !== 'proforma') {
+        try {
+          const mechanism = taxDecision?.mechanism || 'standard_btw';
+          const selfAssessRate = taxDecision?.self_assess_rate || 0;
+
+          const { data: glResult } = await supabase.rpc('post_expense_with_tax', {
+            p_expense_id: newExpense.id,
+            p_tax_mechanism: mechanism,
+            p_self_assess_rate: selfAssessRate,
+          });
+          if (glResult?.success) {
+            const msg = glResult.reverse_charge_vat > 0
+              ? `Posted to GL with reverse charge (${glResult.reverse_charge_vat} EUR)`
+              : 'Posted to General Ledger';
+            toast.success(msg);
+          } else if (glResult?.error) {
+            toast.info(glResult.error);
+          }
+        } catch (glErr) {
+          // Fallback to regular post_expense if post_expense_with_tax doesn't exist yet
+          try {
+            const { data: glResult } = await supabase.rpc('post_expense', { p_expense_id: newExpense.id });
+            if (glResult?.success) toast.success('Posted to General Ledger');
+          } catch {
+            console.warn('GL posting (non-critical):', glErr);
+          }
         }
-      } catch (glErr) {
-        console.warn('GL posting (non-critical):', glErr);
       }
 
-      // 6. Create recurring template if detected
+      // Create recurring template if detected
       if (formData.is_recurring && formData.vendor_name) {
         try {
           const nextDate = recurring?.suggested_next_date || (() => {
@@ -494,8 +595,10 @@ export default function FinanceSmartImport() {
         }
       }
 
-      toast.success('Expense saved and filed!');
+      const label = documentType === 'proforma' ? 'Proforma saved as draft!' : 'Expense saved and filed!';
+      toast.success(label);
       resetState();
+      navigate(createPageUrl('FinanceExpenses'));
     } catch (error) {
       console.error('Save error:', error);
       toast.error(error.message || 'Failed to save');
@@ -518,6 +621,9 @@ export default function FinanceSmartImport() {
     setRecurring(null);
     setFormData(null);
     setLineItems([]);
+    setDocumentType('expense');
+    setTaxDecision(null);
+    setConfidenceData(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -543,6 +649,8 @@ export default function FinanceSmartImport() {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   const showReview = formData && !processing;
+  const reviewReasons = confidenceData?.review_reasons || [];
+  const requiresReview = confidenceData?.requires_review || false;
 
   return (
     <FinancePageTransition>
@@ -633,9 +741,9 @@ export default function FinanceSmartImport() {
                   <div>
                     <h3 className={`font-semibold ${ft('text-gray-900', 'text-white')}`}>{fileName}</h3>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <ConfidenceBadge score={extraction?.confidence?.overall} label="Overall" />
-                      <ConfidenceBadge score={extraction?.confidence?.vendor} label="Vendor" />
-                      <ConfidenceBadge score={extraction?.confidence?.amounts} label="Amounts" />
+                      <ConfidenceBadge score={confidenceData?.overall ?? extraction?.confidence?.overall} label="Overall" />
+                      <ConfidenceBadge score={confidenceData?.vendor ?? extraction?.confidence?.vendor} label="Vendor" />
+                      <ConfidenceBadge score={confidenceData?.amounts ?? extraction?.confidence?.amounts} label="Amounts" />
                     </div>
                   </div>
                 </div>
@@ -655,12 +763,84 @@ export default function FinanceSmartImport() {
                 </div>
               </div>
 
+              {/* Review Reasons Alert */}
+              {requiresReview && reviewReasons.length > 0 && (
+                <div className="flex items-start gap-3 px-4 py-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                  <AlertTriangle className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-yellow-400">Review required</p>
+                    <ul className="mt-1 space-y-0.5">
+                      {reviewReasons.map((reason, i) => (
+                        <li key={i} className="text-xs text-yellow-400/80">- {reason}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Document Type Chips */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-zinc-500 mr-1">Document type:</span>
+                {DOC_TYPES.map(dt => {
+                  const Icon = dt.icon;
+                  const isActive = documentType === dt.value;
+                  return (
+                    <button
+                      key={dt.value}
+                      onClick={() => setDocumentType(dt.value)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                        isActive
+                          ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40'
+                          : `${ft('bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200', 'bg-zinc-800/50 text-zinc-400 border-zinc-700 hover:bg-zinc-700/50')}`
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      {dt.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Tax Treatment Banner */}
+              {taxDecision && (
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
+                  taxDecision.mechanism === 'standard_btw'
+                    ? `${ft('bg-blue-50 border-blue-200', 'bg-blue-500/10 border-blue-500/20')}`
+                    : taxDecision.mechanism === 'import_no_vat'
+                    ? `${ft('bg-zinc-50 border-zinc-200', 'bg-zinc-800/50 border-zinc-700')}`
+                    : `${ft('bg-amber-50 border-amber-200', 'bg-amber-500/10 border-amber-500/20')}`
+                }`}>
+                  <Info className={`w-4 h-4 flex-shrink-0 ${
+                    taxDecision.mechanism === 'standard_btw' ? 'text-blue-400'
+                    : taxDecision.mechanism === 'import_no_vat' ? 'text-zinc-400'
+                    : 'text-amber-400'
+                  }`} />
+                  <span className={`text-sm ${
+                    taxDecision.mechanism === 'standard_btw' ? ft('text-blue-700', 'text-blue-300')
+                    : taxDecision.mechanism === 'import_no_vat' ? ft('text-zinc-600', 'text-zinc-300')
+                    : ft('text-amber-700', 'text-amber-300')
+                  }`}>
+                    {taxDecision.explanation}
+                  </span>
+                  {taxDecision.self_assess_rate > 0 && (
+                    <Badge variant="outline" className="ml-auto text-xs border-amber-500/50 text-amber-400">
+                      Self-assess {taxDecision.self_assess_rate}%
+                    </Badge>
+                  )}
+                </div>
+              )}
+
               {/* Vendor Section */}
               <Card className={ft('bg-white border-gray-200', 'bg-zinc-900/50 border-zinc-800')}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <Building className="w-4 h-4 text-cyan-400" /> Vendor / Supplier
+                      {formData.vendor_country && (
+                        <Badge variant="outline" className="text-xs border-zinc-600 text-zinc-300 ml-1">
+                          <Flag className="w-3 h-3 mr-1" /> {formData.vendor_country}
+                        </Badge>
+                      )}
                     </CardTitle>
                     {vendorMatch && (
                       <Badge variant="outline" className={`text-xs ${

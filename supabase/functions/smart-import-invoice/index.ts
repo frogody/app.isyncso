@@ -14,24 +14,33 @@ interface SmartImportRequest {
   fileName: string;
   companyId: string;
   userId: string;
-  paymentDate?: string; // Override date for ECB rate lookup
+  paymentDate?: string;
 }
 
 /** Flat shape returned by the LLM — pure extraction, no classification */
 interface FlatExtraction {
   supplier_name?: string | null;
   supplier_address?: string | null;
+  supplier_country?: string | null;
   supplier_vat?: string | null;
+  supplier_kvk?: string | null;
   supplier_email?: string | null;
   supplier_phone?: string | null;
   supplier_website?: string | null;
   supplier_iban?: string | null;
+  buyer_name?: string | null;
+  buyer_vat?: string | null;
+  document_label?: string | null;
   invoice_number?: string | null;
   invoice_date?: string | null;
   due_date?: string | null;
+  payment_terms_days?: number | null;
   subtotal?: number | null;
-  tax_amount?: number | null;
-  tax_percent?: number | null;
+  tax_lines?: Array<{
+    rate_percent: number;
+    base_amount: number;
+    tax_amount: number;
+  }>;
   total?: number | null;
   currency?: string | null;
   line_items?: Array<{
@@ -41,6 +50,8 @@ interface FlatExtraction {
     tax_rate_percent?: number | null;
     line_total: number;
   }>;
+  payment_reference?: string | null;
+  notes_on_invoice?: string | null;
   confidence?: number;
 }
 
@@ -49,7 +60,9 @@ interface ExtractionResult {
   vendor: {
     name: string;
     address?: string;
+    country?: string;
     vat_number?: string;
+    kvk?: string;
     website?: string;
     email?: string;
     phone?: string;
@@ -59,10 +72,14 @@ interface ExtractionResult {
     number?: string;
     date?: string;
     due_date?: string;
+    payment_terms_days?: number;
     currency: string;
     subtotal?: number;
     tax_amount?: number;
     total: number;
+    document_label?: string;
+    payment_reference?: string;
+    notes_on_invoice?: string;
   };
   line_items: Array<{
     description: string;
@@ -72,10 +89,16 @@ interface ExtractionResult {
     line_total: number;
     category_hint?: string;
   }>;
+  tax_lines: Array<{
+    rate_percent: number;
+    base_amount: number;
+    tax_amount: number;
+  }>;
   classification: {
     is_recurring: boolean;
     recurring_frequency?: string | null;
     expense_category: string;
+    gl_code: string;
     is_reverse_charge: boolean;
   };
   confidence: {
@@ -83,85 +106,100 @@ interface ExtractionResult {
     vendor: number;
     amounts: number;
     line_items: number;
+    tax: number;
+    doc_type: number;
   };
 }
 
-// ─── LLM Extraction (stock-purchases pattern) ──────────────────────────────
+interface CountryResult {
+  code: string;
+  isEU: boolean;
+  isNL: boolean;
+}
 
-const EXTRACTION_PROMPT = `You are an expert invoice data extraction system. Extract structured data from this invoice text.
+interface TaxDecision {
+  mechanism: "standard_btw" | "reverse_charge_eu" | "reverse_charge_non_eu" | "import_no_vat";
+  rate: number;
+  self_assess_rate: number;
+  explanation: string;
+  supplier_country: string;
+}
 
-CRITICAL RULES:
-1. Extract ONLY what you can clearly see in the text - NEVER guess or infer
-2. For numbers, extract exact values including decimals
-3. For dates, use ISO format (YYYY-MM-DD)
-4. If a field is not visible or unclear, use null
-5. Line items must have description, quantity, unit_price, and line_total
-6. IMPORTANT — Identifying the supplier: The supplier is the company that ISSUED/SENT the invoice. It is NOT the "Bill to" / "Factuur aan" company (that is the buyer/recipient). In invoice text the sender is usually listed FIRST (top-left) with their address, and the "Bill to" section contains the recipient. Look for patterns like "Company A ... Bill to ... Company B" — Company A is the supplier.
-7. For IBAN, extract the full bank account number if present
-8. IMPORTANT — VAT numbers: Only set supplier_vat to the VAT number that belongs to the SUPPLIER. If a VAT number appears in or near the "Bill to" / recipient section, it belongs to the BUYER — do NOT put it in supplier_vat. If the only VAT number visible belongs to the buyer, set supplier_vat to null.
-9. For VAT numbers, extract exactly as shown (e.g., NL123456789B01, DE123456789)
+type DocumentType = "expense" | "bill" | "credit_note" | "proforma";
 
-Return ONLY a valid JSON object in this exact format:
-{
-  "supplier_name": "string or null",
-  "supplier_address": "string or null",
-  "supplier_vat": "string or null",
-  "supplier_email": "string or null",
-  "supplier_phone": "string or null",
-  "supplier_website": "string or null",
-  "supplier_iban": "string or null",
-  "invoice_number": "string or null",
-  "invoice_date": "YYYY-MM-DD or null",
-  "due_date": "YYYY-MM-DD or null",
-  "subtotal": number or null,
-  "tax_amount": number or null,
-  "tax_percent": number or null,
-  "total": number or null,
-  "currency": "EUR" or "USD" or "GBP" or null,
-  "line_items": [
-    {
-      "description": "exact text from invoice",
-      "quantity": number,
-      "unit_price": number,
-      "tax_rate_percent": number or null,
-      "line_total": number
-    }
-  ],
-  "confidence": 0.0 to 1.0
-}`;
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-async function extractFromText(
-  groqApiKey: string,
-  pdfText: string,
-  retryCount = 0
-): Promise<{ success: boolean; data?: FlatExtraction; error?: string; usage?: any }> {
-  const MAX_RETRIES = 2;
+const EU_COUNTRIES = [
+  "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
+  "DE", "GR", "EL", "HU", "IE", "IT", "LV", "LT", "LU", "MT",
+  "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE",
+];
 
+const EU_COUNTRY_NAMES: Record<string, string> = {
+  austria: "AT", belgium: "BE", bulgaria: "BG", croatia: "HR", cyprus: "CY",
+  "czech republic": "CZ", czechia: "CZ", denmark: "DK", estonia: "EE",
+  finland: "FI", france: "FR", germany: "DE", deutschland: "DE",
+  greece: "GR", hungary: "HU", ireland: "IE", italy: "IT", italia: "IT",
+  latvia: "LV", lithuania: "LT", luxembourg: "LU", malta: "MT",
+  netherlands: "NL", nederland: "NL", "the netherlands": "NL",
+  poland: "PL", portugal: "PT", romania: "RO", slovakia: "SK",
+  slovenia: "SI", spain: "ES", espana: "ES", sweden: "SE",
+  // Non-EU
+  "united states": "US", usa: "US", "united kingdom": "GB", uk: "GB",
+  switzerland: "CH", norway: "NO", canada: "CA", australia: "AU",
+  japan: "JP", china: "CN", india: "IN", brazil: "BR",
+  "south korea": "KR", singapore: "SG", "hong kong": "HK",
+  israel: "IL", "new zealand": "NZ", mexico: "MX",
+};
+
+const GL_CODES: Record<string, string> = {
+  software: "6100",
+  hosting: "6110",
+  advertising: "6300",
+  telecom: "6400",
+  travel: "6200",
+  insurance: "6500",
+  rent: "6600",
+  office_supplies: "5000",
+  professional_services: "6700",
+  utilities: "6200",
+  other: "6900",
+};
+
+// ─── LLM Extraction ──────────────────────────────────────────────────────────
+
+const EXTRACTION_PROMPT = `You are a data-copying machine. Copy text from the invoice into JSON fields.
+Rules:
+- Copy ONLY text you see. If a field is not visible, use null.
+- The SUPPLIER is who SENT the invoice (usually first/top). NOT the "Bill to" entity.
+- Do not interpret, classify, or add information not present.
+- Dates: YYYY-MM-DD. Amounts: numbers only (no currency symbols).
+
+Respond with ONLY a JSON object (no markdown, no explanation):
+{"supplier_name":null,"supplier_address":null,"supplier_country":null,"supplier_vat":null,"supplier_kvk":null,"supplier_email":null,"supplier_phone":null,"supplier_website":null,"supplier_iban":null,"buyer_name":null,"buyer_vat":null,"document_label":null,"invoice_number":null,"invoice_date":null,"due_date":null,"payment_terms_days":null,"subtotal":null,"tax_lines":[{"rate_percent":0,"base_amount":0,"tax_amount":0}],"total":null,"currency":null,"line_items":[{"description":"","quantity":1,"unit_price":0,"tax_rate_percent":null,"line_total":0}],"payment_reference":null,"notes_on_invoice":null,"confidence":0.9}`;
+
+async function callLLM(
+  apiKey: string,
+  apiUrl: string,
+  model: string,
+  pdfText: string
+): Promise<{ success: boolean; data?: FlatExtraction; error?: string; usage?: any; provider: string }> {
+  const provider = apiUrl.includes("together") ? "together" : "groq";
   try {
-    console.log(`[EXTRACT] Calling Groq LLM (attempt ${retryCount + 1}/${MAX_RETRIES + 1}), text length: ${pdfText.length}`);
-    if (retryCount === 0) {
-      console.log(`[EXTRACT] First 500 chars: ${pdfText.substring(0, 500)}`);
-    }
+    console.log(`[EXTRACT] Calling ${provider} (${model}), text length: ${pdfText.length}`);
 
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${groqApiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
+        model,
         messages: [
-          {
-            role: "system",
-            content: "You are a data extraction tool. You ONLY output valid JSON. You extract data from the provided text. You NEVER invent data.",
-          },
-          {
-            role: "user",
-            content: EXTRACTION_PROMPT + `\n\nHere is the invoice text:\n\n${pdfText}`,
-          },
+          { role: "system", content: "You are a data extraction tool. Output ONLY valid JSON, no explanation." },
+          { role: "user", content: EXTRACTION_PROMPT + `\n\nHere is the invoice text:\n\n${pdfText}` },
         ],
-        response_format: { type: "json_object" },
         max_tokens: 4096,
         temperature: 0,
       }),
@@ -169,101 +207,458 @@ async function extractFromText(
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Groq API error: ${response.status} ${errorText}`);
+      throw new Error(`${provider} API error: ${response.status} ${errorText}`);
     }
 
     const apiResponse = await response.json();
     const content = apiResponse.choices?.[0]?.message?.content || "";
-    console.log(`[EXTRACT] Response length: ${content.length}`);
 
     if (!content) {
-      return { success: false, error: "No response from AI" };
+      return { success: false, error: "No response from AI", provider };
     }
 
-    // Clean up response — strip markdown code blocks
-    let cleanedContent = content
-      .replace(/```json\s*/gi, "")
-      .replace(/```\s*/g, "")
-      .trim();
-
-    // Find JSON object
-    let jsonString: string | null = null;
-    const firstBrace = cleanedContent.indexOf("{");
-    const lastBrace = cleanedContent.lastIndexOf("}");
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      jsonString = cleanedContent.substring(firstBrace, lastBrace + 1);
+    const parsed = parseJSONResponse(content);
+    if (!parsed) {
+      return { success: false, error: "Could not parse AI response — invalid JSON", provider };
     }
 
-    // Fallback: find JSON containing "supplier_name"
-    if (!jsonString) {
-      const match = content.match(/\{[\s\S]*?"supplier_name"[\s\S]*?\}/);
-      if (match) {
-        const startIdx = content.indexOf(match[0]);
-        let braceCount = 0;
-        let endIdx = startIdx;
-        for (let i = startIdx; i < content.length; i++) {
-          if (content[i] === "{") braceCount++;
-          if (content[i] === "}") braceCount--;
-          if (braceCount === 0) {
-            endIdx = i + 1;
-            break;
-          }
-        }
-        jsonString = content.substring(startIdx, endIdx);
-      }
-    }
-
-    if (!jsonString) {
-      return { success: false, error: "Could not parse AI response — no JSON found" };
-    }
-
-    // Clean up JSON
-    jsonString = jsonString
-      .replace(/,\s*}/g, "}")
-      .replace(/,\s*]/g, "]")
-      .replace(/[\x00-\x1F\x7F]/g, " ")
-      .replace(/\n\s*\n/g, "\n");
-
-    let data: FlatExtraction;
-    try {
-      data = JSON.parse(jsonString) as FlatExtraction;
-    } catch (parseError) {
-      console.error("[EXTRACT] JSON parse error:", parseError);
-      return { success: false, error: "Could not parse AI response — invalid JSON" };
-    }
+    const data = sanitizeExtraction(parsed, pdfText);
 
     console.log(`[EXTRACT] Parsed — supplier: ${data.supplier_name}, total: ${data.total}, confidence: ${data.confidence}`);
-    return { success: true, data, usage: apiResponse.usage };
+    return { success: true, data, usage: apiResponse.usage, provider };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error(`[EXTRACT] Error (attempt ${retryCount + 1}):`, errorMessage);
-
-    // Retry on timeout or server errors only
-    const isRetryable =
-      errorMessage.includes("timeout") ||
-      errorMessage.includes("timed out") ||
-      errorMessage.includes("ETIMEDOUT") ||
-      errorMessage.includes("502") ||
-      errorMessage.includes("503") ||
-      errorMessage.includes("504");
-
-    if (isRetryable && retryCount < MAX_RETRIES) {
-      console.log("[EXTRACT] Retrying in 2 seconds...");
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      return extractFromText(groqApiKey, pdfText, retryCount + 1);
-    }
-
-    return { success: false, error: errorMessage };
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    console.error(`[EXTRACT] ${provider} error:`, msg);
+    return { success: false, error: msg, provider };
   }
 }
 
-// ─── Deterministic Classification (code, NOT LLM) ──────────────────────────
+async function extractFromText(
+  groqApiKey: string,
+  pdfText: string
+): Promise<{ success: boolean; data?: FlatExtraction; error?: string; usage?: any; provider?: string }> {
+  const MAX_RETRIES = 2;
+
+  // Attempt 1-3: Groq with llama-3.3-70b-versatile
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      console.log(`[EXTRACT] Groq retry ${attempt}/${MAX_RETRIES} in 2s...`);
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+
+    const result = await callLLM(
+      groqApiKey,
+      "https://api.groq.com/openai/v1/chat/completions",
+      "llama-3.3-70b-versatile",
+      pdfText
+    );
+
+    if (result.success) return result;
+
+    // Only retry on server errors / timeouts
+    const isRetryable =
+      result.error?.includes("timeout") || result.error?.includes("timed out") ||
+      result.error?.includes("502") || result.error?.includes("503") || result.error?.includes("504");
+    if (!isRetryable) break;
+  }
+
+  // Fallback: Together.ai with Llama-3.3-70B-Instruct-Turbo
+  const togetherKey = Deno.env.get("TOGETHER_API_KEY");
+  if (togetherKey) {
+    console.log("[EXTRACT] Falling back to Together.ai...");
+    const result = await callLLM(
+      togetherKey,
+      "https://api.together.xyz/v1/chat/completions",
+      "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+      pdfText
+    );
+    if (result.success) return result;
+    return { success: false, error: `All providers failed. Last: ${result.error}` };
+  }
+
+  return { success: false, error: "Groq failed and no TOGETHER_API_KEY configured for fallback" };
+}
+
+// ─── JSON Parsing ─────────────────────────────────────────────────────────────
+
+function parseJSONResponse(content: string): FlatExtraction | null {
+  // Strip markdown code blocks
+  let cleaned = content
+    .replace(/```json\s*/gi, "")
+    .replace(/```\s*/g, "")
+    .trim();
+
+  // Find JSON object
+  let jsonString: string | null = null;
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    jsonString = cleaned.substring(firstBrace, lastBrace + 1);
+  }
+
+  // Fallback: find JSON containing "supplier_name"
+  if (!jsonString) {
+    const match = content.match(/\{[\s\S]*?"supplier_name"[\s\S]*?\}/);
+    if (match) {
+      const startIdx = content.indexOf(match[0]);
+      let braceCount = 0;
+      let endIdx = startIdx;
+      for (let i = startIdx; i < content.length; i++) {
+        if (content[i] === "{") braceCount++;
+        if (content[i] === "}") braceCount--;
+        if (braceCount === 0) { endIdx = i + 1; break; }
+      }
+      jsonString = content.substring(startIdx, endIdx);
+    }
+  }
+
+  if (!jsonString) return null;
+
+  // Clean trailing commas and control chars
+  jsonString = jsonString
+    .replace(/,\s*}/g, "}")
+    .replace(/,\s*]/g, "]")
+    .replace(/[\x00-\x1F\x7F]/g, " ")
+    .replace(/\n\s*\n/g, "\n");
+
+  try {
+    return JSON.parse(jsonString) as FlatExtraction;
+  } catch {
+    console.error("[EXTRACT] JSON parse failed");
+    return null;
+  }
+}
+
+// ─── Post-Extraction Sanitization ─────────────────────────────────────────────
+
+function sanitizeExtraction(data: FlatExtraction, pdfText: string): FlatExtraction {
+  const toNum = (v: any): number | null => {
+    if (v === null || v === undefined) return null;
+    if (typeof v === "number") return v;
+    const cleaned = String(v).replace(/[€$£,\s]/g, "");
+    const n = parseFloat(cleaned);
+    return isNaN(n) ? null : n;
+  };
+
+  // Strip currency symbols from amounts
+  data.subtotal = toNum(data.subtotal);
+  data.total = toNum(data.total);
+  data.payment_terms_days = toNum(data.payment_terms_days);
+
+  if (data.tax_lines) {
+    for (const tl of data.tax_lines) {
+      tl.rate_percent = toNum(tl.rate_percent) ?? 0;
+      tl.base_amount = toNum(tl.base_amount) ?? 0;
+      tl.tax_amount = toNum(tl.tax_amount) ?? 0;
+    }
+    // Remove empty tax lines
+    data.tax_lines = data.tax_lines.filter(tl => tl.tax_amount !== 0 || tl.rate_percent !== 0);
+  }
+
+  if (data.line_items) {
+    for (const item of data.line_items) {
+      item.unit_price = toNum(item.unit_price) ?? 0;
+      item.line_total = toNum(item.line_total) ?? 0;
+      item.quantity = toNum(item.quantity) ?? 1;
+      item.tax_rate_percent = toNum(item.tax_rate_percent);
+    }
+  }
+
+  // Strip VAT prefixes: "NL VAT NL005316291B62" → "NL005316291B62"
+  const cleanVat = (v: string | null | undefined): string | null => {
+    if (!v || typeof v !== "string") return null;
+    return v
+      .replace(/^(NL\s+VAT|BTW[- ]?nr\.?|VAT[- ]?(number|nr|no)?\.?|USt[- ]?IdNr\.?|TVA|IVA|MwSt[- ]?Nr\.?)\s*/i, "")
+      .trim() || null;
+  };
+  data.supplier_vat = cleanVat(data.supplier_vat);
+  data.buyer_vat = cleanVat(data.buyer_vat);
+
+  // Cross-validate: if supplier_vat matches buyer_vat, null out supplier_vat
+  if (data.supplier_vat && data.buyer_vat) {
+    const sClean = data.supplier_vat.replace(/[\s.-]/g, "").toUpperCase();
+    const bClean = data.buyer_vat.replace(/[\s.-]/g, "").toUpperCase();
+    if (sClean === bClean) {
+      console.log(`[SANITIZE] supplier_vat matches buyer_vat (${sClean}), nulling supplier_vat`);
+      data.supplier_vat = null;
+    }
+  }
+
+  // Normalize currency
+  if (data.currency) {
+    const c = data.currency.trim();
+    if (c === "€" || c.toUpperCase() === "EUR") data.currency = "EUR";
+    else if (c === "$" || c.toUpperCase() === "USD") data.currency = "USD";
+    else if (c === "£" || c.toUpperCase() === "GBP") data.currency = "GBP";
+    else data.currency = c.toUpperCase();
+  }
+
+  return data;
+}
+
+// ─── Math Validation ──────────────────────────────────────────────────────────
+
+function validateMath(data: FlatExtraction): { valid: boolean; reasons: string[] } {
+  const reasons: string[] = [];
+
+  const taxSum = (data.tax_lines || []).reduce((s, tl) => s + tl.tax_amount, 0);
+
+  // subtotal + tax ≈ total (within €0.10)
+  if (data.subtotal != null && data.total != null && taxSum > 0) {
+    const expected = data.subtotal + taxSum;
+    if (Math.abs(expected - data.total) > 0.10) {
+      reasons.push(`Subtotal (${data.subtotal}) + tax (${taxSum}) = ${expected}, but total is ${data.total}`);
+    }
+  }
+
+  // sum(line_items.line_total) ≈ subtotal (within €1.00)
+  if (data.line_items && data.line_items.length > 0 && data.subtotal != null) {
+    const lineSum = data.line_items.reduce((s, li) => s + (li.line_total || 0), 0);
+    if (lineSum > 0 && Math.abs(lineSum - data.subtotal) > 1.00) {
+      reasons.push(`Line items sum (${lineSum.toFixed(2)}) doesn't match subtotal (${data.subtotal})`);
+    }
+  }
+
+  return { valid: reasons.length === 0, reasons };
+}
+
+// ─── VAT Validation ──────────────────────────────────────────────────────────
+
+function validateSupplierVat(
+  vat: string | null | undefined,
+  supplierAddress: string | null | undefined,
+  supplierName: string | null | undefined,
+  pdfText: string
+): string | null {
+  if (!vat) return null;
+
+  const vatClean = vat.replace(/[\s.-]/g, "").toUpperCase();
+  const vatCountry = vatClean.substring(0, 2);
+
+  // If VAT doesn't start with an EU prefix, return as-is
+  if (!EU_COUNTRIES.includes(vatCountry)) return vat;
+
+  const allText = [supplierAddress || "", supplierName || "", pdfText].join(" ").toLowerCase();
+
+  const nonEuPatterns = /\b(united states|usa|u\.s\.a\.?|canada|australia|japan|china|india|brazil|united kingdom|switzerland)\b/;
+  const usStatePatterns = /\b(ca|ny|tx|fl|il|wa|ma|pa|oh|ga|nc|nj|va|mi|az|co|mn|wi|or|ct|md|sc|in|tn|mo|al)\s+\d{5}\b/;
+
+  const addr = (supplierAddress || "").toLowerCase();
+  const addrHasNonEu = nonEuPatterns.test(addr) || usStatePatterns.test(addr);
+
+  // Check if VAT appears in buyer section
+  const pdfLower = pdfText.toLowerCase();
+  const vatInBuyerSection = (() => {
+    const billToIdx = pdfLower.indexOf("bill to");
+    const factuurAanIdx = pdfLower.indexOf("factuur aan");
+    const buyerStart = Math.max(billToIdx, factuurAanIdx);
+    if (buyerStart === -1) return false;
+    const afterBillTo = pdfLower.substring(buyerStart);
+    return afterBillTo.includes(vatClean.toLowerCase()) || afterBillTo.includes(vat.toLowerCase());
+  })();
+
+  if (addrHasNonEu || vatInBuyerSection) {
+    console.log(`[VAT] Discarding VAT ${vat} — supplier appears non-EU or VAT in buyer section`);
+    return null;
+  }
+
+  // Check context around supplier name
+  if (supplierName) {
+    const nameIdx = pdfLower.indexOf(supplierName.toLowerCase());
+    if (nameIdx !== -1) {
+      const context = pdfLower.substring(nameIdx, nameIdx + 200);
+      if (nonEuPatterns.test(context) || usStatePatterns.test(context)) {
+        console.log(`[VAT] Discarding VAT ${vat} — non-EU country found near supplier name`);
+        return null;
+      }
+    }
+  }
+
+  return vat;
+}
+
+// ─── Country Detection (Phase 2A) ────────────────────────────────────────────
+
+function detectCountry(flat: FlatExtraction): CountryResult {
+  const fallback: CountryResult = { code: "UNKNOWN", isEU: false, isNL: false };
+
+  // Priority 1: supplier_vat prefix
+  if (flat.supplier_vat) {
+    const prefix = flat.supplier_vat.replace(/[\s.-]/g, "").toUpperCase().substring(0, 2);
+    if (/^[A-Z]{2}$/.test(prefix)) {
+      const code = prefix === "EL" ? "GR" : prefix;
+      return { code, isEU: EU_COUNTRIES.includes(code), isNL: code === "NL" };
+    }
+  }
+
+  // Priority 2: supplier_country text
+  if (flat.supplier_country) {
+    const normalized = flat.supplier_country.trim().toLowerCase();
+    // Direct ISO match
+    if (/^[a-z]{2}$/i.test(normalized)) {
+      const code = normalized.toUpperCase();
+      return { code, isEU: EU_COUNTRIES.includes(code), isNL: code === "NL" };
+    }
+    const mapped = EU_COUNTRY_NAMES[normalized];
+    if (mapped) {
+      return { code: mapped, isEU: EU_COUNTRIES.includes(mapped), isNL: mapped === "NL" };
+    }
+  }
+
+  // Priority 3: supplier_address regex
+  if (flat.supplier_address) {
+    const addr = flat.supplier_address.toLowerCase();
+    // US state+ZIP pattern
+    if (/\b[a-z]{2}\s+\d{5}(-\d{4})?\b/.test(addr)) {
+      return { code: "US", isEU: false, isNL: false };
+    }
+    // Country names in address
+    for (const [name, code] of Object.entries(EU_COUNTRY_NAMES)) {
+      if (addr.includes(name)) {
+        return { code, isEU: EU_COUNTRIES.includes(code), isNL: code === "NL" };
+      }
+    }
+  }
+
+  // Priority 4: supplier_iban prefix
+  if (flat.supplier_iban) {
+    const ibanCountry = flat.supplier_iban.replace(/\s/g, "").substring(0, 2).toUpperCase();
+    if (/^[A-Z]{2}$/.test(ibanCountry)) {
+      return { code: ibanCountry, isEU: EU_COUNTRIES.includes(ibanCountry), isNL: ibanCountry === "NL" };
+    }
+  }
+
+  return fallback;
+}
+
+// ─── Tax Rules Engine (Phase 2B) ─────────────────────────────────────────────
+
+function isReducedRateCategory(text: string): boolean {
+  return /\b(food|voedsel|boek|book|magazine|tijdschrift|medicine|medicijn|farmac|hotel|accommodat|verblijf|camping|water\s*supply)\b/i.test(text);
+}
+
+function isLikelyService(text: string): boolean {
+  return /\b(subscription|abonnement|license|licentie|hosting|saas|cloud|platform|consult|advies|support|maintenance|onderhoud|service|dienst)\b/i.test(text);
+}
+
+function determineTaxDecision(
+  country: CountryResult,
+  flat: FlatExtraction,
+  pdfText: string
+): TaxDecision {
+  const allText = [
+    flat.supplier_name,
+    ...(flat.line_items || []).map((li) => li.description),
+    pdfText,
+  ].filter(Boolean).join(" ");
+
+  const reducedRate = isReducedRateCategory(allText);
+  const selfAssessRate = reducedRate ? 9 : 21;
+
+  // NL domestic supplier
+  if (country.isNL) {
+    // Use rate from invoice tax_lines if available
+    let invoiceRate = 21;
+    if (flat.tax_lines && flat.tax_lines.length > 0) {
+      invoiceRate = flat.tax_lines[0].rate_percent;
+    }
+    return {
+      mechanism: "standard_btw",
+      rate: invoiceRate,
+      self_assess_rate: 0,
+      explanation: `Standaard BTW (${invoiceRate}%) — binnenlandse leverancier`,
+      supplier_country: "NL",
+    };
+  }
+
+  // EU non-NL
+  if (country.isEU) {
+    return {
+      mechanism: "reverse_charge_eu",
+      rate: 0,
+      self_assess_rate: selfAssessRate,
+      explanation: `Intracommunautaire verwerving — verlegde BTW (${selfAssessRate}%) — leverancier ${country.code}`,
+      supplier_country: country.code,
+    };
+  }
+
+  // Non-EU
+  if (country.code !== "UNKNOWN") {
+    // Determine if service or goods
+    if (isLikelyService(allText)) {
+      return {
+        mechanism: "reverse_charge_non_eu",
+        rate: 0,
+        self_assess_rate: selfAssessRate,
+        explanation: `Dienst van buiten de EU — verlegde BTW (${selfAssessRate}%) — leverancier ${country.code}`,
+        supplier_country: country.code,
+      };
+    }
+    return {
+      mechanism: "import_no_vat",
+      rate: 0,
+      self_assess_rate: 0,
+      explanation: `Import van buiten de EU — geen BTW (douane apart) — leverancier ${country.code}`,
+      supplier_country: country.code,
+    };
+  }
+
+  // Unknown country — assume service, reverse charge non-EU
+  if (isLikelyService(allText)) {
+    return {
+      mechanism: "reverse_charge_non_eu",
+      rate: 0,
+      self_assess_rate: selfAssessRate,
+      explanation: `Vermoedelijk buitenlandse dienst — verlegde BTW (${selfAssessRate}%)`,
+      supplier_country: "UNKNOWN",
+    };
+  }
+
+  // Fallback: standard BTW
+  return {
+    mechanism: "standard_btw",
+    rate: 21,
+    self_assess_rate: 0,
+    explanation: "Standaard BTW (21%) — land onbekend, geen BTW-nummer",
+    supplier_country: "UNKNOWN",
+  };
+}
+
+// ─── Document Type Classification (Phase 2C) ─────────────────────────────────
+
+function classifyDocumentType(flat: FlatExtraction): { type: DocumentType; confidence: number } {
+  const label = (flat.document_label || "").toLowerCase();
+  const total = flat.total ?? 0;
+
+  // Credit note detection
+  if (
+    /credit\s*note|creditnota|gutschrift|avoir|nota\s*di\s*credito/i.test(label) ||
+    total < 0
+  ) {
+    return { type: "credit_note", confidence: 0.95 };
+  }
+
+  // Proforma detection
+  if (/pro\s*forma|proforma/i.test(label)) {
+    return { type: "proforma", confidence: 0.90 };
+  }
+
+  // Bill detection (has due date or payment terms)
+  if (flat.due_date || (flat.payment_terms_days && flat.payment_terms_days > 0)) {
+    return { type: "bill", confidence: 0.85 };
+  }
+
+  // Default: expense
+  return { type: "expense", confidence: 0.80 };
+}
+
+// ─── Expense Category + GL Codes (Phase 2D) ──────────────────────────────────
 
 function classifyExpenseCategory(
   vendorName: string | null | undefined,
   lineItems: Array<{ description: string }>,
   invoiceText: string
-): string {
+): { category: string; gl_code: string } {
   const text = [vendorName, ...lineItems.map((li) => li.description), invoiceText]
     .filter(Boolean)
     .join(" ")
@@ -279,31 +674,17 @@ function classifyExpenseCategory(
     ["office_supplies", /\b(office supplies|kantoorartikelen|stationery|furniture|meubel|desk|bureau|chair|stoel|equipment|printer|papier|toner|inkt)\b/],
     ["insurance", /\b(insurance|verzekering|polis|premie|dekking|aansprakelijkheid|liability)\b/],
     ["rent", /\b(rent|huur|lease|office space|workspace|kantoor|bedrijfsruimte|werkplek)\b/],
-    ["utilities", /\b(utilit|gas|electric|elektr|water|energy|energie|nutsvoorziening|eneco|vattenfall|essent|greenchoice)\b/],
   ];
 
   for (const [category, pattern] of rules) {
-    if (pattern.test(text)) return category;
+    if (pattern.test(text)) {
+      return { category, gl_code: GL_CODES[category] || "6900" };
+    }
   }
-  return "other";
+  return { category: "other", gl_code: "6900" };
 }
 
-function detectReverseCharge(vendorVat: string | null | undefined): boolean {
-  if (!vendorVat) return false;
-  const vatClean = vendorVat.replace(/[\s.-]/g, "").toUpperCase();
-  if (vatClean.length < 4) return false;
-
-  // Company is Dutch (NL). If vendor VAT starts with non-NL EU country code → reverse charge.
-  const vendorCountry = vatClean.substring(0, 2);
-  if (vendorCountry === "NL") return false; // Same country, no reverse charge
-
-  const euPrefixes = [
-    "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
-    "DE", "GR", "EL", "HU", "IE", "IT", "LV", "LT", "LU", "MT",
-    "PL", "PT", "RO", "SK", "SI", "ES", "SE",
-  ];
-  return euPrefixes.includes(vendorCountry);
-}
+// ─── Recurring Detection ──────────────────────────────────────────────────────
 
 function detectRecurringFromText(
   vendorName: string | null | undefined,
@@ -322,23 +703,35 @@ function detectRecurringFromText(
     return { is_recurring: false, frequency: null };
   }
 
-  // Detect frequency
   if (/\b(annual|yearly|per year|per jaar|jaarlijks|jaarbasis)\b/.test(text))
     return { is_recurring: true, frequency: "annual" };
   if (/\b(quarterly|per quarter|per kwartaal|kwartaal)\b/.test(text))
     return { is_recurring: true, frequency: "quarterly" };
   if (/\b(weekly|per week|wekelijks)\b/.test(text))
     return { is_recurring: true, frequency: "weekly" };
-  return { is_recurring: true, frequency: "monthly" }; // default
+  return { is_recurring: true, frequency: "monthly" };
 }
 
-function calculateConfidence(flat: FlatExtraction): {
+// ─── Confidence Scoring (Phase 2E) ───────────────────────────────────────────
+
+function calculateConfidence(
+  flat: FlatExtraction,
+  docType: { type: DocumentType; confidence: number },
+  taxDecision: TaxDecision,
+  mathValidation: { valid: boolean; reasons: string[] }
+): {
   overall: number;
   vendor: number;
   amounts: number;
   line_items: number;
+  tax: number;
+  doc_type: number;
+  requires_review: boolean;
+  review_reasons: string[];
 } {
-  // Vendor confidence: based on how many vendor fields are filled
+  const review_reasons: string[] = [];
+
+  // Vendor: 20% weight
   const vendorFields = [
     flat.supplier_name,
     flat.supplier_address,
@@ -346,20 +739,21 @@ function calculateConfidence(flat: FlatExtraction): {
     flat.supplier_email,
     flat.supplier_iban,
   ].filter(Boolean);
-  const vendorScore = Math.min(1.0, vendorFields.length / 2); // 2+ fields = 1.0
+  const vendorScore = Math.min(1.0, vendorFields.length / 2);
+  if (vendorScore < 0.5) review_reasons.push("Incomplete vendor information");
 
-  // Amounts confidence: based on total, subtotal, tax consistency
+  // Amounts: 30% weight
   let amountsScore = 0;
   if (flat.total != null && flat.total > 0) amountsScore += 0.5;
   if (flat.subtotal != null && flat.subtotal > 0) amountsScore += 0.25;
-  if (flat.tax_amount != null) amountsScore += 0.15;
-  if (flat.subtotal && flat.tax_amount != null && flat.total) {
-    const calculatedTotal = flat.subtotal + flat.tax_amount;
-    if (Math.abs(calculatedTotal - flat.total) < 0.05) amountsScore += 0.1; // consistency bonus
+  if (flat.tax_lines && flat.tax_lines.length > 0) amountsScore += 0.15;
+  if (mathValidation.valid) amountsScore += 0.1;
+  else {
+    review_reasons.push(...mathValidation.reasons);
   }
   amountsScore = Math.min(1.0, amountsScore);
 
-  // Line items confidence
+  // Line items: 15% weight
   const items = flat.line_items || [];
   let lineScore = 0;
   if (items.length > 0) {
@@ -369,67 +763,52 @@ function calculateConfidence(flat: FlatExtraction): {
     lineScore = validItems.length / items.length;
   }
 
-  const overall = vendorScore * 0.3 + amountsScore * 0.4 + lineScore * 0.3;
+  // Tax: 20% weight
+  let taxScore = 0.5; // base
+  if (taxDecision.mechanism !== "standard_btw" && !flat.supplier_vat) {
+    taxScore = 0.6; // reasonable — non-EU vendors often don't have EU VAT
+  }
+  if (flat.supplier_vat) taxScore += 0.3;
+  if (taxDecision.supplier_country !== "UNKNOWN") taxScore += 0.2;
+  taxScore = Math.min(1.0, taxScore);
+  if (taxDecision.supplier_country === "UNKNOWN") {
+    review_reasons.push("Could not determine supplier country");
+  }
+
+  // Doc type: 15% weight
+  const docTypeScore = docType.confidence;
+
+  const overall =
+    vendorScore * 0.20 +
+    amountsScore * 0.30 +
+    lineScore * 0.15 +
+    taxScore * 0.20 +
+    docTypeScore * 0.15;
+
+  const roundedOverall = Math.round(overall * 100) / 100;
+  const requires_review = roundedOverall < 0.90 || review_reasons.length > 0;
 
   return {
-    overall: Math.round(overall * 100) / 100,
+    overall: roundedOverall,
     vendor: Math.round(vendorScore * 100) / 100,
     amounts: Math.round(amountsScore * 100) / 100,
     line_items: Math.round(lineScore * 100) / 100,
+    tax: Math.round(taxScore * 100) / 100,
+    doc_type: Math.round(docTypeScore * 100) / 100,
+    requires_review,
+    review_reasons,
   };
 }
 
-function detectCurrency(invoiceText: string, extractedCurrency: string | null | undefined): string {
-  if (extractedCurrency) return extractedCurrency.toUpperCase();
-  // Regex fallback: look for currency symbols followed by digits
-  if (/\$\s*\d/.test(invoiceText)) return "USD";
-  if (/\u00a3\s*\d/.test(invoiceText)) return "GBP"; // £
-  return "EUR"; // default for NL company
-}
-
-// ─── VAT Validation ─────────────────────────────────────────────────────────
-
-/**
- * Validate that the extracted VAT number actually belongs to the supplier.
- * If the supplier address indicates a non-EU country (US, UK, etc.) but the
- * VAT number starts with an EU country code, the LLM likely grabbed the
- * buyer's VAT number by mistake → return null.
- */
-function validateSupplierVat(
-  vat: string | null | undefined,
-  supplierAddress: string | null | undefined
-): string | null {
-  if (!vat) return null;
-
-  const vatClean = vat.replace(/[\s.-]/g, "").toUpperCase();
-  const vatCountry = vatClean.substring(0, 2);
-  const addr = (supplierAddress || "").toLowerCase();
-
-  // If supplier address clearly indicates a non-EU country,
-  // but VAT starts with an EU prefix, it's the buyer's VAT.
-  const nonEuCountryPatterns =
-    /\b(united states|usa|u\.s\.a|california|new york|texas|florida|illinois|washington|canada|australia|japan|china|india|brazil|united kingdom|uk|england|scotland|switzerland)\b/;
-
-  if (nonEuCountryPatterns.test(addr)) {
-    const euPrefixes = [
-      "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
-      "DE", "GR", "EL", "HU", "IE", "IT", "LV", "LT", "LU", "MT",
-      "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE",
-    ];
-    if (euPrefixes.includes(vatCountry)) {
-      console.log(`[VAT] Discarding VAT ${vat} — supplier address is non-EU ("${addr.substring(0, 60)}") but VAT prefix is ${vatCountry}`);
-      return null;
-    }
-  }
-
-  return vat;
-}
-
-// ─── Map flat extraction → nested ExtractionResult ──────────────────────────
+// ─── Build Nested Result ──────────────────────────────────────────────────────
 
 function buildExtractionResult(
   flat: FlatExtraction,
-  pdfText: string
+  pdfText: string,
+  country: CountryResult,
+  taxDecision: TaxDecision,
+  mathValidation: { valid: boolean; reasons: string[] },
+  docType: { type: DocumentType; confidence: number }
 ): ExtractionResult {
   const lineItems = (flat.line_items || []).map((li) => ({
     description: li.description || "",
@@ -439,20 +818,20 @@ function buildExtractionResult(
     line_total: li.line_total || 0,
   }));
 
-  const recurringResult = detectRecurringFromText(
-    flat.supplier_name,
-    lineItems,
-    pdfText
-  );
+  const recurringResult = detectRecurringFromText(flat.supplier_name, lineItems, pdfText);
+  const validatedVat = validateSupplierVat(flat.supplier_vat, flat.supplier_address, flat.supplier_name, pdfText);
+  const { category, gl_code } = classifyExpenseCategory(flat.supplier_name, lineItems, pdfText);
+  const totalTax = (flat.tax_lines || []).reduce((s, tl) => s + tl.tax_amount, 0);
 
-  // Validate that the VAT actually belongs to the supplier (not the buyer)
-  const validatedVat = validateSupplierVat(flat.supplier_vat, flat.supplier_address);
+  const confidence = calculateConfidence(flat, docType, taxDecision, mathValidation);
 
   return {
     vendor: {
       name: flat.supplier_name || "",
       address: flat.supplier_address || undefined,
+      country: country.code !== "UNKNOWN" ? country.code : undefined,
       vat_number: validatedVat || undefined,
+      kvk: flat.supplier_kvk || undefined,
       website: flat.supplier_website || undefined,
       email: flat.supplier_email || undefined,
       phone: flat.supplier_phone || undefined,
@@ -462,23 +841,38 @@ function buildExtractionResult(
       number: flat.invoice_number || undefined,
       date: flat.invoice_date || undefined,
       due_date: flat.due_date || undefined,
+      payment_terms_days: flat.payment_terms_days ?? undefined,
       currency: detectCurrency(pdfText, flat.currency),
       subtotal: flat.subtotal ?? undefined,
-      tax_amount: flat.tax_amount ?? undefined,
+      tax_amount: totalTax || undefined,
       total: flat.total || 0,
+      document_label: flat.document_label || undefined,
+      payment_reference: flat.payment_reference || undefined,
+      notes_on_invoice: flat.notes_on_invoice || undefined,
     },
     line_items: lineItems,
+    tax_lines: flat.tax_lines || [],
     classification: {
       is_recurring: recurringResult.is_recurring,
       recurring_frequency: recurringResult.frequency,
-      expense_category: classifyExpenseCategory(flat.supplier_name, lineItems, pdfText),
-      is_reverse_charge: detectReverseCharge(validatedVat),
+      expense_category: category,
+      gl_code,
+      is_reverse_charge:
+        taxDecision.mechanism === "reverse_charge_eu" ||
+        taxDecision.mechanism === "reverse_charge_non_eu",
     },
-    confidence: calculateConfidence(flat),
+    confidence,
   };
 }
 
-// ─── ECB Currency Conversion ─────────────────────────────────────────────────
+function detectCurrency(invoiceText: string, extractedCurrency: string | null | undefined): string {
+  if (extractedCurrency) return extractedCurrency.toUpperCase();
+  if (/\$\s*\d/.test(invoiceText)) return "USD";
+  if (/\u00a3\s*\d/.test(invoiceText)) return "GBP";
+  return "EUR";
+}
+
+// ─── ECB Currency Conversion ──────────────────────────────────────────────────
 
 async function getECBRate(
   supabase: any,
@@ -504,8 +898,6 @@ async function getECBRate(
   // 2. Fetch from ECB SDMX CSV API
   try {
     const url = `https://data-api.ecb.europa.eu/service/data/EXR/D.${currency}.EUR.SP00.A?format=csvdata&startPeriod=${date}&endPeriod=${date}`;
-    console.log(`[ECB] Fetching: ${url}`);
-
     const resp = await fetch(url);
     if (resp.ok) {
       const csv = await resp.text();
@@ -518,29 +910,20 @@ async function getECBRate(
           const rate = parseFloat(values[obsValueIdx]);
           if (!isNaN(rate) && rate > 0) {
             const invertedRate = 1 / rate;
-            console.log(`[ECB] Got rate: 1 ${currency} = ${invertedRate.toFixed(6)} EUR (raw: ${rate})`);
-
             await supabase.from("exchange_rates").upsert(
-              {
-                currency_from: currency,
-                currency_to: "EUR",
-                rate: invertedRate,
-                rate_date: date,
-                source: "ecb_sdmx",
-              },
+              { currency_from: currency, currency_to: "EUR", rate: invertedRate, rate_date: date, source: "ecb_sdmx" },
               { onConflict: "currency_from,currency_to,rate_date" }
             );
-
             return { rate: invertedRate, source: "ecb_sdmx" };
           }
         }
       }
     }
   } catch (e) {
-    console.warn("[ECB] SDMX API failed, trying daily XML feed:", e);
+    console.warn("[ECB] SDMX API failed:", e);
   }
 
-  // 3. Fallback: ECB daily XML feed (latest rates only)
+  // 3. Fallback: ECB daily XML feed
   try {
     const xmlResp = await fetch("https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml");
     if (xmlResp.ok) {
@@ -550,19 +933,10 @@ async function getECBRate(
       if (match && match[1]) {
         const rate = parseFloat(match[1]);
         const invertedRate = 1 / rate;
-        console.log(`[ECB] Daily XML rate: 1 ${currency} = ${invertedRate.toFixed(6)} EUR`);
-
         await supabase.from("exchange_rates").upsert(
-          {
-            currency_from: currency,
-            currency_to: "EUR",
-            rate: invertedRate,
-            rate_date: date,
-            source: "ecb_daily_xml",
-          },
+          { currency_from: currency, currency_to: "EUR", rate: invertedRate, rate_date: date, source: "ecb_daily_xml" },
           { onConflict: "currency_from,currency_to,rate_date" }
         );
-
         return { rate: invertedRate, source: "ecb_daily_xml" };
       }
     }
@@ -574,7 +948,7 @@ async function getECBRate(
   return null;
 }
 
-// ─── Vendor Matching ─────────────────────────────────────────────────────────
+// ─── Vendor Matching ──────────────────────────────────────────────────────────
 
 async function matchOrCreateVendor(
   supabase: any,
@@ -592,7 +966,7 @@ async function matchOrCreateVendor(
       .maybeSingle();
 
     if (vatMatch) {
-      console.log(`[VENDOR] Exact VAT match: ${vatMatch.name} (${vatMatch.id})`);
+      console.log(`[VENDOR] Exact VAT match: ${vatMatch.name}`);
       return { id: vatMatch.id, match_type: "exact_vat", confidence: 0.99 };
     }
   }
@@ -607,11 +981,10 @@ async function matchOrCreateVendor(
       .limit(3);
 
     if (nameMatches && nameMatches.length > 0) {
-      console.log(`[VENDOR] Name match: ${nameMatches[0].name} (${nameMatches[0].id})`);
       return { id: nameMatches[0].id, match_type: "fuzzy_name", confidence: 0.85 };
     }
 
-    // Also check with first word of vendor name
+    // First word match
     const { data: reverseMatches } = await supabase
       .from("vendors")
       .select("id, name")
@@ -620,13 +993,12 @@ async function matchOrCreateVendor(
       .limit(3);
 
     if (reverseMatches && reverseMatches.length > 0) {
-      console.log(`[VENDOR] Partial name match: ${reverseMatches[0].name}`);
       return { id: reverseMatches[0].id, match_type: "partial_name", confidence: 0.7 };
     }
   }
 
   // 3. Create new vendor
-  console.log(`[VENDOR] No match found, creating new vendor: ${vendorData.name}`);
+  console.log(`[VENDOR] Creating new: ${vendorData.name}`);
   const { data: newVendor, error } = await supabase
     .from("vendors")
     .insert({
@@ -643,37 +1015,19 @@ async function matchOrCreateVendor(
     .select("id")
     .single();
 
-  if (error) {
-    console.error("[VENDOR] Create error:", error.message);
-    throw new Error(`Failed to create vendor: ${error.message}`);
-  }
-
+  if (error) throw new Error(`Failed to create vendor: ${error.message}`);
   return { id: newVendor.id, match_type: "new", confidence: 1.0 };
 }
 
-// ─── Tax Classification ──────────────────────────────────────────────────────
+// ─── Tax Rate Lookup ──────────────────────────────────────────────────────────
 
-async function classifyTax(
+async function lookupTaxRate(
   supabase: any,
   companyId: string,
-  extraction: ExtractionResult
-): Promise<{ rate_id: string | null; rate: number; is_reverse_charge: boolean }> {
-  const isReverseCharge = extraction.classification.is_reverse_charge;
+  taxDecision: TaxDecision
+): Promise<{ rate_id: string | null; rate: number }> {
+  const targetRate = taxDecision.mechanism === "standard_btw" ? taxDecision.rate : 0;
 
-  // Determine the target tax rate percentage
-  let targetRate = 21; // Default Dutch BTW
-  if (isReverseCharge) {
-    targetRate = 0; // Reverse charge = 0% BTW
-  } else if (extraction.line_items.length > 0) {
-    // Use the most common tax rate from line items
-    const rates = extraction.line_items.map((li) => li.tax_rate_percent);
-    const mode = rates
-      .sort((a, b) => rates.filter((v) => v === a).length - rates.filter((v) => v === b).length)
-      .pop() || 21;
-    targetRate = mode;
-  }
-
-  // Look up matching tax rate in DB
   const { data: taxRates } = await supabase
     .from("tax_rates")
     .select("id, name, rate")
@@ -683,16 +1037,14 @@ async function classifyTax(
 
   if (taxRates && taxRates.length > 0) {
     const exactMatch = taxRates.find((tr: any) => Number(tr.rate) === targetRate);
-    if (exactMatch) {
-      return { rate_id: exactMatch.id, rate: targetRate, is_reverse_charge: isReverseCharge };
-    }
-    return { rate_id: taxRates[0].id, rate: Number(taxRates[0].rate), is_reverse_charge: isReverseCharge };
+    if (exactMatch) return { rate_id: exactMatch.id, rate: targetRate };
+    return { rate_id: taxRates[0].id, rate: Number(taxRates[0].rate) };
   }
 
-  return { rate_id: null, rate: targetRate, is_reverse_charge: isReverseCharge };
+  return { rate_id: null, rate: targetRate };
 }
 
-// ─── Recurring Detection (next-date calculator) ─────────────────────────────
+// ─── Recurring Detection (next-date) ─────────────────────────────────────────
 
 function detectRecurring(extraction: ExtractionResult): {
   detected: boolean;
@@ -710,21 +1062,11 @@ function detectRecurring(extraction: ExtractionResult): {
   if (invoiceDate) {
     const d = new Date(invoiceDate);
     switch (frequency) {
-      case "weekly":
-        d.setDate(d.getDate() + 7);
-        break;
-      case "monthly":
-        d.setMonth(d.getMonth() + 1);
-        break;
-      case "quarterly":
-        d.setMonth(d.getMonth() + 3);
-        break;
-      case "annual":
-      case "yearly":
-        d.setFullYear(d.getFullYear() + 1);
-        break;
-      default:
-        d.setMonth(d.getMonth() + 1);
+      case "weekly": d.setDate(d.getDate() + 7); break;
+      case "monthly": d.setMonth(d.getMonth() + 1); break;
+      case "quarterly": d.setMonth(d.getMonth() + 3); break;
+      case "annual": case "yearly": d.setFullYear(d.getFullYear() + 1); break;
+      default: d.setMonth(d.getMonth() + 1);
     }
     suggestedNextDate = d.toISOString().split("T")[0];
   }
@@ -732,7 +1074,7 @@ function detectRecurring(extraction: ExtractionResult): {
   return { detected: true, frequency, suggested_next_date: suggestedNextDate };
 }
 
-// ─── Main Handler ────────────────────────────────────────────────────────────
+// ─── Main Handler ─────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -761,7 +1103,7 @@ Deno.serve(async (req) => {
 
     console.log(`[SMART-IMPORT] Processing "${fileName}" for company ${companyId}`);
 
-    // Step 1: Pure LLM extraction (no classification — just extract what's in the text)
+    // Step 1: LLM extraction (70B model)
     const extraction = await extractFromText(groqApiKey, pdfText);
     if (!extraction.success || !extraction.data) {
       return new Response(
@@ -770,12 +1112,32 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Step 2: Build nested result with deterministic classification (code, not LLM)
-    const data = buildExtractionResult(extraction.data, pdfText);
+    const flat = extraction.data;
 
-    console.log(`[SMART-IMPORT] Extraction done — vendor: ${data.vendor.name}, total: ${data.invoice.total}, category: ${data.classification.expense_category}, reverse_charge: ${data.classification.is_reverse_charge}, recurring: ${data.classification.is_recurring}`);
+    // Step 2: Math validation
+    const mathValidation = validateMath(flat);
+    if (!mathValidation.valid) {
+      console.log(`[SMART-IMPORT] Math validation issues: ${mathValidation.reasons.join("; ")}`);
+    }
 
-    // Step 3: Vendor matching
+    // Step 3: Country detection
+    const country = detectCountry(flat);
+    console.log(`[SMART-IMPORT] Country: ${country.code} (EU: ${country.isEU}, NL: ${country.isNL})`);
+
+    // Step 4: Tax rules engine (deterministic, NOT LLM)
+    const taxDecision = determineTaxDecision(country, flat, pdfText);
+    console.log(`[SMART-IMPORT] Tax: ${taxDecision.mechanism} (rate: ${taxDecision.rate}%, self-assess: ${taxDecision.self_assess_rate}%)`);
+
+    // Step 5: Document type classification
+    const docType = classifyDocumentType(flat);
+    console.log(`[SMART-IMPORT] Doc type: ${docType.type} (confidence: ${docType.confidence})`);
+
+    // Step 6: Build nested result
+    const data = buildExtractionResult(flat, pdfText, country, taxDecision, mathValidation, docType);
+
+    console.log(`[SMART-IMPORT] Extraction done — vendor: ${data.vendor.name}, total: ${data.invoice.total}, category: ${data.classification.expense_category}, gl: ${data.classification.gl_code}`);
+
+    // Step 7: Vendor matching
     let vendorMatch: { id: string; match_type: string; confidence: number } | null = null;
     try {
       vendorMatch = await matchOrCreateVendor(supabase, companyId, data.vendor);
@@ -783,10 +1145,10 @@ Deno.serve(async (req) => {
       console.warn("[SMART-IMPORT] Vendor matching failed:", e);
     }
 
-    // Step 4: Tax classification
-    const taxResult = await classifyTax(supabase, companyId, data);
+    // Step 8: Tax rate lookup
+    const taxRateResult = await lookupTaxRate(supabase, companyId, taxDecision);
 
-    // Step 5: Currency conversion
+    // Step 9: Currency conversion
     let currencyConversion: {
       original_currency: string;
       original_amount: number;
@@ -799,7 +1161,6 @@ Deno.serve(async (req) => {
     if (invoiceCurrency !== "EUR" && data.invoice.total) {
       const rateDate = paymentDate || data.invoice.date || new Date().toISOString().split("T")[0];
       const ecbResult = await getECBRate(supabase, invoiceCurrency, rateDate);
-
       if (ecbResult) {
         currencyConversion = {
           original_currency: invoiceCurrency,
@@ -808,20 +1169,20 @@ Deno.serve(async (req) => {
           eur_amount: Math.round(data.invoice.total * ecbResult.rate * 100) / 100,
           source: ecbResult.source,
         };
-        console.log(
-          `[SMART-IMPORT] Currency: ${data.invoice.total} ${invoiceCurrency} → ${currencyConversion.eur_amount} EUR (rate: ${ecbResult.rate})`
-        );
       }
     }
 
-    // Step 6: Recurring detection (next-date calculation)
+    // Step 10: Recurring detection
     const recurring = detectRecurring(data);
 
-    // Step 7: Log AI usage
+    // Step 11: Log AI usage
     if (extraction.usage) {
       try {
         const promptTokens = extraction.usage.prompt_tokens || 0;
         const completionTokens = extraction.usage.completion_tokens || 0;
+        const model = extraction.provider === "together"
+          ? "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+          : "llama-3.3-70b-versatile";
         const cost = (promptTokens / 1000000) * 0.05 + (completionTokens / 1000000) * 0.08;
 
         await supabase.from("ai_usage_logs").insert({
@@ -834,11 +1195,13 @@ Deno.serve(async (req) => {
           request_type: "invoice_processing",
           endpoint: "/openai/v1/chat/completions",
           metadata: {
-            model_name: "llama-3.1-8b-instant",
-            provider: "groq",
+            model_name: model,
+            provider: extraction.provider,
             function: "smart-import-invoice",
             extraction_success: true,
             confidence: data.confidence.overall,
+            document_type: docType.type,
+            tax_mechanism: taxDecision.mechanism,
           },
         });
       } catch (logError) {
@@ -846,18 +1209,25 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Return all analysis results for frontend review
+    // Build response
     const result = {
       success: true,
       extraction: data,
+      document_type: docType.type,
+      tax_decision: taxDecision,
+      confidence: data.confidence,
       vendor_match: vendorMatch,
-      tax_classification: taxResult,
+      tax_classification: {
+        rate_id: taxRateResult.rate_id,
+        rate: taxRateResult.rate,
+        is_reverse_charge: data.classification.is_reverse_charge,
+      },
       currency_conversion: currencyConversion,
       recurring,
     };
 
     console.log(
-      `[SMART-IMPORT] Done — vendor: ${vendorMatch?.match_type}, tax: ${taxResult.rate}%, recurring: ${recurring.detected}, confidence: ${data.confidence.overall}`
+      `[SMART-IMPORT] Done — doc: ${docType.type}, vendor: ${vendorMatch?.match_type}, tax: ${taxDecision.mechanism}, confidence: ${data.confidence.overall}, review: ${data.confidence.requires_review}`
     );
 
     return new Response(JSON.stringify(result), {
