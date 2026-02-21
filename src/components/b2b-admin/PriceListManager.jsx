@@ -279,6 +279,31 @@ export default function PriceListManager() {
     }
   };
 
+  const handleSetDefault = async (id) => {
+    try {
+      // Clear is_default from all price lists for this org
+      await supabase
+        .from('b2b_price_lists')
+        .update({ is_default: false })
+        .eq('organization_id', organizationId);
+
+      // Set the chosen one as default
+      const { error: setErr } = await supabase
+        .from('b2b_price_lists')
+        .update({ is_default: true, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (setErr) throw setErr;
+
+      setPriceLists((prev) =>
+        prev.map((pl) => ({ ...pl, is_default: pl.id === id }))
+      );
+    } catch (err) {
+      console.error('[PriceListManager] set default error:', err);
+      setError(err.message || 'Failed to set default price list');
+    }
+  };
+
   const filteredLists = priceLists.filter((pl) =>
     pl.name.toLowerCase().includes(search.toLowerCase()) ||
     (pl.description || '').toLowerCase().includes(search.toLowerCase())
@@ -392,9 +417,20 @@ export default function PriceListManager() {
                     <StatusBadge status={pl.status} />
                   </div>
                   <div className="col-span-1 text-center">
-                    {pl.is_default && (
-                      <Star className="w-4 h-4 text-amber-400 mx-auto" />
-                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!pl.is_default) handleSetDefault(pl.id);
+                      }}
+                      className={`p-1 rounded-lg transition-colors mx-auto ${
+                        pl.is_default
+                          ? 'text-amber-400 cursor-default'
+                          : 'text-zinc-600 hover:text-amber-400 hover:bg-amber-400/10'
+                      }`}
+                      title={pl.is_default ? 'Default price list' : 'Set as default'}
+                    >
+                      <Star className={`w-4 h-4 ${pl.is_default ? 'fill-amber-400' : ''}`} />
+                    </button>
                   </div>
                   <div className="col-span-2 text-sm text-zinc-400">
                     {formatDate(pl.valid_from)}

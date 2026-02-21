@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Folder, Package, ArrowRight } from 'lucide-react';
 
 /**
@@ -36,7 +37,7 @@ function getGridClasses(columns) {
 /**
  * Card style: surface background, image on top, text below.
  */
-function CardStyleCategory({ category, showCount, showImage }) {
+function CardStyleCategory({ category, showCount, showImage, onClick }) {
   return (
     <div
       className="group flex flex-col rounded-xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
@@ -44,6 +45,7 @@ function CardStyleCategory({ category, showCount, showImage }) {
         backgroundColor: 'var(--ws-surface)',
         border: '1px solid var(--ws-border)',
       }}
+      onClick={onClick}
     >
       {/* Image area */}
       {showImage && (
@@ -93,11 +95,12 @@ function CardStyleCategory({ category, showCount, showImage }) {
 /**
  * Overlay style: image fills card, text at bottom with gradient.
  */
-function OverlayStyleCategory({ category, showCount }) {
+function OverlayStyleCategory({ category, showCount, onClick }) {
   return (
     <div
       className="group relative rounded-xl overflow-hidden cursor-pointer aspect-[4/3]"
       style={{ border: '1px solid var(--ws-border)' }}
+      onClick={onClick}
     >
       {/* Background: image or placeholder */}
       <div className="absolute inset-0" style={{ backgroundColor: 'var(--ws-surface)' }}>
@@ -149,11 +152,12 @@ function OverlayStyleCategory({ category, showCount }) {
 /**
  * Minimal style: text and count only, no images.
  */
-function MinimalStyleCategory({ category, showCount }) {
+function MinimalStyleCategory({ category, showCount, onClick }) {
   return (
     <div
       className="group flex items-center justify-between gap-4 rounded-lg px-5 py-4 transition-all duration-200 cursor-pointer"
       style={{ border: '1px solid var(--ws-border)' }}
+      onClick={onClick}
     >
       <div className="flex items-center gap-3 min-w-0">
         <Folder className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--ws-primary)' }} />
@@ -193,6 +197,9 @@ const STYLE_COMPONENTS = {
 };
 
 export default function CategoryGridRenderer({ section, theme }) {
+  const navigate = useNavigate();
+  const { org } = useParams();
+
   const {
     heading = '',
     subheading = '',
@@ -202,6 +209,11 @@ export default function CategoryGridRenderer({ section, theme }) {
     showCount = true,
     showImage = true,
   } = section?.props || {};
+
+  const handleCategoryClick = (categoryName) => {
+    const basePath = org ? `/portal/${org}/shop/catalog` : '/catalog';
+    navigate(`${basePath}?category=${encodeURIComponent(categoryName)}`);
+  };
 
   const categories =
     Array.isArray(rawCategories) && rawCategories.length > 0
@@ -247,6 +259,7 @@ export default function CategoryGridRenderer({ section, theme }) {
             category={category}
             showCount={showCount}
             showImage={showImage}
+            onClick={() => handleCategoryClick(category.name)}
           />
         ))}
       </div>

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Plus } from 'lucide-react';
+import { supabase } from '@/api/supabaseClient';
 import { useWholesale } from '../WholesaleProvider';
 
 /**
@@ -51,15 +52,23 @@ function DetailedCard({ product, showPricing, showQuickInquiry, onAddToCart, onN
       }}
       onClick={() => onNavigate?.(product.id)}
     >
-      {/* Image placeholder */}
+      {/* Image */}
       <div
         className="relative flex items-center justify-center aspect-square"
         style={{ backgroundColor: 'var(--ws-bg)' }}
       >
-        <ShoppingBag
-          className="w-12 h-12 transition-transform duration-200 group-hover:scale-110"
-          style={{ color: 'var(--ws-muted)' }}
-        />
+        {product.featured_image ? (
+          <img
+            src={product.featured_image}
+            alt={product.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <ShoppingBag
+            className="w-12 h-12 transition-transform duration-200 group-hover:scale-110"
+            style={{ color: 'var(--ws-muted)' }}
+          />
+        )}
       </div>
 
       {/* Details */}
@@ -129,12 +138,20 @@ function CompactCard({ product, showPricing, showQuickInquiry, onAddToCart, onNa
       }}
       onClick={() => onNavigate?.(product.id)}
     >
-      {/* Small image placeholder */}
+      {/* Small image */}
       <div
-        className="flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-lg"
+        className="flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-lg overflow-hidden"
         style={{ backgroundColor: 'var(--ws-bg)' }}
       >
-        <ShoppingBag className="w-6 h-6" style={{ color: 'var(--ws-muted)' }} />
+        {product.featured_image ? (
+          <img
+            src={product.featured_image}
+            alt={product.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <ShoppingBag className="w-6 h-6" style={{ color: 'var(--ws-muted)' }} />
+        )}
       </div>
 
       {/* Info */}
@@ -209,7 +226,7 @@ const CARD_COMPONENTS = {
 
 export default function FeaturedProductsRenderer({ section, theme }) {
   const navigate = useNavigate();
-  const { addToCart } = useWholesale();
+  const { addToCart, orgId } = useWholesale();
 
   const {
     heading = '',
@@ -222,8 +239,62 @@ export default function FeaturedProductsRenderer({ section, theme }) {
     cardStyle = 'detailed',
   } = section?.props || {};
 
-  // Use placeholder data until real products are wired in
-  const products = PLACEHOLDER_PRODUCTS.slice(0, Math.min(maxItems, 8));
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!orgId) {
+      setProducts(PLACEHOLDER_PRODUCTS.slice(0, maxItems));
+      setProductsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchProducts = async () => {
+      setProductsLoading(true);
+      try {
+        let query;
+        if (productIds && productIds.length > 0) {
+          query = supabase
+            .from('products')
+            .select('id, name, price, sku, featured_image, b2b_price, wholesale_price')
+            .in('id', productIds)
+            .eq('is_active', true)
+            .limit(maxItems);
+        } else {
+          query = supabase
+            .from('products')
+            .select('id, name, price, sku, featured_image, b2b_price, wholesale_price, product_sales_channels!inner(channel)')
+            .eq('product_sales_channels.channel', 'b2b')
+            .eq('is_active', true)
+            .eq('company_id', orgId)
+            .order('created_at', { ascending: false })
+            .limit(maxItems);
+        }
+
+        const { data, error } = await query;
+        if (cancelled) return;
+
+        if (error || !data?.length) {
+          setProducts(PLACEHOLDER_PRODUCTS.slice(0, maxItems));
+        } else {
+          setProducts(data.map(p => ({
+            ...p,
+            price: p.b2b_price || p.wholesale_price || p.price || 0,
+          })));
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setProducts(PLACEHOLDER_PRODUCTS.slice(0, maxItems));
+        }
+      } finally {
+        if (!cancelled) setProductsLoading(false);
+      }
+    };
+
+    fetchProducts();
+    return () => { cancelled = true; };
+  }, [orgId, JSON.stringify(productIds), maxItems]);
 
   const CardComponent = CARD_COMPONENTS[cardStyle] || DetailedCard;
   const gridClasses = getGridClasses(columns);

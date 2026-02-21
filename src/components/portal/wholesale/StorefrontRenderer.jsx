@@ -88,6 +88,15 @@ export default function StorefrontRenderer() {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
+  // Signal to parent builder that preview content is loaded
+  useEffect(() => {
+    if (!config || (!providerConfig && !overrideConfig)) return;
+    const isInIframe = window.parent && window.parent !== window;
+    if (isInIframe) {
+      window.parent.postMessage({ type: 'PREVIEW_LOADED' }, '*');
+    }
+  }, [config, configLoading]);
+
   // Post section click back to parent in preview mode
   const handleSectionClick = useCallback(
     (sectionId) => {

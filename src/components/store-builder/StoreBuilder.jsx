@@ -1,94 +1,265 @@
 // ---------------------------------------------------------------------------
-// StoreBuilder.jsx -- Main 3-panel IDE layout for the B2B Store Builder.
+// StoreBuilder.jsx -- Chat-driven B2B Store Builder (Base44-style layout)
 //
-// Layout (Lovable/Bolt-inspired):
+// Layout:
 // ┌──────────────────────────────────────────────────────────────┐
 // │  BuilderToolbar (top bar)                                    │
-// ├──────────┬──────────────────────────────┬────────────────────┤
-// │ Builder  │      BuilderCanvas           │  BuilderProperty   │
-// │ Sidebar  │      (live preview iframe)   │  Editor            │
-// │ (280px)  │      (flex-1)                │  (320px)           │
-// ├──────────┴──────────────────────────────┴────────────────────┤
-// │  AIPromptBar (bottom bar)                                    │
-// └──────────────────────────────────────────────────────────────┘
+// ├─────────────────────────┬────────────────────────────────────┤
+// │  AI Chat Panel          │      BuilderCanvas                 │
+// │  - Suggestions chips    │      (live preview iframe)         │
+// │  - Full conversation    │                                    │
+// │  - Chat input           │                                    │
+// │  (~420px)               │      (flex-1)                      │
+// └─────────────────────────┴────────────────────────────────────┘
 // ---------------------------------------------------------------------------
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  PanelLeftClose,
-  PanelLeftOpen,
+  Sparkles,
+  ArrowUp,
   Loader2,
+  Settings2,
+  Palette,
+  Type,
+  Layout,
+  ChevronDown,
+  ChevronRight,
+  X,
 } from 'lucide-react';
 
 import BuilderToolbar from './BuilderToolbar';
-import BuilderSidebar from './BuilderSidebar';
 import BuilderCanvas from './BuilderCanvas';
-import BuilderPropertyEditor from './BuilderPropertyEditor';
-import AIPromptBar from './AIPromptBar';
-import AIChatPanel from './AIChatPanel';
 
 import { useStoreBuilder } from './hooks/useStoreBuilder';
 import { useBuilderHistory } from './hooks/useBuilderHistory';
 import { useBuilderPreview } from './hooks/useBuilderPreview';
 import { useBuilderAI } from './hooks/useBuilderAI';
-import { createDefaultSection } from './utils/storeDefaults';
 
 // ---------------------------------------------------------------------------
-// Section add modal (simple inline picker)
+// Relative-time helper
 // ---------------------------------------------------------------------------
 
-const SECTION_TYPES = [
-  { type: 'hero', label: 'Hero' },
-  { type: 'featured_products', label: 'Featured Products' },
-  { type: 'category_grid', label: 'Category Grid' },
-  { type: 'about', label: 'About' },
-  { type: 'testimonials', label: 'Testimonials' },
-  { type: 'cta', label: 'Call to Action' },
-  { type: 'faq', label: 'FAQ' },
-  { type: 'contact', label: 'Contact' },
-  { type: 'banner', label: 'Banner' },
-  { type: 'stats', label: 'Stats' },
-  { type: 'rich_text', label: 'Rich Text' },
-  { type: 'logo_grid', label: 'Logo Grid' },
-];
+function formatRelativeTime(date) {
+  if (!date) return '';
+  const now = Date.now();
+  const then = date instanceof Date ? date.getTime() : new Date(date).getTime();
+  const diffMs = now - then;
+  if (Number.isNaN(diffMs) || diffMs < 0) return '';
+  const seconds = Math.floor(diffMs / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const d = new Date(then);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
 
-function AddSectionModal({ open, onClose, onAdd }) {
-  if (!open) return null;
+// ---------------------------------------------------------------------------
+// Typing indicator
+// ---------------------------------------------------------------------------
 
+function TypingIndicator() {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        transition={{ duration: 0.2 }}
-        className="bg-zinc-900 rounded-2xl border border-zinc-800/60 p-5 w-full max-w-md mx-4 shadow-2xl"
-      >
-        <h3 className="text-sm font-semibold text-white mb-3">Add Section</h3>
-        <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto">
-          {SECTION_TYPES.map(({ type, label }) => (
-            <button
-              key={type}
-              onClick={() => {
-                onAdd(type);
-                onClose();
-              }}
-              className="text-left px-3 py-2.5 rounded-xl border border-zinc-800/60 text-sm text-zinc-300 hover:bg-zinc-800/60 hover:text-white hover:border-zinc-700 transition-colors"
-            >
-              {label}
-            </button>
+    <div className="flex items-start gap-2.5 px-4 pb-4">
+      <div className="w-7 h-7 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0 mt-0.5">
+        <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+      </div>
+      <div className="bg-zinc-800/60 rounded-2xl rounded-tl-md px-4 py-3">
+        <div className="flex items-center gap-1">
+          {[0, 1, 2].map((i) => (
+            <motion.span
+              key={i}
+              className="block w-1.5 h-1.5 rounded-full bg-zinc-400"
+              animate={{ y: [0, -4, 0] }}
+              transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
+            />
           ))}
         </div>
-        <div className="mt-4 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
-          >
-            Cancel
-          </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Chat message bubble
+// ---------------------------------------------------------------------------
+
+function ChatBubble({ message }) {
+  const isUser = message.role === 'user';
+  return (
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} px-4 pb-3`}>
+      {!isUser && (
+        <div className="w-7 h-7 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0 mt-0.5 mr-2.5">
+          <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
         </div>
-      </motion.div>
+      )}
+      <div className={`max-w-[85%] flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+        <div
+          className={`px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words ${
+            isUser
+              ? 'bg-cyan-500/15 text-white rounded-2xl rounded-tr-md'
+              : 'bg-zinc-800/60 text-zinc-300 rounded-2xl rounded-tl-md'
+          }`}
+        >
+          {message.content}
+        </div>
+        {message.timestamp && (
+          <span className="text-[10px] text-zinc-600 mt-1 px-1 select-none">
+            {formatRelativeTime(message.timestamp)}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Settings panel (collapsible inline sections for theme, nav, footer)
+// ---------------------------------------------------------------------------
+
+function SettingsPanel({ config, onUpdateTheme }) {
+  const [openSection, setOpenSection] = useState(null);
+  const theme = config?.theme || {};
+
+  const toggle = (section) => setOpenSection((prev) => (prev === section ? null : section));
+
+  const THEME_COLORS = [
+    { key: 'primaryColor', label: 'Primary', default: '#06b6d4' },
+    { key: 'backgroundColor', label: 'Background', default: '#09090b' },
+    { key: 'textColor', label: 'Text', default: '#fafafa' },
+    { key: 'surfaceColor', label: 'Surface', default: '#18181b' },
+    { key: 'borderColor', label: 'Border', default: '#27272a' },
+    { key: 'mutedTextColor', label: 'Muted', default: '#a1a1aa' },
+  ];
+
+  return (
+    <div className="border-t border-zinc-800/60">
+      {/* Theme Colors */}
+      <button
+        onClick={() => toggle('colors')}
+        className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/30 transition-colors"
+      >
+        <Palette className="w-4 h-4 text-cyan-400" />
+        <span className="flex-1 text-left font-medium">Colors</span>
+        {openSection === 'colors' ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+      </button>
+      <AnimatePresence>
+        {openSection === 'colors' && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-3 grid grid-cols-2 gap-2">
+              {THEME_COLORS.map(({ key, label, default: def }) => (
+                <label key={key} className="flex items-center gap-2 text-xs text-zinc-400">
+                  <input
+                    type="color"
+                    value={theme[key] || def}
+                    onChange={(e) => onUpdateTheme({ [key]: e.target.value })}
+                    className="w-6 h-6 rounded-md border border-zinc-700 cursor-pointer bg-transparent"
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Typography */}
+      <button
+        onClick={() => toggle('typography')}
+        className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/30 transition-colors border-t border-zinc-800/40"
+      >
+        <Type className="w-4 h-4 text-cyan-400" />
+        <span className="flex-1 text-left font-medium">Typography</span>
+        {openSection === 'typography' ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+      </button>
+      <AnimatePresence>
+        {openSection === 'typography' && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-3 space-y-2">
+              <label className="block">
+                <span className="text-xs text-zinc-500 mb-1 block">Body Font</span>
+                <input
+                  type="text"
+                  value={theme.font || 'Inter, system-ui, sans-serif'}
+                  onChange={(e) => onUpdateTheme({ font: e.target.value })}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs text-zinc-500 mb-1 block">Heading Font</span>
+                <input
+                  type="text"
+                  value={theme.headingFont || 'Inter, system-ui, sans-serif'}
+                  onChange={(e) => onUpdateTheme({ headingFont: e.target.value })}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
+                />
+              </label>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sections Overview */}
+      <button
+        onClick={() => toggle('sections')}
+        className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/30 transition-colors border-t border-zinc-800/40"
+      >
+        <Layout className="w-4 h-4 text-cyan-400" />
+        <span className="flex-1 text-left font-medium">Sections</span>
+        <span className="text-[10px] text-zinc-600 mr-1">
+          {config?.sections?.length || 0}
+        </span>
+        {openSection === 'sections' ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+      </button>
+      <AnimatePresence>
+        {openSection === 'sections' && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-3 space-y-1">
+              {(config?.sections || []).length === 0 ? (
+                <p className="text-xs text-zinc-600 py-2">No sections yet. Ask AI to add some!</p>
+              ) : (
+                config.sections.map((s, i) => (
+                  <div
+                    key={s.id || i}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-zinc-400"
+                  >
+                    <span className="w-5 h-5 rounded bg-zinc-800 flex items-center justify-center text-[10px] text-zinc-500 font-mono">
+                      {i + 1}
+                    </span>
+                    <span className="flex-1 truncate">{s.type || 'Unknown'}</span>
+                    {s.visible === false && (
+                      <span className="text-[10px] text-zinc-600 italic">hidden</span>
+                    )}
+                  </div>
+                ))
+              )}
+              <p className="text-[10px] text-zinc-600 pt-1">
+                Use the chat to add, remove, or reorder sections.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -105,11 +276,13 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   const ai = useBuilderAI();
 
   // ---- Local state ---------------------------------------------------------
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [showAddSection, setShowAddSection] = useState(false);
-  // isPublished now comes from builder.isPublished (initialized from DB)
-  const [showAIChat, setShowAIChat] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [chatValue, setChatValue] = useState('');
+  const messagesEndRef = useRef(null);
+  const chatInputRef = useRef(null);
+
+  const canSend = chatValue.trim().length > 0 && !ai.isProcessing;
 
   // ---- Sync config to preview iframe when it changes -----------------------
   const prevConfigRef = useRef(null);
@@ -120,17 +293,18 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
     }
   }, [builder.config, preview.sendConfigToPreview]);
 
-  // ---- Listen for section clicks from the preview iframe -------------------
+  // ---- Auto-scroll chat to bottom ------------------------------------------
   useEffect(() => {
-    function handleSectionClick(e) {
-      if (e.detail?.sectionId) {
-        builder.selectSection(e.detail.sectionId);
-      }
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-    window.addEventListener('builder:section-click', handleSectionClick);
-    return () =>
-      window.removeEventListener('builder:section-click', handleSectionClick);
-  }, [builder.selectSection]);
+  }, [ai.messages, ai.isProcessing]);
+
+  // ---- Focus input on mount ------------------------------------------------
+  useEffect(() => {
+    const timer = setTimeout(() => chatInputRef.current?.focus(), 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   // ---- Keyboard shortcuts (Cmd+S save, Cmd+Z undo, Cmd+Shift+Z redo) ------
   useEffect(() => {
@@ -151,7 +325,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [history.undo, history.redo]);
 
-  // ---- Handlers (wrap builder methods with history pushes) -----------------
+  // ---- Handlers ------------------------------------------------------------
 
   const handleSave = useCallback(async () => {
     setSaveError(null);
@@ -169,7 +343,6 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
       if (builder.isPublished) {
         await builder.unpublishStore();
       } else {
-        // Auto-save before publishing
         await builder.saveConfig();
         await builder.publishStore();
       }
@@ -177,54 +350,6 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
       console.error('Publish failed:', err);
     }
   }, [builder.isPublished, builder.saveConfig, builder.publishStore, builder.unpublishStore]);
-
-  const handleAddSection = useCallback(
-    (type) => {
-      history.pushState();
-      builder.addSection(type);
-    },
-    [history.pushState, builder.addSection],
-  );
-
-  const handleRemoveSection = useCallback(
-    (sectionId) => {
-      history.pushState();
-      builder.removeSection(sectionId);
-    },
-    [history.pushState, builder.removeSection],
-  );
-
-  const handleReorderSections = useCallback(
-    (newOrder) => {
-      history.pushState();
-      builder.reorderSections(newOrder);
-    },
-    [history.pushState, builder.reorderSections],
-  );
-
-  const handleToggleVisibility = useCallback(
-    (sectionId) => {
-      history.pushState();
-      builder.toggleSectionVisibility(sectionId);
-    },
-    [history.pushState, builder.toggleSectionVisibility],
-  );
-
-  const handleUpdateSection = useCallback(
-    (sectionId, updates) => {
-      history.pushState();
-      builder.updateSection(sectionId, updates);
-    },
-    [history.pushState, builder.updateSection],
-  );
-
-  const handleUpdateSectionProps = useCallback(
-    (sectionId, propUpdates) => {
-      history.pushState();
-      builder.updateSectionProps(sectionId, propUpdates);
-    },
-    [history.pushState, builder.updateSectionProps],
-  );
 
   const handleUpdateTheme = useCallback(
     (themeUpdates) => {
@@ -245,10 +370,34 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
         }
       } catch (err) {
         console.error('AI prompt failed:', err);
-        throw err; // re-throw so AIPromptBar can restore the input
       }
     },
     [ai.sendPrompt, builder.config, builder.updateConfig, history.pushState, storeName, organizationId],
+  );
+
+  const handleSend = useCallback(async () => {
+    const prompt = chatValue.trim();
+    if (!prompt || ai.isProcessing) return;
+    setChatValue('');
+    await handleAIPrompt(prompt);
+  }, [chatValue, ai.isProcessing, handleAIPrompt]);
+
+  const handleChatKeyDown = useCallback(
+    (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend],
+  );
+
+  const handleSuggestionClick = useCallback(
+    (suggestion) => {
+      if (ai.isProcessing) return;
+      handleAIPrompt(suggestion);
+    },
+    [ai.isProcessing, handleAIPrompt],
   );
 
   // ---- Loading state -------------------------------------------------------
@@ -260,9 +409,6 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
       </div>
     );
   }
-
-  // ---- Resolved values -----------------------------------------------------
-  const showPropertyEditor = !!builder.selectedSection;
 
   // ---- Render --------------------------------------------------------------
   return (
@@ -297,53 +443,144 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
         onDeviceChange={preview.setPreviewDevice}
       />
 
-      {/* ---- Main 3-panel area ---- */}
+      {/* ---- Main 2-panel area ---- */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar */}
-        <AnimatePresence initial={false}>
-          {!sidebarCollapsed && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 280, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.2, ease: 'easeInOut' }}
-              className="flex-shrink-0 overflow-hidden"
+        {/* ---- Left: Chat Panel ---- */}
+        <div className="w-[420px] flex-shrink-0 flex flex-col bg-zinc-900 border-r border-zinc-800/60">
+          {/* Chat header */}
+          <div className="shrink-0 h-12 flex items-center justify-between px-4 border-b border-zinc-800/60">
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <span className="text-sm font-semibold text-white">AI Store Builder</span>
+            </div>
+            <button
+              onClick={() => setShowSettings((p) => !p)}
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                showSettings ? 'bg-cyan-500/15 text-cyan-400' : 'text-zinc-500 hover:text-white hover:bg-zinc-800'
+              }`}
+              title="Store settings"
             >
-              <div className="w-[280px] h-full">
-                <BuilderSidebar
+              <Settings2 className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Settings panel (collapsible) */}
+          <AnimatePresence>
+            {showSettings && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden shrink-0"
+              >
+                <SettingsPanel
                   config={builder.config}
-                  selectedSectionId={builder.selectedSectionId}
-                  activePanel={builder.activePanel}
-                  onSelectSection={builder.selectSection}
-                  onAddSection={() => setShowAddSection(true)}
-                  onRemoveSection={handleRemoveSection}
-                  onReorderSections={handleReorderSections}
-                  onToggleVisibility={handleToggleVisibility}
-                  onActivePanel={builder.setActivePanel}
                   onUpdateTheme={handleUpdateTheme}
-                  onUpdateNavigation={builder.updateNavigation}
-                  onUpdateFooter={builder.updateFooter}
-                  onUpdateCatalog={builder.updateCatalog}
                 />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Messages area */}
+          <div className="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+            {/* Welcome + Suggestions (shown when no messages) */}
+            {ai.messages.length === 0 && !ai.isProcessing && (
+              <div className="flex flex-col items-center justify-center px-6 pt-8 pb-4">
+                <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 flex items-center justify-center mb-4">
+                  <Sparkles className="w-7 h-7 text-cyan-400" />
+                </div>
+                <h3 className="text-base font-semibold text-white mb-1">
+                  Build your store with AI
+                </h3>
+                <p className="text-xs text-zinc-500 text-center leading-relaxed mb-6 max-w-[280px]">
+                  Describe what you want and I'll build it. You can change colors,
+                  add sections, update text, and more.
+                </p>
+
+                {/* Suggestion chips */}
+                <div className="w-full space-y-2">
+                  <p className="text-[10px] uppercase tracking-wider text-zinc-600 font-medium px-1">
+                    Try asking
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ai.suggestions.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="px-3 py-1.5 rounded-full text-xs text-zinc-400 border border-zinc-800 hover:border-cyan-500/30 hover:text-cyan-400 hover:bg-cyan-500/5 transition-colors"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
 
-        {/* Sidebar collapse toggle */}
-        <button
-          onClick={() => setSidebarCollapsed((prev) => !prev)}
-          className="flex-shrink-0 w-5 flex items-center justify-center border-r border-zinc-800/60 bg-zinc-950 hover:bg-zinc-900 transition-colors group"
-          title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {sidebarCollapsed ? (
-            <PanelLeftOpen className="w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
-          ) : (
-            <PanelLeftClose className="w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
-          )}
-        </button>
+            {/* Chat messages */}
+            {ai.messages.map((msg, idx) => (
+              <ChatBubble key={msg.id || idx} message={msg} />
+            ))}
 
-        {/* Center Canvas */}
+            {ai.isProcessing && <TypingIndicator />}
+
+            {/* Follow-up suggestions (after messages) */}
+            {ai.messages.length > 0 && !ai.isProcessing && (
+              <div className="px-4 pb-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {ai.suggestions.slice(0, 3).map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className="px-2.5 py-1 rounded-full text-[11px] text-zinc-500 border border-zinc-800/60 hover:border-cyan-500/30 hover:text-cyan-400 hover:bg-cyan-500/5 transition-colors"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Chat input */}
+          <div className="shrink-0 border-t border-zinc-800/60 p-3">
+            <div className="flex items-center gap-2.5">
+              <textarea
+                ref={chatInputRef}
+                value={chatValue}
+                onChange={(e) => setChatValue(e.target.value)}
+                onKeyDown={handleChatKeyDown}
+                disabled={ai.isProcessing}
+                placeholder="Describe what you want to build..."
+                rows={1}
+                className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/30 transition-all disabled:opacity-50 resize-none min-h-[40px] max-h-[120px]"
+                style={{ fieldSizing: 'content' }}
+              />
+              {ai.isProcessing ? (
+                <div className="w-9 h-9 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0">
+                  <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+                </div>
+              ) : (
+                <button
+                  onClick={handleSend}
+                  disabled={!canSend}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                    canSend
+                      ? 'bg-cyan-500 text-white hover:bg-cyan-400 cursor-pointer'
+                      : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+                  }`}
+                >
+                  <ArrowUp className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ---- Right: Preview Canvas ---- */}
         <BuilderCanvas
           config={builder.config}
           organizationId={organizationId}
@@ -351,57 +588,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
           iframeRef={preview.iframeRef}
           previewLoading={preview.previewLoading}
         />
-
-        {/* Right Property Editor */}
-        <AnimatePresence initial={false}>
-          {showPropertyEditor && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 320, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.2, ease: 'easeInOut' }}
-              className="flex-shrink-0 overflow-hidden"
-            >
-              <div className="w-[320px] h-full">
-                <BuilderPropertyEditor
-                  section={builder.selectedSection}
-                  onUpdateSection={handleUpdateSection}
-                  onUpdateSectionProps={handleUpdateSectionProps}
-                  onClose={() => builder.selectSection(null)}
-                />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
-
-      {/* ---- Bottom AI Prompt Bar ---- */}
-      <AIPromptBar
-        onSendPrompt={handleAIPrompt}
-        isProcessing={ai.isProcessing}
-        suggestions={ai.suggestions}
-        onExpandChat={() => setShowAIChat(true)}
-      />
-
-      {/* ---- AI Chat Panel (slide-in) ---- */}
-      <AIChatPanel
-        messages={ai.messages}
-        isProcessing={ai.isProcessing}
-        isOpen={showAIChat}
-        onClose={() => setShowAIChat(false)}
-        onSendPrompt={handleAIPrompt}
-      />
-
-      {/* ---- Add Section Modal ---- */}
-      <AnimatePresence>
-        {showAddSection && (
-          <AddSectionModal
-            open={showAddSection}
-            onClose={() => setShowAddSection(false)}
-            onAdd={handleAddSection}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }

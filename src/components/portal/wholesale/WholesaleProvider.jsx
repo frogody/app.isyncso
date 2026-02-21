@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/api/supabaseClient';
+import { usePortalClient } from '@/hooks/usePortalClient';
 
 const WholesaleContext = createContext(null);
 
@@ -79,6 +80,7 @@ function saveCartToStorage(orgId, items) {
  */
 export function WholesaleProvider({ children }) {
   const { org } = useParams();
+  const { client, session, loading: clientLoading, isAuthenticated } = usePortalClient();
 
   const [config, setConfig] = useState(getDefaultConfig());
   const [storePublished, setStorePublished] = useState(false);
@@ -214,6 +216,11 @@ export function WholesaleProvider({ children }) {
       // Organization
       orgId: org || null,
 
+      // Client (B2B portal auth)
+      client: client || null,
+      clientLoading,
+      isAuthenticated,
+
       // Theme
       themeVars,
 
@@ -232,6 +239,9 @@ export function WholesaleProvider({ children }) {
       configLoading,
       configError,
       org,
+      client,
+      clientLoading,
+      isAuthenticated,
       themeVars,
       cartItems,
       addToCart,

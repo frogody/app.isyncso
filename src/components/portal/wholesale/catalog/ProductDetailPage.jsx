@@ -584,7 +584,7 @@ function NotFound({ navigate, orgId }) {
 export default function ProductDetailPage() {
   const { productId, org } = useParams();
   const navigate = useNavigate();
-  const { addToCart, orgId: ctxOrgId } = useWholesale();
+  const { addToCart, orgId: ctxOrgId, client } = useWholesale();
   const orgId = org || ctxOrgId;
 
   // State
@@ -595,6 +595,7 @@ export default function ProductDetailPage() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showInquiry, setShowInquiry] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [clientPrice, setClientPrice] = useState(null);
 
   // Fetch product
   useEffect(() => {
@@ -613,7 +614,8 @@ export default function ProductDetailPage() {
       try {
         const { data, error: fetchError } = await supabase
           .from('products')
-          .select('*, physical_products(*), inventory(*)')
+          .select('*, physical_products(*), inventory(*), product_sales_channels!inner(channel)')
+          .eq('product_sales_channels.channel', 'b2b')
           .eq('id', productId)
           .single();
 
@@ -641,6 +643,31 @@ export default function ProductDetailPage() {
     return () => { cancelled = true; };
   }, [productId]);
 
+  // Fetch client-specific pricing if client is authenticated
+  useEffect(() => {
+    if (!client?.id || !productId) return;
+    let cancelled = false;
+
+    const fetchClientPrice = async () => {
+      try {
+        const { data, error: rpcError } = await supabase.rpc('get_b2b_client_price', {
+          p_client_id: client.id,
+          p_product_id: productId,
+          p_quantity: quantity,
+        });
+        if (cancelled || rpcError) return;
+        if (data && data.length > 0 && data[0].source !== 'base_price') {
+          setClientPrice(data[0]);
+        }
+      } catch {
+        // Silently fall back to base price
+      }
+    };
+
+    fetchClientPrice();
+    return () => { cancelled = true; };
+  }, [client?.id, productId, quantity]);
+
   // Derived data
   const images = useMemo(() => collectImages(product), [product]);
 
@@ -663,7 +690,9 @@ export default function ProductDetailPage() {
   }, [product, physicalProduct]);
 
   const basePrice = product?.price ?? product?.unit_price ?? physicalProduct?.price ?? 0;
-  const effectiveUnitPrice = resolveUnitPrice(bulkTiers, quantity, basePrice);
+  const effectiveUnitPrice = clientPrice?.unit_price
+    ? Number(clientPrice.unit_price)
+    : resolveUnitPrice(bulkTiers, quantity, basePrice);
   const lineTotal = effectiveUnitPrice * quantity;
   const currency = product?.currency || 'EUR';
 
