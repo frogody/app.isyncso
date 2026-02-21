@@ -366,6 +366,29 @@ export default function StorePreview() {
     updateQuantity: () => {}, clearCart: () => {}, cartTotal: 0, cartCount: 0,
   }), [config, themeVars]);
 
+  // Inject customHead into document head (Google Fonts, external styles, etc.)
+  useEffect(() => {
+    const head = config?.customHead;
+    if (!head) return;
+    const container = document.createElement('div');
+    container.id = 'store-custom-head';
+    container.innerHTML = head;
+    const nodes = Array.from(container.childNodes);
+    nodes.forEach((node) => document.head.appendChild(node));
+    return () => { nodes.forEach((node) => { try { document.head.removeChild(node); } catch {} }); };
+  }, [config?.customHead]);
+
+  // Inject customCss as a <style> tag
+  useEffect(() => {
+    const css = config?.customCss;
+    if (!css) return;
+    const style = document.createElement('style');
+    style.id = 'store-custom-css';
+    style.textContent = css;
+    document.head.appendChild(style);
+    return () => { try { document.head.removeChild(style); } catch {} };
+  }, [config?.customCss]);
+
   // Waiting for config from builder
   if (!config) {
     return (
@@ -396,30 +419,6 @@ export default function StorePreview() {
       </div>
     );
   }
-
-  // Inject customHead into document head (Google Fonts, external styles, etc.)
-  useEffect(() => {
-    const head = config?.customHead;
-    if (!head) return;
-    const container = document.createElement('div');
-    container.id = 'store-custom-head';
-    container.innerHTML = head;
-    // Move child nodes into actual <head>
-    const nodes = Array.from(container.childNodes);
-    nodes.forEach((node) => document.head.appendChild(node));
-    return () => { nodes.forEach((node) => { try { document.head.removeChild(node); } catch {} }); };
-  }, [config?.customHead]);
-
-  // Inject customCss as a <style> tag
-  useEffect(() => {
-    const css = config?.customCss;
-    if (!css) return;
-    const style = document.createElement('style');
-    style.id = 'store-custom-css';
-    style.textContent = css;
-    document.head.appendChild(style);
-    return () => { try { document.head.removeChild(style); } catch {} };
-  }, [config?.customCss]);
 
   return (
     <WholesaleContext.Provider value={mockWholesaleValue}>

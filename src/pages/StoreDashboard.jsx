@@ -205,20 +205,23 @@ export default function StoreDashboard() {
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
+      // Wrap each query so a 400/404 on a missing table doesn't crash everything
+      const safe = (promise) => promise.then((r) => r).catch(() => ({ data: null, count: 0, error: null }));
+
       const [
         shopifyCreds, bolcomCreds, b2bConfig,
         salesMonthly, salesPending, salesRecent,
         b2bMonthly, b2bPending, b2bRecent,
       ] = await Promise.all([
-        supabase.from('shopify_credentials').select('id').eq('company_id', companyId).eq('is_active', true).maybeSingle(),
-        supabase.from('bolcom_credentials').select('id').eq('company_id', companyId).eq('is_active', true).maybeSingle(),
-        supabase.from('portal_settings').select('id').eq('organization_id', organizationId).eq('enable_wholesale', true).maybeSingle(),
-        supabase.from('sales_orders').select('id, source, total').eq('company_id', companyId).gte('order_date', startOfMonth),
-        supabase.from('sales_orders').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'pending'),
-        supabase.from('sales_orders').select('id, order_number, source, status, total, order_date, customer:customers(id, name, email)').eq('company_id', companyId).order('order_date', { ascending: false }).limit(10),
-        supabase.from('b2b_orders').select('id, total').eq('organization_id', organizationId).gte('created_at', startOfMonth),
-        supabase.from('b2b_orders').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId).eq('status', 'pending'),
-        supabase.from('b2b_orders').select('id, order_number, status, total, currency, created_at, portal_clients(id, full_name, email)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(10),
+        safe(supabase.from('shopify_credentials').select('id').eq('company_id', companyId).eq('is_active', true).maybeSingle()),
+        safe(supabase.from('bolcom_credentials').select('id').eq('company_id', companyId).eq('is_active', true).maybeSingle()),
+        safe(supabase.from('portal_settings').select('id').eq('organization_id', organizationId).eq('enable_wholesale', true).maybeSingle()),
+        safe(supabase.from('sales_orders').select('id, source, total').eq('company_id', companyId).gte('order_date', startOfMonth)),
+        safe(supabase.from('sales_orders').select('id', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'pending')),
+        safe(supabase.from('sales_orders').select('id, order_number, source, status, total, order_date').eq('company_id', companyId).order('order_date', { ascending: false }).limit(10)),
+        safe(supabase.from('b2b_orders').select('id, total').eq('organization_id', organizationId).gte('created_at', startOfMonth)),
+        safe(supabase.from('b2b_orders').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId).eq('status', 'pending')),
+        safe(supabase.from('b2b_orders').select('id, order_number, status, total, currency, created_at, portal_clients(id, full_name, email)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(10)),
       ]);
 
       const shopifyConnected = !!shopifyCreds.data;
@@ -253,9 +256,9 @@ export default function StoreDashboard() {
 
       const salesFormatted = (salesRecent.data || []).map((o) => ({
         id: o.id,
-        orderNumber: o.order_number || `#${o.id.slice(0, 8)}`,
+        orderNumber: o.order_number || `#${String(o.id).slice(0, 8)}`,
         source: o.source || 'manual',
-        customer: o.customer?.name || o.customer?.email || 'Unknown',
+        customer: 'Customer',
         date: o.order_date,
         total: parseFloat(String(o.total)) || 0,
         status: o.status || 'pending',
