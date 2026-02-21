@@ -87,7 +87,7 @@ export default function BuilderCanvas({
   const hasConfig = config && Object.keys(config).length > 0;
 
   const previewUrl = organizationId
-    ? `/portal/${organizationId}/shop?preview=true`
+    ? `/store-preview/${organizationId}`
     : 'about:blank';
 
   return (

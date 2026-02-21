@@ -443,6 +443,7 @@ import PriceListManager from "@/components/b2b-admin/PriceListManager";
 import B2BOrdersManager from "@/components/b2b-admin/B2BOrdersManager";
 import PriceListEditor from "@/components/b2b-admin/PriceListEditor";
 import ClientGroupManager from "@/components/b2b-admin/ClientGroupManager";
+import StorePreview from "./StorePreview";
 
 import { BrowserRouter as Router, Route, Routes, useLocation, useParams, Navigate } from 'react-router-dom';
 
@@ -865,6 +866,17 @@ function PagesContent() {
         return (
             <Routes>
                 <Route path="/book/:username" element={<CalendarBookingPage />} />
+            </Routes>
+        );
+    }
+
+    // Store Preview - lightweight iframe preview for the store builder (no auth/layout)
+    const isStorePreviewRoute = location.pathname.startsWith('/store-preview');
+    if (isStorePreviewRoute) {
+        return (
+            <Routes>
+                <Route path="/store-preview/:orgId" element={<StorePreview />} />
+                <Route path="/store-preview" element={<StorePreview />} />
             </Routes>
         );
     }
