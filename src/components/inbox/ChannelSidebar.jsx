@@ -121,6 +121,13 @@ const ChannelItem = memo(function ChannelItem({
           <SentimentBadge score={sentimentScore} trend={sentimentTrend || 'stable'} compact />
         )}
 
+        {/* B2B client badge */}
+        {channel.linked_entity_type === 'b2b_client' && (
+          <span className="text-[8px] font-bold tracking-wider px-1 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            B2B
+          </span>
+        )}
+
         {/* Guest badge */}
         {!isDM && channel.is_guest_channel && (
           <GuestChannelBadge

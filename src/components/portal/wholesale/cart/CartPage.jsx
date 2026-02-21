@@ -1,6 +1,16 @@
-import React, { useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, Trash2 } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Trash2, AlertTriangle } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 import { useWholesale } from '../WholesaleProvider';
 import CartItem from './CartItem';
 import CartSummary from './CartSummary';
@@ -24,6 +34,7 @@ export default function CartPage() {
   } = useWholesale();
   const navigate = useNavigate();
   const { org } = useParams();
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   /**
    * Normalize cart items from the WholesaleProvider shape into the
@@ -52,9 +63,12 @@ export default function CartPage() {
   );
 
   const handleClearCart = useCallback(() => {
-    if (window.confirm('Are you sure you want to clear all items from your cart?')) {
-      clearCart();
-    }
+    setShowClearConfirm(true);
+  }, []);
+
+  const executeClearCart = useCallback(() => {
+    setShowClearConfirm(false);
+    clearCart();
   }, [clearCart]);
 
   const handleCheckout = useCallback(() => {
@@ -172,6 +186,32 @@ export default function CartPage() {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 mt-0.5 w-9 h-9 rounded-full bg-red-500/10 flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-red-400" />
+              </div>
+              <div>
+                <AlertDialogTitle className="text-white text-base">Clear cart?</AlertDialogTitle>
+                <AlertDialogDescription className="text-zinc-400 text-sm mt-1.5">
+                  This will remove all {normalizedItems.length} item{normalizedItems.length !== 1 ? 's' : ''} from your cart.
+                </AlertDialogDescription>
+              </div>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-2">
+            <AlertDialogCancel className="bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700 hover:text-white">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={executeClearCart} className="bg-red-600 text-white hover:bg-red-500 border-0">
+              Clear Cart
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

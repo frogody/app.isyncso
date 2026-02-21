@@ -11,6 +11,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
+import ConfirmDialog from './shared/ConfirmDialog';
 import {
   ArrowLeft,
   Save,
@@ -179,6 +180,7 @@ export default function PriceListEditor() {
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
   const [dirtyItems, setDirtyItems] = useState(new Set());
+  const [deleteItemConfirm, setDeleteItemConfirm] = useState(null);
 
   const fetchData = useCallback(async () => {
     if (!priceListId) return;
@@ -263,16 +265,18 @@ export default function PriceListEditor() {
     setDirtyItems((prev) => new Set(prev).add(newItem.id));
   };
 
-  const handleDeleteItem = async (item) => {
+  const handleDeleteItem = (item) => {
     if (item._isNew) {
       setItems((prev) => prev.filter((i) => i.id !== item.id));
       return;
     }
+    setDeleteItemConfirm(item);
+  };
 
-    const productName = item.products?.name || 'this product';
-    if (!window.confirm(`Remove ${productName} from this price list? This cannot be undone.`)) {
-      return;
-    }
+  const executeDeleteItem = async () => {
+    const item = deleteItemConfirm;
+    setDeleteItemConfirm(null);
+    if (!item) return;
 
     try {
       const { error: delErr } = await supabase
@@ -570,6 +574,15 @@ export default function PriceListEditor() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteItemConfirm}
+        onOpenChange={(open) => { if (!open) setDeleteItemConfirm(null); }}
+        title="Remove product?"
+        description={`Remove ${deleteItemConfirm?.products?.name || 'this product'} from this price list? This cannot be undone.`}
+        confirmLabel="Remove"
+        onConfirm={executeDeleteItem}
+      />
     </div>
   );
 }

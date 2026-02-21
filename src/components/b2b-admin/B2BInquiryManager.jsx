@@ -40,18 +40,14 @@ const STATUS_TABS = [
   { key: 'closed', label: 'Closed', icon: XCircle },
 ];
 
-const STATUS_COLORS = {
-  open: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-  replied: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  closed: 'bg-zinc-700/50 text-zinc-400 border-zinc-600/30',
-};
+import { INQUIRY_STATUS_COLORS, DEFAULT_STATUS_COLOR } from './shared/b2bConstants';
 
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
 
 function StatusBadge({ status }) {
-  const colorClass = STATUS_COLORS[status] || 'bg-zinc-700/50 text-zinc-400 border-zinc-600/30';
+  const colorClass = INQUIRY_STATUS_COLORS[status] || DEFAULT_STATUS_COLOR;
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${colorClass}`}>
       {status.charAt(0).toUpperCase() + status.slice(1)}

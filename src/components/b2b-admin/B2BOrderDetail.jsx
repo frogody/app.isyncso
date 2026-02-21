@@ -38,14 +38,7 @@ import {
 // Constants
 // ---------------------------------------------------------------------------
 
-const STATUS_COLORS = {
-  pending: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  confirmed: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-  processing: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  shipped: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  delivered: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  cancelled: 'bg-red-500/10 text-red-400 border-red-500/20',
-};
+import { ORDER_STATUS_COLORS, DEFAULT_STATUS_COLOR } from './shared/b2bConstants';
 
 const STATUS_STEPS = [
   { key: 'pending', label: 'Pending', icon: Clock },
@@ -62,7 +55,7 @@ const STATUS_ORDER = ['pending', 'confirmed', 'processing', 'shipped', 'delivere
 // ---------------------------------------------------------------------------
 
 function StatusBadge({ status }) {
-  const colorClass = STATUS_COLORS[status] || 'bg-zinc-700/50 text-zinc-400 border-zinc-600/30';
+  const colorClass = ORDER_STATUS_COLORS[status] || DEFAULT_STATUS_COLOR;
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${colorClass}`}>
       {status.charAt(0).toUpperCase() + status.slice(1)}

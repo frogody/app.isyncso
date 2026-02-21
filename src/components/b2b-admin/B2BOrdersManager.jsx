@@ -36,19 +36,13 @@ const STATUS_TABS = [
   { key: 'cancelled', label: 'Cancelled' },
 ];
 
-const STATUS_COLORS = {
-  pending: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  confirmed: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-  processing: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  shipped: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  delivered: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  cancelled: 'bg-red-500/10 text-red-400 border-red-500/20',
-};
+import { ORDER_STATUS_COLORS, DEFAULT_STATUS_COLOR } from './shared/b2bConstants';
+import ConfirmDialog from './shared/ConfirmDialog';
 
 const ITEMS_PER_PAGE = 20;
 
 function StatusBadge({ status }) {
-  const colorClass = STATUS_COLORS[status] || 'bg-zinc-700/50 text-zinc-400 border-zinc-600/30';
+  const colorClass = ORDER_STATUS_COLORS[status] || DEFAULT_STATUS_COLOR;
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${colorClass}`}>
       {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -75,6 +69,7 @@ export default function B2BOrdersManager() {
 
   // Action loading
   const [actionLoading, setActionLoading] = useState(null);
+  const [rejectConfirm, setRejectConfirm] = useState(null);
 
   const fetchOrders = useCallback(async () => {
     if (!organizationId) return;
@@ -188,8 +183,14 @@ export default function B2BOrdersManager() {
     }
   };
 
-  const handleReject = async (orderId) => {
-    if (!confirm('Reject this order? This will cancel the order.')) return;
+  const handleReject = (orderId) => {
+    setRejectConfirm(orderId);
+  };
+
+  const executeReject = async () => {
+    const orderId = rejectConfirm;
+    setRejectConfirm(null);
+    if (!orderId) return;
     setActionLoading(orderId);
 
     try {
@@ -475,6 +476,15 @@ export default function B2BOrdersManager() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!rejectConfirm}
+        onOpenChange={(open) => { if (!open) setRejectConfirm(null); }}
+        title="Reject this order?"
+        description="This will cancel the order. This action cannot be undone."
+        confirmLabel="Reject Order"
+        onConfirm={executeReject}
+      />
     </div>
   );
 }

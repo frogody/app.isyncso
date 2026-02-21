@@ -24,17 +24,14 @@ import {
   Loader2,
 } from 'lucide-react';
 
+import { ACTIVE_STATUS_COLORS, DEFAULT_STATUS_COLOR } from './shared/b2bConstants';
+import ConfirmDialog from './shared/ConfirmDialog';
+
 function StatusBadge({ status }) {
-  const isActive = status === 'active';
+  const colorClass = ACTIVE_STATUS_COLORS[status] || DEFAULT_STATUS_COLOR;
   return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-        isActive
-          ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
-          : 'bg-zinc-700/50 text-zinc-400 border-zinc-600/30'
-      }`}
-    >
-      {isActive ? 'Active' : 'Inactive'}
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${colorClass}`}>
+      {status === 'active' ? 'Active' : 'Inactive'}
     </span>
   );
 }
@@ -170,6 +167,7 @@ export default function PriceListManager() {
   const [editingList, setEditingList] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const fetchPriceLists = useCallback(async () => {
     if (!organizationId) return;
@@ -257,12 +255,17 @@ export default function PriceListManager() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this price list and all its items? This cannot be undone.')) return;
+  const handleDelete = (id) => {
+    setDeleteConfirm(id);
+  };
+
+  const executeDelete = async () => {
+    const id = deleteConfirm;
+    setDeleteConfirm(null);
+    if (!id) return;
     setDeletingId(id);
 
     try {
-      // Delete items first
       await supabase.from('b2b_price_list_items').delete().eq('price_list_id', id);
       const { error: delErr } = await supabase.from('b2b_price_lists').delete().eq('id', id);
       if (delErr) throw delErr;
@@ -447,6 +450,15 @@ export default function PriceListManager() {
           onSave={handleSave}
           priceList={editingList}
           saving={saving}
+        />
+
+        <ConfirmDialog
+          open={!!deleteConfirm}
+          onOpenChange={(open) => { if (!open) setDeleteConfirm(null); }}
+          title="Delete price list?"
+          description="This will delete the price list and all its items. This cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={executeDelete}
         />
       </div>
     </div>

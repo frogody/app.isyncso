@@ -25,6 +25,12 @@ import {
   Sun,
   Moon,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 // ---------------------------------------------------------------------------
 // Section type -> icon mapping
@@ -50,11 +56,11 @@ const SECTION_ICONS = {
 // ---------------------------------------------------------------------------
 
 const TABS = [
-  { id: 'sections', label: 'Sections' },
-  { id: 'theme', label: 'Theme' },
-  { id: 'navigation', label: 'Navigation' },
-  { id: 'footer', label: 'Footer' },
-  { id: 'catalog', label: 'Catalog' },
+  { id: 'sections', label: 'Sections', tip: 'Add, reorder, and manage page sections' },
+  { id: 'theme', label: 'Theme', tip: 'Customize colors, fonts, and appearance' },
+  { id: 'navigation', label: 'Navigation', tip: 'Edit header links and menu items' },
+  { id: 'footer', label: 'Footer', tip: 'Configure footer content and links' },
+  { id: 'catalog', label: 'Catalog', tip: 'Set product display and filtering options' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -118,20 +124,26 @@ function TabBar({ activePanel, onActivePanel }) {
   return (
     <div className="flex items-center gap-1.5 px-3 py-2.5 overflow-x-auto scrollbar-none border-b border-zinc-800/60">
       {TABS.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => onActivePanel(tab.id)}
-          className={`
-            shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors
-            ${
-              activePanel === tab.id
-                ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-                : 'text-zinc-500 hover:text-zinc-300 border border-transparent'
-            }
-          `}
-        >
-          {tab.label}
-        </button>
+        <Tooltip key={tab.id}>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => onActivePanel(tab.id)}
+              className={`
+                shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors
+                ${
+                  activePanel === tab.id
+                    ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                    : 'text-zinc-500 hover:text-zinc-300 border border-transparent'
+                }
+              `}
+            >
+              {tab.label}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="bg-zinc-900 text-zinc-200 border-zinc-700 text-xs">
+            {tab.tip}
+          </TooltipContent>
+        </Tooltip>
       ))}
     </div>
   );
@@ -207,20 +219,26 @@ function SectionRow({
       </span>
 
       {/* Visibility toggle */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleVisibility(section.id);
-        }}
-        className="p-1 rounded text-zinc-600 hover:text-zinc-300 transition-colors"
-        title={section.visible ? 'Hide section' : 'Show section'}
-      >
-        {section.visible ? (
-          <Eye className="w-3.5 h-3.5" />
-        ) : (
-          <EyeOff className="w-3.5 h-3.5" />
-        )}
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleVisibility(section.id);
+            }}
+            className="p-1 rounded text-zinc-600 hover:text-zinc-300 transition-colors"
+          >
+            {section.visible ? (
+              <Eye className="w-3.5 h-3.5" />
+            ) : (
+              <EyeOff className="w-3.5 h-3.5" />
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="left" className="bg-zinc-900 text-zinc-200 border-zinc-700 text-xs">
+          {section.visible ? 'Hide this section from your store' : 'Show this section on your store'}
+        </TooltipContent>
+      </Tooltip>
 
       {/* Delete */}
       {confirmDelete ? (
@@ -314,18 +332,25 @@ function SectionsPanel({
 
       {/* Add Section button */}
       <div className="p-3 border-t border-zinc-800/60">
-        <button
-          onClick={onAddSection}
-          className="
-            w-full flex items-center justify-center gap-2 py-2.5 rounded-lg
-            border border-dashed border-zinc-700 text-zinc-400
-            hover:border-cyan-500/40 hover:text-cyan-400 hover:bg-cyan-500/5
-            transition-colors
-          "
-        >
-          <Plus className="w-4 h-4" />
-          <span className="text-sm font-medium">Add Section</span>
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={onAddSection}
+              className="
+                w-full flex items-center justify-center gap-2 py-2.5 rounded-lg
+                border border-dashed border-zinc-700 text-zinc-400
+                hover:border-cyan-500/40 hover:text-cyan-400 hover:bg-cyan-500/5
+                transition-colors
+              "
+            >
+              <Plus className="w-4 h-4" />
+              <span className="text-sm font-medium">Add Section</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="bg-zinc-900 text-zinc-200 border-zinc-700 text-xs">
+            Add a new section like Hero, FAQ, or Testimonials
+          </TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );
@@ -589,6 +614,7 @@ export default function BuilderSidebar({
   onUpdateCatalog,
 }) {
   return (
+    <TooltipProvider delayDuration={300}>
     <div className="flex flex-col h-full bg-zinc-950 border-r border-zinc-800/60">
       {/* Tab bar */}
       <TabBar activePanel={activePanel} onActivePanel={onActivePanel} />
@@ -637,5 +663,6 @@ export default function BuilderSidebar({
         </div>
       )}
     </div>
+    </TooltipProvider>
   );
 }

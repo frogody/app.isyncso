@@ -9,6 +9,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
+import ConfirmDialog from './shared/ConfirmDialog';
 import {
   Plus,
   Pencil,
@@ -207,6 +208,7 @@ export default function ClientGroupManager() {
   const [editingGroup, setEditingGroup] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   // Expanded group for member list
   const [expandedId, setExpandedId] = useState(null);
@@ -324,12 +326,17 @@ export default function ClientGroupManager() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this client group? Clients in this group will be unassigned.')) return;
+  const handleDelete = (id) => {
+    setDeleteConfirm(id);
+  };
+
+  const executeDelete = async () => {
+    const id = deleteConfirm;
+    setDeleteConfirm(null);
+    if (!id) return;
     setDeletingId(id);
 
     try {
-      // Unassign clients first
       await supabase
         .from('portal_clients')
         .update({ client_group_id: null })
@@ -552,10 +559,10 @@ export default function ClientGroupManager() {
                                 <p className="text-xs text-zinc-500 truncate">{member.email}</p>
                               </div>
                               <span
-                                className={`text-xs px-2 py-0.5 rounded-full ${
+                                className={`text-xs px-2 py-0.5 rounded-full border ${
                                   member.status === 'active'
-                                    ? 'bg-cyan-500/10 text-cyan-400'
-                                    : 'bg-zinc-700 text-zinc-400'
+                                    ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+                                    : 'bg-zinc-700/50 text-zinc-400 border-zinc-600/30'
                                 }`}
                               >
                                 {member.status || 'active'}
@@ -583,6 +590,15 @@ export default function ClientGroupManager() {
           group={editingGroup}
           priceLists={priceLists}
           saving={saving}
+        />
+
+        <ConfirmDialog
+          open={!!deleteConfirm}
+          onOpenChange={(open) => { if (!open) setDeleteConfirm(null); }}
+          title="Delete client group?"
+          description="Clients in this group will be unassigned. This cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={executeDelete}
         />
       </div>
     </div>

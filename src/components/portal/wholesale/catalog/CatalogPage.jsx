@@ -5,6 +5,7 @@ import { supabase } from '@/api/supabaseClient';
 import { useWholesale } from '../WholesaleProvider';
 import B2BProductCard from './B2BProductCard';
 import CategoryFilter from './CategoryFilter';
+import { getBulkClientPrices } from '@/lib/db/queries/b2b';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -188,12 +189,15 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
 export default function CatalogPage() {
   const navigate = useNavigate();
   const { org: orgSlug } = useParams();
-  const { config, addToCart, orgId } = useWholesale();
+  const { config, addToCart, orgId, client } = useWholesale();
 
   // Data state
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Client-specific pricing (bulk-fetched from price list)
+  const [clientPrices, setClientPrices] = useState({});
 
   // Filter / view state
   const [searchQuery, setSearchQuery] = useState('');
@@ -244,6 +248,45 @@ export default function CatalogPage() {
     fetchProducts();
     return () => { cancelled = true; };
   }, [organizationId]);
+
+  // ---------------------------------------------------------------------------
+  // Batch-fetch client-specific pricing from price lists
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!client?.id || products.length === 0) return;
+    let cancelled = false;
+
+    async function fetchClientPrices() {
+      try {
+        const results = await Promise.allSettled(
+          products.map((p) => getBulkClientPrices(client.id, p.id))
+        );
+
+        if (cancelled) return;
+
+        const priceMap = {};
+        results.forEach((result, i) => {
+          if (result.status === 'fulfilled' && result.value.length > 0) {
+            // Use the lowest tier (qty 1) price as the display price
+            const tiers = result.value;
+            const baseTier = tiers[0];
+            priceMap[products[i].id] = {
+              unit_price: baseTier.unit_price,
+              tiers,
+            };
+          }
+        });
+
+        setClientPrices(priceMap);
+      } catch (err) {
+        console.error('[CatalogPage] Client price fetch error:', err);
+      }
+    }
+
+    fetchClientPrices();
+    return () => { cancelled = true; };
+  }, [client?.id, products]);
 
   // ---------------------------------------------------------------------------
   // Fetch categories
@@ -404,11 +447,17 @@ export default function CatalogPage() {
 
   // Helpers for B2BProductCard props
   const getPricing = useCallback((product) => {
+    if (clientPrices[product.id]) {
+      return {
+        unit_price: clientPrices[product.id].unit_price,
+        discount_percent: 0,
+      };
+    }
     return {
       unit_price: product.b2b_price ?? product.wholesale_price ?? product.price ?? null,
       discount_percent: product.b2b_discount_percent ?? 0,
     };
-  }, []);
+  }, [clientPrices]);
 
   const getInventory = useCallback((product) => {
     return product.inventory?.[0] || null;
