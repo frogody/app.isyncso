@@ -129,12 +129,6 @@ function Bubble({ message }) {
 
 const NAV_SECTIONS = [
   {
-    label: null,
-    items: [
-      { key: 'preview', icon: Monitor, label: 'Preview' },
-    ],
-  },
-  {
     label: 'Design',
     items: [
       { key: 'theme', icon: Palette, label: 'Theme' },
@@ -764,7 +758,7 @@ const DEVICES = [
   { key: 'mobile', icon: Smartphone, label: 'Mobile' },
 ];
 
-function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPublished, canUndo, canRedo, onUndo, onRedo, previewDevice, onDeviceChange, activeView }) {
+function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPublished, canUndo, canRedo, onUndo, onRedo, previewDevice, onDeviceChange, isPreviewMode, onToggleMode }) {
   return (
     <div className="h-12 border-b border-zinc-800/60 bg-zinc-950 flex items-center px-3 shrink-0 gap-2">
       {/* Left */}
@@ -775,6 +769,29 @@ function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPubl
       <div className="hidden sm:block w-px h-4 bg-zinc-800" />
       <span className="text-xs font-medium text-white truncate max-w-[160px]">{storeName}</span>
       {isDirty && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" title="Unsaved changes" />}
+
+      {/* Mode toggle */}
+      <div className="hidden sm:block w-px h-4 bg-zinc-800 ml-1" />
+      <div className="flex items-center gap-0.5 bg-zinc-900 rounded-lg p-0.5">
+        <button
+          onClick={() => onToggleMode(true)}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+            isPreviewMode ? 'bg-zinc-800 text-cyan-400' : 'text-zinc-500 hover:text-zinc-300'
+          }`}
+        >
+          <Eye className="w-3.5 h-3.5" />
+          Preview
+        </button>
+        <button
+          onClick={() => onToggleMode(false)}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+            !isPreviewMode ? 'bg-zinc-800 text-cyan-400' : 'text-zinc-500 hover:text-zinc-300'
+          }`}
+        >
+          <Settings className="w-3.5 h-3.5" />
+          Settings
+        </button>
+      </div>
 
       <div className="flex-1" />
 
@@ -787,7 +804,7 @@ function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPubl
           <Redo2 className="w-3.5 h-3.5" />
         </button>
 
-        {activeView === 'preview' && (
+        {isPreviewMode && (
           <>
             <div className="w-px h-4 bg-zinc-800 mx-1" />
             <div className="flex items-center gap-0.5 bg-zinc-900 rounded-lg p-0.5">
@@ -851,10 +868,28 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   const ai = useBuilderAI();
 
   const [activeView, setActiveView] = useState('preview');
+  const [lastSettingsView, setLastSettingsView] = useState('theme');
   const [saveError, setSaveError] = useState(null);
   const [chatValue, setChatValue] = useState('');
   const messagesEndRef = useRef(null);
   const chatInputRef = useRef(null);
+
+  const isPreviewMode = activeView === 'preview';
+
+  // Toggle between preview and settings mode
+  const handleToggleMode = useCallback((wantPreview) => {
+    if (wantPreview) {
+      setActiveView('preview');
+    } else {
+      setActiveView(lastSettingsView);
+    }
+  }, [lastSettingsView]);
+
+  // When navigating within settings, remember last view
+  const handleChangeView = useCallback((key) => {
+    setActiveView(key);
+    if (key !== 'preview') setLastSettingsView(key);
+  }, []);
 
   const canSend = chatValue.trim().length > 0 && !ai.isProcessing;
   const sectionCount = builder.config?.sections?.length || 0;
@@ -1051,7 +1086,8 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
         onRedo={history.redo}
         previewDevice={preview.previewDevice}
         onDeviceChange={preview.setPreviewDevice}
-        activeView={activeView}
+        isPreviewMode={isPreviewMode}
+        onToggleMode={handleToggleMode}
       />
 
       {/* Three-zone main area */}
@@ -1144,8 +1180,10 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
           </div>
         </div>
 
-        {/* Zone 2: Nav Sidebar */}
-        <NavSidebar activeView={activeView} onChangeView={setActiveView} sectionCount={sectionCount} />
+        {/* Zone 2: Nav Sidebar (hidden in preview mode for max space) */}
+        {!isPreviewMode && (
+          <NavSidebar activeView={activeView} onChangeView={handleChangeView} sectionCount={sectionCount} />
+        )}
 
         {/* Zone 3: Content */}
         <div className="flex-1 flex overflow-hidden bg-zinc-950/50">
