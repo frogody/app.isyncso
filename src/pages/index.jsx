@@ -432,6 +432,12 @@ import WholesaleCart from "./portal/WholesaleCart";
 import WholesaleCheckout from "./portal/WholesaleCheckout";
 import WholesaleOrders from "./portal/WholesaleOrders";
 import WholesaleOrderDetail from "./portal/WholesaleOrderDetail";
+import WholesaleInquiries from "./portal/WholesaleInquiries";
+import WholesaleAccount from "./portal/WholesaleAccount";
+
+import B2BOrderDetail from "@/components/b2b-admin/B2BOrderDetail";
+import B2BCatalogManager from "@/components/b2b-admin/B2BCatalogManager";
+import B2BInquiryManager from "@/components/b2b-admin/B2BInquiryManager";
 
 import { BrowserRouter as Router, Route, Routes, useLocation, useParams, Navigate } from 'react-router-dom';
 
@@ -891,6 +897,8 @@ function PagesContent() {
                     <Route path="/portal/:org/shop/checkout" element={<WholesaleCheckout />} />
                     <Route path="/portal/:org/shop/orders" element={<WholesaleOrders />} />
                     <Route path="/portal/:org/shop/orders/:orderId" element={<WholesaleOrderDetail />} />
+                    <Route path="/portal/:org/shop/inquiries" element={<WholesaleInquiries />} />
+                    <Route path="/portal/:org/shop/account" element={<WholesaleAccount />} />
 
                     {/* Organization-scoped routes */}
                     <Route path="/portal/:org/login" element={<ClientLogin />} />
@@ -1252,6 +1260,10 @@ function PagesContent() {
                 <Route path="/TeamManagement" element={<TeamManagement />} />
 
                 <Route path="/AgentDetail" element={<AgentDetail />} />
+
+                <Route path="/b2b/orders/:id" element={<B2BOrderDetail />} />
+                <Route path="/b2b/catalog" element={<B2BCatalogManager />} />
+                <Route path="/b2b/inquiries" element={<B2BInquiryManager />} />
 
                 <Route path="/Products" element={<Products />} />
 
