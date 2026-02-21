@@ -181,7 +181,7 @@ export default function B2BDashboard() {
         label: 'Store Builder',
         description: 'Customize your B2B storefront',
         icon: LayoutDashboard,
-        path: '/b2b/builder',
+        path: '/b2bstorebuilder',
       },
       {
         label: 'Manage Orders',

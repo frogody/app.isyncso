@@ -2,7 +2,7 @@
  * B2BCatalogManager - Admin page to manage the wholesale product catalog.
  *
  * Fetch from products table, toggle wholesale visibility via product_sales_channels
- * junction (channel='wholesale'), bulk select/deselect, search by name, category filter,
+ * junction (channel='b2b'), bulk select/deselect, search by name, category filter,
  * product image/name/SKU/price display, inline wholesale price editor, pagination 20/page.
  */
 
@@ -226,7 +226,7 @@ export default function B2BCatalogManager() {
           .from('product_sales_channels')
           .select('product_id, enabled, wholesale_price')
           .in('product_id', productIds)
-          .eq('channel', 'wholesale');
+          .eq('channel', 'b2b');
 
         if (!chError && channels) {
           const channelMap = {};
@@ -284,7 +284,7 @@ export default function B2BCatalogManager() {
             .upsert(
               {
                 product_id: productId,
-                channel: 'wholesale',
+                channel: 'b2b',
                 enabled: true,
                 organization_id: organizationId,
               },
@@ -297,7 +297,7 @@ export default function B2BCatalogManager() {
             .from('product_sales_channels')
             .delete()
             .eq('product_id', productId)
-            .eq('channel', 'wholesale');
+            .eq('channel', 'b2b');
           if (delErr) throw delErr;
         }
 
@@ -333,7 +333,7 @@ export default function B2BCatalogManager() {
           .upsert(
             {
               product_id: productId,
-              channel: 'wholesale',
+              channel: 'b2b',
               wholesale_price: price,
               enabled: true,
               organization_id: organizationId,

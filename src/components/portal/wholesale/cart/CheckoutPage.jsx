@@ -706,7 +706,7 @@ export default function CheckoutPage() {
 
       // Create order line items
       const orderItems = normalizedItems.map((item) => ({
-        order_id: newOrderId,
+        b2b_order_id: newOrderId,
         product_id: item.productId ?? item.id,
         product_name: item.name,
         sku: item.sku || null,

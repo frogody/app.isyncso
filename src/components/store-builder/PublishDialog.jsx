@@ -84,7 +84,7 @@ export default function PublishDialog({ isOpen, onClose, config, organizationId 
 
     try {
       // Check 1: Store name set
-      const hasName = !!(config?.name || config?.company?.name);
+      const hasName = !!(config?.navigation?.companyName || config?.name || config?.company?.name);
 
       // Check 2: Sections exist
       const hasSections = Array.isArray(config?.sections) && config.sections.length > 0;
@@ -94,7 +94,7 @@ export default function PublishDialog({ isOpen, onClose, config, organizationId 
         .from('product_sales_channels')
         .select('id', { count: 'exact', head: true })
         .eq('organization_id', organizationId)
-        .eq('channel', 'wholesale')
+        .eq('channel', 'b2b')
         .eq('enabled', true);
 
       const hasProducts = (productCount || 0) > 0;
@@ -107,8 +107,16 @@ export default function PublishDialog({ isOpen, onClose, config, organizationId 
 
       const hasPriceList = (priceListCount || 0) > 0;
 
-      // Check 5: Domain configured
-      const hasDomain = !!(config?.subdomain || config?.custom_domain);
+      // Check 5: Domain configured (check portal_settings columns)
+      let hasDomain = !!(config?.subdomain || config?.custom_domain);
+      if (!hasDomain) {
+        const { data: ps } = await supabase
+          .from('portal_settings')
+          .select('store_subdomain, custom_domain')
+          .eq('organization_id', organizationId)
+          .single();
+        hasDomain = !!(ps?.store_subdomain || ps?.custom_domain);
+      }
 
       setChecks({
         storeName: hasName,
@@ -152,10 +160,9 @@ export default function PublishDialog({ isOpen, onClose, config, organizationId 
 
     try {
       const { error: updateErr } = await supabase
-        .from('b2b_store_configs')
+        .from('portal_settings')
         .update({
-          published: true,
-          published_at: new Date().toISOString(),
+          store_published: true,
           updated_at: new Date().toISOString(),
         })
         .eq('organization_id', organizationId);
@@ -179,9 +186,9 @@ export default function PublishDialog({ isOpen, onClose, config, organizationId 
 
     try {
       const { error: updateErr } = await supabase
-        .from('b2b_store_configs')
+        .from('portal_settings')
         .update({
-          published: false,
+          store_published: false,
           updated_at: new Date().toISOString(),
         })
         .eq('organization_id', organizationId);

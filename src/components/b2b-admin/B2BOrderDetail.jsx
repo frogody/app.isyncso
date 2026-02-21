@@ -288,9 +288,9 @@ function NoteTimeline({ notes, onAddNote, addingNote }) {
                       minute: '2-digit',
                     })}
                   </span>
-                  {note.type && note.type !== 'note' && (
+                  {note.note_type && note.note_type !== 'note' && (
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                      {note.type}
+                      {note.note_type}
                     </span>
                   )}
                 </div>
@@ -493,7 +493,7 @@ export default function B2BOrderDetail() {
         supabase
           .from('b2b_order_items')
           .select('*')
-          .eq('order_id', orderId)
+          .eq('b2b_order_id', orderId)
           .order('created_at', { ascending: true }),
 
         supabase
@@ -541,7 +541,7 @@ export default function B2BOrderDetail() {
           order_id: order.id,
           content: `Status changed to ${newStatus}`,
           author_name: user?.full_name || user?.email || 'Admin',
-          type: 'status_change',
+          note_type: 'status_change',
         });
 
         await fetchOrder();
@@ -567,7 +567,7 @@ export default function B2BOrderDetail() {
           order_id: order.id,
           content,
           author_name: user?.full_name || user?.email || 'Admin',
-          type: 'note',
+          note_type: 'note',
         });
         if (noteError) throw noteError;
         await fetchOrder();
@@ -604,7 +604,7 @@ export default function B2BOrderDetail() {
             order_id: order.id,
             content: `Tracking number updated: ${trackingNumber}`,
             author_name: user?.full_name || user?.email || 'Admin',
-            type: 'tracking',
+            note_type: 'tracking',
           });
         }
 

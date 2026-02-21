@@ -107,7 +107,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   // ---- Local state ---------------------------------------------------------
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showAddSection, setShowAddSection] = useState(false);
-  const [isPublished, setIsPublished] = useState(false);
+  // isPublished now comes from builder.isPublished (initialized from DB)
   const [showAIChat, setShowAIChat] = useState(false);
   const [saveError, setSaveError] = useState(null);
 
@@ -166,19 +166,17 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   const handlePublish = useCallback(async () => {
     setSaveError(null);
     try {
-      if (isPublished) {
+      if (builder.isPublished) {
         await builder.unpublishStore();
-        setIsPublished(false);
       } else {
         // Auto-save before publishing
         await builder.saveConfig();
         await builder.publishStore();
-        setIsPublished(true);
       }
     } catch (err) {
       console.error('Publish failed:', err);
     }
-  }, [isPublished, builder.saveConfig, builder.publishStore, builder.unpublishStore]);
+  }, [builder.isPublished, builder.saveConfig, builder.publishStore, builder.unpublishStore]);
 
   const handleAddSection = useCallback(
     (type) => {
@@ -239,7 +237,8 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   const handleAIPrompt = useCallback(
     async (prompt) => {
       try {
-        const result = await ai.sendPrompt(prompt, builder.config);
+        const businessCtx = { storeName: storeName || 'B2B Store', organizationId };
+        const result = await ai.sendPrompt(prompt, builder.config, businessCtx);
         if (result?.updatedConfig) {
           history.pushState();
           builder.updateConfig(result.updatedConfig);
@@ -249,7 +248,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
         throw err; // re-throw so AIPromptBar can restore the input
       }
     },
-    [ai.sendPrompt, builder.config, builder.updateConfig, history.pushState],
+    [ai.sendPrompt, builder.config, builder.updateConfig, history.pushState, storeName, organizationId],
   );
 
   // ---- Loading state -------------------------------------------------------
@@ -289,7 +288,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
         saving={builder.saving}
         onSave={handleSave}
         onPublish={handlePublish}
-        isPublished={isPublished}
+        isPublished={builder.isPublished}
         canUndo={history.canUndo}
         canRedo={history.canRedo}
         onUndo={history.undo}

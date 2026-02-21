@@ -47,6 +47,7 @@ export function useStoreBuilder(organizationId) {
   const [selectedSectionId, setSelectedSectionId] = useState(null);
   const [activePanel, setActivePanel] = useState('sections');
   const [storeVersion, setStoreVersion] = useState(0);
+  const [isPublished, setIsPublished] = useState(false);
 
   // ---- Load config on mount -------------------------------------------------
   useEffect(() => {
@@ -68,6 +69,7 @@ export function useStoreBuilder(organizationId) {
           // Merge persisted config with defaults so new keys are always present
           setConfig(deepMerge(DEFAULT_STORE_CONFIG, result.store_config));
           setStoreVersion(result.store_version || 0);
+          setIsPublished(result.store_published === true);
         } else {
           setConfig({ ...DEFAULT_STORE_CONFIG });
           setStoreVersion(0);
@@ -261,6 +263,7 @@ export function useStoreBuilder(organizationId) {
         store_published: true,
         store_published_at: new Date().toISOString(),
       });
+      setIsPublished(true);
     } catch (err) {
       console.error('[useStoreBuilder] Failed to publish store:', err);
       throw err;
@@ -277,6 +280,7 @@ export function useStoreBuilder(organizationId) {
       await updateStoreConfig(organizationId, {
         store_published: false,
       });
+      setIsPublished(false);
     } catch (err) {
       console.error('[useStoreBuilder] Failed to unpublish store:', err);
       throw err;
@@ -301,6 +305,7 @@ export function useStoreBuilder(organizationId) {
     isDirty,
     selectedSectionId,
     selectedSection,
+    isPublished,
     activePanel,
     setActivePanel,
     updateConfig,

@@ -72,7 +72,7 @@ export default function CartPage() {
   }, [clearCart]);
 
   const handleCheckout = useCallback(() => {
-    navigate(org ? `/${org}/checkout` : '/checkout');
+    navigate(org ? `/portal/${org}/shop/checkout` : '/checkout');
   }, [navigate, org]);
 
   const catalogPath = org ? `/${org}/catalog` : '/catalog';

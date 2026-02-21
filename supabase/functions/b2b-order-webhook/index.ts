@@ -227,14 +227,20 @@ serve(async (req: Request) => {
     const { data: items } = await supabase
       .from("b2b_order_items")
       .select("*")
-      .eq("order_id", orderId);
+      .eq("b2b_order_id", orderId);
 
-    // Fetch client email
-    const { data: client } = await supabase
+    // Fetch client email (use order's client_id if available, fall back to org)
+    const clientQuery = supabase
       .from("portal_clients")
-      .select("email, contact_name, company_name")
-      .eq("organization_id", organizationId)
-      .single();
+      .select("email, contact_name, company_name");
+
+    if (order.client_id) {
+      clientQuery.eq("id", order.client_id);
+    } else {
+      clientQuery.eq("organization_id", organizationId);
+    }
+
+    const { data: client } = await clientQuery.limit(1).single();
 
     if (!client?.email) {
       return new Response(
