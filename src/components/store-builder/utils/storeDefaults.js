@@ -310,7 +310,7 @@ export function createDefaultSection(type, order) {
 // ---- Full Default Store Config --------------------------------------------
 
 export const DEFAULT_STORE_CONFIG = {
-  version: '1.0',
+  version: '1.1',
   theme: { ...DEFAULT_THEME },
   navigation: {
     ...DEFAULT_NAVIGATION,

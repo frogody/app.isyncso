@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Plus } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { supabase } from '@/api/supabaseClient';
 import { useWholesale } from '../WholesaleProvider';
 
@@ -39,109 +40,226 @@ function getGridClasses(columns) {
   return `grid-cols-1 sm:grid-cols-2 md:grid-cols-3 ${desktopMap[desktop] || 'lg:grid-cols-4'}`;
 }
 
-/**
- * Detailed product card: image, name, sku, price, button.
- */
-function DetailedCard({ product, showPricing, showQuickInquiry, onAddToCart, onNavigate }) {
+/* ------------------------------------------------------------------ */
+/*  Animation variants                                                 */
+/* ------------------------------------------------------------------ */
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 32 },
+  visible: (i) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.08,
+      duration: 0.5,
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
+  }),
+};
+
+const headerVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+};
+
+/* ------------------------------------------------------------------ */
+/*  DetailedCard                                                       */
+/* ------------------------------------------------------------------ */
+
+function DetailedCard({ product, showPricing, onAddToCart, onNavigate, index }) {
   return (
-    <div
-      className="group flex flex-col rounded-xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+    <motion.div
+      custom={index}
+      variants={cardVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-40px' }}
+      whileHover={{ y: -4, transition: { duration: 0.25 } }}
+      className="group flex flex-col rounded-2xl overflow-hidden cursor-pointer"
       style={{
-        backgroundColor: 'var(--ws-surface)',
+        background: 'linear-gradient(135deg, color-mix(in srgb, var(--ws-surface) 92%, transparent), color-mix(in srgb, var(--ws-surface) 80%, transparent))',
         border: '1px solid var(--ws-border)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 0 0 0 transparent',
+        transition: 'box-shadow 0.35s ease, border-color 0.35s ease',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.25), 0 0 0 1px var(--ws-primary)';
+        e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--ws-primary) 40%, var(--ws-border))';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.12), 0 0 0 0 transparent';
+        e.currentTarget.style.borderColor = 'var(--ws-border)';
       }}
       onClick={() => onNavigate?.(product.id)}
     >
+      {/* Gradient top accent */}
+      <div
+        className="h-[2px] w-full"
+        style={{
+          background: 'linear-gradient(90deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 40%, var(--ws-surface)))',
+        }}
+      />
+
       {/* Image */}
       <div
-        className="relative flex items-center justify-center aspect-square"
+        className="relative flex items-center justify-center aspect-square overflow-hidden"
         style={{ backgroundColor: 'var(--ws-bg)' }}
       >
         {product.featured_image ? (
-          <img
-            src={product.featured_image}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
+          <>
+            <img
+              src={product.featured_image}
+              alt={product.name}
+              className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+            />
+            {/* Hover gradient overlay */}
+            <div
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none"
+              style={{
+                background: 'linear-gradient(180deg, transparent 50%, color-mix(in srgb, var(--ws-bg) 70%, transparent) 100%)',
+              }}
+            />
+          </>
         ) : (
-          <ShoppingBag
-            className="w-12 h-12 transition-transform duration-200 group-hover:scale-110"
-            style={{ color: 'var(--ws-muted)' }}
-          />
+          <div
+            className="flex items-center justify-center w-full h-full"
+            style={{
+              background: 'linear-gradient(145deg, var(--ws-bg), color-mix(in srgb, var(--ws-surface) 60%, var(--ws-bg)))',
+            }}
+          >
+            <div
+              className="flex items-center justify-center w-16 h-16 rounded-full transition-transform duration-300 group-hover:scale-110"
+              style={{
+                background: 'linear-gradient(135deg, color-mix(in srgb, var(--ws-primary) 15%, transparent), color-mix(in srgb, var(--ws-primary) 5%, transparent))',
+                border: '1px solid color-mix(in srgb, var(--ws-primary) 20%, transparent)',
+              }}
+            >
+              <ShoppingBag
+                className="w-7 h-7"
+                style={{ color: 'var(--ws-primary)', opacity: 0.7 }}
+              />
+            </div>
+          </div>
         )}
       </div>
 
       {/* Details */}
-      <div className="flex flex-col gap-2 p-4 flex-1">
-        <p
-          className="text-xs font-medium uppercase tracking-wider"
-          style={{ color: 'var(--ws-muted)' }}
+      <div className="flex flex-col gap-2.5 p-5 flex-1">
+        {/* SKU pill */}
+        <span
+          className="inline-flex items-center self-start px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-widest"
+          style={{
+            backgroundColor: 'color-mix(in srgb, var(--ws-surface) 100%, var(--ws-bg))',
+            color: 'var(--ws-muted)',
+            border: '1px solid var(--ws-border)',
+          }}
         >
           {product.sku}
-        </p>
+        </span>
+
+        {/* Product name */}
         <h3
-          className="text-base font-semibold leading-snug"
-          style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
+          className="text-[17px] font-bold leading-snug transition-colors duration-300"
+          style={{
+            color: 'var(--ws-text)',
+            fontFamily: 'var(--ws-heading-font)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--ws-primary)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ws-text)'; }}
         >
           {product.name}
         </h3>
 
+        {/* Price */}
         {showPricing && (
-          <p
-            className="text-lg font-bold mt-auto pt-2"
-            style={{ color: 'var(--ws-primary)' }}
-          >
-            ${(product.price || 0).toFixed(2)}
-          </p>
+          <div className="mt-auto pt-2 flex items-baseline gap-1.5">
+            <span
+              className="text-xs font-medium"
+              style={{ color: 'var(--ws-muted)' }}
+            >
+              From
+            </span>
+            <span
+              className="text-xl font-bold tracking-tight"
+              style={{ color: 'var(--ws-primary)' }}
+            >
+              ${(product.price || 0).toFixed(2)}
+            </span>
+          </div>
         )}
 
-        {showQuickInquiry ? (
-          <button
-            onClick={(e) => { e.stopPropagation(); onNavigate?.(product.id); }}
-            className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors duration-200 hover:opacity-90"
-            style={{
-              backgroundColor: 'var(--ws-primary)',
-              color: 'var(--ws-bg)',
-            }}
-          >
-            <Plus className="w-4 h-4" />
-            Quick Inquiry
-          </button>
-        ) : (
-          <button
-            onClick={(e) => { e.stopPropagation(); onAddToCart?.(product); }}
-            className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors duration-200 hover:opacity-90"
-            style={{
-              backgroundColor: 'var(--ws-primary)',
-              color: 'var(--ws-bg)',
-            }}
-          >
-            <Plus className="w-4 h-4" />
-            Add to Cart
-          </button>
-        )}
+        {/* Action button */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onAddToCart?.(product); }}
+          className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-300"
+          style={{
+            background: 'linear-gradient(135deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 80%, #000))',
+            color: 'var(--ws-bg)',
+            boxShadow: '0 4px 16px color-mix(in srgb, var(--ws-primary) 25%, transparent)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 8px 28px color-mix(in srgb, var(--ws-primary) 40%, transparent)';
+            e.currentTarget.style.transform = 'scale(1.02)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 16px color-mix(in srgb, var(--ws-primary) 25%, transparent)';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        >
+          <Plus className="w-4 h-4" />
+          Add to Cart
+        </button>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
-/**
- * Compact card: smaller image, inline layout.
- */
-function CompactCard({ product, showPricing, showQuickInquiry, onAddToCart, onNavigate }) {
+/* ------------------------------------------------------------------ */
+/*  CompactCard                                                        */
+/* ------------------------------------------------------------------ */
+
+function CompactCard({ product, showPricing, onAddToCart, onNavigate, index }) {
   return (
-    <div
-      className="group flex items-center gap-4 rounded-xl p-3 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+    <motion.div
+      custom={index}
+      variants={cardVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-40px' }}
+      whileHover={{ y: -3, transition: { duration: 0.25 } }}
+      className="group flex items-center gap-4 rounded-2xl p-4 cursor-pointer"
       style={{
-        backgroundColor: 'var(--ws-surface)',
+        background: 'linear-gradient(135deg, color-mix(in srgb, var(--ws-surface) 92%, transparent), color-mix(in srgb, var(--ws-surface) 80%, transparent))',
         border: '1px solid var(--ws-border)',
+        borderLeft: '3px solid var(--ws-primary)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        transition: 'box-shadow 0.35s ease, border-color 0.35s ease',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.2)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
       }}
       onClick={() => onNavigate?.(product.id)}
     >
       {/* Small image */}
       <div
-        className="flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-lg overflow-hidden"
-        style={{ backgroundColor: 'var(--ws-bg)' }}
+        className="flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-xl overflow-hidden"
+        style={{
+          background: product.featured_image
+            ? 'var(--ws-bg)'
+            : 'linear-gradient(135deg, color-mix(in srgb, var(--ws-primary) 10%, var(--ws-bg)), var(--ws-bg))',
+          border: '1px solid var(--ws-border)',
+        }}
       >
         {product.featured_image ? (
           <img
@@ -157,72 +275,122 @@ function CompactCard({ product, showPricing, showQuickInquiry, onAddToCart, onNa
       {/* Info */}
       <div className="flex-1 min-w-0">
         <h3
-          className="text-sm font-semibold truncate"
+          className="text-sm font-bold truncate transition-colors duration-300"
           style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
         >
           {product.name}
         </h3>
         {showPricing && (
-          <p className="text-sm font-bold mt-0.5" style={{ color: 'var(--ws-primary)' }}>
-            ${(product.price || 0).toFixed(2)}
-          </p>
+          <div className="flex items-baseline gap-1 mt-1">
+            <span className="text-[10px] font-medium" style={{ color: 'var(--ws-muted)' }}>
+              From
+            </span>
+            <span className="text-sm font-bold" style={{ color: 'var(--ws-primary)' }}>
+              ${(product.price || 0).toFixed(2)}
+            </span>
+          </div>
         )}
       </div>
 
       {/* Action */}
       <button
         onClick={(e) => { e.stopPropagation(); onAddToCart?.(product); }}
-        className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg transition-colors duration-200 hover:opacity-90"
+        className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300"
         style={{
-          backgroundColor: 'var(--ws-primary)',
+          background: 'linear-gradient(135deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 80%, #000))',
           color: 'var(--ws-bg)',
+          boxShadow: '0 2px 8px color-mix(in srgb, var(--ws-primary) 20%, transparent)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.1)';
+          e.currentTarget.style.boxShadow = '0 4px 16px color-mix(in srgb, var(--ws-primary) 35%, transparent)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = '0 2px 8px color-mix(in srgb, var(--ws-primary) 20%, transparent)';
         }}
       >
         <Plus className="w-4 h-4" />
       </button>
-    </div>
+    </motion.div>
   );
 }
 
-/**
- * Minimal card: text only, very clean.
- */
-function MinimalCard({ product, showPricing, onNavigate }) {
+/* ------------------------------------------------------------------ */
+/*  MinimalCard                                                        */
+/* ------------------------------------------------------------------ */
+
+function MinimalCard({ product, showPricing, onNavigate, index }) {
   return (
-    <div
-      className="group flex items-center justify-between gap-4 rounded-lg px-4 py-3 transition-all duration-200 cursor-pointer"
+    <motion.div
+      custom={index}
+      variants={cardVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-40px' }}
+      whileHover={{ y: -2, transition: { duration: 0.2 } }}
+      className="group flex items-center justify-between gap-4 rounded-xl px-5 py-4 cursor-pointer"
       style={{
+        background: 'color-mix(in srgb, var(--ws-surface) 40%, transparent)',
         border: '1px solid var(--ws-border)',
-        backgroundColor: 'transparent',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        transition: 'background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'color-mix(in srgb, var(--ws-surface) 65%, transparent)';
+        e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--ws-primary) 30%, var(--ws-border))';
+        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'color-mix(in srgb, var(--ws-surface) 40%, transparent)';
+        e.currentTarget.style.borderColor = 'var(--ws-border)';
+        e.currentTarget.style.boxShadow = 'none';
       }}
       onClick={() => onNavigate?.(product.id)}
     >
       <div className="min-w-0">
         <h3
-          className="text-sm font-semibold truncate"
+          className="text-sm font-bold truncate transition-colors duration-300"
           style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
         >
           {product.name}
         </h3>
-        <p className="text-xs mt-0.5" style={{ color: 'var(--ws-muted)' }}>
+        <p className="text-xs mt-0.5 font-medium" style={{ color: 'var(--ws-muted)' }}>
           {product.sku}
         </p>
       </div>
 
       {showPricing && (
-        <span className="text-sm font-bold flex-shrink-0" style={{ color: 'var(--ws-primary)' }}>
+        <span
+          className="text-base font-bold flex-shrink-0"
+          style={{
+            background: 'linear-gradient(135deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 65%, var(--ws-text)))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}
+        >
           ${(product.price || 0).toFixed(2)}
         </span>
       )}
-    </div>
+    </motion.div>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/*  Card component map                                                 */
+/* ------------------------------------------------------------------ */
 
 const CARD_COMPONENTS = {
   detailed: DetailedCard,
   compact: CompactCard,
   minimal: MinimalCard,
 };
+
+/* ------------------------------------------------------------------ */
+/*  Main renderer                                                      */
+/* ------------------------------------------------------------------ */
 
 export default function FeaturedProductsRenderer({ section, theme }) {
   const navigate = useNavigate();
@@ -235,7 +403,6 @@ export default function FeaturedProductsRenderer({ section, theme }) {
     maxItems = 8,
     columns = 4,
     showPricing = true,
-    showQuickInquiry = false,
     cardStyle = 'detailed',
   } = section?.props || {};
 
@@ -315,7 +482,7 @@ export default function FeaturedProductsRenderer({ section, theme }) {
 
   return (
     <section
-      className="w-full px-6 sm:px-10 lg:px-20 py-16 lg:py-20"
+      className="w-full px-6 sm:px-10 lg:px-20 py-16 lg:py-24"
       style={{
         fontFamily: 'var(--ws-font)',
         color: 'var(--ws-text)',
@@ -324,33 +491,50 @@ export default function FeaturedProductsRenderer({ section, theme }) {
     >
       {/* Section header */}
       {(heading || subheading) && (
-        <div className="mb-10 max-w-2xl">
+        <motion.div
+          variants={headerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="mb-12 max-w-3xl"
+        >
+          {/* Gradient accent line */}
+          <div
+            className="w-16 h-[3px] rounded-full mb-6"
+            style={{
+              background: 'linear-gradient(90deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 30%, transparent))',
+            }}
+          />
+
           {heading && (
             <h2
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-3"
+              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-4 leading-[1.1]"
               style={{ fontFamily: 'var(--ws-heading-font)' }}
             >
               {heading}
             </h2>
           )}
           {subheading && (
-            <p className="text-base lg:text-lg leading-relaxed" style={{ color: 'var(--ws-muted)' }}>
+            <p
+              className="text-base lg:text-lg leading-relaxed max-w-2xl"
+              style={{ color: 'var(--ws-muted)' }}
+            >
               {subheading}
             </p>
           )}
-        </div>
+        </motion.div>
       )}
 
       {/* Product grid */}
-      <div className={`grid gap-5 ${gridClasses}`}>
-        {products.map((product) => (
+      <div className={`grid gap-6 ${gridClasses}`}>
+        {products.map((product, i) => (
           <CardComponent
             key={product.id}
             product={product}
             showPricing={showPricing}
-            showQuickInquiry={showQuickInquiry}
             onAddToCart={handleAddToCart}
             onNavigate={handleNavigate}
+            index={i}
           />
         ))}
       </div>

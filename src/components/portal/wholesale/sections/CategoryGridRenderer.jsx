@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Folder, Package, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 /**
  * CategoryGridRenderer
@@ -19,9 +20,22 @@ const PLACEHOLDER_CATEGORIES = [
   { name: 'Raw Materials', image: null, count: 31 },
 ];
 
-/**
- * Map columns number to Tailwind grid classes.
- */
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.07 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+};
+
 function getGridClasses(columns) {
   const desktop = Math.min(Math.max(columns || 3, 2), 6);
   const desktopMap = {
@@ -35,35 +49,61 @@ function getGridClasses(columns) {
 }
 
 /**
- * Card style: surface background, image on top, text below.
+ * Card style: glass surface, image on top with gradient overlay, hover lift + bottom gradient border.
  */
 function CardStyleCategory({ category, showCount, showImage, onClick }) {
   return (
-    <div
-      className="group flex flex-col rounded-xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+    <motion.div
+      variants={itemVariants}
+      whileHover={{ y: -4, transition: { duration: 0.25, ease: 'easeOut' } }}
+      className="group flex flex-col rounded-xl overflow-hidden cursor-pointer border"
       style={{
-        backgroundColor: 'var(--ws-surface)',
-        border: '1px solid var(--ws-border)',
+        backgroundColor: 'color-mix(in srgb, var(--ws-surface) 60%, transparent)',
+        borderColor: 'var(--ws-border)',
+        backdropFilter: 'blur(12px)',
+        transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
       }}
       onClick={onClick}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 12px 32px color-mix(in srgb, var(--ws-primary) 10%, transparent)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = 'none';
+      }}
     >
       {/* Image area */}
       {showImage && (
         <div
-          className="relative flex items-center justify-center aspect-[16/10]"
+          className="relative flex items-center justify-center aspect-[16/10] overflow-hidden"
           style={{ backgroundColor: 'var(--ws-bg)' }}
         >
           {category.image ? (
-            <img
-              src={category.image}
-              alt={category.name}
-              className="w-full h-full object-cover"
-            />
+            <>
+              <img
+                src={category.image}
+                alt={category.name}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              {/* Subtle gradient overlay on image */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.2) 0%, transparent 50%)',
+                }}
+              />
+            </>
           ) : (
-            <Folder
-              className="w-10 h-10 transition-transform duration-200 group-hover:scale-110"
-              style={{ color: 'var(--ws-muted)' }}
-            />
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110"
+              style={{
+                background: `linear-gradient(135deg, color-mix(in srgb, var(--ws-primary) 15%, transparent), color-mix(in srgb, var(--ws-primary) 5%, transparent))`,
+              }}
+            >
+              <Folder
+                className="w-6 h-6"
+                style={{ color: 'var(--ws-muted)' }}
+              />
+            </div>
           )}
         </div>
       )}
@@ -83,23 +123,39 @@ function CardStyleCategory({ category, showCount, showImage, onClick }) {
             </p>
           )}
         </div>
-        <ArrowRight
-          className="w-4 h-4 flex-shrink-0 transition-transform duration-200 group-hover:translate-x-1"
-          style={{ color: 'var(--ws-muted)' }}
-        />
+        <motion.div
+          className="shrink-0"
+          whileHover={{ x: 4 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+        >
+          <ArrowRight
+            className="w-4 h-4"
+            style={{ color: 'var(--ws-muted)' }}
+          />
+        </motion.div>
       </div>
-    </div>
+
+      {/* Bottom gradient border on hover */}
+      <div
+        className="h-[2px] w-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        style={{
+          background: `linear-gradient(90deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 30%, transparent))`,
+        }}
+      />
+    </motion.div>
   );
 }
 
 /**
- * Overlay style: image fills card, text at bottom with gradient.
+ * Overlay style: image fills card, dramatic bottom gradient, badge count, scale on hover.
  */
 function OverlayStyleCategory({ category, showCount, onClick }) {
   return (
-    <div
-      className="group relative rounded-xl overflow-hidden cursor-pointer aspect-[4/3]"
-      style={{ border: '1px solid var(--ws-border)' }}
+    <motion.div
+      variants={itemVariants}
+      whileHover={{ scale: 1.02, transition: { duration: 0.3, ease: 'easeOut' } }}
+      className="group relative rounded-xl overflow-hidden cursor-pointer aspect-[4/3] border"
+      style={{ borderColor: 'var(--ws-border)' }}
       onClick={onClick}
     >
       {/* Background: image or placeholder */}
@@ -108,59 +164,114 @@ function OverlayStyleCategory({ category, showCount, onClick }) {
           <img
             src={category.image}
             alt={category.name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.08]"
           />
         ) : (
           <div className="flex items-center justify-center w-full h-full">
-            <Package
-              className="w-14 h-14 opacity-30 transition-transform duration-200 group-hover:scale-110"
-              style={{ color: 'var(--ws-muted)' }}
-            />
+            <div
+              className="flex h-16 w-16 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110"
+              style={{
+                background: `linear-gradient(135deg, color-mix(in srgb, var(--ws-primary) 15%, transparent), color-mix(in srgb, var(--ws-primary) 5%, transparent))`,
+              }}
+            >
+              <Package
+                className="w-8 h-8 opacity-40"
+                style={{ color: 'var(--ws-muted)' }}
+              />
+            </div>
           </div>
         )}
       </div>
 
-      {/* Bottom gradient overlay */}
+      {/* Dramatic bottom gradient overlay */}
       <div
-        className="absolute inset-x-0 bottom-0 h-1/2"
+        className="absolute inset-x-0 bottom-0 h-2/3"
         style={{
-          background: 'linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, transparent 100%)',
+          background: 'linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%)',
         }}
       />
 
       {/* Text overlay */}
-      <div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between gap-3">
+      <div className="absolute inset-x-0 bottom-0 p-5 flex items-end justify-between gap-3">
         <div className="min-w-0">
           <h3
             className="text-base font-semibold truncate text-white"
-            style={{ fontFamily: 'var(--ws-heading-font)' }}
+            style={{
+              fontFamily: 'var(--ws-heading-font)',
+              textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+            }}
           >
             {category.name}
           </h3>
           {showCount && (
-            <p className="text-sm mt-0.5 text-white/70">
-              {category.count} {category.count === 1 ? 'item' : 'items'}
-            </p>
+            <div className="mt-1.5 inline-flex items-center">
+              <span
+                className="text-xs font-medium px-2.5 py-0.5 rounded-full"
+                style={{
+                  background: `linear-gradient(135deg, color-mix(in srgb, var(--ws-primary) 25%, transparent), color-mix(in srgb, var(--ws-primary) 12%, transparent))`,
+                  color: 'var(--ws-primary)',
+                  backdropFilter: 'blur(8px)',
+                }}
+              >
+                {category.count} {category.count === 1 ? 'item' : 'items'}
+              </span>
+            </div>
           )}
         </div>
-        <ArrowRight className="w-4 h-4 flex-shrink-0 text-white/70 transition-transform duration-200 group-hover:translate-x-1" />
+        <motion.div
+          className="shrink-0"
+          whileHover={{ x: 4 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+        >
+          <ArrowRight className="w-4 h-4 text-white/70" />
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 /**
- * Minimal style: text and count only, no images.
+ * Minimal style: glass card with left gradient border, hover highlight.
  */
 function MinimalStyleCategory({ category, showCount, onClick }) {
   return (
-    <div
-      className="group flex items-center justify-between gap-4 rounded-lg px-5 py-4 transition-all duration-200 cursor-pointer"
-      style={{ border: '1px solid var(--ws-border)' }}
+    <motion.div
+      variants={itemVariants}
+      whileHover={{ y: -2, transition: { duration: 0.2 } }}
+      className="group flex items-center justify-between gap-4 rounded-xl px-5 py-4 cursor-pointer border overflow-hidden relative"
+      style={{
+        backgroundColor: 'color-mix(in srgb, var(--ws-surface) 40%, transparent)',
+        borderColor: 'var(--ws-border)',
+        backdropFilter: 'blur(12px)',
+        transition: 'border-color 0.3s ease, background-color 0.3s ease',
+      }}
       onClick={onClick}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--ws-primary) 30%, var(--ws-border))';
+        e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--ws-surface) 70%, transparent)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = 'var(--ws-border)';
+        e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--ws-surface) 40%, transparent)';
+      }}
     >
+      {/* Left gradient border */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-[3px]"
+        style={{
+          background: `linear-gradient(180deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 30%, transparent))`,
+        }}
+      />
+
       <div className="flex items-center gap-3 min-w-0">
-        <Folder className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--ws-primary)' }} />
+        <div
+          className="flex h-9 w-9 items-center justify-center rounded-lg shrink-0"
+          style={{
+            background: `linear-gradient(135deg, color-mix(in srgb, var(--ws-primary) 15%, transparent), color-mix(in srgb, var(--ws-primary) 5%, transparent))`,
+          }}
+        >
+          <Folder className="w-4 h-4" style={{ color: 'var(--ws-primary)' }} />
+        </div>
         <h3
           className="text-sm font-semibold truncate"
           style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
@@ -174,19 +285,26 @@ function MinimalStyleCategory({ category, showCount, onClick }) {
           <span
             className="text-xs font-medium px-2.5 py-1 rounded-full"
             style={{
-              backgroundColor: 'var(--ws-surface)',
+              backgroundColor: 'color-mix(in srgb, var(--ws-surface) 80%, transparent)',
               color: 'var(--ws-muted)',
+              border: '1px solid var(--ws-border)',
             }}
           >
             {category.count}
           </span>
         )}
-        <ArrowRight
-          className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1"
-          style={{ color: 'var(--ws-muted)' }}
-        />
+        <motion.div
+          className="shrink-0"
+          whileHover={{ x: 4 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+        >
+          <ArrowRight
+            className="w-4 h-4"
+            style={{ color: 'var(--ws-muted)' }}
+          />
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -243,6 +361,13 @@ export default function CategoryGridRenderer({ section, theme }) {
               {heading}
             </h2>
           )}
+          {/* Gradient accent line */}
+          <div
+            className="h-[2px] w-16 rounded-full mb-4"
+            style={{
+              background: `linear-gradient(90deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 20%, transparent))`,
+            }}
+          />
           {subheading && (
             <p className="text-base lg:text-lg leading-relaxed" style={{ color: 'var(--ws-muted)' }}>
               {subheading}
@@ -252,7 +377,13 @@ export default function CategoryGridRenderer({ section, theme }) {
       )}
 
       {/* Category grid */}
-      <div className={`grid gap-5 ${gridClasses}`}>
+      <motion.div
+        className={`grid gap-5 ${gridClasses}`}
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-60px' }}
+      >
         {categories.map((category, index) => (
           <CategoryComponent
             key={category.name || index}
@@ -262,7 +393,7 @@ export default function CategoryGridRenderer({ section, theme }) {
             onClick={() => handleCategoryClick(category.name)}
           />
         ))}
-      </div>
+      </motion.div>
     </section>
   );
 }

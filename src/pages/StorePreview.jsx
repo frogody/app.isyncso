@@ -397,6 +397,30 @@ export default function StorePreview() {
     );
   }
 
+  // Inject customHead into document head (Google Fonts, external styles, etc.)
+  useEffect(() => {
+    const head = config?.customHead;
+    if (!head) return;
+    const container = document.createElement('div');
+    container.id = 'store-custom-head';
+    container.innerHTML = head;
+    // Move child nodes into actual <head>
+    const nodes = Array.from(container.childNodes);
+    nodes.forEach((node) => document.head.appendChild(node));
+    return () => { nodes.forEach((node) => { try { document.head.removeChild(node); } catch {} }); };
+  }, [config?.customHead]);
+
+  // Inject customCss as a <style> tag
+  useEffect(() => {
+    const css = config?.customCss;
+    if (!css) return;
+    const style = document.createElement('style');
+    style.id = 'store-custom-css';
+    style.textContent = css;
+    document.head.appendChild(style);
+    return () => { try { document.head.removeChild(style); } catch {} };
+  }, [config?.customCss]);
+
   return (
     <WholesaleContext.Provider value={mockWholesaleValue}>
       <div
@@ -426,7 +450,7 @@ export default function StorePreview() {
             return (
               <div
                 key={section.id}
-                className={`relative ${paddingClass} transition-all cursor-pointer`}
+                className={`relative section-${section.type} ${section.customClass || ''} ${paddingClass} transition-all cursor-pointer`}
                 style={{
                   ...bgStyle,
                   ...(isHovered

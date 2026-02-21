@@ -5,7 +5,10 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { updateStoreConfig, getStoreConfig } from '@/lib/db/queries/b2b';
-import { DEFAULT_STORE_CONFIG, createDefaultSection } from '../utils/storeDefaults';
+import { DEFAULT_STORE_CONFIG, DEFAULT_SECTION_PROPS, createDefaultSection } from '../utils/storeDefaults';
+
+// Current config version — bump this when adding new default sections.
+const CURRENT_CONFIG_VERSION = '1.1';
 
 /**
  * Deep-merge `source` into `target`. Arrays are replaced, not concatenated.
@@ -38,6 +41,39 @@ function deepMerge(target, source) {
   return result;
 }
 
+/**
+ * Upgrade an existing config's sections to include missing section types
+ * from DEFAULT_STORE_CONFIG. Preserves all existing user sections and adds
+ * any missing types at the end.
+ */
+function upgradeConfigSections(config) {
+  if (!config?.sections) return config;
+
+  const existingTypes = new Set(config.sections.map((s) => s.type));
+  const defaultSections = DEFAULT_STORE_CONFIG.sections;
+  const missing = defaultSections.filter((s) => !existingTypes.has(s.type));
+
+  if (missing.length === 0) return config;
+
+  // Append missing sections after existing ones, renumbering order
+  let nextOrder = config.sections.length;
+  const newSections = missing.map((s) => {
+    const fresh = createDefaultSection(s.type, nextOrder);
+    // Carry over the default's background preference
+    if (s.background && s.background !== 'default') {
+      fresh.background = s.background;
+    }
+    nextOrder++;
+    return fresh;
+  });
+
+  return {
+    ...config,
+    version: CURRENT_CONFIG_VERSION,
+    sections: [...config.sections, ...newSections],
+  };
+}
+
 export function useStoreBuilder(organizationId) {
   // ---- Core state -----------------------------------------------------------
   const [config, setConfig] = useState(null);
@@ -67,7 +103,25 @@ export function useStoreBuilder(organizationId) {
 
         if (result?.store_config && Object.keys(result.store_config).length > 0) {
           // Merge persisted config with defaults so new keys are always present
-          setConfig(deepMerge(DEFAULT_STORE_CONFIG, result.store_config));
+          let merged = deepMerge(DEFAULT_STORE_CONFIG, result.store_config);
+
+          // Auto-upgrade: if saved config is older than current version,
+          // add any missing default sections so existing stores get the full
+          // storefront experience.
+          if (merged.version !== CURRENT_CONFIG_VERSION) {
+            merged = upgradeConfigSections(merged);
+            // Persist the upgrade so it only happens once
+            try {
+              await updateStoreConfig(organizationId, {
+                store_config: merged,
+                store_version: (result.store_version || 0) + 1,
+              });
+            } catch (upgradeErr) {
+              console.warn('[useStoreBuilder] Failed to persist section upgrade:', upgradeErr);
+            }
+          }
+
+          setConfig(merged);
           setStoreVersion(result.store_version || 0);
           setIsPublished(result.store_published === true);
         } else {

@@ -4,7 +4,7 @@
 // real-time chat UX, then extracts the JSON config from a ```json fence.
 // ---------------------------------------------------------------------------
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -127,6 +127,10 @@ export function useBuilderAI() {
   const [error, setError] = useState(null);
   const [suggestions, setSuggestions] = useState(DEFAULT_SUGGESTIONS);
 
+  // Keep a ref to current messages so we can capture history synchronously
+  const messagesRef = useRef(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+
   // Used to allow cancellation of in-flight streams
   const abortRef = useRef(null);
 
@@ -139,6 +143,15 @@ export function useBuilderAI() {
     }
     const controller = new AbortController();
     abortRef.current = controller;
+
+    // Capture current messages for history BEFORE adding the new user message
+    const currentMessages = messagesRef.current;
+
+    // Build conversation history for the AI (last 20 messages, simplified)
+    const history = currentMessages
+      .filter((m) => m.content && !m.streaming)
+      .slice(-20)
+      .map((m) => ({ role: m.role, content: m.content }));
 
     // Add user message
     setMessages((prev) => [
@@ -166,7 +179,7 @@ export function useBuilderAI() {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
-          body: JSON.stringify({ prompt, currentConfig, businessContext }),
+          body: JSON.stringify({ prompt, currentConfig, businessContext, history }),
           signal: controller.signal,
         },
       );

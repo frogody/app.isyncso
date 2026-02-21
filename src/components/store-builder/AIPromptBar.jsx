@@ -1,12 +1,20 @@
 // ---------------------------------------------------------------------------
 // AIPromptBar.jsx -- Bottom bar for AI chat input in the B2B Store Builder.
-// Accepts user prompts, shows quick suggestion chips, and indicates
-// processing state.
+// Accepts user prompts, shows quick suggestion chips, supports image/file
+// attachments, and indicates processing state.
 // ---------------------------------------------------------------------------
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, ArrowUp, Loader2, MessageSquare } from 'lucide-react';
+import {
+  Sparkles,
+  ArrowUp,
+  Loader2,
+  MessageSquare,
+  Image as ImageIcon,
+  Paperclip,
+  X,
+} from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Defaults
@@ -31,24 +39,55 @@ export default function AIPromptBar({
   onExpandChat,
 }) {
   const [value, setValue] = useState('');
+  const [attachments, setAttachments] = useState([]);
   const inputRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  const canSend = value.trim().length > 0 && !isProcessing;
+  const canSend = (value.trim().length > 0 || attachments.length > 0) && !isProcessing;
+
+  const handleAddFiles = useCallback((files) => {
+    const newAttachments = Array.from(files).map((file) => ({
+      id: Math.random().toString(36).slice(2, 10),
+      file,
+      name: file.name,
+      type: file.type,
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+    }));
+    setAttachments((prev) => [...prev, ...newAttachments]);
+  }, []);
+
+  const handleRemoveAttachment = useCallback((id) => {
+    setAttachments((prev) => {
+      const item = prev.find((a) => a.id === id);
+      if (item?.preview) URL.revokeObjectURL(item.preview);
+      return prev.filter((a) => a.id !== id);
+    });
+  }, []);
 
   const handleSend = useCallback(async () => {
     const prompt = value.trim();
-    if (!prompt || isProcessing) return;
+    if ((!prompt && attachments.length === 0) || isProcessing) return;
 
+    const currentAttachments = [...attachments];
     const savedPrompt = prompt;
     setValue('');
+    setAttachments([]);
+    currentAttachments.forEach((a) => { if (a.preview) URL.revokeObjectURL(a.preview); });
+
+    let fullPrompt = prompt;
+    if (currentAttachments.length > 0) {
+      const fileNames = currentAttachments.map((a) => a.name).join(', ');
+      fullPrompt = prompt ? `${prompt}\n\n[Attached files: ${fileNames}]` : `[Attached files: ${fileNames}]`;
+    }
+
     try {
-      await onSendPrompt(prompt);
+      await onSendPrompt(fullPrompt);
     } catch (err) {
       console.error('AIPromptBar: send failed', err);
-      // Restore prompt so user doesn't lose their input
       setValue(savedPrompt);
     }
-  }, [value, isProcessing, onSendPrompt]);
+  }, [value, attachments, isProcessing, onSendPrompt]);
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -63,13 +102,11 @@ export default function AIPromptBar({
   const handleSuggestionClick = useCallback(
     (suggestion) => {
       setValue(suggestion);
-      // Focus the input so the user can review or immediately send
       inputRef.current?.focus();
     },
     [],
   );
 
-  // Keep focus management clean when processing finishes
   useEffect(() => {
     if (!isProcessing && inputRef.current) {
       inputRef.current.focus();
@@ -80,6 +117,24 @@ export default function AIPromptBar({
 
   return (
     <div className="shrink-0">
+      {/* Hidden file inputs */}
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => { if (e.target.files?.length) handleAddFiles(e.target.files); e.target.value = ''; }}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.doc,.docx,.txt,.csv,.json,.svg"
+        multiple
+        className="hidden"
+        onChange={(e) => { if (e.target.files?.length) handleAddFiles(e.target.files); e.target.value = ''; }}
+      />
+
       {/* Suggestion chips */}
       <AnimatePresence>
         {displaySuggestions && !isProcessing && (
@@ -103,47 +158,95 @@ export default function AIPromptBar({
         )}
       </AnimatePresence>
 
+      {/* Attachment previews */}
+      {attachments.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 px-4 py-1.5">
+          {attachments.map((att) => (
+            <div
+              key={att.id}
+              className="flex items-center gap-1.5 bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-2 py-1"
+            >
+              {att.preview ? (
+                <img src={att.preview} alt={att.name} className="w-6 h-6 rounded object-cover" />
+              ) : (
+                <Paperclip className="w-3 h-3 text-zinc-500" />
+              )}
+              <span className="text-[10px] text-zinc-400 max-w-[80px] truncate">{att.name}</span>
+              <button
+                onClick={() => handleRemoveAttachment(att.id)}
+                className="w-3.5 h-3.5 rounded-full bg-zinc-700 hover:bg-red-500/80 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+              >
+                <X className="w-2 h-2" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Input bar */}
-      <div className="h-16 border-t border-zinc-800/60 bg-zinc-950 flex items-center px-4 gap-3">
-        {/* Sparkles icon + expand chat */}
-        <button
-          onClick={onExpandChat}
-          className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-cyan-400 hover:bg-zinc-800 transition-colors"
-          title="Open AI chat"
-        >
-          <MessageSquare className="w-5 h-5" />
-        </button>
+      <div className="border-t border-zinc-800/60 bg-zinc-950 px-4 py-3">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl focus-within:ring-2 focus-within:ring-cyan-500/30 focus-within:border-cyan-500/30 transition-all">
+          <textarea
+            ref={inputRef}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isProcessing}
+            placeholder="Describe what you want to build or change..."
+            rows={3}
+            className="w-full bg-transparent px-4 pt-3 pb-1 text-sm text-white placeholder-zinc-500 focus:outline-none disabled:opacity-50 resize-none"
+            style={{ minHeight: '80px', maxHeight: '160px' }}
+          />
 
-        {/* Text input */}
-        <input
-          ref={inputRef}
-          type="text"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={isProcessing}
-          placeholder="Ask AI to modify your store... (e.g., 'Make it dark with blue accents')"
-          className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/30 transition-all disabled:opacity-50"
-        />
+          {/* Bottom bar: attach + expand + send */}
+          <div className="flex items-center justify-between px-2 pb-2">
+            <div className="flex items-center gap-0.5">
+              <button
+                onClick={onExpandChat}
+                className="p-1.5 rounded-lg text-cyan-400 hover:bg-zinc-800 transition-colors"
+                title="Open AI chat"
+              >
+                <MessageSquare className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => imageInputRef.current?.click()}
+                disabled={isProcessing}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800/60 transition-colors disabled:opacity-40"
+                title="Attach image"
+              >
+                <ImageIcon className="w-4 h-4" />
+                <span className="text-[11px] hidden sm:inline">Image</span>
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isProcessing}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800/60 transition-colors disabled:opacity-40"
+                title="Attach file"
+              >
+                <Paperclip className="w-4 h-4" />
+                <span className="text-[11px] hidden sm:inline">File</span>
+              </button>
+            </div>
 
-        {/* Send / Loader button */}
-        {isProcessing ? (
-          <div className="w-9 h-9 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0">
-            <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+            {isProcessing ? (
+              <div className="w-9 h-9 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0">
+                <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+              </div>
+            ) : (
+              <button
+                onClick={handleSend}
+                disabled={!canSend}
+                className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                  canSend
+                    ? 'bg-cyan-500 text-white hover:bg-cyan-400 cursor-pointer'
+                    : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+                }`}
+              >
+                <ArrowUp className="w-4 h-4" />
+              </button>
+            )}
           </div>
-        ) : (
-          <button
-            onClick={handleSend}
-            disabled={!canSend}
-            className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all ${
-              canSend
-                ? 'bg-cyan-500 text-white hover:bg-cyan-400 cursor-pointer'
-                : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-            }`}
-          >
-            <ArrowUp className="w-4 h-4" />
-          </button>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -12,18 +12,8 @@ import {
   ArrowUp,
   Loader2,
   Monitor,
-  Palette,
-  LayoutGrid,
-  Navigation,
-  PanelBottom,
   Search,
-  Plus,
-  Trash2,
   Eye,
-  EyeOff,
-  GripVertical,
-  ChevronUp,
-  ChevronDown,
   ChevronRight,
   Save,
   Globe,
@@ -33,8 +23,10 @@ import {
   Smartphone,
   Tablet,
   ArrowLeft,
-  Info,
   Settings,
+  Image as ImageIcon,
+  Paperclip,
+  X,
 } from 'lucide-react';
 
 import BuilderCanvas from './BuilderCanvas';
@@ -125,15 +117,6 @@ function Bubble({ message }) {
 
 const NAV_SECTIONS = [
   {
-    label: 'Design',
-    items: [
-      { key: 'theme', icon: Palette, label: 'Theme' },
-      { key: 'sections', icon: LayoutGrid, label: 'Sections' },
-      { key: 'navigation', icon: Navigation, label: 'Navigation' },
-      { key: 'footer', icon: PanelBottom, label: 'Footer' },
-    ],
-  },
-  {
     label: 'Settings',
     items: [
       { key: 'store-settings', icon: Settings, label: 'Store Config' },
@@ -142,7 +125,7 @@ const NAV_SECTIONS = [
   },
 ];
 
-function NavSidebar({ activeView, onChangeView, sectionCount }) {
+function NavSidebar({ activeView, onChangeView }) {
   const [search, setSearch] = useState('');
   const [collapsed, setCollapsed] = useState({});
 
@@ -169,11 +152,6 @@ function NavSidebar({ activeView, onChangeView, sectionCount }) {
       >
         <Icon className="w-4 h-4 shrink-0" />
         <span className="flex-1 text-left truncate">{label}</span>
-        {key === 'sections' && sectionCount > 0 && (
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isActive ? 'bg-cyan-500/20 text-cyan-300' : 'bg-zinc-800 text-zinc-500'}`}>
-            {sectionCount}
-          </span>
-        )}
       </button>
     );
   };
@@ -251,22 +229,6 @@ function SettingsCard({ title, children }) {
   );
 }
 
-function ColorInput({ label, value, onChange }) {
-  return (
-    <label className="flex items-center gap-3">
-      <input
-        type="color"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-8 h-8 rounded-lg border border-zinc-700 cursor-pointer bg-transparent shrink-0"
-      />
-      <div className="flex-1 min-w-0">
-        <span className="text-sm text-zinc-300 block">{label}</span>
-        <span className="text-[11px] text-zinc-600 font-mono">{value}</span>
-      </div>
-    </label>
-  );
-}
 
 function TextInput({ label, value, onChange, placeholder, type = 'text' }) {
   return (
@@ -317,277 +279,6 @@ function ToggleInput({ label, description, value, onChange }) {
   );
 }
 
-// -- Theme Page --
-
-function ThemePage({ config, onUpdateTheme }) {
-  const theme = config?.theme || {};
-  const COLORS = [
-    { key: 'primaryColor', label: 'Primary Color', default: '#06b6d4' },
-    { key: 'backgroundColor', label: 'Background', default: '#09090b' },
-    { key: 'textColor', label: 'Text Color', default: '#fafafa' },
-    { key: 'surfaceColor', label: 'Surface', default: '#18181b' },
-    { key: 'borderColor', label: 'Border', default: '#27272a' },
-    { key: 'mutedTextColor', label: 'Muted Text', default: '#a1a1aa' },
-  ];
-
-  return (
-    <div>
-      <PageHeader title="Theme" description="Customize the look and feel of your store." />
-
-      <SettingsCard title="Colors">
-        <div className="grid grid-cols-2 gap-4">
-          {COLORS.map(({ key, label, default: def }) => (
-            <ColorInput
-              key={key}
-              label={label}
-              value={theme[key] || def}
-              onChange={(val) => onUpdateTheme({ [key]: val })}
-            />
-          ))}
-        </div>
-      </SettingsCard>
-
-      <SettingsCard title="Typography">
-        <div className="space-y-4">
-          <TextInput
-            label="Body Font"
-            value={theme.font}
-            onChange={(val) => onUpdateTheme({ font: val })}
-            placeholder="Inter, system-ui, sans-serif"
-          />
-          <TextInput
-            label="Heading Font"
-            value={theme.headingFont}
-            onChange={(val) => onUpdateTheme({ headingFont: val })}
-            placeholder="Inter, system-ui, sans-serif"
-          />
-        </div>
-      </SettingsCard>
-    </div>
-  );
-}
-
-// -- Sections Page --
-
-const SECTION_TYPES = [
-  { type: 'hero', label: 'Hero' },
-  { type: 'featured_products', label: 'Featured Products' },
-  { type: 'category_grid', label: 'Category Grid' },
-  { type: 'about', label: 'About' },
-  { type: 'testimonials', label: 'Testimonials' },
-  { type: 'cta', label: 'Call to Action' },
-  { type: 'faq', label: 'FAQ' },
-  { type: 'contact', label: 'Contact' },
-  { type: 'banner', label: 'Banner' },
-  { type: 'stats', label: 'Stats' },
-  { type: 'rich_text', label: 'Rich Text' },
-  { type: 'logo_grid', label: 'Logo Grid' },
-];
-
-function SectionsPage({ config, onAddSection, onRemoveSection, onToggleVisibility, onMoveSection }) {
-  const [showAdd, setShowAdd] = useState(false);
-  const sections = config?.sections || [];
-
-  return (
-    <div>
-      <PageHeader title="Sections" description="Add, remove, and reorder your store sections." />
-
-      <SettingsCard>
-        {sections.length === 0 ? (
-          <div className="text-center py-8">
-            <LayoutGrid className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
-            <p className="text-sm text-zinc-500">No sections yet.</p>
-            <p className="text-xs text-zinc-600 mt-1">Add a section to get started, or ask AI in the chat.</p>
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {sections.map((section, idx) => (
-              <div
-                key={section.id}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-zinc-950/60 border border-zinc-800/40 group"
-              >
-                <GripVertical className="w-3.5 h-3.5 text-zinc-700 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm text-zinc-300 capitalize truncate block">
-                    {section.type?.replace(/_/g, ' ') || 'Unknown'}
-                  </span>
-                </div>
-
-                <button
-                  onClick={() => onMoveSection(idx, idx - 1)}
-                  disabled={idx === 0}
-                  className="p-1 text-zinc-600 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronUp className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => onMoveSection(idx, idx + 1)}
-                  disabled={idx === sections.length - 1}
-                  className="p-1 text-zinc-600 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </button>
-
-                <button
-                  onClick={() => onToggleVisibility(section.id)}
-                  className="p-1 text-zinc-600 hover:text-white transition-colors"
-                  title={section.visible === false ? 'Show section' : 'Hide section'}
-                >
-                  {section.visible === false ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </button>
-
-                <button
-                  onClick={() => onRemoveSection(section.id)}
-                  className="p-1 text-zinc-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="mt-3">
-          {showAdd ? (
-            <div className="bg-zinc-950 border border-zinc-800/60 rounded-xl p-3">
-              <p className="text-xs text-zinc-500 mb-2 font-medium">Choose a section type</p>
-              <div className="grid grid-cols-2 gap-1.5">
-                {SECTION_TYPES.map(({ type, label }) => (
-                  <button
-                    key={type}
-                    onClick={() => { onAddSection(type); setShowAdd(false); }}
-                    className="text-left px-3 py-2 rounded-lg text-xs text-zinc-400 border border-zinc-800/40 hover:bg-zinc-800/40 hover:text-white hover:border-zinc-700 transition-colors"
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => setShowAdd(false)}
-                className="mt-2 text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowAdd(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-zinc-700 text-sm text-zinc-500 hover:text-cyan-400 hover:border-cyan-500/30 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Add Section
-            </button>
-          )}
-        </div>
-      </SettingsCard>
-
-      <div className="flex items-start gap-2 px-1 text-xs text-zinc-600">
-        <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-        <span>You can also ask the AI to add, remove, or reorder sections from the chat.</span>
-      </div>
-    </div>
-  );
-}
-
-// -- Navigation Page --
-
-function NavigationPage({ config, onUpdateNavigation }) {
-  const navItems = config?.navigation || [];
-
-  const handleAdd = () => {
-    onUpdateNavigation([...navItems, { label: 'New Link', href: '#' }]);
-  };
-
-  const handleRemove = (idx) => {
-    onUpdateNavigation(navItems.filter((_, i) => i !== idx));
-  };
-
-  const handleUpdate = (idx, field, value) => {
-    const updated = navItems.map((item, i) => (i === idx ? { ...item, [field]: value } : item));
-    onUpdateNavigation(updated);
-  };
-
-  return (
-    <div>
-      <PageHeader title="Navigation" description="Configure the links in your store's navigation bar." />
-
-      <SettingsCard>
-        {navItems.length === 0 ? (
-          <p className="text-sm text-zinc-500 text-center py-4">No navigation links configured.</p>
-        ) : (
-          <div className="space-y-3">
-            {navItems.map((item, idx) => (
-              <div key={idx} className="flex items-start gap-2">
-                <div className="flex-1 grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    value={item.label || ''}
-                    onChange={(e) => handleUpdate(idx, 'label', e.target.value)}
-                    placeholder="Label"
-                    className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
-                  />
-                  <input
-                    type="text"
-                    value={item.href || ''}
-                    onChange={(e) => handleUpdate(idx, 'href', e.target.value)}
-                    placeholder="/page or #section"
-                    className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
-                  />
-                </div>
-                <button
-                  onClick={() => handleRemove(idx)}
-                  className="p-2 text-zinc-600 hover:text-red-400 transition-colors shrink-0"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <button
-          onClick={handleAdd}
-          className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-zinc-700 text-sm text-zinc-500 hover:text-cyan-400 hover:border-cyan-500/30 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add Link
-        </button>
-      </SettingsCard>
-    </div>
-  );
-}
-
-// -- Footer Page --
-
-function FooterPage({ config, onUpdateFooter }) {
-  const footer = config?.footer || {};
-
-  const update = (field, value) => {
-    onUpdateFooter({ ...footer, [field]: value });
-  };
-
-  return (
-    <div>
-      <PageHeader title="Footer" description="Configure your store's footer content." />
-
-      <SettingsCard title="Company Info">
-        <div className="space-y-4">
-          <TextInput label="Company Name" value={footer.companyName} onChange={(v) => update('companyName', v)} placeholder="Your Company" />
-          <TextInput label="Tagline" value={footer.tagline} onChange={(v) => update('tagline', v)} placeholder="Your company tagline" />
-          <TextInput label="Copyright Text" value={footer.copyright} onChange={(v) => update('copyright', v)} placeholder="2026 Company. All rights reserved." />
-        </div>
-      </SettingsCard>
-
-      <SettingsCard title="Contact">
-        <div className="space-y-4">
-          <TextInput label="Email" value={footer.email} onChange={(v) => update('email', v)} placeholder="info@company.com" />
-          <TextInput label="Phone" value={footer.phone} onChange={(v) => update('phone', v)} placeholder="+1 (555) 000-0000" />
-          <TextInput label="Address" value={footer.address} onChange={(v) => update('address', v)} placeholder="123 Business St" />
-        </div>
-      </SettingsCard>
-    </div>
-  );
-}
 
 // -- Store Settings Page --
 
@@ -864,11 +555,14 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   const ai = useBuilderAI();
 
   const [activeView, setActiveView] = useState('preview');
-  const [lastSettingsView, setLastSettingsView] = useState('theme');
+  const [lastSettingsView, setLastSettingsView] = useState('store-settings');
   const [saveError, setSaveError] = useState(null);
   const [chatValue, setChatValue] = useState('');
+  const [attachments, setAttachments] = useState([]);
   const messagesEndRef = useRef(null);
   const chatInputRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const isPreviewMode = activeView === 'preview';
 
@@ -887,8 +581,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
     if (key !== 'preview') setLastSettingsView(key);
   }, []);
 
-  const canSend = chatValue.trim().length > 0 && !ai.isProcessing;
-  const sectionCount = builder.config?.sections?.length || 0;
+  const canSend = (chatValue.trim().length > 0 || attachments.length > 0) && !ai.isProcessing;
 
   // Sync config to preview
   const prevConfigRef = useRef(null);
@@ -931,6 +624,35 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
     return () => window.removeEventListener('keydown', handleKey);
   }, [history.undo, history.redo]);
 
+  // Attachment handlers
+  const handleAddFiles = useCallback((files) => {
+    const newAttachments = Array.from(files).map((file) => ({
+      id: Math.random().toString(36).slice(2, 10),
+      file,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+    }));
+    setAttachments((prev) => [...prev, ...newAttachments]);
+  }, []);
+
+  const handleRemoveAttachment = useCallback((id) => {
+    setAttachments((prev) => {
+      const item = prev.find((a) => a.id === id);
+      if (item?.preview) URL.revokeObjectURL(item.preview);
+      return prev.filter((a) => a.id !== id);
+    });
+  }, []);
+
+  const handleImageSelect = useCallback(() => {
+    imageInputRef.current?.click();
+  }, []);
+
+  const handleFileSelect = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
   // Handlers
   const handleSave = useCallback(async () => {
     setSaveError(null);
@@ -945,25 +667,6 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
       else { await builder.saveConfig(); await builder.publishStore(); }
     } catch (err) { console.error('Publish failed:', err); }
   }, [builder.isPublished, builder.saveConfig, builder.publishStore, builder.unpublishStore]);
-
-  const handleUpdateTheme = useCallback((u) => { history.pushState(); builder.updateTheme(u); }, [history.pushState, builder.updateTheme]);
-
-  const handleAddSection = useCallback((type) => { history.pushState(); builder.addSection(type); }, [history.pushState, builder.addSection]);
-  const handleRemoveSection = useCallback((id) => { history.pushState(); builder.removeSection(id); }, [history.pushState, builder.removeSection]);
-  const handleToggleVisibility = useCallback((id) => { history.pushState(); builder.toggleSectionVisibility(id); }, [history.pushState, builder.toggleSectionVisibility]);
-
-  const handleMoveSection = useCallback((fromIdx, toIdx) => {
-    const sections = builder.config?.sections;
-    if (!sections || toIdx < 0 || toIdx >= sections.length) return;
-    history.pushState();
-    const ids = sections.map((s) => s.id);
-    const [moved] = ids.splice(fromIdx, 1);
-    ids.splice(toIdx, 0, moved);
-    builder.reorderSections(ids);
-  }, [builder.config?.sections, history.pushState, builder.reorderSections]);
-
-  const handleUpdateNavigation = useCallback((nav) => { history.pushState(); builder.updateNavigation(nav); }, [history.pushState, builder.updateNavigation]);
-  const handleUpdateFooter = useCallback((f) => { history.pushState(); builder.updateFooter(f); }, [history.pushState, builder.updateFooter]);
 
   const handleUpdateConfig = useCallback((newConfig) => {
     history.pushState();
@@ -980,10 +683,20 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
 
   const handleSend = useCallback(async () => {
     const p = chatValue.trim();
-    if (!p || ai.isProcessing) return;
+    if ((!p && attachments.length === 0) || ai.isProcessing) return;
+    const currentAttachments = [...attachments];
     setChatValue('');
-    await handleAIPrompt(p);
-  }, [chatValue, ai.isProcessing, handleAIPrompt]);
+    setAttachments([]);
+    // Clean up previews
+    currentAttachments.forEach((a) => { if (a.preview) URL.revokeObjectURL(a.preview); });
+    // Build prompt with attachment context
+    let fullPrompt = p;
+    if (currentAttachments.length > 0) {
+      const fileNames = currentAttachments.map((a) => a.name).join(', ');
+      fullPrompt = p ? `${p}\n\n[Attached files: ${fileNames}]` : `[Attached files: ${fileNames}]`;
+    }
+    await handleAIPrompt(fullPrompt);
+  }, [chatValue, attachments, ai.isProcessing, handleAIPrompt]);
 
   const handleChatKey = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
@@ -1013,38 +726,6 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
             previewLoading={preview.previewLoading}
             onIframeLoad={preview.onIframeLoad}
           />
-        );
-
-      // -- Design pages --
-      case 'theme':
-        return (
-          <div className="flex-1 overflow-y-auto p-8 max-w-2xl">
-            <ThemePage config={builder.config} onUpdateTheme={handleUpdateTheme} />
-          </div>
-        );
-      case 'sections':
-        return (
-          <div className="flex-1 overflow-y-auto p-8 max-w-2xl">
-            <SectionsPage
-              config={builder.config}
-              onAddSection={handleAddSection}
-              onRemoveSection={handleRemoveSection}
-              onToggleVisibility={handleToggleVisibility}
-              onMoveSection={handleMoveSection}
-            />
-          </div>
-        );
-      case 'navigation':
-        return (
-          <div className="flex-1 overflow-y-auto p-8 max-w-2xl">
-            <NavigationPage config={builder.config} onUpdateNavigation={handleUpdateNavigation} />
-          </div>
-        );
-      case 'footer':
-        return (
-          <div className="flex-1 overflow-y-auto p-8 max-w-2xl">
-            <FooterPage config={builder.config} onUpdateFooter={handleUpdateFooter} />
-          </div>
         );
 
       // -- Settings pages --
@@ -1154,40 +835,109 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
 
           {/* Input */}
           <div className="shrink-0 border-t border-zinc-800/60 p-2.5">
-            <div className="flex items-center gap-2">
+            {/* Hidden file inputs */}
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => { if (e.target.files?.length) handleAddFiles(e.target.files); e.target.value = ''; }}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.txt,.csv,.json,.svg"
+              multiple
+              className="hidden"
+              onChange={(e) => { if (e.target.files?.length) handleAddFiles(e.target.files); e.target.value = ''; }}
+            />
+
+            {/* Attachment previews */}
+            {attachments.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {attachments.map((att) => (
+                  <div
+                    key={att.id}
+                    className="relative group flex items-center gap-1.5 bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-2 py-1.5"
+                  >
+                    {att.preview ? (
+                      <img src={att.preview} alt={att.name} className="w-8 h-8 rounded object-cover" />
+                    ) : (
+                      <Paperclip className="w-3.5 h-3.5 text-zinc-500" />
+                    )}
+                    <span className="text-[11px] text-zinc-400 max-w-[100px] truncate">{att.name}</span>
+                    <button
+                      onClick={() => handleRemoveAttachment(att.id)}
+                      className="w-4 h-4 rounded-full bg-zinc-700 hover:bg-red-500/80 flex items-center justify-center text-zinc-400 hover:text-white transition-colors ml-0.5"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Textarea */}
+            <div className="bg-zinc-950 border border-zinc-800 rounded-xl focus-within:ring-2 focus-within:ring-cyan-500/30 focus-within:border-cyan-500/30 transition-all">
               <textarea
                 ref={chatInputRef}
                 value={chatValue}
                 onChange={(e) => setChatValue(e.target.value)}
                 onKeyDown={handleChatKey}
                 disabled={ai.isProcessing}
-                placeholder="What would you like to change?"
-                rows={1}
-                className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/30 transition-all disabled:opacity-50 resize-none min-h-[36px] max-h-[100px]"
-                style={{ fieldSizing: 'content' }}
+                placeholder="Describe what you want to build or change... (e.g., 'Make it a dark professional theme with blue accents, add a hero section with our company tagline')"
+                rows={4}
+                className="w-full bg-transparent px-3 pt-2.5 pb-1 text-sm text-white placeholder-zinc-500 focus:outline-none disabled:opacity-50 resize-none"
+                style={{ minHeight: '100px', maxHeight: '200px' }}
               />
-              {ai.isProcessing ? (
-                <div className="w-8 h-8 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0">
-                  <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
+
+              {/* Bottom bar: attach + send */}
+              <div className="flex items-center justify-between px-2 pb-2">
+                <div className="flex items-center gap-0.5">
+                  <button
+                    onClick={handleImageSelect}
+                    disabled={ai.isProcessing}
+                    className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    title="Attach image"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                    <span className="text-[11px]">Image</span>
+                  </button>
+                  <button
+                    onClick={handleFileSelect}
+                    disabled={ai.isProcessing}
+                    className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    title="Attach file"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                    <span className="text-[11px]">File</span>
+                  </button>
                 </div>
-              ) : (
-                <button
-                  onClick={handleSend}
-                  disabled={!canSend}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${
-                    canSend ? 'bg-cyan-500 text-white hover:bg-cyan-400' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-                  }`}
-                >
-                  <ArrowUp className="w-3.5 h-3.5" />
-                </button>
-              )}
+
+                {ai.isProcessing ? (
+                  <div className="w-8 h-8 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0">
+                    <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleSend}
+                    disabled={!canSend}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                      canSend ? 'bg-cyan-500 text-white hover:bg-cyan-400' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+                    }`}
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Zone 2: Nav Sidebar (hidden in preview mode for max space) */}
         {!isPreviewMode && (
-          <NavSidebar activeView={activeView} onChangeView={handleChangeView} sectionCount={sectionCount} />
+          <NavSidebar activeView={activeView} onChangeView={handleChangeView} />
         )}
 
         {/* Zone 3: Content / Preview */}

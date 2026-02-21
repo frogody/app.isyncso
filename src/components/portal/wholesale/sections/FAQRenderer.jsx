@@ -1,94 +1,125 @@
 import React, { useState, useCallback } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, HelpCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.08 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+};
 
 /**
  * AccordionItem
  *
- * A single expandable FAQ item with smooth height transition
- * and a rotating chevron indicator.
+ * Glass-card expandable FAQ item with framer-motion height animation
+ * and rotating chevron that shifts to primary when open.
  */
-function AccordionItem({ question, answer, isOpen, onToggle }) {
+function AccordionItem({ question, answer, isOpen, onToggle, index }) {
   return (
-    <div
-      className="border-b"
-      style={{ borderColor: 'var(--ws-border)' }}
+    <motion.div
+      variants={itemVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-40px' }}
+      className="rounded-xl border overflow-hidden"
+      style={{
+        backgroundColor: 'color-mix(in srgb, var(--ws-surface) 60%, transparent)',
+        borderColor: isOpen
+          ? 'color-mix(in srgb, var(--ws-primary) 40%, var(--ws-border))'
+          : 'var(--ws-border)',
+        backdropFilter: 'blur(12px)',
+        transition: 'border-color 0.3s ease',
+      }}
     >
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between gap-4 py-4 text-left transition-colors hover:opacity-80"
+        className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
       >
         <span
           className="text-base font-semibold"
-          style={{ color: 'var(--ws-text)' }}
+          style={{
+            color: isOpen ? 'var(--ws-primary)' : 'var(--ws-text)',
+            transition: 'color 0.3s ease',
+          }}
         >
           {question}
         </span>
-        <ChevronDown
-          className="h-5 w-5 shrink-0 transition-transform duration-300"
-          style={{
-            color: 'var(--ws-muted)',
-            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-          }}
-        />
-      </button>
-      <div
-        className="overflow-hidden transition-all duration-300"
-        style={{
-          maxHeight: isOpen ? '500px' : '0px',
-          opacity: isOpen ? 1 : 0,
-        }}
-      >
-        <p
-          className="pb-4 text-sm leading-relaxed"
-          style={{ color: 'var(--ws-muted)' }}
+        <motion.div
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
+          className="shrink-0"
         >
-          {answer}
-        </p>
-      </div>
-    </div>
+          <ChevronDown
+            className="h-5 w-5"
+            style={{
+              color: isOpen ? 'var(--ws-primary)' : 'var(--ws-muted)',
+              transition: 'color 0.3s ease',
+            }}
+          />
+        </motion.div>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="overflow-hidden"
+          >
+            <div className="px-6 pb-5">
+              <div
+                className="border-t pt-4 pl-2"
+                style={{ borderColor: 'color-mix(in srgb, var(--ws-border) 50%, transparent)' }}
+              >
+                <p
+                  className="text-sm"
+                  style={{
+                    color: 'var(--ws-muted)',
+                    lineHeight: '1.8',
+                  }}
+                >
+                  {answer}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
 /**
  * ListItem
  *
- * A non-collapsible FAQ item with bold question and muted answer.
+ * Non-collapsible FAQ item with glass surface and subtle border.
  */
 function ListItem({ question, answer }) {
   return (
-    <div
-      className="border-b py-4"
-      style={{ borderColor: 'var(--ws-border)' }}
-    >
-      <p
-        className="text-base font-semibold"
-        style={{ color: 'var(--ws-text)' }}
-      >
-        {question}
-      </p>
-      <p
-        className="mt-1.5 text-sm leading-relaxed"
-        style={{ color: 'var(--ws-muted)' }}
-      >
-        {answer}
-      </p>
-    </div>
-  );
-}
-
-/**
- * GridItem
- *
- * A card-style FAQ item for grid layout.
- */
-function GridItem({ question, answer }) {
-  return (
-    <div
-      className="rounded-xl border p-5"
+    <motion.div
+      variants={itemVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-40px' }}
+      className="rounded-xl border px-6 py-5"
       style={{
+        backgroundColor: 'color-mix(in srgb, var(--ws-surface) 60%, transparent)',
         borderColor: 'var(--ws-border)',
-        backgroundColor: 'var(--ws-surface)',
+        backdropFilter: 'blur(12px)',
       }}
     >
       <p
@@ -98,12 +129,57 @@ function GridItem({ question, answer }) {
         {question}
       </p>
       <p
-        className="mt-2 text-sm leading-relaxed"
-        style={{ color: 'var(--ws-muted)' }}
+        className="mt-2 text-sm pl-2"
+        style={{ color: 'var(--ws-muted)', lineHeight: '1.8' }}
       >
         {answer}
       </p>
-    </div>
+    </motion.div>
+  );
+}
+
+/**
+ * GridItem
+ *
+ * Card-style FAQ item with gradient top border accent.
+ */
+function GridItem({ question, answer }) {
+  return (
+    <motion.div
+      variants={itemVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-40px' }}
+      whileHover={{ y: -2, transition: { duration: 0.2 } }}
+      className="rounded-xl border overflow-hidden"
+      style={{
+        backgroundColor: 'color-mix(in srgb, var(--ws-surface) 60%, transparent)',
+        borderColor: 'var(--ws-border)',
+        backdropFilter: 'blur(12px)',
+      }}
+    >
+      {/* Gradient top border accent */}
+      <div
+        className="h-[2px] w-full"
+        style={{
+          background: `linear-gradient(90deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 40%, transparent))`,
+        }}
+      />
+      <div className="p-5">
+        <p
+          className="text-base font-semibold"
+          style={{ color: 'var(--ws-text)' }}
+        >
+          {question}
+        </p>
+        <p
+          className="mt-2 text-sm pl-1"
+          style={{ color: 'var(--ws-muted)', lineHeight: '1.8' }}
+        >
+          {answer}
+        </p>
+      </div>
+    </motion.div>
   );
 }
 
@@ -152,18 +228,44 @@ export default function FAQRenderer({ section, theme }) {
       <div className="mx-auto max-w-4xl">
         {/* Heading */}
         {heading && (
-          <h2
-            className="text-3xl font-bold tracking-tight sm:text-4xl"
-            style={{ color: 'var(--ws-text)' }}
-          >
-            {heading}
-          </h2>
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-3 mb-3">
+              {/* Decorative "?" icon with gradient fill */}
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{
+                  background: `linear-gradient(135deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 60%, #000))`,
+                }}
+              >
+                <HelpCircle className="h-5 w-5 text-white" />
+              </div>
+              <h2
+                className="text-3xl font-bold tracking-tight sm:text-4xl"
+                style={{
+                  color: 'var(--ws-text)',
+                  fontFamily: 'var(--ws-heading-font)',
+                }}
+              >
+                {heading}
+              </h2>
+            </div>
+
+            {/* Thin gradient underline */}
+            <div className="mx-auto mt-3 flex justify-center">
+              <div
+                className="h-[2px] w-20 rounded-full"
+                style={{
+                  background: `linear-gradient(90deg, transparent, var(--ws-primary), transparent)`,
+                }}
+              />
+            </div>
+          </div>
         )}
 
         {/* Subheading */}
         {subheading && (
           <p
-            className="mt-3 text-lg"
+            className="mt-4 text-center text-lg"
             style={{ color: 'var(--ws-muted)' }}
           >
             {subheading}
@@ -173,21 +275,34 @@ export default function FAQRenderer({ section, theme }) {
         {/* Items */}
         <div className={heading || subheading ? 'mt-10' : ''}>
           {style === 'accordion' && (
-            <div>
+            <motion.div
+              className="space-y-3"
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-60px' }}
+            >
               {items.map((item, index) => (
                 <AccordionItem
                   key={index}
+                  index={index}
                   question={item.question}
                   answer={item.answer}
                   isOpen={openIndexes.has(index)}
                   onToggle={() => toggleItem(index)}
                 />
               ))}
-            </div>
+            </motion.div>
           )}
 
           {style === 'list' && (
-            <div>
+            <motion.div
+              className="space-y-3"
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-60px' }}
+            >
               {items.map((item, index) => (
                 <ListItem
                   key={index}
@@ -195,11 +310,17 @@ export default function FAQRenderer({ section, theme }) {
                   answer={item.answer}
                 />
               ))}
-            </div>
+            </motion.div>
           )}
 
           {style === 'grid' && (
-            <div className={`grid grid-cols-1 gap-4 ${gridColsClass}`}>
+            <motion.div
+              className={`grid grid-cols-1 gap-4 ${gridColsClass}`}
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-60px' }}
+            >
               {items.map((item, index) => (
                 <GridItem
                   key={index}
@@ -207,7 +328,7 @@ export default function FAQRenderer({ section, theme }) {
                   answer={item.answer}
                 />
               ))}
-            </div>
+            </motion.div>
           )}
         </div>
       </div>

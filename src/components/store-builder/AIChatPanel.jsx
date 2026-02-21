@@ -6,7 +6,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X, ArrowUp, Loader2 } from 'lucide-react';
+import { Sparkles, X, ArrowUp, Loader2, Image as ImageIcon, Paperclip } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Relative-time helper
@@ -121,10 +121,32 @@ export default function AIChatPanel({
   onSendPrompt,
 }) {
   const [value, setValue] = useState('');
+  const [attachments, setAttachments] = useState([]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  const canSend = value.trim().length > 0 && !isProcessing;
+  const canSend = (value.trim().length > 0 || attachments.length > 0) && !isProcessing;
+
+  const handleAddFiles = useCallback((files) => {
+    const newAttachments = Array.from(files).map((file) => ({
+      id: Math.random().toString(36).slice(2, 10),
+      file,
+      name: file.name,
+      type: file.type,
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+    }));
+    setAttachments((prev) => [...prev, ...newAttachments]);
+  }, []);
+
+  const handleRemoveAttachment = useCallback((id) => {
+    setAttachments((prev) => {
+      const item = prev.find((a) => a.id === id);
+      if (item?.preview) URL.revokeObjectURL(item.preview);
+      return prev.filter((a) => a.id !== id);
+    });
+  }, []);
 
   // Auto-scroll to bottom when new messages arrive or processing state changes
   useEffect(() => {
@@ -144,15 +166,25 @@ export default function AIChatPanel({
 
   const handleSend = useCallback(async () => {
     const prompt = value.trim();
-    if (!prompt || isProcessing) return;
+    if ((!prompt && attachments.length === 0) || isProcessing) return;
 
+    const currentAttachments = [...attachments];
     setValue('');
+    setAttachments([]);
+    currentAttachments.forEach((a) => { if (a.preview) URL.revokeObjectURL(a.preview); });
+
+    let fullPrompt = prompt;
+    if (currentAttachments.length > 0) {
+      const fileNames = currentAttachments.map((a) => a.name).join(', ');
+      fullPrompt = prompt ? `${prompt}\n\n[Attached files: ${fileNames}]` : `[Attached files: ${fileNames}]`;
+    }
+
     try {
-      await onSendPrompt(prompt);
+      await onSendPrompt(fullPrompt);
     } catch (err) {
       console.error('AIChatPanel: send failed', err);
     }
-  }, [value, isProcessing, onSendPrompt]);
+  }, [value, attachments, isProcessing, onSendPrompt]);
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -214,35 +246,101 @@ export default function AIChatPanel({
 
           {/* ---- Input area ---- */}
           <div className="shrink-0 border-t border-zinc-800/60 p-3">
-            <div className="flex items-center gap-2.5">
-              <input
+            {/* Hidden file inputs */}
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => { if (e.target.files?.length) handleAddFiles(e.target.files); e.target.value = ''; }}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.txt,.csv,.json,.svg"
+              multiple
+              className="hidden"
+              onChange={(e) => { if (e.target.files?.length) handleAddFiles(e.target.files); e.target.value = ''; }}
+            />
+
+            {/* Attachment previews */}
+            {attachments.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {attachments.map((att) => (
+                  <div
+                    key={att.id}
+                    className="relative group flex items-center gap-1.5 bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-2 py-1.5"
+                  >
+                    {att.preview ? (
+                      <img src={att.preview} alt={att.name} className="w-7 h-7 rounded object-cover" />
+                    ) : (
+                      <Paperclip className="w-3 h-3 text-zinc-500" />
+                    )}
+                    <span className="text-[10px] text-zinc-400 max-w-[80px] truncate">{att.name}</span>
+                    <button
+                      onClick={() => handleRemoveAttachment(att.id)}
+                      className="w-3.5 h-3.5 rounded-full bg-zinc-700 hover:bg-red-500/80 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+                    >
+                      <X className="w-2 h-2" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Textarea with action bar */}
+            <div className="bg-zinc-950 border border-zinc-800 rounded-xl focus-within:ring-2 focus-within:ring-cyan-500/30 focus-within:border-cyan-500/30 transition-all">
+              <textarea
                 ref={inputRef}
-                type="text"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 disabled={isProcessing}
-                placeholder="Ask AI to modify your store..."
-                className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/30 transition-all disabled:opacity-50"
+                placeholder="Describe what you want to build or change..."
+                rows={3}
+                className="w-full bg-transparent px-3.5 pt-2.5 pb-1 text-sm text-white placeholder-zinc-500 focus:outline-none disabled:opacity-50 resize-none"
+                style={{ minHeight: '80px', maxHeight: '160px' }}
               />
 
-              {isProcessing ? (
-                <div className="w-9 h-9 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0">
-                  <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+              <div className="flex items-center justify-between px-2 pb-2">
+                <div className="flex items-center gap-0.5">
+                  <button
+                    onClick={() => imageInputRef.current?.click()}
+                    disabled={isProcessing}
+                    className="p-1.5 rounded-lg text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800/60 transition-colors disabled:opacity-40"
+                    title="Attach image"
+                  >
+                    <ImageIcon className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isProcessing}
+                    className="p-1.5 rounded-lg text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800/60 transition-colors disabled:opacity-40"
+                    title="Attach file"
+                  >
+                    <Paperclip className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-              ) : (
-                <button
-                  onClick={handleSend}
-                  disabled={!canSend}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all ${
-                    canSend
-                      ? 'bg-cyan-500 text-white hover:bg-cyan-400 cursor-pointer'
-                      : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-                  }`}
-                >
-                  <ArrowUp className="w-4 h-4" />
-                </button>
-              )}
+
+                {isProcessing ? (
+                  <div className="w-8 h-8 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0">
+                    <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleSend}
+                    disabled={!canSend}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                      canSend
+                        ? 'bg-cyan-500 text-white hover:bg-cyan-400 cursor-pointer'
+                        : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+                    }`}
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </motion.div>
