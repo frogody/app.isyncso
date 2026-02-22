@@ -127,23 +127,77 @@ export default function AdminAI() {
   };
 
   // Provider mapping for grouping endpoints
+  // Endpoint strings logged by edge functions:
+  //   google/nano-banana-pro, google/veo-*, google/gemini-vision  → Google AI
+  //   /v1/images/generations, together.xyz/images                 → Together.ai (FLUX)
+  //   /v1/chat/completions, /orchestration, together.xyz/chat     → Together.ai (LLM)
+  //   /v1/audio/speech, together.ai/audio                         → Together.ai (TTS)
+  //   together.xyz/embeddings                                     → Together.ai (Embeddings)
+  //   /openai/v1/chat/completions, groq.com/chat                  → Groq
+  //   anthropic.com/messages                                      → Anthropic
+  //   fal.ai, fal.run                                             → fal.ai
+  //   explorium.ai/enrich                                         → Explorium
+  //   tavily.com/search                                           → Tavily
+  //   composio.dev/api                                            → Composio
+  //   shotstack.io                                                → Shotstack
+  //   twilio.com                                                  → Twilio
+  //   resend.com                                                  → Resend
   const getProvider = (endpoint) => {
-    if (endpoint?.startsWith('google/')) return { name: 'Google AI', color: 'blue' };
-    if (endpoint?.includes('/v1/images/generations') || endpoint?.includes('together')) return { name: 'Together.ai (FLUX)', color: 'purple' };
-    if (endpoint?.includes('openai') || endpoint?.includes('groq') || endpoint?.includes('/v1/chat/completions')) return { name: 'Groq', color: 'orange' };
-    if (endpoint?.includes('fal.ai') || endpoint?.includes('fal')) return { name: 'fal.ai', color: 'pink' };
-    if (endpoint?.includes('explorium')) return { name: 'Explorium', color: 'green' };
-    if (endpoint?.includes('tavily')) return { name: 'Tavily', color: 'yellow' };
+    if (!endpoint) return { name: 'Other', color: 'zinc' };
+    const ep = endpoint.toLowerCase();
+    // Google AI (Gemini, Veo, Nano Banana)
+    if (ep.startsWith('google/') || ep.includes('googleapis') || ep.includes('gemini')) return { name: 'Google AI', color: 'blue' };
+    // Groq (uses /openai/v1 prefix or explicit groq)
+    if (ep.includes('groq') || ep.startsWith('/openai/')) return { name: 'Groq', color: 'orange' };
+    // Anthropic (Claude)
+    if (ep.includes('anthropic')) return { name: 'Anthropic', color: 'amber' };
+    // Together.ai - Image (FLUX)
+    if (ep.includes('/v1/images/') || ep.includes('together.xyz/images') || ep.includes('together.ai/images')) return { name: 'Together.ai (FLUX)', color: 'purple' };
+    // Together.ai - TTS
+    if (ep.includes('/audio/speech') || ep.includes('together.ai/audio')) return { name: 'Together.ai (TTS)', color: 'violet' };
+    // Together.ai - Embeddings
+    if (ep.includes('embeddings') || ep.includes('together.xyz/embed')) return { name: 'Together.ai (Embed)', color: 'indigo' };
+    // Together.ai - LLM (chat completions, orchestration)
+    if (ep.includes('/v1/chat/') || ep.includes('/orchestration') || ep.includes('together.xyz/chat') || ep.includes('together')) return { name: 'Together.ai (LLM)', color: 'purple' };
+    // fal.ai
+    if (ep.includes('fal.ai') || ep.includes('fal.run') || ep.includes('fal')) return { name: 'fal.ai', color: 'pink' };
+    // Explorium
+    if (ep.includes('explorium')) return { name: 'Explorium', color: 'green' };
+    // Tavily
+    if (ep.includes('tavily')) return { name: 'Tavily', color: 'yellow' };
+    // Composio
+    if (ep.includes('composio')) return { name: 'Composio', color: 'sky' };
+    // Shotstack
+    if (ep.includes('shotstack')) return { name: 'Shotstack', color: 'rose' };
+    // Twilio
+    if (ep.includes('twilio')) return { name: 'Twilio', color: 'red' };
+    // Resend
+    if (ep.includes('resend')) return { name: 'Resend', color: 'teal' };
+    // Stripe
+    if (ep.includes('stripe')) return { name: 'Stripe', color: 'violet' };
+    // Jina
+    if (ep.includes('jina')) return { name: 'Jina AI', color: 'lime' };
+    // Firecrawl
+    if (ep.includes('firecrawl')) return { name: 'Firecrawl', color: 'cyan' };
     return { name: 'Other', color: 'zinc' };
   };
 
   const PROVIDER_COLORS = {
     blue: { bg: 'bg-blue-500/20', text: 'text-blue-400', bar: 'bg-blue-500', border: 'border-blue-500/30' },
     purple: { bg: 'bg-purple-500/20', text: 'text-purple-400', bar: 'bg-purple-500', border: 'border-purple-500/30' },
+    violet: { bg: 'bg-violet-500/20', text: 'text-violet-400', bar: 'bg-violet-500', border: 'border-violet-500/30' },
+    indigo: { bg: 'bg-indigo-500/20', text: 'text-indigo-400', bar: 'bg-indigo-500', border: 'border-indigo-500/30' },
     orange: { bg: 'bg-orange-500/20', text: 'text-orange-400', bar: 'bg-orange-500', border: 'border-orange-500/30' },
+    amber: { bg: 'bg-amber-500/20', text: 'text-amber-400', bar: 'bg-amber-500', border: 'border-amber-500/30' },
     pink: { bg: 'bg-pink-500/20', text: 'text-pink-400', bar: 'bg-pink-500', border: 'border-pink-500/30' },
     green: { bg: 'bg-green-500/20', text: 'text-green-400', bar: 'bg-green-500', border: 'border-green-500/30' },
     yellow: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', bar: 'bg-yellow-500', border: 'border-yellow-500/30' },
+    sky: { bg: 'bg-sky-500/20', text: 'text-sky-400', bar: 'bg-sky-500', border: 'border-sky-500/30' },
+    rose: { bg: 'bg-rose-500/20', text: 'text-rose-400', bar: 'bg-rose-500', border: 'border-rose-500/30' },
+    red: { bg: 'bg-red-500/20', text: 'text-red-400', bar: 'bg-red-500', border: 'border-red-500/30' },
+    teal: { bg: 'bg-teal-500/20', text: 'text-teal-400', bar: 'bg-teal-500', border: 'border-teal-500/30' },
+    lime: { bg: 'bg-lime-500/20', text: 'text-lime-400', bar: 'bg-lime-500', border: 'border-lime-500/30' },
+    cyan: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', bar: 'bg-cyan-500', border: 'border-cyan-500/30' },
     zinc: { bg: 'bg-zinc-500/20', text: 'text-zinc-400', bar: 'bg-zinc-500', border: 'border-zinc-500/30' },
   };
 
@@ -166,17 +220,23 @@ export default function AdminAI() {
         .from('ai_usage_logs')
         .select('endpoint, cost, total_tokens, created_at');
 
-      // Fetch credit transactions
+      // Fetch credit transactions with user info for owner detection
       const { data: creditTxns, error: creditError } = await supabase
         .from('credit_transactions')
-        .select('action_key, edge_function, amount, created_at')
+        .select('action_key, edge_function, amount, created_at, user_id')
         .order('created_at', { ascending: false })
-        .limit(1000);
+        .limit(2000);
 
       // Fetch action cost definitions
       const { data: actionCosts, error: actionError } = await supabase
         .from('credit_action_costs')
         .select('action_key, credits_required, label, category, tier');
+
+      // Fetch admin/owner users to identify platform owner usage
+      const { data: adminUsers } = await supabase
+        .from('users')
+        .select('id, full_name, role, email')
+        .in('role', ['admin', 'super_admin']);
 
       if (usageError) throw usageError;
 
@@ -268,11 +328,34 @@ export default function AdminAI() {
       const totalCostToday = todayLogs.reduce((sum, l) => sum + parseFloat(l.cost || 0), 0);
       const totalCallsToday = todayLogs.length;
 
-      // Credit revenue (30d) - debits (negative amounts = credits consumed = revenue)
+      // Build owner user ID set
+      const ownerIds = new Set((adminUsers || []).map((u) => u.id));
+      const ownerNames = {};
+      (adminUsers || []).forEach((u) => { ownerNames[u.id] = u.full_name || u.email || 'Admin'; });
+
+      // Credit analysis (30d) - separate owner usage from customer revenue
       const recentTxns = txns.filter((t) => new Date(t.created_at) >= thirtyDaysAgo);
-      const creditsEarned30d = recentTxns
-        .filter((t) => parseFloat(t.amount) < 0)
-        .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+      const ownerTxns = recentTxns.filter((t) => parseFloat(t.amount) < 0 && ownerIds.has(t.user_id));
+      const customerTxns = recentTxns.filter((t) => parseFloat(t.amount) < 0 && !ownerIds.has(t.user_id));
+
+      const ownerCreditsUsed30d = ownerTxns.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+      const customerCreditsUsed30d = customerTxns.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+      const totalCreditsUsed30d = ownerCreditsUsed30d + customerCreditsUsed30d;
+
+      // Owner credit breakdown by action
+      const ownerActionMap = {};
+      ownerTxns.forEach((t) => {
+        const key = t.action_key || t.edge_function || 'other';
+        if (!ownerActionMap[key]) ownerActionMap[key] = { action: key, credits: 0, count: 0 };
+        ownerActionMap[key].credits += Math.abs(parseFloat(t.amount));
+        ownerActionMap[key].count += 1;
+      });
+      const ownerActionBreakdown = Object.values(ownerActionMap).sort((a, b) => b.credits - a.credits);
+
+      // Credit top-ups (positive amounts)
+      const creditsAdded30d = recentTxns
+        .filter((t) => parseFloat(t.amount) > 0)
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
       // Unique providers with data
       const uniqueProviders = [...new Set(logs.map((l) => getProvider(l.endpoint).name))];
@@ -288,7 +371,12 @@ export default function AdminAI() {
         totalCallsAllTime,
         totalCostToday,
         totalCallsToday,
-        creditsEarned30d,
+        ownerCreditsUsed30d,
+        customerCreditsUsed30d,
+        totalCreditsUsed30d,
+        ownerActionBreakdown,
+        creditsAdded30d,
+        ownerNames,
         uniqueProviders,
         actionCosts: actions,
         creditTransactions: recentTxns,
@@ -506,11 +594,27 @@ export default function AdminAI() {
 
   const cleanEndpointName = (endpoint) => {
     if (!endpoint) return 'Unknown';
-    // Strip common prefixes and clean up
+    const ep = endpoint.toLowerCase();
+    // Specific known endpoint mappings
+    if (ep === '/v1/images/generations') return 'FLUX Image Generation';
+    if (ep === '/openai/v1/chat/completions') return 'Groq Chat';
+    if (ep === '/v1/chat/completions') return 'Together.ai Chat';
+    if (ep === '/v1/audio/speech') return 'Together.ai TTS';
+    if (ep === '/v1/embeddings') return 'Together.ai Embeddings';
+    if (ep === '/orchestration') return 'Together.ai Orchestration';
+    if (ep.startsWith('google/')) return 'Google: ' + endpoint.slice(7).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    if (ep.includes('fal.ai') || ep.includes('fal.run')) return 'fal.ai: ' + endpoint.split('/').pop().replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    if (ep.includes('anthropic')) return 'Anthropic: ' + endpoint.split('/').pop().replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    if (ep.includes('explorium')) return 'Explorium Enrichment';
+    if (ep.includes('tavily')) return 'Tavily Search';
+    if (ep.includes('composio')) return 'Composio Action';
+    if (ep.includes('shotstack')) return 'Shotstack Render';
+    if (ep.includes('twilio')) return 'Twilio SMS';
+    if (ep.includes('resend')) return 'Resend Email';
+    if (ep.includes('jina')) return 'Jina AI';
+    if (ep.includes('firecrawl')) return 'Firecrawl Scrape';
+    // Fallback: clean up dashes and capitalize
     return endpoint
-      .replace(/^google\//, 'Google: ')
-      .replace(/^\/v1\/images\/generations$/, 'FLUX Image Gen')
-      .replace(/^\/openai\/v1\/chat\/completions$/, 'Groq Chat')
       .replace(/-/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase());
   };
@@ -928,16 +1032,17 @@ export default function AdminAI() {
                     </CardContent>
                   </Card>
 
-                  {/* Section D: Credit Revenue vs Platform Cost */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Section D: Revenue vs Cost + Owner Production Costs */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+
+                    {/* D1: Cost Breakdown by Type */}
                     <Card className="bg-zinc-900/50 border-zinc-800">
                       <CardHeader className="py-2 px-3 border-b border-zinc-800">
-                        <CardTitle className="text-white text-sm">Cost Breakdown by Type</CardTitle>
+                        <CardTitle className="text-white text-sm">Cost by Type</CardTitle>
                       </CardHeader>
                       <CardContent className="p-3">
                         <div className="space-y-2">
                           {(() => {
-                            // Group by request_type
                             const typeMap = {};
                             usageData.endpointBreakdown.forEach((ep) => {
                               const type = ep.requestType || 'unknown';
@@ -956,92 +1061,148 @@ export default function AdminAI() {
                               </div>
                             ));
                           })()}
+                          <div className="pt-2 border-t border-zinc-800">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] text-zinc-400">All-Time API Cost</span>
+                              <span className="text-xs text-white font-mono">{formatUsd(usageData.totalCostAllTime)}</span>
+                            </div>
+                            <div className="flex items-center justify-between mt-1">
+                              <span className="text-[10px] text-zinc-400">All-Time Calls</span>
+                              <span className="text-xs text-white font-mono">{formatNumber(usageData.totalCallsAllTime)}</span>
+                            </div>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
 
+                    {/* D2: Owner / Platform Credits (Production Cost) */}
+                    <Card className="bg-zinc-900/50 border-zinc-800">
+                      <CardHeader className="py-2 px-3 border-b border-zinc-800">
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-white text-sm">Owner Credits Used</CardTitle>
+                          <Badge className="bg-amber-500/20 text-amber-400 text-[9px] px-1.5 py-px">Production Cost</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-3">
+                        <div className="space-y-2">
+                          <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-2.5">
+                            <p className="text-[10px] text-amber-400/70">Credits used by admin/owner accounts</p>
+                            <p className="text-lg font-bold text-amber-400">
+                              {formatNumber(usageData.ownerCreditsUsed30d)} credits
+                            </p>
+                            <p className="text-[10px] text-zinc-500">
+                              ~{formatCost(usageData.ownerCreditsUsed30d * 0.078)} production cost (30d)
+                            </p>
+                          </div>
+                          {usageData.ownerActionBreakdown.length > 0 ? (
+                            <div className="space-y-1">
+                              <p className="text-[10px] text-zinc-500 font-medium">Owner usage breakdown:</p>
+                              {usageData.ownerActionBreakdown.slice(0, 6).map((a) => (
+                                <div key={a.action} className="flex items-center justify-between bg-zinc-800/30 rounded px-2 py-1">
+                                  <span className="text-[10px] text-zinc-300 truncate flex-1 mr-2">
+                                    {a.action.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                                  </span>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <span className="text-[10px] text-zinc-500">{a.count}x</span>
+                                    <span className="text-[10px] text-amber-400 font-mono">{a.credits} cr</span>
+                                  </div>
+                                </div>
+                              ))}
+                              {usageData.ownerActionBreakdown.length > 6 && (
+                                <p className="text-[10px] text-zinc-600 text-center">
+                                  + {usageData.ownerActionBreakdown.length - 6} more
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-center text-[10px] text-zinc-600 py-2">
+                              No owner credit usage recorded yet
+                            </p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* D3: Revenue vs Total Cost */}
                     <Card className="bg-zinc-900/50 border-zinc-800">
                       <CardHeader className="py-2 px-3 border-b border-zinc-800">
                         <CardTitle className="text-white text-sm">Revenue vs Cost (30d)</CardTitle>
                       </CardHeader>
                       <CardContent className="p-3">
-                        {usageData.creditsEarned30d > 0 ? (
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between bg-zinc-800/30 rounded-lg p-2.5">
+                        <div className="space-y-2">
+                          {/* Customer revenue */}
+                          <div className="flex items-center justify-between bg-zinc-800/30 rounded-lg p-2.5">
+                            <div>
+                              <p className="text-[10px] text-zinc-400">Customer Credits Used</p>
+                              <p className="text-sm font-bold text-green-400">
+                                {formatNumber(usageData.customerCreditsUsed30d)} credits
+                              </p>
+                              <p className="text-[10px] text-zinc-500">
+                                ~{formatCost(usageData.customerCreditsUsed30d * 0.078)} revenue
+                              </p>
+                            </div>
+                            <ArrowUpRight className="w-4 h-4 text-green-400" />
+                          </div>
+
+                          {/* Platform API cost */}
+                          <div className="flex items-center justify-between bg-zinc-800/30 rounded-lg p-2.5">
+                            <div>
+                              <p className="text-[10px] text-zinc-400">Platform API Cost</p>
+                              <p className="text-sm font-bold text-red-400">
+                                {formatUsd(usageData.totalCost30d)}
+                              </p>
+                              <p className="text-[10px] text-zinc-500">
+                                ~{formatCost(usageData.totalCost30d * 0.92)} (USD/EUR)
+                              </p>
+                            </div>
+                            <ArrowDownRight className="w-4 h-4 text-red-400" />
+                          </div>
+
+                          {/* Owner production cost */}
+                          {usageData.ownerCreditsUsed30d > 0 && (
+                            <div className="flex items-center justify-between bg-amber-500/5 border border-amber-500/15 rounded-lg p-2.5">
                               <div>
-                                <p className="text-[10px] text-zinc-400">Credits Earned</p>
-                                <p className="text-sm font-bold text-green-400">
-                                  {formatNumber(usageData.creditsEarned30d)} credits
+                                <p className="text-[10px] text-amber-400/70">Owner Credits (Prod Cost)</p>
+                                <p className="text-sm font-bold text-amber-400">
+                                  {formatNumber(usageData.ownerCreditsUsed30d)} credits
                                 </p>
                                 <p className="text-[10px] text-zinc-500">
-                                  ~{formatCost(usageData.creditsEarned30d * 0.078)} (at avg rate)
+                                  ~{formatCost(usageData.ownerCreditsUsed30d * 0.078)} internal cost
                                 </p>
                               </div>
-                              <ArrowUpRight className="w-4 h-4 text-green-400" />
+                              <ArrowDownRight className="w-4 h-4 text-amber-400" />
                             </div>
-                            <div className="flex items-center justify-between bg-zinc-800/30 rounded-lg p-2.5">
-                              <div>
-                                <p className="text-[10px] text-zinc-400">Platform API Cost</p>
-                                <p className="text-sm font-bold text-red-400">
-                                  {formatUsd(usageData.totalCost30d)}
+                          )}
+
+                          {/* Margin calculation - only customer revenue counts */}
+                          {(() => {
+                            const customerRevenueEur = usageData.customerCreditsUsed30d * 0.078;
+                            const apiCostEur = usageData.totalCost30d * 0.92;
+                            const ownerCostEur = usageData.ownerCreditsUsed30d * 0.078;
+                            const totalCostEur = apiCostEur + ownerCostEur;
+                            const netProfit = customerRevenueEur - totalCostEur;
+                            const margin = customerRevenueEur > 0
+                              ? ((customerRevenueEur - totalCostEur) / customerRevenueEur) * 100
+                              : (totalCostEur > 0 ? -100 : 0);
+                            return (
+                              <div className={cn(
+                                "rounded-lg p-2.5 text-center",
+                                margin >= 0 ? "bg-green-500/10 border border-green-500/20" : "bg-red-500/10 border border-red-500/20"
+                              )}>
+                                <p className="text-[10px] text-zinc-400">Net Margin (excl. owner)</p>
+                                <p className={cn("text-lg font-bold", margin >= 0 ? "text-green-400" : "text-red-400")}>
+                                  {margin === -100 && usageData.customerCreditsUsed30d === 0
+                                    ? 'N/A'
+                                    : `${margin.toFixed(1)}%`
+                                  }
                                 </p>
                                 <p className="text-[10px] text-zinc-500">
-                                  ~{formatCost(usageData.totalCost30d * 0.92)} (at USD/EUR rate)
+                                  {netProfit >= 0 ? '+' : ''}{formatCost(netProfit)} net
                                 </p>
                               </div>
-                              <ArrowDownRight className="w-4 h-4 text-red-400" />
-                            </div>
-                            {(() => {
-                              const revenueEur = usageData.creditsEarned30d * 0.078;
-                              const costEur = usageData.totalCost30d * 0.92;
-                              const margin = revenueEur > 0 ? ((revenueEur - costEur) / revenueEur) * 100 : 0;
-                              return (
-                                <div className={cn(
-                                  "rounded-lg p-2.5 text-center",
-                                  margin >= 0 ? "bg-green-500/10 border border-green-500/20" : "bg-red-500/10 border border-red-500/20"
-                                )}>
-                                  <p className="text-[10px] text-zinc-400">Gross Margin</p>
-                                  <p className={cn("text-lg font-bold", margin >= 0 ? "text-green-400" : "text-red-400")}>
-                                    {margin.toFixed(1)}%
-                                  </p>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between bg-zinc-800/30 rounded-lg p-2.5">
-                              <div>
-                                <p className="text-[10px] text-zinc-400">Platform API Cost (30d)</p>
-                                <p className="text-sm font-bold text-cyan-400">
-                                  {formatUsd(usageData.totalCost30d)}
-                                </p>
-                              </div>
-                              <DollarSign className="w-4 h-4 text-cyan-400" />
-                            </div>
-                            <div className="flex items-center justify-between bg-zinc-800/30 rounded-lg p-2.5">
-                              <div>
-                                <p className="text-[10px] text-zinc-400">All-Time API Cost</p>
-                                <p className="text-sm font-bold text-white">
-                                  {formatUsd(usageData.totalCostAllTime)}
-                                </p>
-                              </div>
-                              <TrendingUp className="w-4 h-4 text-zinc-400" />
-                            </div>
-                            <div className="flex items-center justify-between bg-zinc-800/30 rounded-lg p-2.5">
-                              <div>
-                                <p className="text-[10px] text-zinc-400">Total API Calls (All-Time)</p>
-                                <p className="text-sm font-bold text-white">
-                                  {formatNumber(usageData.totalCallsAllTime)}
-                                </p>
-                              </div>
-                              <Activity className="w-4 h-4 text-zinc-400" />
-                            </div>
-                            <p className="text-center text-[10px] text-zinc-600">
-                              Credit revenue will appear here once credit_transactions has data
-                            </p>
-                          </div>
-                        )}
+                            );
+                          })()}
+                        </div>
                       </CardContent>
                     </Card>
                   </div>
