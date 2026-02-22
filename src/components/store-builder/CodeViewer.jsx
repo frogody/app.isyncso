@@ -1,6 +1,7 @@
 // ---------------------------------------------------------------------------
 // CodeViewer.jsx -- Virtual file tree + syntax-highlighted code panel
-// with diff markers (red/green) for changed lines.
+// with diff markers (red/green) for changed lines. Updates instantly
+// when config changes, auto-scrolling to the first changed line.
 // ---------------------------------------------------------------------------
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
@@ -49,7 +50,6 @@ function getLangForFile(name) {
 }
 
 // ── Simple line diff ────────────────────────────────────────────────────────
-// Returns a Map<lineIndex, 'added' | 'removed'> for changed lines.
 
 function computeLineDiff(oldCode, newCode) {
   if (!oldCode || oldCode === newCode) return new Map();
@@ -57,7 +57,6 @@ function computeLineDiff(oldCode, newCode) {
   const newLines = newCode.split('\n');
   const diff = new Map();
 
-  // Simple LCS-like approach: mark lines that are new or changed
   const oldSet = new Set(oldLines.map((l) => l.trim()));
 
   for (let i = 0; i < newLines.length; i++) {
@@ -104,11 +103,9 @@ function TreeItem({ node, depth = 0, expandedFolders, toggleFolder, activeFile, 
         {!isFolder && <span className="w-3" />}
         <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
         <span className="truncate flex-1">{node.name}</span>
-        {/* Changed indicator dot */}
         {isChanged && (
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
         )}
-        {/* Active folder pulse */}
         {isActiveFolder && (
           <Pencil className="w-3 h-3 text-cyan-400 shrink-0 animate-pulse" />
         )}
@@ -143,57 +140,20 @@ function TreeItem({ node, depth = 0, expandedFolders, toggleFolder, activeFile, 
 
 // ── Code Panel with Line Numbers + Diff Markers ─────────────────────────────
 
-function CodePanel({ code, lang, filePath, typing, lineDiff }) {
+function CodePanel({ code, lang, filePath, lineDiff }) {
   const [copied, setCopied] = useState(false);
   const codeRef = useRef(null);
-  const [visibleChars, setVisibleChars] = useState(typing ? 0 : code.length);
-  const animRef = useRef(null);
-
-  // Typing animation
-  useEffect(() => {
-    if (!typing) {
-      setVisibleChars(code.length);
-      return;
-    }
-    setVisibleChars(0);
-    let frame = 0;
-    const totalChars = code.length;
-    const charsPerTick = Math.max(2, Math.ceil(totalChars / 300));
-    const tick = () => {
-      frame += charsPerTick;
-      if (frame >= totalChars) {
-        setVisibleChars(totalChars);
-        return;
-      }
-      setVisibleChars(frame);
-      animRef.current = requestAnimationFrame(tick);
-    };
-    const timeout = setTimeout(() => {
-      animRef.current = requestAnimationFrame(tick);
-    }, 200);
-    return () => {
-      clearTimeout(timeout);
-      if (animRef.current) cancelAnimationFrame(animRef.current);
-    };
-  }, [typing, code]);
-
-  useEffect(() => {
-    if (!typing) setVisibleChars(code.length);
-  }, [code, typing]);
-
-  const displayCode = typing ? code.slice(0, visibleChars) : code;
-  const isAnimating = typing && visibleChars < code.length;
 
   const highlighted = useMemo(() => {
     try {
       const grammar = languages[lang] || languages.jsx;
-      return highlight(displayCode, grammar, lang);
+      return highlight(code, grammar, lang);
     } catch {
-      return displayCode;
+      return code;
     }
-  }, [displayCode, lang]);
+  }, [code, lang]);
 
-  const lines = displayCode.split('\n');
+  const lines = code.split('\n');
   const highlightedLines = highlighted.split('\n');
 
   const handleCopy = useCallback(() => {
@@ -203,17 +163,26 @@ function CodePanel({ code, lang, filePath, typing, lineDiff }) {
     });
   }, [code]);
 
+  // Reset scroll on file change
   useEffect(() => {
     if (codeRef.current) codeRef.current.scrollTop = 0;
   }, [filePath]);
 
-  useEffect(() => {
-    if (isAnimating && codeRef.current) {
-      codeRef.current.scrollTop = codeRef.current.scrollHeight;
-    }
-  }, [visibleChars, isAnimating]);
-
+  // Auto-scroll to first changed line when diff appears
   const hasDiff = lineDiff && lineDiff.size > 0;
+  useEffect(() => {
+    if (!hasDiff || !codeRef.current) return;
+    // Find first changed line
+    let firstChanged = Infinity;
+    for (const [lineIdx] of lineDiff) {
+      if (lineIdx < firstChanged) firstChanged = lineIdx;
+    }
+    if (firstChanged < Infinity) {
+      // Each line is 20px tall, scroll a bit above the first change
+      const scrollTarget = Math.max(0, (firstChanged - 3) * 20);
+      codeRef.current.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+    }
+  }, [lineDiff, hasDiff]);
 
   return (
     <div className="flex flex-col h-full">
@@ -221,12 +190,7 @@ function CodePanel({ code, lang, filePath, typing, lineDiff }) {
       <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800/60 bg-zinc-900/50 flex-shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-[11px] text-zinc-500 font-mono truncate">{filePath}</span>
-          {isAnimating && (
-            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium text-cyan-400 bg-cyan-500/10 animate-pulse">
-              writing...
-            </span>
-          )}
-          {hasDiff && !isAnimating && (
+          {hasDiff && (
             <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium text-emerald-400 bg-emerald-500/10">
               {lineDiff.size} lines changed
             </span>
@@ -259,16 +223,14 @@ function CodePanel({ code, lang, filePath, typing, lineDiff }) {
 
             return (
               <div key={i} className={`flex ${bgClass} ${gutterClass}`}>
-                {/* Diff indicator */}
                 <div className="w-5 flex-shrink-0 flex items-center justify-center select-none">
                   {diffType === 'added' && (
                     <span className="text-[10px] font-mono text-emerald-400 leading-[20px]">+</span>
                   )}
                   {diffType === 'removed' && (
-                    <span className="text-[10px] font-mono text-red-400 leading-[20px]">−</span>
+                    <span className="text-[10px] font-mono text-red-400 leading-[20px]">-</span>
                   )}
                 </div>
-                {/* Line number */}
                 <div className="w-10 flex-shrink-0 text-right pr-3 select-none">
                   <span className={`text-[11px] leading-[20px] font-mono ${
                     diffType ? (diffType === 'added' ? 'text-emerald-600' : 'text-red-600') : 'text-zinc-700'
@@ -276,7 +238,6 @@ function CodePanel({ code, lang, filePath, typing, lineDiff }) {
                     {i + 1}
                   </span>
                 </div>
-                {/* Code line */}
                 <div className="flex-1 pl-2 pr-6 overflow-x-auto">
                   <pre className="m-0 bg-transparent">
                     <code
@@ -289,11 +250,6 @@ function CodePanel({ code, lang, filePath, typing, lineDiff }) {
               </div>
             );
           })}
-          {isAnimating && (
-            <div className="pl-[60px]">
-              <span className="inline-block w-[2px] h-[14px] bg-cyan-400 ml-px animate-pulse align-middle" />
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -302,7 +258,7 @@ function CodePanel({ code, lang, filePath, typing, lineDiff }) {
 
 // ── Main CodeViewer ─────────────────────────────────────────────────────────
 
-export default function CodeViewer({ config, typingEffect }) {
+export default function CodeViewer({ config }) {
   const fileTree = useMemo(() => generateFileTree(config), [config]);
 
   const allFolderPaths = useMemo(() => {
@@ -344,87 +300,73 @@ export default function CodeViewer({ config, typingEffect }) {
     });
   }, []);
 
-  // When typing effect activates, snapshot current code for all files,
-  // then detect which files changed after config update.
+  // Detect changed files whenever config changes and update diffs instantly
   const prevConfigRef = useRef(null);
 
   useEffect(() => {
-    if (typingEffect && config) {
-      // Snapshot all current file contents BEFORE the new config
-      const snap = {};
-      const walk = (nodes) => {
-        for (const n of nodes) {
-          if (n.type === 'folder' && n.children) walk(n.children);
-          else if (n.type === 'file') {
-            snap[n.path] = generateFileContent(n.path, prevConfigRef.current || config);
-          }
-        }
-      };
-      walk(fileTree);
-      prevCodeRef.current = snap;
+    if (!config || !prevConfigRef.current) {
+      prevConfigRef.current = config;
+      return;
     }
-    prevConfigRef.current = config;
-  }, [typingEffect]); // Only run when typingEffect changes
 
-  // Detect changed files when config changes
-  useEffect(() => {
-    if (!config) return;
-    const changed = new Set();
-    const walk = (nodes) => {
+    // Snapshot code from previous config
+    const snap = {};
+    const walkPrev = (nodes) => {
       for (const n of nodes) {
-        if (n.type === 'folder' && n.children) walk(n.children);
+        if (n.type === 'folder' && n.children) walkPrev(n.children);
         else if (n.type === 'file') {
-          const oldCode = prevCodeRef.current[n.path];
-          if (oldCode) {
-            const newCode = generateFileContent(n.path, config);
-            if (oldCode !== newCode) {
-              changed.add(n.path);
-            }
+          snap[n.path] = generateFileContent(n.path, prevConfigRef.current);
+        }
+      }
+    };
+    // Use current fileTree structure to know which files exist
+    walkPrev(fileTree);
+
+    // Find which files changed
+    const changed = new Set();
+    let firstChangedFile = null;
+    const walkCurr = (nodes) => {
+      for (const n of nodes) {
+        if (n.type === 'folder' && n.children) walkCurr(n.children);
+        else if (n.type === 'file') {
+          const oldCode = snap[n.path];
+          const newCode = generateFileContent(n.path, config);
+          if (oldCode && oldCode !== newCode) {
+            changed.add(n.path);
+            if (!firstChangedFile) firstChangedFile = n.path;
           }
         }
       }
     };
-    walk(fileTree);
+    walkCurr(fileTree);
+
+    // Store previous code for diff computation
+    prevCodeRef.current = snap;
+    prevConfigRef.current = config;
+
     if (changed.size > 0) {
       setChangedFiles(changed);
-      // Auto-clear changed markers after 15s
-      const t = setTimeout(() => setChangedFiles(new Set()), 15000);
+
+      // Auto-select the first changed file so user sees the diff immediately
+      if (firstChangedFile) {
+        setActiveFile(firstChangedFile);
+        const folder = firstChangedFile.substring(0, firstChangedFile.lastIndexOf('/'));
+        setActiveFolder(folder);
+      }
+
+      // Clear changed markers after 30s
+      const t = setTimeout(() => {
+        setChangedFiles(new Set());
+        setActiveFolder(null);
+      }, 30000);
       return () => clearTimeout(t);
     }
   }, [config, fileTree]);
 
-  // When typing effect activates, select a meaningful file and set active folder
-  useEffect(() => {
-    if (!typingEffect) {
-      setActiveFolder(null);
-      return;
-    }
-    const walk = (nodes) => {
-      for (const n of nodes) {
-        if (n.type === 'folder' && n.children) {
-          const found = walk(n.children);
-          if (found) return found;
-        }
-        if (n.type === 'file' && n.path.startsWith('store/components/') && n.name.endsWith('.jsx')) {
-          return n.path;
-        }
-      }
-      return null;
-    };
-    const target = walk(fileTree) || 'store/config/store.json';
-    setActiveFile(target);
-    // Set active folder (parent of the file)
-    const folder = target.substring(0, target.lastIndexOf('/'));
-    setActiveFolder(folder);
-  }, [typingEffect, fileTree]);
-
   // Generate code for the active file
   const { code, lang } = useMemo(() => {
     const content = generateFileContent(activeFile, config);
-    return {
-      code: content,
-      lang: getLangForFile(activeFile),
-    };
+    return { code: content, lang: getLangForFile(activeFile) };
   }, [activeFile, config]);
 
   // Compute line diff for the active file
@@ -482,7 +424,7 @@ export default function CodeViewer({ config, typingEffect }) {
 
         {/* Code panel */}
         <div className="flex-1 min-w-0 bg-[#0d1117]">
-          <CodePanel code={code} lang={lang} filePath={activeFile} typing={typingEffect} lineDiff={lineDiff} />
+          <CodePanel code={code} lang={lang} filePath={activeFile} lineDiff={lineDiff} />
         </div>
       </div>
     </div>

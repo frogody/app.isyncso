@@ -967,14 +967,10 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
     } catch (err) { console.error('AI failed:', err); }
   }, [ai.sendPrompt, builder.config, builder.updateConfig, history.pushState, storeName, organizationId, ai.markLastMessageWithChanges, ai.getSerializableMessages, builder.saveChatHistory, preview.sendConfigToPreview]);
 
-  // Handle "Show changes" button click — switch to code view with typing animation
-  const [codeTypingActive, setCodeTypingActive] = useState(false);
+  // Handle "Show changes" button click — instantly switch to code view
   const handleShowChanges = useCallback(() => {
     setActiveView('code');
     setLastSettingsView('code');
-    setCodeTypingActive(true);
-    // Auto-clear typing effect after animation completes
-    setTimeout(() => setCodeTypingActive(false), 8000);
   }, []);
 
   const handleSend = useCallback(async () => {
@@ -1047,7 +1043,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
       case 'code':
         return (
           <div className="flex-1 overflow-hidden">
-            <CodeViewer config={builder.config} typingEffect={codeTypingActive} />
+            <CodeViewer config={builder.config} />
           </div>
         );
 
