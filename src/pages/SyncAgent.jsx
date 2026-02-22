@@ -2168,7 +2168,7 @@ export default function SyncAgent() {
         <div
           data-animate
           className={cn(
-            'flex flex-col min-h-0 rounded-2xl',
+            'flex flex-col justify-end min-h-0 rounded-2xl',
             syt(
               'bg-gradient-to-b from-white/60 to-slate-50/40 ring-1 ring-slate-200/60',
               'bg-gradient-to-b from-zinc-900/40 to-zinc-950/40 ring-1 ring-white/[0.04]'
@@ -2177,7 +2177,7 @@ export default function SyncAgent() {
           style={{ opacity: 0 }}
         >
           {/* Messages */}
-          <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto px-4 pt-5 pb-3">
+          <div ref={scrollerRef} className="min-h-0 max-h-full overflow-y-auto px-4 pt-5 pb-3">
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center px-6">
                   <div className="relative mb-8">
