@@ -1,11 +1,77 @@
-import React from 'react';
-import { format, formatDistanceToNow } from 'date-fns';
+import React, { useState } from 'react';
+import { formatDistanceToNow } from 'date-fns';
 import {
   Package, Edit, Euro, Truck, Upload, Archive,
-  CheckCircle, AlertTriangle, Plus, Minus, FileText, User
+  CheckCircle, AlertTriangle, Plus, FileText, User, ChevronDown, ChevronRight,
+  Image, Link2, Tag, BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/GlobalThemeContext';
+
+// ─── Field display config ───────────────────────────────────────────
+
+const FIELD_LABELS = {
+  name: 'Name',
+  description: 'Description',
+  short_description: 'Short description',
+  base_price: 'Price',
+  price: 'Price',
+  compare_at_price: 'Compare-at price',
+  cost_price: 'Cost price',
+  status: 'Status',
+  featured_image: 'Featured image',
+  gallery: 'Gallery images',
+  sku: 'SKU',
+  ean: 'EAN / Barcode',
+  mpn: 'MPN',
+  brand: 'Brand',
+  category: 'Category',
+  origin_country: 'Origin',
+  weight: 'Weight',
+  dimensions: 'Dimensions',
+  stock_quantity: 'Stock quantity',
+  quantity: 'Quantity',
+  low_stock_threshold: 'Low stock threshold',
+  channels: 'Sales channels',
+  tags: 'Tags',
+  meta_title: 'SEO title',
+  meta_description: 'SEO description',
+  slug: 'URL slug',
+  margin: 'Margin',
+  tax_rate: 'Tax rate',
+  currency: 'Currency',
+  published_at: 'Published date',
+  warranty_info: 'Warranty',
+  return_policy: 'Return policy',
+  specifications: 'Specifications',
+  pricing_tiers: 'Pricing tiers',
+  pricing_model: 'Pricing model',
+  billing_cycle: 'Billing cycle',
+  trial_days: 'Trial period',
+  setup_fee: 'Setup fee',
+  delivery_time: 'Delivery time',
+  service_area: 'Service area',
+  availability: 'Availability',
+  min_order_quantity: 'Min order qty',
+  max_order_quantity: 'Max order qty',
+};
+
+// Fields that contain long/complex data we should summarize, not display inline
+const COMPLEX_FIELDS = new Set([
+  'description', 'short_description', 'featured_image', 'gallery',
+  'specifications', 'pricing_tiers', 'meta_description', 'warranty_info',
+  'return_policy', 'dimensions',
+]);
+
+// Fields that contain URLs or image paths
+const URL_FIELDS = new Set(['featured_image', 'gallery', 'slug']);
+
+// Fields with currency values
+const CURRENCY_FIELDS = new Set([
+  'base_price', 'price', 'compare_at_price', 'cost_price', 'setup_fee',
+]);
+
+// ─── Activity icons & colors ────────────────────────────────────────
 
 const ACTIVITY_ICONS = {
   created: Plus,
@@ -18,6 +84,9 @@ const ACTIVITY_ICONS = {
   published: CheckCircle,
   low_stock: AlertTriangle,
   document_added: FileText,
+  channel_added: Link2,
+  channel_removed: Link2,
+  status_changed: Tag,
   default: Edit
 };
 
@@ -32,19 +101,133 @@ const ACTIVITY_COLORS = {
   published: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
   low_stock: 'bg-red-500/20 text-red-400 border-red-500/30',
   document_added: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  channel_added: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  channel_removed: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
+  status_changed: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   default: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
 };
 
-function formatValue(val) {
-  if (val === null || val === undefined) return '';
-  if (val instanceof Date) return val.toISOString();
-  if (typeof val === 'object') return JSON.stringify(val);
+// ─── Formatting helpers ─────────────────────────────────────────────
+
+function friendlyFieldName(field) {
+  return FIELD_LABELS[field] || field.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function formatChangeValue(field, val) {
+  if (val === null || val === undefined || val === '') return null;
+
+  // Arrays (gallery images, channels, tags, etc.)
+  if (Array.isArray(val)) {
+    if (val.length === 0) return 'none';
+    // For image arrays, just show count
+    if (URL_FIELDS.has(field) || field === 'gallery') return `${val.length} image${val.length !== 1 ? 's' : ''}`;
+    // For short arrays (channels, tags), show values
+    if (val.length <= 4) return val.map(v => typeof v === 'string' ? v : JSON.stringify(v)).join(', ');
+    return `${val.length} items`;
+  }
+
+  // Objects
+  if (typeof val === 'object') {
+    if (COMPLEX_FIELDS.has(field)) return '(updated)';
+    const keys = Object.keys(val);
+    if (keys.length === 0) return 'empty';
+    return `${keys.length} fields`;
+  }
+
+  // Currency fields
+  if (CURRENCY_FIELDS.has(field) && typeof val === 'number') {
+    return `€${val.toFixed(2)}`;
+  }
+
+  // URLs - just indicate presence
+  if (typeof val === 'string' && (val.startsWith('http') || val.startsWith('/'))) {
+    if (URL_FIELDS.has(field) || val.length > 80) return '(updated)';
+  }
+
+  // Long strings - truncate
+  if (typeof val === 'string' && val.length > 60) {
+    return val.substring(0, 57) + '...';
+  }
+
   return String(val);
+}
+
+/**
+ * Build a compact list of human-readable change descriptions.
+ * Returns an array of { label, oldVal, newVal } objects for display,
+ * plus a summary string.
+ */
+function buildChangeItems(changes) {
+  if (!changes || typeof changes !== 'object') return { items: [], summary: '' };
+
+  const entries = Object.entries(changes);
+  const items = [];
+
+  for (const [field, change] of entries) {
+    if (!change || typeof change !== 'object') continue;
+    const oldVal = formatChangeValue(field, change.old);
+    const newVal = formatChangeValue(field, change.new);
+    // Skip if both are null/empty
+    if (!oldVal && !newVal) continue;
+    items.push({ field, label: friendlyFieldName(field), oldVal, newVal });
+  }
+
+  return items;
+}
+
+// ─── Components ─────────────────────────────────────────────────────
+
+function ChangesList({ items, t }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!items || items.length === 0) return null;
+
+  const MAX_VISIBLE = 3;
+  const visible = expanded ? items : items.slice(0, MAX_VISIBLE);
+  const hasMore = items.length > MAX_VISIBLE;
+
+  return (
+    <div className={`mt-2 p-2.5 rounded-lg ${t('bg-slate-50', 'bg-zinc-900/50')} border ${t('border-slate-200', 'border-white/5')}`}>
+      <div className="space-y-1.5">
+        {visible.map(({ field, label, oldVal, newVal }) => (
+          <div key={field} className="flex items-baseline gap-1.5 text-xs leading-relaxed flex-wrap">
+            <span className={`font-medium ${t('text-slate-600', 'text-zinc-400')}`}>{label}</span>
+            {oldVal && newVal ? (
+              <>
+                <span className={`${t('text-slate-400', 'text-zinc-600')} line-through`}>{oldVal}</span>
+                <span className={t('text-slate-300', 'text-zinc-600')}>→</span>
+                <span className={t('text-slate-800', 'text-zinc-200')}>{newVal}</span>
+              </>
+            ) : newVal ? (
+              <>
+                <span className={t('text-slate-400', 'text-zinc-600')}>set to</span>
+                <span className={t('text-slate-800', 'text-zinc-200')}>{newVal}</span>
+              </>
+            ) : oldVal ? (
+              <>
+                <span className={`${t('text-slate-400', 'text-zinc-600')} line-through`}>{oldVal}</span>
+                <span className={t('text-slate-400', 'text-zinc-600')}>removed</span>
+              </>
+            ) : null}
+          </div>
+        ))}
+      </div>
+      {hasMore && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className={`mt-1.5 flex items-center gap-1 text-xs ${t('text-blue-600', 'text-cyan-400')} hover:underline`}
+        >
+          {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+          {expanded ? 'Show less' : `+${items.length - MAX_VISIBLE} more changes`}
+        </button>
+      )}
+    </div>
+  );
 }
 
 function ActivityItem({ activity, t }) {
   const Icon = ACTIVITY_ICONS[activity.type] || ACTIVITY_ICONS.default;
   const colorClass = ACTIVITY_COLORS[activity.type] || ACTIVITY_COLORS.default;
+  const changeItems = buildChangeItems(activity.changes);
 
   return (
     <div className="flex gap-3 group">
@@ -57,40 +240,18 @@ function ActivityItem({ activity, t }) {
 
       <div className="flex-1 min-w-0 pb-4">
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className={`text-sm ${t('text-slate-900', 'text-white')} font-medium`}>{formatValue(activity.title)}</p>
+          <div className="min-w-0">
+            <p className={`text-sm ${t('text-slate-900', 'text-white')} font-medium`}>{activity.title}</p>
             {activity.description && (
-              <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')} mt-0.5`}>{formatValue(activity.description)}</p>
+              <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')} mt-0.5`}>{activity.description}</p>
             )}
           </div>
-          <span className={`text-xs ${t('text-slate-400', 'text-zinc-600')} whitespace-nowrap`}>
+          <span className={`text-xs ${t('text-slate-400', 'text-zinc-600')} whitespace-nowrap flex-shrink-0`}>
             {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
           </span>
         </div>
 
-        {activity.user && (
-          <div className="flex items-center gap-1.5 mt-1.5">
-            <User className={`w-3 h-3 ${t('text-slate-400', 'text-zinc-600')}`} />
-            <span className={`text-xs ${t('text-slate-400', 'text-zinc-600')}`}>{activity.user}</span>
-          </div>
-        )}
-
-        {activity.changes && (
-          <div className={`mt-2 p-2 rounded-lg ${t('bg-slate-50', 'bg-zinc-900/50')} border ${t('border-slate-200', 'border-white/5')}`}>
-            {Object.entries(activity.changes).map(([field, change]) => {
-              const oldVal = change && typeof change === 'object' ? change.old : '';
-              const newVal = change && typeof change === 'object' ? change.new : change;
-              return (
-                <div key={field} className="flex items-center gap-2 text-xs">
-                  <span className={t('text-slate-500', 'text-zinc-500')}>{field}:</span>
-                  <span className={`${t('text-slate-400', 'text-zinc-600')} line-through`}>{formatValue(oldVal)}</span>
-                  <span className={t('text-slate-400', 'text-zinc-400')}>→</span>
-                  <span className={t('text-slate-900', 'text-white')}>{formatValue(newVal)}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <ChangesList items={changeItems} t={t} />
       </div>
     </div>
   );

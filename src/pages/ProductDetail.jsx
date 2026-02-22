@@ -1896,6 +1896,94 @@ function DocumentsSectionWrapper({ details, onDetailsUpdate }) {
 
 // ============= ACTIVITY SECTION =============
 
+function buildActivityTitle(userName, action, changes, fallbackSummary) {
+  const fieldNames = changes ? Object.keys(changes) : [];
+
+  // Map field keys to human-readable labels
+  const LABELS = {
+    name: 'product name', description: 'description', short_description: 'short description',
+    base_price: 'price', price: 'price', compare_at_price: 'compare-at price',
+    cost_price: 'cost price', status: 'status', featured_image: 'featured image',
+    gallery: 'product images', sku: 'SKU', ean: 'barcode', brand: 'brand',
+    category: 'category', origin_country: 'origin country', weight: 'weight',
+    stock_quantity: 'stock level', quantity: 'quantity', channels: 'sales channels',
+    tags: 'tags', margin: 'margin', tax_rate: 'tax rate', currency: 'currency',
+    pricing_model: 'pricing model', pricing_tiers: 'pricing tiers',
+    billing_cycle: 'billing cycle', trial_days: 'trial period',
+    setup_fee: 'setup fee', delivery_time: 'delivery time',
+    specifications: 'specifications', meta_title: 'SEO title',
+    meta_description: 'SEO description', slug: 'URL slug',
+    min_order_quantity: 'min order quantity', max_order_quantity: 'max order quantity',
+    low_stock_threshold: 'low stock threshold', warranty_info: 'warranty info',
+    return_policy: 'return policy', mpn: 'MPN',
+  };
+
+  const friendlyField = (f) => LABELS[f] || f.replace(/_/g, ' ');
+
+  switch (action) {
+    case 'created':
+      return `${userName} created this product`;
+    case 'published':
+      return `${userName} published the product`;
+    case 'archived':
+      return `${userName} archived the product`;
+    case 'status_changed': {
+      const newStatus = changes?.status?.new;
+      return newStatus
+        ? `${userName} changed status to "${newStatus}"`
+        : `${userName} updated the product status`;
+    }
+    case 'price_changed': {
+      const priceField = fieldNames.find(f => ['base_price', 'price', 'compare_at_price', 'cost_price'].includes(f));
+      if (priceField && changes[priceField]) {
+        const old = changes[priceField].old;
+        const nw = changes[priceField].new;
+        if (old != null && nw != null) {
+          return `${userName} updated ${friendlyField(priceField)} from €${old} to €${nw}`;
+        }
+      }
+      return `${userName} updated pricing`;
+    }
+    case 'image_added':
+      if (changes?.gallery) {
+        const oldCount = Array.isArray(changes.gallery.old) ? changes.gallery.old.length : 0;
+        const newCount = Array.isArray(changes.gallery.new) ? changes.gallery.new.length : 0;
+        const diff = newCount - oldCount;
+        if (diff > 0) return `${userName} added ${diff} product image${diff !== 1 ? 's' : ''}`;
+        if (diff < 0) return `${userName} removed ${Math.abs(diff)} product image${Math.abs(diff) !== 1 ? 's' : ''}`;
+      }
+      return `${userName} updated product images`;
+    case 'channel_added':
+      return typeof fallbackSummary === 'string' && fallbackSummary
+        ? `${userName} — ${fallbackSummary}`
+        : `${userName} added a sales channel`;
+    case 'channel_removed':
+      return typeof fallbackSummary === 'string' && fallbackSummary
+        ? `${userName} — ${fallbackSummary}`
+        : `${userName} removed a sales channel`;
+    case 'stock_adjusted':
+      return `${userName} adjusted stock levels`;
+    case 'deleted':
+      return `${userName} deleted the product`;
+    case 'supplier_added':
+      return `${userName} linked a supplier`;
+    case 'supplier_removed':
+      return `${userName} removed a supplier`;
+    default: {
+      // Generic "updated" — list 1-3 field names
+      if (fieldNames.length === 0) {
+        return typeof fallbackSummary === 'string' && fallbackSummary
+          ? `${userName} — ${fallbackSummary}`
+          : `${userName} updated the product`;
+      }
+      if (fieldNames.length <= 3) {
+        return `${userName} updated ${fieldNames.map(friendlyField).join(', ')}`;
+      }
+      return `${userName} updated ${fieldNames.length} fields`;
+    }
+  }
+}
+
 function ActivitySectionWrapper({ product, details }) {
   const { t } = useTheme();
   const [activities, setActivities] = useState([]);
@@ -1914,24 +2002,29 @@ function ActivitySectionWrapper({ product, details }) {
 
       if (!error && data && data.length > 0) {
         setActivities(data.map(a => {
-          // Sanitize changes: ensure each entry has old/new as strings
+          const userName = a.actor?.full_name || 'Someone';
+          const action = a.action || 'updated';
+          // Sanitize changes — keep only valid {old, new} entries
           let safeChanges = null;
-          if (a.changes && typeof a.changes === 'object') {
+          if (a.changes && typeof a.changes === 'object' && !Array.isArray(a.changes)) {
             safeChanges = {};
             for (const [field, change] of Object.entries(a.changes)) {
-              if (change && typeof change === 'object' && ('old' in change || 'new' in change)) {
+              if (change && typeof change === 'object' && !Array.isArray(change) && ('old' in change || 'new' in change)) {
                 safeChanges[field] = change;
-              } else {
-                safeChanges[field] = { old: '', new: typeof change === 'object' ? JSON.stringify(change) : String(change ?? '') };
               }
             }
+            if (Object.keys(safeChanges).length === 0) safeChanges = null;
           }
+
+          // Build a human-readable title from actor + action + context
+          const title = buildActivityTitle(userName, action, safeChanges, a.summary);
+
           return {
             id: a.id,
-            type: a.action,
-            title: typeof a.summary === 'object' ? JSON.stringify(a.summary) : (a.summary || ''),
+            type: action,
+            title,
             timestamp: a.performed_at,
-            user: a.actor?.full_name || 'Unknown',
+            user: userName,
             changes: safeChanges,
           };
         }));
