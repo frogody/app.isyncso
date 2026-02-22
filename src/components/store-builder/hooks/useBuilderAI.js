@@ -233,14 +233,41 @@ export function useBuilderAI() {
     setIsProcessing(true);
     setError(null);
 
-    // Create a placeholder assistant message that we'll update while streaming
+    // Create a placeholder assistant message in "building" mode
+    // During streaming we do NOT show the AI's explanation text — we show
+    // a building progress state instead. The explanation is only revealed
+    // after the config has been successfully extracted.
     const assistantMsgId = Date.now();
     setMessages((prev) => [
       ...prev,
-      { role: 'assistant', content: '', timestamp: null, streaming: true, _id: assistantMsgId },
+      {
+        role: 'assistant',
+        content: '',
+        timestamp: null,
+        streaming: true,
+        building: true,
+        buildPhase: 'analyzing',
+        _id: assistantMsgId,
+      },
     ]);
 
     let accumulated = '';
+
+    // Progress phases based on accumulated content length
+    const updateBuildPhase = (textLen) => {
+      let phase = 'analyzing';
+      if (textLen > 100) phase = 'planning';
+      if (textLen > 400) phase = 'building';
+      if (textLen > 1000) phase = 'applying';
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === assistantMsgId
+            ? { ...msg, buildPhase: phase }
+            : msg,
+        ),
+      );
+    };
 
     try {
       const response = await fetch(
@@ -261,7 +288,7 @@ export function useBuilderAI() {
         throw new Error(`AI request failed (${response.status}): ${errorText}`);
       }
 
-      // Read the streaming response
+      // Read the streaming response silently — don't show text to user yet
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
 
@@ -272,16 +299,8 @@ export function useBuilderAI() {
         const chunk = decoder.decode(value, { stream: true });
         accumulated += chunk;
 
-        // Show only the explanation part (before any ```json fence) in the chat
-        const displayText = extractExplanation(accumulated);
-
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg._id === assistantMsgId
-              ? { ...msg, content: displayText }
-              : msg,
-          ),
-        );
+        // Update the build phase indicator (not the text content)
+        updateBuildPhase(accumulated.length);
       }
 
       // Stream finished — try to extract config JSON
@@ -292,11 +311,11 @@ export function useBuilderAI() {
       if (!result && accumulated.length > 20) {
         console.warn('[useBuilderAI] No JSON extracted from stream, retrying with JSON-only prompt...');
 
-        // Show user that we're retrying
+        // Show retry phase
         setMessages((prev) =>
           prev.map((msg) =>
             msg._id === assistantMsgId
-              ? { ...msg, content: explanation || 'Applying changes...' }
+              ? { ...msg, buildPhase: 'retrying' }
               : msg,
           ),
         );
@@ -352,7 +371,7 @@ export function useBuilderAI() {
         finalContent = `${explanation}\n\n⚠ Config update failed — try rephrasing your request.`;
       }
 
-      // Finalize the assistant message (remove streaming flag, attach buildPlan)
+      // Finalize the assistant message — NOW show the explanation to the user
       setMessages((prev) =>
         prev.map((msg) =>
           msg._id === assistantMsgId
@@ -361,6 +380,8 @@ export function useBuilderAI() {
                 content: finalContent,
                 timestamp: new Date(),
                 streaming: false,
+                building: false,
+                buildPhase: null,
                 buildPlan: result?.buildPlan || null,
               }
             : msg,

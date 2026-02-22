@@ -110,8 +110,65 @@ function TypingDots() {
   );
 }
 
+const BUILD_PHASES = {
+  analyzing: { label: 'Analyzing request...', icon: Search },
+  planning: { label: 'Planning changes...', icon: Code },
+  building: { label: 'Building components...', icon: Loader2 },
+  applying: { label: 'Writing config...', icon: Code },
+  retrying: { label: 'Finalizing changes...', icon: Loader2 },
+};
+
+function BuildingIndicator({ phase }) {
+  const phaseKeys = Object.keys(BUILD_PHASES);
+  const currentIdx = phaseKeys.indexOf(phase || 'analyzing');
+
+  return (
+    <div className="flex items-start gap-2 px-4 pb-2.5">
+      <div className="w-6 h-6 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0 mt-0.5">
+        <Loader2 className="w-3 h-3 text-cyan-400 animate-spin" />
+      </div>
+      <div className="max-w-[88%]">
+        <div className="bg-zinc-800/60 rounded-2xl rounded-tl-md px-3 py-2.5 space-y-1.5">
+          {phaseKeys.slice(0, Math.max(currentIdx + 1, 1)).map((key, i) => {
+            const p = BUILD_PHASES[key];
+            const isDone = i < currentIdx;
+            const isCurrent = i === currentIdx;
+            const Icon = p.icon;
+            return (
+              <motion.div
+                key={key}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1, duration: 0.2 }}
+                className="flex items-center gap-2"
+              >
+                {isDone ? (
+                  <Check className="w-3 h-3 text-cyan-400 shrink-0" />
+                ) : isCurrent ? (
+                  <Loader2 className="w-3 h-3 text-cyan-400 shrink-0 animate-spin" />
+                ) : (
+                  <div className="w-3 h-3 rounded-full border border-zinc-600 shrink-0" />
+                )}
+                <span className={`text-[12px] ${isDone ? 'text-zinc-500' : isCurrent ? 'text-cyan-400' : 'text-zinc-600'}`}>
+                  {p.label}
+                </span>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Bubble({ message, onShowChanges }) {
   const isUser = message.role === 'user';
+
+  // If the message is in building mode, show the building indicator instead
+  if (message.building && message.streaming) {
+    return <BuildingIndicator phase={message.buildPhase} />;
+  }
+
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} px-4 pb-2.5`}>
       {!isUser && (
@@ -128,13 +185,6 @@ function Bubble({ message, onShowChanges }) {
           }`}
         >
           {message.content}
-          {message.streaming && (
-            <motion.span
-              className="inline-block ml-0.5"
-              animate={{ opacity: [1, 0] }}
-              transition={{ duration: 0.5, repeat: Infinity }}
-            >|</motion.span>
-          )}
         </div>
         <div className="flex items-center gap-2 mt-1 px-1">
           {message.timestamp && !message.streaming && (
@@ -984,8 +1034,6 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
                 )}
               </React.Fragment>
             ))}
-
-            {ai.isProcessing && <TypingDots />}
 
             {ai.messages.length > 0 && !ai.isProcessing && (
               <div className="px-4 pb-2">
