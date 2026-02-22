@@ -567,10 +567,11 @@ export async function createB2BOrder(order: {
   billing_address?: Record<string, unknown>;
   client_notes?: string;
   has_preorder_items?: boolean;
+  po_number?: string;
 }): Promise<B2BOrder> {
   const { data, error } = await supabase
     .from('b2b_orders')
-    .insert({ ...order, order_number: '' }) // trigger generates order_number
+    .insert({ ...order, order_number: '' }) // trigger generates order_number + po_number
     .select()
     .single();
 
