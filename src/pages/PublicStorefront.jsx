@@ -42,6 +42,7 @@ import PreviewOrdersPage from '@/components/portal/wholesale/preview/PreviewOrde
 import PreviewAccountPage from '@/components/portal/wholesale/preview/PreviewAccountPage';
 import PreviewInquiriesPage from '@/components/portal/wholesale/preview/PreviewInquiriesPage';
 import PreviewSettingsPage from '@/components/portal/wholesale/preview/PreviewSettingsPage';
+import StoreHomePage from '@/components/portal/wholesale/preview/StoreHomePage';
 
 // ---------------------------------------------------------------------------
 // Constants & Helpers
@@ -1136,20 +1137,17 @@ export default function PublicStorefront({ subdomain }) {
           ) : currentPage === 'settings' ? (
             <PreviewSettingsPage config={config} nav={nav} />
           ) : (
-            sections.map((section) => {
-              const Component = SECTION_MAP[section.type];
-              if (!Component) return null;
-              return (
-                <div
-                  key={section.id}
-                  data-section-id={section.id}
-                  className={`section-${section.type} ${section.customClass || ''} ${PADDING_MAP[section.padding] || PADDING_MAP.md}`}
-                  style={getBackgroundStyle(section.background)}
-                >
-                  <Component section={section} theme={theme} />
-                </div>
-              );
-            })
+            <StoreHomePage
+              config={config}
+              products={allProducts}
+              sections={sections}
+              logoUrl={storeData?.logo_url}
+              nav={nav}
+              cart={cart}
+              sectionMap={SECTION_MAP}
+              paddingMap={PADDING_MAP}
+              getBackgroundStyle={getBackgroundStyle}
+            />
           )}
         </main>
 
