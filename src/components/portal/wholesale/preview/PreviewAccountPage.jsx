@@ -54,6 +54,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useWholesale } from '../WholesaleProvider';
+import { supabase } from '@/api/supabaseClient';
 import { getClientOrders } from '@/lib/db/queries/b2b';
 
 // ---------------------------------------------------------------------------
@@ -185,17 +186,6 @@ const TABS = [
   { id: 'addresses', label: 'Addresses', icon: MapPin },
   { id: 'preferences', label: 'Order Preferences', icon: Settings },
 ];
-
-// ---------------------------------------------------------------------------
-// Helper: format address JSONB
-// ---------------------------------------------------------------------------
-
-function formatAddress(addr) {
-  if (!addr) return null;
-  return [addr.street, addr.city, addr.zip, addr.state, addr.country]
-    .filter(Boolean)
-    .join(', ');
-}
 
 // ---------------------------------------------------------------------------
 // Tab: Overview (uses real client data)
@@ -505,34 +495,309 @@ function CompanyProfileTab({ client }) {
 }
 
 // ---------------------------------------------------------------------------
-// Tab: Addresses (real client addresses from JSONB)
+// Tab: Addresses (full CRUD on delivery_addresses JSONB)
 // ---------------------------------------------------------------------------
 
+const EMPTY_ADDRESS_FORM = {
+  label: '',
+  street: '',
+  city: '',
+  postal_code: '',
+  state: '',
+  country: '',
+  is_default: false,
+};
+
+function AddressForm({ initial, onSave, onCancel, isSaving }) {
+  const [form, setForm] = useState(initial || EMPTY_ADDRESS_FORM);
+
+  const handleChange = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const isValid = form.label.trim() && form.street.trim() && form.city.trim();
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>
+            Label *
+          </label>
+          <GlassInput
+            value={form.label}
+            onChange={(e) => handleChange('label', e.target.value)}
+            placeholder="e.g. Warehouse, Head Office"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>
+            Street *
+          </label>
+          <GlassInput
+            value={form.street}
+            onChange={(e) => handleChange('street', e.target.value)}
+            placeholder="Street and number"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>
+            City *
+          </label>
+          <GlassInput
+            value={form.city}
+            onChange={(e) => handleChange('city', e.target.value)}
+            placeholder="City"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>
+            Postal Code
+          </label>
+          <GlassInput
+            value={form.postal_code}
+            onChange={(e) => handleChange('postal_code', e.target.value)}
+            placeholder="Postal / ZIP code"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>
+            State / Province
+          </label>
+          <GlassInput
+            value={form.state}
+            onChange={(e) => handleChange('state', e.target.value)}
+            placeholder="State or province"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>
+            Country
+          </label>
+          <GlassInput
+            value={form.country}
+            onChange={(e) => handleChange('country', e.target.value)}
+            placeholder="Country"
+          />
+        </div>
+      </div>
+
+      {/* Is Default checkbox */}
+      <label className="flex items-center gap-2.5 cursor-pointer group">
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={form.is_default}
+          onClick={() => handleChange('is_default', !form.is_default)}
+          className="w-5 h-5 rounded-md flex items-center justify-center transition-all flex-shrink-0"
+          style={{
+            background: form.is_default
+              ? 'var(--ws-primary)'
+              : 'color-mix(in srgb, var(--ws-surface) 60%, transparent)',
+            border: form.is_default
+              ? '1px solid var(--ws-primary)'
+              : '1px solid var(--ws-border)',
+          }}
+        >
+          {form.is_default && <Check className="w-3.5 h-3.5 text-white" />}
+        </button>
+        <span className="text-sm" style={{ color: 'var(--ws-text)' }}>
+          Set as default delivery address
+        </span>
+      </label>
+
+      {/* Actions */}
+      <div className="flex items-center gap-2.5 pt-1">
+        <PrimaryButton size="sm" onClick={() => onSave(form)} disabled={!isValid || isSaving}>
+          {isSaving ? (
+            <span className="flex items-center gap-1.5">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Saving...
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5" />
+              Save Address
+            </span>
+          )}
+        </PrimaryButton>
+        <SecondaryButton size="sm" onClick={onCancel} disabled={isSaving}>
+          Cancel
+        </SecondaryButton>
+      </div>
+    </div>
+  );
+}
+
 function AddressesTab({ client }) {
-  const shippingAddress = client?.shipping_address || null;
-  const billingAddress = client?.billing_address || null;
+  const [addresses, setAddresses] = useState(() => {
+    return Array.isArray(client?.delivery_addresses) ? client.delivery_addresses : [];
+  });
+  const [addingNew, setAddingNew] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const addresses = useMemo(() => {
-    const list = [];
-    if (shippingAddress && Object.keys(shippingAddress).length > 0) {
-      list.push({ id: 'shipping', label: 'Shipping Address', ...shippingAddress, isDefault: true });
-    }
-    if (billingAddress && Object.keys(billingAddress).length > 0) {
-      list.push({ id: 'billing', label: 'Billing Address', ...billingAddress, isDefault: false });
-    }
-    return list;
-  }, [shippingAddress, billingAddress]);
+  // Sync local state when client prop changes
+  useEffect(() => {
+    setAddresses(Array.isArray(client?.delivery_addresses) ? client.delivery_addresses : []);
+  }, [client?.delivery_addresses]);
 
-  if (addresses.length === 0) {
+  const showFeedback = useCallback((msg) => {
+    setFeedback(msg);
+    setErrorMsg('');
+    setTimeout(() => setFeedback(''), 3000);
+  }, []);
+
+  const showError = useCallback((msg) => {
+    setErrorMsg(msg);
+    setFeedback('');
+    setTimeout(() => setErrorMsg(''), 5000);
+  }, []);
+
+  // Persist the full delivery_addresses array to the database
+  const persistAddresses = useCallback(
+    async (updatedList) => {
+      if (!client?.id) return false;
+      setSaving(true);
+      try {
+        const { error } = await supabase
+          .from('portal_clients')
+          .update({ delivery_addresses: updatedList })
+          .eq('id', client.id);
+
+        if (error) throw error;
+        setAddresses(updatedList);
+        return true;
+      } catch (err) {
+        console.error('[AddressesTab] Failed to save addresses:', err);
+        showError('Failed to save. Please try again.');
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [client?.id, showError]
+  );
+
+  // Add a new address
+  const handleAddSave = useCallback(
+    async (formData) => {
+      const newAddress = {
+        ...formData,
+        id: crypto.randomUUID(),
+      };
+
+      let updatedList = [...addresses];
+
+      // If marking as default, unset previous default
+      if (newAddress.is_default) {
+        updatedList = updatedList.map((a) => ({ ...a, is_default: false }));
+      }
+
+      // If this is the first address, always make it default
+      if (updatedList.length === 0) {
+        newAddress.is_default = true;
+      }
+
+      updatedList.push(newAddress);
+
+      const ok = await persistAddresses(updatedList);
+      if (ok) {
+        setAddingNew(false);
+        showFeedback('Address added');
+      }
+    },
+    [addresses, persistAddresses, showFeedback]
+  );
+
+  // Edit an existing address
+  const handleEditSave = useCallback(
+    async (formData) => {
+      let updatedList = addresses.map((a) => {
+        if (a.id === editingId) {
+          return { ...a, ...formData };
+        }
+        return a;
+      });
+
+      // If setting this address as default, unset others
+      if (formData.is_default) {
+        updatedList = updatedList.map((a) =>
+          a.id === editingId ? a : { ...a, is_default: false }
+        );
+      }
+
+      // Guarantee at least one default exists
+      const hasDefault = updatedList.some((a) => a.is_default);
+      if (!hasDefault && updatedList.length > 0) {
+        updatedList[0].is_default = true;
+      }
+
+      const ok = await persistAddresses(updatedList);
+      if (ok) {
+        setEditingId(null);
+        showFeedback('Address updated');
+      }
+    },
+    [addresses, editingId, persistAddresses, showFeedback]
+  );
+
+  // Delete an address (cannot delete default)
+  const handleDelete = useCallback(
+    async (addressId) => {
+      const target = addresses.find((a) => a.id === addressId);
+      if (target?.is_default) return;
+
+      let updatedList = addresses.filter((a) => a.id !== addressId);
+
+      // If we removed the last non-default address and now have addresses, ensure one is default
+      const hasDefault = updatedList.some((a) => a.is_default);
+      if (!hasDefault && updatedList.length > 0) {
+        updatedList[0].is_default = true;
+      }
+
+      const ok = await persistAddresses(updatedList);
+      if (ok) {
+        showFeedback('Address removed');
+      }
+    },
+    [addresses, persistAddresses, showFeedback]
+  );
+
+  // Set a specific address as default
+  const handleSetDefault = useCallback(
+    async (addressId) => {
+      const updatedList = addresses.map((a) => ({
+        ...a,
+        is_default: a.id === addressId,
+      }));
+
+      const ok = await persistAddresses(updatedList);
+      if (ok) {
+        showFeedback('Default address updated');
+      }
+    },
+    [addresses, persistAddresses, showFeedback]
+  );
+
+  // Empty state
+  if (addresses.length === 0 && !addingNew) {
     return (
-      <motion.div variants={motionVariants.container} initial="hidden" animate="visible">
+      <motion.div variants={motionVariants.container} initial="hidden" animate="visible" className="space-y-4">
         <GlassCard className="p-6">
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <MapPin className="w-10 h-10 mb-3" style={{ color: 'var(--ws-muted)', opacity: 0.5 }} />
-            <p className="text-sm font-medium mb-1" style={{ color: 'var(--ws-text)' }}>No addresses on file</p>
-            <p className="text-xs" style={{ color: 'var(--ws-muted)' }}>
-              Contact your account manager to add delivery addresses.
+            <p className="text-sm font-medium mb-1" style={{ color: 'var(--ws-text)' }}>
+              No delivery addresses
             </p>
+            <p className="text-xs mb-5" style={{ color: 'var(--ws-muted)' }}>
+              Add one to speed up checkout.
+            </p>
+            <PrimaryButton size="sm" icon={Plus} onClick={() => setAddingNew(true)}>
+              Add Address
+            </PrimaryButton>
           </div>
         </GlassCard>
       </motion.div>
@@ -541,37 +806,219 @@ function AddressesTab({ client }) {
 
   return (
     <motion.div variants={motionVariants.container} initial="hidden" animate="visible" className="space-y-4">
+      {/* Header row */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <MapPin className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
+          <h3 className="text-base font-semibold" style={{ color: 'var(--ws-text)' }}>
+            Delivery Addresses
+          </h3>
+          <span
+            className="text-xs font-medium px-2 py-0.5 rounded-full"
+            style={{
+              background: 'color-mix(in srgb, var(--ws-primary) 10%, transparent)',
+              color: 'var(--ws-primary)',
+            }}
+          >
+            {addresses.length}
+          </span>
+        </div>
+        {!addingNew && (
+          <PrimaryButton size="sm" icon={Plus} onClick={() => { setAddingNew(true); setEditingId(null); }}>
+            Add Address
+          </PrimaryButton>
+        )}
+      </div>
+
+      {/* Feedback / Error */}
+      <AnimatePresence>
+        {feedback && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center gap-1.5 text-xs font-medium"
+            style={{ color: 'rgb(34, 197, 94)' }}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            {feedback}
+          </motion.div>
+        )}
+        {errorMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center gap-1.5 text-xs font-medium"
+            style={{ color: 'rgb(239, 68, 68)' }}
+          >
+            <AlertCircle className="w-3.5 h-3.5" />
+            {errorMsg}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Add New form (inline, above existing cards) */}
+      <AnimatePresence>
+        {addingNew && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <GlassCard className="p-5 sm:p-6" accentBar>
+              <div className="flex items-center gap-2.5 mb-4">
+                <Plus className="w-4 h-4" style={{ color: 'var(--ws-primary)' }} />
+                <p className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>
+                  New Delivery Address
+                </p>
+              </div>
+              <AddressForm
+                onSave={handleAddSave}
+                onCancel={() => setAddingNew(false)}
+                isSaving={saving}
+              />
+            </GlassCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Address cards */}
       {addresses.map((addr) => (
         <GlassCard key={addr.id} className="p-5 sm:p-6">
-          <div className="flex items-start gap-4">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
-              style={{
-                background: addr.isDefault
-                  ? 'color-mix(in srgb, var(--ws-primary) 12%, transparent)'
-                  : 'color-mix(in srgb, var(--ws-surface) 80%, transparent)',
-                border: addr.isDefault
-                  ? '1px solid color-mix(in srgb, var(--ws-primary) 25%, transparent)'
-                  : '1px solid var(--ws-border)',
-              }}
-            >
-              <MapPin className="w-5 h-5" style={{ color: addr.isDefault ? 'var(--ws-primary)' : 'var(--ws-muted)' }} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+          {editingId === addr.id ? (
+            /* ---------- Edit mode ---------- */
+            <div>
+              <div className="flex items-center gap-2.5 mb-4">
+                <Edit2 className="w-4 h-4" style={{ color: 'var(--ws-primary)' }} />
                 <p className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>
-                  {addr.label}
+                  Edit Address
                 </p>
-                {addr.isDefault && <StatusBadge status="success" label="Default" size="xs" />}
               </div>
-              <p className="text-sm" style={{ color: 'var(--ws-muted)' }}>
-                {[addr.street, addr.city, addr.zip].filter(Boolean).join(', ')}
-              </p>
-              {addr.country && (
-                <p className="text-xs mt-0.5" style={{ color: 'var(--ws-muted)' }}>{addr.country}</p>
-              )}
+              <AddressForm
+                initial={{
+                  label: addr.label || '',
+                  street: addr.street || '',
+                  city: addr.city || '',
+                  postal_code: addr.postal_code || '',
+                  state: addr.state || '',
+                  country: addr.country || '',
+                  is_default: !!addr.is_default,
+                }}
+                onSave={handleEditSave}
+                onCancel={() => setEditingId(null)}
+                isSaving={saving}
+              />
             </div>
-          </div>
+          ) : (
+            /* ---------- Display mode ---------- */
+            <div className="flex items-start gap-4">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+                style={{
+                  background: addr.is_default
+                    ? 'color-mix(in srgb, var(--ws-primary) 12%, transparent)'
+                    : 'color-mix(in srgb, var(--ws-surface) 80%, transparent)',
+                  border: addr.is_default
+                    ? '1px solid color-mix(in srgb, var(--ws-primary) 25%, transparent)'
+                    : '1px solid var(--ws-border)',
+                }}
+              >
+                <MapPin
+                  className="w-5 h-5"
+                  style={{ color: addr.is_default ? 'var(--ws-primary)' : 'var(--ws-muted)' }}
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+                  <p className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>
+                    {addr.label || 'Address'}
+                  </p>
+                  {addr.is_default && <StatusBadge status="success" label="Default" size="xs" />}
+                </div>
+                <p className="text-sm" style={{ color: 'var(--ws-muted)' }}>
+                  {[addr.street, addr.city, addr.postal_code].filter(Boolean).join(', ')}
+                </p>
+                {(addr.state || addr.country) && (
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--ws-muted)' }}>
+                    {[addr.state, addr.country].filter(Boolean).join(', ')}
+                  </p>
+                )}
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                {!addr.is_default && (
+                  <button
+                    type="button"
+                    title="Set as default"
+                    onClick={() => handleSetDefault(addr.id)}
+                    disabled={saving}
+                    className="p-2 rounded-lg transition-colors"
+                    style={{
+                      color: 'var(--ws-muted)',
+                      background: 'transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'color-mix(in srgb, var(--ws-primary) 10%, transparent)';
+                      e.currentTarget.style.color = 'var(--ws-primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = 'var(--ws-muted)';
+                    }}
+                  >
+                    <Check className="w-4 h-4" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  title="Edit"
+                  onClick={() => { setEditingId(addr.id); setAddingNew(false); }}
+                  disabled={saving}
+                  className="p-2 rounded-lg transition-colors"
+                  style={{
+                    color: 'var(--ws-muted)',
+                    background: 'transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'color-mix(in srgb, var(--ws-primary) 10%, transparent)';
+                    e.currentTarget.style.color = 'var(--ws-primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = 'var(--ws-muted)';
+                  }}
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                {!addr.is_default && (
+                  <button
+                    type="button"
+                    title="Delete"
+                    onClick={() => handleDelete(addr.id)}
+                    disabled={saving}
+                    className="p-2 rounded-lg transition-colors"
+                    style={{
+                      color: 'var(--ws-muted)',
+                      background: 'transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'color-mix(in srgb, rgb(239, 68, 68) 10%, transparent)';
+                      e.currentTarget.style.color = 'rgb(239, 68, 68)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = 'var(--ws-muted)';
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </GlassCard>
       ))}
     </motion.div>

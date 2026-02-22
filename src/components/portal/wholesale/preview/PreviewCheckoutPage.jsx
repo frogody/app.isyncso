@@ -199,7 +199,7 @@ function FormLabel({ htmlFor, required, children }) {
 
 function formatAddress(addr) {
   if (!addr || typeof addr !== 'object') return null;
-  return [addr.street, addr.city, addr.zip, addr.state, addr.country]
+  return [addr.street, addr.city, addr.postal_code || addr.zip, addr.state, addr.country]
     .filter(Boolean)
     .join(', ');
 }
@@ -212,8 +212,6 @@ function DeliveryDetailsStep({
   client,
   deliveryAddress,
   setDeliveryAddress,
-  poNumber,
-  setPoNumber,
   deliveryDate,
   setDeliveryDate,
   contactPerson,
@@ -223,31 +221,51 @@ function DeliveryDetailsStep({
   onContinue,
   onBack,
 }) {
-  const canContinue = poNumber?.trim()?.length > 0;
+  // Build address list from delivery_addresses array, fallback to legacy fields
+  const addresses = React.useMemo(() => {
+    const addrs = client?.delivery_addresses;
+    if (Array.isArray(addrs) && addrs.length > 0) return addrs;
 
-  // Build saved addresses from client data
-  const savedAddresses = [];
-  if (client?.shipping_address && Object.keys(client.shipping_address).length > 0) {
-    savedAddresses.push({
-      id: 'shipping',
-      label: 'Shipping Address',
-      full: formatAddress(client.shipping_address) || 'Shipping address on file',
-    });
-  }
-  if (client?.billing_address && Object.keys(client.billing_address).length > 0) {
-    savedAddresses.push({
-      id: 'billing',
-      label: 'Billing Address',
-      full: formatAddress(client.billing_address) || 'Billing address on file',
-    });
-  }
-  if (savedAddresses.length === 0) {
-    savedAddresses.push({
-      id: 'default',
-      label: 'Default',
-      full: 'No address on file - will use default',
-    });
-  }
+    // Fallback: build from legacy shipping/billing address
+    const legacy = [];
+    if (client?.shipping_address && Object.keys(client.shipping_address).length > 0) {
+      legacy.push({
+        id: 'shipping',
+        label: 'Shipping Address',
+        street: client.shipping_address.street || '',
+        city: client.shipping_address.city || '',
+        postal_code: client.shipping_address.postal_code || client.shipping_address.zip || '',
+        state: client.shipping_address.state || '',
+        country: client.shipping_address.country || '',
+        is_default: true,
+      });
+    }
+    if (client?.billing_address && Object.keys(client.billing_address).length > 0) {
+      legacy.push({
+        id: 'billing',
+        label: 'Billing Address',
+        street: client.billing_address.street || '',
+        city: client.billing_address.city || '',
+        postal_code: client.billing_address.postal_code || client.billing_address.zip || '',
+        state: client.billing_address.state || '',
+        country: client.billing_address.country || '',
+        is_default: legacy.length === 0,
+      });
+    }
+    return legacy;
+  }, [client]);
+
+  // Auto-select the default address on mount
+  useEffect(() => {
+    if (!deliveryAddress && addresses.length > 0) {
+      const def = addresses.find((a) => a.is_default) || addresses[0];
+      setDeliveryAddress(def.id);
+    }
+  }, [addresses, deliveryAddress, setDeliveryAddress]);
+
+  const selectedAddr = addresses.find((a) => a.id === deliveryAddress);
+  const hasValidAddress = selectedAddr && selectedAddr.street;
+  const canContinue = !!hasValidAddress;
 
   const paymentTerms = client?.payment_terms_days || 30;
   const creditLimit = Number(client?.credit_limit) || 0;
@@ -269,10 +287,8 @@ function DeliveryDetailsStep({
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center"
               style={{
-                background:
-                  'color-mix(in srgb, var(--ws-primary) 12%, transparent)',
-                border:
-                  '1px solid color-mix(in srgb, var(--ws-primary) 20%, transparent)',
+                background: 'color-mix(in srgb, var(--ws-primary) 12%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--ws-primary) 20%, transparent)',
               }}
             >
               <MapPin className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
@@ -288,44 +304,89 @@ function DeliveryDetailsStep({
                 Delivery Details
               </h2>
               <p className="text-xs" style={{ color: 'var(--ws-muted)' }}>
-                Select delivery address and enter order reference
+                Select a delivery address for this order
               </p>
             </div>
           </div>
 
-          {/* Delivery address selector */}
+          {/* Delivery address cards */}
           <div>
-            <FormLabel htmlFor="delivery-address" required>
-              Delivery Address
-            </FormLabel>
-            <GlassSelect
-              id="delivery-address"
-              value={deliveryAddress}
-              onChange={(e) => setDeliveryAddress(e.target.value)}
-            >
-              {savedAddresses.map((addr) => (
-                <option key={addr.id} value={addr.id}>
-                  {addr.label} - {addr.full}
-                </option>
-              ))}
-            </GlassSelect>
+            <FormLabel required>Delivery Address</FormLabel>
+            {addresses.length === 0 ? (
+              <div
+                className="rounded-xl px-5 py-8 text-center"
+                style={{
+                  background: 'rgba(239,68,68,0.06)',
+                  border: '1px dashed rgba(239,68,68,0.3)',
+                }}
+              >
+                <AlertTriangle className="w-6 h-6 mx-auto mb-2" style={{ color: '#ef4444' }} />
+                <p className="text-sm font-medium" style={{ color: '#ef4444' }}>
+                  No delivery addresses on file
+                </p>
+                <p className="text-xs mt-1" style={{ color: 'var(--ws-muted)' }}>
+                  Go to Account &gt; Addresses to add a delivery address before placing an order.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {addresses.map((addr) => {
+                  const isSelected = deliveryAddress === addr.id;
+                  const parts = [addr.street, addr.city, addr.postal_code, addr.country].filter(Boolean);
+                  return (
+                    <button
+                      key={addr.id}
+                      type="button"
+                      onClick={() => setDeliveryAddress(addr.id)}
+                      className="text-left rounded-xl p-4 transition-all duration-200"
+                      style={{
+                        background: isSelected
+                          ? 'color-mix(in srgb, var(--ws-primary) 8%, transparent)'
+                          : 'color-mix(in srgb, var(--ws-surface) 50%, transparent)',
+                        border: isSelected
+                          ? '2px solid var(--ws-primary)'
+                          : '1px solid var(--ws-border)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>
+                          {addr.label || 'Address'}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {addr.is_default && (
+                            <span
+                              className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full"
+                              style={{
+                                background: 'color-mix(in srgb, var(--ws-primary) 15%, transparent)',
+                                color: 'var(--ws-primary)',
+                              }}
+                            >
+                              Default
+                            </span>
+                          )}
+                          {isSelected && (
+                            <div
+                              className="w-5 h-5 rounded-full flex items-center justify-center"
+                              style={{ background: 'var(--ws-primary)' }}
+                            >
+                              <Check className="w-3 h-3" style={{ color: '#fff' }} />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-xs leading-relaxed" style={{ color: 'var(--ws-muted)' }}>
+                        {parts.join(', ') || 'No address details'}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* PO Number + Delivery Date row */}
+          {/* Delivery Date + Contact Person row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div>
-              <FormLabel htmlFor="po-number" required>
-                PO Number
-              </FormLabel>
-              <GlassInput
-                id="po-number"
-                type="text"
-                value={poNumber}
-                onChange={(e) => setPoNumber(e.target.value)}
-                placeholder="e.g. PO-2026-00382"
-                style={{ fontFamily: 'monospace' }}
-              />
-            </div>
             <div>
               <FormLabel htmlFor="delivery-date">
                 Requested Delivery Date
@@ -337,20 +398,18 @@ function DeliveryDetailsStep({
                 onChange={(e) => setDeliveryDate(e.target.value)}
               />
             </div>
-          </div>
-
-          {/* Contact person */}
-          <div>
-            <FormLabel htmlFor="contact-person">
-              Contact Person
-            </FormLabel>
-            <GlassInput
-              id="contact-person"
-              type="text"
-              value={contactPerson}
-              onChange={(e) => setContactPerson(e.target.value)}
-              placeholder="Full name of contact person"
-            />
+            <div>
+              <FormLabel htmlFor="contact-person">
+                Contact Person
+              </FormLabel>
+              <GlassInput
+                id="contact-person"
+                type="text"
+                value={contactPerson}
+                onChange={(e) => setContactPerson(e.target.value)}
+                placeholder="Full name of contact person"
+              />
+            </div>
           </div>
 
           {/* Special instructions */}
@@ -365,6 +424,19 @@ function DeliveryDetailsStep({
               placeholder="Dock number, delivery window, handling requirements..."
               rows={3}
             />
+          </div>
+
+          {/* Auto PO info */}
+          <div
+            className="rounded-lg px-4 py-3 flex items-center gap-3 text-xs"
+            style={{
+              background: 'color-mix(in srgb, var(--ws-primary) 5%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--ws-primary) 15%, transparent)',
+              color: 'var(--ws-muted)',
+            }}
+          >
+            <FileText className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--ws-primary)' }} />
+            A PO number will be automatically generated when the order is placed.
           </div>
         </div>
       </GlassCard>
@@ -511,16 +583,21 @@ function OrderReviewStep({
     moqViolations = [],
   } = cart;
 
-  // Build selected address label from client data
-  let selectedAddressLabel = 'Default Address';
+  // Resolve selected address from delivery_addresses array
+  let selectedAddressLabel = 'Delivery Address';
   let selectedAddressFull = 'No address specified';
   if (client) {
-    if (deliveryAddress === 'shipping' && client.shipping_address) {
-      selectedAddressLabel = 'Shipping Address';
-      selectedAddressFull = formatAddress(client.shipping_address) || 'Shipping address on file';
+    const allAddrs = Array.isArray(client.delivery_addresses) ? client.delivery_addresses : [];
+    const found = allAddrs.find((a) => a.id === deliveryAddress);
+    if (found) {
+      selectedAddressLabel = found.label || 'Delivery Address';
+      selectedAddressFull = formatAddress(found) || 'Address on file';
     } else if (deliveryAddress === 'billing' && client.billing_address) {
       selectedAddressLabel = 'Billing Address';
       selectedAddressFull = formatAddress(client.billing_address) || 'Billing address on file';
+    } else if (client.shipping_address) {
+      selectedAddressLabel = 'Shipping Address';
+      selectedAddressFull = formatAddress(client.shipping_address) || 'Shipping address on file';
     }
   }
 
@@ -881,11 +958,16 @@ function VerifyEmailStep({
     return `${m}:${String(sec).padStart(2, '0')}`;
   };
 
-  // Resolve shipping address display
-  const shippingAddr = deliveryAddress === 'billing'
-    ? (client?.billing_address || client?.shipping_address || {})
-    : (client?.shipping_address || {});
-  const addrParts = [shippingAddr.street, shippingAddr.city, shippingAddr.postal_code, shippingAddr.country].filter(Boolean);
+  // Resolve shipping address display from delivery_addresses array
+  const resolvedAddr = (() => {
+    const allAddrs = Array.isArray(client?.delivery_addresses) ? client.delivery_addresses : [];
+    const found = allAddrs.find((a) => a.id === deliveryAddress);
+    if (found) return found;
+    // Fallback to legacy fields
+    if (deliveryAddress === 'billing') return client?.billing_address || client?.shipping_address || {};
+    return client?.shipping_address || {};
+  })();
+  const addrParts = [resolvedAddr.street, resolvedAddr.city, resolvedAddr.postal_code, resolvedAddr.country].filter(Boolean);
 
   return (
     <motion.div
@@ -1192,7 +1274,7 @@ function VerifyEmailStep({
 // Step 4 -- Order Submitted Confirmation
 // ---------------------------------------------------------------------------
 
-function ConfirmationStep({ nav, orderNumber }) {
+function ConfirmationStep({ nav, orderNumber, poNumber }) {
   return (
     <motion.div
       key="step-4"
@@ -1239,6 +1321,30 @@ function ConfirmationStep({ nav, orderNumber }) {
           {orderNumber || 'Processing...'}
         </span>
       </motion.div>
+
+      {/* PO number badge */}
+      {poNumber && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.6, duration: 0.4 }}
+          className="inline-flex items-center gap-3 px-5 py-2.5 rounded-xl mb-4"
+          style={{
+            ...glassCardStyle,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+          }}
+        >
+          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--ws-muted)' }}>
+            PO Number
+          </span>
+          <span
+            className="text-sm font-bold font-mono tracking-wider"
+            style={{ color: 'var(--ws-text)' }}
+          >
+            {poNumber}
+          </span>
+        </motion.div>
+      )}
 
       {/* Status explanation */}
       <motion.p
@@ -1318,14 +1424,15 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
   const { goToHome, goToCatalog, goToCart, goToOrders, goBack } = nav;
 
   const [step, setStep] = useState(1);
-  const [deliveryAddress, setDeliveryAddress] = useState('shipping');
-  const [poNumber, setPoNumber] = useState(cartPoNumber || '');
+  const [deliveryAddress, setDeliveryAddress] = useState(null); // address ID from delivery_addresses
+  const [poNumber] = useState(cartPoNumber || ''); // kept for cart sync only; not user-editable
   const [deliveryDate, setDeliveryDate] = useState(cartDeliveryDate || '');
   const [contactPerson, setContactPerson] = useState(client?.full_name || '');
   const [specialInstructions, setSpecialInstructions] = useState(cartOrderNotes || '');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [confirmedOrderNumber, setConfirmedOrderNumber] = useState(null);
+  const [confirmedPoNumber, setConfirmedPoNumber] = useState(null);
   const clearedRef = useRef(false);
 
   // OTP verification state
@@ -1391,21 +1498,24 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
     setSubmitError(null);
 
     try {
-      // Resolve the shipping address JSONB from the selected option
-      const shippingAddr = deliveryAddress === 'billing'
-        ? (client.billing_address || client.shipping_address || {})
-        : (client.shipping_address || {});
+      // Resolve the shipping address from delivery_addresses array
+      const allAddresses = Array.isArray(client.delivery_addresses) ? client.delivery_addresses : [];
+      const selectedAddr = allAddresses.find((a) => a.id === deliveryAddress);
+      const shippingAddr = selectedAddr
+        ? { street: selectedAddr.street, city: selectedAddr.city, postal_code: selectedAddr.postal_code, state: selectedAddr.state, country: selectedAddr.country }
+        : (deliveryAddress === 'billing'
+          ? (client.billing_address || client.shipping_address || {})
+          : (client.shipping_address || {}));
 
       const billingAddr = client.billing_address || client.shipping_address || {};
 
-      // Build combined notes
+      // Build combined notes (PO is auto-generated by DB trigger)
       const notes = [
-        poNumber ? `PO: ${poNumber}` : '',
         contactPerson ? `Contact: ${contactPerson}` : '',
         specialInstructions || '',
       ].filter(Boolean).join(' | ');
 
-      // Create the order
+      // Create the order (po_number auto-generated by trigger)
       const order = await createB2BOrder({
         organization_id: orgId,
         company_id: orgId,
@@ -1447,6 +1557,10 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
       }
 
       setConfirmedOrderNumber(order.order_number || order.id);
+      // Store PO number for confirmation display
+      if (order.po_number) {
+        setConfirmedPoNumber(order.po_number);
+      }
       goToStep(4);
     } catch (err) {
       console.error('[PreviewCheckoutPage] Order creation failed:', err);
@@ -1571,7 +1685,7 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
   }, [step, clearCart]);
 
   // -- Empty cart guard (except on confirmation step) -------------------------
-  if ((!items || items.length === 0) && step !== 4) {
+  if ((!items || items.length === 0) && step < 3) {
     return (
       <div
         className="w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
@@ -1630,8 +1744,6 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
             client={client}
             deliveryAddress={deliveryAddress}
             setDeliveryAddress={setDeliveryAddress}
-            poNumber={poNumber}
-            setPoNumber={setPoNumber}
             deliveryDate={deliveryDate}
             setDeliveryDate={setDeliveryDate}
             contactPerson={contactPerson}
@@ -1683,7 +1795,7 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
           />
         )}
 
-        {step === 4 && <ConfirmationStep nav={nav} orderNumber={confirmedOrderNumber} />}
+        {step === 4 && <ConfirmationStep nav={nav} orderNumber={confirmedOrderNumber} poNumber={confirmedPoNumber} />}
       </AnimatePresence>
     </div>
   );
