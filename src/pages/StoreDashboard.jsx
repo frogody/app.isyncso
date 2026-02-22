@@ -181,6 +181,7 @@ export default function StoreDashboard() {
   });
 
   const [recentOrders, setRecentOrders] = useState([]);
+  const [storeUrl, setStoreUrl] = useState(null);
 
   const activeChannels = useMemo(
     () => Object.values(channels).filter((c) => c.connected).length,
@@ -291,6 +292,19 @@ export default function StoreDashboard() {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    if (!organizationId) return;
+    supabase
+      .from('portal_settings')
+      .select('store_subdomain, custom_domain')
+      .eq('organization_id', organizationId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.custom_domain) setStoreUrl(`https://${data.custom_domain}`);
+        else if (data?.store_subdomain) setStoreUrl(`https://${data.store_subdomain}.syncstore.business`);
+      });
+  }, [organizationId]);
+
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
@@ -351,15 +365,30 @@ export default function StoreDashboard() {
               <p className="text-xs text-zinc-500">Unified overview across all sales channels</p>
             </div>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={fetchData}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-zinc-700/50 bg-zinc-800/30 text-zinc-300 hover:bg-zinc-800/60 hover:text-white transition-all text-sm font-medium"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Refresh
-          </motion.button>
+          <div className="flex items-center gap-2">
+            {storeUrl && (
+              <motion.a
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                href={storeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 hover:text-cyan-300 transition-all text-sm font-medium"
+              >
+                <Globe className="w-4 h-4" />
+                Visit Store
+              </motion.a>
+            )}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={fetchData}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-zinc-700/50 bg-zinc-800/30 text-zinc-300 hover:bg-zinc-800/60 hover:text-white transition-all text-sm font-medium"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </motion.button>
+          </div>
         </motion.div>
 
         {/* Error */}
