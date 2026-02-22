@@ -1,10 +1,9 @@
 // ---------------------------------------------------------------------------
 // PreviewCheckoutPage.jsx -- Premium B2B wholesale "Place Order" flow.
-// 3-step process: Delivery Details -> Order Review -> Confirmation.
-// Creates REAL orders via createB2BOrder / createB2BOrderItems when
-// a client is authenticated. In preview mode (no client), order placement
-// is disabled with a sign-in prompt.
-// Uses CSS custom properties (--ws-*) for theming + design system components.
+// 4-step process: Delivery Details -> Order Review -> Verify Email -> Confirmation.
+// After review, a 6-digit OTP is sent to the buyer's email. The order is
+// only created once the code is verified. Uses CSS custom properties
+// (--ws-*) for theming + design system components.
 // ---------------------------------------------------------------------------
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
@@ -27,6 +26,8 @@ import {
   ShoppingCart,
   LogIn,
   Loader2,
+  ShieldCheck,
+  RefreshCw,
 } from 'lucide-react';
 import {
   GlassCard,
@@ -53,7 +54,10 @@ import { processOrderPlaced } from '@/lib/b2b/processB2BOrder';
 // Constants
 // ---------------------------------------------------------------------------
 
-const STEP_LABELS = ['Delivery Details', 'Order Review', 'Confirmation'];
+const STEP_LABELS = ['Delivery Details', 'Order Review', 'Verify Email', 'Confirmation'];
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // ---------------------------------------------------------------------------
 // StepIndicator -- Glass-morphism 3-step progress bar
@@ -733,9 +737,9 @@ function OrderReviewStep({
         <PrimaryButton
           onClick={onSubmit}
           disabled={!canSubmit}
-          icon={submitting ? Loader2 : ChevronRight}
+          icon={submitting ? Loader2 : ShieldCheck}
         >
-          {submitting ? 'Placing Order...' : isAuthenticated ? 'Submit Order' : 'Sign in to Place Order'}
+          {submitting ? 'Sending Code...' : isAuthenticated ? 'Continue to Verification' : 'Sign in to Place Order'}
         </PrimaryButton>
       </div>
     </motion.div>
@@ -782,13 +786,277 @@ function AnimatedCheckmark() {
 }
 
 // ---------------------------------------------------------------------------
-// Step 3 -- Order Submitted Confirmation
+// Step 3 -- Verify Email OTP
+// ---------------------------------------------------------------------------
+
+function maskEmail(email) {
+  if (!email) return '***';
+  const [local, domain] = email.split('@');
+  if (!domain) return '***';
+  const visible = local.slice(0, Math.min(2, local.length));
+  return `${visible}${'*'.repeat(Math.max(0, local.length - visible.length))}@${domain}`;
+}
+
+function VerifyEmailStep({
+  client,
+  otpCode,
+  setOtpCode,
+  otpError,
+  otpExpiresAt,
+  otpVerifying,
+  otpVerified,
+  otpAttemptsRemaining,
+  resendCooldown,
+  submitting,
+  submitError,
+  onVerify,
+  onResend,
+  onRetryOrder,
+  onBack,
+}) {
+  const inputRefs = useRef([]);
+
+  // Focus first empty input on mount
+  useEffect(() => {
+    const firstEmpty = otpCode.findIndex((d) => !d);
+    const idx = firstEmpty >= 0 ? firstEmpty : 0;
+    inputRefs.current[idx]?.focus();
+  }, []);
+
+  // Countdown timer for expiry
+  const [timeLeft, setTimeLeft] = useState(null);
+  useEffect(() => {
+    if (!otpExpiresAt) return;
+    const tick = () => {
+      const diff = Math.max(0, Math.floor((new Date(otpExpiresAt).getTime() - Date.now()) / 1000));
+      setTimeLeft(diff);
+    };
+    tick();
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
+  }, [otpExpiresAt]);
+
+  const expired = timeLeft !== null && timeLeft <= 0;
+  const allFilled = otpCode.every((d) => d !== '');
+
+  const handleChange = (idx, value) => {
+    // Only accept digits
+    const digit = value.replace(/\D/g, '').slice(-1);
+    const next = [...otpCode];
+    next[idx] = digit;
+    setOtpCode(next);
+    if (digit && idx < 5) {
+      inputRefs.current[idx + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (idx, e) => {
+    if (e.key === 'Backspace' && !otpCode[idx] && idx > 0) {
+      inputRefs.current[idx - 1]?.focus();
+    }
+    if (e.key === 'Enter' && allFilled && !expired) {
+      onVerify();
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const text = (e.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+    if (!text) return;
+    const next = [...otpCode];
+    for (let i = 0; i < 6; i++) {
+      next[i] = text[i] || '';
+    }
+    setOtpCode(next);
+    const focusIdx = Math.min(text.length, 5);
+    inputRefs.current[focusIdx]?.focus();
+  };
+
+  const formatTime = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${String(sec).padStart(2, '0')}`;
+  };
+
+  return (
+    <motion.div
+      key="step-3-verify"
+      variants={motionVariants.fadeIn}
+      initial="hidden"
+      animate="visible"
+      exit={{ opacity: 0, y: -20, transition: { duration: 0.2 } }}
+      className="flex flex-col items-center"
+    >
+      <GlassCard hoverable={false} className="w-full max-w-md">
+        <div className="p-8 flex flex-col items-center text-center">
+          {/* Icon */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6"
+            style={{
+              background: 'color-mix(in srgb, var(--ws-primary) 12%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--ws-primary) 25%, transparent)',
+            }}
+          >
+            <Mail className="w-7 h-7" style={{ color: 'var(--ws-primary)' }} />
+          </motion.div>
+
+          {/* Title */}
+          <h2
+            className="text-xl font-bold mb-2"
+            style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font, var(--ws-font))' }}
+          >
+            Verify Your Email
+          </h2>
+          <p className="text-sm mb-6" style={{ color: 'var(--ws-muted)' }}>
+            To confirm your order, enter the 6-digit code sent to{' '}
+            <span className="font-semibold" style={{ color: 'var(--ws-text)' }}>
+              {maskEmail(client?.email)}
+            </span>
+          </p>
+
+          {/* OTP Inputs */}
+          <div className="flex items-center justify-center gap-2 mb-4" onPaste={handlePaste}>
+            {otpCode.map((digit, idx) => (
+              <React.Fragment key={idx}>
+                {idx === 3 && (
+                  <span
+                    className="text-lg font-bold mx-1"
+                    style={{ color: 'var(--ws-border)' }}
+                  >
+                    —
+                  </span>
+                )}
+                <input
+                  ref={(el) => (inputRefs.current[idx] = el)}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleChange(idx, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(idx, e)}
+                  disabled={otpVerifying || submitting}
+                  className="w-12 h-14 text-center text-2xl font-bold rounded-xl outline-none transition-all duration-200"
+                  style={{
+                    background: 'color-mix(in srgb, var(--ws-surface) 80%, transparent)',
+                    border: digit
+                      ? '2px solid var(--ws-primary)'
+                      : '1px solid var(--ws-border)',
+                    color: 'var(--ws-text)',
+                    fontFamily: "'Courier New', monospace",
+                    boxShadow: digit
+                      ? '0 0 12px color-mix(in srgb, var(--ws-primary) 15%, transparent)'
+                      : 'none',
+                  }}
+                />
+              </React.Fragment>
+            ))}
+          </div>
+
+          {/* Timer */}
+          {timeLeft !== null && !expired && (
+            <p className="text-xs mb-4" style={{ color: 'var(--ws-muted)' }}>
+              Code expires in{' '}
+              <span className="font-semibold font-mono" style={{ color: 'var(--ws-text)' }}>
+                {formatTime(timeLeft)}
+              </span>
+            </p>
+          )}
+
+          {expired && (
+            <p className="text-xs mb-4 font-semibold" style={{ color: '#ef4444' }}>
+              Code expired. Please request a new one.
+            </p>
+          )}
+
+          {/* Error */}
+          {otpError && (
+            <div
+              className="w-full rounded-xl px-4 py-3 mb-4 text-sm text-center"
+              style={{
+                background: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.25)',
+                color: '#ef4444',
+              }}
+            >
+              {otpError}
+            </div>
+          )}
+
+          {/* Submit error (order creation failed after OTP verified) */}
+          {otpVerified && submitError && (
+            <div
+              className="w-full rounded-xl px-4 py-3 mb-4 text-sm text-center"
+              style={{
+                background: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.25)',
+                color: '#ef4444',
+              }}
+            >
+              {submitError}
+            </div>
+          )}
+
+          {/* Verify button (or Retry if OTP passed but order failed) */}
+          {otpVerified && submitError ? (
+            <PrimaryButton
+              onClick={onRetryOrder}
+              disabled={submitting}
+              icon={submitting ? Loader2 : RefreshCw}
+              className="w-full mb-3"
+            >
+              {submitting ? 'Placing Order...' : 'Retry Order'}
+            </PrimaryButton>
+          ) : (
+            <PrimaryButton
+              onClick={onVerify}
+              disabled={!allFilled || expired || otpVerifying || submitting}
+              icon={otpVerifying || submitting ? Loader2 : ShieldCheck}
+              className="w-full mb-3"
+            >
+              {otpVerifying
+                ? 'Verifying...'
+                : submitting
+                ? 'Placing Order...'
+                : 'Verify & Place Order'}
+            </PrimaryButton>
+          )}
+
+          {/* Resend */}
+          <button
+            type="button"
+            onClick={onResend}
+            disabled={resendCooldown > 0 || otpVerifying || submitting}
+            className="text-sm font-medium transition-all hover:opacity-80 disabled:opacity-40"
+            style={{ color: 'var(--ws-primary)' }}
+          >
+            {resendCooldown > 0
+              ? `Resend code in ${resendCooldown}s`
+              : 'Resend Code'}
+          </button>
+        </div>
+      </GlassCard>
+
+      {/* Back button */}
+      <div className="flex items-center justify-start w-full max-w-md mt-6">
+        <SecondaryButton onClick={onBack} icon={ArrowLeft} disabled={otpVerifying || submitting}>
+          Back to Review
+        </SecondaryButton>
+      </div>
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Step 4 -- Order Submitted Confirmation
 // ---------------------------------------------------------------------------
 
 function ConfirmationStep({ nav, orderNumber }) {
   return (
     <motion.div
-      key="step-3"
+      key="step-4"
       variants={motionVariants.fadeIn}
       initial="hidden"
       animate="visible"
@@ -921,6 +1189,16 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
   const [confirmedOrderNumber, setConfirmedOrderNumber] = useState(null);
   const clearedRef = useRef(false);
 
+  // OTP verification state
+  const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
+  const [otpError, setOtpError] = useState(null);
+  const [otpExpiresAt, setOtpExpiresAt] = useState(null);
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpAttemptsRemaining, setOtpAttemptsRemaining] = useState(5);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
   // Update contact person when client loads
   useEffect(() => {
     if (client?.full_name && !contactPerson) {
@@ -954,6 +1232,120 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (_) {}
   }, []);
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const iv = setInterval(() => setResendCooldown((p) => Math.max(0, p - 1)), 1000);
+    return () => clearInterval(iv);
+  }, [resendCooldown]);
+
+  // Send OTP to buyer's email
+  const handleSendOTP = useCallback(async () => {
+    if (!isAuthenticated || !client?.email || !orgId) {
+      setSubmitError('You must be signed in to place an order.');
+      return;
+    }
+    setOtpSending(true);
+    setSubmitError(null);
+    setOtpError(null);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/b2b-checkout-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'send',
+          email: client.email,
+          organizationId: orgId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to send verification code');
+      setOtpExpiresAt(data.expiresAt);
+      setOtpAttemptsRemaining(5);
+      setOtpCode(['', '', '', '', '', '']);
+      setOtpVerified(false);
+      setResendCooldown(60);
+      goToStep(3);
+    } catch (err) {
+      setSubmitError(err.message || 'Failed to send verification code');
+    } finally {
+      setOtpSending(false);
+    }
+  }, [isAuthenticated, client, orgId, goToStep]);
+
+  // Verify OTP code
+  const handleVerifyOTP = useCallback(async () => {
+    const code = otpCode.join('');
+    if (code.length !== 6 || !client?.email || !orgId) return;
+    setOtpVerifying(true);
+    setOtpError(null);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/b2b-checkout-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'verify',
+          email: client.email,
+          organizationId: orgId,
+          code,
+        }),
+      });
+      const data = await res.json();
+      if (data.verified) {
+        setOtpVerified(true);
+        setOtpVerifying(false);
+        // Now create the order
+        await handleSubmitOrder();
+      } else {
+        setOtpAttemptsRemaining(data.attemptsRemaining ?? 0);
+        setOtpError(data.message || 'Incorrect code');
+        setOtpCode(['', '', '', '', '', '']);
+      }
+    } catch (err) {
+      setOtpError(err.message || 'Verification failed');
+    } finally {
+      setOtpVerifying(false);
+    }
+  }, [otpCode, client, orgId]);
+
+  // Resend OTP
+  const handleResendOTP = useCallback(async () => {
+    if (resendCooldown > 0 || !client?.email || !orgId) return;
+    setOtpSending(true);
+    setOtpError(null);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/b2b-checkout-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'send',
+          email: client.email,
+          organizationId: orgId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to resend code');
+      setOtpExpiresAt(data.expiresAt);
+      setOtpAttemptsRemaining(5);
+      setOtpCode(['', '', '', '', '', '']);
+      setOtpVerified(false);
+      setResendCooldown(60);
+    } catch (err) {
+      setOtpError(err.message || 'Failed to resend code');
+    } finally {
+      setOtpSending(false);
+    }
+  }, [resendCooldown, client, orgId]);
 
   // Submit order -- creates a real B2B order in the database
   const handleSubmitOrder = useCallback(async () => {
@@ -1026,7 +1418,7 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
       setConfirmedOrderNumber(order.order_number || order.id);
 
       // Move to confirmation step
-      goToStep(3);
+      goToStep(4);
     } catch (err) {
       console.error('[PreviewCheckoutPage] Order creation failed:', err);
       setSubmitError(err.message || 'An unexpected error occurred. Please try again.');
@@ -1035,16 +1427,16 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
     }
   }, [isAuthenticated, client, orgId, items, subtotal, vat, volumeDiscount, total, deliveryAddress, poNumber, contactPerson, specialInstructions, goToStep]);
 
-  // Clear cart exactly once on reaching step 3
+  // Clear cart exactly once on reaching step 4 (confirmation)
   useEffect(() => {
-    if (step === 3 && !clearedRef.current) {
+    if (step === 4 && !clearedRef.current) {
       clearedRef.current = true;
       clearCart?.();
     }
   }, [step, clearCart]);
 
   // -- Empty cart guard (except on confirmation step) -------------------------
-  if ((!items || items.length === 0) && step !== 3) {
+  if ((!items || items.length === 0) && step !== 4) {
     return (
       <div
         className="w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
@@ -1086,6 +1478,8 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
             ? 'Configure delivery details for your order'
             : step === 2
             ? 'Review your order before submission'
+            : step === 3
+            ? 'Verify your identity to confirm the order'
             : 'Your order has been submitted'
         }
         className="mb-6"
@@ -1124,14 +1518,34 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
             deliveryDate={deliveryDate}
             contactPerson={contactPerson}
             specialInstructions={specialInstructions}
-            onSubmit={handleSubmitOrder}
+            onSubmit={handleSendOTP}
             onBack={() => goToStep(1)}
-            submitting={submitting}
+            submitting={otpSending}
             submitError={submitError}
           />
         )}
 
-        {step === 3 && <ConfirmationStep nav={nav} orderNumber={confirmedOrderNumber} />}
+        {step === 3 && (
+          <VerifyEmailStep
+            client={client}
+            otpCode={otpCode}
+            setOtpCode={setOtpCode}
+            otpError={otpError}
+            otpExpiresAt={otpExpiresAt}
+            otpVerifying={otpVerifying}
+            otpVerified={otpVerified}
+            otpAttemptsRemaining={otpAttemptsRemaining}
+            resendCooldown={resendCooldown}
+            submitting={submitting}
+            submitError={submitError}
+            onVerify={handleVerifyOTP}
+            onResend={handleResendOTP}
+            onRetryOrder={handleSubmitOrder}
+            onBack={() => goToStep(2)}
+          />
+        )}
+
+        {step === 4 && <ConfirmationStep nav={nav} orderNumber={confirmedOrderNumber} />}
       </AnimatePresence>
     </div>
   );
