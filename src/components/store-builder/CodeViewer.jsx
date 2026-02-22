@@ -103,20 +103,60 @@ function TreeItem({ node, depth = 0, expandedFolders, toggleFolder, activeFile, 
 
 // ── Code Panel with Line Numbers ────────────────────────────────────────────
 
-function CodePanel({ code, lang, filePath }) {
+function CodePanel({ code, lang, filePath, typing }) {
   const [copied, setCopied] = useState(false);
   const codeRef = useRef(null);
+  const [visibleChars, setVisibleChars] = useState(typing ? 0 : code.length);
+  const animRef = useRef(null);
+
+  // Typing animation: reveal characters progressively
+  useEffect(() => {
+    if (!typing) {
+      setVisibleChars(code.length);
+      return;
+    }
+    setVisibleChars(0);
+    let frame = 0;
+    const totalChars = code.length;
+    // Characters per frame — fast enough to feel like real coding
+    const charsPerTick = Math.max(2, Math.ceil(totalChars / 300));
+    const tick = () => {
+      frame += charsPerTick;
+      if (frame >= totalChars) {
+        setVisibleChars(totalChars);
+        return;
+      }
+      setVisibleChars(frame);
+      animRef.current = requestAnimationFrame(tick);
+    };
+    // Small initial delay
+    const timeout = setTimeout(() => {
+      animRef.current = requestAnimationFrame(tick);
+    }, 200);
+    return () => {
+      clearTimeout(timeout);
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, [typing, code]);
+
+  // When not typing, always show full code
+  useEffect(() => {
+    if (!typing) setVisibleChars(code.length);
+  }, [code, typing]);
+
+  const displayCode = typing ? code.slice(0, visibleChars) : code;
+  const isAnimating = typing && visibleChars < code.length;
 
   const highlighted = useMemo(() => {
     try {
       const grammar = languages[lang] || languages.jsx;
-      return highlight(code, grammar, lang);
+      return highlight(displayCode, grammar, lang);
     } catch {
-      return code;
+      return displayCode;
     }
-  }, [code, lang]);
+  }, [displayCode, lang]);
 
-  const lines = code.split('\n');
+  const lines = displayCode.split('\n');
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(code).then(() => {
@@ -125,16 +165,29 @@ function CodePanel({ code, lang, filePath }) {
     });
   }, [code]);
 
-  // Scroll to top when file changes
+  // Scroll to top when file changes, auto-scroll during typing
   useEffect(() => {
     if (codeRef.current) codeRef.current.scrollTop = 0;
   }, [filePath]);
+
+  useEffect(() => {
+    if (isAnimating && codeRef.current) {
+      codeRef.current.scrollTop = codeRef.current.scrollHeight;
+    }
+  }, [visibleChars, isAnimating]);
 
   return (
     <div className="flex flex-col h-full">
       {/* File header bar */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800/60 bg-zinc-900/50 flex-shrink-0">
-        <span className="text-[11px] text-zinc-500 font-mono truncate">{filePath}</span>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[11px] text-zinc-500 font-mono truncate">{filePath}</span>
+          {isAnimating && (
+            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium text-cyan-400 bg-cyan-500/10 animate-pulse">
+              writing...
+            </span>
+          )}
+        </div>
         <button
           onClick={handleCopy}
           className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/60 transition-colors"
@@ -162,6 +215,9 @@ function CodePanel({ code, lang, filePath }) {
               style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace" }}
               dangerouslySetInnerHTML={{ __html: highlighted }}
             />
+            {isAnimating && (
+              <span className="inline-block w-[2px] h-[14px] bg-cyan-400 ml-px animate-pulse align-middle" />
+            )}
           </pre>
         </div>
       </div>
@@ -171,7 +227,7 @@ function CodePanel({ code, lang, filePath }) {
 
 // ── Main CodeViewer ─────────────────────────────────────────────────────────
 
-export default function CodeViewer({ config }) {
+export default function CodeViewer({ config, typingEffect }) {
   // Build file tree from config
   const fileTree = useMemo(() => generateFileTree(config), [config]);
 
@@ -210,6 +266,26 @@ export default function CodeViewer({ config }) {
       return next;
     });
   }, []);
+
+  // When typing effect activates, switch to a meaningful file (first section component or store.json)
+  useEffect(() => {
+    if (!typingEffect) return;
+    // Find first section component file
+    const walk = (nodes) => {
+      for (const n of nodes) {
+        if (n.type === 'folder' && n.children) {
+          const found = walk(n.children);
+          if (found) return found;
+        }
+        if (n.type === 'file' && n.path.startsWith('store/components/') && n.name.endsWith('.jsx')) {
+          return n.path;
+        }
+      }
+      return null;
+    };
+    const target = walk(fileTree) || 'store/config/store.json';
+    setActiveFile(target);
+  }, [typingEffect, fileTree]);
 
   // Generate code for the active file
   const { code, lang } = useMemo(() => {
@@ -263,7 +339,7 @@ export default function CodeViewer({ config }) {
 
         {/* Code panel */}
         <div className="flex-1 min-w-0 bg-[#0d1117]">
-          <CodePanel code={code} lang={lang} filePath={activeFile} />
+          <CodePanel code={code} lang={lang} filePath={activeFile} typing={typingEffect} />
         </div>
       </div>
     </div>
