@@ -2177,9 +2177,9 @@ export default function SyncAgent() {
           style={{ opacity: 0 }}
         >
           {/* Messages */}
-          <div ref={scrollerRef} className="flex-1 min-h-0 flex flex-col overflow-y-auto px-4 pt-5 pb-3">
+          <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto px-4 pt-5 pb-3">
               {messages.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
+                <div className="h-full flex flex-col items-center justify-center text-center px-6">
                   <div className="relative mb-8">
                     <div className={cn('absolute inset-0 rounded-full blur-3xl scale-[3]', syt('bg-purple-200/20', 'bg-purple-500/10'))} />
                     <div className={cn(
@@ -2221,7 +2221,7 @@ export default function SyncAgent() {
                   </div>
                 </div>
               ) : (
-                <div className="mt-auto space-y-3">
+                <div className="space-y-3">
                   {messages.map((m, idx) => (
                     <Bubble key={idx} role={m.role} text={m.text} ts={m.ts} index={idx} document={m.document} highlightBorders={highlightBorders} />
                   ))}
@@ -2279,33 +2279,33 @@ export default function SyncAgent() {
                       </Button>
                     </div>
                   )}
+
+                  {/* Suggestion chips — inside scroll area, right after messages */}
+                  {messages.length > 0 && messages.length <= 4 && !isSending && (
+                    <div className="pt-2">
+                      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+                        {suggestions.map((s, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => { setInput(s.action); setTimeout(() => send(), 100); }}
+                            className={cn(
+                              'shrink-0 px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition-all duration-200',
+                              syt(
+                                'bg-slate-100 text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 ring-1 ring-slate-200/80',
+                                'bg-white/[0.04] text-zinc-400 hover:bg-cyan-500/10 hover:text-cyan-400 ring-1 ring-white/[0.06]'
+                              )
+                            )}
+                          >
+                            {s.isOrchestration && <Sparkles className="inline w-3 h-3 mr-1 opacity-50" />}
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-
-          {/* Suggestion chips — shown when few messages */}
-          {messages.length > 0 && messages.length <= 4 && !isSending && (
-            <div className="shrink-0 px-4 pb-2">
-              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
-                {suggestions.map((s, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => { setInput(s.action); setTimeout(() => send(), 100); }}
-                    className={cn(
-                      'shrink-0 px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition-all duration-200',
-                      syt(
-                        'bg-slate-100 text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 ring-1 ring-slate-200/80',
-                        'bg-white/[0.04] text-zinc-400 hover:bg-cyan-500/10 hover:text-cyan-400 ring-1 ring-white/[0.06]'
-                      )
-                    )}
-                  >
-                    {s.isOrchestration && <Sparkles className="inline w-3 h-3 mr-1 opacity-50" />}
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Input Area */}
           <div className="shrink-0 px-3 pb-3 pt-1">
