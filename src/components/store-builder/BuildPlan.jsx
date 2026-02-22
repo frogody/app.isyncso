@@ -23,7 +23,6 @@ function TaskRow({ task, index, animating }) {
       setStatus('done');
       return;
     }
-    // Stagger: each task starts after the previous one finishes
     const startDelay = index * 1200;
     const runDelay = startDelay + 400;
 
@@ -39,7 +38,6 @@ function TaskRow({ task, index, animating }) {
       transition={{ delay: animating ? index * 0.15 : 0, duration: 0.2 }}
       className="flex items-center gap-2 py-1"
     >
-      {/* Status icon */}
       {status === 'done' && (
         <motion.div
           initial={animating ? { scale: 0 } : { scale: 1 }}
@@ -55,8 +53,6 @@ function TaskRow({ task, index, animating }) {
       {status === 'pending' && (
         <Circle className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
       )}
-
-      {/* Label */}
       <span
         className={`text-[11px] leading-tight transition-colors duration-300 ${
           status === 'done'
@@ -78,7 +74,6 @@ export default function BuildPlan({ plan, animate }) {
   const [expanded, setExpanded] = useState(true);
   const hasAnimated = useRef(false);
 
-  // Only animate once
   const shouldAnimate = animate && !hasAnimated.current;
   useEffect(() => {
     if (animate) hasAnimated.current = true;
@@ -86,8 +81,9 @@ export default function BuildPlan({ plan, animate }) {
 
   if (!plan || !plan.tasks?.length) return null;
 
-  const doneCount = plan.tasks.length; // All tasks are "done" from AI
+  const doneCount = plan.tasks.length;
   const totalCount = plan.tasks.length;
+  const allDone = doneCount === totalCount;
 
   return (
     <div className="mx-4 mb-2 rounded-xl border border-zinc-800/80 bg-zinc-900/60 overflow-hidden">
@@ -96,13 +92,24 @@ export default function BuildPlan({ plan, animate }) {
         onClick={() => setExpanded((p) => !p)}
         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer"
       >
-        <div className="w-5 h-5 rounded-md bg-cyan-500/10 flex items-center justify-center shrink-0">
-          <ListChecks className="w-3 h-3 text-cyan-400" />
+        {/* Icon: checkmark when all done, list icon otherwise */}
+        <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
+          allDone ? 'bg-emerald-500/15' : 'bg-cyan-500/10'
+        }`}>
+          {allDone ? (
+            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+          ) : (
+            <ListChecks className="w-3 h-3 text-cyan-400" />
+          )}
         </div>
-        <span className="text-[11px] font-medium text-zinc-200 truncate flex-1 text-left">
+        <span className={`text-[11px] font-medium truncate flex-1 text-left ${
+          allDone ? 'text-emerald-300' : 'text-zinc-200'
+        }`}>
           {plan.title || 'Build Plan'}
         </span>
-        <span className="text-[10px] text-cyan-400 font-mono shrink-0">
+        <span className={`text-[10px] font-mono shrink-0 ${
+          allDone ? 'text-emerald-400' : 'text-cyan-400'
+        }`}>
           {doneCount}/{totalCount}
         </span>
         <ChevronDown
@@ -132,7 +139,11 @@ export default function BuildPlan({ plan, animate }) {
           {/* Progress bar */}
           <div className="mt-2 h-1 rounded-full bg-zinc-800 overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-full"
+              className={`h-full rounded-full ${
+                allDone
+                  ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
+                  : 'bg-gradient-to-r from-cyan-500 to-cyan-400'
+              }`}
               initial={shouldAnimate ? { width: '0%' } : { width: '100%' }}
               animate={{ width: '100%' }}
               transition={
