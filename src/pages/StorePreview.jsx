@@ -297,25 +297,19 @@ function MobileMenuDrawer({ isOpen, onClose, currentPage, onNavigate, onOpenSear
 // ---------------------------------------------------------------------------
 // Preview NavBar — fully interactive: search overlay, cart drawer, account
 // ---------------------------------------------------------------------------
-function PreviewNavBar({ config, sections, onOpenSearch, onOpenCart, onOpenAccount, accountBtnRef, cartItemCount = 0 }) {
-  const nav = config?.navigation || {};
-  const items = nav.items || [];
-  const logoPos = nav.logoPosition || 'left';
-  const [activeNavId, setActiveNavId] = useState(null);
+function PreviewNavBar({ config, currentPage, onNavigate, onOpenSearch, onOpenCart, onOpenAccount, accountBtnRef, cartItemCount = 0 }) {
+  const navConfig = config?.navigation || {};
+  const logoPos = navConfig.logoPosition || 'left';
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleNavClick = useCallback((item) => {
-    const key = (item.label || '').toLowerCase().trim();
-    const href = (item.href || '').replace(/^\//, '').toLowerCase().trim();
-    const sectionType = NAV_SECTION_MAP[key] || NAV_SECTION_MAP[href];
-    if (sectionType) {
-      scrollToSection(sectionType, sections);
-    }
-    setActiveNavId(item.id);
-  }, [sections]);
+  const NAV_LINKS = [
+    { id: 'catalog', label: 'Catalog' },
+    { id: 'orders', label: 'Orders' },
+    { id: 'account', label: 'Account' },
+  ];
 
   const LogoBrand = (
-    <div className="flex-shrink-0 flex items-center gap-2">
+    <button onClick={() => onNavigate('home')} className="flex-shrink-0 flex items-center gap-2 cursor-pointer">
       <div
         className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
         style={{ backgroundColor: 'var(--ws-primary, #06b6d4)', color: 'var(--ws-bg, #000)' }}
@@ -328,7 +322,7 @@ function PreviewNavBar({ config, sections, onOpenSearch, onOpenCart, onOpenAccou
       >
         {config?.seo?.title || 'Your Store'}
       </span>
-    </div>
+    </button>
   );
 
   return (
@@ -338,7 +332,7 @@ function PreviewNavBar({ config, sections, onOpenSearch, onOpenCart, onOpenAccou
         style={{
           backgroundColor: 'var(--ws-bg, #09090b)',
           borderBottom: '1px solid var(--ws-border, #27272a)',
-          position: nav.sticky ? 'sticky' : 'relative',
+          position: navConfig.sticky ? 'sticky' : 'relative',
           top: 0,
         }}
       >
@@ -350,16 +344,16 @@ function PreviewNavBar({ config, sections, onOpenSearch, onOpenCart, onOpenAccou
             {/* Nav Items */}
             <nav className="hidden md:flex items-center gap-1">
               {logoPos === 'center' && <div className="mr-6">{LogoBrand}</div>}
-              {items.map((item) => (
+              {NAV_LINKS.map((link) => (
                 <button
-                  key={item.id}
-                  onClick={() => handleNavClick(item)}
+                  key={link.id}
+                  onClick={() => onNavigate(link.id)}
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                    activeNavId === item.id ? 'bg-white/[0.08]' : 'hover:bg-white/[0.04]'
+                    currentPage === link.id ? 'bg-white/[0.08]' : 'hover:bg-white/[0.04]'
                   }`}
-                  style={{ color: activeNavId === item.id ? 'var(--ws-primary)' : 'var(--ws-muted, #a1a1aa)' }}
+                  style={{ color: currentPage === link.id ? 'var(--ws-primary)' : 'var(--ws-muted, #a1a1aa)' }}
                 >
-                  {item.label}
+                  {link.label}
                 </button>
               ))}
             </nav>
@@ -368,7 +362,7 @@ function PreviewNavBar({ config, sections, onOpenSearch, onOpenCart, onOpenAccou
 
             {/* Right Icons */}
             <div className="flex items-center gap-1.5 relative">
-              {nav.showSearch !== false && (
+              {navConfig.showSearch !== false && (
                 <button
                   onClick={onOpenSearch}
                   className="p-2 rounded-lg transition-colors hover:bg-white/[0.06]"
@@ -380,7 +374,7 @@ function PreviewNavBar({ config, sections, onOpenSearch, onOpenCart, onOpenAccou
                   </svg>
                 </button>
               )}
-              {nav.showCart !== false && (
+              {navConfig.showCart !== false && (
                 <button
                   onClick={onOpenCart}
                   className="p-2 rounded-lg transition-colors hover:bg-white/[0.06] relative"
@@ -398,7 +392,7 @@ function PreviewNavBar({ config, sections, onOpenSearch, onOpenCart, onOpenAccou
                   </span>
                 </button>
               )}
-              {nav.showAccount !== false && (
+              {navConfig.showAccount !== false && (
                 <button
                   ref={accountBtnRef}
                   onClick={onOpenAccount}
@@ -430,8 +424,8 @@ function PreviewNavBar({ config, sections, onOpenSearch, onOpenCart, onOpenAccou
       <MobileMenuDrawer
         isOpen={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        config={config}
-        sections={sections}
+        currentPage={currentPage}
+        onNavigate={onNavigate}
         onOpenSearch={onOpenSearch}
         onOpenCart={onOpenCart}
       />
@@ -658,9 +652,9 @@ export default function StorePreview() {
     if (!orgId) return;
     let cancelled = false;
     listB2BProducts(orgId, { limit: 100 })
-      .then((data) => {
-        if (cancelled || !data?.length) return;
-        setAllProducts(data);
+      .then((result) => {
+        if (cancelled || !result?.products?.length) return;
+        setAllProducts(result.products);
       })
       .catch((err) => console.warn('[StorePreview] Failed to load products:', err));
     return () => { cancelled = true; };
@@ -843,7 +837,8 @@ export default function StorePreview() {
         {/* Navigation Bar */}
         <PreviewNavBar
           config={config}
-          sections={sections}
+          currentPage={currentPage}
+          onNavigate={(page) => nav.navigateTo(page)}
           onOpenSearch={() => setSearchOpen(true)}
           onOpenCart={() => setCartOpen(true)}
           onOpenAccount={() => setAccountOpen((prev) => !prev)}
@@ -924,7 +919,7 @@ export default function StorePreview() {
         <PreviewFooter config={config} />
 
         {/* Overlays */}
-        <PreviewSearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} products={allProducts} nav={nav} />
+        <PreviewSearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} products={allProducts} nav={nav} cart={cart} />
         <PreviewCartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} cart={cart} nav={nav} />
 
         {/* Chat Widget */}
