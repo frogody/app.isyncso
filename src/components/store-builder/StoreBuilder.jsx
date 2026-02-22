@@ -29,10 +29,12 @@ import {
   Paperclip,
   FileText,
   ShoppingBag,
+  Code,
   X,
 } from 'lucide-react';
 
 import BuilderCanvas from './BuilderCanvas';
+import CodeViewer from './CodeViewer';
 
 import { useStoreBuilder } from './hooks/useStoreBuilder';
 import { useBuilderHistory } from './hooks/useBuilderHistory';
@@ -124,6 +126,7 @@ const NAV_SECTIONS = [
     items: [
       { key: 'store-settings', icon: Settings, label: 'Store Config' },
       { key: 'domain', icon: Globe, label: 'Domain' },
+      { key: 'code', icon: Code, label: 'Code' },
     ],
   },
 ];
@@ -832,6 +835,13 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
         return (
           <div className="flex-1 overflow-y-auto p-8 max-w-2xl">
             <DomainPage config={builder.config} onUpdateConfig={handleUpdateConfig} />
+          </div>
+        );
+
+      case 'code':
+        return (
+          <div className="flex-1 overflow-hidden">
+            <CodeViewer config={builder.config} />
           </div>
         );
 
