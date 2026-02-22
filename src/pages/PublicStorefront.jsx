@@ -707,6 +707,7 @@ export default function PublicStorefront({ subdomain }) {
   // Auth state
   const [portalClient, setPortalClient] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const portalClientRef = useRef(null); // Track resolved client for auth-change handler
 
   // Company and products
   const [companyId, setCompanyId] = useState(null);
@@ -796,6 +797,7 @@ export default function PublicStorefront({ subdomain }) {
           const client = await resolveClient(session.user.id, session.user.email);
           if (!cancelled) {
             setPortalClient(client);
+            portalClientRef.current = client;
             if (client) {
               // Update last login
               supabaseAuth.from('portal_clients')
@@ -818,14 +820,23 @@ export default function PublicStorefront({ subdomain }) {
     const { data: { subscription } } = supabaseAuth.auth.onAuthStateChange(async (event, newSession) => {
       if (cancelled) return;
       if (event === 'SIGNED_IN' && newSession?.user) {
-        setAuthLoading(true);
+        // Only show loading spinner on first sign-in (magic link callback).
+        // Skip for tab-focus token refreshes to preserve checkout/OTP state.
+        const alreadyResolved = !!portalClientRef.current;
+        if (!alreadyResolved) {
+          setAuthLoading(true);
+        }
         const client = await resolveClient(newSession.user.id, newSession.user.email);
         if (!cancelled) {
           setPortalClient(client);
+          portalClientRef.current = client;
           setAuthLoading(false);
         }
       } else if (event === 'SIGNED_OUT') {
-        if (!cancelled) setPortalClient(null);
+        if (!cancelled) {
+          setPortalClient(null);
+          portalClientRef.current = null;
+        }
       }
     });
 
