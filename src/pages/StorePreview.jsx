@@ -29,6 +29,18 @@ import LogoGridRenderer from '@/components/portal/wholesale/sections/LogoGridRen
 import { listB2BProducts, getB2BProduct } from '@/lib/db/queries/b2b';
 import supabase from '@/api/supabaseClient';
 
+// Preview page components
+import usePreviewCart from '@/components/portal/wholesale/preview/usePreviewCart';
+import usePreviewNavigation from '@/components/portal/wholesale/preview/usePreviewNavigation';
+import PreviewCartDrawer from '@/components/portal/wholesale/preview/PreviewCartDrawer';
+import PreviewSearchOverlay from '@/components/portal/wholesale/preview/PreviewSearchOverlay';
+import PreviewCatalogPage from '@/components/portal/wholesale/preview/PreviewCatalogPage';
+import PreviewProductDetailPage from '@/components/portal/wholesale/preview/PreviewProductDetailPage';
+import PreviewCartPage from '@/components/portal/wholesale/preview/PreviewCartPage';
+import PreviewCheckoutPage from '@/components/portal/wholesale/preview/PreviewCheckoutPage';
+import PreviewOrdersPage from '@/components/portal/wholesale/preview/PreviewOrdersPage';
+import PreviewAccountPage from '@/components/portal/wholesale/preview/PreviewAccountPage';
+
 const SECTION_MAP = {
   hero: HeroRenderer,
   featured_products: FeaturedProductsRenderer,
@@ -109,184 +121,9 @@ function scrollToSection(sectionType, sections) {
 }
 
 // ---------------------------------------------------------------------------
-// Search Overlay
-// ---------------------------------------------------------------------------
-function SearchOverlay({ isOpen, onClose }) {
-  const inputRef = useRef(null);
-
-  useEffect(() => {
-    if (isOpen && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 150);
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [isOpen, onClose]);
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[60] flex items-start justify-center pt-[15vh]"
-          style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
-          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-        >
-          <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.96 }}
-            transition={{ duration: 0.2 }}
-            className="w-full max-w-xl mx-4 rounded-2xl overflow-hidden"
-            style={{
-              backgroundColor: 'var(--ws-surface, #18181b)',
-              border: '1px solid var(--ws-border, #27272a)',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-            }}
-          >
-            <div className="flex items-center gap-3 px-5 py-4">
-              <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: 'var(--ws-muted)' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-              </svg>
-              <input
-                ref={inputRef}
-                type="text"
-                placeholder="Search products, categories..."
-                className="flex-1 bg-transparent text-base outline-none"
-                style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-font)' }}
-              />
-              <button
-                onClick={onClose}
-                className="text-xs px-2 py-1 rounded-md"
-                style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--ws-muted)' }}
-              >
-                ESC
-              </button>
-            </div>
-            <div
-              className="px-5 py-6 text-center text-sm"
-              style={{ color: 'var(--ws-muted)', borderTop: '1px solid var(--ws-border, #27272a)' }}
-            >
-              Start typing to search the catalog...
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Cart Drawer
-// ---------------------------------------------------------------------------
-function CartDrawer({ isOpen, onClose }) {
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [isOpen, onClose]);
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[60]"
-            style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
-            onClick={onClose}
-          />
-          <motion.aside
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed top-0 right-0 z-[61] h-full w-full max-w-[22rem] flex flex-col"
-            style={{
-              backgroundColor: 'var(--ws-bg, #09090b)',
-              borderLeft: '1px solid var(--ws-border, #27272a)',
-            }}
-          >
-            {/* Header */}
-            <div
-              className="flex items-center justify-between px-5 py-4 shrink-0"
-              style={{ borderBottom: '1px solid var(--ws-border, #27272a)' }}
-            >
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: 'var(--ws-primary)' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                </svg>
-                <h2
-                  className="text-base font-semibold"
-                  style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
-                >
-                  Cart
-                </h2>
-              </div>
-              <button
-                onClick={onClose}
-                className="p-2 rounded-lg hover:bg-white/[0.06] transition-colors"
-                style={{ color: 'var(--ws-muted)' }}
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Empty state */}
-            <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-              <div
-                className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
-                style={{ backgroundColor: 'rgba(255,255,255,0.04)' }}
-              >
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: 'var(--ws-muted)', opacity: 0.5 }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                </svg>
-              </div>
-              <h3
-                className="text-sm font-semibold mb-1"
-                style={{ color: 'var(--ws-text)' }}
-              >
-                Your cart is empty
-              </h3>
-              <p className="text-xs" style={{ color: 'var(--ws-muted)' }}>
-                Browse the catalog to add products.
-              </p>
-            </div>
-
-            {/* Footer */}
-            <div className="px-5 py-4 shrink-0" style={{ borderTop: '1px solid var(--ws-border, #27272a)' }}>
-              <button
-                className="w-full py-3 rounded-xl text-sm font-semibold transition-all opacity-50 cursor-not-allowed"
-                style={{ backgroundColor: 'var(--ws-primary)', color: 'var(--ws-bg)' }}
-                disabled
-              >
-                Checkout
-              </button>
-            </div>
-          </motion.aside>
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Account Dropdown
 // ---------------------------------------------------------------------------
-function AccountDropdown({ isOpen, onClose, anchorRef }) {
+function AccountDropdown({ isOpen, onClose, anchorRef, onNavigate }) {
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -306,8 +143,8 @@ function AccountDropdown({ isOpen, onClose, anchorRef }) {
   }, [isOpen, onClose, anchorRef]);
 
   const items = [
-    { label: 'My Account', icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z' },
-    { label: 'Order History', icon: 'M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z' },
+    { label: 'My Account', icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z', page: 'account' },
+    { label: 'Order History', icon: 'M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z', page: 'orders' },
     { label: 'Inquiries', icon: 'M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
     { label: 'Settings', icon: 'M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z' },
     { divider: true },
@@ -346,7 +183,12 @@ function AccountDropdown({ isOpen, onClose, anchorRef }) {
                   key={i}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/[0.04]"
                   style={{ color: item.danger ? '#ef4444' : 'var(--ws-muted)' }}
-                  onClick={onClose}
+                  onClick={() => {
+                    if (item.page && onNavigate) {
+                      onNavigate(item.page);
+                    }
+                    onClose();
+                  }}
                 >
                   <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
@@ -455,7 +297,7 @@ function MobileMenuDrawer({ isOpen, onClose, config, sections, onOpenSearch, onO
 // ---------------------------------------------------------------------------
 // Preview NavBar — fully interactive: search overlay, cart drawer, account
 // ---------------------------------------------------------------------------
-function PreviewNavBar({ config, sections, onOpenSearch, onOpenCart, onOpenAccount, accountBtnRef }) {
+function PreviewNavBar({ config, sections, onOpenSearch, onOpenCart, onOpenAccount, accountBtnRef, cartItemCount = 0 }) {
   const nav = config?.navigation || {};
   const items = nav.items || [];
   const logoPos = nav.logoPosition || 'left';
@@ -552,7 +394,7 @@ function PreviewNavBar({ config, sections, onOpenSearch, onOpenCart, onOpenAccou
                     className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center"
                     style={{ backgroundColor: 'var(--ws-primary, #06b6d4)', color: 'var(--ws-bg, #000)' }}
                   >
-                    0
+                    {cartItemCount}
                   </span>
                 </button>
               )}
@@ -791,507 +633,13 @@ function PreviewChatWidget() {
 }
 
 // ---------------------------------------------------------------------------
-// Main StorePreview Component
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// Page placeholders for pages not yet fully built
-// ---------------------------------------------------------------------------
-
-const PAGE_LABELS = {
-  home: 'Homepage',
-  catalog: 'Catalog',
-  cart: 'Cart',
-  orders: 'Orders',
-  account: 'Account',
-};
-
-function PlaceholderPage({ pageId, theme }) {
-  const label = PAGE_LABELS[pageId] || pageId;
-  return (
-    <div className="flex-1 flex items-center justify-center py-32 px-6">
-      <div className="flex flex-col items-center gap-4 max-w-md text-center">
-        <div
-          className="w-16 h-16 rounded-2xl flex items-center justify-center"
-          style={{ backgroundColor: 'color-mix(in srgb, var(--ws-primary, #06b6d4) 10%, transparent)' }}
-        >
-          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: 'var(--ws-primary, #06b6d4)' }}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-          </svg>
-        </div>
-        <h2
-          className="text-xl font-semibold"
-          style={{ color: 'var(--ws-text, #fafafa)', fontFamily: 'var(--ws-heading-font)' }}
-        >
-          {label}
-        </h2>
-        <p className="text-sm leading-relaxed" style={{ color: 'var(--ws-muted, #a1a1aa)' }}>
-          This page will display your store's {label.toLowerCase()} once published.
-          Use the AI chat to customize how it looks and feels.
-        </p>
-        <div
-          className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium"
-          style={{
-            border: '1px solid color-mix(in srgb, var(--ws-primary, #06b6d4) 30%, transparent)',
-            color: 'var(--ws-primary, #06b6d4)',
-            backgroundColor: 'color-mix(in srgb, var(--ws-primary, #06b6d4) 5%, transparent)',
-          }}
-        >
-          Preview — {label}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Catalog Page — renders a product grid from config.catalog
-// ---------------------------------------------------------------------------
-
-const SAMPLE_PRODUCTS = [
-  { id: 1, name: 'Premium Widget A', sku: 'WDG-001', price: 24.99, moq: 10, image: null, category: 'Hardware', stock: 'In Stock' },
-  { id: 2, name: 'Industrial Component B', sku: 'IND-002', price: 89.50, moq: 25, image: null, category: 'Components', stock: 'In Stock' },
-  { id: 3, name: 'Bulk Fastener Set', sku: 'FST-003', price: 12.75, moq: 5, image: null, category: 'Fasteners', stock: 'Low Stock' },
-  { id: 4, name: 'Precision Tool Kit', sku: 'TLK-004', price: 149.00, moq: 50, image: null, category: 'Tools', stock: 'In Stock' },
-  { id: 5, name: 'Safety Valve Assembly', sku: 'SVA-005', price: 312.00, moq: 3, image: null, category: 'Safety', stock: 'In Stock' },
-  { id: 6, name: 'Multi-Purpose Sealant', sku: 'SLT-006', price: 24.99, moq: 100, image: null, category: 'Consumables', stock: 'In Stock' },
-];
-
-function CatalogPage({ config, orgId }) {
-  const catalog = config?.catalog || {};
-  const columns = catalog.columns || 3;
-  const cardStyle = catalog.cardStyle || 'detailed';
-  const showFilters = catalog.showFilters !== false;
-  const showPricing = catalog.showPricing !== false;
-  const showStock = catalog.showStock !== false;
-
-  const [products, setProducts] = useState(SAMPLE_PRODUCTS);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!orgId) return;
-    let cancelled = false;
-    setLoading(true);
-
-    listB2BProducts(orgId, { limit: 24 })
-      .then((data) => {
-        if (cancelled || !data?.length) return;
-        const mapped = data.map((p) => ({
-          id: p.id,
-          name: p.name,
-          sku: p.physical_products?.[0]?.sku || p.sku || '',
-          price: p.b2b_price || p.wholesale_price || p.price || 0,
-          moq: p.min_order_quantity || 1,
-          image: p.featured_image || null,
-          category: p.product_categories?.name || 'Uncategorized',
-          stock: p.inventory?.[0]?.quantity_on_hand > 0 ? 'In Stock' : (p.inventory?.[0]?.quantity_on_hand === 0 ? 'Out of Stock' : 'In Stock'),
-        }));
-        setProducts(mapped);
-      })
-      .catch((err) => console.warn('[CatalogPage] Failed to fetch products:', err))
-      .finally(() => { if (!cancelled) setLoading(false); });
-
-    return () => { cancelled = true; };
-  }, [orgId]);
-
-  const categories = [...new Set(products.map((p) => p.category))];
-
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Page header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}>
-          Product Catalog
-        </h1>
-        <p className="text-sm" style={{ color: 'var(--ws-muted)' }}>
-          Browse our full range of wholesale products
-        </p>
-      </div>
-
-      <div className="flex gap-6">
-        {/* Filter sidebar */}
-        {showFilters && (
-          <div className="w-56 shrink-0 hidden lg:block">
-            <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--ws-surface)', border: '1px solid var(--ws-border)' }}>
-              <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--ws-text)' }}>Categories</h3>
-              {categories.map((cat) => (
-                <label key={cat} className="flex items-center gap-2 py-1.5 cursor-pointer">
-                  <div className="w-4 h-4 rounded border" style={{ borderColor: 'var(--ws-border)' }} />
-                  <span className="text-sm" style={{ color: 'var(--ws-muted)' }}>{cat}</span>
-                </label>
-              ))}
-              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--ws-border)' }}>
-                <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--ws-text)' }}>Price Range</h3>
-                <div className="h-1.5 rounded-full" style={{ backgroundColor: 'var(--ws-border)' }}>
-                  <div className="h-full w-3/5 rounded-full" style={{ backgroundColor: 'var(--ws-primary)' }} />
-                </div>
-                <div className="flex justify-between mt-1">
-                  <span className="text-[10px]" style={{ color: 'var(--ws-muted)' }}>$0</span>
-                  <span className="text-[10px]" style={{ color: 'var(--ws-muted)' }}>$500+</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Product grid */}
-        <div className="flex-1">
-          {/* Sort bar */}
-          <div className="flex items-center justify-between mb-4 pb-3" style={{ borderBottom: '1px solid var(--ws-border)' }}>
-            <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>{products.length} products</span>
-            <select className="text-xs px-2 py-1 rounded" style={{ backgroundColor: 'var(--ws-surface)', color: 'var(--ws-text)', border: '1px solid var(--ws-border)' }}>
-              <option>Sort by Name</option>
-              <option>Sort by Price</option>
-              <option>Newest First</option>
-            </select>
-          </div>
-
-          <div
-            className="grid gap-4"
-            style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
-          >
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="rounded-xl overflow-hidden transition-all hover:scale-[1.02]"
-                style={{ backgroundColor: 'var(--ws-surface)', border: '1px solid var(--ws-border)' }}
-              >
-                {/* Product image */}
-                <div
-                  className="aspect-square flex items-center justify-center overflow-hidden"
-                  style={{ backgroundColor: 'color-mix(in srgb, var(--ws-primary) 5%, var(--ws-bg))' }}
-                >
-                  {product.image ? (
-                    <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <svg className="w-12 h-12 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1} style={{ color: 'var(--ws-muted)' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
-                    </svg>
-                  )}
-                </div>
-
-                <div className={`p-3 ${cardStyle === 'compact' ? '' : 'space-y-2'}`}>
-                  {cardStyle !== 'minimal' && (
-                    <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--ws-primary)' }}>{product.category}</span>
-                  )}
-                  <h3 className="text-sm font-medium leading-tight" style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}>
-                    {product.name}
-                  </h3>
-                  {cardStyle === 'detailed' && product.sku && (
-                    <p className="text-[10px]" style={{ color: 'var(--ws-muted)' }}>SKU: {product.sku}</p>
-                  )}
-                  <div className="flex items-center justify-between pt-1">
-                    {showPricing && (
-                      <span className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>
-                        ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
-                      </span>
-                    )}
-                    {showStock && (
-                      <span
-                        className="text-[10px] px-1.5 py-0.5 rounded-full"
-                        style={{
-                          color: product.stock === 'In Stock' ? 'var(--ws-primary)' : 'var(--ws-muted)',
-                          backgroundColor: product.stock === 'In Stock'
-                            ? 'color-mix(in srgb, var(--ws-primary) 10%, transparent)'
-                            : 'color-mix(in srgb, var(--ws-muted) 10%, transparent)',
-                        }}
-                      >
-                        {product.stock}
-                      </span>
-                    )}
-                  </div>
-                  {cardStyle === 'detailed' && (
-                    <p className="text-[10px]" style={{ color: 'var(--ws-muted)' }}>MOQ: {product.moq} units</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Product Detail Page — renders from config.productDetail
-// ---------------------------------------------------------------------------
-
-function ProductDetailPage({ config, orgId }) {
-  const pd = config?.productDetail || {};
-  const imagePosition = pd.imagePosition || 'left';
-  const showSpecifications = pd.showSpecifications !== false;
-  const showRelatedProducts = pd.showRelatedProducts !== false;
-  const showInquiryButton = pd.showInquiryButton !== false;
-  const showBulkPricing = pd.showBulkPricing !== false;
-  const showSKU = pd.showSKU !== false;
-  const showCategories = pd.showCategories !== false;
-
-  const [product, setProduct] = useState(null);
-  const [relatedProducts, setRelatedProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  // Fetch a real product for preview
-  useEffect(() => {
-    if (!orgId) return;
-    let cancelled = false;
-    setLoading(true);
-
-    listB2BProducts(orgId, { limit: 5 })
-      .then((data) => {
-        if (cancelled || !data?.length) return;
-        const first = data[0];
-        setProduct({
-          name: first.name,
-          sku: first.physical_products?.[0]?.sku || first.sku || 'N/A',
-          price: first.b2b_price || first.wholesale_price || first.price || 0,
-          description: first.description || 'High-quality product designed for professional use.',
-          image: first.featured_image || null,
-          gallery: Array.isArray(first.gallery) ? first.gallery : [],
-          category: first.product_categories?.name || 'Products',
-          stock: first.inventory?.[0]?.quantity_on_hand,
-          specifications: first.physical_products?.[0]?.specifications || null,
-          moq: first.min_order_quantity || 1,
-        });
-        // Rest as related
-        if (data.length > 1) {
-          setRelatedProducts(data.slice(1).map((p) => ({
-            id: p.id,
-            name: p.name,
-            price: p.b2b_price || p.wholesale_price || p.price || 0,
-            image: p.featured_image || null,
-          })));
-        }
-      })
-      .catch((err) => console.warn('[ProductDetailPage] Failed to fetch product:', err))
-      .finally(() => { if (!cancelled) setLoading(false); });
-
-    return () => { cancelled = true; };
-  }, [orgId]);
-
-  // Fallback data when no real product
-  const p = product || {
-    name: 'Professional Widget Pro',
-    sku: 'WDG-PRO-001',
-    price: 149.99,
-    description: 'Industrial-grade precision widget designed for high-volume manufacturing environments. Built with premium stainless steel construction and backed by a 24-month warranty.',
-    image: null,
-    gallery: [],
-    category: 'Hardware',
-    stock: null,
-    specifications: null,
-    moq: 10,
-  };
-
-  const specs = p.specifications
-    ? Object.entries(p.specifications).map(([label, value]) => ({ label, value: String(value) }))
-    : [
-        { label: 'Material', value: 'Stainless Steel 304' },
-        { label: 'Weight', value: '2.4 kg' },
-        { label: 'Dimensions', value: '240 x 180 x 55 mm' },
-        { label: 'Operating Temp', value: '-20°C to 85°C' },
-        { label: 'Certification', value: 'ISO 9001, CE' },
-        { label: 'Warranty', value: '24 months' },
-      ];
-
-  const bulkPricing = [
-    { qty: '1-9', price: `$${p.price.toFixed(2)}` },
-    { qty: '10-49', price: `$${(p.price * 0.9).toFixed(2)}` },
-    { qty: '50-99', price: `$${(p.price * 0.8).toFixed(2)}` },
-    { qty: '100+', price: `$${(p.price * 0.67).toFixed(2)}` },
-  ];
-
-  const allImages = [p.image, ...(p.gallery || [])].filter(Boolean);
-
-  const stockLabel = p.stock != null
-    ? (p.stock > 0 ? 'In Stock' : 'Out of Stock')
-    : 'In Stock';
-  const stockColor = stockLabel === 'In Stock' ? 'var(--ws-primary)' : 'var(--ws-muted)';
-
-  const imageBlock = (
-    <div className="space-y-3">
-      {/* Main image */}
-      <div
-        className="aspect-square rounded-xl flex items-center justify-center overflow-hidden"
-        style={{ backgroundColor: 'color-mix(in srgb, var(--ws-primary) 5%, var(--ws-bg))', border: '1px solid var(--ws-border)' }}
-      >
-        {allImages.length > 0 ? (
-          <img src={allImages[0]} alt={p.name} className="w-full h-full object-cover" />
-        ) : (
-          <svg className="w-24 h-24 opacity-15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5} style={{ color: 'var(--ws-muted)' }}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
-          </svg>
-        )}
-      </div>
-      {/* Thumbnails */}
-      <div className="grid grid-cols-4 gap-2">
-        {(allImages.length > 1 ? allImages.slice(0, 4) : [null, null, null, null]).map((img, i) => (
-          <div
-            key={i}
-            className="aspect-square rounded-lg overflow-hidden"
-            style={{
-              backgroundColor: 'color-mix(in srgb, var(--ws-primary) 5%, var(--ws-bg))',
-              border: i === 0 ? '2px solid var(--ws-primary)' : '1px solid var(--ws-border)',
-            }}
-          >
-            {img && <img src={img} alt="" className="w-full h-full object-cover" />}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const detailBlock = (
-    <div className="space-y-6">
-      {showCategories && (
-        <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--ws-muted)' }}>
-          <span>Home</span>
-          <span>/</span>
-          <span>{p.category}</span>
-          <span>/</span>
-          <span style={{ color: 'var(--ws-primary)' }}>{p.name}</span>
-        </div>
-      )}
-
-      <div>
-        <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}>
-          {p.name}
-        </h1>
-        {showSKU && (
-          <p className="text-xs mb-3" style={{ color: 'var(--ws-muted)' }}>SKU: {p.sku}</p>
-        )}
-        <div className="flex items-baseline gap-3">
-          <span className="text-3xl font-bold" style={{ color: 'var(--ws-text)' }}>${typeof p.price === 'number' ? p.price.toFixed(2) : p.price}</span>
-          <span className="text-sm" style={{ color: 'var(--ws-muted)' }}>per unit</span>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: stockColor }} />
-        <span className="text-sm font-medium" style={{ color: stockColor }}>{stockLabel}</span>
-        {stockLabel === 'In Stock' && (
-          <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>-- Ships in 1-2 business days</span>
-        )}
-      </div>
-
-      <p className="text-sm leading-relaxed" style={{ color: 'var(--ws-muted)' }}>
-        {p.description}
-      </p>
-
-      {showBulkPricing && (
-        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--ws-border)' }}>
-          <div className="px-4 py-2.5" style={{ backgroundColor: 'color-mix(in srgb, var(--ws-primary) 5%, var(--ws-bg))' }}>
-            <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--ws-text)' }}>Volume Pricing</h3>
-          </div>
-          <div className="divide-y" style={{ borderColor: 'var(--ws-border)' }}>
-            {bulkPricing.map((tier) => (
-              <div key={tier.qty} className="flex justify-between px-4 py-2.5" style={{ borderColor: 'var(--ws-border)' }}>
-                <span className="text-sm" style={{ color: 'var(--ws-muted)' }}>{tier.qty} units</span>
-                <span className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>{tier.price}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="flex items-center gap-3">
-        <div className="flex items-center rounded-lg overflow-hidden" style={{ border: '1px solid var(--ws-border)' }}>
-          <button className="px-3 py-2 text-sm" style={{ color: 'var(--ws-text)', backgroundColor: 'var(--ws-surface)' }}>-</button>
-          <span className="px-4 py-2 text-sm font-medium" style={{ color: 'var(--ws-text)', backgroundColor: 'var(--ws-surface)', borderLeft: '1px solid var(--ws-border)', borderRight: '1px solid var(--ws-border)' }}>{p.moq}</span>
-          <button className="px-3 py-2 text-sm" style={{ color: 'var(--ws-text)', backgroundColor: 'var(--ws-surface)' }}>+</button>
-        </div>
-        <button
-          className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90"
-          style={{ backgroundColor: 'var(--ws-primary)', color: 'var(--ws-bg)' }}
-        >
-          Add to Cart -- ${(p.price * p.moq).toFixed(2)}
-        </button>
-      </div>
-
-      {showInquiryButton && (
-        <button
-          className="w-full py-2.5 rounded-lg text-sm font-medium transition-colors"
-          style={{ border: '1px solid var(--ws-primary)', color: 'var(--ws-primary)', backgroundColor: 'transparent' }}
-        >
-          Request Custom Quote
-        </button>
-      )}
-    </div>
-  );
-
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className={`grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12 ${imagePosition === 'right' ? 'direction-rtl' : ''}`}>
-        <div style={{ direction: 'ltr' }}>{imagePosition === 'right' ? detailBlock : imageBlock}</div>
-        <div style={{ direction: 'ltr' }}>{imagePosition === 'right' ? imageBlock : detailBlock}</div>
-      </div>
-
-      {showSpecifications && (
-        <div className="mb-12">
-          <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}>
-            Specifications
-          </h2>
-          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--ws-border)' }}>
-            {specs.map((spec, i) => (
-              <div
-                key={spec.label}
-                className="flex"
-                style={{
-                  borderTop: i > 0 ? '1px solid var(--ws-border)' : 'none',
-                  backgroundColor: i % 2 === 0 ? 'var(--ws-surface)' : 'transparent',
-                }}
-              >
-                <div className="w-40 px-4 py-3 text-sm font-medium" style={{ color: 'var(--ws-text)' }}>{spec.label}</div>
-                <div className="flex-1 px-4 py-3 text-sm" style={{ color: 'var(--ws-muted)' }}>{spec.value}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {showRelatedProducts && (
-        <div>
-          <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}>
-            Related Products
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {(relatedProducts.length > 0 ? relatedProducts.slice(0, 4) : SAMPLE_PRODUCTS.slice(0, 4)).map((rp) => (
-              <div
-                key={rp.id}
-                className="rounded-xl overflow-hidden"
-                style={{ backgroundColor: 'var(--ws-surface)', border: '1px solid var(--ws-border)' }}
-              >
-                <div
-                  className="aspect-square flex items-center justify-center overflow-hidden"
-                  style={{ backgroundColor: 'color-mix(in srgb, var(--ws-primary) 5%, var(--ws-bg))' }}
-                >
-                  {rp.image ? (
-                    <img src={rp.image} alt={rp.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <svg className="w-8 h-8 opacity-15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1} style={{ color: 'var(--ws-muted)' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
-                    </svg>
-                  )}
-                </div>
-                <div className="p-3">
-                  <h3 className="text-xs font-medium truncate" style={{ color: 'var(--ws-text)' }}>{rp.name}</h3>
-                  <span className="text-xs font-semibold" style={{ color: 'var(--ws-text)' }}>${typeof rp.price === 'number' ? rp.price.toFixed(2) : rp.price}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Main Preview Component
 // ---------------------------------------------------------------------------
 export default function StorePreview() {
   const { orgId: urlOrgId } = useParams();
   const [config, setConfig] = useState(null);
   const [currentPage, setCurrentPage] = useState('home');
+  const [pageData, setPageData] = useState(null);
   const [hoveredSectionId, setHoveredSectionId] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -1299,6 +647,24 @@ export default function StorePreview() {
   const accountBtnRef = useRef(null);
   const [messageOrgId, setMessageOrgId] = useState(null);
   const orgId = urlOrgId || messageOrgId || null;
+
+  // Preview cart and navigation hooks
+  const cart = usePreviewCart();
+  const nav = usePreviewNavigation(setCurrentPage, setPageData);
+
+  // Shared product loading for all preview pages
+  const [allProducts, setAllProducts] = useState([]);
+  useEffect(() => {
+    if (!orgId) return;
+    let cancelled = false;
+    listB2BProducts(orgId, { limit: 100 })
+      .then((data) => {
+        if (cancelled || !data?.length) return;
+        setAllProducts(data);
+      })
+      .catch((err) => console.warn('[StorePreview] Failed to load products:', err));
+    return () => { cancelled = true; };
+  }, [orgId]);
 
   // Listen for messages from the parent builder window
   useEffect(() => {
@@ -1312,6 +678,7 @@ export default function StorePreview() {
       }
       if (event.data.type === 'NAVIGATE_TO_PAGE' && event.data.pageId) {
         setCurrentPage(event.data.pageId);
+        setPageData(null);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
@@ -1380,14 +747,20 @@ export default function StorePreview() {
   const theme = config?.theme ?? {};
   const themeVars = useMemo(() => buildThemeVars(theme), [theme]);
 
-  // Mock WholesaleContext so FeaturedProductsRenderer doesn't crash.
+  // Mock WholesaleContext with real cart state
   const mockWholesaleValue = useMemo(() => ({
     config: config || { theme: {}, sections: [], navigation: [], footer: {} },
     storePublished: true, configLoading: false, configError: null,
-    orgId: orgId, client: null, clientLoading: false, isAuthenticated: false,
-    themeVars, cartItems: [], addToCart: () => {}, removeFromCart: () => {},
-    updateQuantity: () => {}, clearCart: () => {}, cartTotal: 0, cartCount: 0,
-  }), [config, themeVars, orgId]);
+    orgId, client: null, clientLoading: false, isAuthenticated: false,
+    themeVars,
+    cartItems: cart.items,
+    addToCart: cart.addItem,
+    removeFromCart: cart.removeItem,
+    updateQuantity: cart.updateQuantity,
+    clearCart: cart.clearCart,
+    cartTotal: cart.total,
+    cartCount: cart.itemCount,
+  }), [config, themeVars, orgId, cart.items, cart.total, cart.itemCount]);
 
   // Inject customHead into document head (Google Fonts, external styles, etc.)
   useEffect(() => {
@@ -1432,7 +805,7 @@ export default function StorePreview() {
     );
   }
 
-  if (sections.length === 0) {
+  if (sections.length === 0 && currentPage === 'home') {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
@@ -1464,6 +837,7 @@ export default function StorePreview() {
           onOpenCart={() => setCartOpen(true)}
           onOpenAccount={() => setAccountOpen((prev) => !prev)}
           accountBtnRef={accountBtnRef}
+          cartItemCount={cart.itemCount}
         />
 
         {/* Account dropdown (positioned relative to the right icons area) */}
@@ -1473,6 +847,7 @@ export default function StorePreview() {
               isOpen={accountOpen}
               onClose={() => setAccountOpen(false)}
               anchorRef={accountBtnRef}
+              onNavigate={(page) => nav.navigateTo(page)}
             />
           </div>
         </div>
@@ -1480,11 +855,17 @@ export default function StorePreview() {
         {/* Page content */}
         <main className="flex-1">
           {currentPage === 'catalog' ? (
-            <CatalogPage config={config} orgId={orgId} />
+            <PreviewCatalogPage config={config} products={allProducts} cart={cart} nav={nav} />
           ) : currentPage === 'product' ? (
-            <ProductDetailPage config={config} orgId={orgId} />
-          ) : currentPage !== 'home' ? (
-            <PlaceholderPage pageId={currentPage} theme={theme} />
+            <PreviewProductDetailPage config={config} products={allProducts} pageData={pageData} orgId={orgId} cart={cart} nav={nav} />
+          ) : currentPage === 'cart' ? (
+            <PreviewCartPage config={config} cart={cart} nav={nav} />
+          ) : currentPage === 'checkout' ? (
+            <PreviewCheckoutPage config={config} cart={cart} nav={nav} />
+          ) : currentPage === 'orders' ? (
+            <PreviewOrdersPage config={config} nav={nav} />
+          ) : currentPage === 'account' ? (
+            <PreviewAccountPage config={config} nav={nav} />
           ) : (
             sections.map((section) => {
               const Component = SECTION_MAP[section.type];
@@ -1514,17 +895,17 @@ export default function StorePreview() {
                       className="absolute top-2 left-2 z-20 px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-wider"
                       style={{
                         backgroundColor: 'var(--ws-primary, #06b6d4)',
-                      color: 'var(--ws-bg, #000)',
-                    }}
-                  >
-                    {section.type.replace(/_/g, ' ')}
-                  </div>
-                )}
+                        color: 'var(--ws-bg, #000)',
+                      }}
+                    >
+                      {section.type.replace(/_/g, ' ')}
+                    </div>
+                  )}
 
-                <Component section={section} theme={theme} />
-              </div>
-            );
-          })
+                  <Component section={section} theme={theme} />
+                </div>
+              );
+            })
           )}
         </main>
 
@@ -1532,8 +913,8 @@ export default function StorePreview() {
         <PreviewFooter config={config} />
 
         {/* Overlays */}
-        <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
-        <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
+        <PreviewSearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} products={allProducts} nav={nav} />
+        <PreviewCartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} cart={cart} nav={nav} />
 
         {/* Chat Widget */}
         <PreviewChatWidget />
