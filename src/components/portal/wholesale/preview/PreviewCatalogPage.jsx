@@ -61,12 +61,9 @@ const SORT_OPTIONS = [
 // ---------------------------------------------------------------------------
 
 function getEffectivePrice(product) {
-  return (
-    product.wholesale_price ??
-    product.b2b_price ??
-    product.price ??
-    null
-  );
+  const p = product.price;
+  if (p == null) return null;
+  return typeof p === 'string' ? parseFloat(p) || null : p;
 }
 
 function getMoq(product) {

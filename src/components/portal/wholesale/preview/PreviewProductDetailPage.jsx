@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   Layers,
 } from 'lucide-react';
+import supabase from '@/api/supabaseClient';
 import {
   GlassCard,
   SectionHeader,
@@ -46,12 +47,9 @@ import {
 
 function getProductPrice(product) {
   if (!product) return 0;
-  return (
-    product.b2b_price ??
-    product.wholesale_price ??
-    product.price ??
-    0
-  );
+  const p = product.price;
+  if (p == null) return 0;
+  return typeof p === 'string' ? parseFloat(p) || 0 : p;
 }
 
 function getStockStatus(product) {
@@ -598,17 +596,7 @@ function RelatedProducts({ products, currentProduct, nav }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Demo fallback data
-// ---------------------------------------------------------------------------
-
-const DEMO_SPECS = {
-  Weight: '2.4 kg',
-  Dimensions: '240 x 180 x 55 mm',
-  Material: 'Stainless Steel 304',
-  Color: 'Silver',
-  Warranty: '24 months',
-};
+// No demo fallback — show only real data
 
 // ---------------------------------------------------------------------------
 // Main Component
@@ -660,27 +648,52 @@ export default function PreviewProductDetailPage({
     }
   }, [product]);
 
-  // ---- Optionally fetch richer data from DB ----
+  // ---- Fetch physical product details + inventory from DB ----
   useEffect(() => {
-    const productId = pageData?.productId;
-    if (!productId || !orgId) return;
+    const productId = pageData?.productId || product?.id;
+    if (!productId) return;
     let cancelled = false;
 
-    async function fetchFromDB() {
+    async function fetchDetails() {
       try {
-        const { getB2BProduct } = await import('@/lib/db/queries/b2b');
-        const data = await getB2BProduct(productId);
-        if (!cancelled && data) setDbProduct(data);
+        // Fetch physical_products data (specifications, attributes, variants, pricing, shipping)
+        const { data: physData } = await supabase
+          .from('physical_products')
+          .select('specifications, attributes, variants, pricing, shipping')
+          .eq('product_id', productId)
+          .limit(1)
+          .single();
+
+        if (!cancelled && physData) {
+          setDbProduct((prev) => ({ ...prev, ...physData }));
+        }
       } catch {
-        // Silently ignore -- fallback to products array
+        // Silently ignore
+      }
+
+      try {
+        // Fetch inventory data
+        const { data: invData } = await supabase
+          .from('inventory')
+          .select('quantity_on_hand, quantity_reserved, quantity_incoming')
+          .eq('product_id', productId)
+          .limit(1)
+          .single();
+
+        if (!cancelled && invData) {
+          setDbProduct((prev) => ({
+            ...prev,
+            stock_quantity: (invData.quantity_on_hand || 0) - (invData.quantity_reserved || 0),
+          }));
+        }
+      } catch {
+        // Silently ignore
       }
     }
 
-    fetchFromDB();
-    return () => {
-      cancelled = true;
-    };
-  }, [pageData?.productId, orgId]);
+    fetchDetails();
+    return () => { cancelled = true; };
+  }, [pageData?.productId, product?.id]);
 
   // ---- Merge product data with DB data ----
   const mergedProduct = useMemo(() => {
@@ -688,19 +701,16 @@ export default function PreviewProductDetailPage({
     if (!dbProduct) return product;
     return {
       ...product,
-      featured_image:
-        dbProduct.featured_image || product.featured_image || product.image,
-      gallery_images:
-        dbProduct.gallery_images ||
-        dbProduct.gallery ||
-        product.gallery_images ||
-        product.gallery ||
-        [],
-      specifications:
-        dbProduct.physical_products?.[0]?.specifications ||
-        dbProduct.specifications ||
-        product.specifications,
-      description: dbProduct.description || product.description,
+      ...dbProduct,
+      // Keep product base fields
+      name: product.name,
+      id: product.id,
+      sku: product.sku,
+      price: product.price,
+      category: product.category,
+      featured_image: product.featured_image,
+      gallery: product.gallery,
+      description: product.description || dbProduct.description,
     };
   }, [product, dbProduct]);
 
@@ -725,7 +735,8 @@ export default function PreviewProductDetailPage({
 
   const specifications = useMemo(() => {
     if (mergedProduct?.specifications) return mergedProduct.specifications;
-    return DEMO_SPECS;
+    if (mergedProduct?.attributes) return mergedProduct.attributes;
+    return null;
   }, [mergedProduct]);
 
   // ---- Handlers ----
@@ -1005,7 +1016,7 @@ export default function PreviewProductDetailPage({
         </div>
 
         {/* Specifications */}
-        {showSpecifications && (
+        {showSpecifications && specifications && (
           <motion.div
             variants={motionVariants.fadeIn}
             initial="hidden"
@@ -1034,21 +1045,6 @@ export default function PreviewProductDetailPage({
             />
           </motion.div>
         )}
-
-        {/* Product documents */}
-        <motion.div
-          variants={motionVariants.fadeIn}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="mt-8"
-        >
-          <SectionHeader
-            title="Product Documents"
-            subtitle="Datasheets, certificates, and compliance documentation"
-          />
-          <ProductDocuments />
-        </motion.div>
 
         {/* Related products */}
         {showRelatedProducts && products.length > 1 && (
