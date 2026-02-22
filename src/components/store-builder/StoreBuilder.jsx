@@ -32,6 +32,7 @@ import {
   Code,
   X,
   Crosshair,
+  RefreshCw,
 } from 'lucide-react';
 
 import BuilderCanvas from './BuilderCanvas';
@@ -648,7 +649,7 @@ const DEVICES = [
   { key: 'mobile', icon: Smartphone, label: 'Mobile' },
 ];
 
-function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPublished, canUndo, canRedo, onUndo, onRedo, previewDevice, onDeviceChange, isPreviewMode, onToggleMode, currentPage, onNavigateToPage }) {
+function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPublished, canUndo, canRedo, onUndo, onRedo, previewDevice, onDeviceChange, isPreviewMode, onToggleMode, currentPage, onNavigateToPage, onRefresh }) {
   return (
     <div className="h-12 border-b border-zinc-800/60 bg-zinc-950 flex items-center px-3 shrink-0 gap-2">
       {/* Left */}
@@ -716,6 +717,13 @@ function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPubl
                 </button>
               ))}
             </div>
+            <button
+              onClick={onRefresh}
+              className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors"
+              title="Refresh preview"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
           </>
         )}
       </div>
@@ -1074,6 +1082,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
         onToggleMode={handleToggleMode}
         currentPage={currentPage}
         onNavigateToPage={handleNavigateToPage}
+        onRefresh={preview.refreshPreview}
       />
 
       {/* Main area */}
