@@ -698,7 +698,7 @@ export default function PublicStorefront({ subdomain }) {
     let cancelled = false;
     supabase
       .from('products')
-      .select('id, name, price, sku, featured_image, gallery, category, category_id, description, short_description, tags, ean, type, slug, inventory(quantity_on_hand, quantity_reserved, quantity_incoming), expected_deliveries(quantity_expected, quantity_remaining, status)')
+      .select('id, name, price, sku, featured_image, gallery, category, category_id, description, short_description, tags, ean, type, slug, inventory(quantity_on_hand, quantity_reserved, quantity_incoming), expected_deliveries(quantity_expected, quantity_received, status)')
       .eq('company_id', companyId)
       .eq('status', 'published')
       .eq('type', 'physical')
@@ -718,7 +718,7 @@ export default function PublicStorefront({ subdomain }) {
             const deliveries = Array.isArray(p.expected_deliveries) ? p.expected_deliveries : [];
             const expectedIncoming = deliveries
               .filter((d) => d.status === 'pending' || d.status === 'in_transit' || d.status === 'ordered')
-              .reduce((sum, d) => sum + (d.quantity_remaining ?? d.quantity_expected ?? 0), 0);
+              .reduce((sum, d) => sum + (Math.max(0, (d.quantity_expected ?? 0) - (d.quantity_received ?? 0))), 0);
             const totalIncoming = qtyIncoming + expectedIncoming;
             return {
               ...p,
