@@ -394,7 +394,8 @@ const CARD_COMPONENTS = {
 
 export default function FeaturedProductsRenderer({ section, theme }) {
   const navigate = useNavigate();
-  const { addToCart, orgId } = useWholesale();
+  const { addToCart, orgId, companyId: ctxCompanyId } = useWholesale();
+  const resolvedCompanyId = ctxCompanyId || orgId;
 
   const {
     heading = '',
@@ -410,7 +411,7 @@ export default function FeaturedProductsRenderer({ section, theme }) {
   const [productsLoading, setProductsLoading] = useState(true);
 
   useEffect(() => {
-    if (!orgId) {
+    if (!resolvedCompanyId) {
       setProducts(PLACEHOLDER_PRODUCTS.slice(0, maxItems));
       setProductsLoading(false);
       return;
@@ -426,15 +427,15 @@ export default function FeaturedProductsRenderer({ section, theme }) {
             .from('products')
             .select('id, name, price, sku, featured_image, b2b_price, wholesale_price')
             .in('id', productIds)
-            .eq('is_active', true)
+            .eq('status', 'published')
             .limit(maxItems);
         } else {
+          // Fetch published products for this company
           query = supabase
             .from('products')
-            .select('id, name, price, sku, featured_image, b2b_price, wholesale_price, product_sales_channels!inner(channel)')
-            .eq('product_sales_channels.channel', 'b2b')
-            .eq('is_active', true)
-            .eq('company_id', orgId)
+            .select('id, name, price, sku, featured_image, b2b_price, wholesale_price')
+            .eq('company_id', resolvedCompanyId)
+            .eq('status', 'published')
             .order('created_at', { ascending: false })
             .limit(maxItems);
         }
@@ -461,7 +462,7 @@ export default function FeaturedProductsRenderer({ section, theme }) {
 
     fetchProducts();
     return () => { cancelled = true; };
-  }, [orgId, JSON.stringify(productIds), maxItems]);
+  }, [resolvedCompanyId, JSON.stringify(productIds), maxItems]);
 
   const CardComponent = CARD_COMPONENTS[cardStyle] || DetailedCard;
   const gridClasses = getGridClasses(columns);

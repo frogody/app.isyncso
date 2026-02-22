@@ -647,16 +647,37 @@ export default function StorePreview() {
   const cart = usePreviewCart();
   const nav = usePreviewNavigation(setCurrentPage, setPageData);
 
-  // Shared product loading for all preview pages — fetch all published products
-  // directly from the products table. No sales-channel gating for the preview.
-  const [allProducts, setAllProducts] = useState([]);
+  // Resolve the company_id from the organization_id passed by the builder.
+  // The builder sends organization_id, but products use company_id (different table).
+  const [companyId, setCompanyId] = useState(null);
   useEffect(() => {
     if (!orgId) return;
+    let cancelled = false;
+    // First try: orgId might already be a company_id (check products directly)
+    supabase
+      .from('companies')
+      .select('id')
+      .eq('organization_id', orgId)
+      .limit(1)
+      .single()
+      .then(({ data }) => {
+        if (cancelled) return;
+        // If we found a company with this org_id, use its id
+        // Otherwise orgId itself might be the company_id
+        setCompanyId(data?.id || orgId);
+      });
+    return () => { cancelled = true; };
+  }, [orgId]);
+
+  // Shared product loading for all preview pages — fetch all published products.
+  const [allProducts, setAllProducts] = useState([]);
+  useEffect(() => {
+    if (!companyId) return;
     let cancelled = false;
     supabase
       .from('products')
       .select('*, physical_products(sku, barcode, weight, dimensions), inventory(quantity_on_hand, quantity_reserved)')
-      .eq('company_id', orgId)
+      .eq('company_id', companyId)
       .eq('status', 'published')
       .order('name')
       .limit(200)
@@ -668,7 +689,7 @@ export default function StorePreview() {
         if (data?.length) setAllProducts(data);
       });
     return () => { cancelled = true; };
-  }, [orgId]);
+  }, [companyId]);
 
   // Listen for messages from the parent builder window
   useEffect(() => {
@@ -755,7 +776,7 @@ export default function StorePreview() {
   const mockWholesaleValue = useMemo(() => ({
     config: config || { theme: {}, sections: [], navigation: [], footer: {} },
     storePublished: true, configLoading: false, configError: null,
-    orgId, client: null, clientLoading: false, isAuthenticated: false,
+    orgId, companyId: companyId || orgId, client: null, clientLoading: false, isAuthenticated: false,
     themeVars,
     cartItems: cart.items,
     addToCart: cart.addItem,
@@ -775,7 +796,7 @@ export default function StorePreview() {
     setOrderNotes: cart.setOrderNotes,
     moqViolations: cart.moqViolations,
     hasValidOrder: cart.hasValidOrder,
-  }), [config, themeVars, orgId, cart.items, cart.total, cart.itemCount, cart.subtotal, cart.poNumber, cart.deliveryDate]);
+  }), [config, themeVars, orgId, companyId, cart.items, cart.total, cart.itemCount, cart.subtotal, cart.poNumber, cart.deliveryDate]);
 
   // Inject customHead into document head (Google Fonts, external styles, etc.)
   useEffect(() => {

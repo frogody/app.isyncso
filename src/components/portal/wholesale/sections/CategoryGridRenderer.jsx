@@ -335,33 +335,34 @@ export default function CategoryGridRenderer({ section, theme }) {
     navigate(`${basePath}?category=${encodeURIComponent(categoryName)}`);
   };
 
-  // Try to get orgId from WholesaleContext for real data fetching
+  // Get companyId from WholesaleContext (resolved from organization_id)
   const wholesaleCtx = useContext(WholesaleContext);
-  const orgId = wholesaleCtx?.orgId || null;
+  const resolvedCompanyId = wholesaleCtx?.companyId || wholesaleCtx?.orgId || null;
 
   const [dbCategories, setDbCategories] = useState(null);
 
   useEffect(() => {
-    if (!orgId || (Array.isArray(rawCategories) && rawCategories.length > 0)) return;
+    if (!resolvedCompanyId) return;
     let cancelled = false;
 
     const fetchCategories = async () => {
       try {
-        // Fetch active categories with product counts
+        // First try: product_categories table
         const { data, error } = await supabase
           .from('product_categories')
           .select('id, name, slug, image')
-          .eq('company_id', orgId)
+          .eq('company_id', resolvedCompanyId)
           .eq('is_active', true)
           .order('name');
 
-        if (error || cancelled) return;
-        if (data && data.length > 0) {
+        if (cancelled) return;
+
+        if (!error && data && data.length > 0) {
           // Get product counts per category
           const { data: countData } = await supabase
             .from('products')
             .select('category_id')
-            .eq('company_id', orgId)
+            .eq('company_id', resolvedCompanyId)
             .eq('status', 'published')
             .not('category_id', 'is', null);
 
@@ -377,6 +378,27 @@ export default function CategoryGridRenderer({ section, theme }) {
             slug: cat.slug,
           }));
           if (!cancelled) setDbCategories(mapped);
+        } else {
+          // Fallback: derive categories from published products' category field
+          const { data: products } = await supabase
+            .from('products')
+            .select('category')
+            .eq('company_id', resolvedCompanyId)
+            .eq('status', 'published')
+            .not('category', 'is', null);
+
+          if (cancelled) return;
+          if (products && products.length > 0) {
+            const countMap = {};
+            products.forEach((p) => {
+              const cat = p.category?.trim();
+              if (cat) countMap[cat] = (countMap[cat] || 0) + 1;
+            });
+            const derived = Object.entries(countMap)
+              .map(([name, count]) => ({ name, image: null, count, slug: name.toLowerCase().replace(/\s+/g, '-') }))
+              .sort((a, b) => b.count - a.count);
+            if (derived.length > 0 && !cancelled) setDbCategories(derived);
+          }
         }
       } catch (err) {
         console.warn('[CategoryGridRenderer] Failed to fetch categories:', err);
@@ -385,13 +407,14 @@ export default function CategoryGridRenderer({ section, theme }) {
 
     fetchCategories();
     return () => { cancelled = true; };
-  }, [orgId, rawCategories]);
+  }, [resolvedCompanyId]);
 
+  // Prefer real DB categories over builder-configured ones (which may be mock data)
   const categories =
-    Array.isArray(rawCategories) && rawCategories.length > 0
-      ? rawCategories
-      : dbCategories && dbCategories.length > 0
-        ? dbCategories
+    dbCategories && dbCategories.length > 0
+      ? dbCategories
+      : Array.isArray(rawCategories) && rawCategories.length > 0
+        ? rawCategories
         : PLACEHOLDER_CATEGORIES;
 
   const CategoryComponent = STYLE_COMPONENTS[style] || CardStyleCategory;
