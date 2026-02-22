@@ -391,7 +391,7 @@ function ProductCard({ product, cart, nav, index }) {
 // ProductGrid -- Featured products with "View All" link
 // ---------------------------------------------------------------------------
 
-function ProductGrid({ products, cart, nav, title, count = 15 }) {
+function ProductGrid({ products, cart, nav, title, count = 18 }) {
   const featured = products.slice(0, count);
   if (featured.length === 0) return null;
 
@@ -423,7 +423,7 @@ function ProductGrid({ products, cart, nav, title, count = 15 }) {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4"
+        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4"
       >
         {featured.map((product, i) => (
           <ProductCard
@@ -496,7 +496,7 @@ export default function StoreHomePage({
         cart={cart}
         nav={nav}
         title="Products"
-        count={15}
+        count={18}
       />
     </div>
   );
