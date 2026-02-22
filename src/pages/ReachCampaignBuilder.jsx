@@ -48,6 +48,7 @@ import {
   TONE_OPTIONS,
   VARIANT_STATUSES,
 } from "@/lib/reach-constants";
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 // ---------------------------------------------------------------------------
 // Icon maps
@@ -731,6 +732,7 @@ function VariantCard({
                 <RefreshCw className="w-3.5 h-3.5" />
               )}
               Regenerate Image
+              {!generatingImage && <CreditCostBadge credits={8} />}
             </span>
           </button>
         </div>
@@ -750,6 +752,7 @@ function VariantCard({
             <>
               <Image className="w-4 h-4 text-zinc-500 shrink-0" />
               <span className="text-xs text-zinc-500">Generate Ad Image</span>
+              <CreditCostBadge credits={8} />
             </>
           )}
         </button>
@@ -1034,6 +1037,7 @@ function StepGenerate({
           >
             <Sparkles className="w-4 h-4" />
             Generate Ads
+            <CreditCostBadge credits={2} />
           </MotionButton>
           <p className="text-xs text-zinc-500 mt-2">
             Generates 3 variants per placement using AI

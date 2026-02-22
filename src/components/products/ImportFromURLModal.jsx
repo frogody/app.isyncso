@@ -17,6 +17,7 @@ import { useUser } from "@/components/context/UserContext";
 import { useTheme } from "@/contexts/GlobalThemeContext";
 import { Product, PhysicalProduct } from "@/api/entities";
 import { toast } from "sonner";
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://sfxpmzicgpaxfntqleig.supabase.co";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -296,7 +297,7 @@ export default function ImportFromURLModal({ open, onClose, onSave }) {
                   disabled={!url.trim()}
                   className="bg-cyan-500 hover:bg-cyan-600 text-white shrink-0"
                 >
-                  Import
+                  Import <CreditCostBadge credits={1} />
                 </Button>
               </div>
             </div>

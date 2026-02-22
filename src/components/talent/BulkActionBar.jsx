@@ -1,6 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Users, Send, FolderPlus, Download, Trash2, Brain, Loader2 } from "lucide-react";
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 const BulkActionButton = ({ icon: Icon, label, onClick, variant = "default", disabled = false, loading = false }) => {
   const variants = {
@@ -72,7 +73,7 @@ export default function BulkActionBar({
               {onGenerateOutreach && (
                 <BulkActionButton
                   icon={Send}
-                  label="Generate Outreach"
+                  label={<>Generate Outreach <CreditCostBadge credits={1} /></>}
                   onClick={onGenerateOutreach}
                   variant="primary"
                   loading={loading.generateOutreach}

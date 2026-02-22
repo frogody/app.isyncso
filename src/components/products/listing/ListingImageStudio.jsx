@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Wand2,
@@ -777,6 +778,7 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
                 <Wand2 className="w-4 h-4" />
               )}
               Generate
+              <CreditCostBadge credits={12} />
             </button>
           </div>
         </div>

@@ -2349,7 +2349,10 @@ export default function SyncAgent() {
             </div>
             <div className={cn('px-3 pt-1.5 flex items-center justify-between text-[10px]', syt('text-slate-400', 'text-zinc-600'))}>
               <span>Enter to send · Shift+Enter for newline</span>
-              <span className="tabular-nums">{input.length}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-zinc-500">1 credit per message</span>
+                <span className="tabular-nums">{input.length}</span>
+              </div>
             </div>
           </div>
         </div>

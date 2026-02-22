@@ -10,6 +10,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2 } from 'lucide-react';
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -163,13 +164,16 @@ export default function SmartReply({ lastMessage, recentMessages = [], onSelectR
           ))}
 
           {(suggestions.length > 0 || loading) && (
-            <button
-              onClick={handleDismiss}
-              className="p-0.5 hover:bg-zinc-700/40 rounded-full transition-colors ml-0.5"
-              title="Dismiss suggestions"
-            >
-              <X className="w-3 h-3 text-zinc-500" />
-            </button>
+            <>
+              <CreditCostBadge credits={1} size="xs" />
+              <button
+                onClick={handleDismiss}
+                className="p-0.5 hover:bg-zinc-700/40 rounded-full transition-colors ml-0.5"
+                title="Dismiss suggestions"
+              >
+                <X className="w-3 h-3 text-zinc-500" />
+              </button>
+            </>
           )}
         </motion.div>
       )}

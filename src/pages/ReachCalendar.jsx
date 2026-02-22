@@ -14,6 +14,7 @@ import { SOCIAL_PLATFORMS, POST_STATUSES } from '@/lib/reach-constants';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 // ---------------------------------------------------------------------------
 // Platform icon resolver
@@ -1166,6 +1167,7 @@ function PostEditorDialog({
             >
               {saving && status === 'scheduled' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Clock className="w-3 h-3" />}
               Schedule
+              <CreditCostBadge credits={1} />
             </button>
           </div>
         </div>

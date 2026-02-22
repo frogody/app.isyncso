@@ -32,6 +32,7 @@ import { useTheme } from '@/contexts/GlobalThemeContext';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -192,6 +193,7 @@ function PresetCard({ preset, isSelected, isGenerating, onSelect, onGenerate, t 
                 <>
                   <Sparkles className="w-4 h-4" />
                   Generate
+                  <CreditCostBadge credits={50} />
                 </>
               )}
             </button>
@@ -884,6 +886,7 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
               <>
                 <Video className="w-4 h-4" />
                 Generate Video
+                <CreditCostBadge credits={50} />
               </>
             )}
           </button>

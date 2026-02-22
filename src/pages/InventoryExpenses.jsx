@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -885,23 +886,26 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
           <Button variant="outline" onClick={handleClose} disabled={isUploading}>
             Cancel
           </Button>
-          <Button
-            onClick={handleUpload}
-            disabled={!selectedFile || isUploading}
-            className="bg-cyan-600 hover:bg-cyan-700"
-          >
-            {isUploading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              <>
-                <Upload className="w-4 h-4 mr-2" />
-                Upload & Process
-              </>
-            )}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleUpload}
+              disabled={!selectedFile || isUploading}
+              className="bg-cyan-600 hover:bg-cyan-700"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload & Process
+                </>
+              )}
+            </Button>
+            <CreditCostBadge credits={1} />
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

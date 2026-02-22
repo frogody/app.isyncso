@@ -13,6 +13,7 @@ import { useTheme } from '@/contexts/GlobalThemeContext';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -511,7 +512,7 @@ export default function ListingCopywriter({
             ) : (
               <Wand2 className="w-4 h-4" />
             )}
-            Generate All Copy
+            Generate All Copy <CreditCostBadge credits={2} />
           </Button>
         </div>
       </div>
@@ -550,7 +551,7 @@ export default function ListingCopywriter({
                 ) : (
                   <Sparkles className="w-3.5 h-3.5" />
                 )}
-                Generate Titles
+                Generate Titles <CreditCostBadge credits={2} />
               </Button>
             </div>
           }
@@ -648,7 +649,7 @@ export default function ListingCopywriter({
                 ) : (
                   <Sparkles className="w-3.5 h-3.5" />
                 )}
-                Generate
+                Generate <CreditCostBadge credits={2} />
               </Button>
             </div>
           }
@@ -694,7 +695,7 @@ export default function ListingCopywriter({
                 ) : (
                   <Sparkles className="w-3.5 h-3.5" />
                 )}
-                Generate Bullets
+                Generate Bullets <CreditCostBadge credits={2} />
               </Button>
             </div>
           }
@@ -772,7 +773,7 @@ export default function ListingCopywriter({
                 ) : (
                   <Sparkles className="w-3.5 h-3.5" />
                 )}
-                Generate SEO
+                Generate SEO <CreditCostBadge credits={2} />
               </Button>
             </div>
 

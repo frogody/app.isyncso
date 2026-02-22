@@ -40,6 +40,7 @@ import { AnimatedNumber, AnimatedCount } from "@/components/ui/AnimatedNumber";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 import { SOCIAL_PLATFORMS } from "@/lib/reach-constants";
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 // ---------------------------------------------------------------------------
 // Date range options
@@ -917,6 +918,7 @@ export default function ReachDashboard() {
                   className={`w-4 h-4 ${refreshingInsights ? "animate-spin" : ""}`}
                 />
                 Refresh Insights
+                <CreditCostBadge credits={1} />
               </button>
             </div>
 

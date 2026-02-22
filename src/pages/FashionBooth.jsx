@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@/components/context/UserContext';
 import { BrandAssets, GeneratedContent, Product, PhysicalProduct } from '@/api/entities';
@@ -828,7 +829,7 @@ export default function FashionBooth({ embedded = false }) {
                 className={`shrink-0 px-6 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2 transition-all ${
                   canGenerate ? 'bg-yellow-400 hover:bg-yellow-300 text-black shadow-lg shadow-yellow-500/20' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
                 }`}>
-                {isGenerating ? <><Loader2 className="w-4 h-4 animate-spin" />Generating...</> : <><Sparkles className="w-4 h-4" />Generate</>}
+                {isGenerating ? <><Loader2 className="w-4 h-4 animate-spin" />Generating...</> : <><Sparkles className="w-4 h-4" />Generate <CreditCostBadge credits={12} /></>}
               </button>
             </div>
 
@@ -953,7 +954,7 @@ export default function FashionBooth({ embedded = false }) {
                           {isAnimating ? (
                             <><Loader2 className="w-4 h-4 animate-spin" />Creating starting shot...</>
                           ) : (
-                            <><Play className="w-4 h-4" />Create Starting Shot</>
+                            <><Play className="w-4 h-4" />Create Starting Shot <CreditCostBadge credits={30} /></>
                           )}
                         </button>
 

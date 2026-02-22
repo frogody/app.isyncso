@@ -26,6 +26,7 @@ import {
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { toast } from "sonner";
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 import {
   Document,
   Page as PdfPage,
@@ -962,7 +963,7 @@ export default function ReachSEO() {
             ) : (
               <>
                 <Search className="w-4 h-4" />
-                Scan
+                Scan <CreditCostBadge credits={2} />
               </>
             )}
           </button>

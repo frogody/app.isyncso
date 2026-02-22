@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import ListingGenerationView from './ListingGenerationView';
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 // --- Score Calculation ---
 // ONLY scores listing-specific data. Product catalog data (name, description, featured_image) does NOT count.
@@ -430,8 +431,9 @@ export default function ListingOverview({ product, details, listing, onGenerateA
                   )}
                 </div>
                 <div>
-                  <p className="text-base font-semibold text-white">
+                  <p className="text-base font-semibold text-white flex items-center gap-2">
                     {loading ? 'Generating...' : 'Generate Everything with AI'}
+                    {!loading && <CreditCostBadge credits={15} size="md" />}
                   </p>
                   <p className="text-sm text-white/70 mt-0.5">
                     AI copy, hero image, gallery, product video - the complete listing

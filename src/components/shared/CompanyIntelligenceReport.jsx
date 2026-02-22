@@ -41,6 +41,7 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 const itemVariants = {
   hidden: { opacity: 0, y: 8 },
@@ -300,6 +301,7 @@ export const CompanyIntelligenceReport = ({
                 <>
                   <Sparkles className="w-4 h-4" />
                   SYNC INTEL
+                  <CreditCostBadge credits={15} />
                 </>
               )}
             </button>
@@ -350,6 +352,7 @@ export const CompanyIntelligenceReport = ({
                 <Sparkles className="w-4 h-4" />
               )}
               SYNC INTEL
+              {!isGenerating && <CreditCostBadge credits={15} />}
             </button>
           )}
         </motion.div>

@@ -34,6 +34,7 @@ import {
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { IntelligenceGauge, IntelligenceLevelBadge } from "./IntelligenceGauge";
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 // Pipeline stage configuration
 const OUTREACH_STAGES = [
@@ -633,7 +634,7 @@ export default function OutreachPipeline({ campaign, onUpdate }) {
                 ) : (
                   <Sparkles className="w-4 h-4 mr-2" />
                 )}
-                Generate Messages
+                Generate Messages <CreditCostBadge credits={1} />
               </Button>
               <Button
                 onClick={runOutreach}

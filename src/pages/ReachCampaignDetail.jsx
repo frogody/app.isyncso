@@ -43,6 +43,7 @@ import {
   VARIANT_STATUSES,
   TONE_OPTIONS,
 } from "@/lib/reach-constants";
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -333,6 +334,7 @@ function DetailVariantCard({ variant, campaign, onUpdate, onApprove, onDelete })
                 <RefreshCw className="w-3.5 h-3.5" />
               )}
               {generatingImage ? "Generating..." : "Regenerate Image"}
+              {!generatingImage && <CreditCostBadge credits={8} />}
             </Button>
           </div>
         </div>
@@ -351,6 +353,7 @@ function DetailVariantCard({ variant, campaign, onUpdate, onApprove, onDelete })
             <>
               <Image className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
               <span className="text-[11px] text-zinc-500">Generate Image</span>
+              <CreditCostBadge credits={8} />
             </>
           )}
         </button>

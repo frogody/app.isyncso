@@ -15,6 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { SyncViewSelector } from '@/components/sync/ui';
 import InfoCard from '@/components/shared/InfoCard';
 import { createPageUrl } from "@/utils";
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 export default function DailyJournal() {
   const [user, setUser] = useState(null);
@@ -365,6 +366,7 @@ export default function DailyJournal() {
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
                     Generate Today's Journal
+                    <CreditCostBadge credits={1} />
                   </>
                 )}
               </Button>
@@ -650,6 +652,7 @@ export default function DailyJournal() {
                       <>
                         <Sparkles className="w-4 h-4 mr-2" />
                         Generate Today's Journal
+                        <CreditCostBadge credits={1} />
                       </>
                     )}
                   </Button>

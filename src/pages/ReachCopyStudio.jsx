@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 // ---------------------------------------------------------------------------
 // Icon map for use cases
@@ -856,7 +857,7 @@ export default function ReachCopyStudio() {
                       ) : (
                         <>
                           <Sparkles className="w-4 h-4 mr-2" />
-                          Generate
+                          Generate <CreditCostBadge credits={2} />
                         </>
                       )}
                     </Button>

@@ -24,6 +24,7 @@ import {
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { toast } from "sonner";
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -956,7 +957,7 @@ export default function ReachBrandVoice() {
             ) : (
               <>
                 <Sparkles className="w-4 h-4 mr-1.5" />
-                Analyze Brand Voice
+                Analyze Brand Voice <CreditCostBadge credits={3} />
               </>
             )}
           </Button>

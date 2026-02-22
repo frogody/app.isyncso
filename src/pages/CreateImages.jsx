@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@/components/context/UserContext';
 import { BrandAssets, GeneratedContent, Product, PhysicalProduct } from '@/api/entities';
@@ -56,6 +57,15 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from '@/api/supabaseClient';
 import { createPageUrl } from '@/utils';
+
+// Credit cost per use case (maps to underlying model)
+const USE_CASE_CREDITS = {
+  product_variation: 8,   // flux-kontext-pro
+  product_scene: 15,      // flux-kontext-max
+  marketing_creative: 8,  // flux-pro
+  quick_draft: 2,         // flux-schnell
+  premium_quality: 15,    // flux-kontext-max
+};
 
 // Use case definitions with model selection
 const USE_CASES = {
@@ -1286,6 +1296,7 @@ export default function CreateImages({ embedded = false }) {
                 <>
                   <Wand2 className="w-4 h-4" />
                   Generate Image
+                  <CreditCostBadge credits={USE_CASE_CREDITS[selectedUseCase] || 8} />
                 </>
               )}
             </button>

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 import { StudioNav } from '@/components/studio';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -1005,6 +1006,7 @@ function Step3GeneratePreview({ topic, style, tone, duration, speakers, script, 
         >
           <Sparkles className="w-5 h-5" />
           Generate Podcast
+          <CreditCostBadge credits={5} />
         </button>
       )}
 

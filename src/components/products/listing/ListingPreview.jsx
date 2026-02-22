@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { supabase } from '@/api/supabaseClient';
 import ListingGenerationView from './ListingGenerationView';
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 // ---------------------------------------------------------------------------
 // Debounce helper
@@ -993,6 +994,7 @@ function EmptyState({ onGenerateAll, loading, t }) {
           <div className="flex items-center gap-2">
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
             <span className="text-xs font-semibold">{loading ? 'Generating...' : 'Generate Everything with AI'}</span>
+            {!loading && <CreditCostBadge credits={15} size="md" />}
             <ArrowRight className="w-3 h-3 text-white/60 group-hover:translate-x-0.5 transition-transform" />
           </div>
         </button>
@@ -1057,7 +1059,7 @@ function AuditSidebar({ audit, auditing, onRunAudit, onBuildFixPlan, onApproveFi
               )}
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-              Run Audit
+              Run Audit <CreditCostBadge credits={1} />
             </button>
           </div>
         )}
@@ -1210,7 +1212,7 @@ function AuditSidebar({ audit, auditing, onRunAudit, onBuildFixPlan, onApproveFi
                 )}
               >
                 <Wand2 className="w-3.5 h-3.5" />
-                {fixing === 'done' ? 'Fix Again' : 'Fix with AI'}
+                {fixing === 'done' ? 'Fix Again' : 'Fix with AI'} <CreditCostBadge credits={1} />
               </button>
             )}
 
@@ -1225,7 +1227,7 @@ function AuditSidebar({ audit, auditing, onRunAudit, onBuildFixPlan, onApproveFi
               )}
             >
               <ShieldCheck className="w-3 h-3" />
-              Re-audit
+              Re-audit <CreditCostBadge credits={1} />
             </button>
           </>
         )}
@@ -1909,6 +1911,7 @@ export default function ListingPreview({
         >
           {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
           {loading ? 'Generating...' : 'Regenerate'}
+          {!loading && <CreditCostBadge credits={15} />}
         </button>
       </div>
 

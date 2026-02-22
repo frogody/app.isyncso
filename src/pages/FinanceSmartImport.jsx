@@ -26,6 +26,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 import { createPageUrl } from '@/utils';
 import CountrySelector from '@/components/finance/CountrySelector';
 import { determineTaxRulesForPurchase } from '@/lib/btwRules';
@@ -715,9 +716,12 @@ export default function FinanceSmartImport() {
                         <p className="text-sm text-zinc-500 mb-4">
                           PDF, PNG, or JPG — AI will extract everything automatically
                         </p>
-                        <Badge variant="outline" className="text-xs text-zinc-500 border-zinc-700">
-                          Supports multi-language: English, Dutch, German
-                        </Badge>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="outline" className="text-xs text-zinc-500 border-zinc-700">
+                            Supports multi-language: English, Dutch, German
+                          </Badge>
+                          <CreditCostBadge credits={1} />
+                        </div>
                       </>
                     )}
                     <input

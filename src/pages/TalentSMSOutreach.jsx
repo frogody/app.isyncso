@@ -46,6 +46,7 @@ import {
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import PhoneNumberManager from "@/components/integrations/PhoneNumberManager";
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 // Status configuration
 const STATUS_CONFIG = {
@@ -275,6 +276,7 @@ const ConversationSheet = ({ conversation, candidate, onClose, onRefresh }) => {
                   <Sparkles className="w-4 h-4 mr-1" />
                 )}
                 Generate AI Response
+                <CreditCostBadge credits={1} />
               </Button>
             </div>
 
@@ -295,12 +297,15 @@ const ConversationSheet = ({ conversation, candidate, onClose, onRefresh }) => {
               <Button
                 onClick={handleSend}
                 disabled={sending || !draftMessage.trim()}
-                className="bg-red-500 hover:bg-red-600"
+                className="bg-red-500 hover:bg-red-600 gap-1"
               >
                 {sending ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Send className="w-4 h-4" />
+                  <>
+                    <Send className="w-4 h-4" />
+                    <CreditCostBadge credits={1} />
+                  </>
                 )}
               </Button>
             </div>

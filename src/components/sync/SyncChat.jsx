@@ -618,9 +618,12 @@ export default function SyncChat({
             )}
           </Button>
         </div>
-        <p className={cn('text-[10px] text-center mt-2', syt('text-slate-400', 'text-zinc-600'))}>
-          Press Enter to send • Esc to close
-        </p>
+        <div className="flex items-center justify-between px-1">
+          <p className="text-[10px] text-zinc-500 mt-1">1 credit per message</p>
+          <p className={cn('text-[10px] text-center mt-2', syt('text-slate-400', 'text-zinc-600'))}>
+            Press Enter to send • Esc to close
+          </p>
+        </div>
       </div>
     </div>
   );

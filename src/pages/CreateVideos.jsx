@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@/components/context/UserContext';
 import { BrandAssets, GeneratedContent, Product, DigitalProduct, RenderJob } from '@/api/entities';
@@ -1044,6 +1045,7 @@ export default function CreateVideos({ embedded = false, defaultMode = 'ai' }) {
                     <>
                       <Sparkles className="w-4 h-4" />
                       Generate Video
+                      <CreditCostBadge credits={50} />
                     </>
                   )}
                 </button>
