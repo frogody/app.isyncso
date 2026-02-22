@@ -87,7 +87,7 @@ function SearchHero({ config, client, nav }) {
         background: `linear-gradient(180deg, color-mix(in srgb, var(--ws-primary) 4%, var(--ws-bg)), var(--ws-bg) 100%)`,
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+      <div className="w-full px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
         <motion.div variants={stagger} initial="hidden" animate="visible">
           {/* Greeting + quick nav */}
           <motion.div variants={fadeUp} className="flex items-center justify-between gap-4 mb-6">
@@ -201,7 +201,7 @@ function CategoryBar({ products, nav }) {
   if (categories.length <= 1) return null;
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-2">
+    <section className="w-full px-4 sm:px-6 lg:px-10 pb-2">
       <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
         <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none">
           <button
@@ -391,12 +391,12 @@ function ProductCard({ product, cart, nav, index }) {
 // ProductGrid -- Featured products with "View All" link
 // ---------------------------------------------------------------------------
 
-function ProductGrid({ products, cart, nav, title, count = 8 }) {
+function ProductGrid({ products, cart, nav, title, count = 15 }) {
   const featured = products.slice(0, count);
   if (featured.length === 0) return null;
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+    <section className="w-full px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
       <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
         <div className="flex items-center justify-between gap-4 mb-6">
           <h2
@@ -423,7 +423,7 @@ function ProductGrid({ products, cart, nav, title, count = 8 }) {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
+        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4"
       >
         {featured.map((product, i) => (
           <ProductCard
@@ -496,7 +496,7 @@ export default function StoreHomePage({
         cart={cart}
         nav={nav}
         title="Products"
-        count={12}
+        count={15}
       />
     </div>
   );

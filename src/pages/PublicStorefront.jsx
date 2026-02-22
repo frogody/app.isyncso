@@ -330,7 +330,7 @@ function PublicNavBar({ config, currentPage, onNavigate, onOpenSearch, onOpenCar
           top: 0,
         }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-10">
           <div className="flex items-center justify-between h-16">
             {logoPos === 'left' && LogoBrand}
             {logoPos === 'center' && <div className="flex-1" />}
@@ -460,7 +460,7 @@ function PublicFooter({ config }) {
         color: 'var(--ws-muted, #a1a1aa)',
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="w-full px-4 sm:px-6 lg:px-10 py-10">
         {footer.columns?.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
             {footer.columns.map((col, i) => (

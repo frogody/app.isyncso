@@ -1,6 +1,7 @@
 /**
  * B2BStoreAccess - Full-width page to manage B2B storefront client access.
- * Shows all portal_clients with simple on/off toggle for store access.
+ * Shows CRM contacts (customers, suppliers, partners) with access toggle.
+ * Also shows portal_clients that were directly invited.
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -26,6 +27,9 @@ import {
   Globe,
   Lock,
   Phone,
+  Briefcase,
+  Truck,
+  Handshake,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -188,6 +192,13 @@ function formatDateTime(d) {
   return dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+const ROLE_CONFIG = {
+  customer: { label: 'Customer', icon: Briefcase, color: '#06b6d4' },
+  supplier: { label: 'Supplier', icon: Truck, color: '#8b5cf6' },
+  partner: { label: 'Partner', icon: Handshake, color: '#f59e0b' },
+  invited: { label: 'Invited', icon: Mail, color: '#eab308' },
+};
+
 // ---------------------------------------------------------------------------
 // Main Page
 // ---------------------------------------------------------------------------
@@ -209,23 +220,87 @@ export default function B2BStoreAccess() {
   const [storeUrl, setStoreUrl] = useState(null);
 
   const fetchClients = useCallback(async () => {
-    if (!organizationId) return;
+    if (!organizationId || !user?.id) return;
     setLoading(true);
     setError(null);
     try {
-      const { data, error: fetchErr } = await supabase
+      // 1. Fetch CRM contacts that are customers, suppliers, or partners
+      const { data: prospects, error: prospectErr } = await supabase
+        .from('prospects')
+        .select('id, first_name, last_name, email, phone, company, stage, created_date')
+        .eq('owner_id', user.id)
+        .in('stage', ['customer', 'supplier', 'partner', 'won']);
+
+      if (prospectErr) throw prospectErr;
+
+      // 2. Fetch existing portal_clients for this org
+      const { data: portalClients, error: pcErr } = await supabase
         .from('portal_clients')
-        .select('id, full_name, name, contact_name, email, company_name, phone, status, last_login_at, created_at')
-        .eq('organization_id', organizationId)
-        .order('full_name', { ascending: true });
-      if (fetchErr) throw fetchErr;
-      setClients(data || []);
+        .select('id, full_name, email, company_name, phone, status, last_login_at, created_at')
+        .eq('organization_id', organizationId);
+
+      if (pcErr) throw pcErr;
+
+      // 3. Build email lookup of portal_clients
+      const pcByEmail = {};
+      (portalClients || []).forEach((pc) => {
+        if (pc.email) pcByEmail[pc.email.toLowerCase()] = pc;
+      });
+
+      // 4. Merge: CRM contacts + any portal_clients not matched by email
+      const merged = [];
+      const usedEmails = new Set();
+
+      // CRM contacts first
+      (prospects || []).forEach((p) => {
+        const email = (p.email || '').toLowerCase();
+        const pc = email ? pcByEmail[email] : null;
+        const displayName = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.company || 'Unknown';
+        usedEmails.add(email);
+
+        merged.push({
+          id: pc?.id || p.id,
+          prospectId: p.id,
+          portalClientId: pc?.id || null,
+          displayName,
+          email: p.email,
+          company: p.company || pc?.company_name || null,
+          phone: p.phone || pc?.phone || null,
+          role: p.stage === 'won' ? 'customer' : p.stage,
+          status: pc?.status || 'none',
+          lastLogin: pc?.last_login_at || null,
+          source: 'crm',
+        });
+      });
+
+      // Portal clients not in CRM (directly invited)
+      (portalClients || []).forEach((pc) => {
+        const email = (pc.email || '').toLowerCase();
+        if (usedEmails.has(email)) return;
+        merged.push({
+          id: pc.id,
+          prospectId: null,
+          portalClientId: pc.id,
+          displayName: pc.full_name || 'Unnamed',
+          email: pc.email,
+          company: pc.company_name || null,
+          phone: pc.phone || null,
+          role: 'invited',
+          status: pc.status || 'invited',
+          lastLogin: pc.last_login_at || null,
+          source: 'invite',
+        });
+      });
+
+      // Sort alphabetically
+      merged.sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
+      setClients(merged);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [organizationId]);
+  }, [organizationId, user?.id]);
 
   useEffect(() => {
     if (!organizationId) return;
@@ -242,18 +317,77 @@ export default function B2BStoreAccess() {
 
   useEffect(() => { fetchClients(); }, [fetchClients]);
 
-  const handleToggleAccess = async (clientId, currentlyHasAccess) => {
-    const newStatus = currentlyHasAccess ? 'suspended' : 'active';
-    setTogglingId(clientId);
+  // Grant access: create portal_client record if it doesn't exist, set status active
+  const handleGrantAccess = async (client) => {
+    setTogglingId(client.id);
+    try {
+      if (client.portalClientId) {
+        // Already has portal_client record — just activate
+        const { error: updateErr } = await supabase
+          .from('portal_clients')
+          .update({ status: 'active', updated_at: new Date().toISOString() })
+          .eq('id', client.portalClientId);
+        if (updateErr) throw updateErr;
+      } else {
+        // Create portal_client from CRM contact
+        const { error: insertErr } = await supabase
+          .from('portal_clients')
+          .insert({
+            email: client.email?.toLowerCase(),
+            full_name: client.displayName,
+            company_name: client.company || null,
+            phone: client.phone || null,
+            organization_id: organizationId,
+            status: 'invited',
+          });
+        if (insertErr) {
+          if (insertErr.code === '23505') {
+            // Already exists — just update status
+            const { error: updateErr } = await supabase
+              .from('portal_clients')
+              .update({ status: 'active' })
+              .eq('email', client.email?.toLowerCase())
+              .eq('organization_id', organizationId);
+            if (updateErr) throw updateErr;
+          } else {
+            throw insertErr;
+          }
+        }
+
+        // Send magic link invite
+        if (storeUrl) {
+          await supabase.auth.signInWithOtp({
+            email: client.email?.toLowerCase(),
+            options: {
+              emailRedirectTo: storeUrl,
+              data: { full_name: client.displayName, invited_as: 'portal_client' },
+            },
+          });
+        }
+      }
+      setSuccessMsg(`Access granted to ${client.displayName}`);
+      setTimeout(() => setSuccessMsg(null), 2000);
+      fetchClients();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  // Revoke access: set portal_client status to suspended
+  const handleRevokeAccess = async (client) => {
+    if (!client.portalClientId) return;
+    setTogglingId(client.id);
     try {
       const { error: updateErr } = await supabase
         .from('portal_clients')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', clientId);
+        .update({ status: 'suspended', updated_at: new Date().toISOString() })
+        .eq('id', client.portalClientId);
       if (updateErr) throw updateErr;
-      setClients((prev) => prev.map((c) => (c.id === clientId ? { ...c, status: newStatus } : c)));
-      setSuccessMsg(newStatus === 'active' ? 'Access granted' : 'Access revoked');
+      setSuccessMsg(`Access revoked for ${client.displayName}`);
       setTimeout(() => setSuccessMsg(null), 2000);
+      fetchClients();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -262,13 +396,14 @@ export default function B2BStoreAccess() {
   };
 
   const handleResendInvite = async (client) => {
+    if (!client.email) return;
     setResendingId(client.id);
     try {
       await supabase.auth.signInWithOtp({
-        email: client.email,
+        email: client.email.toLowerCase(),
         options: {
           ...(storeUrl ? { emailRedirectTo: storeUrl } : {}),
-          data: { full_name: client.full_name, invited_as: 'portal_client' },
+          data: { full_name: client.displayName, invited_as: 'portal_client' },
         },
       });
       setSuccessMsg(`Invite resent to ${client.email}`);
@@ -283,15 +418,18 @@ export default function B2BStoreAccess() {
   const filteredClients = useMemo(() => {
     let result = clients;
     if (filter === 'access') result = result.filter((c) => c.status === 'active');
-    else if (filter === 'no-access') result = result.filter((c) => c.status === 'suspended');
-    else if (filter === 'invited') result = result.filter((c) => c.status === 'invited');
+    if (filter === 'no-access') result = result.filter((c) => c.status === 'none' || c.status === 'suspended');
+    if (filter === 'invited') result = result.filter((c) => c.status === 'invited');
+    if (filter === 'customer') result = result.filter((c) => c.role === 'customer');
+    if (filter === 'supplier') result = result.filter((c) => c.role === 'supplier');
+    if (filter === 'partner') result = result.filter((c) => c.role === 'partner');
     if (search.trim()) {
       const q = search.toLowerCase().trim();
       result = result.filter(
         (c) =>
-          (c.full_name || c.name || '').toLowerCase().includes(q) ||
+          (c.displayName || '').toLowerCase().includes(q) ||
           (c.email || '').toLowerCase().includes(q) ||
-          (c.company_name || '').toLowerCase().includes(q)
+          (c.company || '').toLowerCase().includes(q)
       );
     }
     return result;
@@ -301,14 +439,17 @@ export default function B2BStoreAccess() {
     total: clients.length,
     active: clients.filter((c) => c.status === 'active').length,
     invited: clients.filter((c) => c.status === 'invited').length,
-    suspended: clients.filter((c) => c.status === 'suspended').length,
+    noAccess: clients.filter((c) => c.status === 'none' || c.status === 'suspended').length,
   }), [clients]);
 
   const FILTER_TABS = [
     { key: 'all', label: 'All', count: stats.total },
     { key: 'access', label: 'Active', count: stats.active },
     { key: 'invited', label: 'Invited', count: stats.invited },
-    { key: 'no-access', label: 'Suspended', count: stats.suspended },
+    { key: 'no-access', label: 'No Access', count: stats.noAccess },
+    { key: 'customer', label: 'Customers', count: clients.filter((c) => c.role === 'customer').length },
+    { key: 'supplier', label: 'Suppliers', count: clients.filter((c) => c.role === 'supplier').length },
+    { key: 'partner', label: 'Partners', count: clients.filter((c) => c.role === 'partner').length },
   ];
 
   return (
@@ -333,7 +474,7 @@ export default function B2BStoreAccess() {
               Store Access
             </h1>
             <p className="text-sm text-zinc-500 mt-1">
-              Control which clients can access your B2B storefront
+              Manage which contacts can access your B2B storefront
               {storeUrl && (
                 <span className="ml-2">
                   &mdash;{' '}
@@ -356,10 +497,10 @@ export default function B2BStoreAccess() {
         {/* Stats row */}
         <div className="grid grid-cols-4 gap-3 mb-6">
           {[
-            { label: 'Total Clients', value: stats.total, icon: Users, color: '#a1a1aa' },
-            { label: 'Active Access', value: stats.active, icon: ShieldCheck, color: '#10b981' },
+            { label: 'Total Contacts', value: stats.total, icon: Users, color: '#a1a1aa' },
+            { label: 'Active Access', value: stats.active, icon: ShieldCheck, color: '#06b6d4' },
             { label: 'Pending Invite', value: stats.invited, icon: Mail, color: '#eab308' },
-            { label: 'Suspended', value: stats.suspended, icon: Lock, color: '#ef4444' },
+            { label: 'No Access', value: stats.noAccess, icon: Lock, color: '#71717a' },
           ].map((stat) => (
             <div key={stat.label} className="rounded-xl border border-zinc-800/40 bg-zinc-900/40 px-4 py-3 flex items-center gap-3">
               <stat.icon className="w-5 h-5 shrink-0" style={{ color: stat.color }} />
@@ -372,13 +513,13 @@ export default function B2BStoreAccess() {
         </div>
 
         {/* Filter + Search row */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex gap-1.5">
+        <div className="flex items-center gap-3 mb-4 overflow-x-auto">
+          <div className="flex gap-1.5 shrink-0">
             {FILTER_TABS.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setFilter(tab.key)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap"
                 style={{
                   backgroundColor: filter === tab.key ? 'rgba(6, 182, 212, 0.1)' : 'transparent',
                   color: filter === tab.key ? '#06b6d4' : '#71717a',
@@ -396,7 +537,7 @@ export default function B2BStoreAccess() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search clients..."
+              placeholder="Search contacts..."
               className="w-full pl-9 pr-3 py-2 rounded-xl border border-zinc-800 bg-zinc-900/60 text-white placeholder-zinc-600 text-sm focus:outline-none focus:border-cyan-500/40"
             />
           </div>
@@ -439,11 +580,11 @@ export default function B2BStoreAccess() {
               <Users className="w-7 h-7 text-zinc-600" />
             </div>
             <h3 className="text-lg font-semibold text-white mb-1">
-              {clients.length === 0 ? 'No clients yet' : 'No matching clients'}
+              {clients.length === 0 ? 'No contacts found' : 'No matching contacts'}
             </h3>
             <p className="text-sm text-zinc-500 mb-4">
               {clients.length === 0
-                ? 'Invite your first B2B client to give them store access.'
+                ? 'Add customers, suppliers, or partners in your CRM to manage their store access here.'
                 : 'Try adjusting your search or filter.'}
             </p>
             {clients.length === 0 && (
@@ -459,9 +600,10 @@ export default function B2BStoreAccess() {
         ) : (
           <div className="rounded-xl border border-zinc-800/60 overflow-hidden">
             {/* Table header */}
-            <div className="grid grid-cols-[1fr_1fr_140px_160px_100px_80px] gap-4 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 bg-zinc-900/60 border-b border-zinc-800/40">
-              <span>Client</span>
+            <div className="grid grid-cols-[1fr_1fr_120px_140px_160px_100px_80px] gap-4 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 bg-zinc-900/60 border-b border-zinc-800/40">
+              <span>Contact</span>
               <span>Company</span>
+              <span>Role</span>
               <span>Status</span>
               <span>Last Login</span>
               <span className="text-center">Resend</span>
@@ -472,14 +614,16 @@ export default function B2BStoreAccess() {
             {filteredClients.map((client) => {
               const hasAccess = client.status === 'active' || client.status === 'invited';
               const isInvited = client.status === 'invited';
+              const noAccess = client.status === 'none' || client.status === 'suspended';
               const toggling = togglingId === client.id;
               const resending = resendingId === client.id;
-              const displayName = client.full_name || client.contact_name || client.name || 'Unnamed';
+              const roleInfo = ROLE_CONFIG[client.role] || ROLE_CONFIG.customer;
+              const RoleIcon = roleInfo.icon;
 
               return (
                 <div
                   key={client.id}
-                  className="grid grid-cols-[1fr_1fr_140px_160px_100px_80px] gap-4 items-center px-5 py-3.5 border-b border-zinc-800/30 transition-colors hover:bg-zinc-900/30"
+                  className="grid grid-cols-[1fr_1fr_120px_140px_160px_100px_80px] gap-4 items-center px-5 py-3.5 border-b border-zinc-800/30 transition-colors hover:bg-zinc-900/30"
                 >
                   {/* Name + Email */}
                   <div className="flex items-center gap-3 min-w-0">
@@ -490,21 +634,36 @@ export default function B2BStoreAccess() {
                         color: hasAccess ? '#06b6d4' : '#71717a',
                       }}
                     >
-                      {displayName[0].toUpperCase()}
+                      {(client.displayName || '?')[0].toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{displayName}</p>
+                      <p className="text-sm font-medium text-white truncate">{client.displayName}</p>
                       <p className="text-xs text-zinc-500 truncate">{client.email}</p>
                     </div>
                   </div>
 
                   {/* Company */}
                   <div className="min-w-0">
-                    {client.company_name ? (
-                      <span className="text-sm text-zinc-400 truncate block">{client.company_name}</span>
+                    {client.company ? (
+                      <span className="text-sm text-zinc-400 truncate block">{client.company}</span>
                     ) : (
                       <span className="text-xs text-zinc-600">&mdash;</span>
                     )}
+                  </div>
+
+                  {/* Role badge */}
+                  <div>
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium"
+                      style={{
+                        backgroundColor: `${roleInfo.color}10`,
+                        color: roleInfo.color,
+                        border: `1px solid ${roleInfo.color}20`,
+                      }}
+                    >
+                      <RoleIcon className="w-3 h-3" />
+                      {roleInfo.label}
+                    </span>
                   </div>
 
                   {/* Status badge */}
@@ -513,28 +672,28 @@ export default function B2BStoreAccess() {
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium"
                       style={{
                         backgroundColor: hasAccess
-                          ? isInvited ? 'rgba(234, 179, 8, 0.1)' : 'rgba(16, 185, 129, 0.1)'
-                          : 'rgba(239, 68, 68, 0.08)',
+                          ? isInvited ? 'rgba(234, 179, 8, 0.1)' : 'rgba(6, 182, 212, 0.1)'
+                          : 'rgba(63, 63, 70, 0.15)',
                         color: hasAccess
-                          ? isInvited ? '#eab308' : '#10b981'
-                          : '#ef4444',
+                          ? isInvited ? '#eab308' : '#06b6d4'
+                          : '#71717a',
                         border: `1px solid ${hasAccess
-                          ? isInvited ? 'rgba(234, 179, 8, 0.2)' : 'rgba(16, 185, 129, 0.2)'
-                          : 'rgba(239, 68, 68, 0.15)'}`,
+                          ? isInvited ? 'rgba(234, 179, 8, 0.2)' : 'rgba(6, 182, 212, 0.2)'
+                          : 'rgba(63, 63, 70, 0.3)'}`,
                       }}
                     >
-                      {isInvited ? 'Invited' : hasAccess ? 'Active' : 'Suspended'}
+                      {isInvited ? 'Invited' : hasAccess ? 'Active' : noAccess && client.status === 'suspended' ? 'Suspended' : 'No Access'}
                     </span>
                   </div>
 
                   {/* Last login */}
                   <div className="text-xs text-zinc-500">
-                    {formatDateTime(client.last_login_at) || <span className="text-zinc-600">Never</span>}
+                    {formatDateTime(client.lastLogin) || <span className="text-zinc-600">Never</span>}
                   </div>
 
                   {/* Resend */}
                   <div className="text-center">
-                    {isInvited ? (
+                    {(isInvited || hasAccess) && client.email ? (
                       <button
                         onClick={() => handleResendInvite(client)}
                         disabled={resending}
@@ -551,8 +710,8 @@ export default function B2BStoreAccess() {
                   {/* Access toggle */}
                   <div className="flex justify-center">
                     <button
-                      onClick={() => handleToggleAccess(client.id, hasAccess)}
-                      disabled={toggling}
+                      onClick={() => hasAccess ? handleRevokeAccess(client) : handleGrantAccess(client)}
+                      disabled={toggling || !client.email}
                       className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50"
                       style={{ backgroundColor: hasAccess ? '#06b6d4' : '#3f3f46' }}
                       title={hasAccess ? 'Revoke store access' : 'Grant store access'}
@@ -573,7 +732,7 @@ export default function B2BStoreAccess() {
 
             {/* Footer */}
             <div className="px-5 py-2.5 text-xs text-zinc-600 bg-zinc-900/30">
-              {filteredClients.length} of {clients.length} clients
+              {filteredClients.length} of {clients.length} contacts
             </div>
           </div>
         )}

@@ -9,7 +9,7 @@ import {
   Heart, ShoppingCart, Info, Layers, Ruler, Weight, MapPin, Save,
   LayoutGrid, Settings, History, FolderOpen, TrendingUp, Boxes,
   ChevronDown, MoreHorizontal, Eye, Percent, Calculator, Briefcase, ClipboardList, Plus,
-  Megaphone
+  Megaphone, Store
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1895,6 +1895,10 @@ export default function ProductDetail() {
 
   const [auditInfo, setAuditInfo] = useState(null);
 
+  // B2B storefront visibility
+  const [b2bEnabled, setB2bEnabled] = useState(false);
+  const [b2bLoading, setB2bLoading] = useState(false);
+
   // Modal states
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
 
@@ -2001,6 +2005,55 @@ export default function ProductDetail() {
   useEffect(() => {
     loadProduct();
   }, [slug, type]);
+
+  // Load B2B channel status
+  useEffect(() => {
+    if (!product?.id || !user?.company_id) return;
+    supabase
+      .from('product_sales_channels')
+      .select('id, is_active')
+      .eq('product_id', product.id)
+      .eq('channel', 'b2b')
+      .eq('company_id', user.company_id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setB2bEnabled(!!data?.is_active);
+      });
+  }, [product?.id, user?.company_id]);
+
+  const handleB2bToggle = async (enabled) => {
+    if (!product?.id || !user?.company_id) return;
+    setB2bLoading(true);
+    try {
+      if (enabled) {
+        await supabase
+          .from('product_sales_channels')
+          .upsert({
+            company_id: user.company_id,
+            product_id: product.id,
+            channel: 'b2b',
+            is_active: true,
+            listed_at: new Date().toISOString(),
+            listed_by: user.id,
+            delisted_at: null,
+          }, { onConflict: 'company_id,product_id,channel' });
+      } else {
+        await supabase
+          .from('product_sales_channels')
+          .update({ is_active: false, delisted_at: new Date().toISOString() })
+          .eq('product_id', product.id)
+          .eq('channel', 'b2b')
+          .eq('company_id', user.company_id);
+      }
+      setB2bEnabled(enabled);
+      toast.success(enabled ? 'Product visible on B2B store' : 'Product hidden from B2B store');
+    } catch (err) {
+      console.error('Failed to toggle B2B visibility:', err);
+      toast.error('Failed to update B2B visibility');
+    } finally {
+      setB2bLoading(false);
+    }
+  };
 
   // Handle product update
   const handleProductUpdate = async (updates) => {
@@ -2195,6 +2248,19 @@ export default function ProductDetail() {
           </div>
 
           <div className="flex items-center gap-2">
+            <div className={cn(
+              "flex items-center gap-2.5 px-3 py-1.5 rounded-lg border",
+              t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/10')
+            )}>
+              <Store className="w-4 h-4 text-cyan-400" />
+              <span className={cn("text-xs font-medium", t('text-slate-600', 'text-zinc-400'))}>B2B Store</span>
+              <Switch
+                checked={b2bEnabled}
+                onCheckedChange={handleB2bToggle}
+                disabled={b2bLoading}
+                className="data-[state=checked]:bg-cyan-500"
+              />
+            </div>
             <button
               onClick={toggleTheme}
               className={cn(
