@@ -381,6 +381,19 @@ function ProductCard({ product, cart, nav, index }) {
               )}
             </div>
           )}
+          {/* Bulk pricing indicator */}
+          {(() => {
+            const tiers = product?.pricing?.volume_tiers;
+            if (!Array.isArray(tiers) || tiers.length === 0) return null;
+            const sorted = [...tiers].sort((a, b) => (a.min_quantity || 0) - (b.min_quantity || 0));
+            const best = sorted[sorted.length - 1];
+            if (!best?.price || !best?.min_quantity) return null;
+            return (
+              <span className="text-[10px] font-medium" style={{ color: 'var(--ws-primary)' }}>
+                From {formatCurrency(best.price)} at {best.min_quantity}+
+              </span>
+            );
+          })()}
         </div>
       </div>
     </motion.div>

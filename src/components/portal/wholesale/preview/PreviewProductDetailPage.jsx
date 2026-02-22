@@ -110,27 +110,22 @@ function parseSpecifications(specs) {
 }
 
 function getBulkTiers(product, basePrice) {
+  // Check all possible locations where volume tiers might be stored
   const tiers =
+    product?.pricing?.volume_tiers ||
     product?.bulk_pricing ||
     product?.pricing_tiers ||
     null;
   if (Array.isArray(tiers) && tiers.length > 0) {
     return tiers
-      .sort((a, b) => (a.min_qty || 0) - (b.min_qty || 0))
+      .sort((a, b) => (a.min_qty || a.min_quantity || 0) - (b.min_qty || b.min_quantity || 0))
       .map((tier) => ({
-        minQty: tier.min_qty || tier.quantity || 0,
+        minQty: tier.min_qty || tier.min_quantity || tier.quantity || 0,
         unitPrice: tier.price || tier.unit_price || basePrice,
       }));
   }
-  // Fallback: generate sensible B2B tiers
-  if (!basePrice) return [];
-  return [
-    { minQty: 1, unitPrice: basePrice },
-    { minQty: 10, unitPrice: +(basePrice * 0.92).toFixed(2) },
-    { minQty: 50, unitPrice: +(basePrice * 0.85).toFixed(2) },
-    { minQty: 100, unitPrice: +(basePrice * 0.75).toFixed(2) },
-    { minQty: 250, unitPrice: +(basePrice * 0.68).toFixed(2) },
-  ];
+  // No tiers configured — return empty (no fake data)
+  return [];
 }
 
 function getActiveTierIndex(tiers, qty) {

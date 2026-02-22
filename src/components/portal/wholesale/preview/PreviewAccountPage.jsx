@@ -2,7 +2,6 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   GlassCard,
-  SectionHeader,
   Breadcrumb,
   StatusBadge,
   PrimaryButton,
@@ -702,10 +701,17 @@ export default function PreviewAccountPage({ config, nav }) {
             { label: 'Company Account' },
           ]}
         />
-        <SectionHeader
-          title="Company Account"
-          subtitle="Manage your B2B account, delivery addresses, and preferences"
-        />
+        <div className="mb-8">
+          <h2
+            className="text-2xl sm:text-3xl font-bold tracking-tight"
+            style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font, var(--ws-font))' }}
+          >
+            Company Account
+          </h2>
+          <p className="mt-1.5 text-sm sm:text-base" style={{ color: 'var(--ws-muted)' }}>
+            Manage your B2B account, delivery addresses, and preferences
+          </p>
+        </div>
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5"
@@ -756,10 +762,17 @@ export default function PreviewAccountPage({ config, nav }) {
       />
 
       {/* Section Header */}
-      <SectionHeader
-        title="Company Account"
-        subtitle="Manage your B2B account, delivery addresses, and preferences"
-      />
+      <div className="mb-8">
+        <h2
+          className="text-2xl sm:text-3xl font-bold tracking-tight"
+          style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font, var(--ws-font))' }}
+        >
+          Company Account
+        </h2>
+        <p className="mt-1.5 text-sm sm:text-base" style={{ color: 'var(--ws-muted)' }}>
+          Manage your B2B account, delivery addresses, and preferences
+        </p>
+      </div>
 
       {/* Tab Navigation */}
       <div className="mb-8 -mx-1">

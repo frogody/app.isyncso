@@ -93,14 +93,14 @@ function isOutOfStock(product) {
 }
 
 function getBulkPricing(product) {
-  const tiers = product.bulk_pricing || product.pricing_tiers;
+  const tiers = product?.pricing?.volume_tiers || product.bulk_pricing || product.pricing_tiers;
   if (!tiers || !Array.isArray(tiers) || tiers.length === 0) return null;
-  // Find the tier with the highest quantity requirement
-  const sorted = [...tiers].sort((a, b) => (a.quantity || a.min_qty || 0) - (b.quantity || b.min_qty || 0));
+  // Find the tier with the highest quantity requirement (best bulk price)
+  const sorted = [...tiers].sort((a, b) => (a.quantity || a.min_qty || a.min_quantity || 0) - (b.quantity || b.min_qty || b.min_quantity || 0));
   const best = sorted[sorted.length - 1];
   if (!best) return null;
   const price = best.price ?? best.unit_price;
-  const qty = best.quantity ?? best.min_qty;
+  const qty = best.quantity ?? best.min_qty ?? best.min_quantity;
   if (price == null || qty == null) return null;
   return { price, quantity: qty };
 }

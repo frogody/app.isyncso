@@ -631,6 +631,73 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
           onTiersChange={handleTiersChange}
         />
       </div>
+
+      {/* B2B Storefront Pricing Preview */}
+      <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Store className="w-5 h-5 text-cyan-400" />
+            <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>B2B Store Pricing</span>
+          </div>
+          <span className={cn("text-xs px-2.5 py-1 rounded-full border",
+            tiers.length > 0
+              ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/20"
+              : "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
+          )}>
+            {tiers.length > 0 ? `${tiers.length} bulk tier${tiers.length > 1 ? 's' : ''} active` : 'No bulk tiers'}
+          </span>
+        </div>
+
+        {tiers.length > 0 ? (
+          <div className="space-y-3">
+            <p className={cn("text-xs", t('text-slate-500', 'text-zinc-500'))}>
+              These volume tiers are shown on your B2B storefront product pages. Clients see tiered pricing when ordering.
+            </p>
+            <div className={cn("rounded-lg overflow-hidden border", t('border-slate-200', 'border-zinc-800'))}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className={cn(t('bg-slate-50', 'bg-zinc-800/50'))}>
+                    <th className={cn("text-left px-4 py-2 font-medium text-xs", t('text-slate-500', 'text-zinc-400'))}>Quantity</th>
+                    <th className={cn("text-right px-4 py-2 font-medium text-xs", t('text-slate-500', 'text-zinc-400'))}>Unit Price</th>
+                    <th className={cn("text-right px-4 py-2 font-medium text-xs", t('text-slate-500', 'text-zinc-400'))}>Savings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className={cn("border-t", t('border-slate-100', 'border-zinc-800'))}>
+                    <td className={cn("px-4 py-2.5", t('text-slate-700', 'text-zinc-300'))}>1 - {(tiers[0]?.min_quantity || 2) - 1}</td>
+                    <td className={cn("px-4 py-2.5 text-right font-medium", t('text-slate-900', 'text-white'))}>{formatPrice(pricing.base_price || 0, currency)}</td>
+                    <td className={cn("px-4 py-2.5 text-right text-xs", t('text-slate-400', 'text-zinc-500'))}>Base price</td>
+                  </tr>
+                  {tiers.map((tier, idx) => {
+                    const savings = pricing.base_price > 0 ? Math.round((1 - tier.price / pricing.base_price) * 100) : 0;
+                    return (
+                      <tr key={idx} className={cn("border-t", t('border-slate-100', 'border-zinc-800'))}>
+                        <td className={cn("px-4 py-2.5", t('text-slate-700', 'text-zinc-300'))}>
+                          {tier.min_quantity}+{tier.max_quantity ? ` (up to ${tier.max_quantity})` : ''}
+                        </td>
+                        <td className={cn("px-4 py-2.5 text-right font-medium text-cyan-400")}>{formatPrice(tier.price, currency)}</td>
+                        <td className={cn("px-4 py-2.5 text-right text-xs font-medium", savings > 0 ? "text-green-400" : t('text-slate-400', 'text-zinc-500'))}>
+                          {savings > 0 ? `-${savings}%` : '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className={cn("flex flex-col items-center py-6 text-center")}>
+            <Store className={cn("w-8 h-8 mb-2", t('text-slate-300', 'text-zinc-600'))} />
+            <p className={cn("text-sm", t('text-slate-500', 'text-zinc-500'))}>
+              Add volume tiers above to enable bulk pricing on your B2B store
+            </p>
+            <p className={cn("text-xs mt-1", t('text-slate-400', 'text-zinc-600'))}>
+              Clients will see quantity-based discounts on the product detail page
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
