@@ -757,7 +757,7 @@ export default function PublicStorefront({ subdomain }) {
   useEffect(() => {
     if (!config) return;
     const seo = config.seo || {};
-    document.title = seo.title || storeData?.company_name || 'Store';
+    document.title = seo.title || config?.navigation?.companyName || 'Store';
     let metaDesc = document.querySelector('meta[name="description"]');
     if (!metaDesc) {
       metaDesc = document.createElement('meta');

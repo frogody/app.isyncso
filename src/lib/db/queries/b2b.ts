@@ -971,12 +971,11 @@ export async function getStoreBySubdomain(subdomain: string): Promise<{
   organization_id: string;
   store_config: Record<string, unknown>;
   store_published: boolean;
-  company_name: string | null;
   logo_url: string | null;
 } | null> {
   const { data, error } = await supabase
     .from('portal_settings')
-    .select('organization_id, store_config, store_published, company_name, logo_url')
+    .select('organization_id, store_config, store_published, logo_url')
     .eq('store_subdomain', subdomain)
     .eq('store_published', true)
     .single();
