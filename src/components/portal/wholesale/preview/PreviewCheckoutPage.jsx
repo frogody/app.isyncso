@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // PreviewCheckoutPage.jsx -- Premium B2B wholesale "Place Order" flow.
-// 4-step process: Delivery Details -> Order Review -> Verify Email -> Confirmation.
+// 4-step process: Delivery Details -> Order Review -> Confirm Order -> Confirmation.
 // After review, a 6-digit OTP is sent to the buyer's email. The order is
 // only created once the code is verified. Uses CSS custom properties
 // (--ws-*) for theming + design system components.
@@ -54,7 +54,7 @@ import { processOrderPlaced } from '@/lib/b2b/processB2BOrder';
 // Constants
 // ---------------------------------------------------------------------------
 
-const STEP_LABELS = ['Delivery Details', 'Order Review', 'Verify Email', 'Confirmation'];
+const STEP_LABELS = ['Delivery Details', 'Order Review', 'Confirm Order', 'Confirmation'];
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -786,7 +786,7 @@ function AnimatedCheckmark() {
 }
 
 // ---------------------------------------------------------------------------
-// Step 3 -- Verify Email OTP
+// Step 3 -- Confirm Order with OTP
 // ---------------------------------------------------------------------------
 
 function maskEmail(email) {
@@ -799,6 +799,7 @@ function maskEmail(email) {
 
 function VerifyEmailStep({
   client,
+  cart,
   otpCode,
   setOtpCode,
   otpError,
@@ -813,8 +814,11 @@ function VerifyEmailStep({
   onResend,
   onRetryOrder,
   onBack,
+  deliveryAddress,
+  poNumber,
 }) {
   const inputRefs = useRef([]);
+  const { items = [], subtotal = 0, vat = 0, volumeDiscount = 0, total = 0 } = cart || {};
 
   // Focus first empty input on mount
   useEffect(() => {
@@ -840,7 +844,6 @@ function VerifyEmailStep({
   const allFilled = otpCode.every((d) => d !== '');
 
   const handleChange = (idx, value) => {
-    // Only accept digits
     const digit = value.replace(/\D/g, '').slice(-1);
     const next = [...otpCode];
     next[idx] = digit;
@@ -878,6 +881,12 @@ function VerifyEmailStep({
     return `${m}:${String(sec).padStart(2, '0')}`;
   };
 
+  // Resolve shipping address display
+  const shippingAddr = deliveryAddress === 'billing'
+    ? (client?.billing_address || client?.shipping_address || {})
+    : (client?.shipping_address || {});
+  const addrParts = [shippingAddr.street, shippingAddr.city, shippingAddr.postal_code, shippingAddr.country].filter(Boolean);
+
   return (
     <motion.div
       key="step-3-verify"
@@ -885,165 +894,295 @@ function VerifyEmailStep({
       initial="hidden"
       animate="visible"
       exit={{ opacity: 0, y: -20, transition: { duration: 0.2 } }}
-      className="flex flex-col items-center"
+      className="w-full"
     >
-      <GlassCard hoverable={false} className="w-full max-w-md">
-        <div className="p-8 flex flex-col items-center text-center">
-          {/* Icon */}
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6"
-            style={{
-              background: 'color-mix(in srgb, var(--ws-primary) 12%, transparent)',
-              border: '1px solid color-mix(in srgb, var(--ws-primary) 25%, transparent)',
-            }}
-          >
-            <Mail className="w-7 h-7" style={{ color: 'var(--ws-primary)' }} />
-          </motion.div>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* LEFT — Order Summary (legal requirement) */}
+        <div className="lg:col-span-3">
+          <GlassCard hoverable={false} className="w-full">
+            <div className="p-6">
+              <h3
+                className="text-base font-semibold mb-4 flex items-center gap-2"
+                style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font, var(--ws-font))' }}
+              >
+                <FileText className="w-4 h-4" style={{ color: 'var(--ws-primary)' }} />
+                Order Summary
+              </h3>
 
-          {/* Title */}
-          <h2
-            className="text-xl font-bold mb-2"
-            style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font, var(--ws-font))' }}
-          >
-            Verify Your Email
-          </h2>
-          <p className="text-sm mb-6" style={{ color: 'var(--ws-muted)' }}>
-            To confirm your order, enter the 6-digit code sent to{' '}
-            <span className="font-semibold" style={{ color: 'var(--ws-text)' }}>
-              {maskEmail(client?.email)}
-            </span>
-          </p>
+              {/* Items list */}
+              <div
+                className="rounded-xl overflow-hidden mb-4"
+                style={{ border: '1px solid var(--ws-border)' }}
+              >
+                <table className="w-full text-sm" style={{ color: 'var(--ws-text)' }}>
+                  <thead>
+                    <tr style={{ background: 'color-mix(in srgb, var(--ws-surface) 60%, transparent)' }}>
+                      <th className="text-left px-4 py-2.5 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--ws-muted)' }}>Product</th>
+                      <th className="text-center px-3 py-2.5 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--ws-muted)' }}>Qty</th>
+                      <th className="text-right px-3 py-2.5 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--ws-muted)' }}>Unit Price</th>
+                      <th className="text-right px-4 py-2.5 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--ws-muted)' }}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item, idx) => (
+                      <tr
+                        key={item.productId || item.id || idx}
+                        style={{ borderTop: '1px solid var(--ws-border)' }}
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            {item.image && (
+                              <img
+                                src={item.image}
+                                alt=""
+                                className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                                style={{ border: '1px solid var(--ws-border)' }}
+                              />
+                            )}
+                            <div className="min-w-0">
+                              <p className="font-medium truncate" style={{ color: 'var(--ws-text)' }}>
+                                {item.name || 'Product'}
+                              </p>
+                              {item.sku && (
+                                <p className="text-xs mt-0.5" style={{ color: 'var(--ws-muted)' }}>
+                                  SKU: {item.sku}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="text-center px-3 py-3 font-medium">{item.quantity || 1}</td>
+                        <td className="text-right px-3 py-3" style={{ color: 'var(--ws-muted)' }}>
+                          {formatCurrency(Number(item.price) || 0)}
+                        </td>
+                        <td className="text-right px-4 py-3 font-semibold">
+                          {formatCurrency((Number(item.price) || 0) * (item.quantity || 1))}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-          {/* OTP Inputs */}
-          <div className="flex items-center justify-center gap-2 mb-4" onPaste={handlePaste}>
-            {otpCode.map((digit, idx) => (
-              <React.Fragment key={idx}>
-                {idx === 3 && (
-                  <span
-                    className="text-lg font-bold mx-1"
-                    style={{ color: 'var(--ws-border)' }}
-                  >
-                    —
-                  </span>
+              {/* Totals */}
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between" style={{ color: 'var(--ws-muted)' }}>
+                  <span>Subtotal ({items.length} item{items.length !== 1 ? 's' : ''})</span>
+                  <span style={{ color: 'var(--ws-text)' }}>{formatCurrency(subtotal)}</span>
+                </div>
+                {volumeDiscount > 0 && (
+                  <div className="flex justify-between" style={{ color: '#22c55e' }}>
+                    <span>Volume Discount</span>
+                    <span>-{formatCurrency(volumeDiscount)}</span>
+                  </div>
                 )}
-                <input
-                  ref={(el) => (inputRefs.current[idx] = el)}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleChange(idx, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(idx, e)}
-                  disabled={otpVerifying || submitting}
-                  className="w-12 h-14 text-center text-2xl font-bold rounded-xl outline-none transition-all duration-200"
-                  style={{
-                    background: 'color-mix(in srgb, var(--ws-surface) 80%, transparent)',
-                    border: digit
-                      ? '2px solid var(--ws-primary)'
-                      : '1px solid var(--ws-border)',
-                    color: 'var(--ws-text)',
-                    fontFamily: "'Courier New', monospace",
-                    boxShadow: digit
-                      ? '0 0 12px color-mix(in srgb, var(--ws-primary) 15%, transparent)'
-                      : 'none',
-                  }}
-                />
-              </React.Fragment>
-            ))}
-          </div>
+                <div className="flex justify-between" style={{ color: 'var(--ws-muted)' }}>
+                  <span>VAT (21%)</span>
+                  <span style={{ color: 'var(--ws-text)' }}>{formatCurrency(vat)}</span>
+                </div>
+                <div
+                  className="flex justify-between pt-3 mt-2 text-base font-bold"
+                  style={{ borderTop: '1px solid var(--ws-border)', color: 'var(--ws-text)' }}
+                >
+                  <span>Total</span>
+                  <span style={{ color: 'var(--ws-primary)' }}>{formatCurrency(total)}</span>
+                </div>
+              </div>
 
-          {/* Timer */}
-          {timeLeft !== null && !expired && (
-            <p className="text-xs mb-4" style={{ color: 'var(--ws-muted)' }}>
-              Code expires in{' '}
-              <span className="font-semibold font-mono" style={{ color: 'var(--ws-text)' }}>
-                {formatTime(timeLeft)}
-              </span>
-            </p>
-          )}
-
-          {expired && (
-            <p className="text-xs mb-4 font-semibold" style={{ color: '#ef4444' }}>
-              Code expired. Please request a new one.
-            </p>
-          )}
-
-          {/* Error */}
-          {otpError && (
-            <div
-              className="w-full rounded-xl px-4 py-3 mb-4 text-sm text-center"
-              style={{
-                background: 'rgba(239,68,68,0.08)',
-                border: '1px solid rgba(239,68,68,0.25)',
-                color: '#ef4444',
-              }}
-            >
-              {otpError}
+              {/* Delivery & PO info */}
+              <div
+                className="mt-4 pt-4 space-y-2 text-sm"
+                style={{ borderTop: '1px solid var(--ws-border)' }}
+              >
+                {addrParts.length > 0 && (
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: 'var(--ws-muted)' }} />
+                    <span style={{ color: 'var(--ws-muted)' }}>{addrParts.join(', ')}</span>
+                  </div>
+                )}
+                {poNumber && (
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--ws-muted)' }} />
+                    <span style={{ color: 'var(--ws-muted)' }}>PO: {poNumber}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--ws-muted)' }} />
+                  <span style={{ color: 'var(--ws-muted)' }}>
+                    {client?.company_name || client?.full_name || 'Client'} · Payment: Net {client?.payment_terms_days || 30} days
+                  </span>
+                </div>
+              </div>
             </div>
-          )}
-
-          {/* Submit error (order creation failed after OTP verified) */}
-          {otpVerified && submitError && (
-            <div
-              className="w-full rounded-xl px-4 py-3 mb-4 text-sm text-center"
-              style={{
-                background: 'rgba(239,68,68,0.08)',
-                border: '1px solid rgba(239,68,68,0.25)',
-                color: '#ef4444',
-              }}
-            >
-              {submitError}
-            </div>
-          )}
-
-          {/* Verify button (or Retry if OTP passed but order failed) */}
-          {otpVerified && submitError ? (
-            <PrimaryButton
-              onClick={onRetryOrder}
-              disabled={submitting}
-              icon={submitting ? Loader2 : RefreshCw}
-              className="w-full mb-3"
-            >
-              {submitting ? 'Placing Order...' : 'Retry Order'}
-            </PrimaryButton>
-          ) : (
-            <PrimaryButton
-              onClick={onVerify}
-              disabled={!allFilled || expired || otpVerifying || submitting}
-              icon={otpVerifying || submitting ? Loader2 : ShieldCheck}
-              className="w-full mb-3"
-            >
-              {otpVerifying
-                ? 'Verifying...'
-                : submitting
-                ? 'Placing Order...'
-                : 'Verify & Place Order'}
-            </PrimaryButton>
-          )}
-
-          {/* Resend */}
-          <button
-            type="button"
-            onClick={onResend}
-            disabled={resendCooldown > 0 || otpVerifying || submitting}
-            className="text-sm font-medium transition-all hover:opacity-80 disabled:opacity-40"
-            style={{ color: 'var(--ws-primary)' }}
-          >
-            {resendCooldown > 0
-              ? `Resend code in ${resendCooldown}s`
-              : 'Resend Code'}
-          </button>
+          </GlassCard>
         </div>
-      </GlassCard>
 
-      {/* Back button */}
-      <div className="flex items-center justify-start w-full max-w-md mt-6">
-        <SecondaryButton onClick={onBack} icon={ArrowLeft} disabled={otpVerifying || submitting}>
-          Back to Review
-        </SecondaryButton>
+        {/* RIGHT — OTP Verification */}
+        <div className="lg:col-span-2">
+          <GlassCard hoverable={false} className="w-full lg:sticky lg:top-6">
+            <div className="p-6 flex flex-col items-center text-center">
+              {/* Icon */}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
+                style={{
+                  background: 'color-mix(in srgb, var(--ws-primary) 12%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--ws-primary) 25%, transparent)',
+                }}
+              >
+                <ShieldCheck className="w-6 h-6" style={{ color: 'var(--ws-primary)' }} />
+              </motion.div>
+
+              {/* Title */}
+              <h2
+                className="text-lg font-bold mb-1.5"
+                style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font, var(--ws-font))' }}
+              >
+                Confirm Your Order
+              </h2>
+              <p className="text-sm mb-5" style={{ color: 'var(--ws-muted)' }}>
+                Enter the 6-digit code sent to{' '}
+                <span className="font-semibold" style={{ color: 'var(--ws-text)' }}>
+                  {maskEmail(client?.email)}
+                </span>
+              </p>
+
+              {/* OTP Inputs */}
+              <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-4" onPaste={handlePaste}>
+                {otpCode.map((digit, idx) => (
+                  <React.Fragment key={idx}>
+                    {idx === 3 && (
+                      <span
+                        className="text-lg font-bold mx-0.5"
+                        style={{ color: 'var(--ws-border)' }}
+                      >
+                        —
+                      </span>
+                    )}
+                    <input
+                      ref={(el) => (inputRefs.current[idx] = el)}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleChange(idx, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(idx, e)}
+                      disabled={otpVerifying || submitting}
+                      className="w-11 h-13 text-center text-xl font-bold rounded-xl outline-none transition-all duration-200"
+                      style={{
+                        background: 'color-mix(in srgb, var(--ws-surface) 80%, transparent)',
+                        border: digit
+                          ? '2px solid var(--ws-primary)'
+                          : '1px solid var(--ws-border)',
+                        color: 'var(--ws-text)',
+                        fontFamily: "'Courier New', monospace",
+                        boxShadow: digit
+                          ? '0 0 12px color-mix(in srgb, var(--ws-primary) 15%, transparent)'
+                          : 'none',
+                      }}
+                    />
+                  </React.Fragment>
+                ))}
+              </div>
+
+              {/* Timer */}
+              {timeLeft !== null && !expired && (
+                <p className="text-xs mb-4" style={{ color: 'var(--ws-muted)' }}>
+                  Code expires in{' '}
+                  <span className="font-semibold font-mono" style={{ color: 'var(--ws-text)' }}>
+                    {formatTime(timeLeft)}
+                  </span>
+                </p>
+              )}
+
+              {expired && (
+                <p className="text-xs mb-4 font-semibold" style={{ color: '#ef4444' }}>
+                  Code expired. Please request a new one.
+                </p>
+              )}
+
+              {/* Error */}
+              {otpError && (
+                <div
+                  className="w-full rounded-xl px-4 py-3 mb-4 text-sm text-center"
+                  style={{
+                    background: 'rgba(239,68,68,0.08)',
+                    border: '1px solid rgba(239,68,68,0.25)',
+                    color: '#ef4444',
+                  }}
+                >
+                  {otpError}
+                </div>
+              )}
+
+              {/* Submit error (order creation failed after OTP verified) */}
+              {otpVerified && submitError && (
+                <div
+                  className="w-full rounded-xl px-4 py-3 mb-4 text-sm text-center"
+                  style={{
+                    background: 'rgba(239,68,68,0.08)',
+                    border: '1px solid rgba(239,68,68,0.25)',
+                    color: '#ef4444',
+                  }}
+                >
+                  {submitError}
+                </div>
+              )}
+
+              {/* Verify button (or Retry if OTP passed but order failed) */}
+              {otpVerified && submitError ? (
+                <PrimaryButton
+                  onClick={onRetryOrder}
+                  disabled={submitting}
+                  icon={submitting ? Loader2 : RefreshCw}
+                  className="w-full mb-3"
+                >
+                  {submitting ? 'Placing Order...' : 'Retry Order'}
+                </PrimaryButton>
+              ) : (
+                <PrimaryButton
+                  onClick={onVerify}
+                  disabled={!allFilled || expired || otpVerifying || submitting}
+                  icon={otpVerifying || submitting ? Loader2 : ShieldCheck}
+                  className="w-full mb-3"
+                >
+                  {otpVerifying
+                    ? 'Verifying...'
+                    : submitting
+                    ? 'Placing Order...'
+                    : 'Confirm & Place Order'}
+                </PrimaryButton>
+              )}
+
+              {/* Resend */}
+              <button
+                type="button"
+                onClick={onResend}
+                disabled={resendCooldown > 0 || otpVerifying || submitting}
+                className="text-sm font-medium transition-all hover:opacity-80 disabled:opacity-40"
+                style={{ color: 'var(--ws-primary)' }}
+              >
+                {resendCooldown > 0
+                  ? `Resend code in ${resendCooldown}s`
+                  : 'Resend Code'}
+              </button>
+
+              {/* Legal note */}
+              <p className="text-[11px] mt-4 leading-relaxed" style={{ color: 'var(--ws-muted)', opacity: 0.7 }}>
+                By confirming, you agree to place this order for {formatCurrency(total)} under the payment terms shown.
+              </p>
+            </div>
+          </GlassCard>
+
+          {/* Back button */}
+          <div className="mt-4">
+            <SecondaryButton onClick={onBack} icon={ArrowLeft} disabled={otpVerifying || submitting}>
+              Back to Review
+            </SecondaryButton>
+          </div>
+        </div>
       </div>
     </motion.div>
   );
@@ -1240,6 +1379,83 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
     return () => clearInterval(iv);
   }, [resendCooldown]);
 
+  // Submit order -- creates a real B2B order in the database
+  // (defined before handleVerifyOTP so it can be referenced in its deps)
+  const handleSubmitOrder = useCallback(async () => {
+    if (!isAuthenticated || !client?.id || !orgId) {
+      setSubmitError('You must be signed in to place an order.');
+      return;
+    }
+
+    setSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // Resolve the shipping address JSONB from the selected option
+      const shippingAddr = deliveryAddress === 'billing'
+        ? (client.billing_address || client.shipping_address || {})
+        : (client.shipping_address || {});
+
+      const billingAddr = client.billing_address || client.shipping_address || {};
+
+      // Build combined notes
+      const notes = [
+        poNumber ? `PO: ${poNumber}` : '',
+        contactPerson ? `Contact: ${contactPerson}` : '',
+        specialInstructions || '',
+      ].filter(Boolean).join(' | ');
+
+      // Create the order
+      const order = await createB2BOrder({
+        organization_id: orgId,
+        company_id: orgId,
+        client_id: client.id,
+        subtotal: subtotal || 0,
+        tax_amount: vat || 0,
+        shipping_cost: 0,
+        discount_amount: volumeDiscount || 0,
+        total: total || 0,
+        shipping_address: shippingAddr,
+        billing_address: billingAddr,
+        client_notes: notes,
+        payment_terms_days: client.payment_terms_days || 30,
+      });
+
+      // Create order items
+      if (items.length > 0) {
+        const orderItems = items.map((item) => ({
+          b2b_order_id: order.id,
+          product_id: item.productId || item.id || null,
+          product_name: item.name || 'Unknown Product',
+          sku: item.sku || '',
+          quantity: item.quantity || 1,
+          unit_price: Number(item.price) || 0,
+          line_total: (Number(item.price) || 0) * (item.quantity || 1),
+          discount_percent: 0,
+          tax_percent: 21,
+          is_preorder: false,
+        }));
+
+        await createB2BOrderItems(orderItems);
+      }
+
+      // Run order automation (inventory, invoice, notification, email)
+      try {
+        await processOrderPlaced(order.id, orgId);
+      } catch (automationErr) {
+        console.warn('[Checkout] Automation partial failure:', automationErr);
+      }
+
+      setConfirmedOrderNumber(order.order_number || order.id);
+      goToStep(4);
+    } catch (err) {
+      console.error('[PreviewCheckoutPage] Order creation failed:', err);
+      setSubmitError(err.message || 'An unexpected error occurred. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [isAuthenticated, client, orgId, items, subtotal, vat, volumeDiscount, total, deliveryAddress, poNumber, contactPerson, specialInstructions, goToStep]);
+
   // Send OTP to buyer's email
   const handleSendOTP = useCallback(async () => {
     if (!isAuthenticated || !client?.email || !orgId) {
@@ -1277,7 +1493,7 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
     }
   }, [isAuthenticated, client, orgId, goToStep]);
 
-  // Verify OTP code
+  // Verify OTP code — on success, immediately creates the order
   const handleVerifyOTP = useCallback(async () => {
     const code = otpCode.join('');
     if (code.length !== 6 || !client?.email || !orgId) return;
@@ -1301,7 +1517,6 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
       if (data.verified) {
         setOtpVerified(true);
         setOtpVerifying(false);
-        // Now create the order
         await handleSubmitOrder();
       } else {
         setOtpAttemptsRemaining(data.attemptsRemaining ?? 0);
@@ -1313,7 +1528,7 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
     } finally {
       setOtpVerifying(false);
     }
-  }, [otpCode, client, orgId]);
+  }, [otpCode, client, orgId, handleSubmitOrder]);
 
   // Resend OTP
   const handleResendOTP = useCallback(async () => {
@@ -1347,86 +1562,6 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
     }
   }, [resendCooldown, client, orgId]);
 
-  // Submit order -- creates a real B2B order in the database
-  const handleSubmitOrder = useCallback(async () => {
-    if (!isAuthenticated || !client?.id || !orgId) {
-      setSubmitError('You must be signed in to place an order.');
-      return;
-    }
-
-    setSubmitting(true);
-    setSubmitError(null);
-
-    try {
-      // Resolve the shipping address JSONB from the selected option
-      const shippingAddr = deliveryAddress === 'billing'
-        ? (client.billing_address || client.shipping_address || {})
-        : (client.shipping_address || {});
-
-      const billingAddr = client.billing_address || client.shipping_address || {};
-
-      // Build combined notes
-      const notes = [
-        poNumber ? `PO: ${poNumber}` : '',
-        contactPerson ? `Contact: ${contactPerson}` : '',
-        specialInstructions || '',
-      ].filter(Boolean).join(' | ');
-
-      // Create the order
-      const order = await createB2BOrder({
-        organization_id: orgId,
-        company_id: orgId, // In this B2B portal, company_id maps to organization_id
-        client_id: client.id,
-        subtotal: subtotal || 0,
-        tax_amount: vat || 0,
-        shipping_cost: 0,
-        discount_amount: volumeDiscount || 0,
-        total: total || 0,
-        shipping_address: shippingAddr,
-        billing_address: billingAddr,
-        client_notes: notes,
-        payment_terms_days: client.payment_terms_days || 30,
-      });
-
-      // Create order items
-      if (items.length > 0) {
-        const orderItems = items.map((item) => ({
-          b2b_order_id: order.id,
-          product_id: item.productId || item.id || null,
-          product_name: item.name || 'Unknown Product',
-          sku: item.sku || '',
-          quantity: item.quantity || 1,
-          unit_price: Number(item.price) || 0,
-          line_total: (Number(item.price) || 0) * (item.quantity || 1),
-          discount_percent: 0,
-          tax_percent: 21,
-          is_preorder: false,
-        }));
-
-        await createB2BOrderItems(orderItems);
-      }
-
-      // Run order automation (inventory, invoice, notification, email)
-      try {
-        await processOrderPlaced(order.id, orgId);
-      } catch (automationErr) {
-        console.warn('[Checkout] Automation partial failure:', automationErr);
-        // Don't block order confirmation — order is created successfully
-      }
-
-      // Store the confirmed order number
-      setConfirmedOrderNumber(order.order_number || order.id);
-
-      // Move to confirmation step
-      goToStep(4);
-    } catch (err) {
-      console.error('[PreviewCheckoutPage] Order creation failed:', err);
-      setSubmitError(err.message || 'An unexpected error occurred. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  }, [isAuthenticated, client, orgId, items, subtotal, vat, volumeDiscount, total, deliveryAddress, poNumber, contactPerson, specialInstructions, goToStep]);
-
   // Clear cart exactly once on reaching step 4 (confirmation)
   useEffect(() => {
     if (step === 4 && !clearedRef.current) {
@@ -1458,7 +1593,7 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
 
   return (
     <div
-      className="w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+      className={`w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 ${step === 3 ? 'max-w-6xl' : 'max-w-3xl'}`}
       style={{ backgroundColor: 'var(--ws-bg)' }}
     >
       {/* Breadcrumb */}
@@ -1479,7 +1614,7 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
             : step === 2
             ? 'Review your order before submission'
             : step === 3
-            ? 'Verify your identity to confirm the order'
+            ? 'Review and confirm your order'
             : 'Your order has been submitted'
         }
         className="mb-6"
@@ -1528,6 +1663,7 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
         {step === 3 && (
           <VerifyEmailStep
             client={client}
+            cart={cart}
             otpCode={otpCode}
             setOtpCode={setOtpCode}
             otpError={otpError}
@@ -1542,6 +1678,8 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
             onResend={handleResendOTP}
             onRetryOrder={handleSubmitOrder}
             onBack={() => goToStep(2)}
+            deliveryAddress={deliveryAddress}
+            poNumber={poNumber}
           />
         )}
 
