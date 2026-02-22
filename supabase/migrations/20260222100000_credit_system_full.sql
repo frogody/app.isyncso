@@ -38,14 +38,15 @@ INSERT INTO credit_action_costs (action_key, credits_required, label, descriptio
   ('enhance-prompt',             1,  'Enhance Prompt',            'AI prompt improvement',                       'ai',           'medium',  false, NULL,      16),
   ('store-builder-ai',           1,  'Store Builder AI',          'AI store building action',                    'ai',           'medium',  false, NULL,      17),
 
-  -- Image Generation
-  ('generate-image-schnell',     1,  'Quick Draft Image',         'Fast FLUX Schnell image generation',          'image',        'medium',  false, NULL,      20),
-  ('generate-image-pro',         3,  'Pro Image',                 'FLUX Pro image generation',                   'image',        'medium',  false, NULL,      21),
-  ('generate-image-kontext',     3,  'Kontext Image',             'FLUX Kontext image edit/generation',          'image',        'medium',  false, NULL,      22),
-  ('generate-image-kontext-max', 5,  'Kontext Max Image',         'FLUX Kontext Max premium generation',         'image',        'medium',  false, NULL,      23),
-  ('fashion-booth',              5,  'Fashion Booth',             'AI fashion try-on pipeline',                  'image',        'high',    false, NULL,      24),
-  ('outfit-extractor',           3,  'Outfit Extractor',          'Extract outfit from image',                   'image',        'medium',  false, NULL,      25),
-  ('reach-generate-ad-image',    3,  'Ad Image',                  'Marketing ad image generation',               'image',        'medium',  false, NULL,      26),
+  -- Image Generation (~12 credits = ~€1 at Growth Pack rate)
+  ('nano-banana-pro',            12, 'Product Photoshoot',        'Nano Banana Pro (Google Gemini) image generation', 'image',    'high',    false, NULL,      19),
+  ('generate-image-schnell',     2,  'Quick Draft Image',         'Fast FLUX Schnell image generation',          'image',        'low',     false, NULL,      20),
+  ('generate-image-pro',         8,  'Pro Image (FLUX)',          'FLUX Pro image generation',                   'image',        'high',    false, NULL,      21),
+  ('generate-image-kontext',     8,  'Kontext Image',             'FLUX Kontext image edit/generation',          'image',        'high',    false, NULL,      22),
+  ('generate-image-kontext-max', 15, 'Kontext Max Image',         'FLUX Kontext Max premium generation',         'image',        'premium', false, NULL,      23),
+  ('fashion-booth',              12, 'Fashion Booth',             'AI fashion try-on pipeline',                  'image',        'high',    false, NULL,      24),
+  ('outfit-extractor',           8,  'Outfit Extractor',          'Extract outfit pieces from photo',            'image',        'high',    false, NULL,      25),
+  ('reach-generate-ad-image',    8,  'Ad Image',                  'Marketing ad image generation',               'image',        'high',    false, NULL,      26),
 
   -- Video Generation
   ('generate-video',            50,  'AI Video (Veo)',            'Google Veo video generation (~10s)',           'video',        'high',    false, NULL,      30),
@@ -56,8 +57,8 @@ INSERT INTO credit_action_costs (action_key, credits_required, label, descriptio
   ('generate-podcast',          5,  'Podcast',                   'AI podcast generation (LLM + TTS)',            'video',        'high',    false, NULL,      35),
 
   -- Studio
-  ('studio-photoshoot-per-image', 3, 'Studio Photoshoot Image',  'Per image in photoshoot batch',               'studio',       'high',    true,  'image',   40),
-  ('studio-regenerate-shot',      3, 'Studio Regenerate Shot',   'Regenerate a studio shot',                    'studio',       'medium',  false, NULL,      41),
+  ('studio-photoshoot-per-image', 12, 'Studio Photoshoot Image', 'Per image in photoshoot batch',               'studio',       'high',    true,  'image',   40),
+  ('studio-regenerate-shot',      12, 'Studio Regenerate Shot',  'Regenerate a studio shot',                    'studio',       'high',    false, NULL,      41),
 
   -- Content Generation
   ('generate-listing-copy',      2,  'Listing Copy',             'Product listing copywriting',                 'content',      'medium',  false, NULL,      50),

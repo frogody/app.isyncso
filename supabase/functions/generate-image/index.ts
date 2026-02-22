@@ -820,6 +820,8 @@ serve(async (req) => {
       creditActionKey = 'outfit-extractor';
     } else if (fashion_booth) {
       creditActionKey = 'fashion-booth';
+    } else if (model_key === 'nano-banana-pro') {
+      creditActionKey = 'nano-banana-pro';
     } else if (model_key === 'flux-schnell' || use_case === 'quick_draft') {
       creditActionKey = 'generate-image-schnell';
     } else if (model_key === 'flux-kontext-max') {
@@ -894,7 +896,7 @@ serve(async (req) => {
             url: publicUrl,
             description: descriptions[result.label] || result.label,
           });
-          totalCost += 0.04; // per Nano Banana call
+          totalCost += 0.14; // per Nano Banana call (~$0.134/image at 1K/2K)
         } else {
           console.warn(`Failed to extract ${result.label}:`, result.error);
         }
@@ -996,7 +998,7 @@ serve(async (req) => {
         const { publicUrl } = await uploadToStorage('generated-content', fileName, imageData, nanoBananaResult.mimeType || 'image/jpeg');
 
         if (publicUrl) {
-          const costUsd = 0.04;
+          const costUsd = 0.14; // Google Gemini image gen ~$0.134/image at 1K/2K
           if (company_id) {
             try {
               await supabaseInsert('ai_usage_logs', {
@@ -1096,7 +1098,7 @@ serve(async (req) => {
         const { publicUrl } = await uploadToStorage('generated-content', fileName, imageData, nanoBananaResult.mimeType || 'image/jpeg');
 
         if (publicUrl) {
-          const costUsd = 0.04; // Nano Banana pricing via Google API
+          const costUsd = 0.14; // Google Gemini image gen ~$0.134/image at 1K/2K // Nano Banana pricing via Google API
           if (company_id) {
             try {
               await supabaseInsert('ai_usage_logs', {
