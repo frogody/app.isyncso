@@ -1,68 +1,94 @@
 // ---------------------------------------------------------------------------
-// PreviewProductDetailPage.jsx -- Full product detail page for the store
-// builder preview iframe. Renders product info, image gallery, quantity
-// selector, specifications, bulk pricing, and related products.
-//
-// Uses CSS custom properties (--ws-*) for theming. Data comes from props;
-// optionally fetches richer data from DB via getB2BProduct when orgId is set.
+// PreviewProductDetailPage.jsx -- Premium B2B wholesale product detail page.
+// Glass-morphism design system, bulk pricing with dynamic tier highlighting,
+// MOQ enforcement, related products, specifications, and document downloads.
 // ---------------------------------------------------------------------------
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import {
-  ChevronRight,
   Package,
-  ShoppingCart,
+  ClipboardPlus,
   Check,
-  Minus,
-  Plus,
   ArrowLeft,
-  Star,
+  FileText,
+  Truck,
+  MessageSquareQuote,
+  Tag,
+  Info,
+  BoxesIcon,
+  Download,
+  Award,
+  ShieldCheck,
+  Layers,
 } from 'lucide-react';
+import {
+  GlassCard,
+  SectionHeader,
+  Breadcrumb,
+  StatusBadge,
+  QuantityInput,
+  EmptyState,
+  PrimaryButton,
+  SecondaryButton,
+  motionVariants,
+  glassCardStyle,
+  gradientAccentBar,
+  gradientTextStyle,
+  formatCurrency,
+} from './previewDesignSystem';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatPrice(value) {
-  if (value == null) return null;
-  return `\u20AC${Number(value).toFixed(2)}`;
+function getProductPrice(product) {
+  if (!product) return 0;
+  return (
+    product.b2b_price ??
+    product.wholesale_price ??
+    product.price ??
+    0
+  );
 }
 
-function getStockInfo(product) {
-  const stock = product.stock;
-  if (stock == null) return { label: 'In Stock', dotColor: '#22c55e', available: true };
-  if (typeof stock === 'string') {
-    const lower = stock.toLowerCase();
-    if (lower.includes('out')) return { label: 'Out of Stock', dotColor: '#ef4444', available: false };
-    if (lower.includes('limited') || lower.includes('low')) return { label: 'Limited Stock', dotColor: '#f59e0b', available: true };
-    return { label: 'In Stock', dotColor: '#22c55e', available: true };
+function getStockStatus(product) {
+  const qty = product?.stock_quantity ?? product?.stock;
+  if (qty == null)
+    return { label: 'In Stock', status: 'success', available: true };
+  if (typeof qty === 'string') {
+    const lower = qty.toLowerCase();
+    if (lower.includes('out'))
+      return { label: 'Out of Stock', status: 'error', available: false };
+    if (lower.includes('low') || lower.includes('limited'))
+      return { label: 'Low Stock', status: 'warning', available: true };
+    return { label: 'In Stock', status: 'success', available: true };
   }
-  if (typeof stock === 'number') {
-    if (stock <= 0) return { label: 'Out of Stock', dotColor: '#ef4444', available: false };
-    if (stock <= 10) return { label: 'Limited Stock', dotColor: '#f59e0b', available: true };
-    return { label: 'In Stock', dotColor: '#22c55e', available: true };
+  if (typeof qty === 'number') {
+    if (qty <= 0)
+      return { label: 'Out of Stock', status: 'error', available: false };
+    if (qty <= 10)
+      return { label: 'Low Stock', status: 'warning', available: true };
+    return { label: 'In Stock', status: 'success', available: true };
   }
-  return { label: 'In Stock', dotColor: '#22c55e', available: true };
+  return { label: 'In Stock', status: 'success', available: true };
 }
 
-/**
- * Collect all displayable image URLs from a product object.
- */
 function collectImages(product) {
+  if (!product) return [];
   const images = [];
-  if (product?.featured_image) images.push(product.featured_image);
-  if (product?.image && !images.includes(product.image)) images.push(product.image);
-  if (Array.isArray(product?.gallery)) {
-    product.gallery.forEach((url) => {
+  if (product.featured_image) images.push(product.featured_image);
+  if (product.image && !images.includes(product.image))
+    images.push(product.image);
+  const gallery = product.gallery_images || product.gallery || [];
+  if (Array.isArray(gallery)) {
+    gallery.forEach((url) => {
       if (url && !images.includes(url)) images.push(url);
     });
   }
   return images;
 }
 
-/**
- * Parse specifications from various formats into { key, value } pairs.
- */
 function parseSpecifications(specs) {
   if (!specs) return [];
   if (Array.isArray(specs)) {
@@ -84,45 +110,60 @@ function parseSpecifications(specs) {
   return [];
 }
 
+function getBulkTiers(product, basePrice) {
+  const tiers =
+    product?.bulk_pricing ||
+    product?.pricing_tiers ||
+    null;
+  if (Array.isArray(tiers) && tiers.length > 0) {
+    return tiers
+      .sort((a, b) => (a.min_qty || 0) - (b.min_qty || 0))
+      .map((tier) => ({
+        minQty: tier.min_qty || tier.quantity || 0,
+        unitPrice: tier.price || tier.unit_price || basePrice,
+      }));
+  }
+  // Fallback: generate sensible B2B tiers
+  if (!basePrice) return [];
+  return [
+    { minQty: 1, unitPrice: basePrice },
+    { minQty: 10, unitPrice: +(basePrice * 0.92).toFixed(2) },
+    { minQty: 50, unitPrice: +(basePrice * 0.85).toFixed(2) },
+    { minQty: 100, unitPrice: +(basePrice * 0.75).toFixed(2) },
+    { minQty: 250, unitPrice: +(basePrice * 0.68).toFixed(2) },
+  ];
+}
+
+function getActiveTierIndex(tiers, qty) {
+  let active = 0;
+  for (let i = 0; i < tiers.length; i++) {
+    if (qty >= tiers[i].minQty) active = i;
+  }
+  return active;
+}
+
+function getMoq(product) {
+  return product?.moq || product?.minimum_order_quantity || 1;
+}
+
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
-
-function Breadcrumb({ product, nav }) {
-  return (
-    <nav className="flex items-center gap-1.5 text-xs flex-wrap mb-6" style={{ color: 'var(--ws-muted)' }}>
-      <button
-        onClick={() => nav?.goToHome?.()}
-        className="hover:underline transition-colors"
-        style={{ color: 'var(--ws-muted)' }}
-      >
-        Home
-      </button>
-      <ChevronRight className="w-3 h-3 flex-shrink-0" />
-      <button
-        onClick={() => nav?.goToCatalog?.()}
-        className="hover:underline transition-colors"
-        style={{ color: 'var(--ws-muted)' }}
-      >
-        Catalog
-      </button>
-      <ChevronRight className="w-3 h-3 flex-shrink-0" />
-      <span style={{ color: 'var(--ws-text)' }}>{product?.name || 'Product'}</span>
-    </nav>
-  );
-}
 
 function ImageGallery({ images, activeIndex, onSelect }) {
   if (images.length === 0) {
     return (
       <div
-        className="aspect-square rounded-xl flex items-center justify-center"
+        className="aspect-square rounded-2xl flex items-center justify-center"
         style={{
-          backgroundColor: 'var(--ws-surface)',
-          border: '1px solid var(--ws-border)',
+          ...glassCardStyle,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
         }}
       >
-        <Package className="w-20 h-20" style={{ color: 'var(--ws-muted)', opacity: 0.3 }} />
+        <Package
+          className="w-20 h-20"
+          style={{ color: 'var(--ws-muted)', opacity: 0.2 }}
+        />
       </div>
     );
   }
@@ -131,10 +172,10 @@ function ImageGallery({ images, activeIndex, onSelect }) {
     <div className="flex flex-col gap-3">
       {/* Main image */}
       <div
-        className="aspect-square rounded-xl overflow-hidden flex items-center justify-center"
+        className="aspect-square rounded-2xl overflow-hidden flex items-center justify-center"
         style={{
-          backgroundColor: 'var(--ws-surface)',
-          border: '1px solid var(--ws-border)',
+          ...glassCardStyle,
+          boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
         }}
       >
         <img
@@ -150,18 +191,26 @@ function ImageGallery({ images, activeIndex, onSelect }) {
       {/* Thumbnail row */}
       {images.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {images.slice(0, 4).map((url, idx) => (
+          {images.slice(0, 6).map((url, idx) => (
             <button
               key={idx}
               onClick={() => onSelect(idx)}
-              className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden transition-all duration-200"
+              className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden transition-all duration-300"
               style={{
-                backgroundColor: 'var(--ws-surface)',
+                ...glassCardStyle,
                 border:
                   idx === activeIndex
-                    ? '2px solid var(--ws-primary)'
+                    ? '2px solid transparent'
                     : '1px solid var(--ws-border)',
-                opacity: idx === activeIndex ? 1 : 0.6,
+                backgroundImage:
+                  idx === activeIndex
+                    ? undefined
+                    : undefined,
+                boxShadow:
+                  idx === activeIndex
+                    ? '0 0 0 2px var(--ws-primary), 0 4px 12px rgba(0,0,0,0.2)'
+                    : '0 1px 3px rgba(0,0,0,0.08)',
+                opacity: idx === activeIndex ? 1 : 0.65,
               }}
             >
               <img
@@ -177,90 +226,34 @@ function ImageGallery({ images, activeIndex, onSelect }) {
   );
 }
 
-function QuantitySelector({ value, onChange }) {
-  const handleDecrement = () => onChange(Math.max(1, value - 1));
-  const handleIncrement = () => onChange(Math.min(9999, value + 1));
-  const handleInput = (e) => {
-    const raw = e.target.value.replace(/\D/g, '');
-    const num = parseInt(raw, 10);
-    if (isNaN(num)) {
-      onChange(1);
-    } else {
-      onChange(Math.max(1, Math.min(9999, num)));
-    }
-  };
-
-  return (
-    <div
-      className="inline-flex items-center rounded-lg overflow-hidden"
-      style={{ border: '1px solid var(--ws-border)' }}
-    >
-      <button
-        onClick={handleDecrement}
-        disabled={value <= 1}
-        className="flex items-center justify-center w-10 h-10 transition-colors hover:opacity-80 disabled:opacity-30"
-        style={{
-          backgroundColor: 'var(--ws-surface)',
-          color: 'var(--ws-text)',
-          borderRight: '1px solid var(--ws-border)',
-        }}
-        aria-label="Decrease quantity"
-      >
-        <Minus className="w-4 h-4" />
-      </button>
-
-      <input
-        type="text"
-        inputMode="numeric"
-        value={value}
-        onChange={handleInput}
-        className="w-16 h-10 text-center text-sm font-semibold outline-none bg-transparent"
-        style={{
-          color: 'var(--ws-text)',
-          fontFamily: 'var(--ws-font)',
-        }}
-        aria-label="Quantity"
-      />
-
-      <button
-        onClick={handleIncrement}
-        disabled={value >= 9999}
-        className="flex items-center justify-center w-10 h-10 transition-colors hover:opacity-80 disabled:opacity-30"
-        style={{
-          backgroundColor: 'var(--ws-surface)',
-          color: 'var(--ws-text)',
-          borderLeft: '1px solid var(--ws-border)',
-        }}
-        aria-label="Increase quantity"
-      >
-        <Plus className="w-4 h-4" />
-      </button>
-    </div>
-  );
-}
-
 function SpecificationsTable({ specs }) {
   const rows = useMemo(() => parseSpecifications(specs), [specs]);
   if (rows.length === 0) return null;
 
   return (
     <div
-      className="rounded-xl overflow-hidden"
+      className="rounded-2xl overflow-hidden"
       style={{
-        backgroundColor: 'var(--ws-surface)',
-        border: '1px solid var(--ws-border)',
+        ...glassCardStyle,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
       }}
     >
-      <h3
-        className="px-5 py-4 text-base font-bold"
-        style={{
-          color: 'var(--ws-text)',
-          fontFamily: 'var(--ws-heading-font)',
-          borderBottom: '1px solid var(--ws-border)',
-        }}
+      <div style={gradientAccentBar} />
+      <div
+        className="px-5 py-4 flex items-center gap-2"
+        style={{ borderBottom: '1px solid var(--ws-border)' }}
       >
-        Specifications
-      </h3>
+        <Layers className="w-4 h-4" style={{ color: 'var(--ws-primary)' }} />
+        <h3
+          className="text-base font-bold"
+          style={{
+            color: 'var(--ws-text)',
+            fontFamily: 'var(--ws-heading-font, var(--ws-font))',
+          }}
+        >
+          Specifications
+        </h3>
+      </div>
       <table className="w-full text-sm">
         <tbody>
           {rows.map((row, i) => (
@@ -269,7 +262,10 @@ function SpecificationsTable({ specs }) {
               style={{
                 borderBottom:
                   i < rows.length - 1 ? '1px solid var(--ws-border)' : 'none',
-                backgroundColor: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)',
+                background:
+                  i % 2 === 0
+                    ? 'transparent'
+                    : 'color-mix(in srgb, var(--ws-surface) 40%, transparent)',
               }}
             >
               <td
@@ -289,160 +285,315 @@ function SpecificationsTable({ specs }) {
   );
 }
 
-function BulkPricingTable({ basePrice }) {
-  const price = basePrice || 0;
-  const tiers = [
-    { range: '1 - 9', unitPrice: price, savings: null },
-    { range: '10 - 49', unitPrice: price * 0.9, savings: '10%' },
-    { range: '50 - 99', unitPrice: price * 0.8, savings: '20%' },
-    { range: '100+', unitPrice: price * 0.67, savings: '33%' },
-  ];
+function BulkPricingTable({ tiers, basePrice, quantity, unit }) {
+  if (!tiers || tiers.length === 0) return null;
+  const activeTier = getActiveTierIndex(tiers, quantity);
 
   return (
     <div
-      className="rounded-xl overflow-hidden"
+      className="rounded-2xl overflow-hidden"
       style={{
-        backgroundColor: 'var(--ws-surface)',
-        border: '1px solid var(--ws-border)',
+        ...glassCardStyle,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
       }}
     >
-      <h3
-        className="px-5 py-4 text-base font-bold"
-        style={{
-          color: 'var(--ws-text)',
-          fontFamily: 'var(--ws-heading-font)',
-          borderBottom: '1px solid var(--ws-border)',
-        }}
+      <div style={gradientAccentBar} />
+      <div
+        className="px-5 py-4 flex items-center gap-2"
+        style={{ borderBottom: '1px solid var(--ws-border)' }}
       >
-        Volume Pricing
-      </h3>
+        <Tag className="w-4 h-4" style={{ color: 'var(--ws-primary)' }} />
+        <h3
+          className="text-base font-bold"
+          style={{
+            color: 'var(--ws-text)',
+            fontFamily: 'var(--ws-heading-font, var(--ws-font))',
+          }}
+        >
+          Volume Pricing
+        </h3>
+      </div>
       <table className="w-full text-sm">
         <thead>
           <tr style={{ borderBottom: '1px solid var(--ws-border)' }}>
-            <th
-              className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-              style={{ color: 'var(--ws-muted)' }}
-            >
-              Quantity
-            </th>
-            <th
-              className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-              style={{ color: 'var(--ws-muted)' }}
-            >
-              Price Per Unit
-            </th>
-            <th
-              className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-              style={{ color: 'var(--ws-muted)' }}
-            >
-              Savings
-            </th>
+            {['Quantity', `Unit Price`, 'Total', 'Savings'].map((h) => (
+              <th
+                key={h}
+                className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider"
+                style={{ color: 'var(--ws-muted)' }}
+              >
+                {h}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {tiers.map((tier, i) => (
-            <tr
-              key={tier.range}
-              style={{
-                borderBottom:
-                  i < tiers.length - 1 ? '1px solid var(--ws-border)' : 'none',
-              }}
-            >
-              <td className="px-5 py-3 font-medium" style={{ color: 'var(--ws-text)' }}>
-                {tier.range}
-              </td>
-              <td className="px-5 py-3 font-semibold" style={{ color: 'var(--ws-primary)' }}>
-                {formatPrice(tier.unitPrice)}
-              </td>
-              <td className="px-5 py-3" style={{ color: 'var(--ws-muted)' }}>
-                {tier.savings ? (
-                  <span
-                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                    style={{
-                      backgroundColor: 'rgba(34, 197, 94, 0.12)',
-                      color: '#22c55e',
-                    }}
-                  >
-                    Save {tier.savings}
-                  </span>
-                ) : (
-                  <span className="text-xs">Base price</span>
-                )}
-              </td>
-            </tr>
-          ))}
+          {tiers.map((tier, i) => {
+            const isActive = i === activeTier;
+            const nextMin = tiers[i + 1]?.minQty;
+            const rangeLabel = nextMin
+              ? `${tier.minQty} - ${nextMin - 1}`
+              : `${tier.minQty}+`;
+            const savings =
+              basePrice > 0 && tier.unitPrice < basePrice
+                ? Math.round(((basePrice - tier.unitPrice) / basePrice) * 100)
+                : 0;
+            const total = tier.unitPrice * (isActive ? quantity : tier.minQty);
+            const isBestValue = i === tiers.length - 1;
+
+            return (
+              <tr
+                key={i}
+                style={{
+                  borderBottom:
+                    i < tiers.length - 1
+                      ? '1px solid var(--ws-border)'
+                      : 'none',
+                  background: isActive
+                    ? 'color-mix(in srgb, var(--ws-primary) 8%, transparent)'
+                    : 'transparent',
+                }}
+              >
+                <td className="px-5 py-3" style={{ color: 'var(--ws-text)' }}>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{rangeLabel} {unit || 'units'}</span>
+                    {isActive && (
+                      <span
+                        className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full tracking-wider"
+                        style={{
+                          background:
+                            'color-mix(in srgb, var(--ws-primary) 15%, transparent)',
+                          color: 'var(--ws-primary)',
+                          border:
+                            '1px solid color-mix(in srgb, var(--ws-primary) 30%, transparent)',
+                        }}
+                      >
+                        Your tier
+                      </span>
+                    )}
+                    {isBestValue && !isActive && (
+                      <span
+                        className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full tracking-wider"
+                        style={{
+                          background: 'rgba(34,197,94,0.12)',
+                          color: '#22c55e',
+                          border: '1px solid rgba(34,197,94,0.25)',
+                        }}
+                      >
+                        Best value
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td
+                  className="px-5 py-3 font-semibold"
+                  style={{
+                    ...gradientTextStyle(),
+                  }}
+                >
+                  {formatCurrency(tier.unitPrice)}
+                </td>
+                <td
+                  className="px-5 py-3 font-medium"
+                  style={{ color: 'var(--ws-text)' }}
+                >
+                  {formatCurrency(total)}
+                </td>
+                <td className="px-5 py-3">
+                  {savings > 0 ? (
+                    <StatusBadge status="success" label={`Save ${savings}%`} />
+                  ) : (
+                    <span
+                      className="text-xs"
+                      style={{ color: 'var(--ws-muted)' }}
+                    >
+                      Base price
+                    </span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
   );
 }
 
-function RelatedProducts({ products, currentId, nav }) {
+function ProductDocuments() {
+  const docs = [
+    {
+      name: 'Technical Datasheet',
+      type: 'PDF',
+      size: '2.4 MB',
+      icon: FileText,
+    },
+    {
+      name: 'Safety Certificate (CE)',
+      type: 'PDF',
+      size: '1.1 MB',
+      icon: ShieldCheck,
+    },
+    {
+      name: 'Quality Assurance Report',
+      type: 'PDF',
+      size: '3.8 MB',
+      icon: Award,
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {docs.map((doc, i) => {
+        const Icon = doc.icon;
+        return (
+          <div
+            key={i}
+            className="flex items-center gap-3 rounded-xl px-4 py-3 cursor-pointer transition-all duration-200 group"
+            style={{
+              ...glassCardStyle,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor =
+                'color-mix(in srgb, var(--ws-primary) 40%, var(--ws-border))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--ws-border)';
+            }}
+          >
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{
+                background:
+                  'color-mix(in srgb, var(--ws-primary) 10%, transparent)',
+              }}
+            >
+              <Icon
+                className="w-4 h-4"
+                style={{ color: 'var(--ws-primary)' }}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p
+                className="text-sm font-medium truncate"
+                style={{ color: 'var(--ws-text)' }}
+              >
+                {doc.name}
+              </p>
+              <p
+                className="text-xs"
+                style={{ color: 'var(--ws-muted)' }}
+              >
+                {doc.type} -- {doc.size}
+              </p>
+            </div>
+            <Download
+              className="w-4 h-4 flex-shrink-0 opacity-40 group-hover:opacity-100 transition-opacity"
+              style={{ color: 'var(--ws-primary)' }}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function RelatedProducts({ products, currentProduct, nav }) {
   const related = useMemo(() => {
-    return products
-      .filter((p) => p.id !== currentId)
-      .slice(0, 4);
-  }, [products, currentId]);
+    const currentCategory = currentProduct?.category;
+    const currentId = currentProduct?.id;
+    // Prefer same category, then fill with others
+    const sameCategory = products.filter(
+      (p) => p.id !== currentId && p.category === currentCategory,
+    );
+    const others = products.filter(
+      (p) =>
+        p.id !== currentId &&
+        (!currentCategory || p.category !== currentCategory),
+    );
+    return [...sameCategory, ...others].slice(0, 3);
+  }, [products, currentProduct]);
 
   if (related.length === 0) return null;
 
   return (
-    <div className="mt-12">
-      <h2
-        className="text-lg font-bold mb-4"
-        style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
-      >
-        Related Products
-      </h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {related.map((product) => (
-          <div
-            key={product.id}
-            onClick={() => nav?.goToProduct(product.id)}
-            className="group rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-0.5"
-            style={{
-              backgroundColor: 'var(--ws-surface)',
-              border: '1px solid var(--ws-border)',
-            }}
-          >
-            <div
-              className="aspect-square flex items-center justify-center overflow-hidden"
-              style={{ backgroundColor: 'var(--ws-bg)' }}
+    <motion.div
+      variants={motionVariants.container}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-50px' }}
+    >
+      <SectionHeader
+        title="Related Products"
+        subtitle="Other items you may need for your order"
+      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {related.map((product, i) => {
+          const img = product.featured_image || product.image;
+          const price = getProductPrice(product);
+          return (
+            <GlassCard
+              key={product.id}
+              custom={i}
+              variants={motionVariants.staggerItem}
+              accentBar
+              onClick={() => nav?.goToProduct?.(product.id)}
+              className="cursor-pointer"
             >
-              {product.image || product.featured_image ? (
-                <img
-                  src={product.image || product.featured_image}
-                  alt={product.name}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  loading="lazy"
-                />
-              ) : (
-                <Package
-                  className="w-8 h-8 opacity-15"
-                  style={{ color: 'var(--ws-muted)' }}
-                />
-              )}
-            </div>
-            <div className="p-3">
-              <h3
-                className="text-xs font-medium truncate mb-1"
-                style={{ color: 'var(--ws-text)' }}
+              <div
+                className="aspect-[4/3] flex items-center justify-center overflow-hidden"
+                style={{
+                  background:
+                    'color-mix(in srgb, var(--ws-surface) 40%, transparent)',
+                }}
               >
-                {product.name}
-              </h3>
-              {product.price != null && (
-                <span
-                  className="text-xs font-semibold"
-                  style={{ color: 'var(--ws-primary)' }}
+                {img ? (
+                  <img
+                    src={img}
+                    alt={product.name}
+                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                    loading="lazy"
+                  />
+                ) : (
+                  <Package
+                    className="w-10 h-10"
+                    style={{ color: 'var(--ws-muted)', opacity: 0.15 }}
+                  />
+                )}
+              </div>
+              <div className="p-4 flex flex-col gap-2">
+                <h3
+                  className="text-sm font-semibold truncate"
+                  style={{
+                    color: 'var(--ws-text)',
+                    fontFamily: 'var(--ws-heading-font, var(--ws-font))',
+                  }}
                 >
-                  {formatPrice(product.price)}
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
+                  {product.name}
+                </h3>
+                {product.sku && (
+                  <p
+                    className="text-[11px] font-medium uppercase tracking-wider"
+                    style={{ color: 'var(--ws-muted)' }}
+                  >
+                    SKU: {product.sku}
+                  </p>
+                )}
+                {price > 0 && (
+                  <span
+                    className="text-base font-bold"
+                    style={gradientTextStyle()}
+                  >
+                    {formatCurrency(price)}
+                  </span>
+                )}
+              </div>
+            </GlassCard>
+          );
+        })}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -462,21 +613,6 @@ const DEMO_SPECS = {
 // Main Component
 // ---------------------------------------------------------------------------
 
-/**
- * PreviewProductDetailPage
- *
- * Full product detail page for the store builder preview.
- * Supports image gallery, quantity selector, add-to-cart, specifications,
- * bulk pricing, and related products.
- *
- * Props:
- *   config   - Store config (uses config.productDetail for settings)
- *   products - Array of all products (for related products + fallback)
- *   pageData - { productId } identifying which product to show
- *   orgId    - Organization ID for DB fetching
- *   cart     - { addItem }
- *   nav      - { goToCatalog, goToProduct, goBack, goToHome }
- */
 export default function PreviewProductDetailPage({
   config,
   products = [],
@@ -486,7 +622,6 @@ export default function PreviewProductDetailPage({
   nav,
 }) {
   const pd = config?.productDetail || {};
-  const imagePosition = pd.imagePosition || 'left';
   const showSKU = pd.showSKU !== false;
   const showStock = pd.showStock !== false;
   const showSpecifications = pd.showSpecifications !== false;
@@ -494,14 +629,14 @@ export default function PreviewProductDetailPage({
   const showRelatedProducts = pd.showRelatedProducts !== false;
   const showInquiryButton = pd.showInquiryButton !== false;
 
-  // State
+  // ---- State ----
   const [product, setProduct] = useState(null);
   const [dbProduct, setDbProduct] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [addedToCart, setAddedToCart] = useState(false);
+  const [addedToOrder, setAddedToOrder] = useState(false);
 
-  // Resolve product from products array
+  // ---- Resolve product from products array ----
   useEffect(() => {
     const productId = pageData?.productId;
     if (productId && products.length > 0) {
@@ -512,13 +647,19 @@ export default function PreviewProductDetailPage({
     } else if (products.length > 0) {
       setProduct(products[0]);
     }
-    // Reset gallery and quantity on product change
     setActiveImageIndex(0);
-    setQuantity(1);
-    setAddedToCart(false);
+    setAddedToOrder(false);
   }, [pageData?.productId, products]);
 
-  // Optionally fetch richer data from DB
+  // Set initial quantity to MOQ when product changes
+  useEffect(() => {
+    if (product) {
+      const moq = getMoq(product);
+      setQuantity(moq);
+    }
+  }, [product]);
+
+  // ---- Optionally fetch richer data from DB ----
   useEffect(() => {
     const productId = pageData?.productId;
     if (!productId || !orgId) return;
@@ -528,27 +669,32 @@ export default function PreviewProductDetailPage({
       try {
         const { getB2BProduct } = await import('@/lib/db/queries/b2b');
         const data = await getB2BProduct(productId);
-        if (!cancelled && data) {
-          setDbProduct(data);
-        }
+        if (!cancelled && data) setDbProduct(data);
       } catch {
         // Silently ignore -- fallback to products array
       }
     }
 
     fetchFromDB();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [pageData?.productId, orgId]);
 
-  // Merge product data with DB data
+  // ---- Merge product data with DB data ----
   const mergedProduct = useMemo(() => {
     if (!product) return null;
     if (!dbProduct) return product;
-
     return {
       ...product,
-      featured_image: dbProduct.featured_image || product.featured_image || product.image,
-      gallery: dbProduct.gallery || product.gallery || [],
+      featured_image:
+        dbProduct.featured_image || product.featured_image || product.image,
+      gallery_images:
+        dbProduct.gallery_images ||
+        dbProduct.gallery ||
+        product.gallery_images ||
+        product.gallery ||
+        [],
       specifications:
         dbProduct.physical_products?.[0]?.specifications ||
         dbProduct.specifications ||
@@ -557,237 +703,363 @@ export default function PreviewProductDetailPage({
     };
   }, [product, dbProduct]);
 
-  // Derived data
-  const images = useMemo(() => collectImages(mergedProduct), [mergedProduct]);
-  const stockInfo = mergedProduct ? getStockInfo(mergedProduct) : { label: 'In Stock', dotColor: '#22c55e', available: true };
-  const basePrice = mergedProduct?.price ?? mergedProduct?.b2b_price ?? 0;
+  // ---- Derived data ----
+  const images = useMemo(
+    () => collectImages(mergedProduct),
+    [mergedProduct],
+  );
+  const stockInfo = mergedProduct
+    ? getStockStatus(mergedProduct)
+    : { label: 'In Stock', status: 'success', available: true };
+  const basePrice = getProductPrice(mergedProduct);
+  const moq = getMoq(mergedProduct);
+  const bulkTiers = useMemo(
+    () => getBulkTiers(mergedProduct, basePrice),
+    [mergedProduct, basePrice],
+  );
+  const activeTierIdx = getActiveTierIndex(bulkTiers, quantity);
+  const activeUnitPrice =
+    bulkTiers.length > 0 ? bulkTiers[activeTierIdx].unitPrice : basePrice;
+  const lineTotal = activeUnitPrice * quantity;
 
   const specifications = useMemo(() => {
     if (mergedProduct?.specifications) return mergedProduct.specifications;
     return DEMO_SPECS;
   }, [mergedProduct]);
 
-  // Handlers
-  const handleAddToCart = useCallback(() => {
-    if (!mergedProduct || addedToCart) return;
+  // ---- Handlers ----
+  const handleAddToOrder = useCallback(() => {
+    if (!mergedProduct || addedToOrder || !stockInfo.available) return;
     cart?.addItem(mergedProduct, quantity);
-    setAddedToCart(true);
-  }, [mergedProduct, quantity, cart, addedToCart]);
+    setAddedToOrder(true);
+  }, [mergedProduct, quantity, cart, addedToOrder, stockInfo.available]);
 
   useEffect(() => {
-    if (!addedToCart) return;
-    const timer = setTimeout(() => setAddedToCart(false), 2000);
+    if (!addedToOrder) return;
+    const timer = setTimeout(() => setAddedToOrder(false), 2500);
     return () => clearTimeout(timer);
-  }, [addedToCart]);
+  }, [addedToOrder]);
 
-  // Not found state
+  // ---- Not found state ----
   if (!mergedProduct && products.length === 0) {
     return (
       <div
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 flex flex-col items-center gap-4"
+        className="px-6 sm:px-10 lg:px-16 py-8"
         style={{ fontFamily: 'var(--ws-font)' }}
       >
-        <Package className="w-16 h-16" style={{ color: 'var(--ws-muted)', opacity: 0.3 }} />
-        <h2
-          className="text-2xl font-bold"
-          style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
-        >
-          Product Not Found
-        </h2>
-        <p className="text-sm" style={{ color: 'var(--ws-muted)' }}>
-          The product you are looking for is not available.
-        </p>
-        <button
-          onClick={() => nav?.goToCatalog?.()}
-          className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:opacity-90"
-          style={{
-            backgroundColor: 'var(--ws-primary)',
-            color: 'var(--ws-bg)',
-          }}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Catalog
-        </button>
+        <EmptyState
+          icon={Package}
+          title="Product Not Found"
+          description="The product you are looking for is not available or may have been removed from the catalog."
+          action={
+            <PrimaryButton
+              icon={ArrowLeft}
+              onClick={() => nav?.goToCatalog?.()}
+            >
+              Back to Catalog
+            </PrimaryButton>
+          }
+        />
       </div>
     );
   }
 
-  // Use fallback if product not yet resolved
   const p = mergedProduct || products[0] || {};
   const productName = p.name || 'Product';
   const productSku = p.sku || '';
   const productCategory = p.category || 'Products';
   const productDescription =
     p.description ||
-    'High-quality product designed for professional use. Built with premium materials and backed by our standard warranty.';
+    'High-quality product designed for professional B2B use. Built with premium materials and backed by our standard warranty. Contact your account manager for custom configurations.';
+  const productUnit = p.unit || 'units';
+  const packSize = p.pack_size;
 
-  // Build the two main columns
-  const imageColumn = (
-    <ImageGallery
-      images={images}
-      activeIndex={activeImageIndex}
-      onSelect={setActiveImageIndex}
-    />
-  );
-
-  const infoColumn = (
-    <div className="flex flex-col gap-5">
-      {/* Product name */}
-      <h1
-        className="text-2xl sm:text-3xl font-bold tracking-tight"
-        style={{ fontFamily: 'var(--ws-heading-font)', color: 'var(--ws-text)' }}
-      >
-        {productName}
-      </h1>
-
-      {/* SKU */}
-      {showSKU && productSku && (
-        <p
-          className="text-xs font-medium uppercase tracking-wider"
-          style={{ color: 'var(--ws-muted)' }}
-        >
-          SKU: {productSku}
-        </p>
-      )}
-
-      {/* Category badge */}
-      <span
-        className="inline-flex self-start items-center px-2.5 py-1 rounded-md text-xs font-medium"
-        style={{
-          backgroundColor: 'rgba(255,255,255,0.06)',
-          color: 'var(--ws-muted)',
-          border: '1px solid var(--ws-border)',
-        }}
-      >
-        {productCategory}
-      </span>
-
-      {/* Stock indicator */}
-      {showStock && (
-        <div className="flex items-center gap-2">
-          <span
-            className="w-2 h-2 rounded-full flex-shrink-0"
-            style={{ backgroundColor: stockInfo.dotColor }}
-          />
-          <span className="text-sm font-medium" style={{ color: stockInfo.dotColor }}>
-            {stockInfo.label}
-          </span>
-        </div>
-      )}
-
-      {/* Price */}
-      {basePrice > 0 && (
-        <span
-          className="text-3xl font-bold"
-          style={{ color: 'var(--ws-primary)' }}
-        >
-          {formatPrice(basePrice)}
-        </span>
-      )}
-
-      {/* Description */}
-      <p
-        className="text-sm leading-relaxed"
-        style={{ color: 'var(--ws-muted)' }}
-      >
-        {productDescription}
-      </p>
-
-      {/* Quantity selector */}
-      <div className="flex flex-col gap-1.5">
-        <label
-          className="text-xs font-medium uppercase tracking-wider"
-          style={{ color: 'var(--ws-muted)' }}
-        >
-          Quantity
-        </label>
-        <QuantitySelector value={quantity} onChange={setQuantity} />
-      </div>
-
-      {/* Add to Cart button */}
-      <button
-        onClick={handleAddToCart}
-        className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-base font-semibold transition-all duration-200 hover:opacity-90"
-        style={{
-          backgroundColor: addedToCart ? '#22c55e' : 'var(--ws-primary)',
-          color: 'var(--ws-bg)',
-        }}
-      >
-        {addedToCart ? (
-          <>
-            <Check className="w-5 h-5" />
-            Added to Cart!
-          </>
-        ) : (
-          <>
-            <ShoppingCart className="w-5 h-5" />
-            Add to Cart
-          </>
-        )}
-      </button>
-
-      {/* Request Quote button */}
-      {showInquiryButton && (
-        <button
-          className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-80"
-          style={{
-            backgroundColor: 'transparent',
-            color: 'var(--ws-text)',
-            border: '1px solid var(--ws-border)',
-          }}
-        >
-          <Star className="w-4 h-4" />
-          Request Quote
-        </button>
-      )}
-    </div>
-  );
+  // ---- Breadcrumb items ----
+  const breadcrumbItems = [
+    { label: 'Home', onClick: () => nav?.goToHome?.() },
+    { label: 'Catalog', onClick: () => nav?.goToCatalog?.() },
+    { label: productName },
+  ];
 
   return (
     <div
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+      className="px-6 sm:px-10 lg:px-16 py-8"
       style={{ fontFamily: 'var(--ws-font)', color: 'var(--ws-text)' }}
     >
-      {/* Breadcrumb */}
-      <Breadcrumb product={p} nav={nav} />
+      <div className="max-w-7xl mx-auto">
+        {/* Breadcrumb */}
+        <Breadcrumb items={breadcrumbItems} />
 
-      {/* Main layout: image + info */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-        {imagePosition === 'right' ? (
-          <>
-            {infoColumn}
-            {imageColumn}
-          </>
-        ) : (
-          <>
-            {imageColumn}
-            {infoColumn}
-          </>
+        {/* Main layout: image + info */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+          {/* Image gallery -- slides in from left */}
+          <motion.div
+            variants={motionVariants.slideLeft}
+            initial="hidden"
+            animate="visible"
+          >
+            <ImageGallery
+              images={images}
+              activeIndex={activeImageIndex}
+              onSelect={setActiveImageIndex}
+            />
+          </motion.div>
+
+          {/* Product info -- slides in from right */}
+          <motion.div
+            variants={motionVariants.slideRight}
+            initial="hidden"
+            animate="visible"
+            className="flex flex-col gap-5"
+          >
+            {/* Category + stock row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <StatusBadge status="primary" label={productCategory} />
+              {showStock && (
+                <StatusBadge
+                  status={stockInfo.status}
+                  label={stockInfo.label}
+                  pulse={stockInfo.status === 'warning'}
+                />
+              )}
+            </div>
+
+            {/* Product name */}
+            <h1
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-tight"
+              style={{
+                fontFamily: 'var(--ws-heading-font, var(--ws-font))',
+                ...gradientTextStyle(),
+              }}
+            >
+              {productName}
+            </h1>
+
+            {/* SKU */}
+            {showSKU && productSku && (
+              <p
+                className="text-xs font-semibold uppercase tracking-widest"
+                style={{ color: 'var(--ws-muted)' }}
+              >
+                SKU: {productSku}
+              </p>
+            )}
+
+            {/* Price */}
+            {basePrice > 0 && (
+              <div className="flex items-baseline gap-3">
+                <span
+                  className="text-3xl sm:text-4xl font-bold"
+                  style={gradientTextStyle()}
+                >
+                  {formatCurrency(activeUnitPrice)}
+                </span>
+                <span
+                  className="text-sm font-medium"
+                  style={{ color: 'var(--ws-muted)' }}
+                >
+                  per {productUnit === 'units' ? 'unit' : productUnit}
+                </span>
+                {activeUnitPrice < basePrice && (
+                  <span
+                    className="text-sm line-through"
+                    style={{ color: 'var(--ws-muted)', opacity: 0.6 }}
+                  >
+                    {formatCurrency(basePrice)}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Description */}
+            <p
+              className="text-sm leading-relaxed"
+              style={{ color: 'var(--ws-muted)' }}
+            >
+              {productDescription}
+            </p>
+
+            {/* Pack size info */}
+            {packSize && (
+              <div
+                className="flex items-center gap-2 text-sm"
+                style={{ color: 'var(--ws-muted)' }}
+              >
+                <BoxesIcon
+                  className="w-4 h-4"
+                  style={{ color: 'var(--ws-primary)' }}
+                />
+                <span>Sold in cases of {packSize}</span>
+              </div>
+            )}
+
+            {/* MOQ notice */}
+            {moq > 1 && (
+              <div
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm"
+                style={{
+                  background:
+                    'color-mix(in srgb, var(--ws-primary) 6%, transparent)',
+                  border:
+                    '1px solid color-mix(in srgb, var(--ws-primary) 15%, transparent)',
+                  color: 'var(--ws-primary)',
+                }}
+              >
+                <Info className="w-4 h-4 flex-shrink-0" />
+                <span className="font-medium">
+                  Minimum Order: {moq} {productUnit}
+                </span>
+              </div>
+            )}
+
+            {/* Quantity selector + line total */}
+            <div className="flex flex-col gap-2">
+              <label
+                className="text-xs font-semibold uppercase tracking-wider"
+                style={{ color: 'var(--ws-muted)' }}
+              >
+                Order Quantity
+              </label>
+              <div className="flex items-center gap-4 flex-wrap">
+                <QuantityInput
+                  value={quantity}
+                  onChange={setQuantity}
+                  min={moq}
+                  max={9999}
+                  size="lg"
+                />
+                {basePrice > 0 && (
+                  <div className="flex flex-col">
+                    <span
+                      className="text-xs"
+                      style={{ color: 'var(--ws-muted)' }}
+                    >
+                      Line total
+                    </span>
+                    <span
+                      className="text-lg font-bold"
+                      style={{ color: 'var(--ws-text)' }}
+                    >
+                      {formatCurrency(lineTotal)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Add to Order button */}
+            <PrimaryButton
+              size="lg"
+              className="w-full"
+              icon={addedToOrder ? Check : ClipboardPlus}
+              onClick={handleAddToOrder}
+              disabled={!stockInfo.available}
+            >
+              {addedToOrder
+                ? 'Added to Order!'
+                : !stockInfo.available
+                  ? 'Out of Stock'
+                  : 'Add to Order'}
+            </PrimaryButton>
+
+            {/* Request Quote button */}
+            {showInquiryButton && (
+              <SecondaryButton
+                size="lg"
+                className="w-full"
+                icon={MessageSquareQuote}
+              >
+                Request Custom Quote
+              </SecondaryButton>
+            )}
+
+            {/* Delivery estimate bar */}
+            <div
+              className="flex items-center gap-3 px-4 py-3 rounded-xl"
+              style={{
+                ...glassCardStyle,
+                boxShadow: 'none',
+              }}
+            >
+              <Truck
+                className="w-5 h-5 flex-shrink-0"
+                style={{ color: 'var(--ws-primary)' }}
+              />
+              <div className="flex flex-col">
+                <span
+                  className="text-sm font-medium"
+                  style={{ color: 'var(--ws-text)' }}
+                >
+                  Est. delivery: 3-5 business days
+                </span>
+                <span
+                  className="text-xs"
+                  style={{ color: 'var(--ws-muted)' }}
+                >
+                  Free shipping on orders over EUR 500
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Specifications */}
+        {showSpecifications && (
+          <motion.div
+            variants={motionVariants.fadeIn}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="mt-12"
+          >
+            <SpecificationsTable specs={specifications} />
+          </motion.div>
+        )}
+
+        {/* Bulk pricing */}
+        {showBulkPricing && basePrice > 0 && bulkTiers.length > 0 && (
+          <motion.div
+            variants={motionVariants.fadeIn}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="mt-8"
+          >
+            <BulkPricingTable
+              tiers={bulkTiers}
+              basePrice={basePrice}
+              quantity={quantity}
+              unit={productUnit}
+            />
+          </motion.div>
+        )}
+
+        {/* Product documents */}
+        <motion.div
+          variants={motionVariants.fadeIn}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="mt-8"
+        >
+          <SectionHeader
+            title="Product Documents"
+            subtitle="Datasheets, certificates, and compliance documentation"
+          />
+          <ProductDocuments />
+        </motion.div>
+
+        {/* Related products */}
+        {showRelatedProducts && products.length > 1 && (
+          <div className="mt-16">
+            <RelatedProducts
+              products={products}
+              currentProduct={p}
+              nav={nav}
+            />
+          </div>
         )}
       </div>
-
-      {/* Specifications */}
-      {showSpecifications && (
-        <div className="mt-12">
-          <SpecificationsTable specs={specifications} />
-        </div>
-      )}
-
-      {/* Bulk pricing */}
-      {showBulkPricing && basePrice > 0 && (
-        <div className="mt-8">
-          <BulkPricingTable basePrice={basePrice} />
-        </div>
-      )}
-
-      {/* Related products */}
-      {showRelatedProducts && products.length > 1 && (
-        <RelatedProducts
-          products={products}
-          currentId={p.id}
-          nav={nav}
-        />
-      )}
     </div>
   );
 }

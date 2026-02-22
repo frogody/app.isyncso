@@ -1,366 +1,408 @@
 // ---------------------------------------------------------------------------
-// PreviewCheckoutPage.jsx -- 3-step checkout flow for the store builder
-// preview. Runs inside an iframe in demo mode -- no real DB writes, no auth,
-// no router. Uses CSS custom properties for theming.
+// PreviewCheckoutPage.jsx -- Premium B2B wholesale "Place Order" flow.
+// 3-step process: Delivery Details -> Order Review -> Confirmation.
+// Runs inside an iframe in demo mode -- no real DB writes, no auth, no router.
+// Uses CSS custom properties (--ws-*) for theming + design system components.
 // ---------------------------------------------------------------------------
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check,
-  CheckCircle,
   ChevronRight,
   ArrowLeft,
-  Loader2,
   Package,
   MapPin,
-  CreditCard,
+  FileText,
+  Download,
+  Phone,
+  Mail,
+  User,
+  Calendar,
+  Building2,
+  Clock,
+  AlertTriangle,
+  ShoppingCart,
 } from 'lucide-react';
+import {
+  GlassCard,
+  SectionHeader,
+  Breadcrumb,
+  StatusBadge,
+  EmptyState,
+  PrimaryButton,
+  SecondaryButton,
+  GlassInput,
+  GlassTextarea,
+  GlassSelect,
+  motionVariants,
+  glassCardStyle,
+  gradientAccentBar,
+  gradientTextStyle,
+  formatCurrency,
+} from './previewDesignSystem';
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Constants
 // ---------------------------------------------------------------------------
 
-function formatPrice(value) {
-  return `\u20AC${Number(value || 0).toFixed(2)}`;
-}
-
-const VAT_RATE = 0.21;
-
-const COUNTRIES = [
-  'Netherlands',
-  'Belgium',
-  'Germany',
-  'France',
-  'United Kingdom',
-  'Other',
+const SAVED_ADDRESSES = [
+  {
+    id: 'warehouse',
+    label: 'Warehouse',
+    full: 'Industrieweg 42, 1234 AB Amsterdam',
+  },
+  {
+    id: 'head-office',
+    label: 'Head Office',
+    full: 'Herengracht 100, 1015 BS Amsterdam',
+  },
+  {
+    id: 'distribution',
+    label: 'Distribution Center',
+    full: 'Europaweg 8, 3542 DR Utrecht',
+  },
 ];
 
-const INITIAL_ADDRESS = {
-  fullName: '',
-  company: '',
-  street: '',
-  city: '',
-  postal: '',
-  country: 'Netherlands',
-  phone: '',
-};
-
-const REQUIRED_FIELDS = ['fullName', 'street', 'city', 'postal', 'country'];
-
-const FIELD_LABELS = {
-  fullName: 'Full Name',
-  company: 'Company Name',
-  street: 'Street Address',
-  city: 'City',
-  postal: 'Postal Code',
-  country: 'Country',
-  phone: 'Phone Number',
-};
+const STEP_LABELS = ['Delivery Details', 'Order Review', 'Confirmation'];
 
 // ---------------------------------------------------------------------------
-// StepIndicator
+// StepIndicator -- Glass-morphism 3-step progress bar
 // ---------------------------------------------------------------------------
 
 function StepIndicator({ currentStep }) {
-  const steps = [
-    { number: 1, label: 'Shipping' },
-    { number: 2, label: 'Review' },
-    { number: 3, label: 'Confirmation' },
-  ];
-
   return (
-    <div className="flex items-center justify-center gap-0 mb-8">
-      {steps.map((step, idx) => {
-        const isActive = step.number === currentStep;
-        const isCompleted = step.number < currentStep;
+    <motion.div
+      variants={motionVariants.fadeIn}
+      initial="hidden"
+      animate="visible"
+      className="rounded-2xl px-6 py-5 mb-8"
+      style={{
+        ...glassCardStyle,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+      }}
+    >
+      <div className="flex items-center justify-center">
+        {STEP_LABELS.map((label, idx) => {
+          const stepNum = idx + 1;
+          const isActive = stepNum === currentStep;
+          const isCompleted = stepNum < currentStep;
 
-        return (
-          <React.Fragment key={step.number}>
-            {/* Connector line */}
-            {idx > 0 && (
-              <div
-                className="w-10 sm:w-16 h-px flex-shrink-0"
-                style={{
-                  backgroundColor: isCompleted
-                    ? 'var(--ws-primary)'
-                    : 'var(--ws-border, rgba(255,255,255,0.1))',
-                }}
-              />
-            )}
+          return (
+            <React.Fragment key={stepNum}>
+              {/* Connector line */}
+              {idx > 0 && (
+                <div
+                  className="flex-1 max-w-[80px] h-[2px] mx-2 sm:mx-3 rounded-full transition-colors duration-500"
+                  style={{
+                    background: isCompleted
+                      ? 'linear-gradient(90deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 60%, #7c3aed))'
+                      : 'var(--ws-border)',
+                  }}
+                />
+              )}
 
-            {/* Step circle + label */}
-            <div className="flex flex-col items-center gap-1.5">
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-colors text-sm font-semibold"
-                style={{
-                  backgroundColor: isActive || isCompleted
-                    ? 'var(--ws-primary)'
-                    : 'rgba(255,255,255,0.06)',
-                  color: isActive || isCompleted
-                    ? 'var(--ws-bg, #000)'
-                    : 'var(--ws-muted)',
-                }}
-              >
-                {isCompleted ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  step.number
-                )}
+              {/* Step circle + label */}
+              <div className="flex flex-col items-center gap-2">
+                <motion.div
+                  initial={false}
+                  animate={{
+                    scale: isActive ? 1.1 : 1,
+                  }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold transition-all duration-400"
+                  style={{
+                    background:
+                      isActive || isCompleted
+                        ? 'linear-gradient(135deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 70%, #7c3aed))'
+                        : 'color-mix(in srgb, var(--ws-surface) 80%, transparent)',
+                    color:
+                      isActive || isCompleted ? '#fff' : 'var(--ws-muted)',
+                    border:
+                      isActive || isCompleted
+                        ? 'none'
+                        : '1px solid var(--ws-border)',
+                    boxShadow:
+                      isActive
+                        ? '0 4px 16px color-mix(in srgb, var(--ws-primary) 30%, transparent)'
+                        : 'none',
+                  }}
+                >
+                  {isCompleted ? (
+                    <Check className="w-5 h-5" strokeWidth={2.5} />
+                  ) : (
+                    stepNum
+                  )}
+                </motion.div>
+                <span
+                  className="text-[11px] sm:text-xs font-semibold whitespace-nowrap tracking-wide"
+                  style={{
+                    color: isActive
+                      ? 'var(--ws-text)'
+                      : isCompleted
+                      ? 'var(--ws-primary)'
+                      : 'var(--ws-muted)',
+                  }}
+                >
+                  {label}
+                </span>
               </div>
-              <span
-                className="text-[11px] font-medium"
-                style={{
-                  color: isActive
-                    ? 'var(--ws-text)'
-                    : isCompleted
-                    ? 'var(--ws-primary)'
-                    : 'var(--ws-muted)',
-                }}
-              >
-                {step.label}
-              </span>
-            </div>
-          </React.Fragment>
-        );
-      })}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// FormField
-// ---------------------------------------------------------------------------
-
-function FormField({ label, name, value, onChange, type = 'text', required = false, placeholder = '', error }) {
-  const hasError = Boolean(error);
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label
-        htmlFor={`checkout-${name}`}
-        className="text-xs font-medium"
-        style={{ color: 'var(--ws-muted)' }}
-      >
-        {label}
-        {required && <span style={{ color: '#ef4444' }}> *</span>}
-      </label>
-      <input
-        id={`checkout-${name}`}
-        name={name}
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="px-3 py-2.5 rounded-lg text-sm outline-none transition-colors focus:ring-1"
-        style={{
-          backgroundColor: 'var(--ws-surface)',
-          color: 'var(--ws-text)',
-          border: hasError
-            ? '1px solid #ef4444'
-            : '1px solid var(--ws-border, rgba(255,255,255,0.1))',
-          '--tw-ring-color': 'var(--ws-primary)',
-        }}
-      />
-      {hasError && (
-        <p className="text-[11px] font-medium" style={{ color: '#ef4444' }}>
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// SelectField
-// ---------------------------------------------------------------------------
-
-function SelectField({ label, name, value, onChange, options, required = false, error }) {
-  const hasError = Boolean(error);
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label
-        htmlFor={`checkout-${name}`}
-        className="text-xs font-medium"
-        style={{ color: 'var(--ws-muted)' }}
-      >
-        {label}
-        {required && <span style={{ color: '#ef4444' }}> *</span>}
-      </label>
-      <select
-        id={`checkout-${name}`}
-        name={name}
-        value={value}
-        onChange={onChange}
-        className="px-3 py-2.5 rounded-lg text-sm outline-none transition-colors focus:ring-1 appearance-none"
-        style={{
-          backgroundColor: 'var(--ws-surface)',
-          color: 'var(--ws-text)',
-          border: hasError
-            ? '1px solid #ef4444'
-            : '1px solid var(--ws-border, rgba(255,255,255,0.1))',
-          '--tw-ring-color': 'var(--ws-primary)',
-        }}
-      >
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
-      {hasError && (
-        <p className="text-[11px] font-medium" style={{ color: '#ef4444' }}>
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Step 1 -- Shipping Address
-// ---------------------------------------------------------------------------
-
-function ShippingStep({ address, setAddress, errors, onNext, onBackToCart }) {
-  const handleChange = useCallback(
-    (e) => {
-      const { name, value } = e.target;
-      setAddress((prev) => ({ ...prev, [name]: value }));
-    },
-    [setAddress],
-  );
-
-  return (
-    <div>
-      <div
-        className="rounded-xl p-5"
-        style={{
-          backgroundColor: 'var(--ws-surface)',
-          border: '1px solid var(--ws-border)',
-        }}
-      >
-        <div className="flex items-center gap-2 mb-5">
-          <MapPin className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
-          <h2
-            className="text-base font-semibold"
-            style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
-          >
-            Shipping Address
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField
-            label="Full Name"
-            name="fullName"
-            value={address.fullName}
-            onChange={handleChange}
-            required
-            placeholder="John Smith"
-            error={errors.fullName}
-          />
-          <FormField
-            label="Company Name"
-            name="company"
-            value={address.company}
-            onChange={handleChange}
-            placeholder="Acme B.V."
-          />
-          <div className="sm:col-span-2">
-            <FormField
-              label="Street Address"
-              name="street"
-              value={address.street}
-              onChange={handleChange}
-              required
-              placeholder="123 Business Street"
-              error={errors.street}
-            />
-          </div>
-          <FormField
-            label="City"
-            name="city"
-            value={address.city}
-            onChange={handleChange}
-            required
-            placeholder="Amsterdam"
-            error={errors.city}
-          />
-          <FormField
-            label="Postal Code"
-            name="postal"
-            value={address.postal}
-            onChange={handleChange}
-            required
-            placeholder="1012 AB"
-            error={errors.postal}
-          />
-          <SelectField
-            label="Country"
-            name="country"
-            value={address.country}
-            onChange={handleChange}
-            options={COUNTRIES}
-            required
-            error={errors.country}
-          />
-          <FormField
-            label="Phone Number"
-            name="phone"
-            value={address.phone}
-            onChange={handleChange}
-            type="tel"
-            placeholder="+31 6 12345678"
-          />
-        </div>
+            </React.Fragment>
+          );
+        })}
       </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between mt-6">
-        <button
-          type="button"
-          onClick={onBackToCart}
-          className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80"
-          style={{ color: 'var(--ws-muted)' }}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Cart
-        </button>
-
-        <button
-          type="button"
-          onClick={onNext}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold transition-colors hover:opacity-90"
-          style={{
-            backgroundColor: 'var(--ws-primary)',
-            color: 'var(--ws-bg, #000)',
-          }}
-        >
-          Continue to Review
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
+    </motion.div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// ReviewItem
+// GlassInfoBar -- Read-only info display row
 // ---------------------------------------------------------------------------
 
-function ReviewItem({ item }) {
-  const unitPrice = Number(item.price) || 0;
-  const lineTotal = unitPrice * item.quantity;
-
+function GlassInfoBar({ icon: Icon, children, className = '' }) {
   return (
     <div
-      className="flex items-center gap-3 py-3"
-      style={{ borderBottom: '1px solid var(--ws-border, rgba(255,255,255,0.06))' }}
+      className={`flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm ${className}`}
+      style={{
+        background:
+          'color-mix(in srgb, var(--ws-primary) 6%, transparent)',
+        border:
+          '1px solid color-mix(in srgb, var(--ws-primary) 15%, transparent)',
+      }}
     >
-      {/* Image */}
+      {Icon && (
+        <Icon
+          className="w-4 h-4 flex-shrink-0"
+          style={{ color: 'var(--ws-primary)' }}
+        />
+      )}
+      <div style={{ color: 'var(--ws-text)' }}>{children}</div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// FormLabel
+// ---------------------------------------------------------------------------
+
+function FormLabel({ htmlFor, required, children }) {
+  return (
+    <label
+      htmlFor={htmlFor}
+      className="block text-xs font-semibold mb-1.5 tracking-wide uppercase"
+      style={{ color: 'var(--ws-muted)' }}
+    >
+      {children}
+      {required && (
+        <span style={{ color: '#ef4444' }}> *</span>
+      )}
+    </label>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Step 1 -- Delivery Details
+// ---------------------------------------------------------------------------
+
+function DeliveryDetailsStep({
+  deliveryAddress,
+  setDeliveryAddress,
+  poNumber,
+  setPoNumber,
+  deliveryDate,
+  setDeliveryDate,
+  contactPerson,
+  setContactPerson,
+  specialInstructions,
+  setSpecialInstructions,
+  onContinue,
+  onBack,
+}) {
+  const canContinue = poNumber?.trim()?.length > 0;
+
+  return (
+    <motion.div
+      key="step-1"
+      variants={motionVariants.fadeIn}
+      initial="hidden"
+      animate="visible"
+      exit={{ opacity: 0, y: -20, transition: { duration: 0.2 } }}
+      className="space-y-6"
+    >
+      {/* Form card */}
+      <GlassCard accentBar hoverable={false}>
+        <div className="p-6 space-y-6">
+          {/* Section heading */}
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{
+                background:
+                  'color-mix(in srgb, var(--ws-primary) 12%, transparent)',
+                border:
+                  '1px solid color-mix(in srgb, var(--ws-primary) 20%, transparent)',
+              }}
+            >
+              <MapPin className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
+            </div>
+            <div>
+              <h2
+                className="text-base font-bold"
+                style={{
+                  color: 'var(--ws-text)',
+                  fontFamily: 'var(--ws-heading-font, var(--ws-font))',
+                }}
+              >
+                Delivery Details
+              </h2>
+              <p className="text-xs" style={{ color: 'var(--ws-muted)' }}>
+                Select delivery address and enter order reference
+              </p>
+            </div>
+          </div>
+
+          {/* Delivery address selector */}
+          <div>
+            <FormLabel htmlFor="delivery-address" required>
+              Company Delivery Address
+            </FormLabel>
+            <GlassSelect
+              id="delivery-address"
+              value={deliveryAddress}
+              onChange={(e) => setDeliveryAddress(e.target.value)}
+            >
+              {SAVED_ADDRESSES.map((addr) => (
+                <option key={addr.id} value={addr.id}>
+                  {addr.label} - {addr.full}
+                </option>
+              ))}
+            </GlassSelect>
+          </div>
+
+          {/* PO Number + Delivery Date row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <FormLabel htmlFor="po-number" required>
+                PO Number
+              </FormLabel>
+              <GlassInput
+                id="po-number"
+                type="text"
+                value={poNumber}
+                onChange={(e) => setPoNumber(e.target.value)}
+                placeholder="e.g. PO-2026-00382"
+                style={{ fontFamily: 'monospace' }}
+              />
+            </div>
+            <div>
+              <FormLabel htmlFor="delivery-date">
+                Requested Delivery Date
+              </FormLabel>
+              <GlassInput
+                id="delivery-date"
+                type="date"
+                value={deliveryDate}
+                onChange={(e) => setDeliveryDate(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Contact person */}
+          <div>
+            <FormLabel htmlFor="contact-person">
+              Contact Person
+            </FormLabel>
+            <GlassInput
+              id="contact-person"
+              type="text"
+              value={contactPerson}
+              onChange={(e) => setContactPerson(e.target.value)}
+              placeholder="Full name of contact person"
+            />
+          </div>
+
+          {/* Special instructions */}
+          <div>
+            <FormLabel htmlFor="special-instructions">
+              Special Instructions
+            </FormLabel>
+            <GlassTextarea
+              id="special-instructions"
+              value={specialInstructions}
+              onChange={(e) => setSpecialInstructions(e.target.value)}
+              placeholder="Dock number, delivery window, handling requirements..."
+              rows={3}
+            />
+          </div>
+        </div>
+      </GlassCard>
+
+      {/* Payment terms info bar */}
+      <GlassInfoBar icon={FileText}>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span className="font-semibold" style={{ color: 'var(--ws-primary)' }}>
+            Net-30
+          </span>
+          <span style={{ color: 'var(--ws-border)' }}>|</span>
+          <span>
+            Credit Limit:{' '}
+            <span className="font-semibold" style={{ color: 'var(--ws-text)' }}>
+              {formatCurrency(50000)}
+            </span>
+          </span>
+          <span style={{ color: 'var(--ws-border)' }}>|</span>
+          <span>
+            Available:{' '}
+            <span className="font-semibold" style={{ color: 'var(--ws-primary)' }}>
+              {formatCurrency(37500)}
+            </span>
+          </span>
+        </div>
+      </GlassInfoBar>
+
+      {/* Actions */}
+      <div className="flex items-center justify-between pt-2">
+        <SecondaryButton onClick={onBack} icon={ArrowLeft}>
+          Back to Order
+        </SecondaryButton>
+        <PrimaryButton
+          onClick={onContinue}
+          disabled={!canContinue}
+          icon={ChevronRight}
+        >
+          Continue to Review
+        </PrimaryButton>
+      </div>
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ReviewLineItem -- Single product row in order review
+// ---------------------------------------------------------------------------
+
+function ReviewLineItem({ item, isLast }) {
+  const unitPrice = Number(item.price) || 0;
+  const lineTotal = unitPrice * (item.quantity || 1);
+
+  return (
+    <motion.div
+      variants={motionVariants.fadeIn}
+      className="flex items-center gap-4 py-4"
+      style={{
+        borderBottom: isLast
+          ? 'none'
+          : '1px solid color-mix(in srgb, var(--ws-border) 50%, transparent)',
+      }}
+    >
+      {/* Product image */}
       <div
-        className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center"
-        style={{ backgroundColor: 'rgba(255,255,255,0.04)' }}
+        className="flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center"
+        style={{
+          background:
+            'color-mix(in srgb, var(--ws-surface) 80%, transparent)',
+          border: '1px solid var(--ws-border)',
+        }}
       >
         {item.image ? (
           <img
@@ -370,414 +412,554 @@ function ReviewItem({ item }) {
             loading="lazy"
           />
         ) : (
-          <Package className="w-4 h-4" style={{ color: 'var(--ws-muted)', opacity: 0.3 }} />
+          <Package
+            className="w-5 h-5"
+            style={{ color: 'var(--ws-muted)', opacity: 0.4 }}
+          />
         )}
       </div>
 
       {/* Name + SKU */}
       <div className="flex-1 min-w-0">
         <p
-          className="text-sm font-medium truncate"
+          className="text-sm font-semibold truncate"
           style={{ color: 'var(--ws-text)' }}
         >
           {item.name}
         </p>
         {item.sku && (
           <p
-            className="text-[10px] font-medium uppercase tracking-wider"
+            className="text-[10px] font-semibold uppercase tracking-widest mt-0.5"
             style={{ color: 'var(--ws-muted)' }}
           >
-            {item.sku}
+            SKU: {item.sku}
           </p>
         )}
       </div>
 
-      {/* Qty x Price = Total */}
-      <span
-        className="text-xs flex-shrink-0"
-        style={{ color: 'var(--ws-muted)' }}
-      >
-        {item.quantity} &times; {formatPrice(unitPrice)}
-      </span>
+      {/* Qty x Price */}
+      <div className="hidden sm:flex flex-col items-end gap-0.5">
+        <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>
+          {item.quantity} x {formatCurrency(unitPrice)}
+        </span>
+      </div>
 
+      {/* Line total */}
       <span
-        className="text-sm font-semibold flex-shrink-0 min-w-[5rem] text-right"
+        className="text-sm font-bold flex-shrink-0 min-w-[6rem] text-right"
         style={{ color: 'var(--ws-text)' }}
       >
-        {formatPrice(lineTotal)}
+        {formatCurrency(lineTotal)}
       </span>
-    </div>
+    </motion.div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Step 2 -- Review Order
+// Step 2 -- Order Review
 // ---------------------------------------------------------------------------
 
-function ReviewStep({ items, address, orderNotes, setOrderNotes, total, onBack, onPlaceOrder, loading }) {
-  const subtotal = total;
-  const vat = subtotal * VAT_RATE;
-  const grandTotal = subtotal + vat;
+function OrderReviewStep({
+  cart,
+  deliveryAddress,
+  poNumber,
+  deliveryDate,
+  contactPerson,
+  specialInstructions,
+  onSubmit,
+  onBack,
+}) {
+  const {
+    items = [],
+    subtotal = 0,
+    vat = 0,
+    volumeDiscount = 0,
+    total = 0,
+    moqViolations = [],
+  } = cart;
+
+  const selectedAddress = SAVED_ADDRESSES.find((a) => a.id === deliveryAddress) || SAVED_ADDRESSES[0];
 
   return (
-    <div className="space-y-5">
-      {/* Shipping address summary */}
-      <div
-        className="rounded-xl p-5"
-        style={{
-          backgroundColor: 'var(--ws-surface)',
-          border: '1px solid var(--ws-border)',
-        }}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
-            <h2
-              className="text-base font-semibold"
-              style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
-            >
-              Shipping Address
-            </h2>
+    <motion.div
+      key="step-2"
+      variants={motionVariants.fadeIn}
+      initial="hidden"
+      animate="visible"
+      exit={{ opacity: 0, y: -20, transition: { duration: 0.2 } }}
+      className="space-y-6"
+    >
+      {/* MOQ violations warning */}
+      {moqViolations.length > 0 && (
+        <GlassCard hoverable={false} style={{ borderColor: 'rgba(239,68,68,0.3)' }}>
+          <div className="p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#ef4444' }} />
+            <div>
+              <p className="text-sm font-semibold mb-1" style={{ color: '#ef4444' }}>
+                Minimum Order Quantity Not Met
+              </p>
+              {moqViolations.map((v, i) => (
+                <p key={i} className="text-xs" style={{ color: 'var(--ws-muted)' }}>
+                  {v.name || v.productName || `Item ${i + 1}`}: minimum {v.moq || v.minimum} units required
+                </p>
+              ))}
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={onBack}
-            className="text-xs font-medium transition-colors hover:opacity-80"
-            style={{ color: 'var(--ws-primary)' }}
-          >
-            Edit
-          </button>
+        </GlassCard>
+      )}
+
+      {/* Delivery address confirmation */}
+      <GlassCard accentBar hoverable={false}>
+        <div className="p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2.5">
+              <MapPin className="w-4 h-4" style={{ color: 'var(--ws-primary)' }} />
+              <h3
+                className="text-sm font-bold uppercase tracking-wider"
+                style={{ color: 'var(--ws-muted)' }}
+              >
+                Delivery Address
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={onBack}
+              className="text-xs font-semibold transition-colors hover:opacity-80"
+              style={{ color: 'var(--ws-primary)' }}
+            >
+              Edit
+            </button>
+          </div>
+          <div className="text-sm leading-relaxed" style={{ color: 'var(--ws-text)' }}>
+            <p className="font-semibold">{selectedAddress.label}</p>
+            <p style={{ color: 'var(--ws-muted)' }}>{selectedAddress.full}</p>
+            {contactPerson && (
+              <p className="mt-1" style={{ color: 'var(--ws-muted)' }}>
+                Contact: {contactPerson}
+              </p>
+            )}
+          </div>
         </div>
-        <div className="text-sm leading-relaxed" style={{ color: 'var(--ws-muted)' }}>
-          <p style={{ color: 'var(--ws-text)' }}>{address.fullName}</p>
-          {address.company && <p>{address.company}</p>}
-          <p>{address.street}</p>
-          <p>{address.postal} {address.city}</p>
-          <p>{address.country}</p>
-          {address.phone && <p>{address.phone}</p>}
-        </div>
+      </GlassCard>
+
+      {/* PO + delivery info bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <GlassInfoBar icon={FileText}>
+          <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>PO Number:</span>{' '}
+          <span className="font-bold font-mono tracking-wide">{poNumber}</span>
+        </GlassInfoBar>
+        <GlassInfoBar icon={Clock}>
+          <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>Delivery:</span>{' '}
+          <span className="font-semibold">5-7 business days</span>
+        </GlassInfoBar>
       </div>
 
       {/* Order items */}
-      <div
-        className="rounded-xl p-5"
-        style={{
-          backgroundColor: 'var(--ws-surface)',
-          border: '1px solid var(--ws-border)',
-        }}
-      >
-        <div className="flex items-center gap-2 mb-4">
-          <Package className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
-          <h2
-            className="text-base font-semibold"
-            style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
-          >
-            Order Items ({items.length})
-          </h2>
+      <GlassCard hoverable={false}>
+        <div style={gradientAccentBar} />
+        <div className="p-5">
+          <div className="flex items-center gap-2.5 mb-4">
+            <Package className="w-4 h-4" style={{ color: 'var(--ws-primary)' }} />
+            <h3
+              className="text-sm font-bold uppercase tracking-wider"
+              style={{ color: 'var(--ws-muted)' }}
+            >
+              Order Items ({items.length})
+            </h3>
+          </div>
+          <div>
+            {items.map((item, idx) => (
+              <ReviewLineItem
+                key={item.productId || idx}
+                item={item}
+                isLast={idx === items.length - 1}
+              />
+            ))}
+          </div>
         </div>
-        <div>
-          {items.map((item) => (
-            <ReviewItem key={item.productId} item={item} />
-          ))}
-        </div>
-      </div>
+      </GlassCard>
 
-      {/* Order notes */}
-      <div
-        className="rounded-xl p-5"
-        style={{
-          backgroundColor: 'var(--ws-surface)',
-          border: '1px solid var(--ws-border)',
-        }}
-      >
-        <h3
-          className="text-sm font-semibold mb-2"
-          style={{ color: 'var(--ws-text)' }}
-        >
-          Order Notes
-        </h3>
-        <textarea
-          value={orderNotes}
-          onChange={(e) => setOrderNotes(e.target.value)}
-          placeholder="Add notes to your order..."
-          rows={3}
-          className="w-full px-3 py-2.5 rounded-lg text-sm outline-none resize-none transition-colors focus:ring-1"
-          style={{
-            backgroundColor: 'rgba(255,255,255,0.04)',
-            color: 'var(--ws-text)',
-            border: '1px solid var(--ws-border, rgba(255,255,255,0.1))',
-            '--tw-ring-color': 'var(--ws-primary)',
-          }}
-        />
-      </div>
+      {/* Totals breakdown */}
+      <GlassCard hoverable={false}>
+        <div className="p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm" style={{ color: 'var(--ws-muted)' }}>
+              Subtotal
+            </span>
+            <span className="text-sm font-medium" style={{ color: 'var(--ws-text)' }}>
+              {formatCurrency(subtotal)}
+            </span>
+          </div>
 
-      {/* Totals */}
-      <div
-        className="rounded-xl p-5"
-        style={{
-          backgroundColor: 'var(--ws-surface)',
-          border: '1px solid var(--ws-border)',
-        }}
-      >
-        <div className="space-y-2">
+          {volumeDiscount > 0 && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm" style={{ color: 'var(--ws-muted)' }}>
+                Volume Discount
+              </span>
+              <span className="text-sm font-semibold" style={{ color: '#22c55e' }}>
+                -{formatCurrency(volumeDiscount)}
+              </span>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
-            <span className="text-sm" style={{ color: 'var(--ws-muted)' }}>Subtotal</span>
+            <span className="text-sm" style={{ color: 'var(--ws-muted)' }}>
+              VAT (21%)
+            </span>
             <span className="text-sm font-medium" style={{ color: 'var(--ws-text)' }}>
-              {formatPrice(subtotal)}
+              {formatCurrency(vat)}
             </span>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm" style={{ color: 'var(--ws-muted)' }}>VAT (21%)</span>
-            <span className="text-sm font-medium" style={{ color: 'var(--ws-text)' }}>
-              {formatPrice(vat)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm" style={{ color: 'var(--ws-muted)' }}>Shipping</span>
-            <span className="text-xs font-medium italic" style={{ color: 'var(--ws-muted)' }}>
-              Calculated after confirmation
-            </span>
-          </div>
+
           <div
-            className="pt-3 mt-2 flex items-center justify-between"
-            style={{ borderTop: '1px solid var(--ws-border, rgba(255,255,255,0.08))' }}
+            className="pt-4 mt-2 flex items-center justify-between"
+            style={{
+              borderTop:
+                '1px solid color-mix(in srgb, var(--ws-border) 60%, transparent)',
+            }}
           >
-            <span className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>Total</span>
-            <span className="text-lg font-bold" style={{ color: 'var(--ws-primary)' }}>
-              {formatPrice(grandTotal)}
+            <span
+              className="text-base font-bold"
+              style={{ color: 'var(--ws-text)' }}
+            >
+              Total
+            </span>
+            <span
+              className="text-xl font-extrabold"
+              style={gradientTextStyle()}
+            >
+              {formatCurrency(total)}
             </span>
           </div>
         </div>
-      </div>
+      </GlassCard>
+
+      {/* Special instructions (if any) */}
+      {specialInstructions?.trim() && (
+        <GlassInfoBar icon={FileText}>
+          <div>
+            <span
+              className="text-xs font-semibold uppercase tracking-wider block mb-0.5"
+              style={{ color: 'var(--ws-muted)' }}
+            >
+              Special Instructions
+            </span>
+            <span className="text-sm">{specialInstructions}</span>
+          </div>
+        </GlassInfoBar>
+      )}
 
       {/* Actions */}
       <div className="flex items-center justify-between pt-2">
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={loading}
-          className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80 disabled:opacity-40"
-          style={{ color: 'var(--ws-muted)' }}
+        <SecondaryButton onClick={onBack} icon={ArrowLeft}>
+          Back to Details
+        </SecondaryButton>
+        <PrimaryButton
+          onClick={onSubmit}
+          disabled={moqViolations.length > 0}
+          icon={ChevronRight}
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Shipping
-        </button>
-
-        <button
-          type="button"
-          onClick={onPlaceOrder}
-          disabled={loading}
-          className={`
-            inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold
-            transition-all duration-200
-            ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:opacity-90 cursor-pointer'}
-          `}
-          style={{
-            backgroundColor: 'var(--ws-primary)',
-            color: 'var(--ws-bg, #000)',
-          }}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Placing Order...
-            </>
-          ) : (
-            <>
-              <CreditCard className="w-4 h-4" />
-              Place Order
-            </>
-          )}
-        </button>
+          Submit Order
+        </PrimaryButton>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Step 3 -- Confirmation (Demo)
+// AnimatedCheckmark -- Scale + opacity entry animation
 // ---------------------------------------------------------------------------
 
-function ConfirmationStep({ orderId, total, itemCount, nav }) {
-  const grandTotal = total + total * VAT_RATE;
-
+function AnimatedCheckmark() {
   return (
-    <div className="flex flex-col items-center text-center py-8">
-      <div
-        className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
-        style={{ backgroundColor: 'rgba(34, 197, 94, 0.12)' }}
-      >
-        <CheckCircle className="w-10 h-10" style={{ color: '#22c55e' }} />
-      </div>
-
-      <h2
-        className="text-xl font-bold mb-2"
-        style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
-      >
-        Order Placed Successfully!
-      </h2>
-
-      {/* Order ID */}
-      <div
-        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg mt-2 mb-4"
-        style={{
-          backgroundColor: 'rgba(255,255,255,0.04)',
-          border: '1px solid var(--ws-border)',
+    <motion.div
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{
+        type: 'spring',
+        stiffness: 200,
+        damping: 15,
+        delay: 0.15,
+      }}
+      className="w-24 h-24 rounded-full flex items-center justify-center mb-8"
+      style={{
+        background:
+          'linear-gradient(135deg, rgba(34,197,94,0.15), rgba(34,197,94,0.05))',
+        border: '2px solid rgba(34,197,94,0.3)',
+        boxShadow: '0 0 40px rgba(34,197,94,0.15)',
+      }}
+    >
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{
+          type: 'spring',
+          stiffness: 300,
+          damping: 12,
+          delay: 0.35,
         }}
       >
-        <span className="text-xs font-medium" style={{ color: 'var(--ws-muted)' }}>
-          Order ID:
-        </span>
-        <span
-          className="text-sm font-bold font-mono tracking-wider"
-          style={{ color: 'var(--ws-primary)' }}
-        >
-          {orderId}
-        </span>
-      </div>
-
-      <p
-        className="text-sm mb-2 max-w-md"
-        style={{ color: 'var(--ws-muted)' }}
-      >
-        Your order has been received and is being processed.
-      </p>
-
-      {/* Summary */}
-      <div
-        className="inline-flex items-center gap-4 px-4 py-2 rounded-lg mb-6"
-        style={{ backgroundColor: 'rgba(255,255,255,0.03)' }}
-      >
-        <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>
-          {itemCount} {itemCount === 1 ? 'item' : 'items'}
-        </span>
-        <span
-          className="text-sm font-semibold"
-          style={{ color: 'var(--ws-text)' }}
-        >
-          {formatPrice(grandTotal)}
-        </span>
-      </div>
-
-      {/* Action buttons */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={nav.goToCatalog}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:opacity-90"
-          style={{
-            backgroundColor: 'var(--ws-primary)',
-            color: 'var(--ws-bg, #000)',
-          }}
-        >
-          Continue Shopping
-        </button>
-
-        <button
-          type="button"
-          onClick={nav.goToOrders}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-white/[0.04]"
-          style={{
-            color: 'var(--ws-muted)',
-            border: '1px solid var(--ws-border)',
-          }}
-        >
-          View Orders
-        </button>
-      </div>
-    </div>
+        <Check className="w-12 h-12" style={{ color: '#22c55e' }} strokeWidth={2.5} />
+      </motion.div>
+    </motion.div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// PreviewCheckoutPage
+// Step 3 -- Order Submitted Confirmation
+// ---------------------------------------------------------------------------
+
+function ConfirmationStep({ nav }) {
+  const orderNumber = 'ORD-2026-00142';
+
+  return (
+    <motion.div
+      key="step-3"
+      variants={motionVariants.fadeIn}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col items-center text-center"
+    >
+      {/* Animated checkmark */}
+      <AnimatedCheckmark />
+
+      {/* Heading */}
+      <motion.h2
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.5 }}
+        className="text-2xl sm:text-3xl font-extrabold mb-3"
+        style={{
+          ...gradientTextStyle(),
+          fontFamily: 'var(--ws-heading-font, var(--ws-font))',
+        }}
+      >
+        Order Submitted for Processing
+      </motion.h2>
+
+      {/* Order number badge */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.55, duration: 0.4 }}
+        className="inline-flex items-center gap-3 px-5 py-3 rounded-xl mb-4"
+        style={{
+          ...glassCardStyle,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+        }}
+      >
+        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--ws-muted)' }}>
+          Order Number
+        </span>
+        <span
+          className="text-base font-extrabold font-mono tracking-widest"
+          style={{ color: 'var(--ws-primary)' }}
+        >
+          {orderNumber}
+        </span>
+      </motion.div>
+
+      {/* Status explanation */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.65 }}
+        className="text-sm max-w-md mb-8 leading-relaxed"
+        style={{ color: 'var(--ws-muted)' }}
+      >
+        Your order is pending review. You will receive confirmation within 1
+        business day. A detailed order confirmation will be sent to your
+        registered email address.
+      </motion.p>
+
+      {/* Account manager card */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.75, duration: 0.5 }}
+        className="w-full max-w-sm mb-8"
+      >
+        <GlassCard hoverable={false} accentBar>
+          <div className="p-5">
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest mb-3"
+              style={{ color: 'var(--ws-muted)' }}
+            >
+              Your Account Manager
+            </p>
+            <div className="flex items-center gap-3 mb-4">
+              <div
+                className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold"
+                style={{
+                  background:
+                    'linear-gradient(135deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 60%, #7c3aed))',
+                  color: '#fff',
+                }}
+              >
+                SB
+              </div>
+              <div className="text-left">
+                <p
+                  className="text-sm font-bold"
+                  style={{ color: 'var(--ws-text)' }}
+                >
+                  Sarah van den Berg
+                </p>
+                <p
+                  className="text-xs"
+                  style={{ color: 'var(--ws-muted)' }}
+                >
+                  Senior Account Manager
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2.5">
+                <Mail className="w-3.5 h-3.5" style={{ color: 'var(--ws-primary)' }} />
+                <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>
+                  s.vandenberg@company.com
+                </span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Phone className="w-3.5 h-3.5" style={{ color: 'var(--ws-primary)' }} />
+                <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>
+                  +31 20 123 4567
+                </span>
+              </div>
+            </div>
+          </div>
+        </GlassCard>
+      </motion.div>
+
+      {/* Action buttons */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.85, duration: 0.4 }}
+        className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-sm"
+      >
+        <SecondaryButton
+          onClick={() => {}}
+          icon={Download}
+          className="w-full sm:w-auto"
+        >
+          Download Confirmation
+        </SecondaryButton>
+        <PrimaryButton
+          onClick={nav.goToOrders}
+          className="w-full sm:w-auto"
+        >
+          View Orders
+        </PrimaryButton>
+      </motion.div>
+
+      {/* Continue browsing link */}
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1 }}
+        type="button"
+        onClick={nav.goToCatalog}
+        className="mt-5 text-sm font-medium transition-colors hover:opacity-80"
+        style={{ color: 'var(--ws-primary)' }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.textDecoration = 'underline';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.textDecoration = 'none';
+        }}
+      >
+        Continue Browsing
+      </motion.button>
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PreviewCheckoutPage -- Main export
 // ---------------------------------------------------------------------------
 
 export default function PreviewCheckoutPage({ config, cart, nav }) {
-  const { items, total, itemCount, clearCart } = cart;
-  const { goToCart, goToCatalog, goToOrders, goToHome } = nav;
+  const {
+    items = [],
+    subtotal = 0,
+    vat = 0,
+    volumeDiscount = 0,
+    total = 0,
+    itemCount = 0,
+    poNumber: cartPoNumber = '',
+    setPoNumber: cartSetPoNumber,
+    deliveryDate: cartDeliveryDate = '',
+    setDeliveryDate: cartSetDeliveryDate,
+    orderNotes: cartOrderNotes = '',
+    setOrderNotes: cartSetOrderNotes,
+    clearCart,
+    hasValidOrder,
+    moqViolations = [],
+  } = cart;
+
+  const { goToHome, goToCatalog, goToCart, goToOrders, goBack } = nav;
 
   const [step, setStep] = useState(1);
-  const [address, setAddress] = useState({ ...INITIAL_ADDRESS });
-  const [errors, setErrors] = useState({});
-  const [orderNotes, setOrderNotes] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [orderId, setOrderId] = useState(null);
+  const [deliveryAddress, setDeliveryAddress] = useState(SAVED_ADDRESSES[0].id);
+  const [poNumber, setPoNumber] = useState(cartPoNumber || '');
+  const [deliveryDate, setDeliveryDate] = useState(cartDeliveryDate || '');
+  const [contactPerson, setContactPerson] = useState('John Doe');
+  const [specialInstructions, setSpecialInstructions] = useState(cartOrderNotes || '');
+  const clearedRef = useRef(false);
 
-  // -- Validate shipping form -----------------------------------------------
-  const validateShipping = useCallback(() => {
-    const newErrors = {};
-    for (const field of REQUIRED_FIELDS) {
-      if (!address[field]?.trim()) {
-        newErrors[field] = `${FIELD_LABELS[field]} is required`;
-      }
+  // Sync PO number and notes to cart if setters exist
+  useEffect(() => {
+    if (cartSetPoNumber && poNumber !== cartPoNumber) {
+      cartSetPoNumber(poNumber);
     }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [address]);
+  }, [poNumber]);
 
-  // -- Step navigation ------------------------------------------------------
+  useEffect(() => {
+    if (cartSetDeliveryDate && deliveryDate !== cartDeliveryDate) {
+      cartSetDeliveryDate(deliveryDate);
+    }
+  }, [deliveryDate]);
+
+  useEffect(() => {
+    if (cartSetOrderNotes && specialInstructions !== cartOrderNotes) {
+      cartSetOrderNotes(specialInstructions);
+    }
+  }, [specialInstructions]);
+
+  // Navigate between steps
   const goToStep = useCallback((s) => {
     setStep(s);
-    // Scroll preview to top
     try {
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (_) {
-      // silent -- may not be available in all iframe contexts
-    }
+    } catch (_) {}
   }, []);
 
-  const handleNextFromShipping = useCallback(() => {
-    if (validateShipping()) {
-      goToStep(2);
+  // Clear cart exactly once on reaching step 3
+  useEffect(() => {
+    if (step === 3 && !clearedRef.current) {
+      clearedRef.current = true;
+      clearCart?.();
     }
-  }, [validateShipping, goToStep]);
+  }, [step, clearCart]);
 
-  const handleBackToShipping = useCallback(() => {
-    goToStep(1);
-  }, [goToStep]);
-
-  // -- Place order (demo) ---------------------------------------------------
-  const handlePlaceOrder = useCallback(() => {
-    setLoading(true);
-
-    // Simulate 1.5s processing delay
-    setTimeout(() => {
-      const generatedId = `ORD-${Date.now().toString(36).toUpperCase().slice(-8)}`;
-      setOrderId(generatedId);
-      clearCart();
-      setLoading(false);
-      goToStep(3);
-    }, 1500);
-  }, [clearCart, goToStep]);
-
-  // -- Redirect to cart if empty (except on confirmation step) ---------------
-  const isEmpty = (!items || items.length === 0) && step < 3;
-
-  if (isEmpty) {
+  // -- Empty cart guard (except on confirmation step) -------------------------
+  if ((!items || items.length === 0) && step !== 3) {
     return (
       <div
-        className="min-h-[50vh] flex flex-col items-center justify-center px-4 text-center"
+        className="w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
         style={{ backgroundColor: 'var(--ws-bg)' }}
       >
-        <p
-          className="text-sm mb-4"
-          style={{ color: 'var(--ws-muted)' }}
-        >
-          Your cart is empty. Add items before checking out.
-        </p>
-        <button
-          type="button"
-          onClick={goToCart}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:opacity-90"
-          style={{
-            backgroundColor: 'var(--ws-primary)',
-            color: 'var(--ws-bg, #000)',
-          }}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Go to Cart
-        </button>
+        <EmptyState
+          icon={ShoppingCart}
+          title="No Items to Process"
+          description="Your order is empty. Browse the catalog to add products before placing an order."
+          action={
+            <PrimaryButton onClick={goToCatalog} icon={ArrowLeft}>
+              Browse Catalog
+            </PrimaryButton>
+          }
+        />
       </div>
     );
   }
@@ -787,51 +969,65 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
       className="w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
       style={{ backgroundColor: 'var(--ws-bg)' }}
     >
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: 'Home', onClick: goToHome },
+          { label: 'Order', onClick: goToCart },
+          { label: STEP_LABELS[step - 1] },
+        ]}
+      />
+
       {/* Page title */}
-      <h1
-        className="text-xl font-bold mb-2"
-        style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
-      >
-        Checkout
-      </h1>
+      <SectionHeader
+        title="Place Order"
+        subtitle={
+          step === 1
+            ? 'Configure delivery details for your order'
+            : step === 2
+            ? 'Review your order before submission'
+            : 'Your order has been submitted'
+        }
+        className="mb-6"
+      />
 
       {/* Step indicator */}
       <StepIndicator currentStep={step} />
 
-      {/* Step 1: Shipping */}
-      {step === 1 && (
-        <ShippingStep
-          address={address}
-          setAddress={setAddress}
-          errors={errors}
-          onNext={handleNextFromShipping}
-          onBackToCart={goToCart}
-        />
-      )}
+      {/* Step content with AnimatePresence */}
+      <AnimatePresence mode="wait">
+        {step === 1 && (
+          <DeliveryDetailsStep
+            deliveryAddress={deliveryAddress}
+            setDeliveryAddress={setDeliveryAddress}
+            poNumber={poNumber}
+            setPoNumber={setPoNumber}
+            deliveryDate={deliveryDate}
+            setDeliveryDate={setDeliveryDate}
+            contactPerson={contactPerson}
+            setContactPerson={setContactPerson}
+            specialInstructions={specialInstructions}
+            setSpecialInstructions={setSpecialInstructions}
+            onContinue={() => goToStep(2)}
+            onBack={goToCart}
+          />
+        )}
 
-      {/* Step 2: Review */}
-      {step === 2 && (
-        <ReviewStep
-          items={items}
-          address={address}
-          orderNotes={orderNotes}
-          setOrderNotes={setOrderNotes}
-          total={total}
-          onBack={handleBackToShipping}
-          onPlaceOrder={handlePlaceOrder}
-          loading={loading}
-        />
-      )}
+        {step === 2 && (
+          <OrderReviewStep
+            cart={cart}
+            deliveryAddress={deliveryAddress}
+            poNumber={poNumber}
+            deliveryDate={deliveryDate}
+            contactPerson={contactPerson}
+            specialInstructions={specialInstructions}
+            onSubmit={() => goToStep(3)}
+            onBack={() => goToStep(1)}
+          />
+        )}
 
-      {/* Step 3: Confirmation */}
-      {step === 3 && (
-        <ConfirmationStep
-          orderId={orderId}
-          total={total}
-          itemCount={itemCount}
-          nav={nav}
-        />
-      )}
+        {step === 3 && <ConfirmationStep nav={nav} />}
+      </AnimatePresence>
     </div>
   );
 }

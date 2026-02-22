@@ -1,22 +1,45 @@
 // ---------------------------------------------------------------------------
-// PreviewCatalogPage.jsx -- Full product catalog page for the store builder
-// preview iframe. Renders entirely from props (products array, config, cart,
-// nav). All filtering, sorting, and pagination are client-side.
+// PreviewCatalogPage.jsx -- Premium B2B wholesale catalog page for the store
+// builder preview. Glass-morphism design system, stagger animations, inline
+// quantity inputs, MOQ badges, bulk pricing, stock indicators, and pagination.
 //
+// Renders entirely from props -- no router, no auth, no Supabase.
 // Uses CSS custom properties (--ws-*) for theming.
 // ---------------------------------------------------------------------------
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
-  ShoppingCart,
   Package,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ClipboardPlus,
   Check,
-  Grid3X3,
-  List,
+  SlidersHorizontal,
+  Tag,
+  Layers,
+  X,
 } from 'lucide-react';
+
+import {
+  GlassCard,
+  SectionHeader,
+  Breadcrumb,
+  TrustBar,
+  LoadingSkeleton,
+  QuantityInput,
+  EmptyState,
+  PrimaryButton,
+  SecondaryButton,
+  GlassInput,
+  motionVariants,
+  glassCardStyle,
+  gradientAccentBar,
+  gradientTextStyle,
+  formatCurrency,
+} from './previewDesignSystem';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -29,33 +52,71 @@ const SORT_OPTIONS = [
   { value: 'name_desc', label: 'Name Z-A' },
   { value: 'price_asc', label: 'Price: Low to High' },
   { value: 'price_desc', label: 'Price: High to Low' },
+  { value: 'sku_asc', label: 'SKU' },
 ];
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatPrice(value) {
-  if (value == null) return null;
-  return `\u20AC${Number(value).toFixed(2)}`;
+function getEffectivePrice(product) {
+  return (
+    product.wholesale_price ??
+    product.b2b_price ??
+    product.price ??
+    null
+  );
+}
+
+function getMoq(product) {
+  return product.moq || product.minimum_order_quantity || 1;
 }
 
 function getStockStatus(product) {
-  const stock = product.stock;
-  if (stock == null) return { label: 'In Stock', dotColor: '#22c55e' };
+  const stock = product.stock_quantity ?? product.stock;
+  if (stock == null) return { label: 'In Stock', theme: 'success' };
   if (typeof stock === 'string') {
     const lower = stock.toLowerCase();
-    if (lower.includes('out')) return { label: 'Out of Stock', dotColor: '#ef4444' };
-    if (lower.includes('limited') || lower.includes('low')) return { label: 'Limited', dotColor: '#f59e0b' };
-    return { label: 'In Stock', dotColor: '#22c55e' };
+    if (lower.includes('out')) return { label: 'Out of Stock', theme: 'error' };
+    if (lower.includes('limited') || lower.includes('low'))
+      return { label: 'Low Stock', theme: 'warning' };
+    return { label: 'In Stock', theme: 'success' };
   }
   if (typeof stock === 'number') {
-    if (stock <= 0) return { label: 'Out of Stock', dotColor: '#ef4444' };
-    if (stock <= 10) return { label: 'Limited', dotColor: '#f59e0b' };
-    return { label: 'In Stock', dotColor: '#22c55e' };
+    if (stock <= 0) return { label: 'Out of Stock', theme: 'error' };
+    if (stock <= 10) return { label: 'Low Stock', theme: 'warning' };
+    return { label: 'In Stock', theme: 'success' };
   }
-  return { label: 'In Stock', dotColor: '#22c55e' };
+  return { label: 'In Stock', theme: 'success' };
 }
+
+function isOutOfStock(product) {
+  return getStockStatus(product).theme === 'error';
+}
+
+function getBulkPricing(product) {
+  const tiers = product.bulk_pricing || product.pricing_tiers;
+  if (!tiers || !Array.isArray(tiers) || tiers.length === 0) return null;
+  // Find the tier with the highest quantity requirement
+  const sorted = [...tiers].sort((a, b) => (a.quantity || a.min_qty || 0) - (b.quantity || b.min_qty || 0));
+  const best = sorted[sorted.length - 1];
+  if (!best) return null;
+  const price = best.price ?? best.unit_price;
+  const qty = best.quantity ?? best.min_qty;
+  if (price == null || qty == null) return null;
+  return { price, quantity: qty };
+}
+
+function getProductImage(product) {
+  return product.featured_image || product.image || null;
+}
+
+// Stock theme colors (inline to use CSS vars for primary)
+const STOCK_COLORS = {
+  success: { bg: 'rgba(34,197,94,0.12)', text: '#22c55e', border: 'rgba(34,197,94,0.25)' },
+  warning: { bg: 'rgba(234,179,8,0.12)', text: '#eab308', border: 'rgba(234,179,8,0.25)' },
+  error: { bg: 'rgba(239,68,68,0.12)', text: '#ef4444', border: 'rgba(239,68,68,0.25)' },
+};
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -63,35 +124,366 @@ function getStockStatus(product) {
 
 function CategoryPills({ categories, selected, onSelect }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <motion.div
+      variants={motionVariants.fadeIn}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-wrap gap-2"
+    >
       <button
         onClick={() => onSelect(null)}
-        className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors duration-150"
+        className="px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all duration-200"
         style={{
-          backgroundColor: selected === null ? 'var(--ws-primary)' : 'var(--ws-surface)',
-          color: selected === null ? 'var(--ws-bg)' : 'var(--ws-muted)',
-          border: selected === null ? '1px solid var(--ws-primary)' : '1px solid var(--ws-border)',
+          background: selected === null
+            ? 'linear-gradient(135deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 80%, #7c3aed))'
+            : 'color-mix(in srgb, var(--ws-surface) 70%, transparent)',
+          color: selected === null ? '#fff' : 'var(--ws-muted)',
+          border: selected === null
+            ? '1px solid var(--ws-primary)'
+            : '1px solid var(--ws-border)',
+          boxShadow: selected === null
+            ? '0 2px 8px color-mix(in srgb, var(--ws-primary) 25%, transparent)'
+            : 'none',
         }}
       >
-        All
+        All Products
       </button>
       {categories.map((cat) => (
         <button
           key={cat}
           onClick={() => onSelect(cat)}
-          className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors duration-150"
+          className="px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all duration-200"
           style={{
-            backgroundColor: selected === cat ? 'var(--ws-primary)' : 'var(--ws-surface)',
-            color: selected === cat ? 'var(--ws-bg)' : 'var(--ws-muted)',
-            border: selected === cat ? '1px solid var(--ws-primary)' : '1px solid var(--ws-border)',
+            background: selected === cat
+              ? 'linear-gradient(135deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 80%, #7c3aed))'
+              : 'color-mix(in srgb, var(--ws-surface) 70%, transparent)',
+            color: selected === cat ? '#fff' : 'var(--ws-muted)',
+            border: selected === cat
+              ? '1px solid var(--ws-primary)'
+              : '1px solid var(--ws-border)',
+            boxShadow: selected === cat
+              ? '0 2px 8px color-mix(in srgb, var(--ws-primary) 25%, transparent)'
+              : 'none',
           }}
         >
           {cat}
         </button>
       ))}
+    </motion.div>
+  );
+}
+
+function SortDropdown({ value, onChange }) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="appearance-none rounded-xl px-4 py-2.5 pr-10 text-sm font-medium outline-none cursor-pointer transition-all duration-200"
+        style={{
+          background: 'color-mix(in srgb, var(--ws-surface) 60%, transparent)',
+          border: '1px solid var(--ws-border)',
+          color: 'var(--ws-text)',
+          backdropFilter: 'blur(8px)',
+          minWidth: '180px',
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = 'var(--ws-primary)';
+          e.currentTarget.style.boxShadow =
+            '0 0 0 3px color-mix(in srgb, var(--ws-primary) 15%, transparent)';
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = 'var(--ws-border)';
+          e.currentTarget.style.boxShadow = 'none';
+        }}
+      >
+        {SORT_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+        style={{ color: 'var(--ws-muted)' }}
+      />
     </div>
   );
 }
+
+function StockBadge({ product }) {
+  const { label, theme } = getStockStatus(product);
+  const colors = STOCK_COLORS[theme];
+
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+      style={{
+        background: colors.bg,
+        color: colors.text,
+        border: `1px solid ${colors.border}`,
+      }}
+    >
+      <span
+        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+        style={{
+          background: colors.text,
+          animation: theme === 'success' ? undefined : 'pulse 2s infinite',
+        }}
+      />
+      {label}
+    </span>
+  );
+}
+
+function MoqBadge({ moq }) {
+  if (moq <= 1) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+      style={{
+        background: 'color-mix(in srgb, var(--ws-primary) 10%, transparent)',
+        color: 'var(--ws-primary)',
+        border: '1px solid color-mix(in srgb, var(--ws-primary) 20%, transparent)',
+      }}
+    >
+      <Layers className="w-3 h-3" />
+      MOQ: {moq}
+    </span>
+  );
+}
+
+function BulkPricingIndicator({ product }) {
+  const bulk = getBulkPricing(product);
+  if (!bulk) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1 text-[11px] font-medium"
+      style={{ color: 'var(--ws-primary)' }}
+    >
+      <Tag className="w-3 h-3" />
+      From {formatCurrency(bulk.price)} at {bulk.quantity}+
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Product Card
+// ---------------------------------------------------------------------------
+
+function ProductCard({ product, cart, nav, index }) {
+  const [quantity, setQuantity] = useState(() => getMoq(product));
+  const [added, setAdded] = useState(false);
+
+  const effectivePrice = getEffectivePrice(product);
+  const moq = getMoq(product);
+  const outOfStock = isOutOfStock(product);
+  const image = getProductImage(product);
+
+  // Ensure quantity never drops below MOQ
+  const handleQuantityChange = useCallback(
+    (val) => {
+      setQuantity(Math.max(moq, val));
+    },
+    [moq],
+  );
+
+  const handleAddToOrder = useCallback(
+    (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      if (outOfStock || added) return;
+      cart?.addItem(product, quantity);
+      setAdded(true);
+    },
+    [product, cart, quantity, outOfStock, added],
+  );
+
+  useEffect(() => {
+    if (!added) return;
+    const timer = setTimeout(() => setAdded(false), 1800);
+    return () => clearTimeout(timer);
+  }, [added]);
+
+  return (
+    <motion.div
+      variants={motionVariants.staggerItem}
+      custom={index}
+      initial="hidden"
+      animate="visible"
+      layout
+    >
+      <GlassCard
+        accentBar
+        hoverable
+        onClick={() => nav?.goToProduct(product.id)}
+        className="flex flex-col h-full group"
+      >
+        {/* Image area */}
+        <div
+          className="relative aspect-square overflow-hidden"
+          style={{ background: 'color-mix(in srgb, var(--ws-bg) 90%, var(--ws-surface))' }}
+        >
+          {image ? (
+            <img
+              src={image}
+              alt={product.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Package
+                className="w-14 h-14 opacity-15"
+                style={{ color: 'var(--ws-muted)' }}
+              />
+            </div>
+          )}
+
+          {/* Gradient overlay on hover */}
+          <div
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(to top, color-mix(in srgb, var(--ws-bg) 40%, transparent) 0%, transparent 50%)',
+            }}
+          />
+
+          {/* Stock badge */}
+          <div className="absolute top-3 left-3">
+            <StockBadge product={product} />
+          </div>
+
+          {/* MOQ badge */}
+          <div className="absolute top-3 right-3">
+            <MoqBadge moq={moq} />
+          </div>
+        </div>
+
+        {/* Content area */}
+        <div className="flex flex-col gap-2 p-5 flex-1">
+          {/* SKU */}
+          <p
+            className="text-[11px] font-semibold uppercase tracking-widest"
+            style={{ color: 'var(--ws-muted)' }}
+          >
+            {product.sku || 'N/A'}
+          </p>
+
+          {/* Name */}
+          <h3
+            className="text-sm font-bold leading-snug line-clamp-2"
+            style={{
+              color: 'var(--ws-text)',
+              fontFamily: 'var(--ws-heading-font, var(--ws-font))',
+            }}
+          >
+            {product.name}
+          </h3>
+
+          {/* Price row */}
+          <div className="flex items-baseline gap-2 mt-1">
+            {effectivePrice != null && (
+              <span
+                className="text-lg font-bold"
+                style={gradientTextStyle()}
+              >
+                {formatCurrency(effectivePrice)}
+              </span>
+            )}
+            {product.unit && (
+              <span className="text-[11px]" style={{ color: 'var(--ws-muted)' }}>
+                / {product.unit}
+              </span>
+            )}
+          </div>
+
+          {/* Bulk pricing indicator */}
+          <BulkPricingIndicator product={product} />
+
+          {/* Pack size */}
+          {product.pack_size && (
+            <span className="text-[11px]" style={{ color: 'var(--ws-muted)' }}>
+              Pack size: {product.pack_size}
+            </span>
+          )}
+
+          {/* Spacer to push actions to bottom */}
+          <div className="mt-auto pt-4 space-y-3">
+            {/* Quantity input */}
+            <div
+              className="flex items-center justify-between"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span className="text-xs font-medium" style={{ color: 'var(--ws-muted)' }}>
+                Qty
+              </span>
+              <QuantityInput
+                value={quantity}
+                onChange={handleQuantityChange}
+                min={moq}
+                size="sm"
+              />
+            </div>
+
+            {/* Add to Order button */}
+            <button
+              type="button"
+              onClick={handleAddToOrder}
+              disabled={outOfStock}
+              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-250 disabled:opacity-30 disabled:cursor-not-allowed"
+              style={{
+                background: added
+                  ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+                  : outOfStock
+                    ? 'var(--ws-surface)'
+                    : 'linear-gradient(135deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 80%, #7c3aed))',
+                color: outOfStock ? 'var(--ws-muted)' : '#fff',
+                boxShadow: added
+                  ? '0 2px 12px rgba(34,197,94,0.3)'
+                  : outOfStock
+                    ? 'none'
+                    : '0 2px 8px color-mix(in srgb, var(--ws-primary) 30%, transparent)',
+              }}
+              onMouseEnter={(e) => {
+                if (!outOfStock && !added) {
+                  e.currentTarget.style.boxShadow =
+                    '0 4px 20px color-mix(in srgb, var(--ws-primary) 40%, transparent)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!outOfStock && !added) {
+                  e.currentTarget.style.boxShadow =
+                    '0 2px 8px color-mix(in srgb, var(--ws-primary) 30%, transparent)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }
+              }}
+            >
+              {added ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  Added to Order
+                </>
+              ) : outOfStock ? (
+                'Out of Stock'
+              ) : (
+                <>
+                  <ClipboardPlus className="w-4 h-4" />
+                  Add to Order
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </GlassCard>
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Pagination
+// ---------------------------------------------------------------------------
 
 function Pagination({ currentPage, totalPages, onPageChange }) {
   if (totalPages <= 1) return null;
@@ -115,26 +507,39 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
   }, [currentPage, totalPages]);
 
   return (
-    <div className="flex flex-col items-center gap-3 mt-8">
+    <motion.div
+      variants={motionVariants.fadeIn}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col items-center gap-3 mt-12"
+    >
       <div className="flex items-center gap-1.5">
+        {/* Previous */}
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="flex items-center justify-center w-9 h-9 rounded-lg transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+          className="flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 disabled:opacity-25 disabled:cursor-not-allowed"
           style={{
-            border: '1px solid var(--ws-border)',
+            ...glassCardStyle,
             color: 'var(--ws-text)',
+          }}
+          onMouseEnter={(e) => {
+            if (currentPage > 1) e.currentTarget.style.borderColor = 'var(--ws-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--ws-border)';
           }}
           aria-label="Previous page"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
 
+        {/* Page numbers */}
         {pages.map((page, idx) =>
           page === '...' ? (
             <span
               key={`ellipsis-${idx}`}
-              className="w-9 h-9 flex items-center justify-center text-sm"
+              className="w-10 h-10 flex items-center justify-center text-sm"
               style={{ color: 'var(--ws-muted)' }}
             >
               ...
@@ -143,16 +548,22 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
             <button
               key={page}
               onClick={() => onPageChange(page)}
-              className="flex items-center justify-center w-9 h-9 rounded-lg text-sm font-medium transition-colors duration-150"
+              className="flex items-center justify-center w-10 h-10 rounded-xl text-sm font-semibold transition-all duration-200"
               style={{
-                backgroundColor:
-                  page === currentPage ? 'var(--ws-primary)' : 'transparent',
-                color:
-                  page === currentPage ? 'var(--ws-bg)' : 'var(--ws-text)',
+                background:
+                  page === currentPage
+                    ? 'linear-gradient(135deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 80%, #7c3aed))'
+                    : 'color-mix(in srgb, var(--ws-surface) 60%, transparent)',
+                color: page === currentPage ? '#fff' : 'var(--ws-text)',
                 border:
                   page === currentPage
                     ? '1px solid var(--ws-primary)'
                     : '1px solid var(--ws-border)',
+                boxShadow:
+                  page === currentPage
+                    ? '0 2px 8px color-mix(in srgb, var(--ws-primary) 25%, transparent)'
+                    : 'none',
+                backdropFilter: 'blur(8px)',
               }}
             >
               {page}
@@ -160,13 +571,20 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
           ),
         )}
 
+        {/* Next */}
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="flex items-center justify-center w-9 h-9 rounded-lg transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+          className="flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 disabled:opacity-25 disabled:cursor-not-allowed"
           style={{
-            border: '1px solid var(--ws-border)',
+            ...glassCardStyle,
             color: 'var(--ws-text)',
+          }}
+          onMouseEnter={(e) => {
+            if (currentPage < totalPages) e.currentTarget.style.borderColor = 'var(--ws-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--ws-border)';
           }}
           aria-label="Next page"
         >
@@ -174,314 +592,92 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
         </button>
       </div>
 
-      <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>
+      <span className="text-xs font-medium" style={{ color: 'var(--ws-muted)' }}>
         Page {currentPage} of {totalPages}
       </span>
-    </div>
+    </motion.div>
   );
 }
 
-function EmptyState({ hasFilters, onClearFilters }) {
+// ---------------------------------------------------------------------------
+// Active Filters Bar
+// ---------------------------------------------------------------------------
+
+function ActiveFilters({ searchQuery, selectedCategory, onClearSearch, onClearCategory, onClearAll }) {
+  const hasFilters = searchQuery.trim() !== '' || selectedCategory !== null;
+  if (!hasFilters) return null;
+
   return (
-    <div
-      className="flex flex-col items-center justify-center py-20 px-4"
-      style={{ color: 'var(--ws-muted)' }}
+    <motion.div
+      variants={motionVariants.fadeIn}
+      initial="hidden"
+      animate="visible"
+      exit="hidden"
+      className="flex items-center gap-2 flex-wrap"
     >
-      <Package className="w-16 h-16 mb-4 opacity-30" />
-      <h3
-        className="text-lg font-semibold mb-2"
-        style={{ color: 'var(--ws-text)' }}
+      <span className="text-xs font-medium" style={{ color: 'var(--ws-muted)' }}>
+        Active filters:
+      </span>
+      {searchQuery.trim() && (
+        <button
+          onClick={onClearSearch}
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors"
+          style={{
+            background: 'color-mix(in srgb, var(--ws-primary) 10%, transparent)',
+            color: 'var(--ws-primary)',
+            border: '1px solid color-mix(in srgb, var(--ws-primary) 20%, transparent)',
+          }}
+        >
+          <Search className="w-3 h-3" />
+          "{searchQuery}"
+          <X className="w-3 h-3" />
+        </button>
+      )}
+      {selectedCategory && (
+        <button
+          onClick={onClearCategory}
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors"
+          style={{
+            background: 'color-mix(in srgb, var(--ws-primary) 10%, transparent)',
+            color: 'var(--ws-primary)',
+            border: '1px solid color-mix(in srgb, var(--ws-primary) 20%, transparent)',
+          }}
+        >
+          {selectedCategory}
+          <X className="w-3 h-3" />
+        </button>
+      )}
+      <button
+        onClick={onClearAll}
+        className="text-xs font-medium transition-colors"
+        style={{ color: 'var(--ws-muted)' }}
+        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ws-primary)')}
+        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ws-muted)')}
       >
-        No products found
-      </h3>
-      <p className="text-sm text-center max-w-md mb-4">
-        {hasFilters
-          ? 'No products match your current filters. Try adjusting your search or category selection.'
-          : 'There are no products available in the catalog at this time.'}
+        Clear all
+      </button>
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Results Header
+// ---------------------------------------------------------------------------
+
+function ResultsHeader({ count, sortBy, onSortChange }) {
+  return (
+    <div className="flex items-center justify-between gap-4 flex-wrap mb-2">
+      <p className="text-sm font-medium" style={{ color: 'var(--ws-muted)' }}>
+        <span className="font-bold" style={{ color: 'var(--ws-text)' }}>
+          {count}
+        </span>{' '}
+        product{count !== 1 ? 's' : ''} available
       </p>
-      {hasFilters && (
-        <button
-          onClick={onClearFilters}
-          className="px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
-          style={{
-            backgroundColor: 'var(--ws-primary)',
-            color: 'var(--ws-bg)',
-          }}
-        >
-          Clear Filters
-        </button>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Card variants
-// ---------------------------------------------------------------------------
-
-function AddToCartBtn({ product, cart }) {
-  const [added, setAdded] = useState(false);
-
-  const handleClick = useCallback(
-    (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      if (added) return;
-      cart?.addItem(product);
-      setAdded(true);
-    },
-    [product, cart, added],
-  );
-
-  useEffect(() => {
-    if (!added) return;
-    const timer = setTimeout(() => setAdded(false), 1500);
-    return () => clearTimeout(timer);
-  }, [added]);
-
-  return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:opacity-90"
-      style={{
-        backgroundColor: added ? '#22c55e' : 'var(--ws-primary)',
-        color: 'var(--ws-bg, #000)',
-      }}
-    >
-      {added ? (
-        <>
-          <Check className="w-4 h-4" />
-          <span>Added!</span>
-        </>
-      ) : (
-        <>
-          <ShoppingCart className="w-4 h-4" />
-          <span>Add to Cart</span>
-        </>
-      )}
-    </button>
-  );
-}
-
-function DetailedCard({ product, cart, nav, showPricing, showStock }) {
-  const stock = getStockStatus(product);
-
-  return (
-    <div
-      onClick={() => nav?.goToProduct(product.id)}
-      className="group flex flex-col rounded-xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
-      style={{
-        backgroundColor: 'var(--ws-surface)',
-        border: '1px solid var(--ws-border)',
-      }}
-      role="article"
-      aria-label={product.name}
-    >
-      {/* Image */}
-      <div
-        className="relative flex items-center justify-center aspect-square overflow-hidden"
-        style={{ backgroundColor: 'var(--ws-bg)' }}
-      >
-        {product.image ? (
-          <img
-            src={product.image}
-            alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
-          />
-        ) : (
-          <Package
-            className="w-12 h-12 opacity-20"
-            style={{ color: 'var(--ws-muted)' }}
-          />
-        )}
-      </div>
-
-      {/* Details */}
-      <div className="flex flex-col gap-1.5 p-4 flex-1">
-        <h3
-          className="text-sm font-semibold leading-snug line-clamp-2"
-          style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
-        >
-          {product.name}
-        </h3>
-
-        <p
-          className="text-[11px] font-medium uppercase tracking-wider"
-          style={{ color: 'var(--ws-muted)' }}
-        >
-          SKU: {product.sku || 'N/A'}
-        </p>
-
-        {showPricing && product.price != null && (
-          <span
-            className="text-lg font-bold mt-1"
-            style={{ color: 'var(--ws-primary)' }}
-          >
-            {formatPrice(product.price)}
-          </span>
-        )}
-
-        {showStock && (
-          <div className="flex items-center gap-1.5 mt-1">
-            <span
-              className="w-2 h-2 rounded-full flex-shrink-0"
-              style={{ backgroundColor: stock.dotColor }}
-            />
-            <span
-              className="text-xs font-medium"
-              style={{ color: 'var(--ws-muted)' }}
-            >
-              {stock.label}
-            </span>
-          </div>
-        )}
-
-        <div className="mt-auto pt-3">
-          <AddToCartBtn product={product} cart={cart} />
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <SlidersHorizontal className="w-4 h-4" style={{ color: 'var(--ws-muted)' }} />
+          <SortDropdown value={sortBy} onChange={onSortChange} />
         </div>
-      </div>
-    </div>
-  );
-}
-
-function CompactCard({ product, cart, nav, showPricing, showStock }) {
-  const stock = getStockStatus(product);
-
-  return (
-    <div
-      onClick={() => nav?.goToProduct(product.id)}
-      className="group flex items-center gap-4 rounded-xl overflow-hidden p-3 transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
-      style={{
-        backgroundColor: 'var(--ws-surface)',
-        border: '1px solid var(--ws-border)',
-      }}
-      role="article"
-      aria-label={product.name}
-    >
-      {/* Image */}
-      <div
-        className="flex-shrink-0 flex items-center justify-center w-20 h-20 rounded-lg overflow-hidden"
-        style={{ backgroundColor: 'var(--ws-bg)' }}
-      >
-        {product.image ? (
-          <img
-            src={product.image}
-            alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-            loading="lazy"
-          />
-        ) : (
-          <Package
-            className="w-6 h-6 opacity-20"
-            style={{ color: 'var(--ws-muted)' }}
-          />
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <h3
-          className="text-sm font-semibold leading-snug truncate"
-          style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
-        >
-          {product.name}
-        </h3>
-        <p
-          className="text-[10px] font-medium uppercase tracking-wider mt-0.5"
-          style={{ color: 'var(--ws-muted)' }}
-        >
-          {product.sku || ''}
-        </p>
-        {showStock && (
-          <div className="flex items-center gap-1.5 mt-1">
-            <span
-              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-              style={{ backgroundColor: stock.dotColor }}
-            />
-            <span className="text-[10px]" style={{ color: 'var(--ws-muted)' }}>
-              {stock.label}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Price + Action */}
-      <div className="flex-shrink-0 flex flex-col items-end gap-2">
-        {showPricing && product.price != null && (
-          <span
-            className="text-base font-bold"
-            style={{ color: 'var(--ws-primary)' }}
-          >
-            {formatPrice(product.price)}
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            cart?.addItem(product);
-          }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:opacity-90"
-          style={{
-            backgroundColor: 'var(--ws-primary)',
-            color: 'var(--ws-bg, #000)',
-          }}
-        >
-          <ShoppingCart className="w-3.5 h-3.5" />
-          Add
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function MinimalCard({ product, cart, nav, showPricing }) {
-  return (
-    <div
-      onClick={() => nav?.goToProduct(product.id)}
-      className="flex items-center justify-between gap-4 py-3 px-4 rounded-lg transition-colors duration-150 cursor-pointer"
-      style={{
-        border: '1px solid var(--ws-border)',
-      }}
-      role="article"
-      aria-label={product.name}
-    >
-      <div className="min-w-0">
-        <h3
-          className="text-sm font-medium truncate"
-          style={{ color: 'var(--ws-text)' }}
-        >
-          {product.name}
-        </h3>
-      </div>
-      <div className="flex items-center gap-3 flex-shrink-0">
-        {showPricing && product.price != null && (
-          <span
-            className="text-sm font-semibold"
-            style={{ color: 'var(--ws-primary)' }}
-          >
-            {formatPrice(product.price)}
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            cart?.addItem(product);
-          }}
-          className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors hover:opacity-90"
-          style={{
-            backgroundColor: 'var(--ws-primary)',
-            color: 'var(--ws-bg, #000)',
-          }}
-        >
-          <ShoppingCart className="w-3 h-3" />
-          Add
-        </button>
       </div>
     </div>
   );
@@ -491,31 +687,18 @@ function MinimalCard({ product, cart, nav, showPricing }) {
 // Main Component
 // ---------------------------------------------------------------------------
 
-/**
- * PreviewCatalogPage
- *
- * Full product catalog page for the store builder preview.
- * Supports search, category filtering, sorting, pagination, and add-to-cart.
- *
- * Props:
- *   config   - Store config object (uses config.catalog for settings)
- *   products - Array of product objects
- *   cart     - { addItem }
- *   nav      - { goToProduct, goToHome }
- */
 export default function PreviewCatalogPage({ config, products = [], cart, nav }) {
-  const catalog = config?.catalog || {};
-  const columns = catalog.columns || 3;
-  const cardStyle = catalog.cardStyle || 'detailed';
-  const showPricing = catalog.showPricing !== false;
-  const showStock = catalog.showStock !== false;
-
-  // Filter / view state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [sortBy, setSortBy] = useState('name_asc');
-  const [viewMode, setViewMode] = useState('grid');
   const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate initial load
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Extract unique categories
   const categories = useMemo(() => {
@@ -530,13 +713,14 @@ export default function PreviewCatalogPage({ config, products = [], cart, nav })
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
-    // Search filter
+    // Search filter -- name, SKU, description
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter(
         (p) =>
           (p.name && p.name.toLowerCase().includes(q)) ||
-          (p.sku && p.sku.toLowerCase().includes(q)),
+          (p.sku && p.sku.toLowerCase().includes(q)) ||
+          (p.description && p.description.toLowerCase().includes(q)),
       );
     }
 
@@ -553,9 +737,11 @@ export default function PreviewCatalogPage({ config, products = [], cart, nav })
         case 'name_desc':
           return (b.name || '').localeCompare(a.name || '');
         case 'price_asc':
-          return (a.price ?? 0) - (b.price ?? 0);
+          return (getEffectivePrice(a) ?? 0) - (getEffectivePrice(b) ?? 0);
         case 'price_desc':
-          return (b.price ?? 0) - (a.price ?? 0);
+          return (getEffectivePrice(b) ?? 0) - (getEffectivePrice(a) ?? 0);
+        case 'sku_asc':
+          return (a.sku || '').localeCompare(b.sku || '');
         default:
           return 0;
       }
@@ -588,8 +774,8 @@ export default function PreviewCatalogPage({ config, products = [], cart, nav })
     setPage(1);
   }, []);
 
-  const handleSortChange = useCallback((e) => {
-    setSortBy(e.target.value);
+  const handleSortChange = useCallback((val) => {
+    setSortBy(val);
   }, []);
 
   const handlePageChange = useCallback((newPage) => {
@@ -597,7 +783,7 @@ export default function PreviewCatalogPage({ config, products = [], cart, nav })
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  const handleClearFilters = useCallback(() => {
+  const handleClearAll = useCallback(() => {
     setSearchQuery('');
     setSelectedCategory(null);
     setPage(1);
@@ -605,105 +791,78 @@ export default function PreviewCatalogPage({ config, products = [], cart, nav })
 
   const hasFilters = searchQuery.trim() !== '' || selectedCategory !== null;
 
-  // Grid columns style
-  const gridColsClass =
-    viewMode === 'grid'
-      ? columns === 4
-        ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
-        : columns === 2
-          ? 'grid-cols-1 sm:grid-cols-2'
-          : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-      : '';
-
-  // Card renderer
-  const renderCard = useCallback(
-    (product) => {
-      const cardProps = { product, cart, nav, showPricing, showStock };
-
-      if (cardStyle === 'compact') return <CompactCard key={product.id} {...cardProps} />;
-      if (cardStyle === 'minimal') return <MinimalCard key={product.id} {...cardProps} />;
-      return <DetailedCard key={product.id} {...cardProps} />;
-    },
-    [cardStyle, cart, nav, showPricing, showStock],
-  );
-
   return (
     <div
-      className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
-      style={{ fontFamily: 'var(--ws-font)', color: 'var(--ws-text)' }}
+      className="w-full px-6 sm:px-10 lg:px-16 py-8"
+      style={{
+        fontFamily: 'var(--ws-font)',
+        color: 'var(--ws-text)',
+      }}
     >
-      {/* Top bar: heading + result count + view controls */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1
-            className="text-2xl font-bold"
-            style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
-          >
-            Products
-          </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--ws-muted)' }}>
-            {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
-          </p>
-        </div>
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: 'Home', onClick: () => nav?.goToHome() },
+          { label: 'Product Catalog' },
+        ]}
+      />
 
-        <div className="flex items-center gap-2">
-          {/* View toggle */}
-          <div
-            className="flex items-center rounded-lg overflow-hidden"
-            style={{ border: '1px solid var(--ws-border)' }}
-          >
-            <button
-              onClick={() => setViewMode('grid')}
-              className="flex items-center justify-center w-9 h-9 transition-colors duration-150"
-              style={{
-                backgroundColor:
-                  viewMode === 'grid' ? 'var(--ws-primary)' : 'var(--ws-surface)',
-                color:
-                  viewMode === 'grid' ? 'var(--ws-bg)' : 'var(--ws-muted)',
-              }}
-              aria-label="Grid view"
+      {/* Section Header */}
+      <SectionHeader
+        title="Product Catalog"
+        subtitle="Browse our full range of wholesale products. All pricing shown is exclusive of VAT."
+        action={
+          cart?.itemCount > 0 ? (
+            <SecondaryButton
+              icon={ClipboardPlus}
+              size="sm"
+              onClick={() => nav?.goToCart()}
             >
-              <Grid3X3 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className="flex items-center justify-center w-9 h-9 transition-colors duration-150"
-              style={{
-                backgroundColor:
-                  viewMode === 'list' ? 'var(--ws-primary)' : 'var(--ws-surface)',
-                color:
-                  viewMode === 'list' ? 'var(--ws-bg)' : 'var(--ws-muted)',
-              }}
-              aria-label="List view"
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
+              View Order ({cart.itemCount})
+            </SecondaryButton>
+          ) : null
+        }
+      />
 
       {/* Search bar */}
-      <div className="relative mb-4">
+      <motion.div
+        variants={motionVariants.fadeIn}
+        initial="hidden"
+        animate="visible"
+        className="relative mb-5"
+      >
         <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none"
           style={{ color: 'var(--ws-muted)' }}
         />
-        <input
+        <GlassInput
           type="text"
           value={searchQuery}
           onChange={handleSearchChange}
-          placeholder="Search by name or SKU..."
-          className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm outline-none transition-colors duration-150"
-          style={{
-            backgroundColor: 'var(--ws-surface)',
-            color: 'var(--ws-text)',
-            border: '1px solid var(--ws-border)',
-          }}
+          placeholder="Search by product name, SKU, or description..."
+          className="pl-12"
         />
-      </div>
+        {searchQuery && (
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setPage(1);
+            }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
+            style={{ color: 'var(--ws-muted)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ws-primary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ws-muted)')}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </motion.div>
 
-      {/* Category filter pills + sort */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+      {/* Trust bar */}
+      <TrustBar className="mb-6" />
+
+      {/* Category pills + sort */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
         {categories.length > 0 && (
           <CategoryPills
             categories={categories}
@@ -711,45 +870,83 @@ export default function PreviewCatalogPage({ config, products = [], cart, nav })
             onSelect={handleCategorySelect}
           />
         )}
-
-        <select
-          value={sortBy}
-          onChange={handleSortChange}
-          className="px-3 py-2 rounded-lg text-sm font-medium outline-none cursor-pointer transition-colors duration-150 appearance-none flex-shrink-0"
-          style={{
-            backgroundColor: 'var(--ws-surface)',
-            color: 'var(--ws-text)',
-            border: '1px solid var(--ws-border)',
-            minWidth: '160px',
-          }}
-        >
-          {SORT_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+        <ResultsHeader
+          count={filteredProducts.length}
+          sortBy={sortBy}
+          onSortChange={handleSortChange}
+        />
       </div>
 
-      {/* Product grid / list */}
-      {paginatedProducts.length === 0 ? (
-        <EmptyState hasFilters={hasFilters} onClearFilters={handleClearFilters} />
-      ) : viewMode === 'grid' && cardStyle !== 'compact' ? (
-        <div className={`grid ${gridColsClass} gap-5`}>
-          {paginatedProducts.map(renderCard)}
-        </div>
+      {/* Active filters */}
+      <AnimatePresence>
+        {hasFilters && (
+          <div className="mb-6">
+            <ActiveFilters
+              searchQuery={searchQuery}
+              selectedCategory={selectedCategory}
+              onClearSearch={() => {
+                setSearchQuery('');
+                setPage(1);
+              }}
+              onClearCategory={() => {
+                setSelectedCategory(null);
+                setPage(1);
+              }}
+              onClearAll={handleClearAll}
+            />
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Loading skeleton */}
+      {isLoading ? (
+        <LoadingSkeleton count={8} columns={4} />
+      ) : paginatedProducts.length === 0 ? (
+        /* Empty state */
+        <EmptyState
+          icon={Package}
+          title="No products found"
+          description={
+            hasFilters
+              ? 'No products match your current filters. Try adjusting your search or category selection.'
+              : 'There are no products available in the catalog at this time.'
+          }
+          action={
+            hasFilters ? (
+              <PrimaryButton onClick={handleClearAll} size="sm">
+                Clear All Filters
+              </PrimaryButton>
+            ) : null
+          }
+        />
       ) : (
-        <div className="flex flex-col gap-3">
-          {paginatedProducts.map(renderCard)}
-        </div>
+        /* Product grid */
+        <motion.div
+          variants={motionVariants.container}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
+        >
+          {paginatedProducts.map((product, i) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              cart={cart}
+              nav={nav}
+              index={i}
+            />
+          ))}
+        </motion.div>
       )}
 
       {/* Pagination */}
-      <Pagination
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={handlePageChange}
-      />
+      {!isLoading && (
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
+      )}
     </div>
   );
 }

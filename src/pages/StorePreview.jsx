@@ -284,7 +284,7 @@ function MobileMenuDrawer({ isOpen, onClose, config, sections, onOpenSearch, onO
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                 </svg>
-                Cart
+                Order
               </button>
             </div>
           </motion.div>
@@ -385,7 +385,7 @@ function PreviewNavBar({ config, sections, onOpenSearch, onOpenCart, onOpenAccou
                   onClick={onOpenCart}
                   className="p-2 rounded-lg transition-colors hover:bg-white/[0.06] relative"
                   style={{ color: 'var(--ws-muted, #a1a1aa)' }}
-                  aria-label="Cart"
+                  aria-label="Order"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
@@ -759,8 +759,19 @@ export default function StorePreview() {
     updateQuantity: cart.updateQuantity,
     clearCart: cart.clearCart,
     cartTotal: cart.total,
+    cartSubtotal: cart.subtotal,
+    cartVat: cart.vat,
+    cartVolumeDiscount: cart.volumeDiscount,
     cartCount: cart.itemCount,
-  }), [config, themeVars, orgId, cart.items, cart.total, cart.itemCount]);
+    poNumber: cart.poNumber,
+    setPoNumber: cart.setPoNumber,
+    deliveryDate: cart.deliveryDate,
+    setDeliveryDate: cart.setDeliveryDate,
+    orderNotes: cart.orderNotes,
+    setOrderNotes: cart.setOrderNotes,
+    moqViolations: cart.moqViolations,
+    hasValidOrder: cart.hasValidOrder,
+  }), [config, themeVars, orgId, cart.items, cart.total, cart.itemCount, cart.subtotal, cart.poNumber, cart.deliveryDate]);
 
   // Inject customHead into document head (Google Fonts, external styles, etc.)
   useEffect(() => {
