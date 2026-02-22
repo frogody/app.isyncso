@@ -425,7 +425,7 @@ export default function FeaturedProductsRenderer({ section, theme }) {
         if (productIds && productIds.length > 0) {
           query = supabase
             .from('products')
-            .select('id, name, price, sku, featured_image, b2b_price, wholesale_price')
+            .select('id, name, price, sku, featured_image')
             .in('id', productIds)
             .eq('status', 'published')
             .limit(maxItems);
@@ -433,7 +433,7 @@ export default function FeaturedProductsRenderer({ section, theme }) {
           // Fetch published products for this company
           query = supabase
             .from('products')
-            .select('id, name, price, sku, featured_image, b2b_price, wholesale_price')
+            .select('id, name, price, sku, featured_image')
             .eq('company_id', resolvedCompanyId)
             .eq('status', 'published')
             .order('created_at', { ascending: false })
@@ -448,7 +448,7 @@ export default function FeaturedProductsRenderer({ section, theme }) {
         } else {
           setProducts(data.map(p => ({
             ...p,
-            price: p.b2b_price || p.wholesale_price || p.price || 0,
+            price: p.price || 0,
           })));
         }
       } catch (err) {

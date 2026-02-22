@@ -35,17 +35,19 @@ export function useBuilderPreview() {
     const iframe = iframeRef.current;
     if (!iframe?.contentWindow || !config) return;
 
-    // Get the current auth session token so the preview iframe can make
+    // Get the current auth session so the preview iframe can make
     // authenticated Supabase queries (products, companies are RLS-protected).
     let accessToken = null;
+    let refreshToken = null;
     try {
       const { data: { session } } = await supabase.auth.getSession();
       accessToken = session?.access_token || null;
+      refreshToken = session?.refresh_token || null;
     } catch {}
 
     try {
       iframe.contentWindow.postMessage(
-        { type: 'CONFIG_UPDATE', config, organizationId: organizationId || null, accessToken },
+        { type: 'CONFIG_UPDATE', config, organizationId: organizationId || null, accessToken, refreshToken },
         '*',
       );
     } catch (err) {

@@ -676,7 +676,7 @@ export default function StorePreview() {
     let cancelled = false;
     supabase
       .from('products')
-      .select('*, physical_products(sku, barcode, weight, dimensions), inventory(quantity_on_hand, quantity_reserved)')
+      .select('id, name, price, sku, featured_image, gallery, category, category_id, description, short_description, tags, ean, type, slug')
       .eq('company_id', companyId)
       .eq('status', 'published')
       .order('name')
@@ -701,11 +701,11 @@ export default function StorePreview() {
           setMessageOrgId(event.data.organizationId);
         }
         // Set the auth session from the builder so RLS-protected queries work
-        if (event.data.accessToken) {
+        if (event.data.accessToken && event.data.refreshToken) {
           supabase.auth.setSession({
             access_token: event.data.accessToken,
-            refresh_token: '',
-          }).catch(() => {});
+            refresh_token: event.data.refreshToken,
+          }).catch((err) => console.warn('[StorePreview] setSession failed:', err));
         }
       }
       if (event.data.type === 'NAVIGATE_TO_PAGE' && event.data.pageId) {
