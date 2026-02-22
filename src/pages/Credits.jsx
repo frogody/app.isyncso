@@ -1,17 +1,20 @@
 import React, { useState, useMemo } from 'react';
-import { Zap, TrendingUp, Calculator, ShoppingCart, History, ArrowDown, Loader2, Check, Sparkles, Search, Users, Building2, Brain, FileText, Globe, Package } from 'lucide-react';
+import { Zap, TrendingUp, Calculator, ShoppingCart, History, ArrowDown, Loader2, Check, Sparkles, Search, Users, Building2, Brain, FileText, Globe, Package, Image, Video, MessageSquare, Mail, Phone, Layers, ChevronDown, ChevronUp } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { useBilling } from '@/hooks/useBilling';
 import { useEnrichmentConfig } from '@/hooks/useEnrichmentConfig';
+import { useActionCosts } from '@/hooks/useActionCosts';
 import { toast } from 'sonner';
 
 export default function Credits() {
   const { st } = useTheme();
   const { subscription, plans, creditPacks, creditBalance, creditTransactions, isLoading, createCheckout, refresh } = useBilling();
   const { configList, loading: configLoading } = useEnrichmentConfig();
+  const { costsList, costsByCategory, loading: costsLoading } = useActionCosts();
   const [checkingOut, setCheckingOut] = useState(null);
   const [calcInputs, setCalcInputs] = useState({});
+  const [showAllCosts, setShowAllCosts] = useState(false);
 
   const currentPlanSlug = subscription?.subscription_plans?.slug || subscription?.plan_slug || 'free';
   const currentPlan = plans.find(p => p.slug === currentPlanSlug) || plans.find(p => p.slug === 'free');
@@ -171,6 +174,72 @@ export default function Credits() {
             )
           )}
         </div>
+
+        {/* Section B2: All Action Costs (from credit_action_costs) */}
+        {costsList.length > 0 && (
+          <div>
+            <button
+              onClick={() => setShowAllCosts(v => !v)}
+              className={`flex items-center gap-2 mb-4 group`}
+            >
+              <Layers className="w-5 h-5 text-cyan-400" />
+              <h2 className={`text-lg font-semibold ${st('text-slate-900', 'text-white')}`}>All Action Costs</h2>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${st('bg-slate-100 text-slate-500', 'bg-white/5 text-zinc-500')}`}>
+                {costsList.length} actions
+              </span>
+              {showAllCosts ? (
+                <ChevronUp className={`w-4 h-4 ${st('text-slate-400', 'text-zinc-500')}`} />
+              ) : (
+                <ChevronDown className={`w-4 h-4 ${st('text-slate-400', 'text-zinc-500')}`} />
+              )}
+            </button>
+
+            {showAllCosts && (
+              <div className="space-y-6">
+                {Object.entries(costsByCategory()).map(([category, items]) => {
+                  const CATEGORY_ICONS = {
+                    ai: MessageSquare, image: Image, video: Video, studio: Image,
+                    content: FileText, enrichment: Search, research: Globe,
+                    talent: Users, knowledge: Brain, communication: Phone,
+                    finance: Zap, compliance: Brain, learning: Brain,
+                    data: Layers, automation: Layers,
+                  };
+                  const CategoryIcon = CATEGORY_ICONS[category] || Sparkles;
+
+                  return (
+                    <div key={category}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <CategoryIcon className={`w-4 h-4 ${st('text-slate-400', 'text-zinc-500')}`} />
+                        <h3 className={`text-sm font-semibold uppercase tracking-wider ${st('text-slate-500', 'text-zinc-500')}`}>
+                          {category}
+                        </h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {items.map((item) => (
+                          <div
+                            key={item.id}
+                            className={`flex items-center justify-between p-3 rounded-xl ${st('bg-white border-slate-100', 'bg-white/[0.02] border-white/5')} border`}
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className={`text-sm font-medium ${st('text-slate-900', 'text-white')} truncate`}>{item.label}</p>
+                              {item.is_per_unit && (
+                                <p className={`text-[10px] ${st('text-slate-400', 'text-zinc-600')}`}>per {item.unit_label}</p>
+                              )}
+                            </div>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-bold shrink-0 ml-2">
+                              <Zap className="w-2.5 h-2.5" />
+                              {item.credits_required}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Section C: Credit Calculator */}
         <GlassCard className="p-6">
@@ -333,7 +402,12 @@ export default function Credits() {
                           {new Date(tx.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
                         </td>
                         <td className={`py-2.5 px-2 text-sm ${st('text-slate-900', 'text-white')}`}>
-                          {tx.description || tx.reference_name || tx.transaction_type}
+                          <span>{tx.description || tx.reference_name || tx.transaction_type}</span>
+                          {tx.action_key && (
+                            <span className={`ml-2 text-[10px] px-1.5 py-0.5 rounded ${st('bg-slate-100 text-slate-500', 'bg-white/5 text-zinc-500')}`}>
+                              {tx.action_key}
+                            </span>
+                          )}
                         </td>
                         <td className={`py-2.5 px-2 text-sm text-right font-medium ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
                           {isPositive ? '+' : ''}{tx.amount}

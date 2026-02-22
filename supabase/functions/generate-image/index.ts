@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+import { requireCredits, refundCredits } from '../_shared/credit-check.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -810,6 +812,30 @@ serve(async (req) => {
       outfit_extract,
       outfit_source_url,
     } = await req.json();
+
+    // ── Credit check ──────────────────────────────────────────────────
+    // Determine action key based on the pipeline that will be used
+    let creditActionKey = 'generate-image-pro'; // default
+    if (outfit_extract) {
+      creditActionKey = 'outfit-extractor';
+    } else if (fashion_booth) {
+      creditActionKey = 'fashion-booth';
+    } else if (model_key === 'flux-schnell' || use_case === 'quick_draft') {
+      creditActionKey = 'generate-image-schnell';
+    } else if (model_key === 'flux-kontext-max') {
+      creditActionKey = 'generate-image-kontext-max';
+    } else if (model_key?.includes('kontext')) {
+      creditActionKey = 'generate-image-kontext';
+    }
+
+    if (user_id) {
+      const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      const credit = await requireCredits(supabaseAdmin, user_id, creditActionKey, {
+        edgeFunction: 'generate-image',
+        metadata: { model_key, use_case, is_fashion },
+      });
+      if (!credit.success) return credit.errorResponse!;
+    }
 
     // ══════════════════════════════════════════════════════════════════════
     // Outfit Extractor Pipeline

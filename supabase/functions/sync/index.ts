@@ -85,6 +85,7 @@ import {
 
 // Import AI usage tracking utility
 import { logLLMUsage, calculateModelCost } from '../_shared/ai-usage.ts';
+import { requireCredits } from '../_shared/credit-check.ts';
 
 import {
   detectOrchestrationWorkflow,
@@ -2510,6 +2511,15 @@ serve(async (req) => {
 
     const companyId = context?.companyId || DEFAULT_COMPANY_ID;
     const userId = context?.userId;
+
+    // ── Credit check (1 credit per chat message) ───────────────────
+    if (userId) {
+      const credit = await requireCredits(supabase, userId, 'sync-chat', {
+        edgeFunction: 'sync',
+        metadata: { mode, voice, sessionId },
+      });
+      if (!credit.success) return credit.errorResponse!;
+    }
 
     // Get or create persistent session using memory system
     const session = await memorySystem.session.getOrCreateSession(

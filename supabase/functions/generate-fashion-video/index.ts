@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+import { requireCredits } from '../_shared/credit-check.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -160,6 +162,16 @@ serve(async (req) => {
       company_id,
       user_id,
     } = await req.json();
+
+    // ── Credit check (30 credits for fashion video) ────────────────
+    if (user_id) {
+      const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      const credit = await requireCredits(supabaseAdmin, user_id, 'generate-fashion-video', {
+        edgeFunction: 'generate-fashion-video',
+        metadata: { model_key, duration_seconds, aspect_ratio },
+      });
+      if (!credit.success) return credit.errorResponse!;
+    }
 
     if (!image_url) {
       return new Response(

@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+import { requireCredits } from '../_shared/credit-check.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -180,7 +182,18 @@ serve(async (req: Request) => {
       dimensions,
       style,
       product_image_url,
+      user_id,
     } = body;
+
+    // ── Credit check (3 credits for ad image) ─────────────────────
+    if (user_id) {
+      const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      const credit = await requireCredits(supabaseAdmin, user_id, 'reach-generate-ad-image', {
+        edgeFunction: 'reach-generate-ad-image',
+        metadata: { platform, style },
+      });
+      if (!credit.success) return credit.errorResponse!;
+    }
 
     // Build the prompt
     const promptParts = [QUALITY_PREFIX];

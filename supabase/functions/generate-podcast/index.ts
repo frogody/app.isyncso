@@ -12,6 +12,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.2';
 import { logLLMUsage, logAIUsage } from '../_shared/ai-usage.ts';
+import { requireCredits } from '../_shared/credit-check.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -407,6 +408,15 @@ serve(async (req) => {
       userId,
       companyId,
     } = body;
+
+    // ── Credit check (5 credits for podcast) ──────────────────────
+    if (userId) {
+      const credit = await requireCredits(supabase, userId, 'generate-podcast', {
+        edgeFunction: 'generate-podcast',
+        metadata: { topic, style, duration, hasScript: !!script },
+      });
+      if (!credit.success) return credit.errorResponse!;
+    }
 
     const startTime = Date.now();
 
