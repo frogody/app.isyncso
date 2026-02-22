@@ -39,6 +39,7 @@ import {
 // ---------------------------------------------------------------------------
 
 import { ORDER_STATUS_COLORS, DEFAULT_STATUS_COLOR } from './shared/b2bConstants';
+import { processOrderConfirmed, processOrderShipped } from '@/lib/b2b/processB2BOrder';
 
 const STATUS_STEPS = [
   { key: 'pending', label: 'Pending', icon: Clock },
@@ -304,23 +305,33 @@ function NoteTimeline({ notes, onAddNote, addingNote }) {
   );
 }
 
-function TrackingInput({ order, onUpdateTracking, updating }) {
+function TrackingInput({ order, onUpdateTracking, onMarkShipped, updating }) {
   const [trackingNumber, setTrackingNumber] = useState(order.tracking_number || '');
   const [trackingUrl, setTrackingUrl] = useState(order.tracking_url || '');
+  const [carrier, setCarrier] = useState(order.carrier || '');
 
   const handleSave = () => {
     onUpdateTracking(trackingNumber, trackingUrl);
+  };
+
+  const handleShip = () => {
+    if (!trackingNumber.trim()) return;
+    onMarkShipped(trackingNumber.trim(), carrier || null);
   };
 
   const hasChanged =
     trackingNumber !== (order.tracking_number || '') ||
     trackingUrl !== (order.tracking_url || '');
 
+  const canShip =
+    trackingNumber.trim() &&
+    ['confirmed', 'processing'].includes(order.status);
+
   return (
     <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
       <h3 className="text-sm font-medium text-zinc-400 mb-4 flex items-center gap-2">
         <Truck className="w-4 h-4" />
-        Tracking Information
+        Shipping & Tracking
       </h3>
       <div className="space-y-3">
         <div>
@@ -345,6 +356,23 @@ function TrackingInput({ order, onUpdateTracking, updating }) {
           </div>
         </div>
         <div>
+          <label className="block text-xs text-zinc-500 mb-1">Carrier (optional)</label>
+          <select
+            value={carrier}
+            onChange={(e) => setCarrier(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl bg-zinc-800/50 border border-zinc-700 text-white text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors"
+          >
+            <option value="">Select carrier...</option>
+            <option value="PostNL">PostNL</option>
+            <option value="DHL">DHL</option>
+            <option value="DPD">DPD</option>
+            <option value="UPS">UPS</option>
+            <option value="FedEx">FedEx</option>
+            <option value="GLS">GLS</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div>
           <label className="block text-xs text-zinc-500 mb-1">Tracking URL (optional)</label>
           <div className="flex gap-2">
             <input
@@ -367,7 +395,27 @@ function TrackingInput({ order, onUpdateTracking, updating }) {
             )}
           </div>
         </div>
-        {hasChanged && (
+
+        {/* Mark as Shipped button — visible when order is confirmed/processing */}
+        {canShip && (
+          <button
+            onClick={handleShip}
+            disabled={updating}
+            className="w-full mt-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+          >
+            {updating ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <Truck className="w-4 h-4" />
+                Mark as Shipped
+              </>
+            )}
+          </button>
+        )}
+
+        {/* Save tracking info button (when already shipped or just editing) */}
+        {hasChanged && !canShip && (
           <button
             onClick={handleSave}
             disabled={updating}
@@ -525,13 +573,21 @@ export default function B2BOrderDetail() {
   // Update order status
   // -----------------------------------------------------------------------
   const updateStatus = useCallback(
-    async (newStatus) => {
+    async (newStatus, extra = {}) => {
       if (!order) return;
       setActionLoading(newStatus);
       try {
+        const updates = { status: newStatus, updated_at: new Date().toISOString(), ...extra };
+
+        // For confirmed, add approved_by/approved_at
+        if (newStatus === 'confirmed') {
+          updates.approved_by = user?.id;
+          updates.approved_at = new Date().toISOString();
+        }
+
         const { error: updateError } = await supabase
           .from('b2b_orders')
-          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .update(updates)
           .eq('id', order.id);
 
         if (updateError) throw updateError;
@@ -544,6 +600,15 @@ export default function B2BOrderDetail() {
           note_type: 'status_change',
         });
 
+        // Run automation for specific transitions
+        try {
+          if (newStatus === 'confirmed') {
+            await processOrderConfirmed(order.id, organizationId, user?.id);
+          }
+        } catch (autoErr) {
+          console.warn('[B2BOrderDetail] automation error:', autoErr);
+        }
+
         await fetchOrder();
       } catch (err) {
         console.error('[B2BOrderDetail] status update error:', err);
@@ -552,7 +617,7 @@ export default function B2BOrderDetail() {
         setActionLoading(null);
       }
     },
-    [order, user, fetchOrder]
+    [order, user, organizationId, fetchOrder]
   );
 
   // -----------------------------------------------------------------------
@@ -616,6 +681,32 @@ export default function B2BOrderDetail() {
       }
     },
     [order, user, fetchOrder]
+  );
+
+  // -----------------------------------------------------------------------
+  // Mark as shipped (with tracking + automation)
+  // -----------------------------------------------------------------------
+  const markShipped = useCallback(
+    async (trackingCode, carrier) => {
+      if (!order) return;
+      setUpdatingTracking(true);
+      try {
+        await processOrderShipped(
+          order.id,
+          organizationId,
+          trackingCode,
+          carrier,
+          user?.id,
+        );
+        await fetchOrder();
+      } catch (err) {
+        console.error('[B2BOrderDetail] ship error:', err);
+        setError(err.message || 'Failed to mark as shipped');
+      } finally {
+        setUpdatingTracking(false);
+      }
+    },
+    [order, organizationId, user, fetchOrder]
   );
 
   // -----------------------------------------------------------------------
@@ -778,6 +869,7 @@ export default function B2BOrderDetail() {
             <TrackingInput
               order={order}
               onUpdateTracking={updateTracking}
+              onMarkShipped={markShipped}
               updating={updatingTracking}
             />
           </div>

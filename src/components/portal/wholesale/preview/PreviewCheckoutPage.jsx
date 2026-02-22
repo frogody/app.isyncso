@@ -47,6 +47,7 @@ import {
 } from './previewDesignSystem';
 import { useWholesale } from '../WholesaleProvider';
 import { createB2BOrder, createB2BOrderItems } from '@/lib/db/queries/b2b';
+import { processOrderPlaced } from '@/lib/b2b/processB2BOrder';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -1011,6 +1012,14 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
         }));
 
         await createB2BOrderItems(orderItems);
+      }
+
+      // Run order automation (inventory, invoice, notification, email)
+      try {
+        await processOrderPlaced(order.id, orgId);
+      } catch (automationErr) {
+        console.warn('[Checkout] Automation partial failure:', automationErr);
+        // Don't block order confirmation — order is created successfully
       }
 
       // Store the confirmed order number

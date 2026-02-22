@@ -357,7 +357,8 @@ export type SalesOrderItemUpdate = Partial<SalesOrderItemInsert>;
 export interface ShippingTask {
   id: string;
   company_id: string;
-  sales_order_id: string;
+  sales_order_id: string | null;
+  b2b_order_id?: string | null;
   // Task details
   task_number?: string;
   status: 'pending' | 'ready_to_ship' | 'shipped' | 'delivered' | 'cancelled';
@@ -609,6 +610,7 @@ export type NotificationType =
   | 'partial_delivery'
   | 'stock_alert'
   | 'payment_overdue'
+  | 'b2b_order'
   | 'receiving_session_closed';
 
 export type NotificationSeverity = 'low' | 'medium' | 'high' | 'critical';

@@ -37,6 +37,7 @@ const STATUS_TABS = [
 ];
 
 import { ORDER_STATUS_COLORS, DEFAULT_STATUS_COLOR } from './shared/b2bConstants';
+import { processOrderConfirmed } from '@/lib/b2b/processB2BOrder';
 import ConfirmDialog from './shared/ConfirmDialog';
 
 const ITEMS_PER_PAGE = 20;
@@ -169,6 +170,13 @@ export default function B2BOrdersManager() {
         .eq('id', orderId);
 
       if (upErr) throw upErr;
+
+      // Run automation (shipping task, notification, email)
+      try {
+        await processOrderConfirmed(orderId, organizationId, user?.id);
+      } catch (autoErr) {
+        console.warn('[B2BOrdersManager] automation error:', autoErr);
+      }
 
       setOrders((prev) =>
         prev.map((o) =>
