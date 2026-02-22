@@ -209,9 +209,10 @@ export default function Settings() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const { file_url } = await db.integrations.Core.UploadFile({ file });
-      setProfileForm(prev => ({ ...prev, avatar_url: file_url }));
-      await db.auth.updateMe({ avatar_url: file_url });
+      const { url } = await db.integrations.Core.UploadFile({ file, bucket: 'avatars' });
+      if (!url) throw new Error('Upload returned no URL');
+      setProfileForm(prev => ({ ...prev, avatar_url: url }));
+      await db.auth.updateMe({ avatar_url: url });
       toast.success('Avatar updated!');
     } catch (error) {
       console.error("Failed to upload avatar:", error);

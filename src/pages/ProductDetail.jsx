@@ -2025,6 +2025,7 @@ function ActivitySectionWrapper({ product, details }) {
             title,
             timestamp: a.performed_at,
             user: userName,
+            avatarUrl: a.actor?.avatar_url || null,
             changes: safeChanges,
           };
         }));

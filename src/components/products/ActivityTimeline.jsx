@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import {
-  Package, Edit, Euro, Truck, Upload, Archive,
-  CheckCircle, AlertTriangle, Plus, FileText, User, ChevronDown, ChevronRight,
-  Image, Link2, Tag, BarChart3
-} from 'lucide-react';
+import { FileText, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 
@@ -71,41 +67,6 @@ const CURRENCY_FIELDS = new Set([
   'base_price', 'price', 'compare_at_price', 'cost_price', 'setup_fee',
 ]);
 
-// ─── Activity icons & colors ────────────────────────────────────────
-
-const ACTIVITY_ICONS = {
-  created: Plus,
-  updated: Edit,
-  stock_adjusted: Package,
-  price_changed: Euro,
-  shipped: Truck,
-  image_added: Upload,
-  archived: Archive,
-  published: CheckCircle,
-  low_stock: AlertTriangle,
-  document_added: FileText,
-  channel_added: Link2,
-  channel_removed: Link2,
-  status_changed: Tag,
-  default: Edit
-};
-
-const ACTIVITY_COLORS = {
-  created: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  updated: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  stock_adjusted: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  price_changed: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
-  shipped: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  image_added: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-  archived: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-  published: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  low_stock: 'bg-red-500/20 text-red-400 border-red-500/30',
-  document_added: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  channel_added: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  channel_removed: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-  status_changed: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  default: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
-};
 
 // ─── Formatting helpers ─────────────────────────────────────────────
 
@@ -224,19 +185,32 @@ function ChangesList({ items, t }) {
   );
 }
 
+function UserAvatar({ name, avatarUrl, t }) {
+  const initials = (name || '?')
+    .split(' ')
+    .map(w => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  const src = avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=0e7490&color=fff&size=64`;
+
+  return (
+    <div className={cn(
+      "flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border",
+      t('border-slate-200', 'border-zinc-700/50')
+    )}>
+      <img src={src} alt={initials} className="w-full h-full object-cover" />
+    </div>
+  );
+}
+
 function ActivityItem({ activity, t }) {
-  const Icon = ACTIVITY_ICONS[activity.type] || ACTIVITY_ICONS.default;
-  const colorClass = ACTIVITY_COLORS[activity.type] || ACTIVITY_COLORS.default;
   const changeItems = buildChangeItems(activity.changes);
 
   return (
     <div className="flex gap-3 group">
-      <div className={cn(
-        "flex-shrink-0 w-8 h-8 rounded-full border flex items-center justify-center",
-        colorClass
-      )}>
-        <Icon className="w-4 h-4" />
-      </div>
+      <UserAvatar name={activity.user} avatarUrl={activity.avatarUrl} t={t} />
 
       <div className="flex-1 min-w-0 pb-4">
         <div className="flex items-start justify-between gap-2">
