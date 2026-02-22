@@ -441,6 +441,7 @@ import WholesaleAccount from "./portal/WholesaleAccount";
 import B2BOrderDetail from "@/components/b2b-admin/B2BOrderDetail";
 import B2BCatalogManager from "@/components/b2b-admin/B2BCatalogManager";
 import B2BInquiryManager from "@/components/b2b-admin/B2BInquiryManager";
+import B2BStoreAccess from "./B2BStoreAccess";
 import B2BDashboard from "@/components/b2b-admin/B2BDashboard";
 import PriceListManager from "@/components/b2b-admin/PriceListManager";
 import B2BOrdersManager from "@/components/b2b-admin/B2BOrdersManager";
@@ -1366,6 +1367,7 @@ function PagesContent() {
                 <Route path="/b2b/client-groups" element={<ClientGroupManager />} />
                 <Route path="/b2b/catalog" element={<B2BCatalogManager />} />
                 <Route path="/b2b/inquiries" element={<B2BInquiryManager />} />
+                <Route path="/b2b/clients" element={<B2BStoreAccess />} />
 
                 <Route path="/Products" element={<Products />} />
 

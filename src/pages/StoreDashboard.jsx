@@ -309,7 +309,7 @@ export default function StoreDashboard() {
     { label: 'Price Lists', description: 'Manage client pricing', icon: Tag, path: '/b2b/price-lists' },
     { label: 'Product Catalog', description: 'Manage your products', icon: ShoppingBag, path: '/Products' },
     { label: 'Client Chat', description: 'Customer messages', icon: MessageSquare, path: '/b2b/chat' },
-    { label: 'B2B Clients', description: 'Manage client accounts', icon: Users, path: '/b2b/clients' },
+    { label: 'Store Access', description: 'Control who can access your store', icon: Users, path: '/b2b/clients' },
   ], []);
 
   // ---------------------------------------------------------------------------
