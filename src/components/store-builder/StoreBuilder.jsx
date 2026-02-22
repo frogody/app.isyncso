@@ -454,14 +454,32 @@ function StoreSettingsPage({ config, onUpdateConfig }) {
 
 // -- Domain Page --
 
-function DomainPage({ config, onUpdateConfig }) {
+function DomainPage({ config, onUpdateConfig, onSave, saving }) {
   const settings = config?.storeSettings || {};
+  const [localSub, setLocalSub] = React.useState(settings.store_subdomain || '');
+  const changed = localSub !== (settings.store_subdomain || '');
+
+  // Sync if external config changes
+  React.useEffect(() => {
+    if (settings.store_subdomain && settings.store_subdomain !== localSub) {
+      setLocalSub(settings.store_subdomain);
+    }
+  }, [settings.store_subdomain]);
 
   const update = (field, value) => {
     onUpdateConfig({
       ...config,
       storeSettings: { ...settings, [field]: value },
     });
+  };
+
+  const handleSubdomainSave = async () => {
+    const sanitized = localSub.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/^-+|-+$/g, '');
+    if (sanitized.length < 3) return;
+    update('store_subdomain', sanitized);
+    setLocalSub(sanitized);
+    // Wait a tick for config to propagate, then trigger save
+    setTimeout(() => onSave?.(), 50);
   };
 
   return (
@@ -473,14 +491,36 @@ function DomainPage({ config, onUpdateConfig }) {
           <div className="flex items-center gap-2">
             <input
               type="text"
-              value={settings.store_subdomain || ''}
-              onChange={(e) => update('store_subdomain', e.target.value)}
+              value={localSub}
+              onChange={(e) => {
+                const v = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                setLocalSub(v);
+                update('store_subdomain', v);
+              }}
               placeholder="your-store"
-              className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
+              maxLength={48}
+              className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-cyan-500/30 font-mono"
             />
             <span className="text-sm text-zinc-500 shrink-0">.syncstore.business</span>
           </div>
           <p className="text-[11px] text-zinc-600">Your store will be accessible at this subdomain.</p>
+          {localSub.length >= 3 && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleSubdomainSave}
+                disabled={saving}
+                className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white text-sm font-medium transition-colors flex items-center gap-2"
+              >
+                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                Save Subdomain
+              </button>
+              {localSub.length >= 3 && (
+                <span className="text-xs text-zinc-500 font-mono">
+                  https://{localSub}.syncstore.business
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </SettingsCard>
 
@@ -1023,7 +1063,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
       case 'domain':
         return (
           <div className="flex-1 overflow-y-auto p-8 max-w-2xl">
-            <DomainPage config={builder.config} onUpdateConfig={handleUpdateConfig} />
+            <DomainPage config={builder.config} onUpdateConfig={handleUpdateConfig} onSave={handleSave} saving={builder.saving} />
           </div>
         );
 
