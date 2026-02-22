@@ -186,7 +186,11 @@ function repairJSON(str) {
 function extractExplanation(fullText) {
   const fenceStart = fullText.indexOf('```json');
   const text = fenceStart !== -1 ? fullText.slice(0, fenceStart) : fullText;
-  return text.replace(/\n{3,}/g, '\n\n').trim();
+  return text
+    .replace(/\*{0,2}Part\s*\d+\s*[-—]\s*Explanation\s*:?\s*\*{0,2}/gi, '')
+    .replace(/\*{0,2}Part\s*\d+\s*[-—]\s*JSON\s*Config\s*:?\s*\*{0,2}/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 // ---------------------------------------------------------------------------
@@ -283,19 +287,19 @@ export function useBuilderAI(initialMessages) {
 
     let accumulated = '';
 
-    // Progress phases based on accumulated content length
+    // Progress phases: 'thinking' while explanation streams, 'building' once JSON fence starts
     const updateBuildPhase = (text) => {
-      const textLen = text.length;
-      let phase = 'analyzing';
-      if (textLen > 100) phase = 'planning';
-      if (textLen > 400) phase = 'building';
-      if (textLen > 1000) phase = 'applying';
+      const fenceStart = text.indexOf('```json');
+      const phase = fenceStart !== -1 ? 'building' : 'thinking';
 
       // Extract the explanation portion (everything before the JSON fence)
-      // so users can see the AI's reasoning in real-time
-      const fenceStart = text.indexOf('```json');
       const streamingText = fenceStart !== -1 ? text.slice(0, fenceStart) : text;
-      const cleanText = streamingText.replace(/\n{3,}/g, '\n\n').trim();
+      // Strip model labels like "**Part 1 — Explanation:**" or "**Part 2 — JSON Config:**"
+      const cleanText = streamingText
+        .replace(/\*{0,2}Part\s*\d+\s*[-—]\s*Explanation\s*:?\s*\*{0,2}/gi, '')
+        .replace(/\*{0,2}Part\s*\d+\s*[-—]\s*JSON\s*Config\s*:?\s*\*{0,2}/gi, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
 
       setMessages((prev) =>
         prev.map((msg) =>

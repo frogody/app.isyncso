@@ -113,87 +113,51 @@ function TypingDots() {
   );
 }
 
-const BUILD_PHASES = {
-  analyzing: { label: 'Analyzing request...', icon: Search },
-  planning: { label: 'Planning changes...', icon: Code },
-  building: { label: 'Building components...', icon: Loader2 },
-  applying: { label: 'Writing config...', icon: Code },
-  retrying: { label: 'Finalizing changes...', icon: Loader2 },
-};
-
-function BuildingIndicator({ phase, inline }) {
-  const phaseKeys = Object.keys(BUILD_PHASES);
-  const currentIdx = phaseKeys.indexOf(phase || 'analyzing');
-
-  const checklist = (
-    <div className="bg-zinc-800/60 rounded-2xl rounded-tl-md px-3 py-2.5 space-y-1.5">
-      {phaseKeys.slice(0, Math.max(currentIdx + 1, 1)).map((key, i) => {
-        const p = BUILD_PHASES[key];
-        const isDone = i < currentIdx;
-        const isCurrent = i === currentIdx;
-        return (
-          <motion.div
-            key={key}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1, duration: 0.2 }}
-            className="flex items-center gap-2"
-          >
-            {isDone ? (
-              <Check className="w-3 h-3 text-cyan-400 shrink-0" />
-            ) : isCurrent ? (
-              <Loader2 className="w-3 h-3 text-cyan-400 shrink-0 animate-spin" />
-            ) : (
-              <div className="w-3 h-3 rounded-full border border-zinc-600 shrink-0" />
-            )}
-            <span className={`text-[12px] ${isDone ? 'text-zinc-500' : isCurrent ? 'text-cyan-400' : 'text-zinc-600'}`}>
-              {p.label}
-            </span>
-          </motion.div>
-        );
-      })}
-    </div>
-  );
-
-  // When inline, skip the outer wrapper (parent Bubble provides avatar + container)
-  if (inline) return checklist;
-
-  return (
-    <div className="flex items-start gap-2 px-4 pb-2.5">
-      <div className="w-6 h-6 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0 mt-0.5">
-        <Loader2 className="w-3 h-3 text-cyan-400 animate-spin" />
-      </div>
-      <div className="max-w-[88%]">{checklist}</div>
-    </div>
-  );
-}
-
 function Bubble({ message, onShowChanges }) {
   const isUser = message.role === 'user';
 
-  // If the message is in building mode, show the building indicator + streaming reasoning
+  // Streaming state: show explanation text + "Building..." indicator when JSON is being written
   if (message.building && message.streaming) {
+    const isBuilding = message.buildPhase === 'building';
     return (
       <div className="flex items-start gap-2 px-4 pb-2.5">
         <div className="w-6 h-6 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0 mt-0.5">
           <Loader2 className="w-3 h-3 text-cyan-400 animate-spin" />
         </div>
         <div className="max-w-[88%] flex flex-col gap-1.5">
-          {/* Build phase checklist */}
-          <BuildingIndicator phase={message.buildPhase} inline />
-          {/* Streaming reasoning text */}
-          {message.content && (
+          {/* Streaming explanation text */}
+          {message.content ? (
             <motion.div
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-zinc-800/40 rounded-2xl rounded-tl-md px-3 py-2 text-[12px] leading-relaxed text-zinc-400 whitespace-pre-wrap break-words border border-zinc-700/30"
+              className="bg-zinc-800/60 rounded-2xl rounded-tl-md px-3 py-2 text-[13px] leading-relaxed text-zinc-300 whitespace-pre-wrap break-words"
             >
               {message.content}
-              <motion.span
-                className="inline-block w-1 h-3 ml-0.5 bg-cyan-400/60 rounded-sm align-middle"
-                animate={{ opacity: [1, 0] }}
-                transition={{ duration: 0.6, repeat: Infinity }}
-              />
+              {!isBuilding && (
+                <motion.span
+                  className="inline-block w-1 h-3 ml-0.5 bg-cyan-400/60 rounded-sm align-middle"
+                  animate={{ opacity: [1, 0] }}
+                  transition={{ duration: 0.6, repeat: Infinity }}
+                />
+              )}
+            </motion.div>
+          ) : (
+            <div className="bg-zinc-800/60 rounded-2xl rounded-tl-md px-3 py-2.5 flex items-center gap-2">
+              <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
+              <span className="text-[12px] text-zinc-400">Thinking...</span>
+            </div>
+          )}
+          {/* Building indicator once JSON config is being generated */}
+          {isBuilding && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-cyan-500/5 border border-cyan-500/15 rounded-xl px-3 py-2 flex items-center gap-2.5"
+            >
+              <div className="relative w-4 h-4 shrink-0">
+                <Loader2 className="w-4 h-4 text-cyan-400 animate-spin absolute" />
+              </div>
+              <span className="text-[12px] text-cyan-400 font-medium">Building your changes...</span>
             </motion.div>
           )}
         </div>
@@ -954,10 +918,8 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
           diffStats = { added, removed };
         }
         ai.markLastMessageWithChanges(diffStats);
-        // Auto-refresh preview to show the AI's changes
-        setTimeout(() => {
-          preview.sendConfigToPreview(builder.config, organizationId);
-        }, 300);
+        // Auto-refresh preview with the NEW config (builder.config is stale in this closure)
+        preview.sendConfigToPreview(newConfig, organizationId);
       }
       // Persist chat history after each exchange
       try {
