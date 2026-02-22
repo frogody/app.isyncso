@@ -45,19 +45,15 @@ export function useBuilderPreview() {
   }, []);
 
   /**
-   * Scrolls the preview iframe to a specific section by ID or to the top.
+   * Tells the preview iframe to switch to a different store page.
    */
-  const scrollToSection = useCallback((sectionId) => {
+  const navigateToPage = useCallback((pageId) => {
     const iframe = iframeRef.current;
     if (!iframe?.contentWindow) return;
     try {
-      if (sectionId === '__top__') {
-        iframe.contentWindow.postMessage({ type: 'SCROLL_TO_TOP' }, '*');
-      } else {
-        iframe.contentWindow.postMessage({ type: 'SCROLL_TO_SECTION', sectionId }, '*');
-      }
+      iframe.contentWindow.postMessage({ type: 'NAVIGATE_TO_PAGE', pageId }, '*');
     } catch (err) {
-      console.error('[useBuilderPreview] Failed to post SCROLL_TO_SECTION:', err);
+      console.error('[useBuilderPreview] Failed to post NAVIGATE_TO_PAGE:', err);
     }
   }, []);
 
@@ -144,7 +140,7 @@ export function useBuilderPreview() {
     previewLoading,
     setPreviewDevice,
     sendConfigToPreview,
-    scrollToSection,
+    navigateToPage,
     refreshPreview,
     onIframeLoad,
     deviceDimensions,

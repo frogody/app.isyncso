@@ -791,28 +791,77 @@ function PreviewChatWidget() {
 // ---------------------------------------------------------------------------
 // Main StorePreview Component
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Page placeholders for pages not yet fully built
+// ---------------------------------------------------------------------------
+
+const PAGE_LABELS = {
+  home: 'Homepage',
+  catalog: 'Catalog',
+  cart: 'Cart',
+  orders: 'Orders',
+  account: 'Account',
+};
+
+function PlaceholderPage({ pageId, theme }) {
+  const label = PAGE_LABELS[pageId] || pageId;
+  return (
+    <div className="flex-1 flex items-center justify-center py-32 px-6">
+      <div className="flex flex-col items-center gap-4 max-w-md text-center">
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center"
+          style={{ backgroundColor: 'color-mix(in srgb, var(--ws-primary, #06b6d4) 10%, transparent)' }}
+        >
+          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: 'var(--ws-primary, #06b6d4)' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+          </svg>
+        </div>
+        <h2
+          className="text-xl font-semibold"
+          style={{ color: 'var(--ws-text, #fafafa)', fontFamily: 'var(--ws-heading-font)' }}
+        >
+          {label}
+        </h2>
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--ws-muted, #a1a1aa)' }}>
+          This page will display your store's {label.toLowerCase()} once published.
+          Use the AI chat to customize how it looks and feels.
+        </p>
+        <div
+          className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium"
+          style={{
+            border: '1px solid color-mix(in srgb, var(--ws-primary, #06b6d4) 30%, transparent)',
+            color: 'var(--ws-primary, #06b6d4)',
+            backgroundColor: 'color-mix(in srgb, var(--ws-primary, #06b6d4) 5%, transparent)',
+          }}
+        >
+          Preview — {label}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Preview Component
+// ---------------------------------------------------------------------------
 export default function StorePreview() {
   const [config, setConfig] = useState(null);
+  const [currentPage, setCurrentPage] = useState('home');
   const [hoveredSectionId, setHoveredSectionId] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const accountBtnRef = useRef(null);
 
-  // Listen for CONFIG_UPDATE and SCROLL_TO_SECTION from the parent builder window
+  // Listen for messages from the parent builder window
   useEffect(() => {
     function handleMessage(event) {
       if (!event.data || typeof event.data !== 'object') return;
       if (event.data.type === 'CONFIG_UPDATE' && event.data.config) {
         setConfig(event.data.config);
       }
-      if (event.data.type === 'SCROLL_TO_SECTION' && event.data.sectionId) {
-        const el = document.querySelector(`[data-section-id="${event.data.sectionId}"]`);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }
-      if (event.data.type === 'SCROLL_TO_TOP') {
+      if (event.data.type === 'NAVIGATE_TO_PAGE' && event.data.pageId) {
+        setCurrentPage(event.data.pageId);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
@@ -972,36 +1021,39 @@ export default function StorePreview() {
           </div>
         </div>
 
-        {/* Sections */}
+        {/* Page content */}
         <main className="flex-1">
-          {sections.map((section) => {
-            const Component = SECTION_MAP[section.type];
-            if (!Component) return null;
+          {currentPage !== 'home' ? (
+            <PlaceholderPage pageId={currentPage} theme={theme} />
+          ) : (
+            sections.map((section) => {
+              const Component = SECTION_MAP[section.type];
+              if (!Component) return null;
 
-            const paddingClass = PADDING_MAP[section.padding] || PADDING_MAP.md;
-            const bgStyle = getBackgroundStyle(section.background);
-            const isHovered = hoveredSectionId === section.id;
+              const paddingClass = PADDING_MAP[section.padding] || PADDING_MAP.md;
+              const bgStyle = getBackgroundStyle(section.background);
+              const isHovered = hoveredSectionId === section.id;
 
-            return (
-              <div
-                key={section.id}
-                data-section-id={section.id}
-                className={`relative section-${section.type} ${section.customClass || ''} ${paddingClass} transition-all cursor-pointer`}
-                style={{
-                  ...bgStyle,
-                  ...(isHovered
-                    ? { outline: '2px solid var(--ws-primary, #06b6d4)', outlineOffset: '-2px' }
-                    : {}),
-                }}
-                onClick={() => handleSectionClick(section.id)}
-                onMouseEnter={() => setHoveredSectionId(section.id)}
-                onMouseLeave={() => setHoveredSectionId(null)}
-              >
-                {isHovered && (
-                  <div
-                    className="absolute top-2 left-2 z-20 px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-wider"
-                    style={{
-                      backgroundColor: 'var(--ws-primary, #06b6d4)',
+              return (
+                <div
+                  key={section.id}
+                  data-section-id={section.id}
+                  className={`relative section-${section.type} ${section.customClass || ''} ${paddingClass} transition-all cursor-pointer`}
+                  style={{
+                    ...bgStyle,
+                    ...(isHovered
+                      ? { outline: '2px solid var(--ws-primary, #06b6d4)', outlineOffset: '-2px' }
+                      : {}),
+                  }}
+                  onClick={() => handleSectionClick(section.id)}
+                  onMouseEnter={() => setHoveredSectionId(section.id)}
+                  onMouseLeave={() => setHoveredSectionId(null)}
+                >
+                  {isHovered && (
+                    <div
+                      className="absolute top-2 left-2 z-20 px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-wider"
+                      style={{
+                        backgroundColor: 'var(--ws-primary, #06b6d4)',
                       color: 'var(--ws-bg, #000)',
                     }}
                   >
@@ -1012,7 +1064,8 @@ export default function StorePreview() {
                 <Component section={section} theme={theme} />
               </div>
             );
-          })}
+          })
+          )}
         </main>
 
         {/* Footer */}

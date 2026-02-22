@@ -28,6 +28,10 @@ import {
   Image as ImageIcon,
   Paperclip,
   FileText,
+  ShoppingBag,
+  ShoppingCart,
+  Package,
+  User,
   X,
 } from 'lucide-react';
 
@@ -438,30 +442,23 @@ function DomainPage({ config, onUpdateConfig }) {
 }
 
 // ---------------------------------------------------------------------------
-// Section type → display label
+// Store Pages
 // ---------------------------------------------------------------------------
-const SECTION_LABELS = {
-  hero: 'Hero',
-  featured_products: 'Featured Products',
-  category_grid: 'Categories',
-  about: 'About',
-  testimonials: 'Testimonials',
-  cta: 'Call to Action',
-  faq: 'FAQ',
-  contact: 'Contact',
-  banner: 'Banner',
-  stats: 'Stats',
-  rich_text: 'Rich Text',
-  logo_grid: 'Logo Grid',
-};
+
+const STORE_PAGES = [
+  { id: 'home', label: 'Homepage', icon: Globe },
+  { id: 'catalog', label: 'Catalog', icon: ShoppingBag },
+  { id: 'cart', label: 'Cart', icon: ShoppingCart },
+  { id: 'orders', label: 'Orders', icon: Package },
+  { id: 'account', label: 'Account', icon: User },
+];
 
 // ---------------------------------------------------------------------------
 // Page Navigation Dropdown
 // ---------------------------------------------------------------------------
 
-function PageNavigationDropdown({ sections = [], onNavigate }) {
+function PageNavigationDropdown({ currentPage = 'home', onNavigate }) {
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState('__top__');
   const ref = useRef(null);
 
   useEffect(() => {
@@ -473,18 +470,11 @@ function PageNavigationDropdown({ sections = [], onNavigate }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
-  const visibleSections = sections
-    .filter((s) => s.visible !== false)
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const current = STORE_PAGES.find((p) => p.id === currentPage) || STORE_PAGES[0];
 
-  const selectedLabel = selected === '__top__'
-    ? 'Homepage'
-    : SECTION_LABELS[visibleSections.find((s) => s.id === selected)?.type] || 'Section';
-
-  const handleSelect = (id) => {
-    setSelected(id);
+  const handleSelect = (pageId) => {
     setOpen(false);
-    onNavigate?.(id);
+    onNavigate?.(pageId);
   };
 
   return (
@@ -493,8 +483,8 @@ function PageNavigationDropdown({ sections = [], onNavigate }) {
         onClick={() => setOpen((prev) => !prev)}
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-colors border border-zinc-800/60"
       >
-        <FileText className="w-3 h-3" />
-        <span className="max-w-[100px] truncate">{selectedLabel}</span>
+        <current.icon className="w-3 h-3" />
+        <span className="max-w-[100px] truncate">{current.label}</span>
         <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -505,43 +495,22 @@ function PageNavigationDropdown({ sections = [], onNavigate }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.96 }}
             transition={{ duration: 0.12 }}
-            className="absolute left-0 top-full mt-1.5 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl overflow-hidden z-50 min-w-[180px]"
+            className="absolute left-0 top-full mt-1.5 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl overflow-hidden z-50 min-w-[180px] py-1"
           >
-            {/* Homepage */}
-            <button
-              onClick={() => handleSelect('__top__')}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs transition-colors ${
-                selected === '__top__'
-                  ? 'bg-cyan-500/10 text-cyan-400'
-                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
-              }`}
-            >
-              <Globe className="w-3.5 h-3.5 shrink-0" />
-              <span>Homepage</span>
-            </button>
-
-            {visibleSections.length > 0 && (
-              <>
-                <div className="h-px bg-zinc-800 mx-2" />
-                <div className="px-3 pt-2 pb-1">
-                  <span className="text-[9px] uppercase tracking-wider text-zinc-600 font-medium">Sections</span>
-                </div>
-                {visibleSections.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => handleSelect(s.id)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-xs transition-colors ${
-                      selected === s.id
-                        ? 'bg-cyan-500/10 text-cyan-400'
-                        : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
-                    }`}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: selected === s.id ? '#22d3ee' : '#3f3f46' }} />
-                    <span className="truncate">{SECTION_LABELS[s.type] || s.type}</span>
-                  </button>
-                ))}
-              </>
-            )}
+            {STORE_PAGES.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => handleSelect(id)}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs transition-colors ${
+                  currentPage === id
+                    ? 'bg-cyan-500/10 text-cyan-400'
+                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <span>{label}</span>
+              </button>
+            ))}
           </motion.div>
         )}
       </AnimatePresence>
@@ -559,7 +528,7 @@ const DEVICES = [
   { key: 'mobile', icon: Smartphone, label: 'Mobile' },
 ];
 
-function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPublished, canUndo, canRedo, onUndo, onRedo, previewDevice, onDeviceChange, isPreviewMode, onToggleMode, sections, onNavigateToSection }) {
+function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPublished, canUndo, canRedo, onUndo, onRedo, previewDevice, onDeviceChange, isPreviewMode, onToggleMode, currentPage, onNavigateToPage }) {
   return (
     <div className="h-12 border-b border-zinc-800/60 bg-zinc-950 flex items-center px-3 shrink-0 gap-2">
       {/* Left */}
@@ -598,7 +567,7 @@ function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPubl
       {isPreviewMode && (
         <>
           <div className="hidden sm:block w-px h-4 bg-zinc-800 ml-1" />
-          <PageNavigationDropdown sections={sections} onNavigate={onNavigateToSection} />
+          <PageNavigationDropdown currentPage={currentPage} onNavigate={onNavigateToPage} />
         </>
       )}
 
@@ -678,6 +647,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
 
   const [activeView, setActiveView] = useState('preview');
   const [lastSettingsView, setLastSettingsView] = useState('store-settings');
+  const [currentPage, setCurrentPage] = useState('home');
   const [saveError, setSaveError] = useState(null);
   const [chatValue, setChatValue] = useState('');
   const [attachments, setAttachments] = useState([]);
@@ -704,6 +674,12 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   }, []);
 
   const canSend = (chatValue.trim().length > 0 || attachments.length > 0) && !ai.isProcessing;
+
+  // Page navigation — tell preview iframe to switch page view
+  const handleNavigateToPage = useCallback((pageId) => {
+    setCurrentPage(pageId);
+    preview.navigateToPage(pageId);
+  }, [preview.navigateToPage]);
 
   // Sync config to preview
   const prevConfigRef = useRef(null);
@@ -896,8 +872,8 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
         onDeviceChange={preview.setPreviewDevice}
         isPreviewMode={isPreviewMode}
         onToggleMode={handleToggleMode}
-        sections={builder.config?.sections || []}
-        onNavigateToSection={preview.scrollToSection}
+        currentPage={currentPage}
+        onNavigateToPage={handleNavigateToPage}
       />
 
       {/* Main area */}
