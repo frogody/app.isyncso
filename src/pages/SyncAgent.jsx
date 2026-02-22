@@ -2177,9 +2177,9 @@ export default function SyncAgent() {
           style={{ opacity: 0 }}
         >
           {/* Messages */}
-          <div ref={scrollerRef} className="flex-1 min-h-0 space-y-3 overflow-y-auto px-4 pt-5 pb-3">
+          <div ref={scrollerRef} className="flex-1 min-h-0 flex flex-col overflow-y-auto px-4 pt-5 pb-3">
               {messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center px-6">
+                <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
                   <div className="relative mb-8">
                     <div className={cn('absolute inset-0 rounded-full blur-3xl scale-[3]', syt('bg-purple-200/20', 'bg-purple-500/10'))} />
                     <div className={cn(
@@ -2221,7 +2221,7 @@ export default function SyncAgent() {
                   </div>
                 </div>
               ) : (
-                <>
+                <div className="mt-auto space-y-3">
                   {messages.map((m, idx) => (
                     <Bubble key={idx} role={m.role} text={m.text} ts={m.ts} index={idx} document={m.document} highlightBorders={highlightBorders} />
                   ))}
@@ -2279,7 +2279,7 @@ export default function SyncAgent() {
                       </Button>
                     </div>
                   )}
-                </>
+                </div>
               )}
             </div>
 
