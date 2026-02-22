@@ -878,6 +878,8 @@ function PagesContent() {
     if (isStorePreviewRoute) {
         return (
             <Routes>
+                <Route path="/store-preview/:orgId/*" element={<StorePreview />} />
+                <Route path="/store-preview/*" element={<StorePreview />} />
                 <Route path="/store-preview/:orgId" element={<StorePreview />} />
                 <Route path="/store-preview" element={<StorePreview />} />
             </Routes>

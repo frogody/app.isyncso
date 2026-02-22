@@ -45,6 +45,23 @@ export function useBuilderPreview() {
   }, []);
 
   /**
+   * Scrolls the preview iframe to a specific section by ID or to the top.
+   */
+  const scrollToSection = useCallback((sectionId) => {
+    const iframe = iframeRef.current;
+    if (!iframe?.contentWindow) return;
+    try {
+      if (sectionId === '__top__') {
+        iframe.contentWindow.postMessage({ type: 'SCROLL_TO_TOP' }, '*');
+      } else {
+        iframe.contentWindow.postMessage({ type: 'SCROLL_TO_SECTION', sectionId }, '*');
+      }
+    } catch (err) {
+      console.error('[useBuilderPreview] Failed to post SCROLL_TO_SECTION:', err);
+    }
+  }, []);
+
+  /**
    * Posts a REFRESH message telling the preview iframe to fully reload
    * its current state.
    */
@@ -127,6 +144,7 @@ export function useBuilderPreview() {
     previewLoading,
     setPreviewDevice,
     sendConfigToPreview,
+    scrollToSection,
     refreshPreview,
     onIframeLoad,
     deviceDimensions,

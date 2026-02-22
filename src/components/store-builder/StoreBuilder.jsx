@@ -15,6 +15,7 @@ import {
   Search,
   Eye,
   ChevronRight,
+  ChevronDown,
   Save,
   Globe,
   Check,
@@ -26,6 +27,7 @@ import {
   Settings,
   Image as ImageIcon,
   Paperclip,
+  FileText,
   X,
 } from 'lucide-react';
 
@@ -436,6 +438,118 @@ function DomainPage({ config, onUpdateConfig }) {
 }
 
 // ---------------------------------------------------------------------------
+// Section type → display label
+// ---------------------------------------------------------------------------
+const SECTION_LABELS = {
+  hero: 'Hero',
+  featured_products: 'Featured Products',
+  category_grid: 'Categories',
+  about: 'About',
+  testimonials: 'Testimonials',
+  cta: 'Call to Action',
+  faq: 'FAQ',
+  contact: 'Contact',
+  banner: 'Banner',
+  stats: 'Stats',
+  rich_text: 'Rich Text',
+  logo_grid: 'Logo Grid',
+};
+
+// ---------------------------------------------------------------------------
+// Page Navigation Dropdown
+// ---------------------------------------------------------------------------
+
+function PageNavigationDropdown({ sections = [], onNavigate }) {
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState('__top__');
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  const visibleSections = sections
+    .filter((s) => s.visible !== false)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  const selectedLabel = selected === '__top__'
+    ? 'Homepage'
+    : SECTION_LABELS[visibleSections.find((s) => s.id === selected)?.type] || 'Section';
+
+  const handleSelect = (id) => {
+    setSelected(id);
+    setOpen(false);
+    onNavigate?.(id);
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-colors border border-zinc-800/60"
+      >
+        <FileText className="w-3 h-3" />
+        <span className="max-w-[100px] truncate">{selectedLabel}</span>
+        <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 4, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.96 }}
+            transition={{ duration: 0.12 }}
+            className="absolute left-0 top-full mt-1.5 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl overflow-hidden z-50 min-w-[180px]"
+          >
+            {/* Homepage */}
+            <button
+              onClick={() => handleSelect('__top__')}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs transition-colors ${
+                selected === '__top__'
+                  ? 'bg-cyan-500/10 text-cyan-400'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5 shrink-0" />
+              <span>Homepage</span>
+            </button>
+
+            {visibleSections.length > 0 && (
+              <>
+                <div className="h-px bg-zinc-800 mx-2" />
+                <div className="px-3 pt-2 pb-1">
+                  <span className="text-[9px] uppercase tracking-wider text-zinc-600 font-medium">Sections</span>
+                </div>
+                {visibleSections.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => handleSelect(s.id)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-xs transition-colors ${
+                      selected === s.id
+                        ? 'bg-cyan-500/10 text-cyan-400'
+                        : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: selected === s.id ? '#22d3ee' : '#3f3f46' }} />
+                    <span className="truncate">{SECTION_LABELS[s.type] || s.type}</span>
+                  </button>
+                ))}
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Toolbar
 // ---------------------------------------------------------------------------
 
@@ -445,7 +559,7 @@ const DEVICES = [
   { key: 'mobile', icon: Smartphone, label: 'Mobile' },
 ];
 
-function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPublished, canUndo, canRedo, onUndo, onRedo, previewDevice, onDeviceChange, isPreviewMode, onToggleMode }) {
+function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPublished, canUndo, canRedo, onUndo, onRedo, previewDevice, onDeviceChange, isPreviewMode, onToggleMode, sections, onNavigateToSection }) {
   return (
     <div className="h-12 border-b border-zinc-800/60 bg-zinc-950 flex items-center px-3 shrink-0 gap-2">
       {/* Left */}
@@ -479,6 +593,14 @@ function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPubl
           Settings
         </button>
       </div>
+
+      {/* Page navigator */}
+      {isPreviewMode && (
+        <>
+          <div className="hidden sm:block w-px h-4 bg-zinc-800 ml-1" />
+          <PageNavigationDropdown sections={sections} onNavigate={onNavigateToSection} />
+        </>
+      )}
 
       <div className="flex-1" />
 
@@ -774,6 +896,8 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
         onDeviceChange={preview.setPreviewDevice}
         isPreviewMode={isPreviewMode}
         onToggleMode={handleToggleMode}
+        sections={builder.config?.sections || []}
+        onNavigateToSection={preview.scrollToSection}
       />
 
       {/* Main area */}
