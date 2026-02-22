@@ -72,20 +72,20 @@ function getMoq(product) {
 
 function getStockStatus(product) {
   const stock = product.stock_quantity ?? product.stock;
-  if (stock == null) return { label: 'In Stock', theme: 'success' };
+  if (stock == null) return { label: 'In Stock', theme: 'success', count: null };
   if (typeof stock === 'string') {
     const lower = stock.toLowerCase();
-    if (lower.includes('out')) return { label: 'Out of Stock', theme: 'error' };
+    if (lower.includes('out')) return { label: 'Out of Stock', theme: 'error', count: 0 };
     if (lower.includes('limited') || lower.includes('low'))
-      return { label: 'Low Stock', theme: 'warning' };
-    return { label: 'In Stock', theme: 'success' };
+      return { label: 'Low Stock', theme: 'warning', count: null };
+    return { label: 'In Stock', theme: 'success', count: null };
   }
   if (typeof stock === 'number') {
-    if (stock <= 0) return { label: 'Out of Stock', theme: 'error' };
-    if (stock <= 10) return { label: 'Low Stock', theme: 'warning' };
-    return { label: 'In Stock', theme: 'success' };
+    if (stock <= 0) return { label: 'Out of Stock', theme: 'error', count: 0 };
+    if (stock <= 10) return { label: `${stock} in stock`, theme: 'warning', count: stock };
+    return { label: `${stock} in stock`, theme: 'success', count: stock };
   }
-  return { label: 'In Stock', theme: 'success' };
+  return { label: 'In Stock', theme: 'success', count: null };
 }
 
 function isOutOfStock(product) {
@@ -212,25 +212,40 @@ function SortDropdown({ value, onChange }) {
 function StockBadge({ product }) {
   const { label, theme } = getStockStatus(product);
   const colors = STOCK_COLORS[theme];
+  const incoming = product.incoming_stock;
 
   return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-      style={{
-        background: colors.bg,
-        color: colors.text,
-        border: `1px solid ${colors.border}`,
-      }}
-    >
+    <div className="flex flex-col gap-1">
       <span
-        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
         style={{
-          background: colors.text,
-          animation: theme === 'success' ? undefined : 'pulse 2s infinite',
+          background: colors.bg,
+          color: colors.text,
+          border: `1px solid ${colors.border}`,
         }}
-      />
-      {label}
-    </span>
+      >
+        <span
+          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+          style={{
+            background: colors.text,
+            animation: theme === 'success' ? undefined : 'pulse 2s infinite',
+          }}
+        />
+        {label}
+      </span>
+      {incoming > 0 && (
+        <span
+          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+          style={{
+            background: 'rgba(59,130,246,0.12)',
+            color: '#3b82f6',
+            border: '1px solid rgba(59,130,246,0.25)',
+          }}
+        >
+          +{incoming} incoming
+        </span>
+      )}
+    </div>
   );
 }
 

@@ -86,6 +86,7 @@ export function useStoreBuilder(organizationId) {
   const [isPublished, setIsPublished] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
   const [versionHistory, setVersionHistory] = useState([]);
+  const [storeSubdomain, setStoreSubdomain] = useState(null);
 
   // ---- Load config on mount -------------------------------------------------
   useEffect(() => {
@@ -126,6 +127,7 @@ export function useStoreBuilder(organizationId) {
           setConfig(merged);
           setStoreVersion(result.store_version || 0);
           setIsPublished(result.store_published === true);
+          setStoreSubdomain(result.store_subdomain || merged?.storeSettings?.store_subdomain || null);
           if (Array.isArray(result.store_builder_chat_history) && result.store_builder_chat_history.length > 0) {
             setChatHistory(result.store_builder_chat_history);
           }
@@ -315,10 +317,17 @@ export function useStoreBuilder(organizationId) {
     setSaving(true);
     try {
       const nextVersion = storeVersion + 1;
-      await updateStoreConfig(organizationId, {
+      const updates = {
         store_config: config,
         store_version: nextVersion,
-      });
+      };
+      // Sync subdomain from config settings to the dedicated column
+      const configSubdomain = config?.storeSettings?.store_subdomain;
+      if (configSubdomain && configSubdomain !== storeSubdomain) {
+        updates.store_subdomain = configSubdomain;
+        setStoreSubdomain(configSubdomain);
+      }
+      await updateStoreConfig(organizationId, updates);
       setStoreVersion(nextVersion);
       setIsDirty(false);
     } catch (err) {
@@ -327,25 +336,39 @@ export function useStoreBuilder(organizationId) {
     } finally {
       setSaving(false);
     }
-  }, [organizationId, config, storeVersion]);
+  }, [organizationId, config, storeVersion, storeSubdomain]);
 
   const publishStore = useCallback(async () => {
     if (!organizationId) return;
 
     setSaving(true);
     try {
+      // Auto-generate subdomain if not already set
+      let subdomain = storeSubdomain || config?.storeSettings?.store_subdomain;
+      if (!subdomain) {
+        const storeName = config?.navigation?.companyName || config?.name || 'store';
+        subdomain = storeName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+          .slice(0, 48);
+        if (subdomain.length < 3) subdomain = `store-${subdomain || Date.now()}`;
+      }
+
       await updateStoreConfig(organizationId, {
         store_published: true,
         store_published_at: new Date().toISOString(),
+        store_subdomain: subdomain,
       });
       setIsPublished(true);
+      setStoreSubdomain(subdomain);
     } catch (err) {
       console.error('[useStoreBuilder] Failed to publish store:', err);
       throw err;
     } finally {
       setSaving(false);
     }
-  }, [organizationId]);
+  }, [organizationId, storeSubdomain, config]);
 
   const unpublishStore = useCallback(async () => {
     if (!organizationId) return;
@@ -407,6 +430,7 @@ export function useStoreBuilder(organizationId) {
     selectedSectionId,
     selectedSection,
     isPublished,
+    storeSubdomain,
     activePanel,
     setActivePanel,
     updateConfig,

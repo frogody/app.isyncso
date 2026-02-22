@@ -55,23 +55,23 @@ function getProductPrice(product) {
 function getStockStatus(product) {
   const qty = product?.stock_quantity ?? product?.stock;
   if (qty == null)
-    return { label: 'In Stock', status: 'success', available: true };
+    return { label: 'In Stock', status: 'success', available: true, count: null };
   if (typeof qty === 'string') {
     const lower = qty.toLowerCase();
     if (lower.includes('out'))
-      return { label: 'Out of Stock', status: 'error', available: false };
+      return { label: 'Out of Stock', status: 'error', available: false, count: 0 };
     if (lower.includes('low') || lower.includes('limited'))
-      return { label: 'Low Stock', status: 'warning', available: true };
-    return { label: 'In Stock', status: 'success', available: true };
+      return { label: 'Low Stock', status: 'warning', available: true, count: null };
+    return { label: 'In Stock', status: 'success', available: true, count: null };
   }
   if (typeof qty === 'number') {
     if (qty <= 0)
-      return { label: 'Out of Stock', status: 'error', available: false };
+      return { label: 'Out of Stock', status: 'error', available: false, count: 0 };
     if (qty <= 10)
-      return { label: 'Low Stock', status: 'warning', available: true };
-    return { label: 'In Stock', status: 'success', available: true };
+      return { label: `${qty} in stock`, status: 'warning', available: true, count: qty };
+    return { label: `${qty} in stock`, status: 'success', available: true, count: qty };
   }
-  return { label: 'In Stock', status: 'success', available: true };
+  return { label: 'In Stock', status: 'success', available: true, count: null };
 }
 
 function collectImages(product) {
@@ -680,11 +680,33 @@ export default function PreviewProductDetailPage({
           .limit(1)
           .single();
 
+        // Fetch expected deliveries for incoming stock
+        let expectedIncoming = 0;
+        try {
+          const { data: deliveries } = await supabase
+            .from('expected_deliveries')
+            .select('quantity_expected, quantity_remaining, status')
+            .eq('product_id', productId)
+            .in('status', ['pending', 'in_transit', 'ordered']);
+          if (deliveries?.length) {
+            expectedIncoming = deliveries.reduce(
+              (sum, d) => sum + (d.quantity_remaining ?? d.quantity_expected ?? 0),
+              0,
+            );
+          }
+        } catch {
+          // Silently ignore
+        }
+
         if (!cancelled && invData) {
+          const qtyIncoming = invData.quantity_incoming || 0;
           setDbProduct((prev) => ({
             ...prev,
             stock_quantity: (invData.quantity_on_hand || 0) - (invData.quantity_reserved || 0),
+            incoming_stock: qtyIncoming + expectedIncoming,
           }));
+        } else if (!cancelled && expectedIncoming > 0) {
+          setDbProduct((prev) => ({ ...prev, incoming_stock: expectedIncoming }));
         }
       } catch {
         // Silently ignore
@@ -832,6 +854,12 @@ export default function PreviewProductDetailPage({
                   status={stockInfo.status}
                   label={stockInfo.label}
                   pulse={stockInfo.status === 'warning'}
+                />
+              )}
+              {showStock && (mergedProduct?.incoming_stock > 0 || p.incoming_stock > 0) && (
+                <StatusBadge
+                  status="info"
+                  label={`+${mergedProduct?.incoming_stock || p.incoming_stock} incoming`}
                 />
               )}
             </div>

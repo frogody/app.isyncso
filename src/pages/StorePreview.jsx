@@ -676,7 +676,7 @@ export default function StorePreview() {
     let cancelled = false;
     supabase
       .from('products')
-      .select('id, name, price, sku, featured_image, gallery, category, category_id, description, short_description, tags, ean, type, slug')
+      .select('id, name, price, sku, featured_image, gallery, category, category_id, description, short_description, tags, ean, type, slug, inventory(quantity_on_hand, quantity_reserved, quantity_incoming), expected_deliveries(quantity_expected, quantity_remaining, status)')
       .eq('company_id', companyId)
       .eq('status', 'published')
       .eq('type', 'physical')
@@ -687,7 +687,29 @@ export default function StorePreview() {
           if (error) console.warn('[StorePreview] Failed to load products:', error);
           return;
         }
-        if (data?.length) setAllProducts(data);
+        if (data?.length) {
+          // Flatten inventory and expected_deliveries into product-level fields
+          const enriched = data.map((p) => {
+            const inv = Array.isArray(p.inventory) ? p.inventory[0] : p.inventory;
+            const qtyOnHand = inv?.quantity_on_hand ?? null;
+            const qtyReserved = inv?.quantity_reserved ?? 0;
+            const qtyIncoming = inv?.quantity_incoming ?? 0;
+            // Sum expected deliveries that are pending/in_transit
+            const deliveries = Array.isArray(p.expected_deliveries) ? p.expected_deliveries : [];
+            const expectedIncoming = deliveries
+              .filter((d) => d.status === 'pending' || d.status === 'in_transit' || d.status === 'ordered')
+              .reduce((sum, d) => sum + (d.quantity_remaining ?? d.quantity_expected ?? 0), 0);
+            const totalIncoming = qtyIncoming + expectedIncoming;
+            return {
+              ...p,
+              stock_quantity: qtyOnHand != null ? Math.max(0, qtyOnHand - qtyReserved) : null,
+              incoming_stock: totalIncoming > 0 ? totalIncoming : 0,
+              inventory: undefined,
+              expected_deliveries: undefined,
+            };
+          });
+          setAllProducts(enriched);
+        }
       });
     return () => { cancelled = true; };
   }, [companyId]);

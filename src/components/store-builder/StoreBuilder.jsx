@@ -613,7 +613,7 @@ const DEVICES = [
   { key: 'mobile', icon: Smartphone, label: 'Mobile' },
 ];
 
-function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPublished, canUndo, canRedo, onUndo, onRedo, previewDevice, onDeviceChange, isPreviewMode, onToggleMode, currentPage, onNavigateToPage, onRefresh }) {
+function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPublished, storeUrl, onViewStore, canUndo, canRedo, onUndo, onRedo, previewDevice, onDeviceChange, isPreviewMode, onToggleMode, currentPage, onNavigateToPage, onRefresh }) {
   return (
     <div className="h-12 border-b border-zinc-800/60 bg-zinc-950 flex items-center px-3 shrink-0 gap-2">
       {/* Left */}
@@ -694,8 +694,33 @@ function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPubl
 
       <div className="flex-1" />
 
-      {/* Right: save + publish */}
+      {/* Right: save + publish + view */}
       <div className="flex items-center gap-1.5">
+        {/* Published URL pill */}
+        {isPublished && storeUrl && (
+          <a
+            href={storeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] text-zinc-400 hover:text-cyan-400 bg-zinc-800/60 border border-zinc-800 hover:border-cyan-500/30 transition-colors font-mono truncate max-w-[200px]"
+            title={storeUrl}
+          >
+            <Globe className="w-3 h-3 shrink-0" />
+            {storeUrl.replace('https://', '')}
+          </a>
+        )}
+
+        {/* Eye icon — quick nav to published store */}
+        {isPublished && onViewStore && (
+          <button
+            onClick={onViewStore}
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-zinc-400 hover:text-cyan-400 hover:bg-zinc-800/60 transition-colors"
+            title="View published store"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+        )}
+
         <button
           onClick={onSave}
           disabled={saving}
@@ -1033,6 +1058,8 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
         onSave={handleSave}
         onPublish={handlePublish}
         isPublished={builder.isPublished}
+        storeUrl={builder.storeSubdomain ? `https://${builder.storeSubdomain}.isyncso.com` : null}
+        onViewStore={builder.isPublished ? () => window.open(`/store-preview/${organizationId}`, '_blank') : null}
         canUndo={history.canUndo}
         canRedo={history.canRedo}
         onUndo={history.undo}
