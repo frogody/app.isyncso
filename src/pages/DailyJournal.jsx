@@ -277,7 +277,7 @@ export default function DailyJournal() {
         </motion.div>
 
         {/* Privacy Notice */}
-        <div className="shrink-0">
+        <div className="shrink-0 mb-2">
           <InfoCard
             title="Your activity is private"
             icon={Shield}
@@ -294,7 +294,7 @@ export default function DailyJournal() {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="w-72 flex-shrink-0 flex flex-col rounded-xl bg-zinc-900/50 border border-zinc-800/60 overflow-hidden"
+            className="w-72 flex-shrink-0 flex flex-col self-start rounded-xl bg-zinc-900/50 border border-zinc-800/60 overflow-hidden max-h-full"
           >
             <div className="p-3 border-b border-zinc-800/60">
               <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
