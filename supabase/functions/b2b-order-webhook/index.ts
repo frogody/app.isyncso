@@ -232,7 +232,7 @@ serve(async (req: Request) => {
     // Fetch client email (use order's client_id if available, fall back to org)
     const clientQuery = supabase
       .from("portal_clients")
-      .select("email, contact_name, company_name");
+      .select("email, full_name, company_name");
 
     if (order.client_id) {
       clientQuery.eq("id", order.client_id);

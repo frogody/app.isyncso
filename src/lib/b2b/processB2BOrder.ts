@@ -82,11 +82,13 @@ export async function processOrderPlaced(orderId: string, organizationId: string
   try {
     const subtotal = Number(order.subtotal) || 0;
     const taxAmount = Number(order.tax_amount) || 0;
-    const discount = Number(order.discount_amount) || 0;
     const total = Number(order.total) || 0;
     const paymentDays = (order as any).payment_terms_days || 30;
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + paymentDays);
+
+    // Get the authenticated user ID (required by invoices.user_id NOT NULL)
+    const { data: { user: authUser } } = await supabase.auth.getUser();
 
     const lineItems = items.map((it: any) => ({
       name: it.product_name || 'Product',
@@ -97,21 +99,19 @@ export async function processOrderPlaced(orderId: string, organizationId: string
 
     await supabase.from('invoices').insert({
       company_id: organizationId,
+      user_id: authUser?.id || null,
       invoice_type: 'customer',
       b2b_order_id: orderId,
       client_name: client.company_name || client.full_name || 'B2B Client',
       client_email: client.email || '',
-      client_address: order.billing_address ? JSON.stringify(order.billing_address) : null,
-      line_items: lineItems,
+      client_address: order.billing_address || null,
+      items: lineItems,
       subtotal,
       tax_rate: 21,
       tax_amount: taxAmount,
-      discount_amount: discount,
       total,
       status: 'pending',
-      due_at: dueDate.toISOString(),
-      issued_at: new Date().toISOString(),
-      currency: 'EUR',
+      due_date: dueDate.toISOString().split('T')[0],
       notes: `Auto-generated from B2B order ${(order as any).order_number || orderId.slice(0, 8)}`,
     });
   } catch (err: any) {
