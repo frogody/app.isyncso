@@ -700,6 +700,13 @@ export default function StorePreview() {
         if (event.data.organizationId) {
           setMessageOrgId(event.data.organizationId);
         }
+        // Set the auth session from the builder so RLS-protected queries work
+        if (event.data.accessToken) {
+          supabase.auth.setSession({
+            access_token: event.data.accessToken,
+            refresh_token: '',
+          }).catch(() => {});
+        }
       }
       if (event.data.type === 'NAVIGATE_TO_PAGE' && event.data.pageId) {
         setCurrentPage(event.data.pageId);

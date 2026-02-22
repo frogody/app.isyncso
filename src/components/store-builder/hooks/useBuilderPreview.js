@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import supabase from '@/api/supabaseClient';
 
 const DEVICE_DIMENSIONS = {
   desktop: { width: '100%', height: '100%' },
@@ -30,13 +31,21 @@ export function useBuilderPreview() {
    * Posts a CONFIG_UPDATE message to the preview iframe so it can re-render
    * with the latest store configuration.
    */
-  const sendConfigToPreview = useCallback((config, organizationId) => {
+  const sendConfigToPreview = useCallback(async (config, organizationId) => {
     const iframe = iframeRef.current;
     if (!iframe?.contentWindow || !config) return;
 
+    // Get the current auth session token so the preview iframe can make
+    // authenticated Supabase queries (products, companies are RLS-protected).
+    let accessToken = null;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      accessToken = session?.access_token || null;
+    } catch {}
+
     try {
       iframe.contentWindow.postMessage(
-        { type: 'CONFIG_UPDATE', config, organizationId: organizationId || null },
+        { type: 'CONFIG_UPDATE', config, organizationId: organizationId || null, accessToken },
         '*',
       );
     } catch (err) {
