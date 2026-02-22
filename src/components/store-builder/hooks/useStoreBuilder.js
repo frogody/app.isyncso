@@ -127,7 +127,26 @@ export function useStoreBuilder(organizationId) {
           setConfig(merged);
           setStoreVersion(result.store_version || 0);
           setIsPublished(result.store_published === true);
-          setStoreSubdomain(result.store_subdomain || merged?.storeSettings?.store_subdomain || null);
+
+          // Resolve subdomain — backfill if store is published but has no subdomain yet
+          let resolvedSubdomain = result.store_subdomain || merged?.storeSettings?.store_subdomain || null;
+          if (result.store_published && !resolvedSubdomain) {
+            const sName = merged?.navigation?.companyName || merged?.name || 'store';
+            resolvedSubdomain = sName
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '')
+              .slice(0, 48);
+            if (resolvedSubdomain.length < 3) resolvedSubdomain = `store-${resolvedSubdomain || Date.now()}`;
+            // Persist so it only happens once
+            try {
+              await updateStoreConfig(organizationId, { store_subdomain: resolvedSubdomain });
+            } catch (subErr) {
+              console.warn('[useStoreBuilder] Failed to backfill subdomain:', subErr);
+            }
+          }
+          setStoreSubdomain(resolvedSubdomain);
+
           if (Array.isArray(result.store_builder_chat_history) && result.store_builder_chat_history.length > 0) {
             setChatHistory(result.store_builder_chat_history);
           }
