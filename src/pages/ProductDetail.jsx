@@ -1919,55 +1919,97 @@ function buildActionText(action, changes, fallbackSummary) {
 
   const friendlyField = (f) => LABELS[f] || f.replace(/_/g, ' ');
 
-  switch (action) {
-    case 'created':
-      return 'created this product';
-    case 'published':
-      return 'published the product';
-    case 'archived':
-      return 'archived the product';
-    case 'status_changed': {
-      const newStatus = changes?.status?.new;
-      return newStatus ? `changed status to "${newStatus}"` : 'updated the product status';
-    }
-    case 'price_changed': {
-      const priceField = fieldNames.find(f => ['base_price', 'price', 'compare_at_price', 'cost_price'].includes(f));
-      if (priceField && changes[priceField]) {
-        const old = changes[priceField].old;
-        const nw = changes[priceField].new;
-        if (old != null && nw != null) return `updated ${friendlyField(priceField)} from €${old} to €${nw}`;
-      }
-      return 'updated pricing';
-    }
-    case 'image_added':
-      if (changes?.gallery) {
-        const oldCount = Array.isArray(changes.gallery.old) ? changes.gallery.old.length : 0;
-        const newCount = Array.isArray(changes.gallery.new) ? changes.gallery.new.length : 0;
-        const diff = newCount - oldCount;
-        if (diff > 0) return `added ${diff} product image${diff !== 1 ? 's' : ''}`;
-        if (diff < 0) return `removed ${Math.abs(diff)} product image${Math.abs(diff) !== 1 ? 's' : ''}`;
-      }
-      return 'updated product images';
-    case 'channel_added':
-      return typeof fallbackSummary === 'string' && fallbackSummary ? fallbackSummary : 'added a sales channel';
-    case 'channel_removed':
-      return typeof fallbackSummary === 'string' && fallbackSummary ? fallbackSummary : 'removed a sales channel';
-    case 'stock_adjusted':
-      return 'adjusted stock levels';
-    case 'deleted':
-      return 'deleted the product';
-    case 'supplier_added':
-      return 'linked a supplier';
-    case 'supplier_removed':
-      return 'removed a supplier';
-    default: {
-      if (fieldNames.length === 0) {
-        return typeof fallbackSummary === 'string' && fallbackSummary ? fallbackSummary : 'updated the product';
-      }
-      if (fieldNames.length <= 3) return `updated ${fieldNames.map(friendlyField).join(', ')}`;
-      return `updated ${fieldNames.length} fields`;
+  // Format a single value for inline display
+  const fmt = (val) => {
+    if (val === null || val === undefined || val === '') return null;
+    if (Array.isArray(val)) return `${val.length} item${val.length !== 1 ? 's' : ''}`;
+    if (typeof val === 'object') return null;
+    if (typeof val === 'string' && val.length > 40) return null;
+    return String(val);
+  };
+
+  // Handle explicit action types that don't need change introspection
+  if (action === 'created') return 'created this product';
+  if (action === 'deleted') return 'deleted the product';
+  if (action === 'channel_added') return typeof fallbackSummary === 'string' && fallbackSummary ? fallbackSummary : 'added a sales channel';
+  if (action === 'channel_removed') return typeof fallbackSummary === 'string' && fallbackSummary ? fallbackSummary : 'removed a sales channel';
+  if (action === 'supplier_added') return 'linked a supplier';
+  if (action === 'supplier_removed') return 'removed a supplier';
+
+  // For everything else, build description from the actual changes
+  if (!changes || fieldNames.length === 0) {
+    if (action === 'published') return 'published the product';
+    if (action === 'archived') return 'archived the product';
+    return typeof fallbackSummary === 'string' && fallbackSummary ? fallbackSummary : 'updated the product';
+  }
+
+  // Try to build a specific description from the most important changed field
+  const parts = [];
+
+  // Status change is high-priority info
+  if (changes.status) {
+    const nw = fmt(changes.status.new);
+    const old = fmt(changes.status.old);
+    if (nw && old) parts.push(`changed status from "${old}" to "${nw}"`);
+    else if (nw) parts.push(`set status to "${nw}"`);
+  }
+
+  // Price changes
+  for (const pf of ['base_price', 'price', 'compare_at_price', 'cost_price']) {
+    if (changes[pf]) {
+      const old = changes[pf].old;
+      const nw = changes[pf].new;
+      if (old != null && nw != null) parts.push(`updated ${friendlyField(pf)} from €${old} to €${nw}`);
+      else if (nw != null) parts.push(`set ${friendlyField(pf)} to €${nw}`);
+      break; // only show one price field
     }
   }
+
+  // Stock changes
+  if (changes.stock_quantity || changes.quantity) {
+    const sf = changes.stock_quantity || changes.quantity;
+    const old = fmt(sf.old);
+    const nw = fmt(sf.new);
+    if (old && nw) parts.push(`adjusted stock from ${old} to ${nw}`);
+    else if (nw) parts.push(`set stock to ${nw}`);
+  }
+
+  // Image changes
+  if (changes.gallery) {
+    const oldCount = Array.isArray(changes.gallery.old) ? changes.gallery.old.length : 0;
+    const newCount = Array.isArray(changes.gallery.new) ? changes.gallery.new.length : 0;
+    const diff = newCount - oldCount;
+    if (diff > 0) parts.push(`added ${diff} image${diff !== 1 ? 's' : ''}`);
+    else if (diff < 0) parts.push(`removed ${Math.abs(diff)} image${Math.abs(diff) !== 1 ? 's' : ''}`);
+    else if (newCount > 0) parts.push(`reordered ${newCount} images`);
+  }
+  if (changes.featured_image && !parts.some(p => p.includes('image'))) {
+    parts.push('updated featured image');
+  }
+
+  // Name change
+  if (changes.name) {
+    const nw = fmt(changes.name.new);
+    const old = fmt(changes.name.old);
+    if (nw && old) parts.push(`renamed from "${old}" to "${nw}"`);
+    else if (nw) parts.push(`set name to "${nw}"`);
+  }
+
+  // If we got specific parts, use them
+  if (parts.length > 0) {
+    // Count remaining fields not covered by the parts
+    const coveredFields = new Set(['status', 'base_price', 'price', 'compare_at_price', 'cost_price', 'stock_quantity', 'quantity', 'gallery', 'featured_image', 'name']);
+    const remaining = fieldNames.filter(f => !coveredFields.has(f)).length;
+    let text = parts.join(', ');
+    if (remaining > 0) text += ` and ${remaining} other field${remaining !== 1 ? 's' : ''}`;
+    return text;
+  }
+
+  // Fallback: list the field names that changed
+  if (fieldNames.length <= 3) return `updated ${fieldNames.map(friendlyField).join(', ')}`;
+  // Show first 2 + count
+  const shown = fieldNames.slice(0, 2).map(friendlyField);
+  return `updated ${shown.join(', ')} and ${fieldNames.length - 2} other field${fieldNames.length - 2 !== 1 ? 's' : ''}`;
 }
 
 function ActivitySectionWrapper({ product, details }) {
