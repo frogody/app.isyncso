@@ -1896,10 +1896,9 @@ function DocumentsSectionWrapper({ details, onDetailsUpdate }) {
 
 // ============= ACTIVITY SECTION =============
 
-function buildActivityTitle(userName, action, changes, fallbackSummary) {
+function buildActionText(action, changes, fallbackSummary) {
   const fieldNames = changes ? Object.keys(changes) : [];
 
-  // Map field keys to human-readable labels
   const LABELS = {
     name: 'product name', description: 'description', short_description: 'short description',
     base_price: 'price', price: 'price', compare_at_price: 'compare-at price',
@@ -1922,64 +1921,51 @@ function buildActivityTitle(userName, action, changes, fallbackSummary) {
 
   switch (action) {
     case 'created':
-      return `${userName} created this product`;
+      return 'created this product';
     case 'published':
-      return `${userName} published the product`;
+      return 'published the product';
     case 'archived':
-      return `${userName} archived the product`;
+      return 'archived the product';
     case 'status_changed': {
       const newStatus = changes?.status?.new;
-      return newStatus
-        ? `${userName} changed status to "${newStatus}"`
-        : `${userName} updated the product status`;
+      return newStatus ? `changed status to "${newStatus}"` : 'updated the product status';
     }
     case 'price_changed': {
       const priceField = fieldNames.find(f => ['base_price', 'price', 'compare_at_price', 'cost_price'].includes(f));
       if (priceField && changes[priceField]) {
         const old = changes[priceField].old;
         const nw = changes[priceField].new;
-        if (old != null && nw != null) {
-          return `${userName} updated ${friendlyField(priceField)} from €${old} to €${nw}`;
-        }
+        if (old != null && nw != null) return `updated ${friendlyField(priceField)} from €${old} to €${nw}`;
       }
-      return `${userName} updated pricing`;
+      return 'updated pricing';
     }
     case 'image_added':
       if (changes?.gallery) {
         const oldCount = Array.isArray(changes.gallery.old) ? changes.gallery.old.length : 0;
         const newCount = Array.isArray(changes.gallery.new) ? changes.gallery.new.length : 0;
         const diff = newCount - oldCount;
-        if (diff > 0) return `${userName} added ${diff} product image${diff !== 1 ? 's' : ''}`;
-        if (diff < 0) return `${userName} removed ${Math.abs(diff)} product image${Math.abs(diff) !== 1 ? 's' : ''}`;
+        if (diff > 0) return `added ${diff} product image${diff !== 1 ? 's' : ''}`;
+        if (diff < 0) return `removed ${Math.abs(diff)} product image${Math.abs(diff) !== 1 ? 's' : ''}`;
       }
-      return `${userName} updated product images`;
+      return 'updated product images';
     case 'channel_added':
-      return typeof fallbackSummary === 'string' && fallbackSummary
-        ? `${userName} — ${fallbackSummary}`
-        : `${userName} added a sales channel`;
+      return typeof fallbackSummary === 'string' && fallbackSummary ? fallbackSummary : 'added a sales channel';
     case 'channel_removed':
-      return typeof fallbackSummary === 'string' && fallbackSummary
-        ? `${userName} — ${fallbackSummary}`
-        : `${userName} removed a sales channel`;
+      return typeof fallbackSummary === 'string' && fallbackSummary ? fallbackSummary : 'removed a sales channel';
     case 'stock_adjusted':
-      return `${userName} adjusted stock levels`;
+      return 'adjusted stock levels';
     case 'deleted':
-      return `${userName} deleted the product`;
+      return 'deleted the product';
     case 'supplier_added':
-      return `${userName} linked a supplier`;
+      return 'linked a supplier';
     case 'supplier_removed':
-      return `${userName} removed a supplier`;
+      return 'removed a supplier';
     default: {
-      // Generic "updated" — list 1-3 field names
       if (fieldNames.length === 0) {
-        return typeof fallbackSummary === 'string' && fallbackSummary
-          ? `${userName} — ${fallbackSummary}`
-          : `${userName} updated the product`;
+        return typeof fallbackSummary === 'string' && fallbackSummary ? fallbackSummary : 'updated the product';
       }
-      if (fieldNames.length <= 3) {
-        return `${userName} updated ${fieldNames.map(friendlyField).join(', ')}`;
-      }
-      return `${userName} updated ${fieldNames.length} fields`;
+      if (fieldNames.length <= 3) return `updated ${fieldNames.map(friendlyField).join(', ')}`;
+      return `updated ${fieldNames.length} fields`;
     }
   }
 }
@@ -2016,13 +2002,12 @@ function ActivitySectionWrapper({ product, details }) {
             if (Object.keys(safeChanges).length === 0) safeChanges = null;
           }
 
-          // Build a human-readable title from actor + action + context
-          const title = buildActivityTitle(userName, action, safeChanges, a.summary);
+          const actionText = buildActionText(action, safeChanges, a.summary);
 
           return {
             id: a.id,
             type: action,
-            title,
+            actionText,
             timestamp: a.performed_at,
             user: userName,
             avatarUrl: a.actor?.avatar_url || null,

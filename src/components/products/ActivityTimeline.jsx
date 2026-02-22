@@ -215,7 +215,10 @@ function ActivityItem({ activity, t }) {
       <div className="flex-1 min-w-0 pb-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className={`text-sm ${t('text-slate-900', 'text-white')} font-medium`}>{activity.title}</p>
+            <p className={`text-sm ${t('text-slate-900', 'text-white')} font-medium`}>
+              <span className="text-cyan-400">{activity.user}</span>
+              {' '}{activity.actionText || activity.title}
+            </p>
             {activity.description && (
               <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')} mt-0.5`}>{activity.description}</p>
             )}
