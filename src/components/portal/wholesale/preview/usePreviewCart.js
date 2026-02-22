@@ -4,7 +4,7 @@
 // operations and computed totals for the preview experience.
 //
 // B2B wholesale additions: MOQ per item, PO number, delivery date, order notes,
-// payment terms display, and volume discount calculation.
+// payment terms display, and volume/bulk pricing calculation.
 // ---------------------------------------------------------------------------
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
@@ -22,6 +22,29 @@ const VOLUME_TIERS = [
 function loadFromStorage(key) {
   if (!key) return null;
   try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
+}
+
+/**
+ * Resolve the unit price for a given quantity based on volume tiers.
+ * Tiers are sorted ascending by min_quantity. The highest tier whose
+ * min_quantity <= qty wins.
+ */
+function resolveUnitPrice(basePrice, volumeTiers, qty) {
+  if (!Array.isArray(volumeTiers) || volumeTiers.length === 0) return basePrice;
+
+  const sorted = [...volumeTiers].sort(
+    (a, b) => (a.min_quantity || a.min_qty || 0) - (b.min_quantity || b.min_qty || 0),
+  );
+
+  let unitPrice = basePrice;
+  for (const tier of sorted) {
+    const minQty = tier.min_quantity || tier.min_qty || 0;
+    const tierPrice = tier.price || tier.unit_price;
+    if (qty >= minQty && tierPrice != null) {
+      unitPrice = tierPrice;
+    }
+  }
+  return unitPrice;
 }
 
 /**
@@ -45,13 +68,21 @@ export default function usePreviewCart({ storageKey } = {}) {
     if (!product?.id) return;
     const moq = product.moq || product.minimum_order_quantity || DEFAULT_MOQ;
     const effectiveQty = Math.max(qty, moq);
+    const basePrice = product.b2b_price || product.wholesale_price || product.price || 0;
+    // Resolve volume tiers from all possible locations
+    const volumeTiers =
+      product.pricing?.volume_tiers ||
+      product.bulk_pricing ||
+      product.pricing_tiers ||
+      null;
 
     setItems((prev) => {
       const existing = prev.find((i) => i.productId === product.id);
       if (existing) {
+        const newQty = existing.quantity + effectiveQty;
         return prev.map((i) =>
           i.productId === product.id
-            ? { ...i, quantity: i.quantity + effectiveQty }
+            ? { ...i, quantity: newQty }
             : i,
         );
       }
@@ -61,13 +92,13 @@ export default function usePreviewCart({ storageKey } = {}) {
           productId: product.id,
           name: product.name || 'Product',
           sku: product.sku || '',
-          price: product.b2b_price || product.wholesale_price || product.price || 0,
+          basePrice,
           quantity: effectiveQty,
           moq,
           image: product.featured_image || product.image || null,
           unit: product.unit || 'pcs',
           packSize: product.pack_size || null,
-          bulkPricing: product.bulk_pricing || product.pricing_tiers || null,
+          volumeTiers: volumeTiers || null,
         },
       ];
     });
@@ -99,10 +130,28 @@ export default function usePreviewCart({ storageKey } = {}) {
     setOrderNotes('');
   }, []);
 
+  // Items with resolved tier-based unit prices
+  const pricedItems = useMemo(
+    () =>
+      items.map((i) => {
+        const unitPrice = resolveUnitPrice(
+          i.basePrice ?? i.price ?? 0,
+          i.volumeTiers || i.bulkPricing,
+          i.quantity,
+        );
+        return {
+          ...i,
+          price: unitPrice, // effective unit price for current quantity
+          lineTotal: unitPrice * i.quantity,
+        };
+      }),
+    [items],
+  );
+
   // Subtotal before discounts
   const subtotal = useMemo(
-    () => items.reduce((sum, i) => sum + i.price * i.quantity, 0),
-    [items],
+    () => pricedItems.reduce((sum, i) => sum + i.lineTotal, 0),
+    [pricedItems],
   );
 
   // Volume discount
@@ -129,23 +178,23 @@ export default function usePreviewCart({ storageKey } = {}) {
   );
 
   const itemCount = useMemo(
-    () => items.reduce((sum, i) => sum + i.quantity, 0),
-    [items],
+    () => pricedItems.reduce((sum, i) => sum + i.quantity, 0),
+    [pricedItems],
   );
 
   // MOQ violations
   const moqViolations = useMemo(
-    () => items.filter((i) => i.quantity < (i.moq || DEFAULT_MOQ)),
-    [items],
+    () => pricedItems.filter((i) => i.quantity < (i.moq || DEFAULT_MOQ)),
+    [pricedItems],
   );
 
   const hasValidOrder = useMemo(
-    () => items.length > 0 && moqViolations.length === 0,
-    [items, moqViolations],
+    () => pricedItems.length > 0 && moqViolations.length === 0,
+    [pricedItems, moqViolations],
   );
 
   return {
-    items,
+    items: pricedItems,
     addItem,
     removeItem,
     updateQuantity,

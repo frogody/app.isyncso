@@ -46,13 +46,12 @@ const VAT_RATE = 0.21;
 // ---------------------------------------------------------------------------
 
 function getBulkSavings(item) {
-  // If the item has tiered pricing, calculate the discount percentage
-  if (item.bulkPricePerUnit && item.basePrice && item.bulkPricePerUnit < item.basePrice) {
-    const pct = Math.round(((item.basePrice - item.bulkPricePerUnit) / item.basePrice) * 100);
+  // Compare resolved tier price vs base price
+  const base = item.basePrice;
+  const current = Number(item.price) || 0;
+  if (base && current && current < base) {
+    const pct = Math.round(((base - current) / base) * 100);
     return pct > 0 ? pct : null;
-  }
-  if (item.pricingTier && item.pricingTier.discount) {
-    return Math.round(item.pricingTier.discount);
   }
   return null;
 }
