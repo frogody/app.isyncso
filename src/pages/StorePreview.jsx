@@ -26,7 +26,6 @@ import BannerRenderer from '@/components/portal/wholesale/sections/BannerRendere
 import StatsRenderer from '@/components/portal/wholesale/sections/StatsRenderer';
 import RichTextRenderer from '@/components/portal/wholesale/sections/RichTextRenderer';
 import LogoGridRenderer from '@/components/portal/wholesale/sections/LogoGridRenderer';
-import { listB2BProducts, getB2BProduct } from '@/lib/db/queries/b2b';
 import supabase from '@/api/supabaseClient';
 
 // Preview page components
@@ -648,17 +647,26 @@ export default function StorePreview() {
   const cart = usePreviewCart();
   const nav = usePreviewNavigation(setCurrentPage, setPageData);
 
-  // Shared product loading for all preview pages
+  // Shared product loading for all preview pages — fetch all published products
+  // directly from the products table. No sales-channel gating for the preview.
   const [allProducts, setAllProducts] = useState([]);
   useEffect(() => {
     if (!orgId) return;
     let cancelled = false;
-    listB2BProducts(orgId, { limit: 100 })
-      .then((result) => {
-        if (cancelled || !result?.products?.length) return;
-        setAllProducts(result.products);
-      })
-      .catch((err) => console.warn('[StorePreview] Failed to load products:', err));
+    supabase
+      .from('products')
+      .select('*, physical_products(sku, barcode, weight, dimensions), inventory(quantity_on_hand, quantity_reserved)')
+      .eq('company_id', orgId)
+      .eq('status', 'published')
+      .order('name')
+      .limit(200)
+      .then(({ data, error }) => {
+        if (cancelled || error) {
+          if (error) console.warn('[StorePreview] Failed to load products:', error);
+          return;
+        }
+        if (data?.length) setAllProducts(data);
+      });
     return () => { cancelled = true; };
   }, [orgId]);
 
