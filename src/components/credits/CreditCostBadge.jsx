@@ -23,12 +23,12 @@ export function CreditCostBadge({ credits, className, size = 'sm' }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/20 font-medium whitespace-nowrap',
+        'inline-flex items-center rounded-full bg-black/40 text-white border border-white/20 font-semibold whitespace-nowrap backdrop-blur-sm',
         sizes[size] || sizes.sm,
         className
       )}
     >
-      <Zap className={size === 'xs' ? 'w-2 h-2' : size === 'md' ? 'w-3.5 h-3.5' : 'w-2.5 h-2.5'} />
+      <Zap className={size === 'xs' ? 'w-2 h-2' : size === 'md' ? 'w-3.5 h-3.5' : 'w-2.5 h-2.5'} fill="currentColor" />
       {credits}
     </span>
   );
