@@ -26,7 +26,6 @@ import {
   Clock,
   Globe,
   Lock,
-  Phone,
   Briefcase,
   Truck,
   Handshake,
@@ -37,12 +36,12 @@ import {
 // ---------------------------------------------------------------------------
 
 function InviteClientModal({ open, onClose, organizationId, onSuccess }) {
-  const [form, setForm] = useState({ email: '', full_name: '', company_name: '', phone: '' });
+  const [form, setForm] = useState({ email: '', full_name: '', company_name: '' });
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
 
   const resetForm = () => {
-    setForm({ email: '', full_name: '', company_name: '', phone: '' });
+    setForm({ email: '', full_name: '', company_name: '' });
     setError(null);
     setSending(false);
   };
@@ -62,7 +61,6 @@ function InviteClientModal({ open, onClose, organizationId, onSuccess }) {
           email: form.email.trim().toLowerCase(),
           full_name: form.full_name.trim(),
           company_name: form.company_name.trim() || null,
-          phone: form.phone.trim() || null,
           organization_id: organizationId,
           status: 'invited',
         });
@@ -137,25 +135,14 @@ function InviteClientModal({ open, onClose, organizationId, onSuccess }) {
               className="w-full px-3 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/60 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Company</label>
-              <input
-                type="text" value={form.company_name}
-                onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))}
-                placeholder="Acme Inc."
-                className="w-full px-3 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/60 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Phone</label>
-              <input
-                type="tel" value={form.phone}
-                onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-                placeholder="+31..."
-                className="w-full px-3 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/60 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1.5">Company</label>
+            <input
+              type="text" value={form.company_name}
+              onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))}
+              placeholder="Acme Inc."
+              className="w-full px-3 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/60 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
+            />
           </div>
           {error && (
             <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/5 border border-red-500/20 text-red-400 text-xs">
@@ -228,18 +215,22 @@ export default function B2BStoreAccess() {
       const { data: prospects, error: prospectErr } = await supabase
         .from('prospects')
         .select('id, first_name, last_name, email, phone, company, stage, created_date')
-        .eq('owner_id', user.id)
+        .eq('organization_id', organizationId)
         .in('stage', ['customer', 'supplier', 'partner', 'won']);
 
-      if (prospectErr) throw prospectErr;
+      if (prospectErr) {
+        console.warn('[B2BStoreAccess] prospects query failed:', prospectErr.message);
+      }
 
       // 2. Fetch existing portal_clients for this org
       const { data: portalClients, error: pcErr } = await supabase
         .from('portal_clients')
-        .select('id, full_name, email, company_name, phone, status, last_login_at, created_at')
+        .select('id, full_name, email, company_name, status, last_login_at, created_at')
         .eq('organization_id', organizationId);
 
-      if (pcErr) throw pcErr;
+      if (pcErr) {
+        console.warn('[B2BStoreAccess] portal_clients query failed:', pcErr.message);
+      }
 
       // 3. Build email lookup of portal_clients
       const pcByEmail = {};
@@ -265,7 +256,7 @@ export default function B2BStoreAccess() {
           displayName,
           email: p.email,
           company: p.company || pc?.company_name || null,
-          phone: p.phone || pc?.phone || null,
+          phone: p.phone || null,
           role: p.stage === 'won' ? 'customer' : p.stage,
           status: pc?.status || 'none',
           lastLogin: pc?.last_login_at || null,
@@ -284,7 +275,7 @@ export default function B2BStoreAccess() {
           displayName: pc.full_name || 'Unnamed',
           email: pc.email,
           company: pc.company_name || null,
-          phone: pc.phone || null,
+          phone: null,
           role: 'invited',
           status: pc.status || 'invited',
           lastLogin: pc.last_login_at || null,
@@ -336,7 +327,6 @@ export default function B2BStoreAccess() {
             email: client.email?.toLowerCase(),
             full_name: client.displayName,
             company_name: client.company || null,
-            phone: client.phone || null,
             organization_id: organizationId,
             status: 'invited',
           });
