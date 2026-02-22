@@ -7,7 +7,7 @@
 // payment terms display, and volume discount calculation.
 // ---------------------------------------------------------------------------
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 
 // Default MOQ if product doesn't specify one
 const DEFAULT_MOQ = 1;
@@ -19,11 +19,27 @@ const VOLUME_TIERS = [
   { min: 1000, discount: 0.03, label: '3% Volume Discount (EUR 1,000+)' },
 ];
 
-export default function usePreviewCart() {
-  const [items, setItems] = useState([]);
-  const [poNumber, setPoNumber] = useState('');
-  const [deliveryDate, setDeliveryDate] = useState('');
-  const [orderNotes, setOrderNotes] = useState('');
+function loadFromStorage(key) {
+  if (!key) return null;
+  try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
+}
+
+/**
+ * @param {Object} [options]
+ * @param {string} [options.storageKey] - When provided, persist cart to localStorage under this key.
+ */
+export default function usePreviewCart({ storageKey } = {}) {
+  const stored = loadFromStorage(storageKey);
+  const [items, setItems] = useState(stored?.items || []);
+  const [poNumber, setPoNumber] = useState(stored?.poNumber || '');
+  const [deliveryDate, setDeliveryDate] = useState(stored?.deliveryDate || '');
+  const [orderNotes, setOrderNotes] = useState(stored?.orderNotes || '');
+
+  // Persist to localStorage when storageKey is provided
+  useEffect(() => {
+    if (!storageKey) return;
+    localStorage.setItem(storageKey, JSON.stringify({ items, poNumber, deliveryDate, orderNotes }));
+  }, [storageKey, items, poNumber, deliveryDate, orderNotes]);
 
   const addItem = useCallback((product, qty = 1) => {
     if (!product?.id) return;

@@ -447,6 +447,8 @@ import B2BOrdersManager from "@/components/b2b-admin/B2BOrdersManager";
 import PriceListEditor from "@/components/b2b-admin/PriceListEditor";
 import ClientGroupManager from "@/components/b2b-admin/ClientGroupManager";
 import StorePreview from "./StorePreview";
+import PublicStorefront from "./PublicStorefront";
+import { getStoreSubdomain } from '@/lib/subdomain';
 
 import { BrowserRouter as Router, Route, Routes, useLocation, useParams, Navigate } from 'react-router-dom';
 
@@ -836,8 +838,16 @@ function _getCurrentPage(url) {
     return pageName || Object.keys(PAGES)[0];
 }
 
+// Detect store subdomain once at module level (hostname doesn't change)
+const _storeSubdomain = getStoreSubdomain();
+
 // Create a wrapper component that uses useLocation inside the Router context
 function PagesContent() {
+    // Public B2B Store — subdomain routing (MUST be first, before all other routes)
+    if (_storeSubdomain) {
+        return <PublicStorefront subdomain={_storeSubdomain} />;
+    }
+
     const location = useLocation();
     const currentPage = _getCurrentPage(location.pathname);
     const isAdminRoute = location.pathname.startsWith('/admin');

@@ -1059,7 +1059,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
         onPublish={handlePublish}
         isPublished={builder.isPublished}
         storeUrl={builder.storeSubdomain ? `https://${builder.storeSubdomain}.isyncso.com` : null}
-        onViewStore={builder.isPublished ? () => window.open(`/store-preview/${organizationId}`, '_blank') : null}
+        onViewStore={builder.isPublished && builder.storeSubdomain ? () => window.open(`https://${builder.storeSubdomain}.isyncso.com`, '_blank') : null}
         canUndo={history.canUndo}
         canRedo={history.canRedo}
         onUndo={history.undo}
