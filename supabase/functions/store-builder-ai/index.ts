@@ -381,7 +381,7 @@ serve(async (req: Request) => {
       );
     }
 
-    const { prompt, currentConfig, businessContext, history } =
+    const { prompt, currentConfig, businessContext, history, jsonRetry, previousResponse } =
       await req.json();
 
     if (!prompt || typeof prompt !== "string") {
@@ -392,6 +392,64 @@ serve(async (req: Request) => {
       return errorResponse(400, "Missing or invalid 'currentConfig' field.");
     }
 
+    // --- JSON RETRY MODE ---
+    // When the first call produced text but no valid JSON config, the client
+    // retries with jsonRetry=true. We make a focused non-streaming call that
+    // forces the model to output ONLY the JSON config.
+    if (jsonRetry && previousResponse) {
+      const retryMessages = [
+        { role: "system", content: SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: `${prompt}\n\n---\nCurrent config:\n${JSON.stringify(currentConfig)}\n\nBusiness: ${JSON.stringify(businessContext || {})}`,
+        },
+        {
+          role: "assistant",
+          content: previousResponse,
+        },
+        {
+          role: "user",
+          content:
+            "Your previous response did not include the JSON config block. Output ONLY the ```json fence with the configPatch or updatedConfig object. No explanation, no text before or after — ONLY the ```json ... ``` block.",
+        },
+      ];
+
+      const retryResponse = await fetch(
+        "https://api.together.xyz/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${TOGETHER_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "moonshotai/Kimi-K2-Instruct-0905",
+            messages: retryMessages,
+            max_tokens: 16000,
+            temperature: 0.1,
+            stream: false,
+          }),
+        }
+      );
+
+      if (!retryResponse.ok) {
+        return errorResponse(502, "AI retry failed.");
+      }
+
+      const retryJson = await retryResponse.json();
+      const retryText =
+        retryJson.choices?.[0]?.message?.content || "";
+
+      return new Response(retryText, {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "text/plain; charset=utf-8",
+        },
+      });
+    }
+
+    // --- STANDARD STREAMING MODE ---
     const chatMessages = buildMessages(
       prompt,
       currentConfig,

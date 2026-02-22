@@ -284,9 +284,54 @@ export function useBuilderAI() {
         );
       }
 
-      // Stream finished — finalize the message
+      // Stream finished — try to extract config JSON
       const explanation = extractExplanation(accumulated);
-      const result = extractConfigFromText(accumulated);
+      let result = extractConfigFromText(accumulated);
+
+      // ----- RETRY: If no JSON was extracted, ask the AI to output ONLY JSON -----
+      if (!result && accumulated.length > 20) {
+        console.warn('[useBuilderAI] No JSON extracted from stream, retrying with JSON-only prompt...');
+
+        // Show user that we're retrying
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg._id === assistantMsgId
+              ? { ...msg, content: explanation || 'Applying changes...' }
+              : msg,
+          ),
+        );
+
+        try {
+          const retryResponse = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/store-builder-ai`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({
+                prompt,
+                currentConfig,
+                businessContext,
+                jsonRetry: true,
+                previousResponse: accumulated,
+              }),
+              signal: controller.signal,
+            },
+          );
+
+          if (retryResponse.ok) {
+            const retryText = await retryResponse.text();
+            result = extractConfigFromText(retryText);
+            if (result) {
+              console.log('[useBuilderAI] JSON retry succeeded');
+            }
+          }
+        } catch (retryErr) {
+          console.warn('[useBuilderAI] JSON retry failed:', retryErr.message);
+        }
+      }
 
       // Build final display text
       const hasConfig = !!(result?.updatedConfig || result?.configPatch);
@@ -298,8 +343,13 @@ export function useBuilderAI() {
           : `Done! I made these changes:\n${changeList}`;
       } else if (!finalContent && hasConfig) {
         finalContent = 'Done! I updated the store configuration.';
-      } else if (!finalContent) {
-        finalContent = 'I processed your request but couldn\'t generate a config update. Please try rephrasing.';
+      } else if (!finalContent && !hasConfig) {
+        finalContent = 'I couldn\'t apply changes to the store. Please try again with a more specific request.';
+      }
+
+      // If extraction failed completely, flag it in the message
+      if (!hasConfig && explanation) {
+        finalContent = `${explanation}\n\n⚠ Config update failed — try rephrasing your request.`;
       }
 
       // Finalize the assistant message (remove streaming flag, attach buildPlan)
