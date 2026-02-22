@@ -1913,14 +1913,28 @@ function ActivitySectionWrapper({ product, details }) {
         .limit(50);
 
       if (!error && data && data.length > 0) {
-        setActivities(data.map(a => ({
-          id: a.id,
-          type: a.action,
-          title: a.summary,
-          timestamp: a.performed_at,
-          user: a.actor?.full_name || 'Unknown',
-          changes: a.changes,
-        })));
+        setActivities(data.map(a => {
+          // Sanitize changes: ensure each entry has old/new as strings
+          let safeChanges = null;
+          if (a.changes && typeof a.changes === 'object') {
+            safeChanges = {};
+            for (const [field, change] of Object.entries(a.changes)) {
+              if (change && typeof change === 'object' && ('old' in change || 'new' in change)) {
+                safeChanges[field] = change;
+              } else {
+                safeChanges[field] = { old: '', new: typeof change === 'object' ? JSON.stringify(change) : String(change ?? '') };
+              }
+            }
+          }
+          return {
+            id: a.id,
+            type: a.action,
+            title: typeof a.summary === 'object' ? JSON.stringify(a.summary) : (a.summary || ''),
+            timestamp: a.performed_at,
+            user: a.actor?.full_name || 'Unknown',
+            changes: safeChanges,
+          };
+        }));
       } else {
         // Fallback to mock data if no real activity entries yet
         setActivities(generateMockActivities(product, details));

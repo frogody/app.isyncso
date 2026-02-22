@@ -35,6 +35,13 @@ const ACTIVITY_COLORS = {
   default: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
 };
 
+function formatValue(val) {
+  if (val === null || val === undefined) return '';
+  if (val instanceof Date) return val.toISOString();
+  if (typeof val === 'object') return JSON.stringify(val);
+  return String(val);
+}
+
 function ActivityItem({ activity, t }) {
   const Icon = ACTIVITY_ICONS[activity.type] || ACTIVITY_ICONS.default;
   const colorClass = ACTIVITY_COLORS[activity.type] || ACTIVITY_COLORS.default;
@@ -51,9 +58,9 @@ function ActivityItem({ activity, t }) {
       <div className="flex-1 min-w-0 pb-4">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <p className={`text-sm ${t('text-slate-900', 'text-white')} font-medium`}>{activity.title}</p>
+            <p className={`text-sm ${t('text-slate-900', 'text-white')} font-medium`}>{formatValue(activity.title)}</p>
             {activity.description && (
-              <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')} mt-0.5`}>{activity.description}</p>
+              <p className={`text-xs ${t('text-slate-500', 'text-zinc-500')} mt-0.5`}>{formatValue(activity.description)}</p>
             )}
           </div>
           <span className={`text-xs ${t('text-slate-400', 'text-zinc-600')} whitespace-nowrap`}>
@@ -70,14 +77,18 @@ function ActivityItem({ activity, t }) {
 
         {activity.changes && (
           <div className={`mt-2 p-2 rounded-lg ${t('bg-slate-50', 'bg-zinc-900/50')} border ${t('border-slate-200', 'border-white/5')}`}>
-            {Object.entries(activity.changes).map(([field, change]) => (
-              <div key={field} className="flex items-center gap-2 text-xs">
-                <span className={t('text-slate-500', 'text-zinc-500')}>{field}:</span>
-                <span className={`${t('text-slate-400', 'text-zinc-600')} line-through`}>{change.old}</span>
-                <span className={t('text-slate-400', 'text-zinc-400')}>→</span>
-                <span className={t('text-slate-900', 'text-white')}>{change.new}</span>
-              </div>
-            ))}
+            {Object.entries(activity.changes).map(([field, change]) => {
+              const oldVal = change && typeof change === 'object' ? change.old : '';
+              const newVal = change && typeof change === 'object' ? change.new : change;
+              return (
+                <div key={field} className="flex items-center gap-2 text-xs">
+                  <span className={t('text-slate-500', 'text-zinc-500')}>{field}:</span>
+                  <span className={`${t('text-slate-400', 'text-zinc-600')} line-through`}>{formatValue(oldVal)}</span>
+                  <span className={t('text-slate-400', 'text-zinc-400')}>→</span>
+                  <span className={t('text-slate-900', 'text-white')}>{formatValue(newVal)}</span>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
