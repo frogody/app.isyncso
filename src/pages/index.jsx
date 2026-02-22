@@ -412,6 +412,7 @@ import RequestDemo from "./RequestDemo";
 
 import B2BStoreBuilder from "./B2BStoreBuilder";
 import StoreDashboard from "./StoreDashboard";
+import NotFound from "./NotFound";
 
 // Providers needed for admin routes (since they don't use main Layout)
 import { UserProvider } from "@/components/context/UserContext";
@@ -977,6 +978,68 @@ function PagesContent() {
         );
     }
 
+    // Check if this is a completely unknown route — render standalone 404 outside Layout
+    const pathSegment = location.pathname.split('/').filter(Boolean)[0]?.toLowerCase() || '';
+    const knownPrefixes = new Set([
+      '', 'aiassistant', 'sync', 'aisysteminventory', 'authcallback', 'desktop-auth',
+      'login', 'actions', 'activitytimeline', 'admindashboard', 'adminmigration',
+      'analytics', 'analyticsdashboard', 'assignments', 'backendsetup', 'backendstatus',
+      'crmdashboard', 'crmcontacts', 'crmpipeline', 'crmcampaigns', 'crmcompanyprofile',
+      'crmcontactprofile', 'certificates', 'credits', 'companydashboard', 'companyinvite',
+      'companyprofile', 'compliancecenter', 'compliancecontrols', 'complianceevidence',
+      'complianceframeworks', 'compliancepolicies', 'complianceroadmap', 'componentshowcase',
+      'composiointegrations', 'settings', 'contacts', 'coursedetail', 'courseupgrader',
+      'courses', 'dashboard', 'deals', 'documentgenerator', 'desktopactivity',
+      'dailyjournal', 'privacyaiact', 'downloadapp', 'glossary', 'growth',
+      'growthassistant', 'growthcampaigns', 'growthpipeline', 'growthprospects',
+      'financeproposals', 'financeproposalbuilder', 'growthresearch', 'growthsignals',
+      'growthtemplates', 'growthenrich', 'growthdashboard', 'growthcampaignwizard',
+      'growthnestrecommendations', 'growthworkspacesetup', 'growthresearchworkspace',
+      'growthoutreachbuilder', 'growthcustomersignals', 'growthcampaignnests',
+      'growthcampaignreview', 'growthopportunities', 'flowbuilder',
+      'home', 'inbox', 'insights', 'leaderboard', 'leads', 'learn', 'learnaitools',
+      'learnassistant', 'learndashboard', 'lessonviewer', 'practicechallenges',
+      'managecourses', 'teamlearningdashboard', 'managerdashboard', 'onboarding',
+      'projects', 'recommendationsfeed', 'riskassessment', 'sentinel', 'sentineldashboard',
+      'trustcenter', 'vendorrisk', 'sequences', 'shopifycallback', 'skillframeworks',
+      'skillmap', 'skillsoverview', 'studentdashboard', 'support', 'systemworkflow',
+      'tasks', 'templates', 'useranalytics', 'verifycertificate', 'visiontest',
+      'workfloweditor', 'mcpintegrations', 'oauthcallback',
+      'finance', 'financeoverview', 'financedashboard', 'financeinvoices', 'financeexpenses',
+      'financeexpensesconsolidated', 'financesubscriptions', 'financeaccounts',
+      'financejournalentries', 'financegeneralledger', 'financeledger', 'financevendors',
+      'financebills', 'financebillpayments', 'financepayables', 'financereportpl',
+      'financereportbs', 'financereporttb', 'financereportaging', 'financereportcashflow',
+      'financereports', 'financetaxrates', 'financebtwaangifte', 'financerecurringinvoices',
+      'financecreditnotes', 'financebankaccounts', 'financebankreconciliation',
+      'financesmartimport',
+      'raise', 'raiseinvestors', 'raisepitchdecks', 'raisedataroom', 'raisecampaigns',
+      'raiseenrich', 'teammanagement', 'agentdetail',
+      'storedashboard', 'b2b', 'marketplace',
+      'products', 'productsdigital', 'productsphysical', 'productsservices', 'productdetail',
+      'create', 'createbranding', 'createimages', 'createvideos', 'createlibrary',
+      'contentcalendar', 'syncstudiohome', 'syncstudio', 'syncstudioimport',
+      'syncstudiodashboard', 'syncstudiophotoshoot', 'syncstudioresults', 'syncstudioreturn',
+      'studio', 'studioimage', 'studiovideo', 'studiophotoshoot', 'studioclipshoot',
+      'studiotemplates', 'studiolibrary', 'studiopodcast', 'studiovoice',
+      'studiofashionbooth', 'studioavatar',
+      'warehouse', 'inventoryreceiving', 'inventoryshipping', 'palletbuilder',
+      'shipmentverification', 'stockpurchases', 'emailpoolsettings',
+      'syncagent', 'syncphone', 'inventoryreturns', 'inventoryexpenses',
+      'inventoryimport', 'contactsimport', 'integrations',
+      'talentdashboard', 'talentclients', 'talentdeals', 'talentcandidates', 'candidates',
+      'talentcandidateprofile', 'talentcampaigns', 'talentcampaigndetail',
+      'talentprojects', 'talentanalytics', 'talentnests', 'talentnestdetail',
+      'talentsmsoutreach', 'roles',
+      'reachdashboard', 'reachperformance', 'reachcampaigns', 'reachcampaignbuilder',
+      'reachcampaigndetail', 'reachseo', 'reachcalendar', 'reachcopystudio',
+      'reachbrandvoice', 'reachsettings',
+      'learningpaths',
+    ]);
+    if (pathSegment && !knownPrefixes.has(pathSegment)) {
+      return <NotFound />;
+    }
+
     return (
         <Layout currentPageName={currentPage}>
             <Routes>
@@ -1409,14 +1472,7 @@ function PagesContent() {
                 <Route path="/ReachSettings" element={<ReachSettings />} />
 
                 {/* 404 catch-all route */}
-                <Route path="*" element={
-                  <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
-                    <div className="text-center">
-                      <h1 className="text-4xl font-bold mb-4" style={{ color: 'var(--txt)' }}>404</h1>
-                      <p style={{ color: 'var(--muted)' }}>Page not found</p>
-                    </div>
-                  </div>
-                } />
+                <Route path="*" element={<NotFound />} />
 
             </Routes>
         </Layout>
