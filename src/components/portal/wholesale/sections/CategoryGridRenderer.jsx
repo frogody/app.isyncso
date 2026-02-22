@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Folder, Package, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { WholesaleContext } from '@/components/portal/wholesale/WholesaleProvider';
+import supabase from '@/api/supabaseClient';
 
 /**
  * CategoryGridRenderer
@@ -333,10 +335,64 @@ export default function CategoryGridRenderer({ section, theme }) {
     navigate(`${basePath}?category=${encodeURIComponent(categoryName)}`);
   };
 
+  // Try to get orgId from WholesaleContext for real data fetching
+  const wholesaleCtx = useContext(WholesaleContext);
+  const orgId = wholesaleCtx?.orgId || null;
+
+  const [dbCategories, setDbCategories] = useState(null);
+
+  useEffect(() => {
+    if (!orgId || (Array.isArray(rawCategories) && rawCategories.length > 0)) return;
+    let cancelled = false;
+
+    const fetchCategories = async () => {
+      try {
+        // Fetch active categories with product counts
+        const { data, error } = await supabase
+          .from('product_categories')
+          .select('id, name, slug, image')
+          .eq('company_id', orgId)
+          .eq('is_active', true)
+          .order('name');
+
+        if (error || cancelled) return;
+        if (data && data.length > 0) {
+          // Get product counts per category
+          const { data: countData } = await supabase
+            .from('products')
+            .select('category_id')
+            .eq('company_id', orgId)
+            .eq('status', 'published')
+            .not('category_id', 'is', null);
+
+          const countMap = {};
+          (countData || []).forEach((p) => {
+            countMap[p.category_id] = (countMap[p.category_id] || 0) + 1;
+          });
+
+          const mapped = data.map((cat) => ({
+            name: cat.name,
+            image: cat.image || null,
+            count: countMap[cat.id] || 0,
+            slug: cat.slug,
+          }));
+          if (!cancelled) setDbCategories(mapped);
+        }
+      } catch (err) {
+        console.warn('[CategoryGridRenderer] Failed to fetch categories:', err);
+      }
+    };
+
+    fetchCategories();
+    return () => { cancelled = true; };
+  }, [orgId, rawCategories]);
+
   const categories =
     Array.isArray(rawCategories) && rawCategories.length > 0
       ? rawCategories
-      : PLACEHOLDER_CATEGORIES;
+      : dbCategories && dbCategories.length > 0
+        ? dbCategories
+        : PLACEHOLDER_CATEGORIES;
 
   const CategoryComponent = STYLE_COMPONENTS[style] || CardStyleCategory;
   const gridClasses = getGridClasses(columns);

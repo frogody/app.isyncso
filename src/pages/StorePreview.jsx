@@ -26,6 +26,8 @@ import BannerRenderer from '@/components/portal/wholesale/sections/BannerRendere
 import StatsRenderer from '@/components/portal/wholesale/sections/StatsRenderer';
 import RichTextRenderer from '@/components/portal/wholesale/sections/RichTextRenderer';
 import LogoGridRenderer from '@/components/portal/wholesale/sections/LogoGridRenderer';
+import { listB2BProducts, getB2BProduct } from '@/lib/db/queries/b2b';
+import supabase from '@/api/supabaseClient';
 
 const SECTION_MAP = {
   hero: HeroRenderer,
@@ -846,18 +848,15 @@ function PlaceholderPage({ pageId, theme }) {
 // ---------------------------------------------------------------------------
 
 const SAMPLE_PRODUCTS = [
-  { id: 1, name: 'Professional Widget Pro', sku: 'WDG-PRO-001', price: 149.99, moq: 10, image: null, category: 'Hardware', stock: 'In Stock' },
-  { id: 2, name: 'Industrial Fastener Kit', sku: 'FST-KIT-002', price: 89.50, moq: 25, image: null, category: 'Components', stock: 'In Stock' },
-  { id: 3, name: 'Premium Connector Set', sku: 'CON-SET-003', price: 234.00, moq: 5, image: null, category: 'Electronics', stock: 'Low Stock' },
-  { id: 4, name: 'Heavy Duty Bracket', sku: 'BRK-HDY-004', price: 56.75, moq: 50, image: null, category: 'Hardware', stock: 'In Stock' },
-  { id: 5, name: 'Precision Tool Assembly', sku: 'TLS-ASM-005', price: 312.00, moq: 3, image: null, category: 'Tools', stock: 'In Stock' },
-  { id: 6, name: 'Multi-Purpose Sealant', sku: 'SLT-MPR-006', price: 24.99, moq: 100, image: null, category: 'Consumables', stock: 'In Stock' },
-  { id: 7, name: 'Carbon Fiber Panel', sku: 'CFP-STD-007', price: 189.00, moq: 10, image: null, category: 'Materials', stock: 'Pre-Order' },
-  { id: 8, name: 'LED Driver Module', sku: 'LED-DRV-008', price: 67.25, moq: 20, image: null, category: 'Electronics', stock: 'In Stock' },
-  { id: 9, name: 'Stainless Mounting Kit', sku: 'MNT-KIT-009', price: 142.50, moq: 15, image: null, category: 'Hardware', stock: 'In Stock' },
+  { id: 1, name: 'Premium Widget A', sku: 'WDG-001', price: 24.99, moq: 10, image: null, category: 'Hardware', stock: 'In Stock' },
+  { id: 2, name: 'Industrial Component B', sku: 'IND-002', price: 89.50, moq: 25, image: null, category: 'Components', stock: 'In Stock' },
+  { id: 3, name: 'Bulk Fastener Set', sku: 'FST-003', price: 12.75, moq: 5, image: null, category: 'Fasteners', stock: 'Low Stock' },
+  { id: 4, name: 'Precision Tool Kit', sku: 'TLK-004', price: 149.00, moq: 50, image: null, category: 'Tools', stock: 'In Stock' },
+  { id: 5, name: 'Safety Valve Assembly', sku: 'SVA-005', price: 312.00, moq: 3, image: null, category: 'Safety', stock: 'In Stock' },
+  { id: 6, name: 'Multi-Purpose Sealant', sku: 'SLT-006', price: 24.99, moq: 100, image: null, category: 'Consumables', stock: 'In Stock' },
 ];
 
-function CatalogPage({ config }) {
+function CatalogPage({ config, orgId }) {
   const catalog = config?.catalog || {};
   const columns = catalog.columns || 3;
   const cardStyle = catalog.cardStyle || 'detailed';
@@ -865,7 +864,36 @@ function CatalogPage({ config }) {
   const showPricing = catalog.showPricing !== false;
   const showStock = catalog.showStock !== false;
 
-  const categories = [...new Set(SAMPLE_PRODUCTS.map((p) => p.category))];
+  const [products, setProducts] = useState(SAMPLE_PRODUCTS);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!orgId) return;
+    let cancelled = false;
+    setLoading(true);
+
+    listB2BProducts(orgId, { limit: 24 })
+      .then((data) => {
+        if (cancelled || !data?.length) return;
+        const mapped = data.map((p) => ({
+          id: p.id,
+          name: p.name,
+          sku: p.physical_products?.[0]?.sku || p.sku || '',
+          price: p.b2b_price || p.wholesale_price || p.price || 0,
+          moq: p.min_order_quantity || 1,
+          image: p.featured_image || null,
+          category: p.product_categories?.name || 'Uncategorized',
+          stock: p.inventory?.[0]?.quantity_on_hand > 0 ? 'In Stock' : (p.inventory?.[0]?.quantity_on_hand === 0 ? 'Out of Stock' : 'In Stock'),
+        }));
+        setProducts(mapped);
+      })
+      .catch((err) => console.warn('[CatalogPage] Failed to fetch products:', err))
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [orgId]);
+
+  const categories = [...new Set(products.map((p) => p.category))];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -909,7 +937,7 @@ function CatalogPage({ config }) {
         <div className="flex-1">
           {/* Sort bar */}
           <div className="flex items-center justify-between mb-4 pb-3" style={{ borderBottom: '1px solid var(--ws-border)' }}>
-            <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>{SAMPLE_PRODUCTS.length} products</span>
+            <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>{products.length} products</span>
             <select className="text-xs px-2 py-1 rounded" style={{ backgroundColor: 'var(--ws-surface)', color: 'var(--ws-text)', border: '1px solid var(--ws-border)' }}>
               <option>Sort by Name</option>
               <option>Sort by Price</option>
@@ -921,20 +949,24 @@ function CatalogPage({ config }) {
             className="grid gap-4"
             style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
           >
-            {SAMPLE_PRODUCTS.map((product) => (
+            {products.map((product) => (
               <div
                 key={product.id}
                 className="rounded-xl overflow-hidden transition-all hover:scale-[1.02]"
                 style={{ backgroundColor: 'var(--ws-surface)', border: '1px solid var(--ws-border)' }}
               >
-                {/* Product image placeholder */}
+                {/* Product image */}
                 <div
-                  className="aspect-square flex items-center justify-center"
+                  className="aspect-square flex items-center justify-center overflow-hidden"
                   style={{ backgroundColor: 'color-mix(in srgb, var(--ws-primary) 5%, var(--ws-bg))' }}
                 >
-                  <svg className="w-12 h-12 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1} style={{ color: 'var(--ws-muted)' }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
-                  </svg>
+                  {product.image ? (
+                    <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <svg className="w-12 h-12 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1} style={{ color: 'var(--ws-muted)' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+                    </svg>
+                  )}
                 </div>
 
                 <div className={`p-3 ${cardStyle === 'compact' ? '' : 'space-y-2'}`}>
@@ -944,13 +976,13 @@ function CatalogPage({ config }) {
                   <h3 className="text-sm font-medium leading-tight" style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}>
                     {product.name}
                   </h3>
-                  {cardStyle === 'detailed' && (
+                  {cardStyle === 'detailed' && product.sku && (
                     <p className="text-[10px]" style={{ color: 'var(--ws-muted)' }}>SKU: {product.sku}</p>
                   )}
                   <div className="flex items-center justify-between pt-1">
                     {showPricing && (
                       <span className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>
-                        ${product.price.toFixed(2)}
+                        ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
                       </span>
                     )}
                     {showStock && (
@@ -984,7 +1016,7 @@ function CatalogPage({ config }) {
 // Product Detail Page — renders from config.productDetail
 // ---------------------------------------------------------------------------
 
-function ProductDetailPage({ config }) {
+function ProductDetailPage({ config, orgId }) {
   const pd = config?.productDetail || {};
   const imagePosition = pd.imagePosition || 'left';
   const showSpecifications = pd.showSpecifications !== false;
@@ -994,44 +1026,115 @@ function ProductDetailPage({ config }) {
   const showSKU = pd.showSKU !== false;
   const showCategories = pd.showCategories !== false;
 
-  const sampleSpecs = [
-    { label: 'Material', value: 'Stainless Steel 304' },
-    { label: 'Weight', value: '2.4 kg' },
-    { label: 'Dimensions', value: '240 x 180 x 55 mm' },
-    { label: 'Operating Temp', value: '-20°C to 85°C' },
-    { label: 'Certification', value: 'ISO 9001, CE' },
-    { label: 'Warranty', value: '24 months' },
-  ];
+  const [product, setProduct] = useState(null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch a real product for preview
+  useEffect(() => {
+    if (!orgId) return;
+    let cancelled = false;
+    setLoading(true);
+
+    listB2BProducts(orgId, { limit: 5 })
+      .then((data) => {
+        if (cancelled || !data?.length) return;
+        const first = data[0];
+        setProduct({
+          name: first.name,
+          sku: first.physical_products?.[0]?.sku || first.sku || 'N/A',
+          price: first.b2b_price || first.wholesale_price || first.price || 0,
+          description: first.description || 'High-quality product designed for professional use.',
+          image: first.featured_image || null,
+          gallery: Array.isArray(first.gallery) ? first.gallery : [],
+          category: first.product_categories?.name || 'Products',
+          stock: first.inventory?.[0]?.quantity_on_hand,
+          specifications: first.physical_products?.[0]?.specifications || null,
+          moq: first.min_order_quantity || 1,
+        });
+        // Rest as related
+        if (data.length > 1) {
+          setRelatedProducts(data.slice(1).map((p) => ({
+            id: p.id,
+            name: p.name,
+            price: p.b2b_price || p.wholesale_price || p.price || 0,
+            image: p.featured_image || null,
+          })));
+        }
+      })
+      .catch((err) => console.warn('[ProductDetailPage] Failed to fetch product:', err))
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [orgId]);
+
+  // Fallback data when no real product
+  const p = product || {
+    name: 'Professional Widget Pro',
+    sku: 'WDG-PRO-001',
+    price: 149.99,
+    description: 'Industrial-grade precision widget designed for high-volume manufacturing environments. Built with premium stainless steel construction and backed by a 24-month warranty.',
+    image: null,
+    gallery: [],
+    category: 'Hardware',
+    stock: null,
+    specifications: null,
+    moq: 10,
+  };
+
+  const specs = p.specifications
+    ? Object.entries(p.specifications).map(([label, value]) => ({ label, value: String(value) }))
+    : [
+        { label: 'Material', value: 'Stainless Steel 304' },
+        { label: 'Weight', value: '2.4 kg' },
+        { label: 'Dimensions', value: '240 x 180 x 55 mm' },
+        { label: 'Operating Temp', value: '-20°C to 85°C' },
+        { label: 'Certification', value: 'ISO 9001, CE' },
+        { label: 'Warranty', value: '24 months' },
+      ];
 
   const bulkPricing = [
-    { qty: '1-9', price: '$149.99' },
-    { qty: '10-49', price: '$134.99' },
-    { qty: '50-99', price: '$119.99' },
-    { qty: '100+', price: '$99.99' },
+    { qty: '1-9', price: `$${p.price.toFixed(2)}` },
+    { qty: '10-49', price: `$${(p.price * 0.9).toFixed(2)}` },
+    { qty: '50-99', price: `$${(p.price * 0.8).toFixed(2)}` },
+    { qty: '100+', price: `$${(p.price * 0.67).toFixed(2)}` },
   ];
+
+  const allImages = [p.image, ...(p.gallery || [])].filter(Boolean);
+
+  const stockLabel = p.stock != null
+    ? (p.stock > 0 ? 'In Stock' : 'Out of Stock')
+    : 'In Stock';
+  const stockColor = stockLabel === 'In Stock' ? 'var(--ws-primary)' : 'var(--ws-muted)';
 
   const imageBlock = (
     <div className="space-y-3">
       {/* Main image */}
       <div
-        className="aspect-square rounded-xl flex items-center justify-center"
+        className="aspect-square rounded-xl flex items-center justify-center overflow-hidden"
         style={{ backgroundColor: 'color-mix(in srgb, var(--ws-primary) 5%, var(--ws-bg))', border: '1px solid var(--ws-border)' }}
       >
-        <svg className="w-24 h-24 opacity-15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5} style={{ color: 'var(--ws-muted)' }}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
-        </svg>
+        {allImages.length > 0 ? (
+          <img src={allImages[0]} alt={p.name} className="w-full h-full object-cover" />
+        ) : (
+          <svg className="w-24 h-24 opacity-15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5} style={{ color: 'var(--ws-muted)' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+          </svg>
+        )}
       </div>
       {/* Thumbnails */}
       <div className="grid grid-cols-4 gap-2">
-        {[1, 2, 3, 4].map((i) => (
+        {(allImages.length > 1 ? allImages.slice(0, 4) : [null, null, null, null]).map((img, i) => (
           <div
             key={i}
-            className="aspect-square rounded-lg"
+            className="aspect-square rounded-lg overflow-hidden"
             style={{
               backgroundColor: 'color-mix(in srgb, var(--ws-primary) 5%, var(--ws-bg))',
-              border: i === 1 ? '2px solid var(--ws-primary)' : '1px solid var(--ws-border)',
+              border: i === 0 ? '2px solid var(--ws-primary)' : '1px solid var(--ws-border)',
             }}
-          />
+          >
+            {img && <img src={img} alt="" className="w-full h-full object-cover" />}
+          </div>
         ))}
       </div>
     </div>
@@ -1039,46 +1142,41 @@ function ProductDetailPage({ config }) {
 
   const detailBlock = (
     <div className="space-y-6">
-      {/* Breadcrumb */}
       {showCategories && (
         <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--ws-muted)' }}>
           <span>Home</span>
           <span>/</span>
-          <span>Hardware</span>
+          <span>{p.category}</span>
           <span>/</span>
-          <span style={{ color: 'var(--ws-primary)' }}>Professional Widget Pro</span>
+          <span style={{ color: 'var(--ws-primary)' }}>{p.name}</span>
         </div>
       )}
 
-      {/* Title + price */}
       <div>
         <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}>
-          Professional Widget Pro
+          {p.name}
         </h1>
         {showSKU && (
-          <p className="text-xs mb-3" style={{ color: 'var(--ws-muted)' }}>SKU: WDG-PRO-001</p>
+          <p className="text-xs mb-3" style={{ color: 'var(--ws-muted)' }}>SKU: {p.sku}</p>
         )}
         <div className="flex items-baseline gap-3">
-          <span className="text-3xl font-bold" style={{ color: 'var(--ws-text)' }}>$149.99</span>
+          <span className="text-3xl font-bold" style={{ color: 'var(--ws-text)' }}>${typeof p.price === 'number' ? p.price.toFixed(2) : p.price}</span>
           <span className="text-sm" style={{ color: 'var(--ws-muted)' }}>per unit</span>
         </div>
       </div>
 
-      {/* Stock indicator */}
       <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--ws-primary)' }} />
-        <span className="text-sm font-medium" style={{ color: 'var(--ws-primary)' }}>In Stock</span>
-        <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>— Ships in 1-2 business days</span>
+        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: stockColor }} />
+        <span className="text-sm font-medium" style={{ color: stockColor }}>{stockLabel}</span>
+        {stockLabel === 'In Stock' && (
+          <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>-- Ships in 1-2 business days</span>
+        )}
       </div>
 
-      {/* Description */}
       <p className="text-sm leading-relaxed" style={{ color: 'var(--ws-muted)' }}>
-        Industrial-grade precision widget designed for high-volume manufacturing environments.
-        Built with premium stainless steel construction and backed by a 24-month warranty.
-        Ideal for assembly lines, quality control stations, and automated production systems.
+        {p.description}
       </p>
 
-      {/* Bulk pricing */}
       {showBulkPricing && (
         <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--ws-border)' }}>
           <div className="px-4 py-2.5" style={{ backgroundColor: 'color-mix(in srgb, var(--ws-primary) 5%, var(--ws-bg))' }}>
@@ -1095,22 +1193,20 @@ function ProductDetailPage({ config }) {
         </div>
       )}
 
-      {/* Quantity + Add to Cart */}
       <div className="flex items-center gap-3">
         <div className="flex items-center rounded-lg overflow-hidden" style={{ border: '1px solid var(--ws-border)' }}>
-          <button className="px-3 py-2 text-sm" style={{ color: 'var(--ws-text)', backgroundColor: 'var(--ws-surface)' }}>−</button>
-          <span className="px-4 py-2 text-sm font-medium" style={{ color: 'var(--ws-text)', backgroundColor: 'var(--ws-surface)', borderLeft: '1px solid var(--ws-border)', borderRight: '1px solid var(--ws-border)' }}>10</span>
+          <button className="px-3 py-2 text-sm" style={{ color: 'var(--ws-text)', backgroundColor: 'var(--ws-surface)' }}>-</button>
+          <span className="px-4 py-2 text-sm font-medium" style={{ color: 'var(--ws-text)', backgroundColor: 'var(--ws-surface)', borderLeft: '1px solid var(--ws-border)', borderRight: '1px solid var(--ws-border)' }}>{p.moq}</span>
           <button className="px-3 py-2 text-sm" style={{ color: 'var(--ws-text)', backgroundColor: 'var(--ws-surface)' }}>+</button>
         </div>
         <button
           className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90"
           style={{ backgroundColor: 'var(--ws-primary)', color: 'var(--ws-bg)' }}
         >
-          Add to Cart — $1,499.90
+          Add to Cart -- ${(p.price * p.moq).toFixed(2)}
         </button>
       </div>
 
-      {/* Inquiry button */}
       {showInquiryButton && (
         <button
           className="w-full py-2.5 rounded-lg text-sm font-medium transition-colors"
@@ -1124,20 +1220,18 @@ function ProductDetailPage({ config }) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Product hero: image + details */}
       <div className={`grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12 ${imagePosition === 'right' ? 'direction-rtl' : ''}`}>
         <div style={{ direction: 'ltr' }}>{imagePosition === 'right' ? detailBlock : imageBlock}</div>
         <div style={{ direction: 'ltr' }}>{imagePosition === 'right' ? imageBlock : detailBlock}</div>
       </div>
 
-      {/* Specifications */}
       {showSpecifications && (
         <div className="mb-12">
           <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}>
             Specifications
           </h2>
           <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--ws-border)' }}>
-            {sampleSpecs.map((spec, i) => (
+            {specs.map((spec, i) => (
               <div
                 key={spec.label}
                 className="flex"
@@ -1154,30 +1248,33 @@ function ProductDetailPage({ config }) {
         </div>
       )}
 
-      {/* Related products */}
       {showRelatedProducts && (
         <div>
           <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}>
             Related Products
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {SAMPLE_PRODUCTS.slice(0, 4).map((p) => (
+            {(relatedProducts.length > 0 ? relatedProducts.slice(0, 4) : SAMPLE_PRODUCTS.slice(0, 4)).map((rp) => (
               <div
-                key={p.id}
+                key={rp.id}
                 className="rounded-xl overflow-hidden"
                 style={{ backgroundColor: 'var(--ws-surface)', border: '1px solid var(--ws-border)' }}
               >
                 <div
-                  className="aspect-square flex items-center justify-center"
+                  className="aspect-square flex items-center justify-center overflow-hidden"
                   style={{ backgroundColor: 'color-mix(in srgb, var(--ws-primary) 5%, var(--ws-bg))' }}
                 >
-                  <svg className="w-8 h-8 opacity-15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1} style={{ color: 'var(--ws-muted)' }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
-                  </svg>
+                  {rp.image ? (
+                    <img src={rp.image} alt={rp.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <svg className="w-8 h-8 opacity-15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1} style={{ color: 'var(--ws-muted)' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+                    </svg>
+                  )}
                 </div>
                 <div className="p-3">
-                  <h3 className="text-xs font-medium truncate" style={{ color: 'var(--ws-text)' }}>{p.name}</h3>
-                  <span className="text-xs font-semibold" style={{ color: 'var(--ws-text)' }}>${p.price.toFixed(2)}</span>
+                  <h3 className="text-xs font-medium truncate" style={{ color: 'var(--ws-text)' }}>{rp.name}</h3>
+                  <span className="text-xs font-semibold" style={{ color: 'var(--ws-text)' }}>${typeof rp.price === 'number' ? rp.price.toFixed(2) : rp.price}</span>
                 </div>
               </div>
             ))}
@@ -1192,6 +1289,7 @@ function ProductDetailPage({ config }) {
 // Main Preview Component
 // ---------------------------------------------------------------------------
 export default function StorePreview() {
+  const { orgId: urlOrgId } = useParams();
   const [config, setConfig] = useState(null);
   const [currentPage, setCurrentPage] = useState('home');
   const [hoveredSectionId, setHoveredSectionId] = useState(null);
@@ -1199,6 +1297,8 @@ export default function StorePreview() {
   const [cartOpen, setCartOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const accountBtnRef = useRef(null);
+  const [messageOrgId, setMessageOrgId] = useState(null);
+  const orgId = urlOrgId || messageOrgId || null;
 
   // Listen for messages from the parent builder window
   useEffect(() => {
@@ -1206,6 +1306,9 @@ export default function StorePreview() {
       if (!event.data || typeof event.data !== 'object') return;
       if (event.data.type === 'CONFIG_UPDATE' && event.data.config) {
         setConfig(event.data.config);
+        if (event.data.organizationId) {
+          setMessageOrgId(event.data.organizationId);
+        }
       }
       if (event.data.type === 'NAVIGATE_TO_PAGE' && event.data.pageId) {
         setCurrentPage(event.data.pageId);
@@ -1275,10 +1378,10 @@ export default function StorePreview() {
   const mockWholesaleValue = useMemo(() => ({
     config: config || { theme: {}, sections: [], navigation: [], footer: {} },
     storePublished: true, configLoading: false, configError: null,
-    orgId: null, client: null, clientLoading: false, isAuthenticated: false,
+    orgId: orgId, client: null, clientLoading: false, isAuthenticated: false,
     themeVars, cartItems: [], addToCart: () => {}, removeFromCart: () => {},
     updateQuantity: () => {}, clearCart: () => {}, cartTotal: 0, cartCount: 0,
-  }), [config, themeVars]);
+  }), [config, themeVars, orgId]);
 
   // Inject customHead into document head (Google Fonts, external styles, etc.)
   useEffect(() => {
@@ -1371,9 +1474,9 @@ export default function StorePreview() {
         {/* Page content */}
         <main className="flex-1">
           {currentPage === 'catalog' ? (
-            <CatalogPage config={config} />
+            <CatalogPage config={config} orgId={orgId} />
           ) : currentPage === 'product' ? (
-            <ProductDetailPage config={config} />
+            <ProductDetailPage config={config} orgId={orgId} />
           ) : currentPage !== 'home' ? (
             <PlaceholderPage pageId={currentPage} theme={theme} />
           ) : (

@@ -4,15 +4,13 @@
 // edits made in the store builder.
 // ---------------------------------------------------------------------------
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 
 const MAX_HISTORY = 50;
 
 /**
  * @param {object}   config       Current StoreConfig from useStoreBuilder.
- * @param {function} updateConfig Function that replaces the full config
- *                                (e.g. the `patchConfig` or top-level setter
- *                                from useStoreBuilder).
+ * @param {function} updateConfig Function that replaces the full config.
  */
 export function useBuilderHistory(config, updateConfig) {
   const [undoStack, setUndoStack] = useState([]);
@@ -26,14 +24,19 @@ export function useBuilderHistory(config, updateConfig) {
    * Push the current config snapshot onto the undo stack.
    * Should be called *before* applying a new config.
    * Clears the redo stack (new edits invalidate any redo history).
+   * @param {string} [label] - Optional label describing this change.
    */
-  const pushState = useCallback(() => {
+  const pushState = useCallback((label) => {
     const snapshot = configRef.current;
     if (!snapshot) return;
 
     setUndoStack((prev) => {
-      const next = [...prev, JSON.parse(JSON.stringify(snapshot))];
-      // Cap the stack size
+      const entry = {
+        config: JSON.parse(JSON.stringify(snapshot)),
+        label: label || 'Manual edit',
+        timestamp: Date.now(),
+      };
+      const next = [...prev, entry];
       if (next.length > MAX_HISTORY) next.shift();
       return next;
     });
@@ -41,10 +44,7 @@ export function useBuilderHistory(config, updateConfig) {
   }, []);
 
   /**
-   * Undo the last change:
-   *  1. Pop the most recent entry off the undo stack.
-   *  2. Push the *current* config onto the redo stack.
-   *  3. Apply the popped config.
+   * Undo the last change.
    */
   const undo = useCallback(() => {
     setUndoStack((prevUndo) => {
@@ -53,27 +53,25 @@ export function useBuilderHistory(config, updateConfig) {
       const nextUndo = [...prevUndo];
       const previous = nextUndo.pop();
 
-      // Push current state onto redo stack
       const current = configRef.current;
       if (current) {
         setRedoStack((prevRedo) => [
           ...prevRedo,
-          JSON.parse(JSON.stringify(current)),
+          {
+            config: JSON.parse(JSON.stringify(current)),
+            label: 'Undo',
+            timestamp: Date.now(),
+          },
         ]);
       }
 
-      // Apply the restored config
-      updateConfig(previous);
-
+      updateConfig(previous.config);
       return nextUndo;
     });
   }, [updateConfig]);
 
   /**
-   * Redo the last undone change:
-   *  1. Pop the most recent entry off the redo stack.
-   *  2. Push the *current* config onto the undo stack.
-   *  3. Apply the popped config.
+   * Redo the last undone change.
    */
   const redo = useCallback(() => {
     setRedoStack((prevRedo) => {
@@ -82,28 +80,66 @@ export function useBuilderHistory(config, updateConfig) {
       const nextRedo = [...prevRedo];
       const restored = nextRedo.pop();
 
-      // Push current state onto undo stack
       const current = configRef.current;
       if (current) {
         setUndoStack((prevUndo) => {
-          const next = [
-            ...prevUndo,
-            JSON.parse(JSON.stringify(current)),
-          ];
+          const entry = {
+            config: JSON.parse(JSON.stringify(current)),
+            label: 'Redo',
+            timestamp: Date.now(),
+          };
+          const next = [...prevUndo, entry];
           if (next.length > MAX_HISTORY) next.shift();
           return next;
         });
       }
 
-      // Apply the restored config
-      updateConfig(restored);
-
+      updateConfig(restored.config);
       return nextRedo;
+    });
+  }, [updateConfig]);
+
+  /**
+   * Restore config to a specific point in the undo history.
+   * All entries after that index become the redo stack.
+   */
+  const restoreToIndex = useCallback((index) => {
+    setUndoStack((prevUndo) => {
+      if (index < 0 || index >= prevUndo.length) return prevUndo;
+
+      const entry = prevUndo[index];
+      const current = configRef.current;
+
+      // Everything after this index + current state goes to redo
+      const futureEntries = prevUndo.slice(index + 1);
+      if (current) {
+        futureEntries.push({
+          config: JSON.parse(JSON.stringify(current)),
+          label: 'Before rollback',
+          timestamp: Date.now(),
+        });
+      }
+      setRedoStack(futureEntries);
+
+      // Apply the restored config
+      updateConfig(entry.config);
+
+      // Undo stack is now everything up to (but not including) the restored index
+      return prevUndo.slice(0, index);
     });
   }, [updateConfig]);
 
   const canUndo = undoStack.length > 0;
   const canRedo = redoStack.length > 0;
 
-  return { pushState, undo, redo, canUndo, canRedo };
+  // Expose history entries for the timeline UI (most recent first)
+  const historyEntries = useMemo(() => {
+    return undoStack.map((entry, i) => ({
+      index: i,
+      label: entry.label,
+      timestamp: entry.timestamp,
+    })).reverse();
+  }, [undoStack]);
+
+  return { pushState, undo, redo, canUndo, canRedo, historyEntries, restoreToIndex };
 }

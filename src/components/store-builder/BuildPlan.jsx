@@ -11,6 +11,8 @@ import {
   Loader2,
   ListChecks,
   ChevronDown,
+  Plus,
+  Minus,
 } from 'lucide-react';
 
 // ── Single Task Row ──────────────────────────────────────────────────────────
@@ -70,7 +72,7 @@ function TaskRow({ task, index, animating }) {
 
 // ── Main BuildPlan Component ─────────────────────────────────────────────────
 
-export default function BuildPlan({ plan, animate }) {
+export default function BuildPlan({ plan, animate, diffStats }) {
   const [expanded, setExpanded] = useState(true);
   const hasAnimated = useRef(false);
 
@@ -153,6 +155,29 @@ export default function BuildPlan({ plan, animate }) {
               }
             />
           </div>
+
+          {/* Diff stats: lines added / removed */}
+          {allDone && diffStats && (diffStats.added > 0 || diffStats.removed > 0) && (
+            <motion.div
+              initial={shouldAnimate ? { opacity: 0, y: 4 } : { opacity: 1 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: shouldAnimate ? totalCount * 0.8 + 0.5 : 0, duration: 0.3 }}
+              className="flex items-center gap-3 mt-2 pt-2 border-t border-zinc-800/40"
+            >
+              {diffStats.added > 0 && (
+                <span className="flex items-center gap-1 text-[10px] font-mono text-emerald-400">
+                  <Plus className="w-2.5 h-2.5" />
+                  {diffStats.added} added
+                </span>
+              )}
+              {diffStats.removed > 0 && (
+                <span className="flex items-center gap-1 text-[10px] font-mono text-red-400">
+                  <Minus className="w-2.5 h-2.5" />
+                  {diffStats.removed} removed
+                </span>
+              )}
+            </motion.div>
+          )}
         </motion.div>
       )}
     </div>

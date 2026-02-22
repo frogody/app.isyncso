@@ -31,11 +31,13 @@ import {
   ShoppingBag,
   Code,
   X,
+  Crosshair,
 } from 'lucide-react';
 
 import BuilderCanvas from './BuilderCanvas';
 import CodeViewer from './CodeViewer';
 import BuildPlan from './BuildPlan';
+import VersionHistory from './VersionHistory';
 
 import { useStoreBuilder } from './hooks/useStoreBuilder';
 import { useBuilderHistory } from './hooks/useBuilderHistory';
@@ -118,45 +120,49 @@ const BUILD_PHASES = {
   retrying: { label: 'Finalizing changes...', icon: Loader2 },
 };
 
-function BuildingIndicator({ phase }) {
+function BuildingIndicator({ phase, inline }) {
   const phaseKeys = Object.keys(BUILD_PHASES);
   const currentIdx = phaseKeys.indexOf(phase || 'analyzing');
+
+  const checklist = (
+    <div className="bg-zinc-800/60 rounded-2xl rounded-tl-md px-3 py-2.5 space-y-1.5">
+      {phaseKeys.slice(0, Math.max(currentIdx + 1, 1)).map((key, i) => {
+        const p = BUILD_PHASES[key];
+        const isDone = i < currentIdx;
+        const isCurrent = i === currentIdx;
+        return (
+          <motion.div
+            key={key}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1, duration: 0.2 }}
+            className="flex items-center gap-2"
+          >
+            {isDone ? (
+              <Check className="w-3 h-3 text-cyan-400 shrink-0" />
+            ) : isCurrent ? (
+              <Loader2 className="w-3 h-3 text-cyan-400 shrink-0 animate-spin" />
+            ) : (
+              <div className="w-3 h-3 rounded-full border border-zinc-600 shrink-0" />
+            )}
+            <span className={`text-[12px] ${isDone ? 'text-zinc-500' : isCurrent ? 'text-cyan-400' : 'text-zinc-600'}`}>
+              {p.label}
+            </span>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+
+  // When inline, skip the outer wrapper (parent Bubble provides avatar + container)
+  if (inline) return checklist;
 
   return (
     <div className="flex items-start gap-2 px-4 pb-2.5">
       <div className="w-6 h-6 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0 mt-0.5">
         <Loader2 className="w-3 h-3 text-cyan-400 animate-spin" />
       </div>
-      <div className="max-w-[88%]">
-        <div className="bg-zinc-800/60 rounded-2xl rounded-tl-md px-3 py-2.5 space-y-1.5">
-          {phaseKeys.slice(0, Math.max(currentIdx + 1, 1)).map((key, i) => {
-            const p = BUILD_PHASES[key];
-            const isDone = i < currentIdx;
-            const isCurrent = i === currentIdx;
-            const Icon = p.icon;
-            return (
-              <motion.div
-                key={key}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1, duration: 0.2 }}
-                className="flex items-center gap-2"
-              >
-                {isDone ? (
-                  <Check className="w-3 h-3 text-cyan-400 shrink-0" />
-                ) : isCurrent ? (
-                  <Loader2 className="w-3 h-3 text-cyan-400 shrink-0 animate-spin" />
-                ) : (
-                  <div className="w-3 h-3 rounded-full border border-zinc-600 shrink-0" />
-                )}
-                <span className={`text-[12px] ${isDone ? 'text-zinc-500' : isCurrent ? 'text-cyan-400' : 'text-zinc-600'}`}>
-                  {p.label}
-                </span>
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
+      <div className="max-w-[88%]">{checklist}</div>
     </div>
   );
 }
@@ -164,9 +170,34 @@ function BuildingIndicator({ phase }) {
 function Bubble({ message, onShowChanges }) {
   const isUser = message.role === 'user';
 
-  // If the message is in building mode, show the building indicator instead
+  // If the message is in building mode, show the building indicator + streaming reasoning
   if (message.building && message.streaming) {
-    return <BuildingIndicator phase={message.buildPhase} />;
+    return (
+      <div className="flex items-start gap-2 px-4 pb-2.5">
+        <div className="w-6 h-6 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0 mt-0.5">
+          <Loader2 className="w-3 h-3 text-cyan-400 animate-spin" />
+        </div>
+        <div className="max-w-[88%] flex flex-col gap-1.5">
+          {/* Build phase checklist */}
+          <BuildingIndicator phase={message.buildPhase} inline />
+          {/* Streaming reasoning text */}
+          {message.content && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-zinc-800/40 rounded-2xl rounded-tl-md px-3 py-2 text-[12px] leading-relaxed text-zinc-400 whitespace-pre-wrap break-words border border-zinc-700/30"
+            >
+              {message.content}
+              <motion.span
+                className="inline-block w-1 h-3 ml-0.5 bg-cyan-400/60 rounded-sm align-middle"
+                animate={{ opacity: [1, 0] }}
+                transition={{ duration: 0.6, repeat: Infinity }}
+              />
+            </motion.div>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -298,6 +329,84 @@ function NavSidebar({ activeView, onChangeView }) {
           })
         )}
       </nav>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Section Selector for targeting specific store sections in chat
+// ---------------------------------------------------------------------------
+
+function SectionSelector({ sections, onSelect, disabled }) {
+  const [open, setOpen] = useState(false);
+  const ref = React.useRef(null);
+
+  // Close on outside click
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  if (!sections || sections.length === 0) return null;
+
+  const visibleSections = sections.filter((s) => s.visible !== false);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((p) => !p)}
+        disabled={disabled}
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        title="Target a specific section"
+      >
+        <Crosshair className="w-4 h-4" />
+        <span className="text-[11px]">Section</span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 4, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="absolute bottom-full left-0 mb-1 w-56 bg-zinc-900 border border-zinc-700/60 rounded-xl shadow-xl shadow-black/40 overflow-hidden z-50"
+          >
+            <div className="px-3 py-2 border-b border-zinc-800/60">
+              <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Target section</p>
+            </div>
+            <div className="max-h-[200px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+              {visibleSections.map((section) => {
+                const label = section.props?.heading || section.props?.text || section.type.replace(/_/g, ' ');
+                const typeLabel = section.type.replace(/_/g, ' ');
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => {
+                      onSelect(section);
+                      setOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-white/[0.03] transition-colors text-left"
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-500/50 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] text-zinc-300 truncate capitalize">{typeLabel}</p>
+                      {section.props?.heading && (
+                        <p className="text-[10px] text-zinc-600 truncate">"{section.props.heading}"</p>
+                      )}
+                    </div>
+                    <span className="text-[9px] font-mono text-zinc-700 shrink-0">#{section.id.slice(-4)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -773,18 +882,18 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   useEffect(() => {
     if (builder.config && builder.config !== prevConfigRef.current) {
       prevConfigRef.current = builder.config;
-      preview.sendConfigToPreview(builder.config);
+      preview.sendConfigToPreview(builder.config, organizationId);
     }
-  }, [builder.config, preview.sendConfigToPreview]);
+  }, [builder.config, preview.sendConfigToPreview, organizationId]);
 
   // Resend config when preview finishes loading (iframe may have missed initial send)
   const prevPreviewLoading = useRef(true);
   useEffect(() => {
     if (prevPreviewLoading.current && !preview.previewLoading && builder.config) {
-      preview.sendConfigToPreview(builder.config);
+      preview.sendConfigToPreview(builder.config, organizationId);
     }
     prevPreviewLoading.current = preview.previewLoading;
-  }, [preview.previewLoading, builder.config, preview.sendConfigToPreview]);
+  }, [preview.previewLoading, builder.config, preview.sendConfigToPreview, organizationId]);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -838,6 +947,13 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
     fileInputRef.current?.click();
   }, []);
 
+  const handleSectionSelect = useCallback((section) => {
+    const label = section.props?.heading || section.type.replace(/_/g, ' ');
+    const ref = `[Section: ${section.type} "${label}" (${section.id})]`;
+    setChatValue((prev) => prev ? `${prev}\n${ref}\n` : `${ref} `);
+    chatInputRef.current?.focus();
+  }, []);
+
   // Handlers
   const handleSave = useCallback(async () => {
     setSaveError(null);
@@ -854,28 +970,45 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   }, [builder.isPublished, builder.saveConfig, builder.publishStore, builder.unpublishStore]);
 
   const handleUpdateConfig = useCallback((newConfig) => {
-    history.pushState();
+    history.pushState('Settings change');
     builder.updateConfig(newConfig);
   }, [history.pushState, builder.updateConfig]);
 
   const handleAIPrompt = useCallback(async (prompt) => {
     try {
       const ctx = { storeName: storeName || 'B2B Store', organizationId };
+      const beforeLines = JSON.stringify(builder.config, null, 2).split('\n');
       const result = await ai.sendPrompt(prompt, builder.config, ctx);
       let applied = false;
+      let newConfig = null;
       if (result?.updatedConfig) {
-        history.pushState();
+        history.pushState('AI: full config update');
         builder.updateConfig(result.updatedConfig);
+        newConfig = result.updatedConfig;
         applied = true;
       } else if (result?.configPatch) {
-        history.pushState();
+        history.pushState('AI: config patch');
         const merged = deepMerge(builder.config, result.configPatch);
         builder.updateConfig(merged);
+        newConfig = merged;
         applied = true;
       }
-      // Mark the most recent assistant message with hasChanges
+      // Mark the most recent assistant message with hasChanges + diff stats
       if (applied) {
-        ai.markLastMessageWithChanges();
+        let diffStats = null;
+        if (newConfig) {
+          const afterLines = JSON.stringify(newConfig, null, 2).split('\n');
+          const beforeSet = new Set(beforeLines);
+          const afterSet = new Set(afterLines);
+          const added = afterLines.filter((l) => !beforeSet.has(l)).length;
+          const removed = beforeLines.filter((l) => !afterSet.has(l)).length;
+          diffStats = { added, removed };
+        }
+        ai.markLastMessageWithChanges(diffStats);
+        // Auto-refresh preview to show the AI's changes
+        setTimeout(() => {
+          preview.sendConfigToPreview(builder.config, organizationId);
+        }, 300);
       }
       // Persist chat history after each exchange
       try {
@@ -883,7 +1016,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
         builder.saveChatHistory(serialized);
       } catch (_) { /* non-critical */ }
     } catch (err) { console.error('AI failed:', err); }
-  }, [ai.sendPrompt, builder.config, builder.updateConfig, history.pushState, storeName, organizationId, ai.markLastMessageWithChanges, ai.getSerializableMessages, builder.saveChatHistory]);
+  }, [ai.sendPrompt, builder.config, builder.updateConfig, history.pushState, storeName, organizationId, ai.markLastMessageWithChanges, ai.getSerializableMessages, builder.saveChatHistory, preview.sendConfigToPreview]);
 
   // Handle "Show changes" button click — switch to code view with typing animation
   const [codeTypingActive, setCodeTypingActive] = useState(false);
@@ -1035,7 +1168,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
               <React.Fragment key={msg._id || i}>
                 <Bubble message={msg} onShowChanges={handleShowChanges} />
                 {msg.buildPlan && !msg.streaming && (
-                  <BuildPlan plan={msg.buildPlan} animate={msg.hasChanges} />
+                  <BuildPlan plan={msg.buildPlan} animate={msg.hasChanges} diffStats={msg.diffStats} />
                 )}
               </React.Fragment>
             ))}
@@ -1054,6 +1187,15 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
                   ))}
                 </div>
               </div>
+            )}
+
+            {history.historyEntries.length > 0 && !ai.isProcessing && (
+              <VersionHistory
+                entries={history.historyEntries}
+                onRestore={history.restoreToIndex}
+                canUndo={history.canUndo}
+                onUndo={history.undo}
+              />
             )}
 
             <div ref={messagesEndRef} />
@@ -1139,6 +1281,11 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
                     <Paperclip className="w-4 h-4" />
                     <span className="text-[11px]">File</span>
                   </button>
+                  <SectionSelector
+                    sections={builder.config?.sections}
+                    onSelect={handleSectionSelect}
+                    disabled={ai.isProcessing}
+                  />
                 </div>
 
                 {ai.isProcessing ? (

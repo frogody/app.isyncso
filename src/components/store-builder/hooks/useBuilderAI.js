@@ -265,16 +265,23 @@ export function useBuilderAI(initialMessages) {
     let accumulated = '';
 
     // Progress phases based on accumulated content length
-    const updateBuildPhase = (textLen) => {
+    const updateBuildPhase = (text) => {
+      const textLen = text.length;
       let phase = 'analyzing';
       if (textLen > 100) phase = 'planning';
       if (textLen > 400) phase = 'building';
       if (textLen > 1000) phase = 'applying';
 
+      // Extract the explanation portion (everything before the JSON fence)
+      // so users can see the AI's reasoning in real-time
+      const fenceStart = text.indexOf('```json');
+      const streamingText = fenceStart !== -1 ? text.slice(0, fenceStart) : text;
+      const cleanText = streamingText.replace(/\n{3,}/g, '\n\n').trim();
+
       setMessages((prev) =>
         prev.map((msg) =>
           msg._id === assistantMsgId
-            ? { ...msg, buildPhase: phase }
+            ? { ...msg, buildPhase: phase, content: cleanText }
             : msg,
         ),
       );
@@ -310,8 +317,8 @@ export function useBuilderAI(initialMessages) {
         const chunk = decoder.decode(value, { stream: true });
         accumulated += chunk;
 
-        // Update the build phase indicator (not the text content)
-        updateBuildPhase(accumulated.length);
+        // Update the build phase and stream reasoning text to the user
+        updateBuildPhase(accumulated);
       }
 
       // Stream finished — try to extract config JSON
@@ -454,13 +461,13 @@ export function useBuilderAI(initialMessages) {
     setError(null);
   }, []);
 
-  // Mark the last assistant message with hasChanges flag
-  const markLastMessageWithChanges = useCallback(() => {
+  // Mark the last assistant message with hasChanges flag + optional diff stats
+  const markLastMessageWithChanges = useCallback((diffStats) => {
     setMessages((prev) => {
       const updated = [...prev];
       for (let i = updated.length - 1; i >= 0; i--) {
         if (updated[i].role === 'assistant' && !updated[i].streaming) {
-          updated[i] = { ...updated[i], hasChanges: true };
+          updated[i] = { ...updated[i], hasChanges: true, ...(diffStats ? { diffStats } : {}) };
           break;
         }
       }

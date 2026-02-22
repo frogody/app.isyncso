@@ -179,10 +179,40 @@ Example: <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght
 - Stats and testimonials build trust. Use them.
 - CTAs should be action-oriented: "Browse 10,000+ Products", not "Learn More".
 
+## CRITICAL: Section Targeting Rules
+
+When the user asks you to change something, you MUST first identify WHICH part of the config they're referring to:
+
+1. **Identify the target**: Read the user's request and determine what they want to change:
+   - "Change the hero text" → modify the section where type="hero"
+   - "Update colors" → modify the theme object
+   - "Add a testimonials section" → add a new section to the sections array
+   - "Change the heading of the categories section" → find section where type="category_grid" and update its props.heading
+
+2. **ONLY modify what's targeted**: If the user says "change the hero heading", you MUST:
+   - Find the section with type="hero" in the sections array
+   - Change ONLY the heading prop in that section
+   - Keep ALL other sections EXACTLY as they are (copy them verbatim)
+   - Keep ALL other config keys (theme, navigation, footer, etc.) unchanged
+
+3. **Section identification**: Sections in the config have:
+   - An "id" (e.g. "sec_a1b2c3d4") — this is the unique identifier, NEVER change it
+   - A "type" (e.g. "hero", "about", "stats") — this tells you what kind of section it is
+   - The user refers to sections by their TYPE or by the content in them (e.g. "the About section", "where it says Our Story")
+
+4. **Common mistakes to AVOID**:
+   - DO NOT modify sections the user didn't mention
+   - DO NOT regenerate section IDs — always preserve existing IDs
+   - DO NOT reorder sections unless explicitly asked
+   - DO NOT remove sections unless explicitly asked
+   - DO NOT change section text/content that the user didn't mention
+   - DO NOT duplicate sections
+   - When the user says "update the hero", find type="hero" — don't create a new hero
+
 ## Response Format
 ALWAYS respond in two parts:
 
-**Part 1 — Explanation (1-3 sentences MAX):** What you changed and why. Be extremely brief. 1-2 sentences.
+**Part 1 — Explanation:** Describe your thought process: what the user wants, which sections/config keys you identified as targets, and what changes you're making. Be clear and specific (2-5 sentences). Name the exact section IDs and types you're modifying.
 
 **Part 2 — JSON Config:** Output config changes in a \`\`\`json fence. You have TWO options:
 
@@ -237,19 +267,20 @@ ALWAYS include a "buildPlan" object in your JSON response. This shows the user y
 - Order tasks by execution sequence
 
 ## Rules
-- Explanation FIRST, then JSON fence. Keep explanation SHORT (1-2 sentences).
+- Explanation FIRST, then JSON fence.
+- In your explanation, ALWAYS state which section(s) you're targeting by type and ID (e.g. "Targeting the hero section (sec_abc123) to update the heading")
 - Preserve existing section IDs — never regenerate them
 - New sections: ID = "sec_" + 8 random alphanumeric chars
 - Config version: always '1.1'
-- When using configPatch for sections: ALWAYS include the full sections array (sections are replaced, not merged)
+- When using configPatch for sections: ALWAYS include the full sections array (sections are replaced, not merged). Copy unmodified sections exactly as they appear in the current config.
 - When user says "make it X themed": change ALL theme colors consistently (bg, surface, text, muted, border, primary)
 - Use customCss liberally for effects like gradients, glassmorphism, shadows, animations
 - Use customHead for Google Fonts when changing font families
 - Write real, professional B2B content — never use "Lorem ipsum" or "Company Name"
 - When adding sections, write content tailored to the business context provided
 - Previous conversation messages give you context of what was already done — build on top, don't start over
-- NEVER output long explanations or multi-part responses. Keep text minimal, JSON maximal.
-- The JSON MUST be valid and complete within the fence. Do not truncate it.`;
+- The JSON MUST be valid and complete within the fence. Do not truncate it.
+- DOUBLE CHECK: Before outputting the JSON, verify you haven't accidentally modified sections the user didn't ask about. Compare section IDs and content against the current config.`;
 
 // ---------------------------------------------------------------------------
 // SSE → text transform: extracts content tokens from Together SSE stream
@@ -328,6 +359,76 @@ interface ChatMessage {
   content: string;
 }
 
+/**
+ * Build a structured config summary so the AI can quickly identify sections
+ * without wading through raw JSON.
+ */
+function summarizeConfig(config: Record<string, unknown>): string {
+  const lines: string[] = [];
+
+  // Theme summary
+  const theme = config.theme as Record<string, unknown> | undefined;
+  if (theme) {
+    lines.push(`## Theme`);
+    lines.push(`mode=${theme.mode}, primary=${theme.primaryColor}, bg=${theme.backgroundColor}, surface=${theme.surfaceColor}, text=${theme.textColor}, muted=${theme.mutedTextColor}, border=${theme.borderColor}, font=${theme.font}, headingFont=${theme.headingFont}, borderRadius=${theme.borderRadius}, spacing=${theme.spacing}`);
+    lines.push('');
+  }
+
+  // Sections map (most important for targeting)
+  const sections = config.sections as Array<Record<string, unknown>> | undefined;
+  if (sections && Array.isArray(sections)) {
+    lines.push(`## Sections (${sections.length} total)`);
+    lines.push(`| # | ID | Type | Visible | Key Props |`);
+    lines.push(`|---|-----|------|---------|-----------|`);
+    for (let i = 0; i < sections.length; i++) {
+      const s = sections[i];
+      const props = s.props as Record<string, unknown> || {};
+      // Show a few key props per section type
+      let keyProps = '';
+      const type = String(s.type || '');
+      if (type === 'hero') keyProps = `heading="${props.heading || ''}"`;
+      else if (type === 'featured_products') keyProps = `heading="${props.heading || ''}", maxItems=${props.maxItems || '?'}`;
+      else if (type === 'category_grid') keyProps = `heading="${props.heading || ''}", style=${props.style || '?'}, categories=${Array.isArray(props.categories) ? props.categories.length : 0}`;
+      else if (type === 'about') keyProps = `heading="${props.heading || ''}"`;
+      else if (type === 'testimonials') keyProps = `heading="${props.heading || ''}", items=${Array.isArray(props.items) ? props.items.length : 0}`;
+      else if (type === 'cta') keyProps = `heading="${props.heading || ''}"`;
+      else if (type === 'faq') keyProps = `heading="${props.heading || ''}", items=${Array.isArray(props.items) ? props.items.length : 0}`;
+      else if (type === 'contact') keyProps = `heading="${props.heading || ''}"`;
+      else if (type === 'banner') keyProps = `text="${props.text || ''}"`;
+      else if (type === 'stats') keyProps = `heading="${props.heading || ''}", items=${Array.isArray(props.items) ? props.items.length : 0}`;
+      else if (type === 'rich_text') keyProps = `heading="${props.heading || ''}"`;
+      else if (type === 'logo_grid') keyProps = `heading="${props.heading || ''}"`;
+      else keyProps = Object.keys(props).slice(0, 3).join(', ');
+
+      lines.push(`| ${i} | ${s.id} | ${type} | ${s.visible !== false ? 'yes' : 'no'} | ${keyProps} |`);
+    }
+    lines.push('');
+  }
+
+  // Navigation summary
+  const nav = config.navigation as Record<string, unknown> | undefined;
+  if (nav) {
+    const items = nav.items as Array<Record<string, unknown>> | undefined;
+    lines.push(`## Navigation: ${items ? items.length + ' items' : 'default'}, logo=${nav.logoPosition || 'left'}, sticky=${nav.sticky !== false}`);
+    lines.push('');
+  }
+
+  // Footer, catalog, seo - brief
+  const footer = config.footer as Record<string, unknown> | undefined;
+  if (footer) {
+    lines.push(`## Footer: style=${footer.style || 'simple'}, social=${footer.showSocial || false}, newsletter=${footer.showNewsletter || false}`);
+  }
+  const catalog = config.catalog as Record<string, unknown> | undefined;
+  if (catalog) {
+    lines.push(`## Catalog: layout=${catalog.layout || 'grid'}, columns=${catalog.columns || 3}, cardStyle=${catalog.cardStyle || 'detailed'}`);
+  }
+
+  lines.push('');
+  lines.push('## Full Config JSON (reference for exact values):');
+
+  return lines.join('\n');
+}
+
 function buildMessages(
   prompt: string,
   currentConfig: Record<string, unknown>,
@@ -349,11 +450,14 @@ function buildMessages(
     }
   }
 
-  // Add the current user message with compact config context
+  // Build a structured config summary + full JSON for reference
+  const configSummary = summarizeConfig(currentConfig);
+
+  // Add the current user message with structured config context
   const userMessage = `${prompt}
 
 ---
-Current config:
+${configSummary}
 ${JSON.stringify(currentConfig)}
 
 Business: ${JSON.stringify(businessContext || {})}`;

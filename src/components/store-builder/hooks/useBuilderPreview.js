@@ -30,13 +30,13 @@ export function useBuilderPreview() {
    * Posts a CONFIG_UPDATE message to the preview iframe so it can re-render
    * with the latest store configuration.
    */
-  const sendConfigToPreview = useCallback((config) => {
+  const sendConfigToPreview = useCallback((config, organizationId) => {
     const iframe = iframeRef.current;
     if (!iframe?.contentWindow || !config) return;
 
     try {
       iframe.contentWindow.postMessage(
-        { type: 'CONFIG_UPDATE', config },
+        { type: 'CONFIG_UPDATE', config, organizationId: organizationId || null },
         '*',
       );
     } catch (err) {
