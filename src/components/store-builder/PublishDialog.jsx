@@ -146,7 +146,7 @@ export default function PublishDialog({ isOpen, onClose, config, organizationId 
 
   const storeUrl = useMemo(() => {
     if (config?.custom_domain) return `https://${config.custom_domain}`;
-    if (config?.subdomain) return `https://${config.subdomain}.isyncso.com`;
+    if (config?.subdomain) return `https://${config.subdomain}.syncstore.business`;
     return null;
   }, [config]);
 

@@ -862,7 +862,7 @@ export default function PublicStorefront({ subdomain }) {
           </div>
           <h1 className="text-xl font-semibold" style={{ color: '#fafafa' }}>Store Not Found</h1>
           <p className="text-sm max-w-md" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            The store at <strong style={{ color: 'rgba(255,255,255,0.6)' }}>{subdomain}.isyncso.com</strong> doesn't exist or isn't published yet.
+            The store at <strong style={{ color: 'rgba(255,255,255,0.6)' }}>{subdomain}.syncstore.business</strong> doesn't exist or isn't published yet.
           </p>
         </div>
       </div>

@@ -1,7 +1,7 @@
 /**
  * DomainSetup - Domain configuration panel for the B2B store builder.
  *
- * SubdomainSection: input + .isyncso.com suffix, availability check via debounce.
+ * SubdomainSection: input + .syncstore.business suffix, availability check via debounce.
  * CustomDomainSection: domain input, DNS instructions with CNAME record display,
  * verify button calling manage-custom-domain edge fn, SSL badge.
  * RedirectSettings: www redirect toggle, force HTTPS toggle.
@@ -85,7 +85,7 @@ function SubdomainSection({ subdomain, onUpdate }) {
         <Globe className="w-4 h-4 text-cyan-400" />
         Subdomain
       </h3>
-      <p className="text-xs text-zinc-500 mb-4">Your free subdomain on isyncso.com</p>
+      <p className="text-xs text-zinc-500 mb-4">Your free subdomain on syncstore.business</p>
 
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
@@ -98,7 +98,7 @@ function SubdomainSection({ subdomain, onUpdate }) {
             className="w-full px-4 py-2.5 rounded-xl bg-zinc-800/50 border border-zinc-700 text-white placeholder:text-zinc-500 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors pr-36 font-mono"
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500 pointer-events-none">
-            .isyncso.com
+            .syncstore.business
           </span>
         </div>
 
@@ -148,7 +148,7 @@ function CustomDomainSection({ customDomain, sslStatus, organizationId, onUpdate
   const [verifyResult, setVerifyResult] = useState(null); // { success, message }
   const [copied, setCopied] = useState(false);
 
-  const cnameTarget = 'cname.isyncso.com';
+  const cnameTarget = 'cname.vercel-dns.com';
 
   const handleVerify = async () => {
     if (!domain.trim()) return;

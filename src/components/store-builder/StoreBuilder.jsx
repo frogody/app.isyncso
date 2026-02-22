@@ -478,7 +478,7 @@ function DomainPage({ config, onUpdateConfig }) {
               placeholder="your-store"
               className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
             />
-            <span className="text-sm text-zinc-500 shrink-0">.isyncso.com</span>
+            <span className="text-sm text-zinc-500 shrink-0">.syncstore.business</span>
           </div>
           <p className="text-[11px] text-zinc-600">Your store will be accessible at this subdomain.</p>
         </div>
@@ -506,7 +506,7 @@ function DomainPage({ config, onUpdateConfig }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-zinc-600 w-12">Value:</span>
-                  <span className="text-zinc-300 font-mono">cname.isyncso.com</span>
+                  <span className="text-zinc-300 font-mono">cname.vercel-dns.com</span>
                 </div>
               </div>
               {settings.custom_domain_verified ? (
@@ -1058,8 +1058,8 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
         onSave={handleSave}
         onPublish={handlePublish}
         isPublished={builder.isPublished}
-        storeUrl={builder.storeSubdomain ? `https://${builder.storeSubdomain}.isyncso.com` : null}
-        onViewStore={builder.isPublished && builder.storeSubdomain ? () => window.open(`https://${builder.storeSubdomain}.isyncso.com`, '_blank') : null}
+        storeUrl={builder.storeSubdomain ? `https://${builder.storeSubdomain}.syncstore.business` : null}
+        onViewStore={builder.isPublished && builder.storeSubdomain ? () => window.open(`https://${builder.storeSubdomain}.syncstore.business`, '_blank') : null}
         canUndo={history.canUndo}
         canRedo={history.canRedo}
         onUndo={history.undo}

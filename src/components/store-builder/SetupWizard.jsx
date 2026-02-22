@@ -539,7 +539,7 @@ function ChooseDomainStep({ data, onChange }) {
             className="flex-1 bg-zinc-800/60 border border-zinc-700/60 border-r-0 rounded-l-xl px-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/40 transition-all"
           />
           <div className="bg-zinc-800/80 border border-zinc-700/60 rounded-r-xl px-4 py-2.5 text-sm text-zinc-500 whitespace-nowrap select-none">
-            .store.isyncso.com
+            .syncstore.business
           </div>
         </div>
 
@@ -570,7 +570,7 @@ function ChooseDomainStep({ data, onChange }) {
           {isValid && !checking && available === true && (
             <p className="flex items-center gap-1.5 text-xs text-emerald-400">
               <Check className="w-3.5 h-3.5" />
-              {data.subdomain}.store.isyncso.com is available
+              {data.subdomain}.syncstore.business is available
             </p>
           )}
 
@@ -595,7 +595,7 @@ function ChooseDomainStep({ data, onChange }) {
             <span className="text-sm font-medium text-white">Your store will be live at</span>
           </div>
           <p className="text-sm text-cyan-400 font-mono">
-            https://{data.subdomain}.store.isyncso.com
+            https://{data.subdomain}.syncstore.business
           </p>
         </motion.div>
       )}
