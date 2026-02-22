@@ -5,6 +5,13 @@ import { motion } from 'framer-motion';
 import { supabase } from '@/api/supabaseClient';
 import { useWholesale } from '../WholesaleProvider';
 
+function resolveImageUrl(img) {
+  if (!img) return null;
+  if (typeof img === 'string') return img;
+  if (typeof img === 'object' && img.url) return img.url;
+  return null;
+}
+
 /**
  * FeaturedProductsRenderer
  *
@@ -111,10 +118,10 @@ function DetailedCard({ product, showPricing, onAddToCart, onNavigate, index }) 
         className="relative flex items-center justify-center aspect-square overflow-hidden"
         style={{ backgroundColor: 'var(--ws-bg)' }}
       >
-        {product.featured_image ? (
+        {resolveImageUrl(product.featured_image) ? (
           <>
             <img
-              src={product.featured_image}
+              src={resolveImageUrl(product.featured_image)}
               alt={product.name}
               className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
             />
@@ -261,9 +268,9 @@ function CompactCard({ product, showPricing, onAddToCart, onNavigate, index }) {
           border: '1px solid var(--ws-border)',
         }}
       >
-        {product.featured_image ? (
+        {resolveImageUrl(product.featured_image) ? (
           <img
-            src={product.featured_image}
+            src={resolveImageUrl(product.featured_image)}
             alt={product.name}
             className="w-full h-full object-cover"
           />
@@ -428,14 +435,16 @@ export default function FeaturedProductsRenderer({ section, theme }) {
             .select('id, name, price, sku, featured_image')
             .in('id', productIds)
             .eq('status', 'published')
+            .eq('type', 'physical')
             .limit(maxItems);
         } else {
-          // Fetch published products for this company
+          // Fetch published physical products for this company
           query = supabase
             .from('products')
             .select('id, name, price, sku, featured_image')
             .eq('company_id', resolvedCompanyId)
             .eq('status', 'published')
+            .eq('type', 'physical')
             .order('created_at', { ascending: false })
             .limit(maxItems);
         }

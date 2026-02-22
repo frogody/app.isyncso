@@ -36,6 +36,8 @@ import {
   gradientAccentBar,
   gradientTextStyle,
   formatCurrency,
+  resolveImageUrl,
+  resolveGalleryUrls,
 } from './previewDesignSystem';
 
 // ---------------------------------------------------------------------------
@@ -77,15 +79,14 @@ function getStockStatus(product) {
 function collectImages(product) {
   if (!product) return [];
   const images = [];
-  if (product.featured_image) images.push(product.featured_image);
-  if (product.image && !images.includes(product.image))
-    images.push(product.image);
-  const gallery = product.gallery_images || product.gallery || [];
-  if (Array.isArray(gallery)) {
-    gallery.forEach((url) => {
-      if (url && !images.includes(url)) images.push(url);
-    });
-  }
+  const featuredUrl = resolveImageUrl(product.featured_image);
+  if (featuredUrl) images.push(featuredUrl);
+  const imageUrl = resolveImageUrl(product.image);
+  if (imageUrl && !images.includes(imageUrl)) images.push(imageUrl);
+  const galleryUrls = resolveGalleryUrls(product.gallery_images || product.gallery || []);
+  galleryUrls.forEach((url) => {
+    if (url && !images.includes(url)) images.push(url);
+  });
   return images;
 }
 
@@ -530,7 +531,7 @@ function RelatedProducts({ products, currentProduct, nav }) {
       />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {related.map((product, i) => {
-          const img = product.featured_image || product.image;
+          const img = resolveImageUrl(product.featured_image) || resolveImageUrl(product.image);
           const price = getProductPrice(product);
           return (
             <GlassCard

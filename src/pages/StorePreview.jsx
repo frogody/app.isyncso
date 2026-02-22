@@ -679,6 +679,7 @@ export default function StorePreview() {
       .select('id, name, price, sku, featured_image, gallery, category, category_id, description, short_description, tags, ean, type, slug')
       .eq('company_id', companyId)
       .eq('status', 'published')
+      .eq('type', 'physical')
       .order('name')
       .limit(200)
       .then(({ data, error }) => {

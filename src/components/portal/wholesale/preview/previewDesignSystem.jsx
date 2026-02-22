@@ -21,6 +21,23 @@ import {
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
+// Image URL resolver — handles JSONB objects ({url, alt, path, ...}) and
+// plain string URLs. Use everywhere a product image is displayed.
+// ---------------------------------------------------------------------------
+
+export function resolveImageUrl(img) {
+  if (!img) return null;
+  if (typeof img === 'string') return img;
+  if (typeof img === 'object' && img.url) return img.url;
+  return null;
+}
+
+export function resolveGalleryUrls(gallery) {
+  if (!gallery || !Array.isArray(gallery)) return [];
+  return gallery.map(resolveImageUrl).filter(Boolean);
+}
+
+// ---------------------------------------------------------------------------
 // Motion Variants (matching section renderers)
 // ---------------------------------------------------------------------------
 

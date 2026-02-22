@@ -364,6 +364,7 @@ export default function CategoryGridRenderer({ section, theme }) {
             .select('category_id')
             .eq('company_id', resolvedCompanyId)
             .eq('status', 'published')
+            .eq('type', 'physical')
             .not('category_id', 'is', null);
 
           const countMap = {};
@@ -385,6 +386,7 @@ export default function CategoryGridRenderer({ section, theme }) {
             .select('category')
             .eq('company_id', resolvedCompanyId)
             .eq('status', 'published')
+            .eq('type', 'physical')
             .not('category', 'is', null);
 
           if (cancelled) return;

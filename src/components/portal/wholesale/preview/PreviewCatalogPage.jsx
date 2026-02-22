@@ -39,6 +39,7 @@ import {
   gradientAccentBar,
   gradientTextStyle,
   formatCurrency,
+  resolveImageUrl,
 } from './previewDesignSystem';
 
 // ---------------------------------------------------------------------------
@@ -108,7 +109,7 @@ function getBulkPricing(product) {
 }
 
 function getProductImage(product) {
-  return product.featured_image || product.image || null;
+  return resolveImageUrl(product.featured_image) || resolveImageUrl(product.image) || null;
 }
 
 // Stock theme colors (inline to use CSS vars for primary)

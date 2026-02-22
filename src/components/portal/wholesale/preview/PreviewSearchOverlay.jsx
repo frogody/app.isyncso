@@ -410,7 +410,14 @@ export default function PreviewSearchOverlay({ isOpen, onClose, products = [], c
 // ---------------------------------------------------------------------------
 
 function SearchResultRow({ product, onSelect, onAddToOrder, isLast }) {
-  const { id, name, sku, price, image, category } = product;
+  const { id, name, sku, price, category } = product;
+  const image = (() => {
+    const fi = product.featured_image;
+    if (!fi) return null;
+    if (typeof fi === 'string') return fi;
+    if (typeof fi === 'object' && fi.url) return fi.url;
+    return null;
+  })();
   const moq = product.moq || product.min_order || 1;
   const stock = getStockStatus(product);
   const stockInfo = STOCK_DOT[stock];
