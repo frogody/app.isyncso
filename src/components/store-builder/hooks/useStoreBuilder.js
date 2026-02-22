@@ -85,6 +85,7 @@ export function useStoreBuilder(organizationId) {
   const [storeVersion, setStoreVersion] = useState(0);
   const [isPublished, setIsPublished] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
+  const [versionHistory, setVersionHistory] = useState([]);
 
   // ---- Load config on mount -------------------------------------------------
   useEffect(() => {
@@ -127,6 +128,9 @@ export function useStoreBuilder(organizationId) {
           setIsPublished(result.store_published === true);
           if (Array.isArray(result.store_builder_chat_history) && result.store_builder_chat_history.length > 0) {
             setChatHistory(result.store_builder_chat_history);
+          }
+          if (Array.isArray(result.store_builder_version_history) && result.store_builder_version_history.length > 0) {
+            setVersionHistory(result.store_builder_version_history);
           }
         } else {
           // No config exists yet — seed with full default B2B template
@@ -380,6 +384,19 @@ export function useStoreBuilder(organizationId) {
     }
   }, [organizationId]);
 
+  // ---- Version history persistence ------------------------------------------
+
+  const saveVersionHistory = useCallback(async (entries) => {
+    if (!organizationId) return;
+    try {
+      await updateStoreConfig(organizationId, {
+        store_builder_version_history: entries,
+      });
+    } catch (err) {
+      console.warn('[useStoreBuilder] Failed to save version history:', err);
+    }
+  }, [organizationId]);
+
   // ---- Return ---------------------------------------------------------------
 
   return {
@@ -412,5 +429,7 @@ export function useStoreBuilder(organizationId) {
     applyTemplate,
     chatHistory,
     saveChatHistory,
+    versionHistory,
+    saveVersionHistory,
   };
 }

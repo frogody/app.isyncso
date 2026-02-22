@@ -769,7 +769,10 @@ function Toolbar({ onBack, storeName, isDirty, saving, onSave, onPublish, isPubl
 
 export default function StoreBuilder({ organizationId, storeName, onBack }) {
   const builder = useStoreBuilder(organizationId);
-  const history = useBuilderHistory(builder.config, builder.updateConfig);
+  const history = useBuilderHistory(builder.config, builder.updateConfig, {
+    initialEntries: builder.versionHistory,
+    onSave: builder.saveVersionHistory,
+  });
   const preview = useBuilderPreview();
   const ai = useBuilderAI(builder.chatHistory);
 

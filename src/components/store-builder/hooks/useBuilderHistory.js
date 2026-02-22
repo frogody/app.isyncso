@@ -1,24 +1,61 @@
 // ---------------------------------------------------------------------------
 // useBuilderHistory.js -- Undo / redo stack for store config changes.
 // Maintains up to 50 previous states so the user can step backwards through
-// edits made in the store builder.
+// edits made in the store builder. Persists to DB via onSave callback.
 // ---------------------------------------------------------------------------
 
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 
 const MAX_HISTORY = 50;
 
 /**
- * @param {object}   config       Current StoreConfig from useStoreBuilder.
- * @param {function} updateConfig Function that replaces the full config.
+ * @param {object}   config          Current StoreConfig from useStoreBuilder.
+ * @param {function} updateConfig    Function that replaces the full config.
+ * @param {object}   options
+ * @param {Array}    options.initialEntries  Persisted history entries from DB.
+ * @param {function} options.onSave          Called with serializable entries after changes.
  */
-export function useBuilderHistory(config, updateConfig) {
+export function useBuilderHistory(config, updateConfig, { initialEntries, onSave } = {}) {
   const [undoStack, setUndoStack] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
 
   // Keep a ref to the latest config so callbacks never go stale.
   const configRef = useRef(config);
   configRef.current = config;
+
+  // Hydrate from persisted entries when they arrive (async DB fetch)
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    if (Array.isArray(initialEntries) && initialEntries.length > 0) {
+      hydratedRef.current = true;
+      setUndoStack((prev) => {
+        if (prev.length > 0) return prev; // Don't overwrite if user already made edits
+        return initialEntries.map((e) => ({
+          config: e.config,
+          label: e.label || 'Restored',
+          timestamp: e.timestamp || Date.now(),
+        }));
+      });
+    }
+  }, [initialEntries]);
+
+  // Persist to DB whenever undoStack changes (debounced)
+  const saveTimerRef = useRef(null);
+  useEffect(() => {
+    if (!onSave || undoStack.length === 0) return;
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      // Only persist last 20 entries to keep DB payload reasonable
+      const toSave = undoStack.slice(-20).map((e) => ({
+        config: e.config,
+        label: e.label,
+        timestamp: e.timestamp,
+      }));
+      onSave(toSave);
+    }, 2000); // 2s debounce
+    return () => clearTimeout(saveTimerRef.current);
+  }, [undoStack, onSave]);
 
   /**
    * Push the current config snapshot onto the undo stack.

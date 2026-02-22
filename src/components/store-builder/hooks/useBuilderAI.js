@@ -206,6 +206,25 @@ export function useBuilderAI(initialMessages) {
     }
     return [];
   });
+
+  // Hydrate messages when initialMessages arrives after mount (async DB fetch)
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    if (Array.isArray(initialMessages) && initialMessages.length > 0) {
+      hydratedRef.current = true;
+      setMessages((prev) => {
+        // Only hydrate if current messages are empty (no user activity yet)
+        if (prev.length > 0) return prev;
+        return initialMessages.map((m) => ({
+          ...m,
+          timestamp: m.timestamp ? new Date(m.timestamp) : null,
+          streaming: false,
+          building: false,
+        }));
+      });
+    }
+  }, [initialMessages]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [suggestions, setSuggestions] = useState(DEFAULT_SUGGESTIONS);
