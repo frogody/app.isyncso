@@ -38,6 +38,8 @@ export default function usePreviewNavigation(setCurrentPage, setPageData) {
     goToCheckout: useCallback(() => navigateTo('checkout'), [navigateTo]),
     goToOrders: useCallback(() => navigateTo('orders'), [navigateTo]),
     goToAccount: useCallback(() => navigateTo('account'), [navigateTo]),
+    goToInquiries: useCallback(() => navigateTo('inquiries'), [navigateTo]),
+    goToSettings: useCallback(() => navigateTo('settings'), [navigateTo]),
     goBack,
     navigateTo,
   };
