@@ -1356,10 +1356,16 @@ export default function StorePreview() {
     return () => document.removeEventListener('click', handleClick, true);
   }, [config?.sections]);
 
-  // Post section click back to parent
-  const handleSectionClick = useCallback((sectionId) => {
+  // Post section click back to parent with full section info
+  const handleSectionClick = useCallback((section) => {
     if (window.parent && window.parent !== window) {
-      window.parent.postMessage({ type: 'SECTION_CLICK', sectionId }, '*');
+      const label = section.props?.heading || section.props?.text || section.type.replace(/_/g, ' ');
+      window.parent.postMessage({
+        type: 'SECTION_CLICK',
+        sectionId: section.id,
+        sectionType: section.type,
+        sectionLabel: label,
+      }, '*');
     }
   }, []);
 
@@ -1499,7 +1505,7 @@ export default function StorePreview() {
                       ? { outline: '2px solid var(--ws-primary, #06b6d4)', outlineOffset: '-2px' }
                       : {}),
                   }}
-                  onClick={() => handleSectionClick(section.id)}
+                  onClick={() => handleSectionClick(section)}
                   onMouseEnter={() => setHoveredSectionId(section.id)}
                   onMouseLeave={() => setHoveredSectionId(null)}
                 >

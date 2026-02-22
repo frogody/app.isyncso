@@ -85,13 +85,13 @@ export function useBuilderPreview() {
 
       switch (event.data.type) {
         case 'SECTION_CLICK':
-          // The preview communicates which section the user clicked on.
-          // External consumers can listen via a custom event or the caller
-          // can wire this up via onSectionClick prop if desired.
-          // For now we dispatch a CustomEvent on `window`.
           window.dispatchEvent(
             new CustomEvent('builder:section-click', {
-              detail: { sectionId: event.data.sectionId },
+              detail: {
+                sectionId: event.data.sectionId,
+                sectionType: event.data.sectionType,
+                sectionLabel: event.data.sectionLabel,
+              },
             }),
           );
           break;

@@ -333,83 +333,7 @@ function NavSidebar({ activeView, onChangeView }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Section Selector for targeting specific store sections in chat
-// ---------------------------------------------------------------------------
-
-function SectionSelector({ sections, onSelect, disabled }) {
-  const [open, setOpen] = useState(false);
-  const ref = React.useRef(null);
-
-  // Close on outside click
-  React.useEffect(() => {
-    if (!open) return;
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  if (!sections || sections.length === 0) return null;
-
-  const visibleSections = sections.filter((s) => s.visible !== false);
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen((p) => !p)}
-        disabled={disabled}
-        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        title="Target a specific section"
-      >
-        <Crosshair className="w-4 h-4" />
-        <span className="text-[11px]">Section</span>
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 4, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute bottom-full left-0 mb-1 w-56 bg-zinc-900 border border-zinc-700/60 rounded-xl shadow-xl shadow-black/40 overflow-hidden z-50"
-          >
-            <div className="px-3 py-2 border-b border-zinc-800/60">
-              <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Target section</p>
-            </div>
-            <div className="max-h-[200px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-              {visibleSections.map((section) => {
-                const label = section.props?.heading || section.props?.text || section.type.replace(/_/g, ' ');
-                const typeLabel = section.type.replace(/_/g, ' ');
-                return (
-                  <button
-                    key={section.id}
-                    onClick={() => {
-                      onSelect(section);
-                      setOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-white/[0.03] transition-colors text-left"
-                  >
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-500/50 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] text-zinc-300 truncate capitalize">{typeLabel}</p>
-                      {section.props?.heading && (
-                        <p className="text-[10px] text-zinc-600 truncate">"{section.props.heading}"</p>
-                      )}
-                    </div>
-                    <span className="text-[9px] font-mono text-zinc-700 shrink-0">#{section.id.slice(-4)}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+// (Section picker is now click-to-select in the preview iframe — no dropdown needed)
 
 // ---------------------------------------------------------------------------
 // Settings Pages (Design)
@@ -847,6 +771,8 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   const [saveError, setSaveError] = useState(null);
   const [chatValue, setChatValue] = useState('');
   const [attachments, setAttachments] = useState([]);
+  const [pickerActive, setPickerActive] = useState(false);
+  const [selectedSection, setSelectedSection] = useState(null); // { id, type, label }
   const messagesEndRef = useRef(null);
   const chatInputRef = useRef(null);
   const imageInputRef = useRef(null);
@@ -918,6 +844,20 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
     return () => window.removeEventListener('keydown', handleKey);
   }, [history.undo, history.redo]);
 
+  // Listen for section clicks from the preview iframe
+  useEffect(() => {
+    const handler = (e) => {
+      const { sectionId, sectionType, sectionLabel } = e.detail;
+      if (sectionId) {
+        setSelectedSection({ id: sectionId, type: sectionType, label: sectionLabel });
+        setPickerActive(false);
+        chatInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('builder:section-click', handler);
+    return () => window.removeEventListener('builder:section-click', handler);
+  }, []);
+
   // Attachment handlers
   const handleAddFiles = useCallback((files) => {
     const newAttachments = Array.from(files).map((file) => ({
@@ -947,12 +887,10 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
     fileInputRef.current?.click();
   }, []);
 
-  const handleSectionSelect = useCallback((section) => {
-    const label = section.props?.heading || section.type.replace(/_/g, ' ');
-    const ref = `[Section: ${section.type} "${label}" (${section.id})]`;
-    setChatValue((prev) => prev ? `${prev}\n${ref}\n` : `${ref} `);
-    chatInputRef.current?.focus();
-  }, []);
+  const handlePickerToggle = useCallback(() => {
+    setPickerActive((p) => !p);
+    if (selectedSection) setSelectedSection(null);
+  }, [selectedSection]);
 
   // Handlers
   const handleSave = useCallback(async () => {
@@ -1032,18 +970,24 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
     const p = chatValue.trim();
     if ((!p && attachments.length === 0) || ai.isProcessing) return;
     const currentAttachments = [...attachments];
+    const currentSection = selectedSection;
     setChatValue('');
     setAttachments([]);
+    setSelectedSection(null);
     // Clean up previews
     currentAttachments.forEach((a) => { if (a.preview) URL.revokeObjectURL(a.preview); });
-    // Build prompt with attachment context
+    // Build prompt with section target + attachment context
     let fullPrompt = p;
+    if (currentSection) {
+      const ref = `[Section: ${currentSection.type} "${currentSection.label}" (${currentSection.id})]`;
+      fullPrompt = `${ref}\n${fullPrompt}`;
+    }
     if (currentAttachments.length > 0) {
       const fileNames = currentAttachments.map((a) => a.name).join(', ');
-      fullPrompt = p ? `${p}\n\n[Attached files: ${fileNames}]` : `[Attached files: ${fileNames}]`;
+      fullPrompt = fullPrompt ? `${fullPrompt}\n\n[Attached files: ${fileNames}]` : `[Attached files: ${fileNames}]`;
     }
     await handleAIPrompt(fullPrompt);
-  }, [chatValue, attachments, ai.isProcessing, handleAIPrompt]);
+  }, [chatValue, attachments, selectedSection, ai.isProcessing, handleAIPrompt]);
 
   const handleChatKey = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
@@ -1247,20 +1191,66 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
             )}
 
             {/* Textarea */}
-            <div className="bg-zinc-950 border border-zinc-800 rounded-xl focus-within:ring-2 focus-within:ring-cyan-500/30 focus-within:border-cyan-500/30 transition-all">
+            <div className={`bg-zinc-950 border rounded-xl transition-all ${pickerActive ? 'border-cyan-500/60 ring-2 ring-cyan-500/20' : 'border-zinc-800 focus-within:ring-2 focus-within:ring-cyan-500/30 focus-within:border-cyan-500/30'}`}>
+              {/* Selected section pill */}
+              <AnimatePresence>
+                {selectedSection && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="px-3 pt-2"
+                  >
+                    <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                      <Crosshair className="w-3 h-3 text-cyan-400" />
+                      <span className="text-[11px] text-cyan-300 capitalize">{selectedSection.type.replace(/_/g, ' ')}</span>
+                      {selectedSection.label && (
+                        <span className="text-[10px] text-cyan-500/60 truncate max-w-[140px]">"{selectedSection.label}"</span>
+                      )}
+                      <button
+                        onClick={() => setSelectedSection(null)}
+                        className="ml-0.5 text-cyan-500/40 hover:text-cyan-300 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Picker active hint */}
+              <AnimatePresence>
+                {pickerActive && !selectedSection && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="px-3 pt-2"
+                  >
+                    <div className="flex items-center gap-2 text-[11px] text-cyan-400">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500" />
+                      </span>
+                      Click a section in the preview to target it
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <textarea
                 ref={chatInputRef}
                 value={chatValue}
                 onChange={(e) => setChatValue(e.target.value)}
                 onKeyDown={handleChatKey}
                 disabled={ai.isProcessing}
-                placeholder="Describe what you want to build or change... (e.g., 'Make it a dark professional theme with blue accents, add a hero section with our company tagline')"
+                placeholder={pickerActive ? 'Click a section in the preview, then type your request...' : "Describe what you want to build or change..."}
                 rows={4}
                 className="w-full bg-transparent px-3 pt-2.5 pb-1 text-sm text-white placeholder-zinc-500 focus:outline-none disabled:opacity-50 resize-none"
                 style={{ minHeight: '100px', maxHeight: '200px' }}
               />
 
-              {/* Bottom bar: attach + send */}
+              {/* Bottom bar: attach + pick + send */}
               <div className="flex items-center justify-between px-2 pb-2">
                 <div className="flex items-center gap-0.5">
                   <button
@@ -1281,11 +1271,19 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
                     <Paperclip className="w-4 h-4" />
                     <span className="text-[11px]">File</span>
                   </button>
-                  <SectionSelector
-                    sections={builder.config?.sections}
-                    onSelect={handleSectionSelect}
+                  <button
+                    onClick={handlePickerToggle}
                     disabled={ai.isProcessing}
-                  />
+                    className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                      pickerActive || selectedSection
+                        ? 'text-cyan-400 bg-cyan-500/10'
+                        : 'text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800/60'
+                    }`}
+                    title={pickerActive ? 'Cancel section picker' : 'Pick a section from preview'}
+                  >
+                    <Crosshair className="w-4 h-4" />
+                    <span className="text-[11px]">{selectedSection ? 'Targeted' : 'Pick'}</span>
+                  </button>
                 </div>
 
                 {ai.isProcessing ? (
