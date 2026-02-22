@@ -35,6 +35,7 @@ import {
 
 import BuilderCanvas from './BuilderCanvas';
 import CodeViewer from './CodeViewer';
+import BuildPlan from './BuildPlan';
 
 import { useStoreBuilder } from './hooks/useStoreBuilder';
 import { useBuilderHistory } from './hooks/useBuilderHistory';
@@ -109,7 +110,7 @@ function TypingDots() {
   );
 }
 
-function Bubble({ message }) {
+function Bubble({ message, onShowChanges }) {
   const isUser = message.role === 'user';
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} px-4 pb-2.5`}>
@@ -135,9 +136,20 @@ function Bubble({ message }) {
             >|</motion.span>
           )}
         </div>
-        {message.timestamp && !message.streaming && (
-          <span className="text-[10px] text-zinc-600 mt-0.5 px-1 select-none">{timeAgo(message.timestamp)}</span>
-        )}
+        <div className="flex items-center gap-2 mt-1 px-1">
+          {message.timestamp && !message.streaming && (
+            <span className="text-[10px] text-zinc-600 select-none">{timeAgo(message.timestamp)}</span>
+          )}
+          {message.hasChanges && !message.streaming && onShowChanges && (
+            <button
+              onClick={() => onShowChanges(message._id)}
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/15 hover:border-cyan-500/30 transition-colors"
+            >
+              <Code className="w-3 h-3" />
+              Show changes
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -800,18 +812,33 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
     try {
       const ctx = { storeName: storeName || 'B2B Store', organizationId };
       const result = await ai.sendPrompt(prompt, builder.config, ctx);
+      let applied = false;
       if (result?.updatedConfig) {
-        // Full config replacement
         history.pushState();
         builder.updateConfig(result.updatedConfig);
+        applied = true;
       } else if (result?.configPatch) {
-        // Partial patch — deep-merge into current config
         history.pushState();
         const merged = deepMerge(builder.config, result.configPatch);
         builder.updateConfig(merged);
+        applied = true;
+      }
+      // Mark the most recent assistant message with hasChanges
+      if (applied) {
+        ai.markLastMessageWithChanges();
       }
     } catch (err) { console.error('AI failed:', err); }
-  }, [ai.sendPrompt, builder.config, builder.updateConfig, history.pushState, storeName, organizationId]);
+  }, [ai.sendPrompt, builder.config, builder.updateConfig, history.pushState, storeName, organizationId, ai.markLastMessageWithChanges]);
+
+  // Handle "Show changes" button click — switch to code view with typing animation
+  const [codeTypingActive, setCodeTypingActive] = useState(false);
+  const handleShowChanges = useCallback(() => {
+    setActiveView('code');
+    setLastSettingsView('code');
+    setCodeTypingActive(true);
+    // Auto-clear typing effect after animation completes
+    setTimeout(() => setCodeTypingActive(false), 8000);
+  }, []);
 
   const handleSend = useCallback(async () => {
     const p = chatValue.trim();
@@ -877,7 +904,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
       case 'code':
         return (
           <div className="flex-1 overflow-hidden">
-            <CodeViewer config={builder.config} />
+            <CodeViewer config={builder.config} typingEffect={codeTypingActive} />
           </div>
         );
 
@@ -950,7 +977,12 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
             )}
 
             {ai.messages.map((msg, i) => (
-              <Bubble key={msg.id || i} message={msg} />
+              <React.Fragment key={msg._id || i}>
+                <Bubble message={msg} onShowChanges={handleShowChanges} />
+                {msg.buildPlan && !msg.streaming && (
+                  <BuildPlan plan={msg.buildPlan} animate={msg.hasChanges} />
+                )}
+              </React.Fragment>
             ))}
 
             {ai.isProcessing && <TypingDots />}

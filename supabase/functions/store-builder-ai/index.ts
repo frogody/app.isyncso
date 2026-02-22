@@ -194,7 +194,16 @@ Only include the keys that changed. The system will deep-merge this into the exi
     "theme": { "mode": "dark", "primaryColor": "#06b6d4", "backgroundColor": "#09090b" },
     "sections": [ ...full sections array if sections changed... ]
   },
-  "changes": ["Switched to dark theme with cyan accents"]
+  "changes": ["Switched to dark theme with cyan accents"],
+  "buildPlan": {
+    "title": "Apply dark theme",
+    "tasks": [
+      { "label": "Analyze current theme", "status": "done" },
+      { "label": "Update color palette", "status": "done" },
+      { "label": "Adjust surface and border colors", "status": "done" },
+      { "label": "Verify text contrast", "status": "done" }
+    ]
+  }
 }
 \`\`\`
 
@@ -202,11 +211,30 @@ Only include the keys that changed. The system will deep-merge this into the exi
 \`\`\`json
 {
   "updatedConfig": { ...complete StoreConfig... },
-  "changes": ["Complete redesign with new theme and sections"]
+  "changes": ["Complete redesign with new theme and sections"],
+  "buildPlan": {
+    "title": "Complete store redesign",
+    "tasks": [
+      { "label": "Analyze existing layout and content", "status": "done" },
+      { "label": "Design new theme palette", "status": "done" },
+      { "label": "Rebuild hero section", "status": "done" },
+      { "label": "Add feature sections", "status": "done" },
+      { "label": "Configure navigation and footer", "status": "done" },
+      { "label": "Apply custom CSS effects", "status": "done" }
+    ]
+  }
 }
 \`\`\`
 
 IMPORTANT: Use "configPatch" (Option A) for most requests. Only use "updatedConfig" when replacing everything.
+
+## Build Plan Rules
+ALWAYS include a "buildPlan" object in your JSON response. This shows the user your structured workflow.
+- "title": Short name for what you're building (e.g. "Add testimonials section", "Dark theme overhaul")
+- "tasks": Array of 3-8 task objects, each with "label" (what you did) and "status" (always "done" since you've completed them)
+- Tasks should reflect a logical engineering workflow: analyze → plan → implement → verify
+- Be specific to the actual changes: "Update hero headline to match brand" not "Make changes"
+- Order tasks by execution sequence
 
 ## Rules
 - Explanation FIRST, then JSON fence. Keep explanation SHORT (1-2 sentences).

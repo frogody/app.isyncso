@@ -136,6 +136,7 @@ function extractConfigFromText(fullText) {
     updatedConfig: parsed.updatedConfig || null,
     configPatch: parsed.configPatch || null,
     changes: parsed.changes || [],
+    buildPlan: parsed.buildPlan || null,
   };
 }
 
@@ -301,11 +302,17 @@ export function useBuilderAI() {
         finalContent = 'I processed your request but couldn\'t generate a config update. Please try rephrasing.';
       }
 
-      // Finalize the assistant message (remove streaming flag)
+      // Finalize the assistant message (remove streaming flag, attach buildPlan)
       setMessages((prev) =>
         prev.map((msg) =>
           msg._id === assistantMsgId
-            ? { ...msg, content: finalContent, timestamp: new Date(), streaming: false }
+            ? {
+                ...msg,
+                content: finalContent,
+                timestamp: new Date(),
+                streaming: false,
+                buildPlan: result?.buildPlan || null,
+              }
             : msg,
         ),
       );
@@ -365,6 +372,20 @@ export function useBuilderAI() {
     setError(null);
   }, []);
 
+  // Mark the last assistant message with hasChanges flag
+  const markLastMessageWithChanges = useCallback(() => {
+    setMessages((prev) => {
+      const updated = [...prev];
+      for (let i = updated.length - 1; i >= 0; i--) {
+        if (updated[i].role === 'assistant' && !updated[i].streaming) {
+          updated[i] = { ...updated[i], hasChanges: true };
+          break;
+        }
+      }
+      return updated;
+    });
+  }, []);
+
   // ---- Return ---------------------------------------------------------------
 
   return {
@@ -375,5 +396,6 @@ export function useBuilderAI() {
     sendPrompt,
     clearMessages,
     clearError,
+    markLastMessageWithChanges,
   };
 }
