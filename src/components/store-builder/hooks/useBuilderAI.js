@@ -89,22 +89,93 @@ function deriveContextualSuggestions(changes) {
 // ---------------------------------------------------------------------------
 
 /**
- * Extracts JSON from ```json ... ``` fenced block in the accumulated text.
- * Returns { updatedConfig, changes } or null if not found / parse error.
+ * Extracts JSON from the AI response. Tries multiple strategies:
+ * 1. ```json ... ``` fenced block
+ * 2. Unclosed ```json fence (model hit token limit)
+ * 3. Raw JSON object starting with { "updatedConfig" or { "configPatch"
+ *
+ * Returns { updatedConfig?, configPatch?, changes } or null.
  */
 function extractConfigFromText(fullText) {
+  // Strategy 1: Proper fenced JSON block
+  let jsonStr = null;
   const fenceMatch = fullText.match(/```json\s*([\s\S]*?)```/);
-  if (!fenceMatch) return null;
+  if (fenceMatch) {
+    jsonStr = fenceMatch[1].trim();
+  }
 
+  // Strategy 2: Unclosed fence (model ran out of tokens before closing ```)
+  if (!jsonStr) {
+    const openFence = fullText.indexOf('```json');
+    if (openFence !== -1) {
+      jsonStr = fullText.slice(openFence + 7).trim();
+      // Remove trailing ``` if partially there
+      jsonStr = jsonStr.replace(/`{0,3}$/, '').trim();
+    }
+  }
+
+  // Strategy 3: Raw JSON in the response (no fences at all)
+  if (!jsonStr) {
+    const rawMatch = fullText.match(/(\{[\s\S]*"(?:updatedConfig|configPatch)"[\s\S]*\})\s*$/);
+    if (rawMatch) jsonStr = rawMatch[1].trim();
+  }
+
+  if (!jsonStr) return null;
+
+  // Try to repair truncated JSON (missing closing braces/brackets)
+  let parsed = tryParseJSON(jsonStr);
+  if (!parsed) {
+    // Attempt to close unclosed braces/brackets
+    const repaired = repairJSON(jsonStr);
+    parsed = tryParseJSON(repaired);
+  }
+
+  if (!parsed) return null;
+
+  return {
+    updatedConfig: parsed.updatedConfig || null,
+    configPatch: parsed.configPatch || null,
+    changes: parsed.changes || [],
+  };
+}
+
+function tryParseJSON(str) {
   try {
-    const parsed = JSON.parse(fenceMatch[1].trim());
-    return {
-      updatedConfig: parsed.updatedConfig || null,
-      changes: parsed.changes || [],
-    };
+    return JSON.parse(str);
   } catch {
     return null;
   }
+}
+
+/** Attempt to close unclosed brackets/braces in truncated JSON */
+function repairJSON(str) {
+  let depth = { brace: 0, bracket: 0 };
+  let inString = false;
+  let escape = false;
+
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\') { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '{') depth.brace++;
+    else if (ch === '}') depth.brace--;
+    else if (ch === '[') depth.bracket++;
+    else if (ch === ']') depth.bracket--;
+  }
+
+  // Remove any trailing partial value (e.g. truncated string)
+  let repaired = str.replace(/,\s*"[^"]*$/, '').replace(/,\s*$/, '');
+
+  // Close unclosed strings
+  if (inString) repaired += '"';
+
+  // Close brackets/braces
+  while (depth.bracket > 0) { repaired += ']'; depth.bracket--; }
+  while (depth.brace > 0) { repaired += '}'; depth.brace--; }
+
+  return repaired;
 }
 
 /**
@@ -217,13 +288,14 @@ export function useBuilderAI() {
       const result = extractConfigFromText(accumulated);
 
       // Build final display text
+      const hasConfig = !!(result?.updatedConfig || result?.configPatch);
       let finalContent = explanation;
       if (result?.changes?.length) {
         const changeList = result.changes.map((c) => `- ${c}`).join('\n');
         finalContent = finalContent
           ? `${finalContent}\n\n${changeList}`
           : `Done! I made these changes:\n${changeList}`;
-      } else if (!finalContent && result?.updatedConfig) {
+      } else if (!finalContent && hasConfig) {
         finalContent = 'Done! I updated the store configuration.';
       } else if (!finalContent) {
         finalContent = 'I processed your request but couldn\'t generate a config update. Please try rephrasing.';
@@ -238,9 +310,15 @@ export function useBuilderAI() {
         ),
       );
 
+      // Return full config or a patch to be deep-merged by the caller
       if (result?.updatedConfig) {
         setSuggestions(deriveContextualSuggestions(result.changes));
         return { updatedConfig: result.updatedConfig, changes: result.changes };
+      }
+
+      if (result?.configPatch) {
+        setSuggestions(deriveContextualSuggestions(result.changes));
+        return { configPatch: result.configPatch, changes: result.changes };
       }
 
       return null;

@@ -182,28 +182,46 @@ Example: <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght
 ## Response Format
 ALWAYS respond in two parts:
 
-**Part 1 — Explanation (1-3 sentences):** What you changed and why. Be direct, not chatty. Use design terminology.
+**Part 1 — Explanation (1-3 sentences MAX):** What you changed and why. Be extremely brief. 1-2 sentences.
 
-**Part 2 — JSON Config:** Output the COMPLETE updated config in a \`\`\`json fence:
+**Part 2 — JSON Config:** Output config changes in a \`\`\`json fence. You have TWO options:
+
+**Option A — Partial patch (PREFERRED for small/medium changes):**
+Only include the keys that changed. The system will deep-merge this into the existing config.
 \`\`\`json
 {
-  "updatedConfig": { ...complete StoreConfig... },
-  "changes": ["Switched to dark premium theme with cyan accents", "Added testimonials section with 3 client quotes", "Wrote custom CSS for glassmorphism card effects"]
+  "configPatch": {
+    "theme": { "mode": "dark", "primaryColor": "#06b6d4", "backgroundColor": "#09090b" },
+    "sections": [ ...full sections array if sections changed... ]
+  },
+  "changes": ["Switched to dark theme with cyan accents"]
 }
 \`\`\`
 
+**Option B — Full replacement (for major overhauls only):**
+\`\`\`json
+{
+  "updatedConfig": { ...complete StoreConfig... },
+  "changes": ["Complete redesign with new theme and sections"]
+}
+\`\`\`
+
+IMPORTANT: Use "configPatch" (Option A) for most requests. Only use "updatedConfig" when replacing everything.
+
 ## Rules
-- Explanation FIRST, then JSON fence
-- JSON must be the COMPLETE config (not a partial diff)
+- Explanation FIRST, then JSON fence. Keep explanation SHORT (1-2 sentences).
 - Preserve existing section IDs — never regenerate them
 - New sections: ID = "sec_" + 8 random alphanumeric chars
 - Config version: always '1.1'
+- When using configPatch for sections: ALWAYS include the full sections array (sections are replaced, not merged)
 - When user says "make it X themed": change ALL theme colors consistently (bg, surface, text, muted, border, primary)
 - Use customCss liberally for effects like gradients, glassmorphism, shadows, animations
 - Use customHead for Google Fonts when changing font families
 - Write real, professional B2B content — never use "Lorem ipsum" or "Company Name"
 - When adding sections, write content tailored to the business context provided
-- Previous conversation messages give you context of what was already done — build on top, don't start over`;
+- Previous conversation messages give you context of what was already done — build on top, don't start over
+- NEVER output long explanations or multi-part responses. Keep text minimal, JSON maximal.
+- The JSON MUST be valid and complete within the fence. Do not truncate it.`;
 
 // ---------------------------------------------------------------------------
 // SSE → text transform: extracts content tokens from Together SSE stream
@@ -303,14 +321,14 @@ function buildMessages(
     }
   }
 
-  // Add the current user message with full config context
+  // Add the current user message with compact config context
   const userMessage = `${prompt}
 
 ---
-Current store config:
-${JSON.stringify(currentConfig, null, 2)}
+Current config:
+${JSON.stringify(currentConfig)}
 
-Business context: ${JSON.stringify(businessContext || {})}`;
+Business: ${JSON.stringify(businessContext || {})}`;
 
   messages.push({ role: "user", content: userMessage });
 
@@ -365,8 +383,8 @@ serve(async (req: Request) => {
         body: JSON.stringify({
           model: "moonshotai/Kimi-K2-Instruct-0905",
           messages: chatMessages,
-          max_tokens: 16000,
-          temperature: 0.3,
+          max_tokens: 32000,
+          temperature: 0.25,
           stream: true,
         }),
       }

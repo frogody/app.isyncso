@@ -42,6 +42,33 @@ import { useBuilderPreview } from './hooks/useBuilderPreview';
 import { useBuilderAI } from './hooks/useBuilderAI';
 
 // ---------------------------------------------------------------------------
+// Deep merge for partial AI config patches
+// ---------------------------------------------------------------------------
+
+function deepMerge(target, source) {
+  if (!source || typeof source !== 'object') return target;
+  if (!target || typeof target !== 'object') return source;
+  if (Array.isArray(source)) return source; // Arrays are replaced, not merged
+
+  const result = { ...target };
+  for (const key of Object.keys(source)) {
+    if (
+      source[key] &&
+      typeof source[key] === 'object' &&
+      !Array.isArray(source[key]) &&
+      target[key] &&
+      typeof target[key] === 'object' &&
+      !Array.isArray(target[key])
+    ) {
+      result[key] = deepMerge(target[key], source[key]);
+    } else {
+      result[key] = source[key];
+    }
+  }
+  return result;
+}
+
+// ---------------------------------------------------------------------------
 // Time helper
 // ---------------------------------------------------------------------------
 
@@ -773,7 +800,16 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
     try {
       const ctx = { storeName: storeName || 'B2B Store', organizationId };
       const result = await ai.sendPrompt(prompt, builder.config, ctx);
-      if (result?.updatedConfig) { history.pushState(); builder.updateConfig(result.updatedConfig); }
+      if (result?.updatedConfig) {
+        // Full config replacement
+        history.pushState();
+        builder.updateConfig(result.updatedConfig);
+      } else if (result?.configPatch) {
+        // Partial patch — deep-merge into current config
+        history.pushState();
+        const merged = deepMerge(builder.config, result.configPatch);
+        builder.updateConfig(merged);
+      }
     } catch (err) { console.error('AI failed:', err); }
   }, [ai.sendPrompt, builder.config, builder.updateConfig, history.pushState, storeName, organizationId]);
 
