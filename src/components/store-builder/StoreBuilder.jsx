@@ -29,9 +29,6 @@ import {
   Paperclip,
   FileText,
   ShoppingBag,
-  ShoppingCart,
-  Package,
-  User,
   X,
 } from 'lucide-react';
 
@@ -448,9 +445,7 @@ function DomainPage({ config, onUpdateConfig }) {
 const STORE_PAGES = [
   { id: 'home', label: 'Homepage', icon: Globe },
   { id: 'catalog', label: 'Catalog', icon: ShoppingBag },
-  { id: 'cart', label: 'Cart', icon: ShoppingCart },
-  { id: 'orders', label: 'Orders', icon: Package },
-  { id: 'account', label: 'Account', icon: User },
+  { id: 'product', label: 'Product Detail', icon: FileText },
 ];
 
 // ---------------------------------------------------------------------------
