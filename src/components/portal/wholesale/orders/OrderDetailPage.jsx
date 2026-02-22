@@ -15,6 +15,7 @@ import { supabase } from '@/api/supabaseClient';
 import { useWholesale } from '../WholesaleProvider';
 import OrderStatusBadge from './OrderStatusBadge';
 import ReorderButton from './ReorderButton';
+import ShipmentTrackingMap from './ShipmentTrackingMap';
 
 /**
  * Format a number as EUR currency.
@@ -369,6 +370,13 @@ export default function OrderDetailPage() {
       >
         <StatusTimeline status={order.status} />
       </div>
+
+      {/* Track & Trace Map — only when shipped or delivered */}
+      {(order.status === 'shipped' || order.status === 'delivered') && (
+        <div className="mb-8">
+          <ShipmentTrackingMap orderId={orderId} />
+        </div>
+      )}
 
       {/* Content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

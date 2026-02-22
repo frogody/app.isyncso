@@ -540,6 +540,26 @@ export async function completeShipping(
     await db.updateShippingTask(taskId, { tracking_url: trackingUrl });
   }
 
+  // Register with AfterShip for real-time tracking (non-blocking)
+  try {
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/aftership-register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        trackingJobId: trackingJob.id,
+        trackingNumber: trackTraceCode,
+        carrier,
+        orderNumber: fullTask?.sales_orders?.order_number,
+        companyId: shippingTask.company_id,
+      }),
+    });
+  } catch (err) {
+    console.error('[completeShipping] AfterShip registration failed (non-blocking):', err);
+  }
+
   // Auto-push Shopify fulfillment if order source is 'shopify' and auto_fulfill is on
   if (shippingTask.sales_order_id) {
     try {
