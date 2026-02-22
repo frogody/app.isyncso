@@ -84,6 +84,7 @@ export function useStoreBuilder(organizationId) {
   const [activePanel, setActivePanel] = useState('sections');
   const [storeVersion, setStoreVersion] = useState(0);
   const [isPublished, setIsPublished] = useState(false);
+  const [chatHistory, setChatHistory] = useState([]);
 
   // ---- Load config on mount -------------------------------------------------
   useEffect(() => {
@@ -124,6 +125,9 @@ export function useStoreBuilder(organizationId) {
           setConfig(merged);
           setStoreVersion(result.store_version || 0);
           setIsPublished(result.store_published === true);
+          if (Array.isArray(result.store_builder_chat_history) && result.store_builder_chat_history.length > 0) {
+            setChatHistory(result.store_builder_chat_history);
+          }
         } else {
           // No config exists yet — seed with full default B2B template
           const seedConfig = { ...DEFAULT_STORE_CONFIG };
@@ -363,6 +367,19 @@ export function useStoreBuilder(organizationId) {
     [patchConfig],
   );
 
+  // ---- Chat history persistence ---------------------------------------------
+
+  const saveChatHistory = useCallback(async (serializableMessages) => {
+    if (!organizationId) return;
+    try {
+      await updateStoreConfig(organizationId, {
+        store_builder_chat_history: serializableMessages,
+      });
+    } catch (err) {
+      console.warn('[useStoreBuilder] Failed to save chat history:', err);
+    }
+  }, [organizationId]);
+
   // ---- Return ---------------------------------------------------------------
 
   return {
@@ -393,5 +410,7 @@ export function useStoreBuilder(organizationId) {
     publishStore,
     unpublishStore,
     applyTemplate,
+    chatHistory,
+    saveChatHistory,
   };
 }

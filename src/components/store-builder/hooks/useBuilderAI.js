@@ -193,8 +193,19 @@ function extractExplanation(fullText) {
 // Hook
 // ---------------------------------------------------------------------------
 
-export function useBuilderAI() {
-  const [messages, setMessages] = useState([]);
+export function useBuilderAI(initialMessages) {
+  const [messages, setMessages] = useState(() => {
+    // Restore persisted messages (rehydrate timestamps)
+    if (Array.isArray(initialMessages) && initialMessages.length > 0) {
+      return initialMessages.map((m) => ({
+        ...m,
+        timestamp: m.timestamp ? new Date(m.timestamp) : null,
+        streaming: false,
+        building: false,
+      }));
+    }
+    return [];
+  });
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [suggestions, setSuggestions] = useState(DEFAULT_SUGGESTIONS);
@@ -457,6 +468,21 @@ export function useBuilderAI() {
     });
   }, []);
 
+  // ---- Serializable snapshot for persistence --------------------------------
+
+  /** Returns a clean array suitable for JSON storage (no circular refs, no _id) */
+  const getSerializableMessages = useCallback(() => {
+    return messagesRef.current
+      .filter((m) => m.content && !m.streaming && !m.building)
+      .map((m) => ({
+        role: m.role,
+        content: m.content,
+        timestamp: m.timestamp ? m.timestamp.toISOString() : null,
+        hasChanges: m.hasChanges || false,
+        buildPlan: m.buildPlan || null,
+      }));
+  }, []);
+
   // ---- Return ---------------------------------------------------------------
 
   return {
@@ -468,5 +494,6 @@ export function useBuilderAI() {
     clearMessages,
     clearError,
     markLastMessageWithChanges,
+    getSerializableMessages,
   };
 }

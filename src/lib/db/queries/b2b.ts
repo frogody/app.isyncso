@@ -902,6 +902,7 @@ export async function getStoreConfig(organizationId: string): Promise<{
   catalog_visibility: string;
   custom_domain: string | null;
   custom_domain_verified: boolean;
+  store_builder_chat_history: unknown[];
 } | null> {
   const { data, error } = await supabase
     .from('portal_settings')
@@ -920,7 +921,8 @@ export async function getStoreConfig(organizationId: string): Promise<{
       order_requires_approval,
       catalog_visibility,
       custom_domain,
-      custom_domain_verified
+      custom_domain_verified,
+      store_builder_chat_history
     `)
     .eq('organization_id', organizationId)
     .single();
@@ -949,6 +951,7 @@ export async function updateStoreConfig(
     custom_domain_verified?: boolean;
     custom_domain_verification_token?: string;
     custom_domain_ssl_status?: string;
+    store_builder_chat_history?: unknown[];
   }
 ): Promise<void> {
   const { error } = await supabase

@@ -730,7 +730,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
   const builder = useStoreBuilder(organizationId);
   const history = useBuilderHistory(builder.config, builder.updateConfig);
   const preview = useBuilderPreview();
-  const ai = useBuilderAI();
+  const ai = useBuilderAI(builder.chatHistory);
 
   const [activeView, setActiveView] = useState('preview');
   const [lastSettingsView, setLastSettingsView] = useState('store-settings');
@@ -877,8 +877,13 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
       if (applied) {
         ai.markLastMessageWithChanges();
       }
+      // Persist chat history after each exchange
+      try {
+        const serialized = ai.getSerializableMessages();
+        builder.saveChatHistory(serialized);
+      } catch (_) { /* non-critical */ }
     } catch (err) { console.error('AI failed:', err); }
-  }, [ai.sendPrompt, builder.config, builder.updateConfig, history.pushState, storeName, organizationId, ai.markLastMessageWithChanges]);
+  }, [ai.sendPrompt, builder.config, builder.updateConfig, history.pushState, storeName, organizationId, ai.markLastMessageWithChanges, ai.getSerializableMessages, builder.saveChatHistory]);
 
   // Handle "Show changes" button click — switch to code view with typing animation
   const [codeTypingActive, setCodeTypingActive] = useState(false);
