@@ -258,10 +258,11 @@ function CategoryBar({ products, nav }) {
 function ProductCard({ product, cart, nav, index }) {
   const [added, setAdded] = useState(false);
   const image = resolveImageUrl(product.featured_image);
+  const rawPrice = product.price || product.pricing?.wholesale_price || product.pricing?.base_price;
   const price =
-    typeof product.price === 'string'
-      ? parseFloat(product.price) || null
-      : product.price;
+    typeof rawPrice === 'string'
+      ? parseFloat(rawPrice) || null
+      : rawPrice || null;
 
   const handleAddToCart = useCallback(
     (e) => {

@@ -47,7 +47,7 @@ import {
 
 function getProductPrice(product) {
   if (!product) return 0;
-  const p = product.price;
+  const p = product.price || product.pricing?.wholesale_price || product.pricing?.base_price;
   if (p == null) return 0;
   return typeof p === 'string' ? parseFloat(p) || 0 : p;
 }

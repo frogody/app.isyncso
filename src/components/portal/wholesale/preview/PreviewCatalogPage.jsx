@@ -61,7 +61,7 @@ const SORT_OPTIONS = [
 // ---------------------------------------------------------------------------
 
 function getEffectivePrice(product) {
-  const p = product.price;
+  const p = product.price || product.pricing?.wholesale_price || product.pricing?.base_price;
   if (p == null) return null;
   return typeof p === 'string' ? parseFloat(p) || null : p;
 }

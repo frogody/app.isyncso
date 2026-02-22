@@ -861,7 +861,7 @@ export default function PublicStorefront({ subdomain }) {
     let cancelled = false;
     supabase
       .from('products')
-      .select('id, name, price, sku, featured_image, gallery, category, category_id, description, short_description, tags, ean, type, slug, inventory(quantity_on_hand, quantity_reserved, quantity_incoming), expected_deliveries(quantity_expected, quantity_received, status)')
+      .select('id, name, price, pricing, sku, featured_image, gallery, category, category_id, description, short_description, tags, ean, type, slug, inventory(quantity_on_hand, quantity_reserved, quantity_incoming), expected_deliveries(quantity_expected, quantity_received, status)')
       .eq('company_id', companyId)
       .eq('status', 'published')
       .eq('type', 'physical')
@@ -883,8 +883,11 @@ export default function PublicStorefront({ subdomain }) {
               .filter((d) => d.status === 'pending' || d.status === 'in_transit' || d.status === 'ordered')
               .reduce((sum, d) => sum + (Math.max(0, (d.quantity_expected ?? 0) - (d.quantity_received ?? 0))), 0);
             const totalIncoming = qtyIncoming + expectedIncoming;
+            // Resolve effective price: prefer top-level price, fall back to pricing JSONB
+            const effectivePrice = p.price || p.pricing?.wholesale_price || p.pricing?.base_price || 0;
             return {
               ...p,
+              price: effectivePrice,
               stock_quantity: qtyOnHand != null ? Math.max(0, qtyOnHand - qtyReserved) : null,
               incoming_stock: totalIncoming > 0 ? totalIncoming : 0,
               inventory: undefined,
