@@ -859,30 +859,21 @@ function AddressesTab({ client }) {
       </AnimatePresence>
 
       {/* Add New form (inline, above existing cards) */}
-      <AnimatePresence>
-        {addingNew && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <GlassCard className="p-5 sm:p-6" accentBar>
-              <div className="flex items-center gap-2.5 mb-4">
-                <Plus className="w-4 h-4" style={{ color: 'var(--ws-primary)' }} />
-                <p className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>
-                  New Delivery Address
-                </p>
-              </div>
-              <AddressForm
-                onSave={handleAddSave}
-                onCancel={() => setAddingNew(false)}
-                isSaving={saving}
-              />
-            </GlassCard>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {addingNew && (
+        <GlassCard className="p-5 sm:p-6" accentBar>
+          <div className="flex items-center gap-2.5 mb-4">
+            <Plus className="w-4 h-4" style={{ color: 'var(--ws-primary)' }} />
+            <p className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>
+              New Delivery Address
+            </p>
+          </div>
+          <AddressForm
+            onSave={handleAddSave}
+            onCancel={() => setAddingNew(false)}
+            isSaving={saving}
+          />
+        </GlassCard>
+      )}
 
       {/* Address cards */}
       {addresses.map((addr) => (
