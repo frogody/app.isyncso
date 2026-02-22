@@ -103,7 +103,11 @@ export default function ShipmentTrackingMap({ orderId }) {
     );
   }
 
-  if (error || !trackingJob) return null;
+  if (error) {
+    console.error('[ShipmentTrackingMap] Error loading tracking data:', error);
+    return null;
+  }
+  if (!trackingJob) return null;
 
   if (checkpoints.length === 0) {
     return (

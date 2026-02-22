@@ -633,15 +633,24 @@ export default function OrderDetailPage() {
                   <p>{shippingAddress}</p>
                 ) : (
                   <>
-                    {shippingAddress.name && <p style={{ color: 'var(--ws-text)' }}>{shippingAddress.name}</p>}
-                    {shippingAddress.line1 && <p>{shippingAddress.line1}</p>}
+                    {(shippingAddress.name || shippingAddress.company) && (
+                      <p style={{ color: 'var(--ws-text)' }}>
+                        {shippingAddress.name || shippingAddress.company}
+                      </p>
+                    )}
+                    {(shippingAddress.line1 || shippingAddress.street || shippingAddress.address) && (
+                      <p>{shippingAddress.line1 || shippingAddress.street || shippingAddress.address}</p>
+                    )}
                     {shippingAddress.line2 && <p>{shippingAddress.line2}</p>}
-                    {(shippingAddress.city || shippingAddress.postal_code) && (
+                    {(shippingAddress.city || shippingAddress.postal_code || shippingAddress.zip) && (
                       <p>
-                        {[shippingAddress.postal_code, shippingAddress.city]
+                        {[shippingAddress.postal_code || shippingAddress.zip, shippingAddress.city]
                           .filter(Boolean)
                           .join(' ')}
                       </p>
+                    )}
+                    {(shippingAddress.state || shippingAddress.province) && (
+                      <p>{shippingAddress.state || shippingAddress.province}</p>
                     )}
                     {shippingAddress.country && <p>{shippingAddress.country}</p>}
                   </>
