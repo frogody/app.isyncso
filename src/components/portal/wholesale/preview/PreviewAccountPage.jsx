@@ -501,6 +501,7 @@ function CompanyProfileTab({ client }) {
 const EMPTY_ADDRESS_FORM = {
   label: '',
   street: '',
+  number: '',
   city: '',
   postal_code: '',
   state: '',
@@ -515,12 +516,12 @@ function AddressForm({ initial, onSave, onCancel, isSaving }) {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const isValid = form.label.trim() && form.street.trim() && form.city.trim();
+  const isValid = form.label.trim() && form.street.trim() && form.number.trim() && form.postal_code.trim() && form.city.trim();
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
+        <div className="sm:col-span-2">
           <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>
             Label *
           </label>
@@ -537,7 +538,27 @@ function AddressForm({ initial, onSave, onCancel, isSaving }) {
           <GlassInput
             value={form.street}
             onChange={(e) => handleChange('street', e.target.value)}
-            placeholder="Street and number"
+            placeholder="Street name"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>
+            Number *
+          </label>
+          <GlassInput
+            value={form.number}
+            onChange={(e) => handleChange('number', e.target.value)}
+            placeholder="e.g. 42, 12A"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>
+            Postal Code *
+          </label>
+          <GlassInput
+            value={form.postal_code}
+            onChange={(e) => handleChange('postal_code', e.target.value)}
+            placeholder="Postal / ZIP code"
           />
         </div>
         <div>
@@ -548,16 +569,6 @@ function AddressForm({ initial, onSave, onCancel, isSaving }) {
             value={form.city}
             onChange={(e) => handleChange('city', e.target.value)}
             placeholder="City"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>
-            Postal Code
-          </label>
-          <GlassInput
-            value={form.postal_code}
-            onChange={(e) => handleChange('postal_code', e.target.value)}
-            placeholder="Postal / ZIP code"
           />
         </div>
         <div>
@@ -891,6 +902,7 @@ function AddressesTab({ client }) {
                 initial={{
                   label: addr.label || '',
                   street: addr.street || '',
+                  number: addr.number || '',
                   city: addr.city || '',
                   postal_code: addr.postal_code || '',
                   state: addr.state || '',
@@ -929,7 +941,7 @@ function AddressesTab({ client }) {
                   {addr.is_default && <StatusBadge status="success" label="Default" size="xs" />}
                 </div>
                 <p className="text-sm" style={{ color: 'var(--ws-muted)' }}>
-                  {[addr.street, addr.city, addr.postal_code].filter(Boolean).join(', ')}
+                  {[addr.street && addr.number ? `${addr.street} ${addr.number}` : addr.street, addr.postal_code, addr.city].filter(Boolean).join(', ')}
                 </p>
                 {(addr.state || addr.country) && (
                   <p className="text-xs mt-0.5" style={{ color: 'var(--ws-muted)' }}>

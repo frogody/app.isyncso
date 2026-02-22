@@ -199,7 +199,8 @@ function FormLabel({ htmlFor, required, children }) {
 
 function formatAddress(addr) {
   if (!addr || typeof addr !== 'object') return null;
-  return [addr.street, addr.city, addr.postal_code || addr.zip, addr.state, addr.country]
+  const streetLine = addr.street && addr.number ? `${addr.street} ${addr.number}` : addr.street;
+  return [streetLine, addr.postal_code || addr.zip, addr.city, addr.state, addr.country]
     .filter(Boolean)
     .join(', ');
 }
@@ -332,7 +333,8 @@ function DeliveryDetailsStep({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {addresses.map((addr) => {
                   const isSelected = deliveryAddress === addr.id;
-                  const parts = [addr.street, addr.city, addr.postal_code, addr.country].filter(Boolean);
+                  const streetLine = addr.street && addr.number ? `${addr.street} ${addr.number}` : addr.street;
+                  const parts = [streetLine, addr.postal_code, addr.city, addr.country].filter(Boolean);
                   return (
                     <button
                       key={addr.id}
@@ -967,7 +969,8 @@ function VerifyEmailStep({
     if (deliveryAddress === 'billing') return client?.billing_address || client?.shipping_address || {};
     return client?.shipping_address || {};
   })();
-  const addrParts = [resolvedAddr.street, resolvedAddr.city, resolvedAddr.postal_code, resolvedAddr.country].filter(Boolean);
+  const resolvedStreetLine = resolvedAddr.street && resolvedAddr.number ? `${resolvedAddr.street} ${resolvedAddr.number}` : resolvedAddr.street;
+  const addrParts = [resolvedStreetLine, resolvedAddr.postal_code, resolvedAddr.city, resolvedAddr.country].filter(Boolean);
 
   return (
     <motion.div
@@ -1502,7 +1505,7 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
       const allAddresses = Array.isArray(client.delivery_addresses) ? client.delivery_addresses : [];
       const selectedAddr = allAddresses.find((a) => a.id === deliveryAddress);
       const shippingAddr = selectedAddr
-        ? { street: selectedAddr.street, city: selectedAddr.city, postal_code: selectedAddr.postal_code, state: selectedAddr.state, country: selectedAddr.country }
+        ? { street: selectedAddr.street, number: selectedAddr.number || '', city: selectedAddr.city, postal_code: selectedAddr.postal_code, state: selectedAddr.state, country: selectedAddr.country }
         : (deliveryAddress === 'billing'
           ? (client.billing_address || client.shipping_address || {})
           : (client.shipping_address || {}));
