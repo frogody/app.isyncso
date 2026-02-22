@@ -782,10 +782,10 @@ function AddressesTab({ client }) {
     [addresses, persistAddresses, showFeedback]
   );
 
-  // Empty state
-  if (addresses.length === 0 && !addingNew) {
-    return (
-      <motion.div variants={motionVariants.container} initial="hidden" animate="visible" className="space-y-4">
+  return (
+    <motion.div variants={motionVariants.container} initial="hidden" animate="visible" className="space-y-4">
+      {/* Empty state */}
+      {addresses.length === 0 && !addingNew && (
         <GlassCard className="p-6">
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <MapPin className="w-10 h-10 mb-3" style={{ color: 'var(--ws-muted)', opacity: 0.5 }} />
@@ -800,35 +800,35 @@ function AddressesTab({ client }) {
             </PrimaryButton>
           </div>
         </GlassCard>
-      </motion.div>
-    );
-  }
+      )}
 
-  return (
-    <motion.div variants={motionVariants.container} initial="hidden" animate="visible" className="space-y-4">
-      {/* Header row */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <MapPin className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
-          <h3 className="text-base font-semibold" style={{ color: 'var(--ws-text)' }}>
-            Delivery Addresses
-          </h3>
-          <span
-            className="text-xs font-medium px-2 py-0.5 rounded-full"
-            style={{
-              background: 'color-mix(in srgb, var(--ws-primary) 10%, transparent)',
-              color: 'var(--ws-primary)',
-            }}
-          >
-            {addresses.length}
-          </span>
+      {/* Header row (shown when addresses exist or adding new) */}
+      {(addresses.length > 0 || addingNew) && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <MapPin className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
+            <h3 className="text-base font-semibold" style={{ color: 'var(--ws-text)' }}>
+              Delivery Addresses
+            </h3>
+            {addresses.length > 0 && (
+              <span
+                className="text-xs font-medium px-2 py-0.5 rounded-full"
+                style={{
+                  background: 'color-mix(in srgb, var(--ws-primary) 10%, transparent)',
+                  color: 'var(--ws-primary)',
+                }}
+              >
+                {addresses.length}
+              </span>
+            )}
+          </div>
+          {!addingNew && (
+            <PrimaryButton size="sm" icon={Plus} onClick={() => { setAddingNew(true); setEditingId(null); }}>
+              Add Address
+            </PrimaryButton>
+          )}
         </div>
-        {!addingNew && (
-          <PrimaryButton size="sm" icon={Plus} onClick={() => { setAddingNew(true); setEditingId(null); }}>
-            Add Address
-          </PrimaryButton>
-        )}
-      </div>
+      )}
 
       {/* Feedback / Error */}
       <AnimatePresence>
