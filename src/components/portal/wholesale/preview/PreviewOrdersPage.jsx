@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package,
@@ -24,6 +24,8 @@ import {
   Timer,
   CircleDollarSign,
   ArrowRight,
+  LogIn,
+  Loader2,
 } from 'lucide-react';
 import {
   GlassCard,
@@ -40,183 +42,28 @@ import {
   gradientTextStyle,
   formatCurrency,
 } from './previewDesignSystem';
-
-// ---------------------------------------------------------------------------
-// Mock Data
-// ---------------------------------------------------------------------------
-
-const MOCK_ORDERS = [
-  {
-    id: 'ORD-2026-00142',
-    poNumber: 'PO-2026-0089',
-    date: '2026-02-15',
-    status: 'delivered',
-    paymentStatus: 'paid',
-    paymentDueDate: '2026-03-15',
-    deliveryAddress: 'Warehouse - Industrieweg 42, 3044 AS Rotterdam',
-    items: [
-      { name: 'Electric Motor 5.5kW IE3', sku: 'MOT-5500-IE3', quantity: 2, price: 2850.00, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=Motor' },
-      { name: 'Frequency Inverter 7.5kW', sku: 'INV-7500-FQ', quantity: 2, price: 1475.00, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=Inverter' },
-      { name: 'Control Panel CP-800', sku: 'PNL-CP800', quantity: 1, price: 1950.00, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=Panel' },
-    ],
-    subtotal: 10600.00,
-    discount: 530.00,
-    vat: 2114.70,
-    total: 12184.70,
-    trackingNumber: 'NL9876543210',
-    invoiceUrl: '#',
-  },
-  {
-    id: 'ORD-2026-00141',
-    poNumber: 'PO-2026-0088',
-    date: '2026-02-12',
-    status: 'in_transit',
-    paymentStatus: 'net30_pending',
-    paymentDueDate: '2026-03-12',
-    deliveryAddress: 'Warehouse - Industrieweg 42, 3044 AS Rotterdam',
-    items: [
-      { name: 'CNC Mill End-Effector T4', sku: 'CNC-EE-T4', quantity: 1, price: 1250.00, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=CNC' },
-      { name: 'Stainless Steel Sheet 2mm', sku: 'SS-SHT-2MM', quantity: 10, price: 89.00, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=Steel' },
-      { name: 'Welding Rod Pack WR-316L', sku: 'WR-316L-PK', quantity: 4, price: 175.00, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=Weld' },
-    ],
-    subtotal: 2840.00,
-    discount: 0,
-    vat: 596.40,
-    total: 3436.40,
-    trackingNumber: 'NL1234567890',
-    invoiceUrl: null,
-  },
-  {
-    id: 'ORD-2026-00140',
-    poNumber: 'PO-2026-0085',
-    date: '2026-02-08',
-    status: 'processing',
-    paymentStatus: 'net30_pending',
-    paymentDueDate: '2026-03-08',
-    deliveryAddress: 'Main Office - Keizersgracht 123, 1015 CJ Amsterdam',
-    items: [
-      { name: 'PLC Module IO-16', sku: 'PLC-IO16', quantity: 3, price: 785.00, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=PLC' },
-      { name: 'Sensor Kit SK-Pro', sku: 'SNS-SKPRO', quantity: 6, price: 165.00, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=Sensor' },
-    ],
-    subtotal: 3345.00,
-    discount: 167.25,
-    vat: 667.33,
-    total: 3845.08,
-    trackingNumber: null,
-    invoiceUrl: null,
-  },
-  {
-    id: 'ORD-2026-00138',
-    poNumber: 'PO-2026-0082',
-    date: '2026-02-01',
-    status: 'confirmed',
-    paymentStatus: 'net30_pending',
-    paymentDueDate: '2026-03-01',
-    deliveryAddress: 'Warehouse - Industrieweg 42, 3044 AS Rotterdam',
-    items: [
-      { name: 'Hydraulic Pump Filter HF-200', sku: 'HYD-HF200', quantity: 12, price: 130.00, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=Filter' },
-      { name: 'Precision Gasket Ring M8', sku: 'GSK-M8-PR', quantity: 50, price: 24.00, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=Gasket' },
-    ],
-    subtotal: 2760.00,
-    discount: 138.00,
-    vat: 550.62,
-    total: 3172.62,
-    trackingNumber: null,
-    invoiceUrl: null,
-  },
-  {
-    id: 'ORD-2026-00135',
-    poNumber: 'PO-2026-0079',
-    date: '2026-01-22',
-    status: 'pending_review',
-    paymentStatus: 'net30_due',
-    paymentDueDate: '2026-02-22',
-    deliveryAddress: 'Main Office - Keizersgracht 123, 1015 CJ Amsterdam',
-    items: [
-      { name: 'Torque Wrench 40-200Nm', sku: 'TRQ-40200', quantity: 2, price: 389.00, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=Torque' },
-      { name: 'Calibration Weight Set', sku: 'CAL-WGT-ST', quantity: 1, price: 367.80, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=Cal' },
-    ],
-    subtotal: 1145.80,
-    discount: 0,
-    vat: 240.62,
-    total: 1386.42,
-    trackingNumber: null,
-    invoiceUrl: null,
-  },
-  {
-    id: 'ORD-2026-00130',
-    poNumber: 'PO-2026-0074',
-    date: '2026-01-10',
-    status: 'invoiced',
-    paymentStatus: 'paid',
-    paymentDueDate: '2026-02-10',
-    deliveryAddress: 'Warehouse - Industrieweg 42, 3044 AS Rotterdam',
-    items: [
-      { name: 'Safety Goggles Pro-X', sku: 'SAF-GOG-PX', quantity: 50, price: 22.50, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=Safety' },
-      { name: 'Cutting Fluid 5L', sku: 'CUT-FLD-5L', quantity: 8, price: 145.00, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=Fluid' },
-      { name: 'Cable Tray 3m Section', sku: 'CBL-TRY-3M', quantity: 20, price: 67.50, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=Cable' },
-    ],
-    subtotal: 3635.00,
-    discount: 181.75,
-    vat: 725.18,
-    total: 4178.43,
-    trackingNumber: 'NL5678901234',
-    invoiceUrl: '#',
-  },
-  {
-    id: 'ORD-2026-00125',
-    poNumber: 'PO-2026-0068',
-    date: '2025-12-20',
-    status: 'delivered',
-    paymentStatus: 'paid',
-    paymentDueDate: '2026-01-20',
-    deliveryAddress: 'Warehouse - Industrieweg 42, 3044 AS Rotterdam',
-    items: [
-      { name: 'Digital Caliper 0-300mm', sku: 'DGC-300MM', quantity: 5, price: 299.99, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=Caliper' },
-    ],
-    subtotal: 1499.95,
-    discount: 75.00,
-    vat: 299.24,
-    total: 1724.19,
-    trackingNumber: 'NL1122334455',
-    invoiceUrl: '#',
-  },
-  {
-    id: 'ORD-2026-00118',
-    poNumber: 'PO-2026-0060',
-    date: '2025-12-05',
-    status: 'in_transit',
-    paymentStatus: 'overdue',
-    paymentDueDate: '2026-01-05',
-    deliveryAddress: 'Main Office - Keizersgracht 123, 1015 CJ Amsterdam',
-    items: [
-      { name: 'Industrial Bearing Set A12', sku: 'BRG-A12-ST', quantity: 4, price: 498.75, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=Bearing' },
-      { name: 'Mounting Bracket Set', sku: 'MNT-BRK-ST', quantity: 10, price: 28.50, image: 'https://placehold.co/80x80/1a1a2e/ffffff?text=Mount' },
-    ],
-    subtotal: 2280.00,
-    discount: 114.00,
-    vat: 454.86,
-    total: 2620.86,
-    trackingNumber: 'NL6677889900',
-    invoiceUrl: null,
-  },
-];
+import { useWholesale } from '../WholesaleProvider';
+import { getClientOrders } from '@/lib/db/queries/b2b';
 
 // ---------------------------------------------------------------------------
 // Status configuration
 // ---------------------------------------------------------------------------
 
 const ORDER_STATUS_CONFIG = {
+  pending: { label: 'Pending Review', theme: 'info', pulse: true, color: 'rgba(59,130,246,0.8)' },
   pending_review: { label: 'Pending Review', theme: 'info', pulse: true, color: 'rgba(59,130,246,0.8)' },
   confirmed: { label: 'Confirmed', theme: 'primary', pulse: false, color: 'var(--ws-primary)' },
   processing: { label: 'Processing', theme: 'warning', pulse: false, color: 'rgba(245,158,11,0.8)' },
+  shipped: { label: 'In Transit', theme: 'info', pulse: false, color: 'rgba(59,130,246,0.8)' },
   in_transit: { label: 'In Transit', theme: 'info', pulse: false, color: 'rgba(59,130,246,0.8)' },
   delivered: { label: 'Delivered', theme: 'success', pulse: false, color: 'rgba(34,197,94,0.8)' },
   invoiced: { label: 'Invoiced', theme: 'neutral', pulse: false, color: 'rgba(161,161,170,0.8)' },
+  cancelled: { label: 'Cancelled', theme: 'error', pulse: false, color: 'rgba(239,68,68,0.8)' },
 };
 
 const PAYMENT_STATUS_CONFIG = {
   paid: { label: 'Paid', theme: 'success', pulse: false },
+  pending: { label: 'Pending', theme: 'info', pulse: false },
   net30_pending: { label: 'Net-30', theme: 'info', pulse: false, getDynamic: (order) => `Net-30 (Due: ${formatDateShort(order.paymentDueDate)})` },
   net30_due: { label: 'Net-30 Due', theme: 'warning', pulse: false },
   overdue: { label: 'Overdue', theme: 'error', pulse: true },
@@ -224,11 +71,11 @@ const PAYMENT_STATUS_CONFIG = {
 
 const STATUS_FILTERS = [
   { key: 'all', label: 'All' },
-  { key: 'pending_review', label: 'Pending Review' },
+  { key: 'pending', label: 'Pending' },
   { key: 'confirmed', label: 'Confirmed' },
-  { key: 'in_transit', label: 'In Transit' },
+  { key: 'processing', label: 'Processing' },
+  { key: 'shipped', label: 'In Transit' },
   { key: 'delivered', label: 'Delivered' },
-  { key: 'invoiced', label: 'Invoiced' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -251,6 +98,68 @@ function getStatusAccentColor(status) {
   return ORDER_STATUS_CONFIG[status]?.color || 'var(--ws-border)';
 }
 
+/**
+ * Normalize a B2B order from the database into the shape the UI expects.
+ */
+function normalizeOrder(dbOrder) {
+  const items = (dbOrder.b2b_order_items || []).map((item) => ({
+    name: item.product_name || 'Unknown Product',
+    sku: item.sku || '',
+    quantity: item.quantity || 1,
+    price: Number(item.unit_price) || 0,
+    lineTotal: Number(item.line_total) || 0,
+    image: null, // DB items don't store images inline
+  }));
+
+  const subtotal = Number(dbOrder.subtotal) || 0;
+  const discount = Number(dbOrder.discount_amount) || 0;
+  const vat = Number(dbOrder.tax_amount) || 0;
+  const total = Number(dbOrder.total) || 0;
+
+  // Determine payment due date from payment_terms_days
+  let paymentDueDate = null;
+  if (dbOrder.created_at && dbOrder.payment_terms_days) {
+    const created = new Date(dbOrder.created_at);
+    created.setDate(created.getDate() + dbOrder.payment_terms_days);
+    paymentDueDate = created.toISOString().split('T')[0];
+  }
+
+  // Derive payment status
+  let paymentStatus = dbOrder.payment_status || 'pending';
+  if (paymentStatus === 'pending' && dbOrder.payment_terms_days) {
+    const now = new Date();
+    if (paymentDueDate && new Date(paymentDueDate) < now) {
+      paymentStatus = 'overdue';
+    } else {
+      paymentStatus = 'net30_pending';
+    }
+  }
+
+  // Build delivery address string from JSONB
+  const addr = dbOrder.shipping_address || {};
+  const deliveryAddress = [addr.street, addr.city, addr.zip, addr.country]
+    .filter(Boolean)
+    .join(', ') || 'No address specified';
+
+  return {
+    id: dbOrder.order_number || dbOrder.id,
+    dbId: dbOrder.id,
+    poNumber: dbOrder.client_notes ? `PO-${dbOrder.order_number}` : '',
+    date: dbOrder.created_at,
+    status: dbOrder.status || 'pending',
+    paymentStatus,
+    paymentDueDate,
+    deliveryAddress,
+    items,
+    subtotal,
+    discount,
+    vat,
+    total,
+    trackingNumber: null, // Could be added to b2b_orders table later
+    invoiceUrl: null,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // OrderStatsBar
 // ---------------------------------------------------------------------------
@@ -265,8 +174,8 @@ function OrderStatsBar({ orders }) {
   }, [orders]);
 
   const totalValue = useMemo(() => orders.reduce((s, o) => s + o.total, 0), [orders]);
-  const pendingCount = useMemo(() => orders.filter((o) => o.status === 'pending_review').length, [orders]);
-  const inTransitCount = useMemo(() => orders.filter((o) => o.status === 'in_transit').length, [orders]);
+  const pendingCount = useMemo(() => orders.filter((o) => o.status === 'pending' || o.status === 'pending_review').length, [orders]);
+  const inTransitCount = useMemo(() => orders.filter((o) => o.status === 'shipped' || o.status === 'in_transit').length, [orders]);
 
   const stats = [
     { label: 'This Month', value: `${thisMonthCount} orders`, icon: Calendar, accent: 'var(--ws-primary)' },
@@ -358,10 +267,14 @@ function QuickReorderSection({ orders, nav }) {
               {order.items.slice(0, 3).map((item, idx) => (
                 <div
                   key={idx}
-                  className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0"
-                  style={{ border: '1px solid var(--ws-border)' }}
+                  className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center"
+                  style={{ border: '1px solid var(--ws-border)', background: 'color-mix(in srgb, var(--ws-surface) 80%, transparent)' }}
                 >
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                  {item.image ? (
+                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Package className="w-4 h-4" style={{ color: 'var(--ws-muted)', opacity: 0.5 }} />
+                  )}
                 </div>
               ))}
               {order.items.length > 3 && (
@@ -462,7 +375,7 @@ function SearchAndDateFilter({ searchQuery, onSearchChange, dateFrom, dateTo, on
         />
         <GlassInput
           type="text"
-          placeholder="Search by PO Number or Order ID..."
+          placeholder="Search by Order Number..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           className="!pl-10"
@@ -515,22 +428,28 @@ function OrderItemRow({ item, isLast }) {
       style={{ borderBottom: isLast ? 'none' : '1px solid color-mix(in srgb, var(--ws-border) 50%, transparent)' }}
     >
       <div
-        className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0"
-        style={{ border: '1px solid var(--ws-border)' }}
+        className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center"
+        style={{ border: '1px solid var(--ws-border)', background: 'color-mix(in srgb, var(--ws-surface) 80%, transparent)' }}
       >
-        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+        {item.image ? (
+          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+        ) : (
+          <Package className="w-4 h-4" style={{ color: 'var(--ws-muted)', opacity: 0.4 }} />
+        )}
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate" style={{ color: 'var(--ws-text)' }}>
           {item.name}
         </p>
-        <p className="text-xs font-mono" style={{ color: 'var(--ws-muted)' }}>
-          {item.sku}
-        </p>
+        {item.sku && (
+          <p className="text-xs font-mono" style={{ color: 'var(--ws-muted)' }}>
+            {item.sku}
+          </p>
+        )}
       </div>
       <div className="text-right flex-shrink-0">
         <p className="text-sm font-medium" style={{ color: 'var(--ws-text)' }}>
-          {formatCurrency(item.quantity * item.price)}
+          {formatCurrency(item.lineTotal || item.quantity * item.price)}
         </p>
         <p className="text-xs" style={{ color: 'var(--ws-muted)' }}>
           {item.quantity} x {formatCurrency(item.price)}
@@ -580,22 +499,24 @@ function OrderRow({ order, isExpanded, onToggle, nav, index }) {
           onMouseEnter={(e) => (e.currentTarget.style.background = 'color-mix(in srgb, var(--ws-primary) 3%, transparent)')}
           onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
         >
-          {/* Order ID + PO + Date */}
+          {/* Order ID + Date */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-sm font-bold font-mono" style={{ color: 'var(--ws-text)' }}>
                 {order.id}
               </p>
-              <span
-                className="hidden sm:inline text-[11px] font-mono px-2 py-0.5 rounded-md"
-                style={{
-                  background: 'color-mix(in srgb, var(--ws-surface) 80%, transparent)',
-                  color: 'var(--ws-muted)',
-                  border: '1px solid var(--ws-border)',
-                }}
-              >
-                {order.poNumber}
-              </span>
+              {order.poNumber && (
+                <span
+                  className="hidden sm:inline text-[11px] font-mono px-2 py-0.5 rounded-md"
+                  style={{
+                    background: 'color-mix(in srgb, var(--ws-surface) 80%, transparent)',
+                    color: 'var(--ws-muted)',
+                    border: '1px solid var(--ws-border)',
+                  }}
+                >
+                  {order.poNumber}
+                </span>
+              )}
             </div>
             <p className="text-xs mt-0.5" style={{ color: 'var(--ws-muted)' }}>
               {formatDateFull(order.date)}
@@ -605,7 +526,9 @@ function OrderRow({ order, isExpanded, onToggle, nav, index }) {
           {/* Status badges */}
           <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
             <StatusBadge status={statusCfg.theme} label={statusCfg.label} pulse={statusCfg.pulse} size="xs" />
-            <StatusBadge status={paymentCfg.theme} label={paymentLabel} pulse={paymentCfg.pulse} size="xs" />
+            {paymentLabel && (
+              <StatusBadge status={paymentCfg.theme} label={paymentLabel} pulse={paymentCfg.pulse} size="xs" />
+            )}
           </div>
 
           {/* Item count (desktop) */}
@@ -649,11 +572,13 @@ function OrderRow({ order, isExpanded, onToggle, nav, index }) {
                 style={{ borderTop: '1px solid var(--ws-border)' }}
               >
                 {/* PO number on mobile */}
-                <div className="sm:hidden pt-3">
-                  <span className="text-xs font-mono" style={{ color: 'var(--ws-muted)' }}>
-                    PO: {order.poNumber}
-                  </span>
-                </div>
+                {order.poNumber && (
+                  <div className="sm:hidden pt-3">
+                    <span className="text-xs font-mono" style={{ color: 'var(--ws-muted)' }}>
+                      PO: {order.poNumber}
+                    </span>
+                  </div>
+                )}
 
                 {/* Items */}
                 <div className="pt-4">
@@ -671,7 +596,7 @@ function OrderRow({ order, isExpanded, onToggle, nav, index }) {
                   </div>
                 </div>
 
-                {/* Delivery + Tracking */}
+                {/* Delivery Address */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <h4
@@ -757,7 +682,7 @@ function OrderRow({ order, isExpanded, onToggle, nav, index }) {
                       Download Invoice
                     </SecondaryButton>
                   )}
-                  {order.status === 'in_transit' && order.trackingNumber && (
+                  {(order.status === 'shipped' || order.status === 'in_transit') && order.trackingNumber && (
                     <SecondaryButton
                       size="sm"
                       icon={Truck}
@@ -788,14 +713,49 @@ function OrderRow({ order, isExpanded, onToggle, nav, index }) {
 // ---------------------------------------------------------------------------
 
 export default function PreviewOrdersPage({ config, nav }) {
+  const { client, isAuthenticated } = useWholesale();
+
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
+  // Fetch real orders when client is available
+  useEffect(() => {
+    if (!client?.id) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchOrders = async () => {
+      setLoading(true);
+      setFetchError(null);
+      try {
+        const dbOrders = await getClientOrders(client.id, 100);
+        if (cancelled) return;
+        setOrders(dbOrders.map(normalizeOrder));
+      } catch (err) {
+        console.error('[PreviewOrdersPage] Failed to fetch orders:', err);
+        if (!cancelled) setFetchError(err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchOrders();
+
+    return () => { cancelled = true; };
+  }, [client?.id]);
+
   const filteredOrders = useMemo(() => {
-    let result = MOCK_ORDERS;
+    let result = orders;
 
     // Status filter
     if (activeFilter !== 'all') {
@@ -808,7 +768,7 @@ export default function PreviewOrdersPage({ config, nav }) {
       result = result.filter(
         (o) =>
           o.id.toLowerCase().includes(q) ||
-          o.poNumber.toLowerCase().includes(q),
+          (o.poNumber && o.poNumber.toLowerCase().includes(q)),
       );
     }
 
@@ -824,7 +784,7 @@ export default function PreviewOrdersPage({ config, nav }) {
     }
 
     return result;
-  }, [activeFilter, searchQuery, dateFrom, dateTo]);
+  }, [orders, activeFilter, searchQuery, dateFrom, dateTo]);
 
   const handleToggle = useCallback((orderId) => {
     setExpandedId((prev) => (prev === orderId ? null : orderId));
@@ -834,6 +794,83 @@ export default function PreviewOrdersPage({ config, nav }) {
     setActiveFilter(key);
     setExpandedId(null);
   }, []);
+
+  // Not authenticated -- show sign-in prompt
+  if (!isAuthenticated || !client) {
+    return (
+      <div className="min-h-full px-6 sm:px-10 lg:px-16 py-8">
+        <Breadcrumb
+          items={[
+            { label: 'Home', onClick: () => nav?.goToHome?.() },
+            { label: 'Order History' },
+          ]}
+        />
+        <SectionHeader
+          title="Order History"
+          subtitle="Track your orders, manage invoices, and quickly reorder past purchases"
+        />
+        <EmptyState
+          icon={LogIn}
+          title="Sign in to view your orders"
+          description="Log in to your B2B account to access your order history, track shipments, and reorder past purchases."
+          action={
+            <PrimaryButton size="sm" icon={LogIn} onClick={() => nav?.goToLogin?.()}>
+              Sign In
+            </PrimaryButton>
+          }
+        />
+      </div>
+    );
+  }
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-full px-6 sm:px-10 lg:px-16 py-8">
+        <Breadcrumb
+          items={[
+            { label: 'Home', onClick: () => nav?.goToHome?.() },
+            { label: 'Order History' },
+          ]}
+        />
+        <SectionHeader
+          title="Order History"
+          subtitle="Loading your orders..."
+        />
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--ws-primary)' }} />
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (fetchError) {
+    return (
+      <div className="min-h-full px-6 sm:px-10 lg:px-16 py-8">
+        <Breadcrumb
+          items={[
+            { label: 'Home', onClick: () => nav?.goToHome?.() },
+            { label: 'Order History' },
+          ]}
+        />
+        <SectionHeader
+          title="Order History"
+          subtitle="Something went wrong"
+        />
+        <EmptyState
+          icon={AlertCircle}
+          title="Failed to load orders"
+          description={fetchError}
+          action={
+            <PrimaryButton size="sm" icon={RefreshCw} onClick={() => window.location.reload()}>
+              Retry
+            </PrimaryButton>
+          }
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full px-6 sm:px-10 lg:px-16 py-8">
@@ -857,16 +894,16 @@ export default function PreviewOrdersPage({ config, nav }) {
       />
 
       {/* Order Stats Bar */}
-      <OrderStatsBar orders={MOCK_ORDERS} />
+      <OrderStatsBar orders={orders} />
 
       {/* Quick Reorder */}
-      <QuickReorderSection orders={MOCK_ORDERS} nav={nav} />
+      <QuickReorderSection orders={orders} nav={nav} />
 
       {/* Status Filter Pills */}
       <StatusFilterPills
         activeFilter={activeFilter}
         onFilterChange={handleFilterChange}
-        orders={MOCK_ORDERS}
+        orders={orders}
       />
 
       {/* Search + Date Range */}
@@ -909,7 +946,7 @@ export default function PreviewOrdersPage({ config, nav }) {
         <div className="space-y-3">
           {filteredOrders.map((order, idx) => (
             <OrderRow
-              key={order.id}
+              key={order.dbId || order.id}
               order={order}
               isExpanded={expandedId === order.id}
               onToggle={() => handleToggle(order.id)}
@@ -928,7 +965,7 @@ export default function PreviewOrdersPage({ config, nav }) {
           className="text-center text-xs mt-6 pb-4"
           style={{ color: 'var(--ws-muted)' }}
         >
-          Showing {filteredOrders.length} of {MOCK_ORDERS.length} orders
+          Showing {filteredOrders.length} of {orders.length} orders
         </motion.p>
       )}
     </div>

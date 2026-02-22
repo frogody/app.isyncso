@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+
 import { Folder, Package, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { WholesaleContext } from '@/components/portal/wholesale/WholesaleProvider';
@@ -317,9 +317,6 @@ const STYLE_COMPONENTS = {
 };
 
 export default function CategoryGridRenderer({ section, theme }) {
-  const navigate = useNavigate();
-  const { org } = useParams();
-
   const {
     heading = '',
     subheading = '',
@@ -330,13 +327,12 @@ export default function CategoryGridRenderer({ section, theme }) {
     showImage = true,
   } = section?.props || {};
 
-  const handleCategoryClick = (categoryName) => {
-    const basePath = org ? `/portal/${org}/shop/catalog` : '/catalog';
-    navigate(`${basePath}?category=${encodeURIComponent(categoryName)}`);
-  };
-
   // Get companyId from WholesaleContext (resolved from organization_id)
   const wholesaleCtx = useContext(WholesaleContext);
+
+  const handleCategoryClick = (categoryName) => {
+    wholesaleCtx?.goToCatalog?.({ category: categoryName });
+  };
   const resolvedCompanyId = wholesaleCtx?.companyId || wholesaleCtx?.orgId || null;
 
   const [dbCategories, setDbCategories] = useState(null);

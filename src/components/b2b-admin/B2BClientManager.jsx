@@ -27,6 +27,11 @@ import {
   FileText,
   ShoppingCart,
   UserCircle,
+  UserPlus,
+  Mail,
+  Phone,
+  Send,
+  CheckCircle2,
 } from 'lucide-react';
 
 import { ACTIVE_STATUS_COLORS, DEFAULT_STATUS_COLOR } from './shared/b2bConstants';
@@ -153,6 +158,259 @@ function ExpandedDetail({ client, orderStats }) {
   );
 }
 
+function InviteClientModal({ open, onClose, organizationId, onSuccess }) {
+  const [form, setForm] = useState({
+    email: '',
+    full_name: '',
+    company_name: '',
+    phone: '',
+    notes: '',
+  });
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState(null);
+
+  const resetForm = () => {
+    setForm({ email: '', full_name: '', company_name: '', phone: '', notes: '' });
+    setError(null);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  const handleChange = (field) => (e) => {
+    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.email.trim() || !form.full_name.trim()) return;
+
+    setSending(true);
+    setError(null);
+
+    try {
+      // 1. Insert portal_clients row
+      const { error: insertErr } = await supabase.from('portal_clients').insert({
+        email: form.email.trim().toLowerCase(),
+        full_name: form.full_name.trim(),
+        company_name: form.company_name.trim() || null,
+        phone: form.phone.trim() || null,
+        b2b_notes: form.notes.trim() || null,
+        organization_id: organizationId,
+        status: 'invited',
+      });
+
+      if (insertErr) {
+        if (insertErr.code === '23505') {
+          throw new Error('A client with this email already exists');
+        }
+        throw insertErr;
+      }
+
+      // 2. Look up store subdomain for magic link redirect
+      let redirectUrl = undefined;
+      const { data: portalSettings } = await supabase
+        .from('portal_settings')
+        .select('store_subdomain')
+        .eq('organization_id', organizationId)
+        .maybeSingle();
+
+      if (portalSettings?.store_subdomain) {
+        redirectUrl = `https://${portalSettings.store_subdomain}.syncstore.business`;
+      }
+
+      // 3. Send magic link OTP
+      const { error: otpErr } = await supabase.auth.signInWithOtp({
+        email: form.email.trim().toLowerCase(),
+        options: {
+          ...(redirectUrl ? { emailRedirectTo: redirectUrl } : {}),
+          data: {
+            full_name: form.full_name.trim(),
+            invited_as: 'portal_client',
+          },
+        },
+      });
+
+      if (otpErr) {
+        console.warn('[InviteClient] OTP warning (non-blocking):', otpErr.message);
+        // Don't throw here -- the client record is already created.
+        // The merchant can resend the invite later.
+      }
+
+      // 4. Done
+      onSuccess(`Invitation sent to ${form.email}`);
+      handleClose();
+    } catch (err) {
+      console.error('[InviteClient] error:', err);
+      setError(err.message || 'Failed to invite client');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={handleClose}
+      />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-lg mx-4 rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-cyan-500/10">
+              <UserPlus className="w-4.5 h-4.5 text-cyan-400" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-white">Invite Client</h2>
+              <p className="text-xs text-zinc-500">Send a magic link invitation</p>
+            </div>
+          </div>
+          <button
+            onClick={handleClose}
+            className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Error inside modal */}
+        {error && (
+          <div className="mx-6 mt-4 flex items-center gap-2.5 p-3 rounded-xl border border-red-500/20 bg-red-500/5 text-red-400">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <p className="text-sm">{error}</p>
+            <button onClick={() => setError(null)} className="ml-auto p-0.5 hover:bg-red-500/10 rounded">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {/* Email */}
+          <div>
+            <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 mb-1.5">
+              <Mail className="w-3.5 h-3.5" />
+              Email <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="email"
+              required
+              value={form.email}
+              onChange={handleChange('email')}
+              placeholder="client@company.com"
+              disabled={sending}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/60 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors disabled:opacity-50"
+            />
+          </div>
+
+          {/* Full Name */}
+          <div>
+            <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 mb-1.5">
+              <UserCircle className="w-3.5 h-3.5" />
+              Full Name <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={form.full_name}
+              onChange={handleChange('full_name')}
+              placeholder="Jane Doe"
+              disabled={sending}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/60 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors disabled:opacity-50"
+            />
+          </div>
+
+          {/* Company + Phone row */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 mb-1.5">
+                <Building2 className="w-3.5 h-3.5" />
+                Company
+              </label>
+              <input
+                type="text"
+                value={form.company_name}
+                onChange={handleChange('company_name')}
+                placeholder="Acme Corp"
+                disabled={sending}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/60 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors disabled:opacity-50"
+              />
+            </div>
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 mb-1.5">
+                <Phone className="w-3.5 h-3.5" />
+                Phone
+              </label>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={handleChange('phone')}
+                placeholder="+31 6 1234 5678"
+                disabled={sending}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/60 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors disabled:opacity-50"
+              />
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 mb-1.5">
+              <FileText className="w-3.5 h-3.5" />
+              Notes
+            </label>
+            <textarea
+              value={form.notes}
+              onChange={handleChange('notes')}
+              placeholder="Internal notes about this client..."
+              rows={3}
+              disabled={sending}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/60 text-white placeholder-zinc-500 text-sm resize-none focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors disabled:opacity-50"
+            />
+          </div>
+        </form>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-zinc-800">
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={sending}
+            className="px-4 py-2 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-700 transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={sending || !form.email.trim() || !form.full_name.trim()}
+            className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-medium bg-cyan-600 hover:bg-cyan-500 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {sending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Sending...
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                Send Invite
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function B2BClientManager() {
   const { user } = useUser();
   const organizationId = user?.organization_id || user?.company_id;
@@ -176,6 +434,9 @@ export default function B2BClientManager() {
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
   const [savingId, setSavingId] = useState(null);
+
+  // Invite modal
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   // Expanded row
   const [expandedId, setExpandedId] = useState(null);
@@ -530,16 +791,25 @@ export default function B2BClientManager() {
           ))}
         </div>
 
-        {/* Search bar */}
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-          <input
-            type="text"
-            placeholder="Search by name, email, or company..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-900/60 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors"
-          />
+        {/* Search bar + Invite button */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <input
+              type="text"
+              placeholder="Search by name, email, or company..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-900/60 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors"
+            />
+          </div>
+          <button
+            onClick={() => setInviteOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-cyan-600 hover:bg-cyan-500 text-white transition-colors whitespace-nowrap shrink-0"
+          >
+            <UserPlus className="w-4 h-4" />
+            Invite Client
+          </button>
         </div>
 
         {/* Clients table */}
@@ -842,6 +1112,17 @@ export default function B2BClientManager() {
             <span className="text-sm text-zinc-300">Refreshing...</span>
           </div>
         )}
+
+        {/* Invite Client Modal */}
+        <InviteClientModal
+          open={inviteOpen}
+          onClose={() => setInviteOpen(false)}
+          organizationId={organizationId}
+          onSuccess={(msg) => {
+            setSuccessMsg(msg);
+            fetchClients();
+          }}
+        />
       </div>
     </div>
   );

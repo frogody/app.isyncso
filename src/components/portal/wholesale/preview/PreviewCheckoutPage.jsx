@@ -1,7 +1,9 @@
 // ---------------------------------------------------------------------------
 // PreviewCheckoutPage.jsx -- Premium B2B wholesale "Place Order" flow.
 // 3-step process: Delivery Details -> Order Review -> Confirmation.
-// Runs inside an iframe in demo mode -- no real DB writes, no auth, no router.
+// Creates REAL orders via createB2BOrder / createB2BOrderItems when
+// a client is authenticated. In preview mode (no client), order placement
+// is disabled with a sign-in prompt.
 // Uses CSS custom properties (--ws-*) for theming + design system components.
 // ---------------------------------------------------------------------------
 
@@ -23,6 +25,8 @@ import {
   Clock,
   AlertTriangle,
   ShoppingCart,
+  LogIn,
+  Loader2,
 } from 'lucide-react';
 import {
   GlassCard,
@@ -41,28 +45,12 @@ import {
   gradientTextStyle,
   formatCurrency,
 } from './previewDesignSystem';
+import { useWholesale } from '../WholesaleProvider';
+import { createB2BOrder, createB2BOrderItems } from '@/lib/db/queries/b2b';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-
-const SAVED_ADDRESSES = [
-  {
-    id: 'warehouse',
-    label: 'Warehouse',
-    full: 'Industrieweg 42, 1234 AB Amsterdam',
-  },
-  {
-    id: 'head-office',
-    label: 'Head Office',
-    full: 'Herengracht 100, 1015 BS Amsterdam',
-  },
-  {
-    id: 'distribution',
-    label: 'Distribution Center',
-    full: 'Europaweg 8, 3542 DR Utrecht',
-  },
-];
 
 const STEP_LABELS = ['Delivery Details', 'Order Review', 'Confirmation'];
 
@@ -201,10 +189,22 @@ function FormLabel({ htmlFor, required, children }) {
 }
 
 // ---------------------------------------------------------------------------
+// Helper: format address JSONB into string
+// ---------------------------------------------------------------------------
+
+function formatAddress(addr) {
+  if (!addr || typeof addr !== 'object') return null;
+  return [addr.street, addr.city, addr.zip, addr.state, addr.country]
+    .filter(Boolean)
+    .join(', ');
+}
+
+// ---------------------------------------------------------------------------
 // Step 1 -- Delivery Details
 // ---------------------------------------------------------------------------
 
 function DeliveryDetailsStep({
+  client,
   deliveryAddress,
   setDeliveryAddress,
   poNumber,
@@ -219,6 +219,33 @@ function DeliveryDetailsStep({
   onBack,
 }) {
   const canContinue = poNumber?.trim()?.length > 0;
+
+  // Build saved addresses from client data
+  const savedAddresses = [];
+  if (client?.shipping_address && Object.keys(client.shipping_address).length > 0) {
+    savedAddresses.push({
+      id: 'shipping',
+      label: 'Shipping Address',
+      full: formatAddress(client.shipping_address) || 'Shipping address on file',
+    });
+  }
+  if (client?.billing_address && Object.keys(client.billing_address).length > 0) {
+    savedAddresses.push({
+      id: 'billing',
+      label: 'Billing Address',
+      full: formatAddress(client.billing_address) || 'Billing address on file',
+    });
+  }
+  if (savedAddresses.length === 0) {
+    savedAddresses.push({
+      id: 'default',
+      label: 'Default',
+      full: 'No address on file - will use default',
+    });
+  }
+
+  const paymentTerms = client?.payment_terms_days || 30;
+  const creditLimit = Number(client?.credit_limit) || 0;
 
   return (
     <motion.div
@@ -264,14 +291,14 @@ function DeliveryDetailsStep({
           {/* Delivery address selector */}
           <div>
             <FormLabel htmlFor="delivery-address" required>
-              Company Delivery Address
+              Delivery Address
             </FormLabel>
             <GlassSelect
               id="delivery-address"
               value={deliveryAddress}
               onChange={(e) => setDeliveryAddress(e.target.value)}
             >
-              {SAVED_ADDRESSES.map((addr) => (
+              {savedAddresses.map((addr) => (
                 <option key={addr.id} value={addr.id}>
                   {addr.label} - {addr.full}
                 </option>
@@ -341,22 +368,19 @@ function DeliveryDetailsStep({
       <GlassInfoBar icon={FileText}>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <span className="font-semibold" style={{ color: 'var(--ws-primary)' }}>
-            Net-30
+            Net-{paymentTerms}
           </span>
-          <span style={{ color: 'var(--ws-border)' }}>|</span>
-          <span>
-            Credit Limit:{' '}
-            <span className="font-semibold" style={{ color: 'var(--ws-text)' }}>
-              {formatCurrency(50000)}
-            </span>
-          </span>
-          <span style={{ color: 'var(--ws-border)' }}>|</span>
-          <span>
-            Available:{' '}
-            <span className="font-semibold" style={{ color: 'var(--ws-primary)' }}>
-              {formatCurrency(37500)}
-            </span>
-          </span>
+          {creditLimit > 0 && (
+            <>
+              <span style={{ color: 'var(--ws-border)' }}>|</span>
+              <span>
+                Credit Limit:{' '}
+                <span className="font-semibold" style={{ color: 'var(--ws-text)' }}>
+                  {formatCurrency(creditLimit)}
+                </span>
+              </span>
+            </>
+          )}
         </div>
       </GlassInfoBar>
 
@@ -461,6 +485,8 @@ function ReviewLineItem({ item, isLast }) {
 
 function OrderReviewStep({
   cart,
+  client,
+  isAuthenticated,
   deliveryAddress,
   poNumber,
   deliveryDate,
@@ -468,6 +494,8 @@ function OrderReviewStep({
   specialInstructions,
   onSubmit,
   onBack,
+  submitting,
+  submitError,
 }) {
   const {
     items = [],
@@ -478,7 +506,20 @@ function OrderReviewStep({
     moqViolations = [],
   } = cart;
 
-  const selectedAddress = SAVED_ADDRESSES.find((a) => a.id === deliveryAddress) || SAVED_ADDRESSES[0];
+  // Build selected address label from client data
+  let selectedAddressLabel = 'Default Address';
+  let selectedAddressFull = 'No address specified';
+  if (client) {
+    if (deliveryAddress === 'shipping' && client.shipping_address) {
+      selectedAddressLabel = 'Shipping Address';
+      selectedAddressFull = formatAddress(client.shipping_address) || 'Shipping address on file';
+    } else if (deliveryAddress === 'billing' && client.billing_address) {
+      selectedAddressLabel = 'Billing Address';
+      selectedAddressFull = formatAddress(client.billing_address) || 'Billing address on file';
+    }
+  }
+
+  const canSubmit = isAuthenticated && moqViolations.length === 0 && !submitting;
 
   return (
     <motion.div
@@ -508,6 +549,23 @@ function OrderReviewStep({
         </GlassCard>
       )}
 
+      {/* Not authenticated warning */}
+      {!isAuthenticated && (
+        <GlassCard hoverable={false} style={{ borderColor: 'color-mix(in srgb, var(--ws-primary) 40%, transparent)' }}>
+          <div className="p-4 flex items-start gap-3">
+            <LogIn className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--ws-primary)' }} />
+            <div>
+              <p className="text-sm font-semibold mb-1" style={{ color: 'var(--ws-primary)' }}>
+                Sign in to place orders
+              </p>
+              <p className="text-xs" style={{ color: 'var(--ws-muted)' }}>
+                You must be signed in to your B2B account to submit orders. You can still review your order details.
+              </p>
+            </div>
+          </div>
+        </GlassCard>
+      )}
+
       {/* Delivery address confirmation */}
       <GlassCard accentBar hoverable={false}>
         <div className="p-5">
@@ -531,8 +589,8 @@ function OrderReviewStep({
             </button>
           </div>
           <div className="text-sm leading-relaxed" style={{ color: 'var(--ws-text)' }}>
-            <p className="font-semibold">{selectedAddress.label}</p>
-            <p style={{ color: 'var(--ws-muted)' }}>{selectedAddress.full}</p>
+            <p className="font-semibold">{selectedAddressLabel}</p>
+            <p style={{ color: 'var(--ws-muted)' }}>{selectedAddressFull}</p>
             {contactPerson && (
               <p className="mt-1" style={{ color: 'var(--ws-muted)' }}>
                 Contact: {contactPerson}
@@ -570,7 +628,7 @@ function OrderReviewStep({
           <div>
             {items.map((item, idx) => (
               <ReviewLineItem
-                key={item.productId || idx}
+                key={item.productId || item.id || idx}
                 item={item}
                 isLast={idx === items.length - 1}
               />
@@ -649,17 +707,34 @@ function OrderReviewStep({
         </GlassInfoBar>
       )}
 
+      {/* Submit error */}
+      {submitError && (
+        <GlassCard hoverable={false} style={{ borderColor: 'rgba(239,68,68,0.3)' }}>
+          <div className="p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#ef4444' }} />
+            <div>
+              <p className="text-sm font-semibold mb-1" style={{ color: '#ef4444' }}>
+                Failed to place order
+              </p>
+              <p className="text-xs" style={{ color: 'var(--ws-muted)' }}>
+                {submitError}
+              </p>
+            </div>
+          </div>
+        </GlassCard>
+      )}
+
       {/* Actions */}
       <div className="flex items-center justify-between pt-2">
-        <SecondaryButton onClick={onBack} icon={ArrowLeft}>
+        <SecondaryButton onClick={onBack} icon={ArrowLeft} disabled={submitting}>
           Back to Details
         </SecondaryButton>
         <PrimaryButton
           onClick={onSubmit}
-          disabled={moqViolations.length > 0}
-          icon={ChevronRight}
+          disabled={!canSubmit}
+          icon={submitting ? Loader2 : ChevronRight}
         >
-          Submit Order
+          {submitting ? 'Placing Order...' : isAuthenticated ? 'Submit Order' : 'Sign in to Place Order'}
         </PrimaryButton>
       </div>
     </motion.div>
@@ -709,9 +784,7 @@ function AnimatedCheckmark() {
 // Step 3 -- Order Submitted Confirmation
 // ---------------------------------------------------------------------------
 
-function ConfirmationStep({ nav }) {
-  const orderNumber = 'ORD-2026-00142';
-
+function ConfirmationStep({ nav, orderNumber }) {
   return (
     <motion.div
       key="step-3"
@@ -755,7 +828,7 @@ function ConfirmationStep({ nav }) {
           className="text-base font-extrabold font-mono tracking-widest"
           style={{ color: 'var(--ws-primary)' }}
         >
-          {orderNumber}
+          {orderNumber || 'Processing...'}
         </span>
       </motion.div>
 
@@ -772,79 +845,13 @@ function ConfirmationStep({ nav }) {
         registered email address.
       </motion.p>
 
-      {/* Account manager card */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.75, duration: 0.5 }}
-        className="w-full max-w-sm mb-8"
-      >
-        <GlassCard hoverable={false} accentBar>
-          <div className="p-5">
-            <p
-              className="text-[10px] font-bold uppercase tracking-widest mb-3"
-              style={{ color: 'var(--ws-muted)' }}
-            >
-              Your Account Manager
-            </p>
-            <div className="flex items-center gap-3 mb-4">
-              <div
-                className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold"
-                style={{
-                  background:
-                    'linear-gradient(135deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 60%, #7c3aed))',
-                  color: '#fff',
-                }}
-              >
-                SB
-              </div>
-              <div className="text-left">
-                <p
-                  className="text-sm font-bold"
-                  style={{ color: 'var(--ws-text)' }}
-                >
-                  Sarah van den Berg
-                </p>
-                <p
-                  className="text-xs"
-                  style={{ color: 'var(--ws-muted)' }}
-                >
-                  Senior Account Manager
-                </p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2.5">
-                <Mail className="w-3.5 h-3.5" style={{ color: 'var(--ws-primary)' }} />
-                <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>
-                  s.vandenberg@company.com
-                </span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Phone className="w-3.5 h-3.5" style={{ color: 'var(--ws-primary)' }} />
-                <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>
-                  +31 20 123 4567
-                </span>
-              </div>
-            </div>
-          </div>
-        </GlassCard>
-      </motion.div>
-
       {/* Action buttons */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.85, duration: 0.4 }}
+        transition={{ delay: 0.75, duration: 0.4 }}
         className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-sm"
       >
-        <SecondaryButton
-          onClick={() => {}}
-          icon={Download}
-          className="w-full sm:w-auto"
-        >
-          Download Confirmation
-        </SecondaryButton>
         <PrimaryButton
           onClick={nav.goToOrders}
           className="w-full sm:w-auto"
@@ -857,7 +864,7 @@ function ConfirmationStep({ nav }) {
       <motion.button
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
+        transition={{ delay: 0.9 }}
         type="button"
         onClick={nav.goToCatalog}
         className="mt-5 text-sm font-medium transition-colors hover:opacity-80"
@@ -880,6 +887,8 @@ function ConfirmationStep({ nav }) {
 // ---------------------------------------------------------------------------
 
 export default function PreviewCheckoutPage({ config, cart, nav }) {
+  const { client, isAuthenticated, orgId } = useWholesale();
+
   const {
     items = [],
     subtotal = 0,
@@ -901,12 +910,22 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
   const { goToHome, goToCatalog, goToCart, goToOrders, goBack } = nav;
 
   const [step, setStep] = useState(1);
-  const [deliveryAddress, setDeliveryAddress] = useState(SAVED_ADDRESSES[0].id);
+  const [deliveryAddress, setDeliveryAddress] = useState('shipping');
   const [poNumber, setPoNumber] = useState(cartPoNumber || '');
   const [deliveryDate, setDeliveryDate] = useState(cartDeliveryDate || '');
-  const [contactPerson, setContactPerson] = useState('John Doe');
+  const [contactPerson, setContactPerson] = useState(client?.full_name || '');
   const [specialInstructions, setSpecialInstructions] = useState(cartOrderNotes || '');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [confirmedOrderNumber, setConfirmedOrderNumber] = useState(null);
   const clearedRef = useRef(false);
+
+  // Update contact person when client loads
+  useEffect(() => {
+    if (client?.full_name && !contactPerson) {
+      setContactPerson(client.full_name);
+    }
+  }, [client?.full_name]);
 
   // Sync PO number and notes to cart if setters exist
   useEffect(() => {
@@ -934,6 +953,78 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (_) {}
   }, []);
+
+  // Submit order -- creates a real B2B order in the database
+  const handleSubmitOrder = useCallback(async () => {
+    if (!isAuthenticated || !client?.id || !orgId) {
+      setSubmitError('You must be signed in to place an order.');
+      return;
+    }
+
+    setSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // Resolve the shipping address JSONB from the selected option
+      const shippingAddr = deliveryAddress === 'billing'
+        ? (client.billing_address || client.shipping_address || {})
+        : (client.shipping_address || {});
+
+      const billingAddr = client.billing_address || client.shipping_address || {};
+
+      // Build combined notes
+      const notes = [
+        poNumber ? `PO: ${poNumber}` : '',
+        contactPerson ? `Contact: ${contactPerson}` : '',
+        specialInstructions || '',
+      ].filter(Boolean).join(' | ');
+
+      // Create the order
+      const order = await createB2BOrder({
+        organization_id: orgId,
+        company_id: orgId, // In this B2B portal, company_id maps to organization_id
+        client_id: client.id,
+        subtotal: subtotal || 0,
+        tax_amount: vat || 0,
+        shipping_cost: 0,
+        discount_amount: volumeDiscount || 0,
+        total: total || 0,
+        shipping_address: shippingAddr,
+        billing_address: billingAddr,
+        client_notes: notes,
+        payment_terms_days: client.payment_terms_days || 30,
+      });
+
+      // Create order items
+      if (items.length > 0) {
+        const orderItems = items.map((item) => ({
+          b2b_order_id: order.id,
+          product_id: item.productId || item.id || null,
+          product_name: item.name || 'Unknown Product',
+          sku: item.sku || '',
+          quantity: item.quantity || 1,
+          unit_price: Number(item.price) || 0,
+          line_total: (Number(item.price) || 0) * (item.quantity || 1),
+          discount_percent: 0,
+          tax_percent: 21,
+          is_preorder: false,
+        }));
+
+        await createB2BOrderItems(orderItems);
+      }
+
+      // Store the confirmed order number
+      setConfirmedOrderNumber(order.order_number || order.id);
+
+      // Move to confirmation step
+      goToStep(3);
+    } catch (err) {
+      console.error('[PreviewCheckoutPage] Order creation failed:', err);
+      setSubmitError(err.message || 'An unexpected error occurred. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [isAuthenticated, client, orgId, items, subtotal, vat, volumeDiscount, total, deliveryAddress, poNumber, contactPerson, specialInstructions, goToStep]);
 
   // Clear cart exactly once on reaching step 3
   useEffect(() => {
@@ -998,6 +1089,7 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
       <AnimatePresence mode="wait">
         {step === 1 && (
           <DeliveryDetailsStep
+            client={client}
             deliveryAddress={deliveryAddress}
             setDeliveryAddress={setDeliveryAddress}
             poNumber={poNumber}
@@ -1016,17 +1108,21 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
         {step === 2 && (
           <OrderReviewStep
             cart={cart}
+            client={client}
+            isAuthenticated={isAuthenticated}
             deliveryAddress={deliveryAddress}
             poNumber={poNumber}
             deliveryDate={deliveryDate}
             contactPerson={contactPerson}
             specialInstructions={specialInstructions}
-            onSubmit={() => goToStep(3)}
+            onSubmit={handleSubmitOrder}
             onBack={() => goToStep(1)}
+            submitting={submitting}
+            submitError={submitError}
           />
         )}
 
-        {step === 3 && <ConfirmationStep nav={nav} />}
+        {step === 3 && <ConfirmationStep nav={nav} orderNumber={confirmedOrderNumber} />}
       </AnimatePresence>
     </div>
   );

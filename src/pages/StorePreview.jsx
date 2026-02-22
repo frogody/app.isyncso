@@ -808,6 +808,10 @@ export default function StorePreview() {
     storePublished: true, configLoading: false, configError: null,
     orgId, companyId: companyId || orgId, client: null, clientLoading: false, isAuthenticated: false,
     themeVars,
+    // Navigation functions for section renderers
+    goToProduct: (productId) => nav.navigateTo('product', { productId }),
+    goToCatalog: (filters) => nav.navigateTo('catalog', filters),
+    goToHome: () => nav.navigateTo('home'),
     cartItems: cart.items,
     addToCart: cart.addItem,
     removeFromCart: cart.removeItem,
@@ -826,7 +830,7 @@ export default function StorePreview() {
     setOrderNotes: cart.setOrderNotes,
     moqViolations: cart.moqViolations,
     hasValidOrder: cart.hasValidOrder,
-  }), [config, themeVars, orgId, companyId, cart.items, cart.total, cart.itemCount, cart.subtotal, cart.poNumber, cart.deliveryDate]);
+  }), [config, themeVars, orgId, companyId, nav, cart.items, cart.total, cart.itemCount, cart.subtotal, cart.poNumber, cart.deliveryDate]);
 
   // Inject customHead into document head (Google Fonts, external styles, etc.)
   useEffect(() => {

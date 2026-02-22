@@ -12,6 +12,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion';
 import { getStoreBySubdomain } from '@/lib/db/queries/b2b';
 import supabase from '@/api/supabaseClient';
+import { supabase as supabaseAuth } from '@/api/supabaseClient';
 import { WholesaleContext } from '@/components/portal/wholesale/WholesaleProvider';
 
 // Section renderers
@@ -99,7 +100,7 @@ function buildThemeVars(theme) {
 // AccountDropdown
 // ---------------------------------------------------------------------------
 
-function AccountDropdown({ isOpen, onClose, anchorRef, onNavigate }) {
+function AccountDropdown({ isOpen, onClose, anchorRef, onNavigate, client, onSignOut }) {
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -145,8 +146,12 @@ function AccountDropdown({ isOpen, onClose, anchorRef, onNavigate }) {
         >
           {/* User info header */}
           <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--ws-border, #27272a)' }}>
-            <p className="text-sm font-medium" style={{ color: 'var(--ws-text)' }}>Guest</p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--ws-muted)' }}>Not signed in</p>
+            <p className="text-sm font-medium" style={{ color: 'var(--ws-text)' }}>
+              {client?.full_name || client?.client_name || 'Account'}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--ws-muted)' }}>
+              {client?.email || client?.company_name || ''}
+            </p>
           </div>
 
           <div className="py-1.5">
@@ -160,7 +165,9 @@ function AccountDropdown({ isOpen, onClose, anchorRef, onNavigate }) {
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-white/[0.04]"
                   style={{ color: item.danger ? '#ef4444' : 'var(--ws-muted)' }}
                   onClick={() => {
-                    if (item.page && onNavigate) {
+                    if (item.danger && onSignOut) {
+                      onSignOut();
+                    } else if (item.page && onNavigate) {
                       onNavigate(item.page);
                     }
                     onClose();
@@ -477,31 +484,6 @@ function PublicFooter({ config }) {
           </div>
         )}
 
-        {footer.showNewsletter && (
-          <div className="flex flex-col sm:flex-row items-center gap-3 mb-8 pb-8" style={{ borderBottom: '1px solid var(--ws-border, #27272a)' }}>
-            <span className="text-sm" style={{ color: 'var(--ws-text, #fafafa)' }}>Stay updated</span>
-            <div className="flex gap-2 flex-1 max-w-md">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
-                style={{
-                  backgroundColor: 'var(--ws-bg, #09090b)',
-                  border: '1px solid var(--ws-border, #27272a)',
-                  color: 'var(--ws-text, #fafafa)',
-                }}
-                readOnly
-              />
-              <button
-                className="px-4 py-2 rounded-lg text-sm font-medium"
-                style={{ backgroundColor: 'var(--ws-primary, #06b6d4)', color: 'var(--ws-bg, #000)' }}
-              >
-                Subscribe
-              </button>
-            </div>
-          </div>
-        )}
-
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs">{copyright}</p>
           {footer.showSocial && socialLinks.length > 0 && (
@@ -519,103 +501,189 @@ function PublicFooter({ config }) {
   );
 }
 
+
 // ---------------------------------------------------------------------------
-// PublicChatWidget
+// StoreLoginPage -- Auth gate login screen themed with store CSS vars
 // ---------------------------------------------------------------------------
 
-function PublicChatWidget() {
-  const [open, setOpen] = useState(false);
+function StoreLoginPage({ storeData, themeVars, onAuthenticated }) {
+  const [email, setEmail] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState(null);
+
+  const config = storeData?.store_config || {};
+  const storeName = config?.seo?.title || config?.navigation?.companyName || 'Store';
+  const logoUrl = storeData?.logo_url;
+  const orgId = storeData?.organization_id;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email.trim() || sending) return;
+    setSending(true);
+    setError(null);
+
+    try {
+      // Verify email exists in portal_clients for this org
+      const { data: clientData, error: clientErr } = await supabaseAuth
+        .from('portal_clients')
+        .select('id, email, organization_id, status')
+        .eq('email', email.toLowerCase().trim())
+        .eq('organization_id', orgId)
+        .in('status', ['active', 'invited'])
+        .single();
+
+      if (clientErr || !clientData) {
+        setError('No account found with this email. Please contact your supplier.');
+        setSending(false);
+        return;
+      }
+
+      // Send magic link OTP
+      const { error: authErr } = await supabaseAuth.auth.signInWithOtp({
+        email: email.toLowerCase().trim(),
+        options: {
+          emailRedirectTo: window.location.origin + window.location.pathname,
+          data: {
+            portal_client_id: clientData.id,
+            organization_id: clientData.organization_id,
+          },
+        },
+      });
+
+      if (authErr) throw authErr;
+      setSent(true);
+    } catch (err) {
+      console.error('[StoreLogin] error:', err);
+      setError(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
-    <>
-      {/* Chat bubble */}
-      <button
-        onClick={() => setOpen(!open)}
-        className="fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105"
-        style={{ backgroundColor: 'var(--ws-primary, #06b6d4)' }}
+    <div
+      style={{
+        ...themeVars,
+        backgroundColor: 'var(--ws-bg, #09090b)',
+        minHeight: '100vh',
+        fontFamily: 'var(--ws-font, Inter, system-ui, sans-serif)',
+        color: 'var(--ws-text, #fafafa)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem',
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-sm"
       >
-        {open ? (
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: 'var(--ws-bg, #000)' }}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        ) : (
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: 'var(--ws-bg, #000)' }}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-        )}
-        {!open && (
-          <span
-            className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center"
-            style={{ backgroundColor: '#ef4444', color: '#fff' }}
+        {/* Logo & Store Name */}
+        <div className="flex flex-col items-center mb-8">
+          {logoUrl ? (
+            <img src={logoUrl} alt={storeName} className="w-16 h-16 rounded-2xl object-contain mb-4" />
+          ) : (
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold mb-4"
+              style={{ backgroundColor: 'var(--ws-primary, #06b6d4)', color: 'var(--ws-bg, #000)' }}
+            >
+              {storeName[0]?.toUpperCase()}
+            </div>
+          )}
+          <h1
+            className="text-xl font-semibold"
+            style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
           >
-            1
-          </span>
-        )}
-      </button>
+            {storeName}
+          </h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--ws-muted, #a1a1aa)' }}>
+            Sign in to access the wholesale store
+          </p>
+        </div>
 
-      {/* Chat window */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            transition={{ duration: 0.2 }}
-            className="fixed bottom-24 right-5 z-50 w-80 rounded-2xl overflow-hidden"
-            style={{
-              backgroundColor: 'var(--ws-surface, #18181b)',
-              border: '1px solid var(--ws-border, #27272a)',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-              height: '360px',
-            }}
-          >
-            <div className="px-4 py-3 flex items-center gap-3" style={{ borderBottom: '1px solid var(--ws-border, #27272a)' }}>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--ws-primary)', color: 'var(--ws-bg)' }}>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+        {/* Login Card */}
+        <div
+          className="rounded-2xl p-6"
+          style={{
+            backgroundColor: 'var(--ws-surface, #18181b)',
+            border: '1px solid var(--ws-border, #27272a)',
+          }}
+        >
+          {sent ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-4"
+            >
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
+                style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="#10b981" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                 </svg>
               </div>
-              <div>
-                <p className="text-sm font-medium" style={{ color: 'var(--ws-text)' }}>Support</p>
-                <p className="text-[11px]" style={{ color: 'var(--ws-muted)' }}>Usually replies in a few minutes</p>
-              </div>
-            </div>
-            <div className="flex-1 flex items-center justify-center p-6 text-center" style={{ height: 'calc(100% - 120px)' }}>
-              <p className="text-xs" style={{ color: 'var(--ws-muted)' }}>
-                Chat support is available during business hours.
+              <h3 className="text-base font-semibold mb-1" style={{ color: 'var(--ws-text)' }}>
+                Check your email
+              </h3>
+              <p className="text-sm" style={{ color: 'var(--ws-muted)' }}>
+                We sent a login link to <strong style={{ color: 'var(--ws-text)' }}>{email}</strong>
               </p>
-            </div>
-            <div className="px-3 py-3" style={{ borderTop: '1px solid var(--ws-border, #27272a)' }}>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Type a message..."
-                  className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
-                  style={{
-                    backgroundColor: 'var(--ws-bg)',
-                    border: '1px solid var(--ws-border)',
-                    color: 'var(--ws-text)',
-                  }}
-                />
-                <button
-                  className="px-3 py-2 rounded-lg text-sm font-medium"
-                  style={{ backgroundColor: 'var(--ws-primary)', color: 'var(--ws-bg)' }}
-                >
-                  Send
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+              <button
+                onClick={() => { setSent(false); setEmail(''); }}
+                className="mt-4 text-sm font-medium transition-opacity hover:opacity-80"
+                style={{ color: 'var(--ws-primary, #06b6d4)' }}
+              >
+                Use a different email
+              </button>
+            </motion.div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--ws-text)' }}>
+                Email address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                required
+                className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-colors"
+                style={{
+                  backgroundColor: 'var(--ws-bg, #09090b)',
+                  border: '1px solid var(--ws-border, #27272a)',
+                  color: 'var(--ws-text, #fafafa)',
+                }}
+                autoFocus
+              />
+              {error && (
+                <p className="text-sm mt-2" style={{ color: '#ef4444' }}>{error}</p>
+              )}
+              <button
+                type="submit"
+                disabled={sending || !email.trim()}
+                className="w-full mt-4 px-4 py-3 rounded-xl text-sm font-semibold transition-colors disabled:opacity-40"
+                style={{
+                  backgroundColor: 'var(--ws-primary, #06b6d4)',
+                  color: 'var(--ws-bg, #000)',
+                }}
+              >
+                {sending ? 'Sending...' : 'Continue with Email'}
+              </button>
+            </form>
+          )}
+        </div>
+
+        <p className="text-center text-xs mt-6" style={{ color: 'var(--ws-muted, #a1a1aa)', opacity: 0.6 }}>
+          Don't have an account? Contact your supplier for access.
+        </p>
+      </motion.div>
+    </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// localStorage cart persistence helpers
-// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Main PublicStorefront Component
@@ -634,6 +702,10 @@ export default function PublicStorefront({ subdomain }) {
   const [cartOpen, setCartOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const accountBtnRef = useRef(null);
+
+  // Auth state
+  const [portalClient, setPortalClient] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   // Company and products
   const [companyId, setCompanyId] = useState(null);
@@ -671,6 +743,96 @@ export default function PublicStorefront({ subdomain }) {
 
     return () => { cancelled = true; };
   }, [subdomain]);
+
+  // -----------------------------------------------------------------------
+  // 1b. Auth gate -- check session and resolve portal_client for this org
+  // -----------------------------------------------------------------------
+  useEffect(() => {
+    if (!storeData?.organization_id) return;
+    let cancelled = false;
+    const orgId = storeData.organization_id;
+
+    const resolveClient = async (userId, userEmail) => {
+      const selectFields = '*, organization:organizations(id, name, slug, logo_url)';
+
+      // Try by auth_user_id first
+      let { data, error: fetchErr } = await supabaseAuth
+        .from('portal_clients')
+        .select(selectFields)
+        .eq('auth_user_id', userId)
+        .eq('organization_id', orgId)
+        .in('status', ['active', 'invited'])
+        .single();
+
+      // Fallback: try by email and link account
+      if (fetchErr?.code === 'PGRST116' && userEmail) {
+        const { data: emailMatch } = await supabaseAuth
+          .from('portal_clients')
+          .select(selectFields)
+          .eq('email', userEmail.toLowerCase())
+          .eq('organization_id', orgId)
+          .in('status', ['active', 'invited'])
+          .single();
+
+        if (emailMatch) {
+          await supabaseAuth
+            .from('portal_clients')
+            .update({ auth_user_id: userId, status: 'active', last_login_at: new Date().toISOString() })
+            .eq('id', emailMatch.id);
+          data = { ...emailMatch, auth_user_id: userId, status: 'active' };
+        }
+      }
+
+      return data || null;
+    };
+
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabaseAuth.auth.getSession();
+        if (cancelled) return;
+
+        if (session?.user) {
+          const client = await resolveClient(session.user.id, session.user.email);
+          if (!cancelled) {
+            setPortalClient(client);
+            if (client) {
+              // Update last login
+              supabaseAuth.from('portal_clients')
+                .update({ last_login_at: new Date().toISOString() })
+                .eq('id', client.id)
+                .then(() => {});
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[PublicStorefront] Auth init error:', err);
+      } finally {
+        if (!cancelled) setAuthLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Listen for auth changes (magic link callback)
+    const { data: { subscription } } = supabaseAuth.auth.onAuthStateChange(async (event, newSession) => {
+      if (cancelled) return;
+      if (event === 'SIGNED_IN' && newSession?.user) {
+        setAuthLoading(true);
+        const client = await resolveClient(newSession.user.id, newSession.user.email);
+        if (!cancelled) {
+          setPortalClient(client);
+          setAuthLoading(false);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        if (!cancelled) setPortalClient(null);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, [storeData?.organization_id]);
 
   // -----------------------------------------------------------------------
   // 2. Resolve company_id from organization_id
@@ -800,6 +962,12 @@ export default function PublicStorefront({ subdomain }) {
   // -----------------------------------------------------------------------
   // WholesaleContext value (memoised)
   // -----------------------------------------------------------------------
+  // Sign out handler
+  const handleSignOut = useCallback(async () => {
+    await supabaseAuth.auth.signOut();
+    setPortalClient(null);
+  }, []);
+
   const wholesaleValue = useMemo(() => ({
     config: config || { theme: {}, sections: [], navigation: [], footer: {} },
     storePublished: true,
@@ -807,10 +975,18 @@ export default function PublicStorefront({ subdomain }) {
     configError: null,
     orgId,
     companyId: companyId || orgId,
-    client: null,
-    clientLoading: false,
-    isAuthenticated: false,
+    client: portalClient,
+    clientLoading: authLoading,
+    isAuthenticated: !!portalClient,
     themeVars,
+    // Navigation functions for section renderers
+    goToProduct: (productId) => nav.navigateTo('product', { productId }),
+    goToCatalog: (filters) => {
+      nav.navigateTo('catalog');
+      if (filters?.category) setPageData(filters);
+    },
+    goToHome: () => nav.navigateTo('home'),
+    // Cart
     cartItems: cart.items,
     addToCart: cart.addItem,
     removeFromCart: cart.removeItem,
@@ -829,7 +1005,7 @@ export default function PublicStorefront({ subdomain }) {
     setOrderNotes: cart.setOrderNotes,
     moqViolations: cart.moqViolations,
     hasValidOrder: cart.hasValidOrder,
-  }), [config, themeVars, orgId, companyId, cart.items, cart.total, cart.itemCount, cart.subtotal, cart.poNumber, cart.deliveryDate, cart.orderNotes, cart.vat, cart.volumeDiscount, cart.moqViolations, cart.hasValidOrder, cart.addItem, cart.removeItem, cart.updateQuantity, cart.clearCart, cart.setPoNumber, cart.setDeliveryDate, cart.setOrderNotes]);
+  }), [config, themeVars, orgId, companyId, portalClient, authLoading, nav, cart.items, cart.total, cart.itemCount, cart.subtotal, cart.poNumber, cart.deliveryDate, cart.orderNotes, cart.vat, cart.volumeDiscount, cart.moqViolations, cart.hasValidOrder, cart.addItem, cart.removeItem, cart.updateQuantity, cart.clearCart, cart.setPoNumber, cart.setDeliveryDate, cart.setOrderNotes]);
 
   // -----------------------------------------------------------------------
   // Loading state
@@ -851,6 +1027,35 @@ export default function PublicStorefront({ subdomain }) {
   // -----------------------------------------------------------------------
   // Not found state
   // -----------------------------------------------------------------------
+  // -----------------------------------------------------------------------
+  // Auth loading state
+  // -----------------------------------------------------------------------
+  if (!notFound && storeData && authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#09090b' }}>
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: '#06b6d4', borderTopColor: 'transparent' }}
+          />
+          <span className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>Checking access...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // -----------------------------------------------------------------------
+  // Auth gate -- show login if not authenticated
+  // -----------------------------------------------------------------------
+  if (!notFound && storeData && !authLoading && !portalClient) {
+    return (
+      <StoreLoginPage
+        storeData={storeData}
+        themeVars={themeVars}
+      />
+    );
+  }
+
   if (notFound) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#09090b' }}>
@@ -906,6 +1111,8 @@ export default function PublicStorefront({ subdomain }) {
               onClose={() => setAccountOpen(false)}
               anchorRef={accountBtnRef}
               onNavigate={(page) => nav.navigateTo(page)}
+              client={portalClient}
+              onSignOut={handleSignOut}
             />
           </div>
         </div>
@@ -953,8 +1160,6 @@ export default function PublicStorefront({ subdomain }) {
         <PreviewSearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} products={allProducts} nav={nav} cart={cart} />
         <PreviewCartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} cart={cart} nav={nav} />
 
-        {/* Chat Widget */}
-        <PublicChatWidget />
       </div>
     </WholesaleContext.Provider>
   );

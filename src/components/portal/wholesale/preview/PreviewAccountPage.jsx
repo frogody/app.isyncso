@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   GlassCard,
@@ -51,7 +51,11 @@ import {
   Calendar,
   RefreshCw,
   Copy,
+  LogIn,
+  Loader2,
 } from 'lucide-react';
+import { useWholesale } from '../WholesaleProvider';
+import { getClientOrders } from '@/lib/db/queries/b2b';
 
 // ---------------------------------------------------------------------------
 // Toggle switch
@@ -179,108 +183,60 @@ function TabButton({ active, label, icon: Icon, onClick }) {
 const TABS = [
   { id: 'overview', label: 'Overview', icon: Building2 },
   { id: 'profile', label: 'Company Profile', icon: FileText },
-  { id: 'addresses', label: 'Delivery Addresses', icon: MapPin },
+  { id: 'addresses', label: 'Addresses', icon: MapPin },
   { id: 'preferences', label: 'Order Preferences', icon: Settings },
-  { id: 'team', label: 'Team Members', icon: Users },
-  { id: 'security', label: 'Security', icon: Shield },
 ];
 
 // ---------------------------------------------------------------------------
-// MOCK DATA
+// Helper: format address JSONB
 // ---------------------------------------------------------------------------
 
-const MOCK_ACTIVITIES = [
-  { id: 1, text: 'Order ORD-2026-00142 delivered', time: '2 hours ago', status: 'success' },
-  { id: 2, text: 'Invoice INV-2026-0089 paid', time: '1 day ago', status: 'success' },
-  { id: 3, text: 'Order ORD-2026-00141 shipped', time: '2 days ago', status: 'info' },
-  { id: 4, text: 'Credit limit increased to EUR 50,000', time: '5 days ago', status: 'primary' },
-  { id: 5, text: 'New team member Jane Smith added', time: '1 week ago', status: 'neutral' },
-];
-
-const MOCK_ADDRESSES = [
-  {
-    id: 1,
-    label: 'Warehouse',
-    street: 'Industrieweg 42',
-    postal: '1234 AB',
-    city: 'Amsterdam',
-    country: 'Netherlands',
-    department: 'Logistics',
-    isDefault: true,
-  },
-  {
-    id: 2,
-    label: 'Head Office',
-    street: 'Herengracht 100',
-    postal: '1015 BS',
-    city: 'Amsterdam',
-    country: 'Netherlands',
-    department: 'Administration',
-    isDefault: false,
-  },
-  {
-    id: 3,
-    label: 'Distribution Center',
-    street: 'Europaweg 8',
-    postal: '3542 DR',
-    city: 'Utrecht',
-    country: 'Netherlands',
-    department: 'Fulfillment',
-    isDefault: false,
-  },
-];
-
-const MOCK_TEAM = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john@techdistribution.nl',
-    role: 'admin',
-    lastActive: '2 hours ago',
-  },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    email: 'jane@techdistribution.nl',
-    role: 'orderer',
-    lastActive: '1 day ago',
-  },
-  {
-    id: 3,
-    name: 'Bob Wilson',
-    email: 'bob@techdistribution.nl',
-    role: 'viewer',
-    lastActive: '3 days ago',
-  },
-];
-
-const MOCK_LOGIN_HISTORY = [
-  { date: 'Feb 22, 2026 14:32', ip: '82.161.45.12', location: 'Amsterdam, NL', device: 'Chrome / macOS' },
-  { date: 'Feb 21, 2026 09:15', ip: '82.161.45.12', location: 'Amsterdam, NL', device: 'Chrome / macOS' },
-  { date: 'Feb 20, 2026 16:44', ip: '185.23.108.3', location: 'Utrecht, NL', device: 'Safari / iOS' },
-  { date: 'Feb 19, 2026 11:22', ip: '82.161.45.12', location: 'Amsterdam, NL', device: 'Chrome / macOS' },
-  { date: 'Feb 18, 2026 08:55', ip: '82.161.45.12', location: 'Amsterdam, NL', device: 'Firefox / Windows' },
-];
+function formatAddress(addr) {
+  if (!addr) return null;
+  return [addr.street, addr.city, addr.zip, addr.state, addr.country]
+    .filter(Boolean)
+    .join(', ');
+}
 
 // ---------------------------------------------------------------------------
-// Role badge styling
+// Tab: Overview (uses real client data)
 // ---------------------------------------------------------------------------
 
-const ROLE_CONFIG = {
-  admin: { label: 'Admin', status: 'primary' },
-  orderer: { label: 'Orderer', status: 'info' },
-  viewer: { label: 'Viewer', status: 'neutral' },
-};
-
-// ---------------------------------------------------------------------------
-// Tab: Overview
-// ---------------------------------------------------------------------------
-
-function OverviewTab() {
-  const creditUsed = 12500;
-  const creditLimit = 50000;
+function OverviewTab({ client }) {
+  const creditLimit = Number(client?.credit_limit) || 0;
+  const creditUsed = 0; // Could be calculated from outstanding orders
   const creditAvailable = creditLimit - creditUsed;
-  const creditPercent = ((creditLimit - creditUsed) / creditLimit) * 100;
+  const creditPercent = creditLimit > 0 ? ((creditLimit - creditUsed) / creditLimit) * 100 : 100;
+  const paymentTerms = client?.payment_terms_days || 30;
+  const taxExempt = client?.tax_exempt || false;
+
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+
+  // Fetch recent orders for stats
+  useEffect(() => {
+    if (!client?.id) {
+      setOrdersLoading(false);
+      return;
+    }
+    let cancelled = false;
+    const fetch = async () => {
+      try {
+        const data = await getClientOrders(client.id, 50);
+        if (!cancelled) setRecentOrders(data || []);
+      } catch (err) {
+        console.error('[OverviewTab] Failed to fetch orders:', err);
+      } finally {
+        if (!cancelled) setOrdersLoading(false);
+      }
+    };
+    fetch();
+    return () => { cancelled = true; };
+  }, [client?.id]);
+
+  const totalOrders = recentOrders.length;
+  const totalSpend = recentOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+  const avgOrder = totalOrders > 0 ? totalSpend / totalOrders : 0;
 
   return (
     <motion.div
@@ -295,63 +251,71 @@ function OverviewTab() {
           {/* Left: Account info */}
           <div className="flex-1 space-y-5">
             <div className="flex items-center gap-3 flex-wrap">
-              <StatusBadge status="primary" label="Gold Partner" pulse />
               <StatusBadge status="success" label="Active" />
+              {taxExempt && <StatusBadge status="info" label="Tax Exempt" />}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Credit Limit */}
+              {/* Company Name */}
               <div>
-                <p className="text-xs font-medium mb-1" style={{ color: 'var(--ws-muted)' }}>Credit Limit</p>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--ws-muted)' }}>Company</p>
                 <p className="text-xl font-bold" style={{ color: 'var(--ws-text)' }}>
-                  {formatCurrency(creditLimit)}
+                  {client?.company_name || 'N/A'}
                 </p>
               </div>
-              {/* Available Credit */}
+              {/* Contact */}
               <div>
-                <p className="text-xs font-medium mb-1" style={{ color: 'var(--ws-muted)' }}>Available Credit</p>
-                <p className="text-xl font-bold" style={{ color: 'var(--ws-primary)' }}>
-                  {formatCurrency(creditAvailable)}
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--ws-muted)' }}>Contact</p>
+                <p className="text-base font-semibold" style={{ color: 'var(--ws-text)' }}>
+                  {client?.full_name || 'N/A'}
                 </p>
               </div>
+              {/* Credit Limit */}
+              {creditLimit > 0 && (
+                <div>
+                  <p className="text-xs font-medium mb-1" style={{ color: 'var(--ws-muted)' }}>Credit Limit</p>
+                  <p className="text-xl font-bold" style={{ color: 'var(--ws-text)' }}>
+                    {formatCurrency(creditLimit)}
+                  </p>
+                </div>
+              )}
               {/* Payment Terms */}
               <div>
                 <p className="text-xs font-medium mb-1" style={{ color: 'var(--ws-muted)' }}>Payment Terms</p>
-                <p className="text-base font-semibold" style={{ color: 'var(--ws-text)' }}>Net-30</p>
-              </div>
-              {/* Member Since */}
-              <div>
-                <p className="text-xs font-medium mb-1" style={{ color: 'var(--ws-muted)' }}>Member Since</p>
-                <p className="text-base font-semibold" style={{ color: 'var(--ws-text)' }}>January 2024</p>
+                <p className="text-base font-semibold" style={{ color: 'var(--ws-text)' }}>
+                  Net-{paymentTerms}
+                </p>
               </div>
             </div>
 
             {/* Credit progress bar */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-medium" style={{ color: 'var(--ws-muted)' }}>Credit Utilization</p>
-                <p className="text-xs font-semibold" style={{ color: 'var(--ws-primary)' }}>
-                  {creditPercent.toFixed(0)}% available
-                </p>
+            {creditLimit > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-medium" style={{ color: 'var(--ws-muted)' }}>Credit Utilization</p>
+                  <p className="text-xs font-semibold" style={{ color: 'var(--ws-primary)' }}>
+                    {creditPercent.toFixed(0)}% available
+                  </p>
+                </div>
+                <div
+                  className="h-2.5 rounded-full overflow-hidden"
+                  style={{ background: 'color-mix(in srgb, var(--ws-border) 60%, transparent)' }}
+                >
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${creditPercent}%` }}
+                    transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
+                    className="h-full rounded-full"
+                    style={{
+                      background: 'linear-gradient(90deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 60%, #7c3aed))',
+                    }}
+                  />
+                </div>
               </div>
-              <div
-                className="h-2.5 rounded-full overflow-hidden"
-                style={{ background: 'color-mix(in srgb, var(--ws-border) 60%, transparent)' }}
-              >
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${creditPercent}%` }}
-                  transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
-                  className="h-full rounded-full"
-                  style={{
-                    background: 'linear-gradient(90deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 60%, #7c3aed))',
-                  }}
-                />
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Right: Account Manager */}
+          {/* Right: Contact Details */}
           <div
             className="lg:w-72 flex-shrink-0 rounded-xl p-5"
             style={{
@@ -360,46 +324,33 @@ function OverviewTab() {
             }}
           >
             <p className="text-xs font-medium mb-3" style={{ color: 'var(--ws-muted)' }}>
-              Account Manager
+              Contact Details
             </p>
-            <div className="flex items-center gap-3 mb-4">
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
-                style={{
-                  background: 'linear-gradient(135deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 60%, #7c3aed))',
-                  color: '#fff',
-                }}
-              >
-                SB
-              </div>
-              <div>
-                <p className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>
-                  Sarah van den Berg
-                </p>
-                <p className="text-xs" style={{ color: 'var(--ws-muted)' }}>Senior Account Executive</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <a
-                href="mailto:sarah@supplier.com"
-                className="flex items-center gap-2 text-xs transition-colors"
-                style={{ color: 'var(--ws-muted)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ws-primary)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ws-muted)')}
-              >
-                <Mail className="w-3.5 h-3.5" />
-                sarah@supplier.com
-              </a>
-              <a
-                href="tel:+31201234568"
-                className="flex items-center gap-2 text-xs transition-colors"
-                style={{ color: 'var(--ws-muted)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ws-primary)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ws-muted)')}
-              >
-                <Phone className="w-3.5 h-3.5" />
-                +31 20 123 4568
-              </a>
+            <div className="space-y-3">
+              {client?.email && (
+                <div className="flex items-center gap-2.5">
+                  <Mail className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--ws-primary)' }} />
+                  <span className="text-xs truncate" style={{ color: 'var(--ws-muted)' }}>
+                    {client.email}
+                  </span>
+                </div>
+              )}
+              {client?.phone && (
+                <div className="flex items-center gap-2.5">
+                  <Phone className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--ws-primary)' }} />
+                  <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>
+                    {client.phone}
+                  </span>
+                </div>
+              )}
+              {client?.full_name && (
+                <div className="flex items-center gap-2.5">
+                  <User className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--ws-primary)' }} />
+                  <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>
+                    {client.full_name}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -408,66 +359,28 @@ function OverviewTab() {
       {/* Quick Stats Row */}
       <motion.div
         variants={motionVariants.container}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
       >
-        <StatCard icon={Package} label="Total Orders" value="47" suffix="All time" index={0} />
-        <StatCard icon={TrendingUp} label="This Year Spend" value={formatCurrency(124500)} suffix="2026" index={1} />
-        <StatCard icon={CreditCard} label="Average Order" value={formatCurrency(2650)} index={2} />
-        <StatCard icon={Clock} label="On-Time Payment" value="98%" suffix="Excellent" index={3} />
+        <StatCard
+          icon={Package}
+          label="Total Orders"
+          value={ordersLoading ? '...' : String(totalOrders)}
+          suffix="All time"
+          index={0}
+        />
+        <StatCard
+          icon={TrendingUp}
+          label="Total Spend"
+          value={ordersLoading ? '...' : formatCurrency(totalSpend)}
+          index={1}
+        />
+        <StatCard
+          icon={CreditCard}
+          label="Average Order"
+          value={ordersLoading ? '...' : formatCurrency(avgOrder)}
+          index={2}
+        />
       </motion.div>
-
-      {/* Recent Activity */}
-      <GlassCard className="p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-base font-semibold" style={{ color: 'var(--ws-text)' }}>
-            Recent Activity
-          </h3>
-          <button
-            className="text-xs font-medium transition-colors"
-            style={{ color: 'var(--ws-muted)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ws-primary)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ws-muted)')}
-          >
-            View All
-          </button>
-        </div>
-        <div className="space-y-0">
-          {MOCK_ACTIVITIES.map((activity, idx) => (
-            <div
-              key={activity.id}
-              className="flex items-center justify-between py-3.5"
-              style={{
-                borderBottom:
-                  idx < MOCK_ACTIVITIES.length - 1
-                    ? '1px solid color-mix(in srgb, var(--ws-border) 50%, transparent)'
-                    : 'none',
-              }}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{
-                    background:
-                      activity.status === 'success'
-                        ? '#22c55e'
-                        : activity.status === 'info'
-                        ? '#3b82f6'
-                        : activity.status === 'primary'
-                        ? 'var(--ws-primary)'
-                        : '#a1a1aa',
-                  }}
-                />
-                <p className="text-sm truncate" style={{ color: 'var(--ws-text)' }}>
-                  {activity.text}
-                </p>
-              </div>
-              <span className="text-xs flex-shrink-0 ml-4" style={{ color: 'var(--ws-muted)' }}>
-                {activity.time}
-              </span>
-            </div>
-          ))}
-        </div>
-      </GlassCard>
 
       {/* Notification Preferences */}
       <NotificationPreferences />
@@ -543,89 +456,47 @@ function NotificationPreferences() {
 }
 
 // ---------------------------------------------------------------------------
-// Tab: Company Profile
+// Tab: Company Profile (real client data)
 // ---------------------------------------------------------------------------
 
-function CompanyProfileTab() {
-  const [editing, setEditing] = useState(false);
-  const [feedback, setFeedback] = useState('');
-  const [form, setForm] = useState({
-    companyName: 'TechDistribution B.V.',
-    registrationNumber: 'KVK 12345678',
-    vatNumber: 'NL123456789B01',
-    industry: 'Technology Distribution',
-    contactPerson: 'John Doe',
-    email: 'john@techdistribution.nl',
-    phone: '+31 20 123 4567',
-    website: 'www.techdistribution.nl',
-  });
-
-  const handleSave = useCallback(() => {
-    setEditing(false);
-    setFeedback('Company profile updated!');
-    setTimeout(() => setFeedback(''), 2500);
-  }, []);
-
+function CompanyProfileTab({ client }) {
   const fields = [
-    { key: 'companyName', label: 'Company Name', icon: Building2 },
-    { key: 'registrationNumber', label: 'Registration Number (KVK)', icon: Hash },
-    { key: 'vatNumber', label: 'VAT Number', icon: FileText },
-    { key: 'industry', label: 'Industry', icon: Globe },
-    { key: 'contactPerson', label: 'Contact Person', icon: User },
-    { key: 'email', label: 'Email Address', icon: Mail },
-    { key: 'phone', label: 'Phone Number', icon: Phone },
-    { key: 'website', label: 'Website', icon: Globe },
+    { key: 'company_name', label: 'Company Name', icon: Building2, value: client?.company_name || '' },
+    { key: 'full_name', label: 'Contact Person', icon: User, value: client?.full_name || '' },
+    { key: 'email', label: 'Email Address', icon: Mail, value: client?.email || '' },
+    { key: 'phone', label: 'Phone Number', icon: Phone, value: client?.phone || '' },
+    { key: 'payment_terms', label: 'Payment Terms', icon: CreditCard, value: client?.payment_terms_days ? `Net-${client.payment_terms_days}` : 'N/A' },
+    { key: 'credit_limit', label: 'Credit Limit', icon: TrendingUp, value: client?.credit_limit ? formatCurrency(Number(client.credit_limit)) : 'N/A' },
+    { key: 'tax_exempt', label: 'Tax Exempt', icon: FileText, value: client?.tax_exempt ? 'Yes' : 'No' },
   ];
 
   return (
     <motion.div variants={motionVariants.container} initial="hidden" animate="visible">
       <GlassCard className="p-6 sm:p-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2.5">
-            <Building2 className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
-            <h3 className="text-base font-semibold" style={{ color: 'var(--ws-text)' }}>
-              Company Information
-            </h3>
-          </div>
-          <div className="flex items-center gap-2">
-            <FeedbackToast message={feedback} />
-            {!editing ? (
-              <SecondaryButton size="sm" icon={Edit2} onClick={() => setEditing(true)}>
-                Edit
-              </SecondaryButton>
-            ) : (
-              <div className="flex gap-2">
-                <SecondaryButton size="sm" onClick={() => setEditing(false)}>Cancel</SecondaryButton>
-                <PrimaryButton size="sm" icon={Check} onClick={handleSave}>Save</PrimaryButton>
-              </div>
-            )}
-          </div>
+        <div className="flex items-center gap-2.5 mb-6">
+          <Building2 className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
+          <h3 className="text-base font-semibold" style={{ color: 'var(--ws-text)' }}>
+            Company Information
+          </h3>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {fields.map(({ key, label, icon: Icon }) => (
+          {fields.map(({ key, label, icon: Icon, value }) => (
             <div key={key}>
               <label className="flex items-center gap-1.5 text-xs font-medium mb-2" style={{ color: 'var(--ws-muted)' }}>
                 <Icon className="w-3.5 h-3.5" />
                 {label}
               </label>
-              {editing ? (
-                <GlassInput
-                  value={form[key]}
-                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                />
-              ) : (
-                <p
-                  className="px-4 py-3 rounded-xl text-sm"
-                  style={{
-                    background: 'color-mix(in srgb, var(--ws-surface) 40%, transparent)',
-                    border: '1px solid color-mix(in srgb, var(--ws-border) 50%, transparent)',
-                    color: 'var(--ws-text)',
-                  }}
-                >
-                  {form[key]}
-                </p>
-              )}
+              <p
+                className="px-4 py-3 rounded-xl text-sm"
+                style={{
+                  background: 'color-mix(in srgb, var(--ws-surface) 40%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--ws-border) 50%, transparent)',
+                  color: 'var(--ws-text)',
+                }}
+              >
+                {value || '-'}
+              </p>
             </div>
           ))}
         </div>
@@ -635,210 +506,75 @@ function CompanyProfileTab() {
 }
 
 // ---------------------------------------------------------------------------
-// Tab: Delivery Addresses
+// Tab: Addresses (real client addresses from JSONB)
 // ---------------------------------------------------------------------------
 
-function DeliveryAddressesTab() {
-  const [addresses, setAddresses] = useState(MOCK_ADDRESSES);
-  const [feedback, setFeedback] = useState('');
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newAddress, setNewAddress] = useState({
-    label: '',
-    street: '',
-    postal: '',
-    city: '',
-    country: 'Netherlands',
-    department: '',
-  });
+function AddressesTab({ client }) {
+  const shippingAddress = client?.shipping_address || null;
+  const billingAddress = client?.billing_address || null;
 
-  const handleSetDefault = useCallback((id) => {
-    setAddresses((prev) => prev.map((a) => ({ ...a, isDefault: a.id === id })));
-    setFeedback('Default address updated!');
-    setTimeout(() => setFeedback(''), 2500);
-  }, []);
+  const addresses = useMemo(() => {
+    const list = [];
+    if (shippingAddress && Object.keys(shippingAddress).length > 0) {
+      list.push({ id: 'shipping', label: 'Shipping Address', ...shippingAddress, isDefault: true });
+    }
+    if (billingAddress && Object.keys(billingAddress).length > 0) {
+      list.push({ id: 'billing', label: 'Billing Address', ...billingAddress, isDefault: false });
+    }
+    return list;
+  }, [shippingAddress, billingAddress]);
 
-  const handleDelete = useCallback((id) => {
-    setAddresses((prev) => prev.filter((a) => a.id !== id));
-    setFeedback('Address removed!');
-    setTimeout(() => setFeedback(''), 2500);
-  }, []);
-
-  const handleAdd = useCallback(() => {
-    const id = Math.max(...addresses.map((a) => a.id), 0) + 1;
-    setAddresses((prev) => [
-      ...prev,
-      { ...newAddress, id, isDefault: false },
-    ]);
-    setNewAddress({ label: '', street: '', postal: '', city: '', country: 'Netherlands', department: '' });
-    setShowAddForm(false);
-    setFeedback('Address added!');
-    setTimeout(() => setFeedback(''), 2500);
-  }, [addresses, newAddress]);
+  if (addresses.length === 0) {
+    return (
+      <motion.div variants={motionVariants.container} initial="hidden" animate="visible">
+        <GlassCard className="p-6">
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <MapPin className="w-10 h-10 mb-3" style={{ color: 'var(--ws-muted)', opacity: 0.5 }} />
+            <p className="text-sm font-medium mb-1" style={{ color: 'var(--ws-text)' }}>No addresses on file</p>
+            <p className="text-xs" style={{ color: 'var(--ws-muted)' }}>
+              Contact your account manager to add delivery addresses.
+            </p>
+          </div>
+        </GlassCard>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div variants={motionVariants.container} initial="hidden" animate="visible" className="space-y-4">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <FeedbackToast message={feedback} />
-        </div>
-        <SecondaryButton size="sm" icon={Plus} onClick={() => setShowAddForm(true)}>
-          Add New Address
-        </SecondaryButton>
-      </div>
-
       {addresses.map((addr) => (
         <GlassCard key={addr.id} className="p-5 sm:p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-4 min-w-0">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
-                style={{
-                  background: addr.isDefault
-                    ? 'color-mix(in srgb, var(--ws-primary) 12%, transparent)'
-                    : 'color-mix(in srgb, var(--ws-surface) 80%, transparent)',
-                  border: addr.isDefault
-                    ? '1px solid color-mix(in srgb, var(--ws-primary) 25%, transparent)'
-                    : '1px solid var(--ws-border)',
-                }}
-              >
-                <MapPin className="w-5 h-5" style={{ color: addr.isDefault ? 'var(--ws-primary)' : 'var(--ws-muted)' }} />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2.5 mb-1 flex-wrap">
-                  <p className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>
-                    {addr.label}
-                  </p>
-                  {addr.isDefault && <StatusBadge status="success" label="Default" size="xs" />}
-                </div>
-                <p className="text-sm" style={{ color: 'var(--ws-muted)' }}>
-                  {addr.street}, {addr.postal} {addr.city}
-                </p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--ws-muted)' }}>{addr.country}</p>
-                {addr.department && (
-                  <p className="text-xs mt-1.5" style={{ color: 'var(--ws-muted)' }}>
-                    Department: {addr.department}
-                  </p>
-                )}
-              </div>
+          <div className="flex items-start gap-4">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+              style={{
+                background: addr.isDefault
+                  ? 'color-mix(in srgb, var(--ws-primary) 12%, transparent)'
+                  : 'color-mix(in srgb, var(--ws-surface) 80%, transparent)',
+                border: addr.isDefault
+                  ? '1px solid color-mix(in srgb, var(--ws-primary) 25%, transparent)'
+                  : '1px solid var(--ws-border)',
+              }}
+            >
+              <MapPin className="w-5 h-5" style={{ color: addr.isDefault ? 'var(--ws-primary)' : 'var(--ws-muted)' }} />
             </div>
-
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              {!addr.isDefault && (
-                <button
-                  onClick={() => handleSetDefault(addr.id)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                  style={{
-                    border: '1px solid var(--ws-border)',
-                    color: 'var(--ws-muted)',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--ws-primary)';
-                    e.currentTarget.style.color = 'var(--ws-primary)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--ws-border)';
-                    e.currentTarget.style.color = 'var(--ws-muted)';
-                  }}
-                >
-                  Set as Default
-                </button>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+                <p className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>
+                  {addr.label}
+                </p>
+                {addr.isDefault && <StatusBadge status="success" label="Default" size="xs" />}
+              </div>
+              <p className="text-sm" style={{ color: 'var(--ws-muted)' }}>
+                {[addr.street, addr.city, addr.zip].filter(Boolean).join(', ')}
+              </p>
+              {addr.country && (
+                <p className="text-xs mt-0.5" style={{ color: 'var(--ws-muted)' }}>{addr.country}</p>
               )}
-              <button
-                onClick={() => setFeedback('Address updated!')}
-                className="p-2 rounded-lg transition-colors"
-                style={{ color: 'var(--ws-muted)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ws-primary)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ws-muted)')}
-                aria-label="Edit address"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleDelete(addr.id)}
-                className="p-2 rounded-lg transition-colors"
-                style={{ color: 'var(--ws-muted)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ws-muted)')}
-                aria-label="Delete address"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
             </div>
           </div>
         </GlassCard>
       ))}
-
-      {/* Add Address Form */}
-      <AnimatePresence>
-        {showAddForm && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
-          >
-            <GlassCard className="p-6">
-              <h4 className="text-sm font-semibold mb-4" style={{ color: 'var(--ws-text)' }}>
-                New Delivery Address
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>Label</label>
-                  <GlassInput
-                    placeholder="e.g. Branch Office"
-                    value={newAddress.label}
-                    onChange={(e) => setNewAddress((a) => ({ ...a, label: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>Street Address</label>
-                  <GlassInput
-                    placeholder="Street and number"
-                    value={newAddress.street}
-                    onChange={(e) => setNewAddress((a) => ({ ...a, street: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>Postal Code</label>
-                  <GlassInput
-                    placeholder="1234 AB"
-                    value={newAddress.postal}
-                    onChange={(e) => setNewAddress((a) => ({ ...a, postal: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>City</label>
-                  <GlassInput
-                    placeholder="Amsterdam"
-                    value={newAddress.city}
-                    onChange={(e) => setNewAddress((a) => ({ ...a, city: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>Country</label>
-                  <GlassInput
-                    placeholder="Netherlands"
-                    value={newAddress.country}
-                    onChange={(e) => setNewAddress((a) => ({ ...a, country: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>Department</label>
-                  <GlassInput
-                    placeholder="e.g. Logistics"
-                    value={newAddress.department}
-                    onChange={(e) => setNewAddress((a) => ({ ...a, department: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-3 mt-5">
-                <PrimaryButton size="sm" icon={Check} onClick={handleAdd}>Save Address</PrimaryButton>
-                <SecondaryButton size="sm" onClick={() => setShowAddForm(false)}>Cancel</SecondaryButton>
-              </div>
-            </GlassCard>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 }
@@ -849,11 +585,10 @@ function DeliveryAddressesTab() {
 
 function OrderPreferencesTab() {
   const [prefs, setPrefs] = useState({
-    defaultAddress: 'warehouse',
-    poPrefix: 'PO-2026-',
+    defaultAddress: 'shipping',
     preferredDay: 'tuesday',
     autoReorder: false,
-    orderNotes: 'Deliver to loading dock B. Ring bell on arrival.',
+    orderNotes: '',
     stockThreshold: '25',
   });
   const [feedback, setFeedback] = useState('');
@@ -874,36 +609,6 @@ function OrderPreferencesTab() {
         </div>
 
         <div className="space-y-5 max-w-xl">
-          {/* Default Delivery Address */}
-          <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: 'var(--ws-muted)' }}>
-              Default Delivery Address
-            </label>
-            <GlassSelect
-              value={prefs.defaultAddress}
-              onChange={(e) => setPrefs((p) => ({ ...p, defaultAddress: e.target.value }))}
-            >
-              <option value="warehouse">Warehouse - Industrieweg 42, Amsterdam</option>
-              <option value="office">Head Office - Herengracht 100, Amsterdam</option>
-              <option value="dc">Distribution Center - Europaweg 8, Utrecht</option>
-            </GlassSelect>
-          </div>
-
-          {/* PO Number Prefix */}
-          <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: 'var(--ws-muted)' }}>
-              PO Number Prefix
-            </label>
-            <GlassInput
-              value={prefs.poPrefix}
-              onChange={(e) => setPrefs((p) => ({ ...p, poPrefix: e.target.value }))}
-              placeholder="e.g. PO-2026-"
-            />
-            <p className="text-xs mt-1.5" style={{ color: 'var(--ws-muted)' }}>
-              Auto-appended to all purchase orders
-            </p>
-          </div>
-
           {/* Preferred Delivery Day */}
           <div>
             <label className="block text-xs font-medium mb-2" style={{ color: 'var(--ws-muted)' }}>
@@ -980,423 +685,65 @@ function OrderPreferencesTab() {
 }
 
 // ---------------------------------------------------------------------------
-// Tab: Team Members
-// ---------------------------------------------------------------------------
-
-function TeamMembersTab() {
-  const [team, setTeam] = useState(MOCK_TEAM);
-  const [feedback, setFeedback] = useState('');
-  const [showInvite, setShowInvite] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('orderer');
-
-  const handleRemove = useCallback((id) => {
-    setTeam((prev) => prev.filter((m) => m.id !== id));
-    setFeedback('Team member removed.');
-    setTimeout(() => setFeedback(''), 2500);
-  }, []);
-
-  const handleInvite = useCallback(() => {
-    if (!inviteEmail) return;
-    const id = Math.max(...team.map((m) => m.id), 0) + 1;
-    setTeam((prev) => [
-      ...prev,
-      { id, name: inviteEmail.split('@')[0], email: inviteEmail, role: inviteRole, lastActive: 'Invited' },
-    ]);
-    setInviteEmail('');
-    setShowInvite(false);
-    setFeedback('Invitation sent!');
-    setTimeout(() => setFeedback(''), 2500);
-  }, [inviteEmail, inviteRole, team]);
-
-  return (
-    <motion.div variants={motionVariants.container} initial="hidden" animate="visible" className="space-y-4">
-      <div className="flex items-center justify-between mb-2">
-        <FeedbackToast message={feedback} />
-        <PrimaryButton size="sm" icon={UserPlus} onClick={() => setShowInvite(true)}>
-          Invite Team Member
-        </PrimaryButton>
-      </div>
-
-      {/* Invite form */}
-      <AnimatePresence>
-        {showInvite && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
-          >
-            <GlassCard className="p-6">
-              <h4 className="text-sm font-semibold mb-4" style={{ color: 'var(--ws-text)' }}>
-                Invite New Team Member
-              </h4>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>Email Address</label>
-                  <GlassInput
-                    type="email"
-                    placeholder="colleague@company.com"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                  />
-                </div>
-                <div className="w-full sm:w-48">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>Role</label>
-                  <GlassSelect
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value)}
-                  >
-                    <option value="admin">Admin</option>
-                    <option value="orderer">Orderer</option>
-                    <option value="viewer">Viewer</option>
-                  </GlassSelect>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 mt-4">
-                <PrimaryButton size="sm" icon={Mail} onClick={handleInvite}>Send Invite</PrimaryButton>
-                <SecondaryButton size="sm" onClick={() => setShowInvite(false)}>Cancel</SecondaryButton>
-              </div>
-            </GlassCard>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Team member list */}
-      {team.map((member) => {
-        const roleConfig = ROLE_CONFIG[member.role] || ROLE_CONFIG.viewer;
-        return (
-          <GlassCard key={member.id} className="p-5">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4 min-w-0">
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                  style={{
-                    background: member.role === 'admin'
-                      ? 'linear-gradient(135deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 60%, #7c3aed))'
-                      : member.role === 'orderer'
-                      ? 'linear-gradient(135deg, #3b82f6, #6366f1)'
-                      : 'color-mix(in srgb, var(--ws-surface) 80%, transparent)',
-                    color: member.role === 'viewer' ? 'var(--ws-muted)' : '#fff',
-                    border: member.role === 'viewer' ? '1px solid var(--ws-border)' : 'none',
-                  }}
-                >
-                  {member.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <p className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>
-                      {member.name}
-                    </p>
-                    <StatusBadge status={roleConfig.status} label={roleConfig.label} size="xs" />
-                  </div>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--ws-muted)' }}>{member.email}</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--ws-muted)' }}>
-                    Last active: {member.lastActive}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                <button
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                  style={{ border: '1px solid var(--ws-border)', color: 'var(--ws-muted)' }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--ws-primary)';
-                    e.currentTarget.style.color = 'var(--ws-primary)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--ws-border)';
-                    e.currentTarget.style.color = 'var(--ws-muted)';
-                  }}
-                >
-                  Edit Role
-                </button>
-                {member.role !== 'admin' && (
-                  <button
-                    onClick={() => handleRemove(member.id)}
-                    className="p-2 rounded-lg transition-colors"
-                    style={{ color: 'var(--ws-muted)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ws-muted)')}
-                    aria-label="Remove member"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-          </GlassCard>
-        );
-      })}
-    </motion.div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Tab: Security
-// ---------------------------------------------------------------------------
-
-function SecurityTab() {
-  const [passwords, setPasswords] = useState({ current: '', newPassword: '', confirm: '' });
-  const [twoFactor, setTwoFactor] = useState(false);
-  const [feedback, setFeedback] = useState('');
-
-  const handleChangePassword = useCallback(() => {
-    setPasswords({ current: '', newPassword: '', confirm: '' });
-    setFeedback('Password updated successfully!');
-    setTimeout(() => setFeedback(''), 2500);
-  }, []);
-
-  const handleSignOutAll = useCallback(() => {
-    setFeedback('All other sessions terminated.');
-    setTimeout(() => setFeedback(''), 2500);
-  }, []);
-
-  return (
-    <motion.div variants={motionVariants.container} initial="hidden" animate="visible" className="space-y-6">
-      {/* Change Password */}
-      <GlassCard className="p-6 sm:p-8">
-        <div className="flex items-center gap-2.5 mb-6">
-          <Lock className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
-          <h3 className="text-base font-semibold" style={{ color: 'var(--ws-text)' }}>
-            Change Password
-          </h3>
-        </div>
-        <div className="space-y-4 max-w-md">
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>
-              Current Password
-            </label>
-            <GlassInput
-              type="password"
-              placeholder="Enter current password"
-              value={passwords.current}
-              onChange={(e) => setPasswords((p) => ({ ...p, current: e.target.value }))}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>
-              New Password
-            </label>
-            <GlassInput
-              type="password"
-              placeholder="Enter new password"
-              value={passwords.newPassword}
-              onChange={(e) => setPasswords((p) => ({ ...p, newPassword: e.target.value }))}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--ws-muted)' }}>
-              Confirm New Password
-            </label>
-            <GlassInput
-              type="password"
-              placeholder="Confirm new password"
-              value={passwords.confirm}
-              onChange={(e) => setPasswords((p) => ({ ...p, confirm: e.target.value }))}
-            />
-          </div>
-        </div>
-        <div className="flex items-center gap-3 mt-5">
-          <PrimaryButton size="sm" onClick={handleChangePassword}>Update Password</PrimaryButton>
-          <FeedbackToast message={feedback} />
-        </div>
-      </GlassCard>
-
-      {/* Two-Factor Authentication */}
-      <GlassCard className="p-6 sm:p-8">
-        <div className="flex items-center gap-2.5 mb-5">
-          <Smartphone className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
-          <h3 className="text-base font-semibold" style={{ color: 'var(--ws-text)' }}>
-            Two-Factor Authentication
-          </h3>
-        </div>
-        <div
-          className="p-4 rounded-xl max-w-lg"
-          style={{
-            background: 'color-mix(in srgb, var(--ws-surface) 40%, transparent)',
-            border: '1px solid var(--ws-border)',
-          }}
-        >
-          <Toggle
-            label="Enable Two-Factor Authentication"
-            description="Add an extra layer of security with an authenticator app. You will need to enter a verification code each time you sign in."
-            checked={twoFactor}
-            onChange={setTwoFactor}
-          />
-        </div>
-        {twoFactor && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-4 p-4 rounded-xl max-w-lg"
-            style={{
-              background: 'color-mix(in srgb, var(--ws-primary) 5%, transparent)',
-              border: '1px solid color-mix(in srgb, var(--ws-primary) 20%, transparent)',
-            }}
-          >
-            <p className="text-xs" style={{ color: 'var(--ws-primary)' }}>
-              Two-factor authentication is enabled. Use your authenticator app to generate verification codes.
-            </p>
-          </motion.div>
-        )}
-      </GlassCard>
-
-      {/* Login History */}
-      <GlassCard className="p-6 sm:p-8">
-        <div className="flex items-center gap-2.5 mb-5">
-          <Clock className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
-          <h3 className="text-base font-semibold" style={{ color: 'var(--ws-text)' }}>
-            Login History
-          </h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr>
-                {['Date & Time', 'IP Address', 'Location', 'Device'].map((h) => (
-                  <th
-                    key={h}
-                    className="text-left text-xs font-medium py-2.5 pr-4"
-                    style={{ color: 'var(--ws-muted)', borderBottom: '1px solid var(--ws-border)' }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {MOCK_LOGIN_HISTORY.map((entry, idx) => (
-                <tr key={idx}>
-                  <td
-                    className="py-3 pr-4"
-                    style={{
-                      color: 'var(--ws-text)',
-                      borderBottom:
-                        idx < MOCK_LOGIN_HISTORY.length - 1
-                          ? '1px solid color-mix(in srgb, var(--ws-border) 40%, transparent)'
-                          : 'none',
-                    }}
-                  >
-                    {entry.date}
-                  </td>
-                  <td
-                    className="py-3 pr-4 font-mono text-xs"
-                    style={{
-                      color: 'var(--ws-muted)',
-                      borderBottom:
-                        idx < MOCK_LOGIN_HISTORY.length - 1
-                          ? '1px solid color-mix(in srgb, var(--ws-border) 40%, transparent)'
-                          : 'none',
-                    }}
-                  >
-                    {entry.ip}
-                  </td>
-                  <td
-                    className="py-3 pr-4"
-                    style={{
-                      color: 'var(--ws-muted)',
-                      borderBottom:
-                        idx < MOCK_LOGIN_HISTORY.length - 1
-                          ? '1px solid color-mix(in srgb, var(--ws-border) 40%, transparent)'
-                          : 'none',
-                    }}
-                  >
-                    {entry.location}
-                  </td>
-                  <td
-                    className="py-3"
-                    style={{
-                      color: 'var(--ws-muted)',
-                      borderBottom:
-                        idx < MOCK_LOGIN_HISTORY.length - 1
-                          ? '1px solid color-mix(in srgb, var(--ws-border) 40%, transparent)'
-                          : 'none',
-                    }}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <Monitor className="w-3.5 h-3.5" />
-                      {entry.device}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </GlassCard>
-
-      {/* Active Sessions */}
-      <GlassCard className="p-6 sm:p-8">
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2.5">
-            <Globe className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
-            <h3 className="text-base font-semibold" style={{ color: 'var(--ws-text)' }}>
-              Active Sessions
-            </h3>
-          </div>
-          <SecondaryButton size="sm" icon={LogOut} onClick={handleSignOutAll}>
-            Sign Out All Other Sessions
-          </SecondaryButton>
-        </div>
-        <div
-          className="flex items-center justify-between p-4 rounded-xl"
-          style={{
-            background: 'color-mix(in srgb, var(--ws-primary) 5%, transparent)',
-            border: '1px solid color-mix(in srgb, var(--ws-primary) 20%, transparent)',
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{
-                background: 'color-mix(in srgb, var(--ws-primary) 15%, transparent)',
-              }}
-            >
-              <Monitor className="w-4 h-4" style={{ color: 'var(--ws-primary)' }} />
-            </div>
-            <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--ws-text)' }}>
-                Current Session
-              </p>
-              <p className="text-xs" style={{ color: 'var(--ws-muted)' }}>
-                Chrome / macOS -- Amsterdam, NL -- 82.161.45.12
-              </p>
-            </div>
-          </div>
-          <StatusBadge status="success" label="Active" size="xs" pulse />
-        </div>
-      </GlassCard>
-    </motion.div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Main: PreviewAccountPage
 // ---------------------------------------------------------------------------
 
 export default function PreviewAccountPage({ config, nav }) {
+  const { client, isAuthenticated } = useWholesale();
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Not authenticated -- show sign-in prompt
+  if (!isAuthenticated || !client) {
+    return (
+      <div className="min-h-full px-6 sm:px-10 lg:px-16 py-8">
+        <Breadcrumb
+          items={[
+            { label: 'Home', onClick: () => nav?.goToHome?.() },
+            { label: 'Company Account' },
+          ]}
+        />
+        <SectionHeader
+          title="Company Account"
+          subtitle="Manage your B2B account, delivery addresses, and preferences"
+        />
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5"
+            style={{
+              background: 'color-mix(in srgb, var(--ws-primary) 10%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--ws-primary) 20%, transparent)',
+            }}
+          >
+            <LogIn className="w-7 h-7" style={{ color: 'var(--ws-primary)' }} />
+          </div>
+          <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--ws-text)' }}>
+            Sign in to view your account
+          </h3>
+          <p className="text-sm mb-6 max-w-sm" style={{ color: 'var(--ws-muted)' }}>
+            Log in to your B2B account to manage company details, delivery addresses, and payment information.
+          </p>
+          <PrimaryButton icon={LogIn} onClick={() => nav?.goToLogin?.()}>
+            Sign In
+          </PrimaryButton>
+        </div>
+      </div>
+    );
+  }
 
   const renderTab = useMemo(() => {
     switch (activeTab) {
       case 'overview':
-        return <OverviewTab />;
+        return <OverviewTab client={client} />;
       case 'profile':
-        return <CompanyProfileTab />;
+        return <CompanyProfileTab client={client} />;
       case 'addresses':
-        return <DeliveryAddressesTab />;
+        return <AddressesTab client={client} />;
       case 'preferences':
         return <OrderPreferencesTab />;
-      case 'team':
-        return <TeamMembersTab />;
-      case 'security':
-        return <SecurityTab />;
       default:
-        return <OverviewTab />;
+        return <OverviewTab client={client} />;
     }
-  }, [activeTab]);
+  }, [activeTab, client]);
 
   return (
     <div className="min-h-full px-6 sm:px-10 lg:px-16 py-8">
@@ -1411,7 +758,7 @@ export default function PreviewAccountPage({ config, nav }) {
       {/* Section Header */}
       <SectionHeader
         title="Company Account"
-        subtitle="Manage your B2B account, team members, delivery addresses, and security settings"
+        subtitle="Manage your B2B account, delivery addresses, and preferences"
       />
 
       {/* Tab Navigation */}
