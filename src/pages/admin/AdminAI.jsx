@@ -35,6 +35,12 @@ import {
   Settings,
   Star,
   Sparkles,
+  DollarSign,
+  ArrowUpRight,
+  ArrowDownRight,
+  Loader2,
+  Server,
+  Hash,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getIconColor, getStatusColor, BUTTON_STYLES } from '@/lib/adminTheme';
@@ -76,6 +82,10 @@ export default function AdminAI() {
   const [scheduledTasks, setScheduledTasks] = useState([]);
   const [usage, setUsage] = useState(null);
 
+  // Real usage data from ai_usage_logs
+  const [usageData, setUsageData] = useState(null);
+  const [usageLoading, setUsageLoading] = useState(false);
+
   // Modal states
   const [showModelModal, setShowModelModal] = useState(false);
   const [showPromptModal, setShowPromptModal] = useState(false);
@@ -116,8 +126,184 @@ export default function AdminAI() {
     }
   };
 
+  // Provider mapping for grouping endpoints
+  const getProvider = (endpoint) => {
+    if (endpoint?.startsWith('google/')) return { name: 'Google AI', color: 'blue' };
+    if (endpoint?.includes('/v1/images/generations') || endpoint?.includes('together')) return { name: 'Together.ai (FLUX)', color: 'purple' };
+    if (endpoint?.includes('openai') || endpoint?.includes('groq') || endpoint?.includes('/v1/chat/completions')) return { name: 'Groq', color: 'orange' };
+    if (endpoint?.includes('fal.ai') || endpoint?.includes('fal')) return { name: 'fal.ai', color: 'pink' };
+    if (endpoint?.includes('explorium')) return { name: 'Explorium', color: 'green' };
+    if (endpoint?.includes('tavily')) return { name: 'Tavily', color: 'yellow' };
+    return { name: 'Other', color: 'zinc' };
+  };
+
+  const PROVIDER_COLORS = {
+    blue: { bg: 'bg-blue-500/20', text: 'text-blue-400', bar: 'bg-blue-500', border: 'border-blue-500/30' },
+    purple: { bg: 'bg-purple-500/20', text: 'text-purple-400', bar: 'bg-purple-500', border: 'border-purple-500/30' },
+    orange: { bg: 'bg-orange-500/20', text: 'text-orange-400', bar: 'bg-orange-500', border: 'border-orange-500/30' },
+    pink: { bg: 'bg-pink-500/20', text: 'text-pink-400', bar: 'bg-pink-500', border: 'border-pink-500/30' },
+    green: { bg: 'bg-green-500/20', text: 'text-green-400', bar: 'bg-green-500', border: 'border-green-500/30' },
+    yellow: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', bar: 'bg-yellow-500', border: 'border-yellow-500/30' },
+    zinc: { bg: 'bg-zinc-500/20', text: 'text-zinc-400', bar: 'bg-zinc-500', border: 'border-zinc-500/30' },
+  };
+
+  const fetchUsageData = async () => {
+    setUsageLoading(true);
+    try {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
+
+      // Fetch all usage logs (last 30 days)
+      const { data: usageLogs, error: usageError } = await supabase
+        .from('ai_usage_logs')
+        .select('endpoint, request_type, cost, total_tokens, prompt_tokens, completion_tokens, created_at')
+        .gte('created_at', thirtyDaysAgoISO)
+        .order('created_at', { ascending: false });
+
+      // Fetch ALL usage logs for all-time totals
+      const { data: allTimeLogs, error: allTimeError } = await supabase
+        .from('ai_usage_logs')
+        .select('endpoint, cost, total_tokens, created_at');
+
+      // Fetch credit transactions
+      const { data: creditTxns, error: creditError } = await supabase
+        .from('credit_transactions')
+        .select('action_key, edge_function, amount, created_at')
+        .order('created_at', { ascending: false })
+        .limit(1000);
+
+      // Fetch action cost definitions
+      const { data: actionCosts, error: actionError } = await supabase
+        .from('credit_action_costs')
+        .select('action_key, credits_required, label, category, tier');
+
+      if (usageError) throw usageError;
+
+      const logs = usageLogs || [];
+      const allLogs = allTimeLogs || [];
+      const txns = creditTxns || [];
+      const actions = actionCosts || [];
+
+      // --- Aggregate by provider (30d) ---
+      const providerMap = {};
+      logs.forEach((log) => {
+        const provider = getProvider(log.endpoint);
+        if (!providerMap[provider.name]) {
+          providerMap[provider.name] = {
+            name: provider.name,
+            color: provider.color,
+            calls: 0,
+            cost: 0,
+            tokens: 0,
+          };
+        }
+        providerMap[provider.name].calls += 1;
+        providerMap[provider.name].cost += parseFloat(log.cost || 0);
+        providerMap[provider.name].tokens += parseInt(log.total_tokens || 0);
+      });
+      const providerBreakdown = Object.values(providerMap).sort((a, b) => b.cost - a.cost);
+
+      // --- Aggregate by endpoint (30d) ---
+      const endpointMap = {};
+      logs.forEach((log) => {
+        const key = log.endpoint || 'unknown';
+        if (!endpointMap[key]) {
+          const provider = getProvider(log.endpoint);
+          endpointMap[key] = {
+            endpoint: key,
+            provider: provider.name,
+            providerColor: provider.color,
+            requestType: log.request_type || 'unknown',
+            calls: 0,
+            cost: 0,
+            tokens: 0,
+            lastUsed: log.created_at,
+          };
+        }
+        endpointMap[key].calls += 1;
+        endpointMap[key].cost += parseFloat(log.cost || 0);
+        endpointMap[key].tokens += parseInt(log.total_tokens || 0);
+        if (log.created_at > endpointMap[key].lastUsed) {
+          endpointMap[key].lastUsed = log.created_at;
+        }
+      });
+      const endpointBreakdown = Object.values(endpointMap).sort((a, b) => b.cost - a.cost);
+
+      // --- Daily cost trend (30d) grouped by provider ---
+      const dailyMap = {};
+      logs.forEach((log) => {
+        const day = log.created_at?.split('T')[0];
+        if (!day) return;
+        const provider = getProvider(log.endpoint);
+        if (!dailyMap[day]) dailyMap[day] = { date: day, totalCost: 0, providers: {} };
+        dailyMap[day].totalCost += parseFloat(log.cost || 0);
+        if (!dailyMap[day].providers[provider.name]) {
+          dailyMap[day].providers[provider.name] = { cost: 0, color: provider.color };
+        }
+        dailyMap[day].providers[provider.name].cost += parseFloat(log.cost || 0);
+      });
+
+      // Fill in missing days
+      const dailyTrend = [];
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dayStr = d.toISOString().split('T')[0];
+        dailyTrend.push(dailyMap[dayStr] || { date: dayStr, totalCost: 0, providers: {} });
+      }
+
+      // --- Summary stats (30d) ---
+      const totalCalls30d = logs.length;
+      const totalCost30d = logs.reduce((sum, l) => sum + parseFloat(l.cost || 0), 0);
+      const totalTokens30d = logs.reduce((sum, l) => sum + parseInt(l.total_tokens || 0), 0);
+
+      // All-time totals
+      const totalCostAllTime = allLogs.reduce((sum, l) => sum + parseFloat(l.cost || 0), 0);
+      const totalCallsAllTime = allLogs.length;
+
+      // Today's stats
+      const todayStr = new Date().toISOString().split('T')[0];
+      const todayLogs = logs.filter((l) => l.created_at?.startsWith(todayStr));
+      const totalCostToday = todayLogs.reduce((sum, l) => sum + parseFloat(l.cost || 0), 0);
+      const totalCallsToday = todayLogs.length;
+
+      // Credit revenue (30d) - debits (negative amounts = credits consumed = revenue)
+      const recentTxns = txns.filter((t) => new Date(t.created_at) >= thirtyDaysAgo);
+      const creditsEarned30d = recentTxns
+        .filter((t) => parseFloat(t.amount) < 0)
+        .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+
+      // Unique providers with data
+      const uniqueProviders = [...new Set(logs.map((l) => getProvider(l.endpoint).name))];
+
+      setUsageData({
+        providerBreakdown,
+        endpointBreakdown,
+        dailyTrend,
+        totalCalls30d,
+        totalCost30d,
+        totalTokens30d,
+        totalCostAllTime,
+        totalCallsAllTime,
+        totalCostToday,
+        totalCallsToday,
+        creditsEarned30d,
+        uniqueProviders,
+        actionCosts: actions,
+        creditTransactions: recentTxns,
+      });
+    } catch (error) {
+      console.error('Error fetching usage data:', error);
+      toast.error('Failed to load usage analytics');
+    } finally {
+      setUsageLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    fetchUsageData();
   }, []);
 
   const handleSaveModel = async (data) => {
@@ -294,11 +480,39 @@ export default function AdminAI() {
     return `€${parseFloat(cost).toFixed(4)}`;
   };
 
+  const formatUsd = (cost, decimals = 2) => {
+    if (cost === null || cost === undefined) return '$0.00';
+    const val = parseFloat(cost);
+    if (val >= 1000) return `$${(val / 1000).toFixed(1)}K`;
+    if (val >= 100) return `$${val.toFixed(decimals)}`;
+    if (val >= 1) return `$${val.toFixed(decimals)}`;
+    if (val >= 0.01) return `$${val.toFixed(3)}`;
+    return `$${val.toFixed(4)}`;
+  };
+
+  const formatNumber = (num) => {
+    if (!num && num !== 0) return '0';
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+    return num.toLocaleString();
+  };
+
   const formatTokens = (tokens) => {
     if (!tokens) return '0';
     if (tokens >= 1000000) return `${(tokens / 1000000).toFixed(1)}M`;
     if (tokens >= 1000) return `${(tokens / 1000).toFixed(1)}K`;
     return tokens.toString();
+  };
+
+  const cleanEndpointName = (endpoint) => {
+    if (!endpoint) return 'Unknown';
+    // Strip common prefixes and clean up
+    return endpoint
+      .replace(/^google\//, 'Google: ')
+      .replace(/^\/v1\/images\/generations$/, 'FLUX Image Gen')
+      .replace(/^\/openai\/v1\/chat\/completions$/, 'Groq Chat')
+      .replace(/-/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
   return (
@@ -318,11 +532,11 @@ export default function AdminAI() {
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchData}
-              disabled={loading}
+              onClick={() => { fetchData(); fetchUsageData(); }}
+              disabled={loading || usageLoading}
               className="border-zinc-700 h-7 text-xs"
             >
-              <RefreshCw className={cn("w-3 h-3 mr-1.5", loading && "animate-spin")} />
+              <RefreshCw className={cn("w-3 h-3 mr-1.5", (loading || usageLoading) && "animate-spin")} />
               Refresh
             </Button>
           </div>
@@ -333,16 +547,16 @@ export default function AdminAI() {
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-zinc-400 text-[10px]">Tokens (30d)</p>
+                    <p className="text-zinc-400 text-[10px]">API Calls (30d)</p>
                     <p className="text-lg font-bold text-white">
-                      {formatTokens(stats?.total_tokens_30d)}
+                      {formatNumber(usageData?.totalCalls30d || 0)}
                     </p>
                     <p className="text-[10px] text-zinc-500">
-                      Today: {formatTokens(stats?.total_tokens_today)}
+                      Today: {formatNumber(usageData?.totalCallsToday || 0)}
                     </p>
                   </div>
                   <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${getIconColor('blue')}`}>
-                    <Coins className="w-4 h-4" />
+                    <Zap className="w-4 h-4" />
                   </div>
                 </div>
               </CardContent>
@@ -352,16 +566,16 @@ export default function AdminAI() {
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-zinc-400 text-[10px]">Cost (30d)</p>
+                    <p className="text-zinc-400 text-[10px]">Platform Cost (30d)</p>
                     <p className="text-lg font-bold text-white">
-                      {formatCost(stats?.total_cost_30d)}
+                      {formatUsd(usageData?.totalCost30d || 0)}
                     </p>
                     <p className="text-[10px] text-zinc-500">
-                      Today: {formatCost(stats?.total_cost_today)}
+                      Today: {formatUsd(usageData?.totalCostToday || 0)} | All-time: {formatUsd(usageData?.totalCostAllTime || 0)}
                     </p>
                   </div>
                   <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${getIconColor('cyan')}`}>
-                    <TrendingUp className="w-4 h-4" />
+                    <DollarSign className="w-4 h-4" />
                   </div>
                 </div>
               </CardContent>
@@ -371,16 +585,16 @@ export default function AdminAI() {
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-zinc-400 text-[10px]">Active Models</p>
+                    <p className="text-zinc-400 text-[10px]">API Providers</p>
                     <p className="text-lg font-bold text-white">
-                      {stats?.active_models || 0}
+                      {usageData?.uniqueProviders?.length || 0}
                     </p>
                     <p className="text-[10px] text-zinc-500">
-                      {stats?.total_models || 0} total configured
+                      {usageData?.endpointBreakdown?.length || 0} unique endpoints
                     </p>
                   </div>
                   <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${getIconColor('blue')}`}>
-                    <Brain className="w-4 h-4" />
+                    <Server className="w-4 h-4" />
                   </div>
                 </div>
               </CardContent>
@@ -390,16 +604,16 @@ export default function AdminAI() {
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-zinc-400 text-[10px]">Active Workflows</p>
+                    <p className="text-zinc-400 text-[10px]">Tokens Used (30d)</p>
                     <p className="text-lg font-bold text-white">
-                      {stats?.active_workflows || 0}
+                      {formatTokens(usageData?.totalTokens30d || 0)}
                     </p>
                     <p className="text-[10px] text-zinc-500">
-                      {stats?.workflow_runs_today || 0} runs today
+                      Avg: {formatUsd(usageData?.totalCalls30d ? (usageData.totalCost30d / usageData.totalCalls30d) : 0, 4)}/call
                     </p>
                   </div>
                   <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${getIconColor('blue')}`}>
-                    <Workflow className="w-4 h-4" />
+                    <Hash className="w-4 h-4" />
                   </div>
                 </div>
               </CardContent>
@@ -519,85 +733,356 @@ export default function AdminAI() {
 
             {/* Usage Analytics Tab */}
             <TabsContent value="usage">
-              <div className="space-y-3">
-                {/* Usage by Model */}
+              {usageLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
+                  <span className="ml-2 text-zinc-400 text-sm">Loading usage data...</span>
+                </div>
+              ) : !usageData ? (
                 <Card className="bg-zinc-900/50 border-zinc-800">
-                  <CardHeader className="py-2 px-3 border-b border-zinc-800">
-                    <CardTitle className="text-white text-sm">Usage by Model (30 days)</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3">
-                    <div className="space-y-2">
-                      {stats?.usage_by_model?.map((item, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <div className="w-24 text-xs text-zinc-400 truncate">{item.name}</div>
-                          <div className="flex-1">
-                            <div className="h-4 bg-zinc-800 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 rounded-full"
-                                style={{
-                                  width: `${Math.min(100, (item.tokens / (stats?.total_tokens_30d || 1)) * 100)}%`
-                                }}
-                              />
+                  <CardContent className="p-6 text-center">
+                    <BarChart3 className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                    <p className="text-zinc-400 text-xs">No usage data available</p>
+                    <Button
+                      onClick={fetchUsageData}
+                      size="sm"
+                      className="mt-3 bg-cyan-600 hover:bg-cyan-700 text-white h-7 text-xs"
+                    >
+                      Retry
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+
+                  {/* Section A: API Provider Breakdown */}
+                  <Card className="bg-zinc-900/50 border-zinc-800">
+                    <CardHeader className="py-2 px-3 border-b border-zinc-800">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-white text-sm">API Provider Breakdown (30 days)</CardTitle>
+                        <span className="text-[10px] text-zinc-500">
+                          Total: {formatUsd(usageData.totalCost30d)}
+                        </span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-3">
+                      <div className="space-y-2.5">
+                        {usageData.providerBreakdown.map((provider) => {
+                          const pctOfTotal = usageData.totalCost30d > 0
+                            ? (provider.cost / usageData.totalCost30d) * 100
+                            : 0;
+                          const colors = PROVIDER_COLORS[provider.color] || PROVIDER_COLORS.zinc;
+                          return (
+                            <div key={provider.name} className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className={cn("w-5 h-5 rounded flex items-center justify-center", colors.bg)}>
+                                    <Server className={cn("w-3 h-3", colors.text)} />
+                                  </div>
+                                  <span className="text-xs text-white font-medium">{provider.name}</span>
+                                  <span className="text-[10px] text-zinc-500">{provider.calls} calls</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xs font-mono text-white">{formatUsd(provider.cost)}</span>
+                                  <span className={cn("text-[10px] font-medium", colors.text)}>
+                                    {pctOfTotal.toFixed(1)}%
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                                <div
+                                  className={cn("h-full rounded-full transition-all duration-500", colors.bar)}
+                                  style={{ width: `${Math.max(1, pctOfTotal)}%` }}
+                                />
+                              </div>
                             </div>
-                          </div>
-                          <div className="w-16 text-right text-xs text-white">
-                            {formatTokens(item.tokens)}
-                          </div>
-                          <div className="w-14 text-right text-xs text-green-400">
-                            {formatCost(item.cost)}
-                          </div>
-                        </div>
-                      ))}
-                      {(!stats?.usage_by_model || stats.usage_by_model.length === 0) && (
-                        <p className="text-center text-zinc-500 text-xs py-4">No usage data yet</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                          );
+                        })}
+                        {usageData.providerBreakdown.length === 0 && (
+                          <p className="text-center text-zinc-500 text-xs py-4">No API calls in the last 30 days</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                {/* Usage by Type */}
-                <Card className="bg-zinc-900/50 border-zinc-800">
-                  <CardHeader className="py-2 px-3 border-b border-zinc-800">
-                    <CardTitle className="text-white text-sm">Usage by Request Type</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {stats?.usage_by_type?.map((item, index) => (
-                        <div key={index} className="bg-zinc-800/50 rounded-lg p-2 text-center">
-                          <p className="text-lg font-bold text-white">{item.requests}</p>
-                          <p className="text-xs text-zinc-400">{item.request_type || 'Unknown'}</p>
-                          <p className="text-[10px] text-zinc-500">{formatTokens(item.tokens)} tokens</p>
+                  {/* Section B: Daily Cost Trend (30-day bar chart) */}
+                  <Card className="bg-zinc-900/50 border-zinc-800">
+                    <CardHeader className="py-2 px-3 border-b border-zinc-800">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-white text-sm">Daily Cost Trend (30 days)</CardTitle>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {usageData.providerBreakdown.map((p) => {
+                            const colors = PROVIDER_COLORS[p.color] || PROVIDER_COLORS.zinc;
+                            return (
+                              <div key={p.name} className="flex items-center gap-1">
+                                <div className={cn("w-2 h-2 rounded-full", colors.bar)} />
+                                <span className="text-[10px] text-zinc-500">{p.name}</span>
+                              </div>
+                            );
+                          })}
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-3">
+                      {(() => {
+                        const maxDailyCost = Math.max(...usageData.dailyTrend.map((d) => d.totalCost), 0.01);
+                        return (
+                          <>
+                            <div className="h-40 flex items-end gap-0.5">
+                              {usageData.dailyTrend.map((day, index) => {
+                                const providerEntries = Object.entries(day.providers);
+                                const totalHeight = (day.totalCost / maxDailyCost) * 100;
+                                return (
+                                  <div
+                                    key={index}
+                                    className="flex-1 flex flex-col-reverse rounded-t overflow-hidden cursor-pointer group relative"
+                                    style={{ height: `${Math.max(day.totalCost > 0 ? 3 : 0, totalHeight)}%` }}
+                                    title={`${day.date}: ${formatUsd(day.totalCost)}`}
+                                  >
+                                    {providerEntries.length > 0 ? (
+                                      providerEntries.map(([name, data]) => {
+                                        const colors = PROVIDER_COLORS[data.color] || PROVIDER_COLORS.zinc;
+                                        const segmentPct = day.totalCost > 0 ? (data.cost / day.totalCost) * 100 : 0;
+                                        return (
+                                          <div
+                                            key={name}
+                                            className={cn("w-full group-hover:opacity-80 transition-opacity", colors.bar)}
+                                            style={{ height: `${segmentPct}%`, minHeight: segmentPct > 0 ? '1px' : 0 }}
+                                          />
+                                        );
+                                      })
+                                    ) : (
+                                      <div className="w-full h-full bg-zinc-800" />
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="flex justify-between mt-1.5 text-[10px] text-zinc-500">
+                              <span>{usageData.dailyTrend[0]?.date?.slice(5)}</span>
+                              <span>{usageData.dailyTrend[14]?.date?.slice(5)}</span>
+                              <span>{usageData.dailyTrend[29]?.date?.slice(5)}</span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </CardContent>
+                  </Card>
 
-                {/* Daily Usage Chart Placeholder */}
-                <Card className="bg-zinc-900/50 border-zinc-800">
-                  <CardHeader className="py-2 px-3 border-b border-zinc-800">
-                    <CardTitle className="text-white text-sm">Daily Usage Trend</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3">
-                    <div className="h-40 flex items-end gap-0.5">
-                      {stats?.daily_usage?.slice(-30).map((day, index) => (
-                        <div
-                          key={index}
-                          className="flex-1 bg-purple-500/30 hover:bg-purple-500/50 rounded-t transition-colors"
-                          style={{
-                            height: `${Math.max(5, (day.tokens / Math.max(...(stats?.daily_usage?.map(d => d.tokens) || [1]))) * 100)}%`
-                          }}
-                          title={`${day.date}: ${formatTokens(day.tokens)} tokens`}
-                        />
-                      ))}
-                    </div>
-                    <div className="flex justify-between mt-1.5 text-[10px] text-zinc-500">
-                      <span>30 days ago</span>
-                      <span>Today</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                  {/* Section C: Endpoint Details Table */}
+                  <Card className="bg-zinc-900/50 border-zinc-800">
+                    <CardHeader className="py-2 px-3 border-b border-zinc-800">
+                      <CardTitle className="text-white text-sm">Endpoint Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="border-b border-zinc-800">
+                              <th className="text-left text-zinc-400 font-medium py-2 px-3">Endpoint</th>
+                              <th className="text-left text-zinc-400 font-medium py-2 px-3">Provider</th>
+                              <th className="text-left text-zinc-400 font-medium py-2 px-3">Type</th>
+                              <th className="text-right text-zinc-400 font-medium py-2 px-3">Calls</th>
+                              <th className="text-right text-zinc-400 font-medium py-2 px-3">Cost (USD)</th>
+                              <th className="text-right text-zinc-400 font-medium py-2 px-3">Avg/Call</th>
+                              <th className="text-right text-zinc-400 font-medium py-2 px-3">Last Used</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {usageData.endpointBreakdown.map((ep) => {
+                              const colors = PROVIDER_COLORS[ep.providerColor] || PROVIDER_COLORS.zinc;
+                              return (
+                                <tr key={ep.endpoint} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
+                                  <td className="py-2 px-3">
+                                    <span className="text-white font-mono text-[11px]">{cleanEndpointName(ep.endpoint)}</span>
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    <Badge className={cn("text-[10px] px-1.5 py-px", colors.bg, colors.text)}>
+                                      {ep.provider}
+                                    </Badge>
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    <span className="text-zinc-400 capitalize">{ep.requestType}</span>
+                                  </td>
+                                  <td className="py-2 px-3 text-right text-white font-mono">
+                                    {ep.calls}
+                                  </td>
+                                  <td className="py-2 px-3 text-right text-cyan-400 font-mono">
+                                    {formatUsd(ep.cost)}
+                                  </td>
+                                  <td className="py-2 px-3 text-right text-zinc-400 font-mono">
+                                    {formatUsd(ep.calls > 0 ? ep.cost / ep.calls : 0, 4)}
+                                  </td>
+                                  <td className="py-2 px-3 text-right text-zinc-500">
+                                    {ep.lastUsed ? formatDistanceToNow(new Date(ep.lastUsed), { addSuffix: true }) : '-'}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                        {usageData.endpointBreakdown.length === 0 && (
+                          <p className="text-center text-zinc-500 text-xs py-6">No endpoint data</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Section D: Credit Revenue vs Platform Cost */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Card className="bg-zinc-900/50 border-zinc-800">
+                      <CardHeader className="py-2 px-3 border-b border-zinc-800">
+                        <CardTitle className="text-white text-sm">Cost Breakdown by Type</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-3">
+                        <div className="space-y-2">
+                          {(() => {
+                            // Group by request_type
+                            const typeMap = {};
+                            usageData.endpointBreakdown.forEach((ep) => {
+                              const type = ep.requestType || 'unknown';
+                              if (!typeMap[type]) typeMap[type] = { type, calls: 0, cost: 0 };
+                              typeMap[type].calls += ep.calls;
+                              typeMap[type].cost += ep.cost;
+                            });
+                            const types = Object.values(typeMap).sort((a, b) => b.cost - a.cost);
+                            return types.map((t) => (
+                              <div key={t.type} className="flex items-center justify-between bg-zinc-800/30 rounded-lg p-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-white capitalize font-medium">{t.type}</span>
+                                  <span className="text-[10px] text-zinc-500">{t.calls} calls</span>
+                                </div>
+                                <span className="text-xs text-cyan-400 font-mono">{formatUsd(t.cost)}</span>
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-zinc-900/50 border-zinc-800">
+                      <CardHeader className="py-2 px-3 border-b border-zinc-800">
+                        <CardTitle className="text-white text-sm">Revenue vs Cost (30d)</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-3">
+                        {usageData.creditsEarned30d > 0 ? (
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between bg-zinc-800/30 rounded-lg p-2.5">
+                              <div>
+                                <p className="text-[10px] text-zinc-400">Credits Earned</p>
+                                <p className="text-sm font-bold text-green-400">
+                                  {formatNumber(usageData.creditsEarned30d)} credits
+                                </p>
+                                <p className="text-[10px] text-zinc-500">
+                                  ~{formatCost(usageData.creditsEarned30d * 0.078)} (at avg rate)
+                                </p>
+                              </div>
+                              <ArrowUpRight className="w-4 h-4 text-green-400" />
+                            </div>
+                            <div className="flex items-center justify-between bg-zinc-800/30 rounded-lg p-2.5">
+                              <div>
+                                <p className="text-[10px] text-zinc-400">Platform API Cost</p>
+                                <p className="text-sm font-bold text-red-400">
+                                  {formatUsd(usageData.totalCost30d)}
+                                </p>
+                                <p className="text-[10px] text-zinc-500">
+                                  ~{formatCost(usageData.totalCost30d * 0.92)} (at USD/EUR rate)
+                                </p>
+                              </div>
+                              <ArrowDownRight className="w-4 h-4 text-red-400" />
+                            </div>
+                            {(() => {
+                              const revenueEur = usageData.creditsEarned30d * 0.078;
+                              const costEur = usageData.totalCost30d * 0.92;
+                              const margin = revenueEur > 0 ? ((revenueEur - costEur) / revenueEur) * 100 : 0;
+                              return (
+                                <div className={cn(
+                                  "rounded-lg p-2.5 text-center",
+                                  margin >= 0 ? "bg-green-500/10 border border-green-500/20" : "bg-red-500/10 border border-red-500/20"
+                                )}>
+                                  <p className="text-[10px] text-zinc-400">Gross Margin</p>
+                                  <p className={cn("text-lg font-bold", margin >= 0 ? "text-green-400" : "text-red-400")}>
+                                    {margin.toFixed(1)}%
+                                  </p>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between bg-zinc-800/30 rounded-lg p-2.5">
+                              <div>
+                                <p className="text-[10px] text-zinc-400">Platform API Cost (30d)</p>
+                                <p className="text-sm font-bold text-cyan-400">
+                                  {formatUsd(usageData.totalCost30d)}
+                                </p>
+                              </div>
+                              <DollarSign className="w-4 h-4 text-cyan-400" />
+                            </div>
+                            <div className="flex items-center justify-between bg-zinc-800/30 rounded-lg p-2.5">
+                              <div>
+                                <p className="text-[10px] text-zinc-400">All-Time API Cost</p>
+                                <p className="text-sm font-bold text-white">
+                                  {formatUsd(usageData.totalCostAllTime)}
+                                </p>
+                              </div>
+                              <TrendingUp className="w-4 h-4 text-zinc-400" />
+                            </div>
+                            <div className="flex items-center justify-between bg-zinc-800/30 rounded-lg p-2.5">
+                              <div>
+                                <p className="text-[10px] text-zinc-400">Total API Calls (All-Time)</p>
+                                <p className="text-sm font-bold text-white">
+                                  {formatNumber(usageData.totalCallsAllTime)}
+                                </p>
+                              </div>
+                              <Activity className="w-4 h-4 text-zinc-400" />
+                            </div>
+                            <p className="text-center text-[10px] text-zinc-600">
+                              Credit revenue will appear here once credit_transactions has data
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Section E: Action Cost Definitions */}
+                  {usageData.actionCosts?.length > 0 && (
+                    <Card className="bg-zinc-900/50 border-zinc-800">
+                      <CardHeader className="py-2 px-3 border-b border-zinc-800">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-white text-sm">Credit Action Pricing ({usageData.actionCosts.length} actions)</CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-3">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                          {usageData.actionCosts.slice(0, 16).map((action) => (
+                            <div key={action.action_key} className="bg-zinc-800/30 rounded-lg p-2">
+                              <p className="text-[10px] text-white font-medium truncate" title={action.label || action.action_key}>
+                                {action.label || action.action_key}
+                              </p>
+                              <div className="flex items-center justify-between mt-1">
+                                <Badge className="bg-zinc-700 text-zinc-300 text-[9px] px-1 py-px">
+                                  {action.category || 'general'}
+                                </Badge>
+                                <span className="text-[10px] text-cyan-400 font-mono">
+                                  {action.credits_required} cr
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {usageData.actionCosts.length > 16 && (
+                          <p className="text-center text-[10px] text-zinc-500 mt-2">
+                            + {usageData.actionCosts.length - 16} more actions defined
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                </div>
+              )}
             </TabsContent>
 
             {/* Prompt Library Tab */}
