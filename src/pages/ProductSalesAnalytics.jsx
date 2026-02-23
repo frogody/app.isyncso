@@ -275,7 +275,7 @@ export default function ProductSalesAnalytics() {
 
   return (
     <div className="min-h-screen bg-black px-4 lg:px-6 py-4 space-y-4">
-      <div className="max-w-7xl mx-auto space-y-4">
+      <div className="w-full space-y-4">
 
         {/* Header */}
         <motion.div {...stagger(0)}>
@@ -431,7 +431,7 @@ export default function ProductSalesAnalytics() {
                         const prod = productsMap[row.product_id];
                         const name = prod?.name || row.description || row.ean || 'Unknown Product';
                         const ean = prod?.ean || row.ean || '—';
-                        const img = prod?.featured_image;
+                        const img = prod?.featured_image?.url || (typeof prod?.featured_image === 'string' ? prod.featured_image : null);
                         return (
                           <motion.tr
                             key={row.key}
