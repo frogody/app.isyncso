@@ -874,49 +874,67 @@ export default function PublicStorefront({ subdomain }) {
   useEffect(() => {
     if (!companyId) return;
     let cancelled = false;
-    supabase
-      .from('products')
-      .select('id, name, price, sku, featured_image, gallery, category, category_id, description, short_description, tags, ean, type, slug, inventory(quantity_on_hand, quantity_reserved, quantity_incoming), expected_deliveries(quantity_expected, quantity_received, status), physical_products(pricing)')
-      .eq('company_id', companyId)
-      .eq('status', 'published')
-      .eq('type', 'physical')
-      .order('name')
-      .limit(200)
-      .then(({ data, error }) => {
-        if (cancelled || error) {
-          if (error) console.warn('[PublicStorefront] Failed to load products:', error);
+
+    async function fetchAllProducts() {
+      const PAGE_SIZE = 1000;
+      let allData = [];
+      let offset = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('products')
+          .select('id, name, price, sku, featured_image, gallery, category, category_id, description, short_description, tags, ean, type, slug, inventory(quantity_on_hand, quantity_reserved, quantity_incoming), expected_deliveries(quantity_expected, quantity_received, status), physical_products(pricing)')
+          .eq('company_id', companyId)
+          .eq('status', 'published')
+          .eq('type', 'physical')
+          .order('name')
+          .range(offset, offset + PAGE_SIZE - 1);
+
+        if (cancelled) return;
+        if (error) {
+          console.warn('[PublicStorefront] Failed to load products:', error);
           return;
         }
         if (data?.length) {
-          const enriched = data.map((p) => {
-            const inv = Array.isArray(p.inventory) ? p.inventory[0] : p.inventory;
-            const qtyOnHand = inv?.quantity_on_hand ?? null;
-            const qtyReserved = inv?.quantity_reserved ?? 0;
-            const qtyIncoming = inv?.quantity_incoming ?? 0;
-            const deliveries = Array.isArray(p.expected_deliveries) ? p.expected_deliveries : [];
-            const expectedIncoming = deliveries
-              .filter((d) => d.status === 'pending' || d.status === 'in_transit' || d.status === 'ordered')
-              .reduce((sum, d) => sum + (Math.max(0, (d.quantity_expected ?? 0) - (d.quantity_received ?? 0))), 0);
-            const totalIncoming = qtyIncoming + expectedIncoming;
-            // Extract pricing from physical_products join
-            const pp = Array.isArray(p.physical_products) ? p.physical_products[0] : p.physical_products;
-            const pricing = pp?.pricing || {};
-            // Resolve effective price: prefer top-level price, fall back to physical_products pricing
-            const effectivePrice = p.price || pricing.wholesale_price || pricing.base_price || 0;
-            return {
-              ...p,
-              price: effectivePrice,
-              pricing,
-              stock_quantity: qtyOnHand != null ? Math.max(0, qtyOnHand - qtyReserved) : null,
-              incoming_stock: totalIncoming > 0 ? totalIncoming : 0,
-              inventory: undefined,
-              expected_deliveries: undefined,
-              physical_products: undefined,
-            };
-          });
-          setAllProducts(enriched);
+          allData = allData.concat(data);
+          offset += data.length;
+          hasMore = data.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
         }
+      }
+
+      if (cancelled || !allData.length) return;
+
+      const enriched = allData.map((p) => {
+        const inv = Array.isArray(p.inventory) ? p.inventory[0] : p.inventory;
+        const qtyOnHand = inv?.quantity_on_hand ?? null;
+        const qtyReserved = inv?.quantity_reserved ?? 0;
+        const qtyIncoming = inv?.quantity_incoming ?? 0;
+        const deliveries = Array.isArray(p.expected_deliveries) ? p.expected_deliveries : [];
+        const expectedIncoming = deliveries
+          .filter((d) => d.status === 'pending' || d.status === 'in_transit' || d.status === 'ordered')
+          .reduce((sum, d) => sum + (Math.max(0, (d.quantity_expected ?? 0) - (d.quantity_received ?? 0))), 0);
+        const totalIncoming = qtyIncoming + expectedIncoming;
+        const pp = Array.isArray(p.physical_products) ? p.physical_products[0] : p.physical_products;
+        const pricing = pp?.pricing || {};
+        const effectivePrice = p.price || pricing.wholesale_price || pricing.base_price || 0;
+        return {
+          ...p,
+          price: effectivePrice,
+          pricing,
+          stock_quantity: qtyOnHand != null ? Math.max(0, qtyOnHand - qtyReserved) : null,
+          incoming_stock: totalIncoming > 0 ? totalIncoming : 0,
+          inventory: undefined,
+          expected_deliveries: undefined,
+          physical_products: undefined,
+        };
       });
+      setAllProducts(enriched);
+    }
+
+    fetchAllProducts();
     return () => { cancelled = true; };
   }, [companyId]);
 
