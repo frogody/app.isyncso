@@ -38,6 +38,7 @@ import {
   UserCheck,
   PlusCircle,
   Eye,
+  Lock,
 } from 'lucide-react';
 
 import { ORDER_STATUS_COLORS, DEFAULT_STATUS_COLOR } from '@/components/b2b-admin/shared/b2bConstants';
@@ -198,7 +199,7 @@ function ChannelBar({ icon: Icon, name, connected, orderCount, revenue, maxOrder
 
 const QUICK_ACTIONS = {
   all: [
-    { label: 'Edit B2B Store', description: 'Customize your storefront', icon: LayoutDashboard, path: '/b2bstorebuilder' },
+    { label: 'Edit B2B Store', description: 'Customize your storefront', icon: LayoutDashboard, path: '/b2bstorebuilder', comingSoon: true },
     { label: 'B2B Orders', description: 'Manage wholesale orders', icon: Package, path: '/b2b/orders' },
     { label: 'Price Lists', description: 'Manage client pricing', icon: Tag, path: '/b2b/price-lists' },
     { label: 'Product Catalog', description: 'Manage your products', icon: ShoppingBag, path: '/Products' },
@@ -207,7 +208,7 @@ const QUICK_ACTIONS = {
   ],
   b2b: [
     { label: 'B2B Orders', description: 'View and manage orders', icon: Package, path: '/b2b/orders' },
-    { label: 'Edit Storefront', description: 'Customize your B2B store', icon: LayoutDashboard, path: '/b2bstorebuilder' },
+    { label: 'Edit Storefront', description: 'Customize your B2B store', icon: LayoutDashboard, path: '/b2bstorebuilder', comingSoon: true },
     { label: 'Manage Clients', description: 'Client access & invites', icon: UserCheck, path: '/b2b/clients' },
     { label: 'Price Lists', description: 'Client-specific pricing', icon: Tag, path: '/b2b/price-lists' },
     { label: 'Client Chat', description: 'Customer messages', icon: MessageSquare, path: '/b2b/chat' },
@@ -681,23 +682,39 @@ export default function StoreDashboard() {
               <div className="p-3 space-y-2">
                 {quickActions.map((action, i) => {
                   const ActionIcon = action.icon;
+                  const isLocked = action.comingSoon;
                   return (
                     <motion.button
                       key={action.path + action.label}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.45 + i * 0.04 }}
-                      onClick={() => navigate(action.path)}
-                      className="w-full flex items-center gap-3.5 p-3 rounded-[14px] border border-zinc-800/40 bg-zinc-800/20 hover:bg-zinc-800/40 hover:border-cyan-500/20 transition-all text-left group"
+                      onClick={() => !isLocked && navigate(action.path)}
+                      className={`w-full flex items-center gap-3.5 p-3 rounded-[14px] border transition-all text-left group ${
+                        isLocked
+                          ? 'border-zinc-800/30 bg-zinc-800/10 cursor-not-allowed opacity-60'
+                          : 'border-zinc-800/40 bg-zinc-800/20 hover:bg-zinc-800/40 hover:border-cyan-500/20 cursor-pointer'
+                      }`}
                     >
-                      <div className={`w-9 h-9 rounded-[12px] ${channelConfig.bg} ${channelConfig.text} group-hover:opacity-80 transition-colors flex items-center justify-center flex-shrink-0`}>
-                        <ActionIcon className="w-4 h-4" />
+                      <div className={`w-9 h-9 rounded-[12px] flex items-center justify-center flex-shrink-0 ${
+                        isLocked ? 'bg-zinc-800/40 text-zinc-600' : `${channelConfig.bg} ${channelConfig.text} group-hover:opacity-80`
+                      } transition-colors`}>
+                        {isLocked ? <Lock className="w-4 h-4" /> : <ActionIcon className="w-4 h-4" />}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-white">{action.label}</p>
+                        <div className="flex items-center gap-2">
+                          <p className={`text-sm font-medium ${isLocked ? 'text-zinc-500' : 'text-white'}`}>{action.label}</p>
+                          {isLocked && (
+                            <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                              Coming Soon
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] text-zinc-500">{action.description}</p>
                       </div>
-                      <ArrowRight className={`w-4 h-4 text-zinc-700 group-hover:${channelConfig.text} transition-colors flex-shrink-0`} />
+                      {!isLocked && (
+                        <ArrowRight className={`w-4 h-4 text-zinc-700 group-hover:${channelConfig.text} transition-colors flex-shrink-0`} />
+                      )}
                     </motion.button>
                   );
                 })}
