@@ -1167,23 +1167,6 @@ export default function PreviewProductDetailPage({
         )}
 
         {/* Full Bulk pricing table (below fold, detailed view) */}
-        {showBulkPricing && basePrice > 0 && bulkTiers.length > 0 && (
-          <motion.div
-            variants={motionVariants.fadeIn}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="mt-6"
-          >
-            <BulkPricingTable
-              tiers={bulkTiers}
-              basePrice={basePrice}
-              quantity={quantity}
-              unit={productUnit}
-            />
-          </motion.div>
-        )}
-
         {/* Related products */}
         {showRelatedProducts && products.length > 1 && (
           <div className="mt-12">
