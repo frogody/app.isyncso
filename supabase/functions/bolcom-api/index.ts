@@ -87,7 +87,8 @@ type BolcomAction =
   | "fetchPricing"
   | "fetchStock"
   | "fetchImages"
-  | "fetchOrders";
+  | "fetchOrders"
+  | "repairOrders";
 
 interface BolcomRequest {
   action: BolcomAction;
@@ -2380,6 +2381,139 @@ serve(async (req) => {
         const totalElapsed = elapsed();
         console.log(`[bolcom-api] fetchOrders done (${totalElapsed}ms): ${ordersSynced} orders, ${itemsSynced} items`);
         result = { success: true, data: { ordersFound: allIds.length, ordersSynced, itemsSynced, customersCreated, alreadySynced: existingSet.size, fetchErrors, elapsed: totalElapsed } };
+        break;
+      }
+
+      // ================================================================
+      // REPAIR ORDERS — fix zero-total orders by re-fetching from bol.com
+      // ================================================================
+      case "repairOrders": {
+        const tokenRes = await getBolToken(supabase, companyId);
+        if ("error" in tokenRes) { result = { success: false, error: tokenRes.error }; break; }
+
+        interface RepairOItem {
+          orderItemId: string; ean: string; quantity: number;
+          unitPrice: number; offerPrice?: number;
+          product?: { title?: string; ean?: string };
+        }
+        interface RepairBolOrder {
+          orderId: string; dateTimeOrderPlaced?: string;
+          orderItems: RepairOItem[];
+        }
+
+        const BUDGET_MS = 130_000;
+        const t0 = Date.now();
+        const elapsed = () => Date.now() - t0;
+
+        // Get zero-total bolcom orders
+        const { data: zeroOrders, error: zErr } = await supabase
+          .from("sales_orders")
+          .select("id, external_reference, order_date, total")
+          .eq("company_id", companyId)
+          .eq("source", "bolcom")
+          .eq("total", 0)
+          .limit(500);
+
+        if (zErr || !zeroOrders?.length) {
+          result = { success: true, data: { message: "No zero-total orders to repair", count: 0 } };
+          break;
+        }
+
+        console.log(`[bolcom-api] repairOrders: ${zeroOrders.length} zero-total orders to fix`);
+
+        let lastCall = 0;
+        const rateLimitedFetchRepair = async <T>(path: string): Promise<T | null> => {
+          const wait = Math.max(0, 550 - (Date.now() - lastCall));
+          if (wait > 0) await new Promise(r => setTimeout(r, wait));
+          lastCall = Date.now();
+          try {
+            return await bolFetch<T>(tokenRes.token, path, "GET", undefined, undefined, 1);
+          } catch { return null; }
+        };
+
+        let fixed = 0, skipped = 0, errors = 0;
+
+        for (const order of zeroOrders) {
+          if (elapsed() > BUDGET_MS) break;
+
+          const oid = order.external_reference;
+          const o = await rateLimitedFetchRepair<RepairBolOrder>(`/orders/${oid}`);
+
+          if (!o?.orderItems?.length) {
+            skipped++;
+            continue;
+          }
+
+          // Calculate total from order items
+          let orderTotal = 0;
+          const itemUpdates: Array<{ ean: string; price: number; title: string; qty: number }> = [];
+          for (const oi of o.orderItems) {
+            const price = oi.unitPrice || oi.offerPrice || 0;
+            const qty = oi.quantity || 1;
+            orderTotal += price * qty;
+            itemUpdates.push({
+              ean: oi.ean || oi.product?.ean || '',
+              price,
+              title: oi.product?.title || `EAN: ${oi.ean}`,
+              qty,
+            });
+          }
+
+          if (orderTotal === 0) { skipped++; continue; }
+
+          // Update sales_order
+          const updateData: Record<string, unknown> = {
+            total: orderTotal,
+            subtotal: orderTotal,
+          };
+          if (!order.order_date && o.dateTimeOrderPlaced) {
+            updateData.order_date = o.dateTimeOrderPlaced;
+          }
+
+          const { error: uErr } = await supabase
+            .from("sales_orders")
+            .update(updateData)
+            .eq("id", order.id);
+
+          if (uErr) { errors++; continue; }
+
+          // Update item prices too
+          for (const item of itemUpdates) {
+            if (item.price > 0) {
+              await supabase
+                .from("sales_order_items")
+                .update({ unit_price: item.price, line_total: item.price * item.qty })
+                .eq("sales_order_id", order.id)
+                .eq("ean", item.ean);
+            }
+          }
+
+          fixed++;
+        }
+
+        // Also fix orders with prices but NULL order_date
+        const { data: nullDateOrders } = await supabase
+          .from("sales_orders")
+          .select("id, external_reference")
+          .eq("company_id", companyId)
+          .eq("source", "bolcom")
+          .is("order_date", null)
+          .limit(100);
+
+        let dateFixed = 0;
+        if (nullDateOrders?.length) {
+          for (const order of nullDateOrders) {
+            if (elapsed() > BUDGET_MS) break;
+            const o = await rateLimitedFetchRepair<RepairBolOrder>(`/orders/${order.external_reference}`);
+            if (o?.dateTimeOrderPlaced) {
+              await supabase.from("sales_orders").update({ order_date: o.dateTimeOrderPlaced }).eq("id", order.id);
+              dateFixed++;
+            }
+          }
+        }
+
+        console.log(`[bolcom-api] repairOrders done (${elapsed()}ms): ${fixed} fixed, ${dateFixed} dates fixed, ${skipped} skipped, ${errors} errors`);
+        result = { success: true, data: { totalZero: zeroOrders.length, fixed, dateFixed, skipped, errors, elapsed: elapsed() } };
         break;
       }
 
