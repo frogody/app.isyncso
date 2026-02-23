@@ -63,16 +63,6 @@ const stagger = (delay = 0) => ({
 // ---------------------------------------------------------------------------
 
 const CHANNELS = {
-  all: {
-    key: 'all',
-    label: 'All Channels',
-    icon: Layers,
-    color: 'cyan',
-    bg: 'bg-cyan-500/10',
-    text: 'text-cyan-400',
-    border: 'border-cyan-500/30',
-    ring: 'ring-cyan-500/20',
-  },
   b2b: {
     key: 'b2b',
     label: 'B2B Wholesale',
@@ -82,6 +72,8 @@ const CHANNELS = {
     text: 'text-cyan-400',
     border: 'border-cyan-500/30',
     ring: 'ring-cyan-500/20',
+    gradient: 'from-cyan-500/20 to-cyan-500/5',
+    accentHex: '#06b6d4',
   },
   bolcom: {
     key: 'bolcom',
@@ -92,6 +84,8 @@ const CHANNELS = {
     text: 'text-blue-400',
     border: 'border-blue-500/30',
     ring: 'ring-blue-500/20',
+    gradient: 'from-blue-500/20 to-blue-500/5',
+    accentHex: '#3b82f6',
   },
   shopify: {
     key: 'shopify',
@@ -102,6 +96,20 @@ const CHANNELS = {
     text: 'text-green-400',
     border: 'border-green-500/30',
     ring: 'ring-green-500/20',
+    gradient: 'from-green-500/20 to-green-500/5',
+    accentHex: '#22c55e',
+  },
+  all: {
+    key: 'all',
+    label: 'All Channels',
+    icon: Layers,
+    color: 'cyan',
+    bg: 'bg-cyan-500/10',
+    text: 'text-cyan-400',
+    border: 'border-cyan-500/30',
+    ring: 'ring-cyan-500/20',
+    gradient: 'from-cyan-500/20 to-cyan-500/5',
+    accentHex: '#06b6d4',
   },
 };
 
@@ -241,7 +249,7 @@ export default function StoreDashboard() {
   const companyId = user?.company_id;
   const organizationId = user?.organization_id || user?.company_id;
 
-  const [activeView, setActiveView] = useState(searchParams.get('view') || 'all');
+  const [activeView, setActiveView] = useState(searchParams.get('view') || 'b2b');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -412,7 +420,7 @@ export default function StoreDashboard() {
   // Sync activeView with URL
   const switchView = useCallback((view) => {
     setActiveView(view);
-    setSearchParams(view === 'all' ? {} : { view });
+    setSearchParams(view === 'b2b' ? {} : { view });
   }, [setSearchParams]);
 
   // ---------------------------------------------------------------------------
@@ -584,22 +592,79 @@ export default function StoreDashboard() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Sales Channels — only on "All" view */}
+        {/* Channel Cockpit Cards — only on "All" view */}
         {activeView === 'all' && (
-          <motion.div {...stagger(0.25)}>
-            <GlassCard padding="md">
-              <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-4">
-                <Radio className="w-4 h-4 text-cyan-400" />
-                Sales Channels
-              </h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                <ChannelBar icon={Store} name="B2B Wholesale" connected={channelData.b2b.connected} orderCount={channelData.b2b.orders} revenue={formatCurrency(channelData.b2b.revenue)} maxOrders={maxChannelOrders} onClick={() => switchView('b2b')} channelColor="cyan" delay={0.3} />
-                <ChannelBar icon={ShoppingBag} name="Shopify" connected={channelData.shopify.connected} orderCount={channelData.shopify.orders} revenue={formatCurrency(channelData.shopify.revenue)} maxOrders={maxChannelOrders} onClick={() => switchView('shopify')} channelColor="green" delay={0.35} />
-                <ChannelBar icon={Globe} name="bol.com" connected={channelData.bolcom.connected} orderCount={channelData.bolcom.orders} revenue={formatCurrency(channelData.bolcom.revenue)} maxOrders={maxChannelOrders} onClick={() => switchView('bolcom')} channelColor="blue" delay={0.4} />
-                <ChannelBar icon={FileText} name="Manual / Other" connected={channelData.manual.connected} orderCount={channelData.manual.orders} revenue={formatCurrency(channelData.manual.revenue)} maxOrders={maxChannelOrders} onClick={() => navigate('/Warehouse')} channelColor="cyan" delay={0.45} />
-              </div>
-            </GlassCard>
-          </motion.div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* B2B Cockpit Card */}
+            <motion.div {...stagger(0.2)}>
+              <ChannelCockpitCard
+                channelKey="b2b"
+                config={CHANNELS.b2b}
+                data={channelData.b2b}
+                formatCurrency={formatCurrency}
+                formatDate={formatDate}
+                onViewChannel={() => switchView('b2b')}
+                navigate={navigate}
+                storeUrl={storeUrl}
+                kpis={[
+                  { label: 'Orders', value: channelData.b2b.orders },
+                  { label: 'Pending', value: channelData.b2b.pending, alert: channelData.b2b.pending > 0 },
+                  { label: 'Revenue', value: formatCurrency(channelData.b2b.revenue) },
+                ]}
+                actions={[
+                  { label: 'Orders', icon: Package, path: '/b2b/orders' },
+                  { label: 'Clients', icon: UserCheck, path: '/b2b/clients' },
+                  { label: 'Chat', icon: MessageSquare, path: '/b2b/chat' },
+                ]}
+              />
+            </motion.div>
+
+            {/* bol.com Cockpit Card */}
+            <motion.div {...stagger(0.3)}>
+              <ChannelCockpitCard
+                channelKey="bolcom"
+                config={CHANNELS.bolcom}
+                data={channelData.bolcom}
+                formatCurrency={formatCurrency}
+                formatDate={formatDate}
+                onViewChannel={() => switchView('bolcom')}
+                navigate={navigate}
+                kpis={[
+                  { label: 'Orders', value: channelData.bolcom.orders },
+                  { label: 'Pending', value: channelData.bolcom.pending, alert: channelData.bolcom.pending > 0 },
+                  { label: 'Revenue', value: formatCurrency(channelData.bolcom.revenue) },
+                ]}
+                actions={[
+                  { label: 'Orders', icon: Package, path: '/Warehouse' },
+                  { label: 'Mappings', icon: BarChart3, path: '/Settings?tab=integrations' },
+                  { label: 'Settings', icon: Settings, path: '/Settings?tab=integrations' },
+                ]}
+              />
+            </motion.div>
+
+            {/* Shopify Cockpit Card */}
+            <motion.div {...stagger(0.4)}>
+              <ChannelCockpitCard
+                channelKey="shopify"
+                config={CHANNELS.shopify}
+                data={channelData.shopify}
+                formatCurrency={formatCurrency}
+                formatDate={formatDate}
+                onViewChannel={() => switchView('shopify')}
+                navigate={navigate}
+                kpis={[
+                  { label: 'Orders', value: channelData.shopify.orders },
+                  { label: 'Pending', value: channelData.shopify.pending, alert: channelData.shopify.pending > 0 },
+                  { label: 'Revenue', value: formatCurrency(channelData.shopify.revenue) },
+                ]}
+                actions={[
+                  { label: 'Orders', icon: Package, path: '/Warehouse' },
+                  { label: 'Products', icon: ShoppingBag, path: '/Products' },
+                  { label: 'Settings', icon: Settings, path: '/Settings?tab=integrations' },
+                ]}
+              />
+            </motion.div>
+          </div>
         )}
 
         {/* Channel-specific status — only on single-channel views */}
@@ -609,120 +674,317 @@ export default function StoreDashboard() {
           </motion.div>
         )}
 
-        {/* Recent Orders + Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Recent Orders */}
-          <motion.div {...stagger(0.35)} className="lg:col-span-2">
-            <GlassCard padding="none" className="overflow-hidden h-full">
+        {/* All Channels: Combined Recent Orders Feed */}
+        {activeView === 'all' && viewData.recentOrders.length > 0 && (
+          <motion.div {...stagger(0.5)}>
+            <GlassCard padding="none" className="overflow-hidden">
               <div className="px-5 py-4 border-b border-zinc-800/40 flex items-center justify-between">
                 <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                  <Package className={`w-4 h-4 ${channelConfig.text}`} />
-                  {activeView === 'all' ? 'Recent Orders' : `${channelConfig.label} Orders`}
+                  <Package className="w-4 h-4 text-cyan-400" />
+                  Recent Orders — All Channels
                 </h3>
-                {viewData.recentOrders.length > 0 && (
-                  <button
-                    onClick={() => navigate(activeView === 'b2b' ? '/b2b/orders' : '/Warehouse')}
-                    className={`text-xs ${channelConfig.text} hover:opacity-80 flex items-center gap-1 font-medium transition-colors`}
+                <button
+                  onClick={() => navigate('/Warehouse')}
+                  className="text-xs text-cyan-400 hover:opacity-80 flex items-center gap-1 font-medium transition-colors"
+                >
+                  View All <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
+              <div className="divide-y divide-zinc-800/30">
+                {viewData.recentOrders.slice(0, 8).map((order, i) => (
+                  <motion.div
+                    key={`${order.source}-${order.id}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.55 + i * 0.03 }}
+                    className="px-5 py-3.5 flex items-center justify-between hover:bg-zinc-800/20 transition-colors cursor-pointer"
+                    onClick={() => order.link && navigate(order.link)}
                   >
-                    View All <ArrowRight className="w-3 h-3" />
-                  </button>
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-white truncate">{order.orderNumber}</p>
+                          <SourceBadge source={order.source} />
+                        </div>
+                        <p className="text-xs text-zinc-500 truncate">{order.customer} &middot; {formatDate(order.date)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-sm font-bold text-white tabular-nums">{formatCurrency(order.total)}</span>
+                      <StatusBadge status={order.status} />
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </GlassCard>
+          </motion.div>
+        )}
+
+        {/* Single-channel: Recent Orders + Quick Actions */}
+        {activeView !== 'all' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Recent Orders */}
+            <motion.div {...stagger(0.35)} className="lg:col-span-2">
+              <GlassCard padding="none" className="overflow-hidden h-full">
+                <div className="px-5 py-4 border-b border-zinc-800/40 flex items-center justify-between">
+                  <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                    <Package className={`w-4 h-4 ${channelConfig.text}`} />
+                    {channelConfig.label} Orders
+                  </h3>
+                  {viewData.recentOrders.length > 0 && (
+                    <button
+                      onClick={() => navigate(activeView === 'b2b' ? '/b2b/orders' : '/Warehouse')}
+                      className={`text-xs ${channelConfig.text} hover:opacity-80 flex items-center gap-1 font-medium transition-colors`}
+                    >
+                      View All <ArrowRight className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+
+                {viewData.recentOrders.length === 0 ? (
+                  <div className="px-5 py-16 text-center">
+                    <div className="w-12 h-12 rounded-[20px] bg-zinc-800/40 flex items-center justify-center mx-auto mb-4">
+                      <Package className="w-6 h-6 text-zinc-600" />
+                    </div>
+                    <p className="text-sm text-zinc-400 font-medium">No orders yet</p>
+                    <p className="text-xs text-zinc-600 mt-1">Connect and sync {channelConfig.label} to see orders</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-zinc-800/30">
+                    {viewData.recentOrders.map((order, i) => (
+                      <motion.div
+                        key={`${order.source}-${order.id}`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 + i * 0.03 }}
+                        className="px-5 py-3.5 flex items-center justify-between hover:bg-zinc-800/20 transition-colors cursor-pointer"
+                        onClick={() => order.link && navigate(order.link)}
+                      >
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium text-white truncate">{order.orderNumber}</p>
+                            </div>
+                            <p className="text-xs text-zinc-500 truncate">{order.customer} &middot; {formatDate(order.date)}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-sm font-bold text-white tabular-nums">{formatCurrency(order.total)}</span>
+                          <StatusBadge status={order.status} />
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </GlassCard>
+            </motion.div>
+
+            {/* Quick Actions */}
+            <motion.div {...stagger(0.4)}>
+              <GlassCard padding="none" className="overflow-hidden h-full">
+                <div className="px-5 py-4 border-b border-zinc-800/40">
+                  <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                    <Zap className={`w-4 h-4 ${channelConfig.text}`} />
+                    Quick Actions
+                  </h3>
+                </div>
+                <div className="p-3 space-y-2">
+                  {quickActions.map((action, i) => {
+                    const ActionIcon = action.icon;
+                    const isLocked = action.comingSoon;
+                    return (
+                      <motion.button
+                        key={action.path + action.label}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.45 + i * 0.04 }}
+                        onClick={() => !isLocked && navigate(action.path)}
+                        className={`w-full flex items-center gap-3.5 p-3 rounded-[14px] border transition-all text-left group ${
+                          isLocked
+                            ? 'border-zinc-800/30 bg-zinc-800/10 cursor-not-allowed opacity-60'
+                            : 'border-zinc-800/40 bg-zinc-800/20 hover:bg-zinc-800/40 hover:border-cyan-500/20 cursor-pointer'
+                        }`}
+                      >
+                        <div className={`w-9 h-9 rounded-[12px] flex items-center justify-center flex-shrink-0 ${
+                          isLocked ? 'bg-zinc-800/40 text-zinc-600' : `${channelConfig.bg} ${channelConfig.text} group-hover:opacity-80`
+                        } transition-colors`}>
+                          {isLocked ? <Lock className="w-4 h-4" /> : <ActionIcon className="w-4 h-4" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className={`text-sm font-medium ${isLocked ? 'text-zinc-500' : 'text-white'}`}>{action.label}</p>
+                            {isLocked && (
+                              <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                                Coming Soon
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-zinc-500">{action.description}</p>
+                        </div>
+                        {!isLocked && (
+                          <ArrowRight className={`w-4 h-4 text-zinc-700 group-hover:${channelConfig.text} transition-colors flex-shrink-0`} />
+                        )}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </GlassCard>
+            </motion.div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Channel Cockpit Card — shown on "All Channels" cockpit view
+// ---------------------------------------------------------------------------
+
+function ChannelCockpitCard({ channelKey, config, data, formatCurrency, formatDate, onViewChannel, navigate, storeUrl, kpis, actions }) {
+  const ChannelIcon = config.icon;
+  const isConnected = data.connected;
+  const recentOrders = (data.recentOrders || []).slice(0, 3);
+  const avgOrder = data.orders > 0 ? data.revenue / data.orders : 0;
+
+  // Revenue share visual (ring)
+  const revPct = data.revenue > 0 ? Math.min(100, Math.max(5, (data.orders / Math.max(data.orders, 1)) * 100)) : 0;
+
+  return (
+    <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm overflow-hidden h-full flex flex-col group hover:border-zinc-700/60 transition-all">
+      {/* Channel Header with gradient accent */}
+      <div className={`relative px-5 pt-5 pb-4 bg-gradient-to-b ${config.gradient}`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-[14px] ${config.bg} border ${config.border} flex items-center justify-center`}>
+              <ChannelIcon className={`w-5 h-5 ${config.text}`} />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-white">{config.label}</h3>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                {isConnected ? (
+                  <>
+                    <span className={`w-1.5 h-1.5 rounded-full bg-current ${config.text}`} />
+                    <span className="text-[10px] text-zinc-400 font-medium">Active</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-3 h-3 text-zinc-600" />
+                    <span className="text-[10px] text-zinc-500 font-medium">Not connected</span>
+                  </>
                 )}
               </div>
+            </div>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onViewChannel}
+            className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border ${config.border} ${config.bg} ${config.text} hover:opacity-80 transition-all flex items-center gap-1`}
+          >
+            View <ArrowRight className="w-3 h-3" />
+          </motion.button>
+        </div>
 
-              {viewData.recentOrders.length === 0 ? (
-                <div className="px-5 py-16 text-center">
-                  <div className="w-12 h-12 rounded-[20px] bg-zinc-800/40 flex items-center justify-center mx-auto mb-4">
-                    <Package className="w-6 h-6 text-zinc-600" />
-                  </div>
-                  <p className="text-sm text-zinc-400 font-medium">No orders yet</p>
-                  <p className="text-xs text-zinc-600 mt-1">
-                    {activeView === 'all' ? 'Orders from all channels will appear here' : `Connect and sync ${channelConfig.label} to see orders`}
-                  </p>
-                </div>
-              ) : (
-                <div className="divide-y divide-zinc-800/30">
-                  {viewData.recentOrders.map((order, i) => (
-                    <motion.div
-                      key={`${order.source}-${order.id}`}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 + i * 0.03 }}
-                      className="px-5 py-3.5 flex items-center justify-between hover:bg-zinc-800/20 transition-colors cursor-pointer"
-                      onClick={() => order.link && navigate(order.link)}
-                    >
-                      <div className="flex items-center gap-4 min-w-0">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-white truncate">{order.orderNumber}</p>
-                            {activeView === 'all' && <SourceBadge source={order.source} />}
-                          </div>
-                          <p className="text-xs text-zinc-500 truncate">{order.customer} &middot; {formatDate(order.date)}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-sm font-bold text-white tabular-nums">{formatCurrency(order.total)}</span>
-                        <StatusBadge status={order.status} />
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </GlassCard>
-          </motion.div>
-
-          {/* Quick Actions */}
-          <motion.div {...stagger(0.4)}>
-            <GlassCard padding="none" className="overflow-hidden h-full">
-              <div className="px-5 py-4 border-b border-zinc-800/40">
-                <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                  <Zap className={`w-4 h-4 ${channelConfig.text}`} />
-                  Quick Actions
-                </h3>
-              </div>
-              <div className="p-3 space-y-2">
-                {quickActions.map((action, i) => {
-                  const ActionIcon = action.icon;
-                  const isLocked = action.comingSoon;
-                  return (
-                    <motion.button
-                      key={action.path + action.label}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.45 + i * 0.04 }}
-                      onClick={() => !isLocked && navigate(action.path)}
-                      className={`w-full flex items-center gap-3.5 p-3 rounded-[14px] border transition-all text-left group ${
-                        isLocked
-                          ? 'border-zinc-800/30 bg-zinc-800/10 cursor-not-allowed opacity-60'
-                          : 'border-zinc-800/40 bg-zinc-800/20 hover:bg-zinc-800/40 hover:border-cyan-500/20 cursor-pointer'
-                      }`}
-                    >
-                      <div className={`w-9 h-9 rounded-[12px] flex items-center justify-center flex-shrink-0 ${
-                        isLocked ? 'bg-zinc-800/40 text-zinc-600' : `${channelConfig.bg} ${channelConfig.text} group-hover:opacity-80`
-                      } transition-colors`}>
-                        {isLocked ? <Lock className="w-4 h-4" /> : <ActionIcon className="w-4 h-4" />}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className={`text-sm font-medium ${isLocked ? 'text-zinc-500' : 'text-white'}`}>{action.label}</p>
-                          {isLocked && (
-                            <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                              Coming Soon
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-zinc-500">{action.description}</p>
-                      </div>
-                      {!isLocked && (
-                        <ArrowRight className={`w-4 h-4 text-zinc-700 group-hover:${channelConfig.text} transition-colors flex-shrink-0`} />
-                      )}
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </GlassCard>
-          </motion.div>
+        {/* Revenue highlight */}
+        <div className="mt-1">
+          <p className="text-2xl font-bold text-white tabular-nums tracking-tight">{formatCurrency(data.revenue)}</p>
+          <p className="text-[11px] text-zinc-400 mt-0.5">
+            {data.orders} order{data.orders !== 1 ? 's' : ''} this month
+            {avgOrder > 0 && <span className="text-zinc-500"> &middot; avg {formatCurrency(avgOrder)}</span>}
+          </p>
         </div>
       </div>
+
+      {/* KPI Strip */}
+      <div className="grid grid-cols-3 gap-px bg-zinc-800/20 border-y border-zinc-800/40">
+        {kpis.map((kpi) => (
+          <div key={kpi.label} className="bg-zinc-900/60 px-3 py-3 text-center">
+            <p className={`text-lg font-bold tabular-nums ${kpi.alert ? 'text-amber-400' : 'text-white'}`}>{kpi.value}</p>
+            <p className="text-[10px] text-zinc-500 uppercase tracking-wider">{kpi.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Recent Orders or Empty State */}
+      <div className="flex-1 px-4 py-3">
+        {!isConnected ? (
+          <div className="flex flex-col items-center justify-center py-6 text-center">
+            <div className={`w-10 h-10 rounded-[14px] ${config.bg} flex items-center justify-center mb-3`}>
+              <PlusCircle className={`w-5 h-5 ${config.text}`} />
+            </div>
+            <p className="text-xs text-zinc-300 font-medium mb-1">Connect {config.label}</p>
+            <p className="text-[10px] text-zinc-500 mb-3">Set up this channel to start syncing</p>
+            <button
+              onClick={() => navigate(channelKey === 'b2b' ? '/b2bstorebuilder' : '/Settings?tab=integrations')}
+              className={`px-3 py-1.5 rounded-full text-[11px] font-medium border ${config.border} ${config.bg} ${config.text} hover:opacity-80 transition-all`}
+            >
+              Set Up
+            </button>
+          </div>
+        ) : recentOrders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-6 text-center">
+            <Package className="w-5 h-5 text-zinc-600 mb-2" />
+            <p className="text-[11px] text-zinc-500">No orders this month</p>
+          </div>
+        ) : (
+          <div className="space-y-0">
+            <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium mb-2">Recent Orders</p>
+            {recentOrders.map((order) => (
+              <button
+                key={order.id}
+                onClick={() => order.link ? navigate(order.link) : onViewChannel()}
+                className="w-full flex items-center justify-between py-2 px-1 rounded-lg hover:bg-zinc-800/30 transition-colors text-left group/order"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-zinc-200 truncate">{order.orderNumber}</p>
+                  <p className="text-[10px] text-zinc-500 truncate">{order.customer}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 ml-2">
+                  <span className="text-xs font-bold text-white tabular-nums">{formatCurrency(order.total)}</span>
+                  <StatusBadge status={order.status} />
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Quick Action Buttons */}
+      {isConnected && (
+        <div className="px-4 pb-4 pt-1 border-t border-zinc-800/30">
+          <div className="flex items-center gap-2">
+            {actions.map((action) => {
+              const ActionIcon = action.icon;
+              return (
+                <button
+                  key={action.label}
+                  onClick={() => navigate(action.path)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[12px] border border-zinc-800/40 bg-zinc-800/20 hover:bg-zinc-800/40 hover:border-zinc-700/50 text-zinc-400 hover:text-zinc-200 transition-all text-[11px] font-medium`}
+                >
+                  <ActionIcon className="w-3.5 h-3.5" />
+                  {action.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* B2B: Visit Store link */}
+      {channelKey === 'b2b' && isConnected && storeUrl && (
+        <div className="px-4 pb-4 -mt-2">
+          <a
+            href={storeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`flex items-center justify-center gap-2 py-2 rounded-[12px] border ${config.border} ${config.bg} ${config.text} hover:opacity-80 transition-all text-[11px] font-medium w-full`}
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            Visit B2B Store
+          </a>
+        </div>
+      )}
     </div>
   );
 }
