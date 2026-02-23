@@ -365,12 +365,13 @@ export default function ShipmentTrackingMap({ orderId }) {
             Checkpoints ({checkpoints.length})
           </div>
           <div className="py-1">
-            {[...checkpoints].reverse().map((cp, idx) => (
+            {[...checkpoints].reverse().map((cp, idx, arr) => (
               <CheckpointItem
                 key={cp.id}
                 checkpoint={cp}
                 isLatest={idx === 0}
                 isFirst={idx === 0}
+                isLast={idx === arr.length - 1}
                 onClick={flyTo}
               />
             ))}
