@@ -208,7 +208,7 @@ function ChannelBar({ icon: Icon, name, connected, orderCount, revenue, maxOrder
 
 const QUICK_ACTIONS = {
   all: [
-    { label: 'Edit B2B Store', description: 'Customize your storefront', icon: LayoutDashboard, path: '/b2bstorebuilder', comingSoon: true },
+    { label: 'Edit B2B Store', description: 'Customize your storefront', icon: LayoutDashboard, path: '/b2bstorebuilder' },
     { label: 'B2B Orders', description: 'Manage wholesale orders', icon: Package, path: '/b2b/orders' },
     { label: 'Manage Clients', description: 'Clients, access & pricing rules', icon: UserCheck, path: '/b2b/clients' },
     { label: 'Product Catalog', description: 'Manage your products', icon: ShoppingBag, path: '/Products' },
@@ -217,7 +217,7 @@ const QUICK_ACTIONS = {
   ],
   b2b: [
     { label: 'B2B Orders', description: 'View and manage orders', icon: Package, path: '/b2b/orders' },
-    { label: 'Edit Storefront', description: 'Customize your B2B store', icon: LayoutDashboard, path: '/b2bstorebuilder', comingSoon: true },
+    { label: 'Edit Storefront', description: 'Customize your B2B store', icon: LayoutDashboard, path: '/b2bstorebuilder' },
     { label: 'Manage Clients', description: 'Access, invites & pricing rules', icon: UserCheck, path: '/b2b/clients' },
     { label: 'Client Chat', description: 'Customer messages', icon: MessageSquare, path: '/b2b/chat' },
     { label: 'Shipping Tasks', description: 'Fulfillment overview', icon: Truck, path: '/inventoryshipping' },
@@ -983,6 +983,7 @@ export default function StoreDashboard() {
               syncing={syncing}
               syncResult={syncResult}
               onSync={syncBolcomOrders}
+              periodLabel={periodLabel}
             />
           </motion.div>
         )}
@@ -1306,7 +1307,7 @@ function ChannelCockpitCard({ channelKey, config, data, formatCurrency, formatDa
 // Channel Status Card — shown in single-channel views
 // ---------------------------------------------------------------------------
 
-function ChannelStatusCard({ channel, data, config, formatCurrency, navigate, syncing, syncResult, onSync }) {
+function ChannelStatusCard({ channel, data, config, formatCurrency, navigate, syncing, syncResult, onSync, periodLabel }) {
   const ChannelIcon = config.icon;
 
   if (channel === 'b2b') {
@@ -1326,7 +1327,7 @@ function ChannelStatusCard({ channel, data, config, formatCurrency, navigate, sy
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Orders This Month</p>
+            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Orders</p>
             <p className="text-lg font-bold text-white tabular-nums">{data.orders}</p>
           </div>
           <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40">
@@ -1400,7 +1401,7 @@ function ChannelStatusCard({ channel, data, config, formatCurrency, navigate, sy
         {data.connected ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40">
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Orders This Month</p>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Orders</p>
               <p className="text-lg font-bold text-white tabular-nums">{data.orders}</p>
             </div>
             <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40">
@@ -1462,7 +1463,7 @@ function ChannelStatusCard({ channel, data, config, formatCurrency, navigate, sy
         {data.connected ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40">
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Orders This Month</p>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Orders</p>
               <p className="text-lg font-bold text-white tabular-nums">{data.orders}</p>
             </div>
             <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40">
