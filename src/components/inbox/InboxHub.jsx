@@ -1,17 +1,17 @@
-import React, { useState, memo } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageSquare, Calendar, Video,
   Users as UsersIcon, Loader2,
-  Link2, Copy, Check, ExternalLink, Settings, X
+  Link2, Copy, Check, ExternalLink, Settings, X, Clock
 } from 'lucide-react';
 import CalendarMiniMonth from './calendar/CalendarMiniMonth';
 import CalendarView from './calendar/CalendarView';
 import { useCalendar } from './calendar/useCalendar';
 import { BookingSettings } from './booking';
 import { useUser } from '@/components/context/UserContext';
-import { useVideoCall } from './video';
-import { VideoCallRoom } from './video';
+import { useVideoCall, VideoCallRoom, MeetingLinkModal } from './video';
+import { toast } from 'sonner';
 
 // Tab definitions for Communication Hub (Phone/PA features live on the Sync page)
 const TABS = [
@@ -219,6 +219,38 @@ const CalendarSidebarContent = memo(function CalendarSidebarContent({ calendarSt
 const CallsSidebarContent = memo(function CallsSidebarContent() {
   const { user } = useUser();
   const videoCall = useVideoCall(user?.id, user?.company_id);
+  const [meetingLinks, setMeetingLinks] = useState([]);
+  const [linkModalCall, setLinkModalCall] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
+
+  const loadLinks = useCallback(async () => {
+    const links = await videoCall.getMyMeetingLinks();
+    setMeetingLinks(links);
+  }, [videoCall.getMyMeetingLinks]);
+
+  useEffect(() => { loadLinks(); }, [loadLinks]);
+
+  const handleCreateLink = useCallback(async () => {
+    try {
+      const call = await videoCall.createMeetingLink({ title: 'Meeting' });
+      setLinkModalCall(call);
+      loadLinks();
+    } catch {}
+  }, [videoCall.createMeetingLink, loadLinks]);
+
+  const handleCopyLinkUrl = useCallback((link) => {
+    navigator.clipboard.writeText(link.join_url).then(() => {
+      setCopiedId(link.id);
+      toast.success('Link copied');
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  }, []);
+
+  const statusDot = (status) => {
+    if (status === 'active') return 'bg-cyan-400 animate-pulse';
+    if (status === 'waiting') return 'bg-amber-400';
+    return 'bg-zinc-500';
+  };
 
   return (
     <div className="flex-1 overflow-y-auto px-3 py-4">
@@ -249,17 +281,74 @@ const CallsSidebarContent = memo(function CallsSidebarContent() {
       <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mt-6 mb-3">
         Quick Actions
       </div>
-      <button
-        onClick={() => videoCall.createCall({ title: 'Quick Call', channelId: null })}
-        disabled={videoCall.loading || videoCall.isInCall}
-        className="w-full flex items-center gap-2 p-3 rounded-xl bg-zinc-800/40 border border-zinc-700/40 hover:bg-zinc-800/60 hover:border-cyan-500/30 transition-all disabled:opacity-50 text-left"
-      >
-        <Video className="w-4 h-4 text-cyan-400" />
-        <div>
-          <div className="text-xs font-medium text-zinc-200">Start Quick Call</div>
-          <div className="text-[10px] text-zinc-500">Start an instant video call</div>
-        </div>
-      </button>
+      <div className="space-y-2">
+        <button
+          onClick={() => videoCall.createCall({ title: 'Quick Call', channelId: null })}
+          disabled={videoCall.loading || videoCall.isInCall}
+          className="w-full flex items-center gap-2 p-3 rounded-xl bg-zinc-800/40 border border-zinc-700/40 hover:bg-zinc-800/60 hover:border-cyan-500/30 transition-all disabled:opacity-50 text-left"
+        >
+          <Video className="w-4 h-4 text-cyan-400" />
+          <div>
+            <div className="text-xs font-medium text-zinc-200">Start Quick Call</div>
+            <div className="text-[10px] text-zinc-500">Start an instant video call</div>
+          </div>
+        </button>
+        <button
+          onClick={handleCreateLink}
+          disabled={videoCall.loading}
+          className="w-full flex items-center gap-2 p-3 rounded-xl bg-zinc-800/40 border border-zinc-700/40 hover:bg-zinc-800/60 hover:border-cyan-500/30 transition-all disabled:opacity-50 text-left"
+        >
+          <Link2 className="w-4 h-4 text-cyan-400" />
+          <div>
+            <div className="text-xs font-medium text-zinc-200">Create Meeting Link</div>
+            <div className="text-[10px] text-zinc-500">Share a link without joining</div>
+          </div>
+        </button>
+      </div>
+
+      {/* Recent Links */}
+      {meetingLinks.length > 0 && (
+        <>
+          <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mt-6 mb-3">
+            Recent Links ({meetingLinks.length})
+          </div>
+          <div className="space-y-1.5">
+            {meetingLinks.slice(0, 5).map((link) => (
+              <div
+                key={link.id}
+                className="p-2.5 rounded-xl bg-zinc-800/40 border border-zinc-700/40 hover:bg-zinc-800/60 transition-colors group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusDot(link.status)}`} />
+                    <span className="text-xs font-medium text-zinc-200 truncate">{link.title || 'Meeting'}</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopyLinkUrl(link)}
+                    className="p-1 rounded-md text-zinc-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                    title="Copy link"
+                  >
+                    {copiedId === link.id ? <Check className="w-3 h-3 text-cyan-400" /> : <Copy className="w-3 h-3" />}
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-[10px] font-mono text-zinc-500">{link.join_code}</span>
+                  <span className="text-[10px] text-zinc-600">
+                    {new Date(link.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      <MeetingLinkModal
+        isOpen={!!linkModalCall}
+        onClose={() => setLinkModalCall(null)}
+        call={linkModalCall}
+        onJoinNow={(joinCode) => videoCall.joinCall(joinCode)}
+      />
     </div>
   );
 });
@@ -274,6 +363,32 @@ function CalendarMainContent() {
 function CallsMainContent() {
   const { user } = useUser();
   const videoCall = useVideoCall(user?.id, user?.company_id);
+  const [meetingLinks, setMeetingLinks] = useState([]);
+  const [linkModalCall, setLinkModalCall] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
+
+  const loadLinks = useCallback(async () => {
+    const links = await videoCall.getMyMeetingLinks();
+    setMeetingLinks(links);
+  }, [videoCall.getMyMeetingLinks]);
+
+  useEffect(() => { loadLinks(); }, [loadLinks]);
+
+  const handleCreateLink = useCallback(async () => {
+    try {
+      const call = await videoCall.createMeetingLink({ title: 'Meeting' });
+      setLinkModalCall(call);
+      loadLinks();
+    } catch {}
+  }, [videoCall.createMeetingLink, loadLinks]);
+
+  const handleCopyLinkUrl = useCallback((link) => {
+    navigator.clipboard.writeText(link.join_url).then(() => {
+      setCopiedId(link.id);
+      toast.success('Link copied');
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  }, []);
 
   if (videoCall.isInCall && videoCall.currentCall) {
     return (
@@ -295,9 +410,13 @@ function CallsMainContent() {
     );
   }
 
+  const statusLabel = (s) => s === 'active' ? 'Active' : s === 'waiting' ? 'Waiting' : 'Ended';
+  const statusColor = (s) => s === 'active' ? 'text-cyan-400' : s === 'waiting' ? 'text-amber-400' : 'text-zinc-500';
+  const statusDot = (s) => s === 'active' ? 'bg-cyan-400 animate-pulse' : s === 'waiting' ? 'bg-amber-400' : 'bg-zinc-500';
+
   return (
-    <div className="flex-1 flex items-center justify-center p-4">
-      <div className="text-center max-w-md">
+    <div className="flex-1 flex flex-col items-center p-6 overflow-y-auto">
+      <div className="text-center max-w-md mt-8">
         <div className="w-16 h-16 rounded-2xl bg-zinc-800/50 flex items-center justify-center mx-auto mb-4">
           <Video className="w-8 h-8 text-cyan-400/40" />
         </div>
@@ -305,24 +424,91 @@ function CallsMainContent() {
         <p className="text-sm text-zinc-500 mb-6">
           Start video calls with your team or external guests. Sync joins as a silent note-taker and can be activated on demand.
         </p>
-        <button
-          onClick={() => videoCall.createCall({ title: 'New Call', channelId: null })}
-          disabled={videoCall.loading}
-          className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
-        >
-          {videoCall.loading ? (
+        <div className="flex items-center gap-3 justify-center">
+          <button
+            onClick={() => videoCall.createCall({ title: 'New Call', channelId: null })}
+            disabled={videoCall.loading}
+            className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+          >
+            {videoCall.loading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Starting...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Video className="w-4 h-4" />
+                Start a Call
+              </span>
+            )}
+          </button>
+          <button
+            onClick={handleCreateLink}
+            disabled={videoCall.loading}
+            className="px-6 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm font-medium rounded-lg border border-zinc-700/40 transition-colors disabled:opacity-50"
+          >
             <span className="flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Starting...
+              <Link2 className="w-4 h-4 text-cyan-400" />
+              Create Link
             </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <Video className="w-4 h-4" />
-              Start a Call
-            </span>
-          )}
-        </button>
+          </button>
+        </div>
       </div>
+
+      {/* Recent Meeting Links */}
+      {meetingLinks.length > 0 && (
+        <div className="w-full max-w-lg mt-10">
+          <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">
+            Recent Meeting Links
+          </div>
+          <div className="space-y-2">
+            {meetingLinks.map((link) => (
+              <div
+                key={link.id}
+                className="flex items-center gap-3 p-3 rounded-xl bg-zinc-800/40 border border-zinc-700/40 hover:bg-zinc-800/60 transition-colors group"
+              >
+                <div className={`w-2 h-2 rounded-full shrink-0 ${statusDot(link.status)}`} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-zinc-200 truncate">{link.title || 'Meeting'}</span>
+                    <span className={`text-[10px] font-medium ${statusColor(link.status)}`}>{statusLabel(link.status)}</span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-0.5">
+                    <span className="text-xs font-mono text-zinc-500">{link.join_code}</span>
+                    <span className="text-[10px] text-zinc-600 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {new Date(link.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleCopyLinkUrl(link)}
+                  className="p-2 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-700/50 transition-colors opacity-0 group-hover:opacity-100"
+                  title="Copy link"
+                >
+                  {copiedId === link.id ? <Check className="w-4 h-4 text-cyan-400" /> : <Copy className="w-4 h-4" />}
+                </button>
+                {(link.status === 'waiting' || link.status === 'active') && (
+                  <button
+                    onClick={() => videoCall.joinCall(link.join_code)}
+                    disabled={videoCall.loading || videoCall.isInCall}
+                    className="px-3 py-1.5 rounded-lg bg-cyan-600/20 text-cyan-400 text-xs font-medium hover:bg-cyan-600/30 transition-colors disabled:opacity-50"
+                  >
+                    Join
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <MeetingLinkModal
+        isOpen={!!linkModalCall}
+        onClose={() => setLinkModalCall(null)}
+        call={linkModalCall}
+        onJoinNow={(joinCode) => videoCall.joinCall(joinCode)}
+      />
     </div>
   );
 }

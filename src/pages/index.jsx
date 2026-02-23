@@ -1,5 +1,6 @@
 import Layout from "./Layout.jsx";
 import { CalendarBookingPage } from "@/components/inbox/booking";
+import JoinCallPage from "./JoinCallPage";
 import FinanceErrorWrapper from "@/components/finance/FinanceErrorWrapper";
 
 import AIAssistant from "./AIAssistant";
@@ -887,6 +888,16 @@ function PagesContent() {
         );
     }
 
+    // Public video call join page - no auth required to view, auth required to join
+    const isCallRoute = location.pathname.startsWith('/call');
+    if (isCallRoute) {
+        return (
+            <Routes>
+                <Route path="/call/:joinCode" element={<JoinCallPage />} />
+            </Routes>
+        );
+    }
+
     // Store Preview - lightweight iframe preview for the store builder (no auth/layout)
     const isStorePreviewRoute = location.pathname.startsWith('/store-preview');
     if (isStorePreviewRoute) {
@@ -996,7 +1007,7 @@ function PagesContent() {
     // Check if this is a completely unknown route — render standalone 404 outside Layout
     const pathSegment = location.pathname.split('/').filter(Boolean)[0]?.toLowerCase() || '';
     const knownPrefixes = new Set([
-      '', 'aiassistant', 'sync', 'aisysteminventory', 'authcallback', 'desktop-auth',
+      '', 'aiassistant', 'sync', 'aisysteminventory', 'authcallback', 'call', 'desktop-auth',
       'login', 'actions', 'activitytimeline', 'admindashboard', 'adminmigration',
       'analytics', 'analyticsdashboard', 'assignments', 'backendsetup', 'backendstatus',
       'crmdashboard', 'crmcontacts', 'crmpipeline', 'crmcampaigns', 'crmcompanyprofile',

@@ -250,6 +250,47 @@ export function useVideoCall(userId, companyId) {
   }, [userId, companyId, getProvider, loadParticipants, subscribeToParticipants]);
 
   // ------------------------------------------------------------------
+  // createMeetingLink — insert a video_calls row WITHOUT joining
+  // ------------------------------------------------------------------
+  const createMeetingLink = useCallback(async ({ title } = {}) => {
+    if (!userId || !companyId) throw new Error('Not authenticated');
+
+    setLoading(true);
+    try {
+      const joinCode = generateJoinCode();
+
+      const { data: call, error } = await supabase
+        .from('video_calls')
+        .insert({
+          company_id: companyId,
+          channel_id: null,
+          creator_id: userId,
+          initiated_by: userId,
+          title: title || 'Meeting',
+          join_code: joinCode,
+          room_id: joinCode,
+          join_url: `${window.location.origin}/call/${joinCode}`,
+          provider: 'livekit',
+          status: 'waiting',
+          settings: {},
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success('Meeting link created');
+      return call;
+    } catch (error) {
+      console.error('[useVideoCall] Failed to create meeting link:', error);
+      toast.error('Failed to create meeting link');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, companyId]);
+
+  // ------------------------------------------------------------------
   // joinCall — look up by join_code, add user to call_participants
   // ------------------------------------------------------------------
   const joinCall = useCallback(async (joinCode) => {
@@ -492,6 +533,27 @@ export function useVideoCall(userId, companyId) {
   }, []);
 
   // ------------------------------------------------------------------
+  // getMyMeetingLinks — fetch recent meeting links created by this user
+  // ------------------------------------------------------------------
+  const getMyMeetingLinks = useCallback(async () => {
+    if (!userId || !companyId) return [];
+
+    const { data, error } = await supabase
+      .from('video_calls')
+      .select('id, title, join_code, join_url, status, created_at, started_at, ended_at')
+      .eq('creator_id', userId)
+      .eq('company_id', companyId)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error) {
+      console.error('[useVideoCall] Failed to fetch meeting links:', error);
+      return [];
+    }
+    return data || [];
+  }, [userId, companyId]);
+
+  // ------------------------------------------------------------------
   // Active participant count (only those still in the call)
   // Guarantees the local user always appears even if DB query returned empty
   // ------------------------------------------------------------------
@@ -539,6 +601,7 @@ export function useVideoCall(userId, companyId) {
 
     // Actions
     createCall,
+    createMeetingLink,
     joinCall,
     leaveCall,
     endCall,
@@ -546,6 +609,7 @@ export function useVideoCall(userId, companyId) {
     toggleCamera,
     toggleScreenShare,
     getActiveCallsForChannel,
+    getMyMeetingLinks,
   };
 }
 
