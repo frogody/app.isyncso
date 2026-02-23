@@ -224,16 +224,16 @@ export default function B2BCatalogManager() {
       if (productIds.length > 0) {
         const { data: channels, error: chError } = await supabase
           .from('product_sales_channels')
-          .select('product_id, enabled, wholesale_price')
+          .select('product_id, is_active')
           .in('product_id', productIds)
-          .eq('channel', 'b2b');
+          .eq('channel', 'b2b')
+          .eq('company_id', organizationId);
 
         if (!chError && channels) {
           const channelMap = {};
           channels.forEach((ch) => {
             channelMap[ch.product_id] = {
-              enabled: ch.enabled !== false,
-              wholesale_price: ch.wholesale_price,
+              enabled: ch.is_active !== false,
             };
           });
           setSalesChannels(channelMap);
@@ -285,8 +285,8 @@ export default function B2BCatalogManager() {
               {
                 product_id: productId,
                 channel: 'b2b',
-                enabled: true,
-                organization_id: organizationId,
+                is_active: true,
+                company_id: organizationId,
               },
               { onConflict: 'product_id,channel' }
             );
@@ -297,7 +297,8 @@ export default function B2BCatalogManager() {
             .from('product_sales_channels')
             .delete()
             .eq('product_id', productId)
-            .eq('channel', 'b2b');
+            .eq('channel', 'b2b')
+            .eq('company_id', organizationId);
           if (delErr) throw delErr;
         }
 
@@ -334,9 +335,8 @@ export default function B2BCatalogManager() {
             {
               product_id: productId,
               channel: 'b2b',
-              wholesale_price: price,
-              enabled: true,
-              organization_id: organizationId,
+              is_active: true,
+              company_id: organizationId,
             },
             { onConflict: 'product_id,channel' }
           );

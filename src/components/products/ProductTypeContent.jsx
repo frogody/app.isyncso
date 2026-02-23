@@ -294,6 +294,7 @@ export default function ProductTypeContent({ productType = 'all' }) {
       let query = supabase
         .from('products')
         .select('*', { count: 'exact' })
+        .eq('company_id', user?.company_id)
         .order('created_at', { ascending: false });
 
       // Type filter
@@ -323,7 +324,8 @@ export default function ProductTypeContent({ productType = 'all' }) {
         const { data: channelProducts } = await supabase
           .from('product_sales_channels')
           .select('product_id')
-          .eq('channel', channelFilter);
+          .eq('channel', channelFilter)
+          .eq('company_id', user?.company_id);
         const channelProductIds = (channelProducts || []).map(c => c.product_id);
         if (channelProductIds.length > 0) {
           query = query.in('id', channelProductIds);
@@ -401,7 +403,8 @@ export default function ProductTypeContent({ productType = 'all' }) {
           const { data: channelsData } = await supabase
             .from('product_sales_channels')
             .select('product_id, channel')
-            .in('product_id', physIdsForChannels);
+            .in('product_id', physIdsForChannels)
+            .eq('company_id', user?.company_id);
           const chMap = {};
           (channelsData || []).forEach(ch => {
             if (!chMap[ch.product_id]) chMap[ch.product_id] = [];

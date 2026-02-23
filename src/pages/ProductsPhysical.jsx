@@ -267,6 +267,7 @@ export default function ProductsPhysical() {
         .from('products')
         .select('*', { count: 'exact' })
         .eq('type', 'physical')
+        .eq('company_id', user.company_id)
         .order('created_at', { ascending: false });
 
       // Server-side search
@@ -289,7 +290,8 @@ export default function ProductsPhysical() {
         const { data: channelProducts } = await supabase
           .from('product_sales_channels')
           .select('product_id')
-          .eq('channel', channelFilter);
+          .eq('channel', channelFilter)
+          .eq('company_id', user.company_id);
         const channelProductIds = (channelProducts || []).map(c => c.product_id);
         if (channelProductIds.length > 0) {
           query = query.in('id', channelProductIds);

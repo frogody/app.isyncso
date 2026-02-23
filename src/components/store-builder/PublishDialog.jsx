@@ -93,9 +93,9 @@ export default function PublishDialog({ isOpen, onClose, config, organizationId 
       const { count: productCount } = await supabase
         .from('product_sales_channels')
         .select('id', { count: 'exact', head: true })
-        .eq('organization_id', organizationId)
+        .eq('company_id', organizationId)
         .eq('channel', 'b2b')
-        .eq('enabled', true);
+        .eq('is_active', true);
 
       const hasProducts = (productCount || 0) > 0;
 

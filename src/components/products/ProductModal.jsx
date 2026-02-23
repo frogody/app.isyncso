@@ -409,7 +409,8 @@ export default function ProductModal({
         const { data } = await supabase
           .from('product_sales_channels')
           .select('channel')
-          .eq('product_id', product.id);
+          .eq('product_id', product.id)
+          .eq('company_id', user?.company_id);
         setProductChannels((data || []).map(r => r.channel));
       } catch (e) {
         console.warn('Failed to load channels:', e);
@@ -750,7 +751,8 @@ export default function ProductModal({
         const { data: existingChannels, error: readChErr } = await supabase
           .from('product_sales_channels')
           .select('channel')
-          .eq('product_id', savedProduct.id);
+          .eq('product_id', savedProduct.id)
+          .eq('company_id', user.company_id);
         if (readChErr) console.error('Failed to read existing channels:', readChErr);
         const oldChannels = (existingChannels || []).map(r => r.channel);
         const added = productChannels.filter(ch => !oldChannels.includes(ch));
@@ -761,6 +763,7 @@ export default function ProductModal({
             .from('product_sales_channels')
             .delete()
             .eq('product_id', savedProduct.id)
+            .eq('company_id', user.company_id)
             .in('channel', removed);
         }
         if (added.length > 0) {
