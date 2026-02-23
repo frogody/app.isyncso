@@ -34,7 +34,7 @@ Deno.serve(async (req: Request) => {
     let audioBlob: Blob;
     let mode = "transcribe";
     let transcriptSoFar = "";
-    let language = "en";
+    let language = ""; // empty = auto-detect
 
     if (contentType.includes("multipart/form-data")) {
       const formData = await req.formData();
@@ -45,12 +45,12 @@ Deno.serve(async (req: Request) => {
       audioBlob = audioFile as Blob;
       mode = (formData.get("mode") as string) || "transcribe";
       transcriptSoFar = (formData.get("transcript_so_far") as string) || "";
-      language = (formData.get("language") as string) || "en";
+      language = (formData.get("language") as string) || "";
     } else {
       // Accept raw binary with query params
       const url = new URL(req.url);
       mode = url.searchParams.get("mode") || "transcribe";
-      language = url.searchParams.get("language") || "en";
+      language = url.searchParams.get("language") || "";
       transcriptSoFar = url.searchParams.get("transcript_so_far") || "";
       audioBlob = await req.blob();
     }
@@ -61,7 +61,10 @@ Deno.serve(async (req: Request) => {
     const whisperForm = new FormData();
     whisperForm.append("file", audioBlob, "audio.webm");
     whisperForm.append("model", "whisper-large-v3-turbo");
-    whisperForm.append("language", language);
+    // Only set language if explicitly provided — otherwise Whisper auto-detects
+    if (language) {
+      whisperForm.append("language", language);
+    }
     whisperForm.append("response_format", "verbose_json");
     whisperForm.append("temperature", "0.0");
 
@@ -105,6 +108,9 @@ Deno.serve(async (req: Request) => {
       ? `${transcriptSoFar}\n${transcribedText}`
       : transcribedText;
 
+    // Detect transcript language for analysis prompt
+    const detectedLang = whisperData.language || "en";
+
     const analysisRes = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
       {
@@ -120,14 +126,17 @@ Deno.serve(async (req: Request) => {
               role: "system",
               content: `You are a real-time meeting assistant analyzing a live conversation transcript. Extract ONLY what's clearly said — no hallucination.
 
+IMPORTANT: The transcript is in "${detectedLang}". Write ALL analysis fields in the SAME language as the transcript. Additionally, provide an "action_items_en" field with English translations of action items (for automated task execution).
+
 Return JSON:
 {
-  "action_items": ["string"],
-  "decisions": ["string"],
-  "questions": ["string"],
-  "key_points": ["string"],
+  "action_items": ["string — in transcript language"],
+  "action_items_en": ["string — English translation of each action item"],
+  "decisions": ["string — in transcript language"],
+  "questions": ["string — in transcript language"],
+  "key_points": ["string — in transcript language"],
   "sentiment": "positive" | "neutral" | "negative" | "mixed",
-  "current_topic": "string"
+  "current_topic": "string — in transcript language"
 }
 
 Keep arrays short (max 5 items each). Focus on the LATEST segment but use the full transcript for context. Be concise — single sentence per item.`,

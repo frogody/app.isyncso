@@ -74,7 +74,6 @@ export default function useRealtimeTranscription() {
       formData.append('audio', audioBlob, 'audio.webm');
       formData.append('mode', 'transcribe_and_analyze');
       formData.append('transcript_so_far', fullTranscriptRef.current);
-      formData.append('language', 'en');
 
       const response = await fetch(
         `${SUPABASE_URL}/functions/v1/transcribe-audio`,
