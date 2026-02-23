@@ -1548,7 +1548,7 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
           subtotal: subtotal || 0,
           taxAmount: vat || 0,
           shippingCost: 0,
-          discountAmount: volumeDiscount || 0,
+          discountAmount: typeof volumeDiscount === 'object' ? (volumeDiscount?.amount || 0) : (volumeDiscount || 0),
           total: total || 0,
           shippingAddress: shippingAddr,
           billingAddress: billingAddr,
