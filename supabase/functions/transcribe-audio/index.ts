@@ -60,7 +60,7 @@ Deno.serve(async (req: Request) => {
     // ------------------------------------------------------------------
     const whisperForm = new FormData();
     whisperForm.append("file", audioBlob, "audio.webm");
-    whisperForm.append("model", "distil-whisper-large-v3-en");
+    whisperForm.append("model", "whisper-large-v3-turbo");
     whisperForm.append("language", language);
     whisperForm.append("response_format", "verbose_json");
     whisperForm.append("temperature", "0.0");
