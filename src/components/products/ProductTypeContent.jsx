@@ -59,7 +59,7 @@ export default function ProductTypeContent({ productType = 'all' }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState('table');
   const [pricingFilter, setPricingFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
   const [channelFilter, setChannelFilter] = useState('all');
@@ -104,7 +104,7 @@ export default function ProductTypeContent({ productType = 'all' }) {
     if (useServerSidePagination) {
       setCurrentPage(1);
     }
-  }, [debouncedSearch, statusFilter, categoryFilter, channelFilter, stockFilter, typeFilter, useServerSidePagination]);
+  }, [debouncedSearch, statusFilter, categoryFilter, channelFilter, stockFilter, pricingFilter, typeFilter, useServerSidePagination]);
 
   // ---- Handlers ----
 
@@ -534,7 +534,23 @@ export default function ProductTypeContent({ productType = 'all' }) {
   // ---- Client-side filtering (digital & service) ----
 
   const filteredProducts = useMemo(() => {
-    if (useServerSidePagination) return products;
+    // For server-side pagination, search/status/category/channel are already applied server-side.
+    // But stockFilter and pricingFilter must be applied client-side (derived from detailsMap).
+    if (useServerSidePagination) {
+      if (stockFilter === 'all' && pricingFilter === 'all') return products;
+      return products.filter(p => {
+        if (stockFilter !== 'all') {
+          const detail = detailsMap[p.id];
+          const status = getStockStatus(detail?.inventory);
+          if (status !== stockFilter) return false;
+        }
+        if (pricingFilter !== 'all') {
+          const detail = detailsMap[p.id];
+          if (!detail || detail.pricing_model !== pricingFilter) return false;
+        }
+        return true;
+      });
+    }
 
     return products.filter(p => {
       if (searchQuery.trim()) {
@@ -548,6 +564,12 @@ export default function ProductTypeContent({ productType = 'all' }) {
       if (statusFilter !== 'all' && p.status !== statusFilter) return false;
       if (categoryFilter !== 'all' && p.category_id !== categoryFilter) return false;
 
+      if (stockFilter !== 'all') {
+        const detail = detailsMap[p.id];
+        const status = getStockStatus(detail?.inventory);
+        if (status !== stockFilter) return false;
+      }
+
       if (pricingFilter !== 'all') {
         const detail = detailsMap[p.id];
         if (!detail || detail.pricing_model !== pricingFilter) return false;
@@ -555,7 +577,7 @@ export default function ProductTypeContent({ productType = 'all' }) {
 
       return true;
     });
-  }, [products, detailsMap, searchQuery, statusFilter, categoryFilter, pricingFilter, useServerSidePagination]);
+  }, [products, detailsMap, searchQuery, statusFilter, categoryFilter, stockFilter, pricingFilter, useServerSidePagination]);
 
   // ---- Stats ----
 
@@ -605,7 +627,7 @@ export default function ProductTypeContent({ productType = 'all' }) {
 
   const totalPages = useServerSidePagination ? Math.ceil(totalCount / PAGE_SIZE) : 0;
 
-  const displayProducts = useServerSidePagination ? products : filteredProducts;
+  const displayProducts = filteredProducts;
 
   // ---- Resolve effective product type for modal ----
 
