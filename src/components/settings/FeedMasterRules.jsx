@@ -27,6 +27,7 @@ export default function FeedMasterRules() {
   const [expandedGroup, setExpandedGroup] = useState(null);
   const [newGroupName, setNewGroupName] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const loadGroups = useCallback(async () => {
     if (!companyId) return;
@@ -63,13 +64,13 @@ export default function FeedMasterRules() {
   };
 
   const handleDelete = async (group) => {
-    if (!confirm(`Delete master rule group "${group.name}"?`)) return;
     const { error } = await supabase
       .from("product_feed_master_rules")
       .delete()
       .eq("id", group.id);
     if (error) return toast.error("Failed to delete");
     toast.success("Deleted");
+    setConfirmDelete(null);
     loadGroups();
   };
 
@@ -191,7 +192,7 @@ export default function FeedMasterRules() {
                   <button onClick={() => handleDuplicate(group)} className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 transition-colors">
                     <Copy className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => handleDelete(group)} className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 transition-colors">
+                  <button onClick={() => setConfirmDelete(group)} className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 transition-colors">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                   <button
@@ -225,6 +226,35 @@ export default function FeedMasterRules() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-zinc-700/40 rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-red-500/10">
+                <Trash2 className="w-4 h-4 text-red-400" />
+              </div>
+              <h3 className="text-sm font-semibold text-zinc-100">Delete Master Rule Group</h3>
+            </div>
+            <p className="text-xs text-zinc-400">
+              Delete <span className="text-zinc-200 font-medium">"{confirmDelete.name}"</span>?
+              {(confirmDelete.rules || []).length > 0 && (
+                <> This will remove all {(confirmDelete.rules || []).length} rules.</>
+              )}
+              {" "}This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" size="sm" onClick={() => setConfirmDelete(null)} className="border-zinc-700/40 text-zinc-400 text-xs h-8">
+                Cancel
+              </Button>
+              <Button size="sm" onClick={() => handleDelete(confirmDelete)} className="bg-red-600 hover:bg-red-500 text-white text-xs h-8">
+                <Trash2 className="w-3 h-3 mr-1" /> Delete
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -365,20 +365,36 @@ export default function FeedQualityValidation({
                 </span>
                 <span className="text-xs text-zinc-500">{issue.fix}</span>
                 <div>
-                  {issue.type === "missing_mapping" && onNavigateToStep && (
+                  {(issue.type === "missing_mapping" || issue.type === "missing_recommended") && onNavigateToStep && (
                     <button
-                      onClick={() => onNavigateToStep(2)}
-                      className="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors"
+                      onClick={() => onNavigateToStep(4)}
+                      className="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1"
                     >
-                      Go to mapping
+                      Go to mapping <ArrowRight className="w-2.5 h-2.5" />
                     </button>
                   )}
                   {(issue.type === "missing_stock_rule" || issue.type === "duplicate_rule") && onNavigateToStep && (
                     <button
                       onClick={() => onNavigateToStep(3)}
-                      className="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors"
+                      className="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1"
                     >
-                      Go to rules
+                      Go to rules <ArrowRight className="w-2.5 h-2.5" />
+                    </button>
+                  )}
+                  {(issue.type === "invalid_format" || issue.type === "invalid_values") && onNavigateToStep && (
+                    <button
+                      onClick={() => onNavigateToStep(3)}
+                      className="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1"
+                    >
+                      Add rule <ArrowRight className="w-2.5 h-2.5" />
+                    </button>
+                  )}
+                  {issue.type === "invalid_default" && onNavigateToStep && (
+                    <button
+                      onClick={() => onNavigateToStep(1)}
+                      className="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1"
+                    >
+                      Go to settings <ArrowRight className="w-2.5 h-2.5" />
                     </button>
                   )}
                 </div>

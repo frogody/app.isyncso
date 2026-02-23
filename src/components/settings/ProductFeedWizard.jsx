@@ -99,6 +99,7 @@ export default function ProductFeedWizard({ open, onClose, onSaved, editFeed = n
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [savedFeedId, setSavedFeedId] = useState(editFeed?.id || null);
+  const [syncComplete, setSyncComplete] = useState(false);
 
   // Step 1: Settings
   const [feedName, setFeedName] = useState(editFeed?.name || "");
@@ -230,6 +231,7 @@ export default function ProductFeedWizard({ open, onClose, onSaved, editFeed = n
 
       // Move to step 7 (results) and trigger sync
       setStep(7);
+      setSyncComplete(false);
       toast.info("Starting sync...");
       callFeedApi("syncFeed", { feedId, triggeredBy: "manual" })
         .then((res) => {
@@ -240,9 +242,10 @@ export default function ProductFeedWizard({ open, onClose, onSaved, editFeed = n
           } else {
             toast.error(`Sync failed: ${res.error || "Unknown error"}`);
           }
+          setSyncComplete(true);
           onSaved?.();
         })
-        .catch(() => toast.error("Sync request failed"));
+        .catch(() => { toast.error("Sync request failed"); setSyncComplete(true); });
     } catch (e) {
       toast.error(`Save failed: ${e.message}`);
     } finally {
@@ -268,11 +271,19 @@ export default function ProductFeedWizard({ open, onClose, onSaved, editFeed = n
       case 1: return feedUrl.trim() && feedName.trim();
       case 2: return true; // categories optional
       case 3: return true; // rules optional
-      case 4: return hasRequiredMappings;
+      case 4: return hasRequiredMappings && headers.length > 0;
       case 5: return true; // quality is informational
       case 6: return true; // preview is informational
       default: return false;
     }
+  };
+
+  const stepBlockReason = () => {
+    if (step === 4) {
+      if (headers.length === 0) return "Load feed preview first to map fields";
+      if (!hasRequiredMappings) return "Map EAN and Product Name to continue";
+    }
+    return null;
   };
 
   return (
@@ -608,7 +619,7 @@ export default function ProductFeedWizard({ open, onClose, onSaved, editFeed = n
                 <p className="text-xs text-zinc-500 mt-0.5">View sync results, track successful imports and errors.</p>
               </div>
               {savedFeedId ? (
-                <FeedSyncResults feedId={savedFeedId} feedName={feedName} />
+                <FeedSyncResults feedId={savedFeedId} feedName={feedName} syncComplete={syncComplete} />
               ) : (
                 <div className="text-center py-12 text-zinc-500">
                   <p className="text-sm">Save your feed first to see results</p>
@@ -627,7 +638,13 @@ export default function ProductFeedWizard({ open, onClose, onSaved, editFeed = n
               </Button>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {stepBlockReason() && (
+              <span className="text-xs text-amber-400 flex items-center gap-1.5">
+                <AlertTriangle className="w-3 h-3" />
+                {stepBlockReason()}
+              </span>
+            )}
             <Button variant="outline" onClick={onClose} className="border-zinc-700/40 text-zinc-400 text-xs h-8">
               {step === 7 ? "Done" : "Cancel"}
             </Button>
@@ -635,7 +652,7 @@ export default function ProductFeedWizard({ open, onClose, onSaved, editFeed = n
               <Button
                 onClick={() => goToStep(step + 1)}
                 disabled={!canAdvance()}
-                className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs h-8"
+                className={`text-xs h-8 ${canAdvance() ? "bg-cyan-600 hover:bg-cyan-500 text-white" : "bg-zinc-700 text-zinc-500 cursor-not-allowed"}`}
               >
                 {steps[step]?.label || "Next"} <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </Button>

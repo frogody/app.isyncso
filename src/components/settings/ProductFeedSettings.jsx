@@ -109,6 +109,7 @@ export default function ProductFeedSettings() {
     } else {
       setExpandedFeed(feedId);
       if (!syncLogs[feedId]) loadSyncLogs(feedId);
+      loadMasterGroups(); // refresh master groups in case new ones were created
     }
   };
 
@@ -341,35 +342,36 @@ export default function ProductFeedSettings() {
                   </div>
 
                   {/* Master Rule Group */}
-                  {masterGroups.length > 0 && (
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-zinc-700/30 bg-zinc-900/30">
-                      <BookOpen className="w-4 h-4 text-cyan-400 shrink-0" />
-                      <div className="flex-1">
-                        <label className="text-[11px] text-zinc-500 block mb-1">Master Rule Group</label>
-                        <select
-                          value={feed.master_rule_group_id || ""}
-                          onChange={async (e) => {
-                            const val = e.target.value || null;
-                            const { error } = await supabase
-                              .from("product_feeds")
-                              .update({ master_rule_group_id: val, updated_at: new Date().toISOString() })
-                              .eq("id", feed.id);
-                            if (error) toast.error("Failed to update");
-                            else {
-                              toast.success(val ? "Master rules linked" : "Master rules unlinked");
-                              loadFeeds();
-                            }
-                          }}
-                          className="w-full rounded-lg bg-zinc-800/60 border border-zinc-700/40 text-sm text-zinc-200 px-2.5 py-1.5"
-                        >
-                          <option value="">None (no master rules)</option>
-                          {masterGroups.map((g) => (
-                            <option key={g.id} value={g.id}>{g.name}</option>
-                          ))}
-                        </select>
-                      </div>
+                  <div className="flex items-center gap-3 p-3 rounded-xl border border-zinc-700/30 bg-zinc-900/30">
+                    <BookOpen className="w-4 h-4 text-cyan-400 shrink-0" />
+                    <div className="flex-1">
+                      <label className="text-[11px] text-zinc-500 block mb-1">Master Rule Group</label>
+                      <select
+                        value={feed.master_rule_group_id || ""}
+                        onChange={async (e) => {
+                          const val = e.target.value || null;
+                          const { error } = await supabase
+                            .from("product_feeds")
+                            .update({ master_rule_group_id: val, updated_at: new Date().toISOString() })
+                            .eq("id", feed.id);
+                          if (error) toast.error("Failed to update");
+                          else {
+                            toast.success(val ? "Master rules linked" : "Master rules unlinked");
+                            loadFeeds();
+                          }
+                        }}
+                        className="w-full rounded-lg bg-zinc-800/60 border border-zinc-700/40 text-sm text-zinc-200 px-2.5 py-1.5"
+                      >
+                        <option value="">None (no master rules)</option>
+                        {masterGroups.map((g) => (
+                          <option key={g.id} value={g.id}>{g.name}</option>
+                        ))}
+                      </select>
+                      {masterGroups.length === 0 && (
+                        <p className="text-[10px] text-zinc-600 mt-1">Create a master rule group in the section below to link it here</p>
+                      )}
                     </div>
-                  )}
+                  </div>
 
                   {/* Sync History */}
                   <div>

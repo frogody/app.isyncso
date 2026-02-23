@@ -24,7 +24,7 @@ function timeAgo(dateStr) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-export default function FeedSyncResults({ feedId, feedName }) {
+export default function FeedSyncResults({ feedId, feedName, syncComplete }) {
   const [tab, setTab] = useState("success");
   const [loading, setLoading] = useState(true);
   const [syncLogs, setSyncLogs] = useState([]);
@@ -37,6 +37,22 @@ export default function FeedSyncResults({ feedId, feedName }) {
     if (!feedId) return;
     loadData();
   }, [feedId]);
+
+  // Auto-refresh when sync completes
+  useEffect(() => {
+    if (syncComplete && feedId) {
+      loadData();
+    }
+  }, [syncComplete]);
+
+  // Poll for data while waiting for sync (items count is 0)
+  useEffect(() => {
+    if (!feedId || syncComplete) return;
+    const interval = setInterval(() => {
+      loadData();
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [feedId, syncComplete]);
 
   const loadData = async () => {
     setLoading(true);
