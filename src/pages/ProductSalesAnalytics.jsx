@@ -117,6 +117,7 @@ export default function ProductSalesAnalytics() {
   const [selectedChannel, setSelectedChannel] = useState('all');
   const [loading, setLoading] = useState(true);
   const [rawItems, setRawItems] = useState([]);
+  const [rawOrders, setRawOrders] = useState([]);
   const [productsMap, setProductsMap] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState('revenue');
@@ -130,8 +131,16 @@ export default function ProductSalesAnalytics() {
     try {
       const start = periodStart(selectedPeriod);
 
-      // Fetch order items joined with order metadata
-      const { data: items, error } = await supabase
+      // Fetch order-level totals (source of truth for revenue — matches StoreDashboard)
+      const ordersPromise = supabase
+        .from('sales_orders')
+        .select('id, total, source, status')
+        .eq('company_id', companyId)
+        .gte('order_date', start)
+        .neq('status', 'cancelled');
+
+      // Fetch order items joined with order metadata (for per-product breakdown)
+      const itemsPromise = supabase
         .from('sales_order_items')
         .select(`
           product_id, quantity, unit_price, line_total, ean, description,
@@ -141,8 +150,12 @@ export default function ProductSalesAnalytics() {
         .gte('sales_orders.order_date', start)
         .neq('sales_orders.status', 'cancelled');
 
-      if (error) throw error;
-      setRawItems(items || []);
+      const [ordersRes, itemsRes] = await Promise.all([ordersPromise, itemsPromise]);
+      if (ordersRes.error) throw ordersRes.error;
+      if (itemsRes.error) throw itemsRes.error;
+
+      setRawOrders(ordersRes.data || []);
+      setRawItems(itemsRes.data || []);
 
       // Fetch product details for linked items
       const productIds = [...new Set((items || []).map(i => i.product_id).filter(Boolean))];
@@ -202,14 +215,19 @@ export default function ProductSalesAnalytics() {
       avgPrice: r.totalQty > 0 ? r.totalRevenue / r.totalQty : 0,
     }));
 
-    const totalRevenue = rows.reduce((s, r) => s + r.totalRevenue, 0);
     const totalUnits = rows.reduce((s, r) => s + r.totalQty, 0);
     const productCount = rows.length;
-    const orderCount = orderIds.size;
+
+    // Use order-level totals for revenue stats (matches StoreDashboard exactly)
+    const filteredOrders = selectedChannel === 'all'
+      ? rawOrders
+      : rawOrders.filter(o => o.source === selectedChannel);
+    const totalRevenue = filteredOrders.reduce((s, o) => s + (parseFloat(String(o.total)) || 0), 0);
+    const orderCount = filteredOrders.length;
     const avgOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
 
     return { rows, totalRevenue, totalUnits, productCount, orderCount, avgOrderValue };
-  }, [rawItems, selectedChannel]);
+  }, [rawItems, rawOrders, selectedChannel]);
 
   // ---- Search + Sort ----
 
