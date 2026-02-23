@@ -317,7 +317,7 @@ function TrackingInput({ order, onUpdateTracking, onMarkShipped, updating }) {
 
   const handleShip = () => {
     if (!trackingNumber.trim()) return;
-    onMarkShipped(trackingNumber.trim(), carrier || null);
+    onMarkShipped(trackingNumber.trim(), carrier || null, trackingUrl || null);
   };
 
   const hasChanged =
@@ -689,7 +689,7 @@ export default function B2BOrderDetail() {
   // Mark as shipped (with tracking + automation)
   // -----------------------------------------------------------------------
   const markShipped = useCallback(
-    async (trackingCode, carrier) => {
+    async (trackingCode, carrier, trackingUrl) => {
       if (!order) return;
       setUpdatingTracking(true);
       try {
@@ -699,6 +699,8 @@ export default function B2BOrderDetail() {
           trackingCode,
           carrier,
           user?.id,
+          trackingUrl,
+          user?.company_id,
         );
         await fetchOrder();
       } catch (err) {

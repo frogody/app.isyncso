@@ -160,26 +160,23 @@ serve(async (req: Request) => {
         const itemCount = items.length;
         const totalFmt = new Intl.NumberFormat("en-EU", { style: "currency", currency: "EUR" }).format(Number(order.total) || 0);
 
-        if (!adminUserId) {
-          console.warn("[b2b-portal-api] No admin user found, skipping notification");
-          errors.push("Notification: No admin user found");
-        } else {
-          const { error: notifErr } = await supabase.from("user_notifications").insert({
-            user_id: adminUserId,
-            organization_id: organizationId,
-            type: "b2b_order",
-            title: `New B2B Order ${orderNum}`,
-            message: `Order from ${client.company_name || client.full_name || "client"} — ${totalFmt}, ${itemCount} item${itemCount !== 1 ? "s" : ""}`,
-            action_url: `/b2b/orders/${orderId}`,
-            metadata: { orderId, orderNumber: orderNum, clientName: client.full_name, severity: "medium" },
-          });
+        // Write to `notifications` table (same table the frontend reads)
+        const { error: notifErr } = await supabase.from("notifications").insert({
+          company_id: companyId || organizationId,
+          type: "b2b_order",
+          severity: "medium",
+          title: `New B2B Order ${orderNum}`,
+          message: `Order from ${client.company_name || client.full_name || "client"} — ${totalFmt}, ${itemCount} item${itemCount !== 1 ? "s" : ""}`,
+          action_url: `/b2b/orders/${orderId}`,
+          context_data: { orderId, orderNumber: orderNum, clientName: client.full_name },
+          status: "unread",
+        });
 
-          if (notifErr) {
-            console.warn("[b2b-portal-api] Notification failed:", notifErr.message);
-            errors.push(`Notification: ${notifErr.message}`);
-          } else {
-            console.log("[b2b-portal-api] Notification created for order", orderNum);
-          }
+        if (notifErr) {
+          console.warn("[b2b-portal-api] Notification failed:", notifErr.message);
+          errors.push(`Notification: ${notifErr.message}`);
+        } else {
+          console.log("[b2b-portal-api] Notification created for order", orderNum);
         }
       } catch (err: any) {
         console.warn("[b2b-portal-api] Notification error:", err?.message);

@@ -31,6 +31,16 @@ function formatCurrency(val: number): string {
   }).format(val || 0);
 }
 
+async function resolveCompanyId(organizationId: string): Promise<string> {
+  const { data } = await supabase
+    .from('users')
+    .select('company_id')
+    .eq('organization_id', organizationId)
+    .limit(1)
+    .maybeSingle();
+  return data?.company_id || organizationId;
+}
+
 async function callWebhook(event: string, orderId: string, organizationId: string) {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/b2b-order-webhook`, {
@@ -62,6 +72,7 @@ export async function processOrderPlaced(orderId: string, organizationId: string
   const items = (order as any).b2b_order_items || [];
   const client = (order as any).portal_clients || {};
   const errors: string[] = [];
+  const notifCompanyId = await resolveCompanyId(organizationId);
 
   // 1. Reserve inventory per item
   for (const item of items) {
@@ -85,7 +96,7 @@ export async function processOrderPlaced(orderId: string, organizationId: string
     const orderNum = (order as any).order_number || `#${orderId.slice(0, 8)}`;
     const itemCount = items.length;
     await createNotification({
-      company_id: organizationId,
+      company_id: notifCompanyId,
       type: 'b2b_order',
       severity: 'medium',
       title: `New B2B Order ${orderNum}`,
@@ -174,7 +185,7 @@ export async function processOrderConfirmed(
   // 2. Create shipping task
   try {
     await createShippingTask({
-      company_id: organizationId,
+      company_id: companyId || organizationId,
       b2b_order_id: orderId,
       sales_order_id: null,
       status: 'pending',
@@ -191,7 +202,7 @@ export async function processOrderConfirmed(
   try {
     const orderNum = (order as any).order_number || `#${orderId.slice(0, 8)}`;
     await createNotification({
-      company_id: organizationId,
+      company_id: companyId || organizationId,
       type: 'b2b_order',
       severity: 'low',
       title: `Order ${orderNum} Confirmed`,
@@ -225,11 +236,13 @@ export async function processOrderShipped(
   trackingCode: string,
   carrier?: string,
   userId?: string,
+  trackingUrl?: string,
+  companyId?: string,
 ) {
   const now = new Date().toISOString();
   const errors: string[] = [];
 
-  // 1. Update order status + shipped_at + tracking
+  // 1. Update order status + shipped_at + tracking + carrier
   try {
     const { error: orderErr } = await supabase
       .from('b2b_orders')
@@ -237,7 +250,8 @@ export async function processOrderShipped(
         status: 'shipped',
         shipped_at: now,
         tracking_number: trackingCode,
-        tracking_url: null,
+        tracking_url: trackingUrl || null,
+        carrier: carrier || null,
         updated_at: now,
       })
       .eq('id', orderId);
@@ -280,7 +294,7 @@ export async function processOrderShipped(
 
     const orderNum = order?.order_number || `#${orderId.slice(0, 8)}`;
     await createNotification({
-      company_id: organizationId,
+      company_id: companyId || organizationId,
       type: 'b2b_order',
       severity: 'low',
       title: `Order ${orderNum} Shipped`,

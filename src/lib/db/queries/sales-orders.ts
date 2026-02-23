@@ -170,6 +170,10 @@ export async function listShippingTasks(
       sales_orders (
         id, order_number, customer_id,
         customers (id, name, email)
+      ),
+      b2b_orders (
+        id, order_number, status, total, currency,
+        portal_clients (id, full_name, email, company_name)
       )
     `)
     .eq('company_id', companyId);
@@ -194,6 +198,11 @@ export async function getShippingTask(id: string): Promise<ShippingTask | null> 
         shipping_name, shipping_address_line1, shipping_address_line2,
         shipping_city, shipping_postal_code, shipping_country,
         customers (id, name, email, phone, tracking_alert_days)
+      ),
+      b2b_orders (
+        id, order_number, status, total, currency,
+        shipping_address,
+        portal_clients (id, full_name, email, company_name)
       )
     `)
     .eq('id', id)

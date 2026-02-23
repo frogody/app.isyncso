@@ -137,14 +137,17 @@ function ShipModal({ task, isOpen, onClose, onShip, t }) {
             <div className="text-sm">
               <span className={`${t ? t('text-slate-500', 'text-zinc-400') : 'text-zinc-400'}`}>Order:</span>
               <span className={`ml-2 ${t ? t('text-slate-900', 'text-white') : 'text-white'} font-medium`}>
-                {task?.sales_orders?.order_number || task?.task_number}
+                {task?.sales_orders?.order_number || task?.b2b_orders?.order_number || task?.task_number}
               </span>
+              {task?.b2b_orders && !task?.sales_orders && (
+                <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">B2B</span>
+              )}
             </div>
-            {task?.sales_orders?.customers?.name && (
+            {(task?.sales_orders?.customers?.name || task?.b2b_orders?.portal_clients) && (
               <div className="text-sm mt-1">
                 <span className={`${t ? t('text-slate-500', 'text-zinc-400') : 'text-zinc-400'}`}>Customer:</span>
                 <span className={`ml-2 ${t ? t('text-slate-900', 'text-white') : 'text-white'}`}>
-                  {task.sales_orders.customers.name}
+                  {task?.sales_orders?.customers?.name || task?.b2b_orders?.portal_clients?.company_name || task?.b2b_orders?.portal_clients?.full_name}
                 </span>
               </div>
             )}
@@ -248,6 +251,29 @@ function getPriorityStyle(priorityKey) {
   return { bg: "bg-zinc-500/10", text: "text-zinc-400" };
 }
 
+// Helper: get order info from either sales_orders or b2b_orders
+function getOrderInfo(task) {
+  if (task.sales_orders) {
+    return {
+      orderNumber: task.sales_orders.order_number || task.task_number,
+      customerName: task.sales_orders.customers?.name || 'Unknown customer',
+      source: 'sales',
+    };
+  }
+  if (task.b2b_orders) {
+    return {
+      orderNumber: task.b2b_orders.order_number || task.task_number,
+      customerName: task.b2b_orders.portal_clients?.company_name || task.b2b_orders.portal_clients?.full_name || 'B2B Client',
+      source: 'b2b',
+    };
+  }
+  return {
+    orderNumber: task.task_number || 'No order',
+    customerName: 'Unknown',
+    source: null,
+  };
+}
+
 // Shipping task card
 function ShippingTaskCard({ task, onShip, t }) {
   if (!task) return null;
@@ -256,6 +282,7 @@ function ShippingTaskCard({ task, onShip, t }) {
   const priority = getPriorityStyle(task.priority);
   const StatusIcon = (status.icon && typeof status.icon === 'function') ? status.icon : Clock;
   const isShippable = ["pending", "ready_to_ship"].includes(task.status);
+  const orderInfo = getOrderInfo(task);
 
   return (
     <div className={`p-3 rounded-lg ${t('bg-white/80 border-slate-200', 'bg-zinc-900/50 border-white/5')} border hover:border-cyan-500/30 transition-all`}>
@@ -267,8 +294,11 @@ function ShippingTaskCard({ task, onShip, t }) {
           <div>
             <div className="flex items-center gap-2">
               <h3 className={`font-medium ${t('text-slate-900', 'text-white')}`}>
-                {task.sales_orders?.order_number || task.task_number}
+                {orderInfo.orderNumber}
               </h3>
+              {orderInfo.source === 'b2b' && (
+                <Badge className="bg-cyan-500/10 text-cyan-400 border-cyan-500/20">B2B</Badge>
+              )}
               <Badge className={`${status.bg} ${status.text} ${status.border}`}>
                 {task.status || 'unknown'}
               </Badge>
@@ -279,7 +309,7 @@ function ShippingTaskCard({ task, onShip, t }) {
               )}
             </div>
             <p className={`text-sm ${t('text-slate-500', 'text-zinc-400')} mt-1`}>
-              {task.sales_orders?.customers?.name || "Unknown customer"}
+              {orderInfo.customerName}
             </p>
           </div>
         </div>
@@ -433,6 +463,9 @@ export default function InventoryShipping({ embedded = false }) {
         task.task_number?.toLowerCase().includes(searchLower) ||
         task.sales_orders?.order_number?.toLowerCase().includes(searchLower) ||
         task.sales_orders?.customers?.name?.toLowerCase().includes(searchLower) ||
+        task.b2b_orders?.order_number?.toLowerCase().includes(searchLower) ||
+        task.b2b_orders?.portal_clients?.full_name?.toLowerCase().includes(searchLower) ||
+        task.b2b_orders?.portal_clients?.company_name?.toLowerCase().includes(searchLower) ||
         task.track_trace_code?.toLowerCase().includes(searchLower)
       );
     }
