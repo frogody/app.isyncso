@@ -200,21 +200,35 @@ const SyncCallAssistant = forwardRef(function SyncCallAssistant({
     if (isListening) {
       stopListening();
     } else if (localStream) {
-      startListening(localStream, remoteStreams);
+      const remoteArray = Array.isArray(remoteStreams)
+        ? remoteStreams
+        : Object.values(remoteStreams || {});
+      startListening(localStream, remoteArray);
     }
   }, [isListening, localStream, remoteStreams, startListening, stopListening]);
 
-  // Auto-start listening when stream becomes available
+  // Auto-start listening when localStream becomes available
+  const hasStartedRef = useRef(false);
   useEffect(() => {
-    if (localStream && !isListening && isVisible) {
-      startListening(localStream, remoteStreams);
+    if (localStream && !hasStartedRef.current && isVisible) {
+      // Convert remoteStreams object to array of MediaStreams
+      const remoteArray = Array.isArray(remoteStreams)
+        ? remoteStreams
+        : Object.values(remoteStreams || {});
+      hasStartedRef.current = true;
+      startListening(localStream, remoteArray);
     }
+  }, [localStream, isVisible, remoteStreams, startListening]);
+
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
       if (isListening) {
         stopListening();
       }
+      hasStartedRef.current = false;
     };
-  }, []); // Only on mount
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Notify parent of collapsed state changes
   const handleToggleCollapse = useCallback(() => {

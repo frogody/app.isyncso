@@ -7,7 +7,7 @@
  * AnimatePresence for smooth mount/unmount transitions.
  */
 
-import React, { memo, useState, useCallback, useMemo, useRef } from 'react';
+import React, { memo, useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mic,
@@ -23,8 +23,10 @@ import {
   X,
   Brain,
   UserPlus,
+  Send,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/api/supabaseClient';
 
 import VideoGrid from './VideoGrid';
 import CallHeader from './CallHeader';
@@ -254,10 +256,15 @@ const VideoCallRoom = memo(function VideoCallRoom({
   const [showSync, setShowSync] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
   const [syncCollapsed, setSyncCollapsed] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
   const syncAssistantRef = useRef(null);
+  const chatChannelRef = useRef(null);
+  const chatEndRef = useRef(null);
 
   const callId = call?.id;
   const userId = user?.id;
+  const userName = user?.full_name || user?.email || 'Unknown';
   const title = call?.title || 'Video Call';
   const joinCode = call?.join_code;
   const startedAt = call?.started_at;
@@ -272,9 +279,65 @@ const VideoCallRoom = memo(function VideoCallRoom({
   // Determine active speaker (local user for now; in real WebRTC this would come from remote audio levels)
   const activeSpeakerId = useMemo(() => {
     if (isLocalSpeaking) return userId;
-    // In a full implementation, we'd track active speaker from remote participants too
     return null;
   }, [isLocalSpeaking, userId]);
+
+  // ---- Call chat via Supabase Broadcast ----
+  useEffect(() => {
+    if (!callId) return;
+
+    const channel = supabase
+      .channel(`call-chat:${callId}`, {
+        config: { broadcast: { self: true } },
+      })
+      .on('broadcast', { event: 'chat-message' }, (message) => {
+        const msg = message.payload;
+        if (msg) {
+          setChatMessages((prev) => [...prev, msg]);
+        }
+      })
+      .subscribe();
+
+    chatChannelRef.current = channel;
+
+    return () => {
+      supabase.removeChannel(channel);
+      chatChannelRef.current = null;
+    };
+  }, [callId]);
+
+  // Auto-scroll chat to bottom on new messages
+  useEffect(() => {
+    if (chatEndRef.current && showChat) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, showChat]);
+
+  const sendChatMessage = useCallback(() => {
+    const text = chatInput.trim();
+    if (!text || !chatChannelRef.current) return;
+
+    chatChannelRef.current.send({
+      type: 'broadcast',
+      event: 'chat-message',
+      payload: {
+        id: `${Date.now()}-${userId}`,
+        sender_id: userId,
+        sender_name: userName,
+        text,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    setChatInput('');
+  }, [chatInput, userId, userName]);
+
+  const handleChatKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
+    }
+  }, [sendChatMessage]);
 
   const toggleReactions = useCallback(() => {
     setShowReactions((prev) => !prev);
@@ -337,6 +400,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
             <SyncCallAssistant
               ref={syncAssistantRef}
               localStream={localStream}
+              remoteStreams={remoteStreams}
               callId={callId}
               isVisible={showSync}
               onClose={toggleSync}
@@ -374,6 +438,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 className="absolute right-0 top-0 bottom-0 w-80 bg-zinc-900/95 backdrop-blur-xl border-l border-zinc-700/50 flex flex-col z-20"
               >
+                {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700/50">
                   <h3 className="text-sm font-semibold text-white">Call Chat</h3>
                   <button
@@ -383,19 +448,63 @@ const VideoCallRoom = memo(function VideoCallRoom({
                     <X className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="flex-1 flex items-center justify-center p-4">
-                  <div className="text-center">
-                    <MessageSquare className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                    <p className="text-sm text-zinc-500">Chat messages will appear here</p>
-                    <p className="text-xs text-zinc-600 mt-1">Send messages to other call participants</p>
-                  </div>
+
+                {/* Messages area */}
+                <div className="flex-1 overflow-y-auto scrollbar-hide p-3 space-y-2">
+                  {chatMessages.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <MessageSquare className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                      <p className="text-sm text-zinc-500">No messages yet</p>
+                      <p className="text-xs text-zinc-600 mt-1">Send a message to start chatting</p>
+                    </div>
+                  )}
+                  {chatMessages.map((msg) => {
+                    const isMe = msg.sender_id === userId;
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
+                      >
+                        {!isMe && (
+                          <span className="text-[10px] text-zinc-500 mb-0.5 px-1">
+                            {msg.sender_name}
+                          </span>
+                        )}
+                        <div
+                          className={`max-w-[85%] px-3 py-1.5 rounded-xl text-sm ${
+                            isMe
+                              ? 'bg-cyan-600/80 text-white rounded-br-sm'
+                              : 'bg-zinc-800/80 text-zinc-200 rounded-bl-sm'
+                          }`}
+                        >
+                          {msg.text}
+                        </div>
+                        <span className="text-[9px] text-zinc-600 mt-0.5 px-1">
+                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  <div ref={chatEndRef} />
                 </div>
-                <div className="p-3 border-t border-zinc-700/50">
+
+                {/* Input */}
+                <div className="p-3 border-t border-zinc-700/50 flex gap-2">
                   <input
                     type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={handleChatKeyDown}
                     placeholder="Type a message..."
-                    className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white text-sm placeholder-zinc-500 focus:border-cyan-500 focus:outline-none transition-colors"
+                    className="flex-1 px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white text-sm placeholder-zinc-500 focus:border-cyan-500 focus:outline-none transition-colors"
                   />
+                  <button
+                    onClick={sendChatMessage}
+                    disabled={!chatInput.trim()}
+                    className="p-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
                 </div>
               </motion.div>
             )}
