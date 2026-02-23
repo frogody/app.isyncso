@@ -1676,6 +1676,7 @@ export default function InboxPage() {
             user={user}
             localStream={videoCall.localStream}
             screenStream={videoCall.screenStream}
+            remoteStreams={videoCall.remoteStreams}
             isMuted={videoCall.isMuted}
             isCameraOff={videoCall.isCameraOff}
             isScreenSharing={videoCall.isScreenSharing}

@@ -73,6 +73,7 @@ const VideoGrid = memo(function VideoGrid({
   currentUserId,
   localStream = null,
   screenStream = null,
+  remoteStreams = {},
   activeSpeakerId = null,
 }) {
   const [galleryPage, setGalleryPage] = useState(0);
@@ -103,9 +104,9 @@ const VideoGrid = memo(function VideoGrid({
     if (p.user_id === currentUserId) {
       return isScreen ? screenStream : localStream;
     }
-    // Remote participants would get their stream from WebRTC peer connections
-    return null;
-  }, [currentUserId, localStream, screenStream]);
+    // Remote participants get their stream from WebRTC peer connections
+    return remoteStreams[p.user_id] || null;
+  }, [currentUserId, localStream, screenStream, remoteStreams]);
 
   const totalPages = Math.ceil(sortedParticipants.length / TILES_PER_PAGE);
   const safePage = Math.min(galleryPage, Math.max(0, totalPages - 1));

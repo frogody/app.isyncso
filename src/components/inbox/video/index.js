@@ -3,11 +3,12 @@
  *
  * Phase 2.1: Provider abstraction, hooks, and UI controls.
  * Phase 2.2: Full VideoCallRoom UI with grid, reactions, header.
- * Real media integration (LiveKit/Daily.co) ships in Phase 2.3.
+ * Phase 2.3: P2P WebRTC via Supabase Realtime Broadcast signaling.
  */
 
 export { useVideoCall } from './useVideoCall';
-export { createVideoProvider, MockVideoProvider, LiveKitProvider } from './VideoProvider';
+export { createVideoProvider, BrowserMediaProvider } from './VideoProvider';
+export { useWebRTCPeers } from './useWebRTCPeers';
 export { default as CallControls } from './CallControls';
 export { default as CallBanner } from './CallBanner';
 export { default as VideoCallRoom } from './VideoCallRoom';

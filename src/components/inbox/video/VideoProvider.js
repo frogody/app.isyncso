@@ -177,10 +177,16 @@ class BrowserMediaProvider {
             this._screenStream = null;
             this._emit('screenShareEnded');
             this._emit('trackToggled', { kind: 'screen', enabled: false });
+            // Notify peers to switch back to camera track
+            this._emit('trackChanged', { kind: 'camera', track: this._videoTrack });
           });
         }
 
         this._emit('trackToggled', { kind: 'screen', enabled: true });
+        // Notify peers to switch to screen share track
+        if (videoTrack) {
+          this._emit('trackChanged', { kind: 'screen', track: videoTrack });
+        }
         return true;
       } catch (err) {
         // User cancelled the screen picker
@@ -196,6 +202,8 @@ class BrowserMediaProvider {
         this._screenStream = null;
       }
       this._emit('trackToggled', { kind: 'screen', enabled: false });
+      // Notify peers to switch back to camera track
+      this._emit('trackChanged', { kind: 'camera', track: this._videoTrack });
       return false;
     }
   }

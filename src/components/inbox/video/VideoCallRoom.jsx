@@ -242,6 +242,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
   isLocalSpeaking = false,
   localStream = null,
   screenStream = null,
+  remoteStreams = {},
   onToggleMute,
   onToggleCamera,
   onToggleScreenShare,
@@ -350,6 +351,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
               currentUserId={userId}
               localStream={localStream}
               screenStream={screenStream}
+              remoteStreams={remoteStreams}
               activeSpeakerId={activeSpeakerId}
             />
 

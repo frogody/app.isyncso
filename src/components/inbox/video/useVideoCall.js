@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 import { createVideoProvider } from './VideoProvider';
+import { useWebRTCPeers } from './useWebRTCPeers';
 
 // Force re-render helper for stream updates
 function useForceUpdate() {
@@ -61,10 +62,32 @@ export function useVideoCall(userId, companyId, userName) {
   const providerRef = useRef(null);
   const subscriptionRef = useRef(null);
   const updateParticipantRef = useRef(null);
+  const replaceVideoTrackRef = useRef(null);
   const forceUpdate = useForceUpdate();
 
   // Track local speaker state
   const [isLocalSpeaking, setIsLocalSpeaking] = useState(false);
+
+  // Expose real MediaStreams from the provider (declared early so useWebRTCPeers can use localStream)
+  const localStream = providerRef.current?.localStream || null;
+  const screenStream = providerRef.current?.screenStream || null;
+
+  // ---- WebRTC Peers (P2P media transport) ----
+  const {
+    remoteStreams,
+    addPeer,
+    removePeer,
+    removeAllPeers,
+    replaceVideoTrack,
+  } = useWebRTCPeers({
+    callId: currentCall?.id,
+    userId,
+    localStream,
+    enabled: isInCall,
+  });
+
+  // Keep replaceVideoTrack ref in sync for event handler
+  replaceVideoTrackRef.current = replaceVideoTrack;
 
   // Lazily initialize provider
   const getProvider = useCallback(() => {
@@ -105,6 +128,13 @@ export function useVideoCall(userId, companyId, userName) {
       providerRef.current.on('speakingChanged', ({ isSpeaking }) => {
         setIsLocalSpeaking(isSpeaking);
       });
+
+      // Track change (screen share start/stop) — replace video track on all peers
+      providerRef.current.on('trackChanged', ({ track }) => {
+        if (track) {
+          replaceVideoTrackRef.current?.(track);
+        }
+      });
     }
     return providerRef.current;
   }, [forceUpdate]);
@@ -141,6 +171,7 @@ export function useVideoCall(userId, companyId, userName) {
               prev.map(p => (p.id === newRow.id ? newRow : p))
             );
           } else if (eventType === 'DELETE') {
+            if (oldRow.user_id) removePeer(oldRow.user_id);
             setParticipants(prev =>
               prev.filter(p => p.id !== oldRow.id)
             );
@@ -150,7 +181,21 @@ export function useVideoCall(userId, companyId, userName) {
       .subscribe();
 
     subscriptionRef.current = channel;
-  }, []);
+  }, [removePeer]);
+
+  // ------------------------------------------------------------------
+  // Add/remove WebRTC peers when participants change
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    if (!isInCall || !userId) return;
+
+    // Add peer connections for each remote participant
+    participants.forEach((p) => {
+      if (p.user_id && p.user_id !== userId && !p.left_at) {
+        addPeer(p.user_id);
+      }
+    });
+  }, [participants, isInCall, userId, addPeer]);
 
   // ------------------------------------------------------------------
   // Load initial participants for a call
@@ -377,6 +422,9 @@ export function useVideoCall(userId, companyId, userName) {
     if (!currentCall || !userId) return;
 
     try {
+      // Close all WebRTC peer connections
+      removeAllPeers();
+
       // Mark participant as left
       await supabase
         .from('call_participants')
@@ -407,7 +455,7 @@ export function useVideoCall(userId, companyId, userName) {
       console.error('[useVideoCall] Failed to leave call:', error);
       toast.error('Failed to leave call');
     }
-  }, [currentCall, userId, getProvider]);
+  }, [currentCall, userId, getProvider, removeAllPeers]);
 
   // ------------------------------------------------------------------
   // endCall — set status='ended' and ended_at on the video_calls row
@@ -434,6 +482,7 @@ export function useVideoCall(userId, companyId, userName) {
 
       // Disconnect provider if this is our current call
       if (currentCall?.id === targetId) {
+        removeAllPeers();
         const provider = getProvider();
         await provider.disconnect();
 
@@ -452,7 +501,7 @@ export function useVideoCall(userId, companyId, userName) {
       console.error('[useVideoCall] Failed to end call:', error);
       toast.error('Failed to end call');
     }
-  }, [currentCall, getProvider]);
+  }, [currentCall, getProvider, removeAllPeers]);
 
   // ------------------------------------------------------------------
   // Toggle helpers — update both local state and call_participants row
@@ -580,10 +629,6 @@ export function useVideoCall(userId, companyId, userName) {
     };
   }, []);
 
-  // Expose real MediaStreams from the provider
-  const localStream = providerRef.current?.localStream || null;
-  const screenStream = providerRef.current?.screenStream || null;
-
   return {
     // State
     currentCall,
@@ -598,6 +643,7 @@ export function useVideoCall(userId, companyId, userName) {
     // Media streams
     localStream,
     screenStream,
+    remoteStreams,
 
     // Actions
     createCall,

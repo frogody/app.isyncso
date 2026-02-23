@@ -497,6 +497,7 @@ function CallsMainContent() {
         isScreenSharing={videoCall.isScreenSharing}
         localStream={videoCall.localStream}
         screenStream={videoCall.screenStream}
+        remoteStreams={videoCall.remoteStreams}
         onToggleMute={videoCall.toggleMute}
         onToggleCamera={videoCall.toggleCamera}
         onToggleScreenShare={videoCall.toggleScreenShare}
