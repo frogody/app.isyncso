@@ -11,7 +11,7 @@ export default function JoinCallPage() {
   const { joinCode } = useParams();
   const navigate = useNavigate();
   const { user } = useUser();
-  const videoCall = useVideoCall(user?.id, user?.company_id);
+  const videoCall = useVideoCall(user?.id, user?.company_id, user?.full_name);
 
   const [call, setCall] = useState(null);
   const [status, setStatus] = useState('loading'); // loading | found | ended | not_found
@@ -56,7 +56,7 @@ export default function JoinCallPage() {
     setJoining(true);
     try {
       await videoCall.joinCall(joinCode);
-      navigate('/Inbox');
+      navigate('/Inbox?tab=calls');
     } catch (err) {
       setJoining(false);
     }

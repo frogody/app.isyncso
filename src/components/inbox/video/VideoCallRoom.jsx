@@ -22,6 +22,7 @@ import {
   MessageSquare,
   X,
   Brain,
+  UserPlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -29,6 +30,7 @@ import VideoGrid from './VideoGrid';
 import CallHeader from './CallHeader';
 import ReactionsOverlay from './ReactionsOverlay';
 import SyncCallAssistant from './SyncCallAssistant';
+import InviteMembersPanel from './InviteMembersPanel';
 
 // ---------------------------------------------------------------------------
 // Control button (reused from CallControls pattern)
@@ -88,6 +90,7 @@ const RoomControls = memo(function RoomControls({
   showReactions,
   showChat,
   showSync,
+  showInvite,
   participantCount,
   joinCode,
   onToggleMute,
@@ -96,6 +99,7 @@ const RoomControls = memo(function RoomControls({
   onToggleReactions,
   onToggleChat,
   onToggleSync,
+  onToggleInvite,
   onEndCall,
   onLeave,
   isHost,
@@ -177,6 +181,14 @@ const RoomControls = memo(function RoomControls({
         onClick={onToggleSync}
       />
 
+      {/* Invite members */}
+      <ControlButton
+        icon={UserPlus}
+        isActive={showInvite}
+        label={showInvite ? 'Hide invites' : 'Invite members'}
+        onClick={onToggleInvite}
+      />
+
       {/* Participant count */}
       <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.05]">
         <Users className="w-4 h-4 text-zinc-400" />
@@ -239,6 +251,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
   const [showReactions, setShowReactions] = useState(true);
   const [showChat, setShowChat] = useState(false);
   const [showSync, setShowSync] = useState(true);
+  const [showInvite, setShowInvite] = useState(false);
   const [syncCollapsed, setSyncCollapsed] = useState(false);
   const syncAssistantRef = useRef(null);
 
@@ -268,11 +281,19 @@ const VideoCallRoom = memo(function VideoCallRoom({
 
   const toggleChat = useCallback(() => {
     setShowChat((prev) => !prev);
+    // Close invite if opening chat (they share the right panel slot)
+    setShowInvite(false);
   }, []);
 
   const toggleSync = useCallback(() => {
     setShowSync((prev) => !prev);
     setSyncCollapsed(false);
+  }, []);
+
+  const toggleInvite = useCallback(() => {
+    setShowInvite((prev) => !prev);
+    // Close chat if opening invite (they share the right panel slot)
+    setShowChat(false);
   }, []);
 
   // Capture transcript and trigger end/leave with it
@@ -323,7 +344,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
           )}
 
           {/* Main video area */}
-          <div className={`flex-1 relative transition-all duration-300 ${showChat ? 'mr-80' : ''}`}>
+          <div className={`flex-1 relative transition-all duration-300 ${showChat || showInvite ? 'mr-80' : ''}`}>
             <VideoGrid
               participants={participants}
               currentUserId={userId}
@@ -377,6 +398,23 @@ const VideoCallRoom = memo(function VideoCallRoom({
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Invite members panel */}
+          <AnimatePresence>
+            {showInvite && (
+              <InviteMembersPanel
+                companyId={call?.company_id}
+                userId={userId}
+                userName={user?.full_name}
+                callId={callId}
+                joinCode={joinCode}
+                joinUrl={call?.join_url}
+                callTitle={title}
+                participantUserIds={participants.map((p) => p.user_id).filter(Boolean)}
+                onClose={toggleInvite}
+              />
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Extended controls */}
@@ -387,6 +425,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
           showReactions={showReactions}
           showChat={showChat}
           showSync={showSync}
+          showInvite={showInvite}
           participantCount={participants.length}
           joinCode={joinCode}
           onToggleMute={onToggleMute}
@@ -395,6 +434,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
           onToggleReactions={toggleReactions}
           onToggleChat={toggleChat}
           onToggleSync={toggleSync}
+          onToggleInvite={toggleInvite}
           onEndCall={handleEndCall}
           onLeave={handleLeave}
           isHost={isHost}

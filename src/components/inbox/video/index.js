@@ -17,3 +17,4 @@ export { default as CallHeader } from './CallHeader';
 export { default as ReactionsOverlay } from './ReactionsOverlay';
 export { default as CallEndScreen } from './CallEndScreen';
 export { default as MeetingLinkModal } from './MeetingLinkModal';
+export { default as InviteMembersPanel } from './InviteMembersPanel';

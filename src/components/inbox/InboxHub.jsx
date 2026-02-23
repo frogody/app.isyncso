@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageSquare, Calendar, Video,
   Users as UsersIcon, Loader2,
-  Link2, Copy, Check, ExternalLink, Settings, X, Clock
+  Link2, Copy, Check, ExternalLink, Settings, X, Clock, Phone
 } from 'lucide-react';
+import { supabase } from '@/api/supabaseClient';
 import CalendarMiniMonth from './calendar/CalendarMiniMonth';
 import CalendarView from './calendar/CalendarView';
 import { useCalendar } from './calendar/useCalendar';
@@ -218,10 +219,69 @@ const CalendarSidebarContent = memo(function CalendarSidebarContent({ calendarSt
 // Calls tab sidebar with live call state
 const CallsSidebarContent = memo(function CallsSidebarContent() {
   const { user } = useUser();
-  const videoCall = useVideoCall(user?.id, user?.company_id);
+  const videoCall = useVideoCall(user?.id, user?.company_id, user?.full_name);
   const [meetingLinks, setMeetingLinks] = useState([]);
   const [linkModalCall, setLinkModalCall] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
+  const [callInvites, setCallInvites] = useState([]);
+
+  // Subscribe to call invite notifications
+  useEffect(() => {
+    if (!user?.id) return;
+
+    // Fetch existing unread call invites
+    supabase
+      .from('user_notifications')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('type', 'call_invite')
+      .eq('read', false)
+      .order('created_at', { ascending: false })
+      .limit(5)
+      .then(({ data }) => {
+        if (data) setCallInvites(data);
+      });
+
+    // Listen for new call invites in realtime
+    const channel = supabase
+      .channel(`call-invites-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'user_notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.new?.type === 'call_invite') {
+            setCallInvites((prev) => [payload.new, ...prev]);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id]);
+
+  const dismissInvite = useCallback(async (inviteId) => {
+    await supabase
+      .from('user_notifications')
+      .update({ read: true })
+      .eq('id', inviteId);
+    setCallInvites((prev) => prev.filter((i) => i.id !== inviteId));
+  }, []);
+
+  const acceptInvite = useCallback(async (invite) => {
+    const joinCode = invite.metadata?.join_code;
+    if (!joinCode) return;
+    await supabase
+      .from('user_notifications')
+      .update({ read: true })
+      .eq('id', invite.id);
+    setCallInvites((prev) => prev.filter((i) => i.id !== invite.id));
+    videoCall.joinCall(joinCode);
+  }, [videoCall]);
 
   const loadLinks = useCallback(async () => {
     const links = await videoCall.getMyMeetingLinks();
@@ -275,6 +335,42 @@ const CallsSidebarContent = memo(function CallsSidebarContent() {
             <Video className="w-4 h-4 text-zinc-600" />
             <span className="text-xs text-zinc-400">No active calls</span>
           </div>
+        </div>
+      )}
+
+      {/* Incoming call invites */}
+      {callInvites.length > 0 && (
+        <div className="mt-4 space-y-2">
+          {callInvites.map((invite) => (
+            <motion.div
+              key={invite.id}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 animate-pulse"
+            >
+              <div className="flex items-center gap-2 mb-1.5">
+                <Phone className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="text-xs font-medium text-cyan-300 truncate">{invite.title}</span>
+              </div>
+              <p className="text-[11px] text-zinc-400 mb-2 truncate">{invite.message}</p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => acceptInvite(invite)}
+                  disabled={videoCall.isInCall}
+                  className="flex-1 px-2 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-medium rounded-lg transition-colors disabled:opacity-50"
+                >
+                  Join
+                </button>
+                <button
+                  onClick={() => dismissInvite(invite.id)}
+                  className="flex-1 px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] font-medium rounded-lg border border-zinc-700/40 transition-colors"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </motion.div>
+          ))}
         </div>
       )}
 
@@ -362,7 +458,7 @@ function CalendarMainContent() {
 
 function CallsMainContent() {
   const { user } = useUser();
-  const videoCall = useVideoCall(user?.id, user?.company_id);
+  const videoCall = useVideoCall(user?.id, user?.company_id, user?.full_name);
   const [meetingLinks, setMeetingLinks] = useState([]);
   const [linkModalCall, setLinkModalCall] = useState(null);
   const [copiedId, setCopiedId] = useState(null);

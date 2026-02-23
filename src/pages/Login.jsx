@@ -49,7 +49,9 @@ export default function Login() {
     const checkAuth = async () => {
       const isAuth = await db.auth.isAuthenticated();
       if (isAuth) {
-        const returnUrl = localStorage.getItem('returnUrl') || '/Dashboard';
+        const params = new URLSearchParams(window.location.search);
+        const redirectUrl = params.get('redirect');
+        const returnUrl = redirectUrl || localStorage.getItem('returnUrl') || '/Dashboard';
         localStorage.removeItem('returnUrl');
         navigate(returnUrl, { replace: true });
       }
@@ -112,7 +114,9 @@ export default function Login() {
 
         if (user) {
           await db.auth.ensureUserProfile();
-          const returnUrl = localStorage.getItem('returnUrl') || '/Dashboard';
+          const params = new URLSearchParams(window.location.search);
+          const redirectUrl = params.get('redirect');
+          const returnUrl = redirectUrl || localStorage.getItem('returnUrl') || '/Dashboard';
           localStorage.removeItem('returnUrl');
           navigate(returnUrl, { replace: true });
         }

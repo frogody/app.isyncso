@@ -47,7 +47,7 @@ function generateJoinCode() {
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
-export function useVideoCall(userId, companyId) {
+export function useVideoCall(userId, companyId, userName) {
   // Call state
   const [currentCall, setCurrentCall] = useState(null);
   const [participants, setParticipants] = useState([]);
@@ -206,7 +206,7 @@ export function useVideoCall(userId, companyId) {
         .insert({
           call_id: call.id,
           user_id: userId,
-          display_name: 'You',
+          display_name: userName || 'You',
           role: 'host',
           joined_at: new Date().toISOString(),
           is_muted: false,
@@ -327,7 +327,7 @@ export function useVideoCall(userId, companyId) {
           .insert({
             call_id: call.id,
             user_id: userId,
-            display_name: 'Participant',
+            display_name: userName || 'Participant',
             role: 'participant',
             joined_at: new Date().toISOString(),
             is_muted: false,

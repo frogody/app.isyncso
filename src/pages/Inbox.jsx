@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Hash, Lock, Users, Pin, Search, Info,
@@ -82,9 +83,14 @@ export default function InboxPage() {
   }, [user?.id]);
 
   // ========================================
-  // COMMUNICATION HUB TAB STATE
+  // COMMUNICATION HUB TAB STATE (URL-aware)
   // ========================================
-  const [activeHubTab, setActiveHubTab] = useState('chat');
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const callParam = searchParams.get('call');
+  const [activeHubTab, setActiveHubTab] = useState(
+    tabParam && ['chat', 'calendar', 'calls'].includes(tabParam) ? tabParam : 'chat'
+  );
 
   // ========================================
   // REALTIME HOOKS (replacing polling)
@@ -247,7 +253,17 @@ export default function InboxPage() {
   const [showDigest, setShowDigest] = useState(false);
 
   // Video call hook
-  const videoCall = useVideoCall(user?.id, user?.company_id);
+  const videoCall = useVideoCall(user?.id, user?.company_id, user?.full_name);
+
+  // Auto-join call from URL param (e.g. /Inbox?tab=calls&call=SYN-XXX-XXX)
+  const autoJoinAttempted = useRef(false);
+  useEffect(() => {
+    if (callParam && user?.id && !videoCall.isInCall && !autoJoinAttempted.current) {
+      autoJoinAttempted.current = true;
+      setActiveHubTab('calls');
+      videoCall.joinCall(callParam).catch(() => {});
+    }
+  }, [callParam, user?.id, videoCall.isInCall]);
 
   // Post-call wrap-up state
   const [callEndData, setCallEndData] = useState(null);

@@ -888,13 +888,15 @@ function PagesContent() {
         );
     }
 
-    // Public video call join page - no auth required to view, auth required to join
+    // Video call join page - UserProvider needed for auth-aware join flow
     const isCallRoute = location.pathname.startsWith('/call');
     if (isCallRoute) {
         return (
-            <Routes>
-                <Route path="/call/:joinCode" element={<JoinCallPage />} />
-            </Routes>
+            <UserProvider>
+                <Routes>
+                    <Route path="/call/:joinCode" element={<JoinCallPage />} />
+                </Routes>
+            </UserProvider>
         );
     }
 
