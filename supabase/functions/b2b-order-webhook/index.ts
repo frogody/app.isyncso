@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
+import { encode as base64Encode } from "https://deno.land/std@0.177.0/encoding/base64.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -234,22 +236,42 @@ function orderConfirmedEmail(
       ${itemsHtml}
     </table>
 
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;background-color:${config.bgColor};border-radius:10px;overflow:hidden;">
       <tr>
-        <td style="padding:4px 0;font-size:14px;color:${config.mutedColor};">Subtotal</td>
-        <td style="padding:4px 0;font-size:14px;color:${config.textColor};text-align:right;">${formatCurrency(subtotal)}</td>
+        <td style="padding:16px 20px 12px;">
+          <p style="margin:0 0 12px;font-size:11px;font-weight:600;color:${config.mutedColor};text-transform:uppercase;letter-spacing:0.08em;">Price Breakdown</p>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding:6px 0;font-size:14px;color:${config.mutedColor};">${items.length} item${items.length !== 1 ? 's' : ''} &times; unit price</td>
+              <td style="padding:6px 0;font-size:14px;color:${config.textColor};text-align:right;font-weight:500;">${formatCurrency(subtotal)}</td>
+            </tr>
+            ${discountAmount > 0 ? `<tr>
+              <td style="padding:6px 0;font-size:14px;color:${config.mutedColor};">Wholesale discount (10%)</td>
+              <td style="padding:6px 0;font-size:14px;color:#22c55e;text-align:right;font-weight:500;">&minus; ${formatCurrency(discountAmount)}</td>
+            </tr>
+            <tr>
+              <td colspan="2" style="padding:0;"><div style="height:1px;background:${config.borderColor};margin:4px 0;"></div></td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:14px;color:${config.mutedColor};">After discount</td>
+              <td style="padding:6px 0;font-size:14px;color:${config.textColor};text-align:right;font-weight:500;">${formatCurrency(subtotal - discountAmount)}</td>
+            </tr>` : ''}
+            <tr>
+              <td style="padding:6px 0;font-size:14px;color:${config.mutedColor};">VAT 21%</td>
+              <td style="padding:6px 0;font-size:14px;color:${config.textColor};text-align:right;font-weight:500;">+ ${formatCurrency(taxAmount)}</td>
+            </tr>
+          </table>
+        </td>
       </tr>
-      ${discountAmount > 0 ? `<tr>
-        <td style="padding:4px 0;font-size:14px;color:${config.mutedColor};">Discount</td>
-        <td style="padding:4px 0;font-size:14px;color:#22c55e;text-align:right;">-${formatCurrency(discountAmount)}</td>
-      </tr>` : ''}
       <tr>
-        <td style="padding:4px 0;font-size:14px;color:${config.mutedColor};">Tax (21%)</td>
-        <td style="padding:4px 0;font-size:14px;color:${config.textColor};text-align:right;">${formatCurrency(taxAmount)}</td>
-      </tr>
-      <tr>
-        <td style="padding:12px 0 4px;font-size:16px;font-weight:700;color:${config.textColor};border-top:1px solid ${config.borderColor};">Total</td>
-        <td style="padding:12px 0 4px;font-size:16px;font-weight:700;color:${config.primaryColor};text-align:right;border-top:1px solid ${config.borderColor};">${formatCurrency(total)}</td>
+        <td style="padding:14px 20px;background:linear-gradient(135deg, rgba(6,182,212,0.12) 0%, rgba(6,182,212,0.06) 100%);border-top:1px solid ${config.borderColor};">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="font-size:15px;font-weight:700;color:${config.textColor};">Total Due</td>
+              <td style="font-size:20px;font-weight:700;color:${config.primaryColor};text-align:right;">${formatCurrency(total)}</td>
+            </tr>
+          </table>
+        </td>
       </tr>
     </table>
 
@@ -264,6 +286,214 @@ function orderConfirmedEmail(
 
     <p style="margin:24px 0 0;font-size:13px;color:${config.mutedColor};">Thank you for your order. We will notify you when your order has been shipped.</p>
   `);
+}
+
+// ---------------------------------------------------------------------------
+// PDF Invoice Generator
+// ---------------------------------------------------------------------------
+
+async function generateInvoicePdf(invoice: any, company: any, storeConfig: StoreConfig): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  const page = doc.addPage([595.28, 841.89]); // A4
+  const { width, height } = page.getSize();
+
+  const fontRegular = await doc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
+
+  const black = rgb(0.1, 0.1, 0.1);
+  const gray = rgb(0.45, 0.45, 0.45);
+  const darkGray = rgb(0.25, 0.25, 0.25);
+  const accent = rgb(0.024, 0.714, 0.831); // cyan-500
+  const lightBg = rgb(0.96, 0.96, 0.97);
+  const lineColor = rgb(0.88, 0.88, 0.9);
+
+  const margin = 50;
+  let y = height - margin;
+
+  // Helper: draw text
+  const text = (str: string, x: number, yp: number, opts: { font?: any; size?: number; color?: any } = {}) => {
+    page.drawText(str || "", {
+      x,
+      y: yp,
+      font: opts.font || fontRegular,
+      size: opts.size || 10,
+      color: opts.color || black,
+    });
+  };
+
+  // Helper: right-aligned text
+  const textRight = (str: string, yp: number, opts: { font?: any; size?: number; color?: any } = {}) => {
+    const f = opts.font || fontRegular;
+    const s = opts.size || 10;
+    const w = f.widthOfTextAtSize(str || "", s);
+    text(str, width - margin - w, yp, opts);
+  };
+
+  // Helper: horizontal line
+  const hline = (yp: number) => {
+    page.drawLine({
+      start: { x: margin, y: yp },
+      end: { x: width - margin, y: yp },
+      thickness: 0.5,
+      color: lineColor,
+    });
+  };
+
+  // ── Company header ──
+  const companyName = company?.name || storeConfig.storeName || "Wholesale Store";
+  text(companyName, margin, y, { font: fontBold, size: 18, color: black });
+  y -= 18;
+
+  if (company?.invoice_branding?.company_address) {
+    text(company.invoice_branding.company_address, margin, y, { size: 9, color: gray });
+    y -= 13;
+  }
+  const contactParts: string[] = [];
+  if (company?.invoice_branding?.company_email) contactParts.push(company.invoice_branding.company_email);
+  if (company?.invoice_branding?.company_phone) contactParts.push(company.invoice_branding.company_phone);
+  if (contactParts.length) {
+    text(contactParts.join("  |  "), margin, y, { size: 9, color: gray });
+    y -= 13;
+  }
+  if (company?.invoice_branding?.company_vat) {
+    text(`VAT: ${company.invoice_branding.company_vat}`, margin, y, { size: 9, color: gray });
+    y -= 13;
+  }
+
+  // ── INVOICE title ──
+  y -= 10;
+  textRight("INVOICE", y + 12, { font: fontBold, size: 24, color: accent });
+  y -= 30;
+  hline(y);
+  y -= 20;
+
+  // ── Invoice details (left) + Bill To (right) ──
+  const detailsX = margin;
+  const billToX = width / 2 + 20;
+
+  text("Invoice Number", detailsX, y, { font: fontBold, size: 8, color: gray });
+  text(invoice.invoice_number || "—", detailsX, y - 14, { font: fontBold, size: 11, color: black });
+
+  text("Bill To", billToX, y, { font: fontBold, size: 8, color: gray });
+  text(invoice.client_name || "Client", billToX, y - 14, { font: fontBold, size: 11, color: black });
+
+  y -= 32;
+
+  text("Invoice Date", detailsX, y, { font: fontBold, size: 8, color: gray });
+  text(formatDate(invoice.created_at || new Date().toISOString()), detailsX, y - 14, { size: 10 });
+
+  if (invoice.client_email) {
+    text(invoice.client_email, billToX, y, { size: 9, color: gray });
+  }
+
+  y -= 32;
+
+  text("Due Date", detailsX, y, { font: fontBold, size: 8, color: gray });
+  text(formatDate(invoice.due_date), detailsX, y - 14, { size: 10 });
+
+  text("Payment Terms", billToX, y, { font: fontBold, size: 8, color: gray });
+  text(`Net ${invoice.payment_terms_days || 30} days`, billToX, y - 14, { size: 10 });
+
+  y -= 40;
+  hline(y);
+  y -= 8;
+
+  // ── Line items table header ──
+  const colProduct = margin;
+  const colQty = 340;
+  const colPrice = 410;
+  const colTotal = width - margin;
+
+  // Header background
+  page.drawRectangle({ x: margin - 5, y: y - 4, width: width - 2 * margin + 10, height: 18, color: lightBg });
+
+  text("ITEM", colProduct, y, { font: fontBold, size: 8, color: gray });
+  text("QTY", colQty, y, { font: fontBold, size: 8, color: gray });
+  text("UNIT PRICE", colPrice, y, { font: fontBold, size: 8, color: gray });
+  textRight("TOTAL", y, { font: fontBold, size: 8, color: gray });
+
+  y -= 20;
+
+  // ── Line items ──
+  const lineItems = invoice.items || [];
+  for (const item of lineItems) {
+    const qty = item.quantity || 1;
+    const unitPrice = Number(item.unit_price) || 0;
+    const lineTotal = Number(item.total) || qty * unitPrice;
+
+    // Truncate long product names
+    let productName = item.name || "Product";
+    if (productName.length > 45) productName = productName.substring(0, 42) + "...";
+
+    text(productName, colProduct, y, { size: 10, color: darkGray });
+    text(String(qty), colQty, y, { size: 10 });
+    text(formatCurrency(unitPrice), colPrice, y, { size: 10 });
+    textRight(formatCurrency(lineTotal), y, { size: 10 });
+
+    y -= 18;
+    hline(y + 6);
+  }
+
+  y -= 10;
+
+  // ── Summary ──
+  const summaryX = colPrice;
+  const subtotal = Number(invoice.subtotal) || 0;
+  const discount = Number(invoice.discount_amount) || 0;
+  const taxRate = Number(invoice.tax_rate) || 0;
+  const taxAmount = Number(invoice.tax_amount) || 0;
+  const total = Number(invoice.total) || 0;
+
+  text("Subtotal", summaryX, y, { size: 10, color: gray });
+  textRight(formatCurrency(subtotal), y, { size: 10 });
+  y -= 18;
+
+  if (discount > 0) {
+    text("Discount", summaryX, y, { size: 10, color: gray });
+    textRight(`-${formatCurrency(discount)}`, y, { size: 10, color: rgb(0.9, 0.2, 0.2) });
+    y -= 18;
+  }
+
+  if (taxRate > 0) {
+    text(`Tax (${taxRate}%)`, summaryX, y, { size: 10, color: gray });
+    textRight(formatCurrency(taxAmount), y, { size: 10 });
+    y -= 18;
+  }
+
+  y -= 4;
+  hline(y + 10);
+  y -= 8;
+
+  // Total row - bold + accent
+  page.drawRectangle({ x: summaryX - 10, y: y - 6, width: width - margin - summaryX + 10, height: 24, color: rgb(0.024, 0.714, 0.831, 0.08) });
+  text("Total", summaryX, y, { font: fontBold, size: 12, color: black });
+  textRight(formatCurrency(total), y, { font: fontBold, size: 14, color: accent });
+
+  y -= 40;
+
+  // ── Bank details ──
+  if (company?.invoice_branding?.show_bank_details) {
+    const ib = company.invoice_branding;
+    hline(y + 10);
+    y -= 10;
+    text("BANK DETAILS", margin, y, { font: fontBold, size: 8, color: gray });
+    y -= 16;
+    if (ib.bank_name) { text(`Bank: ${ib.bank_name}`, margin, y, { size: 9, color: darkGray }); y -= 13; }
+    if (ib.iban) { text(`IBAN: ${ib.iban}`, margin, y, { size: 9, color: darkGray }); y -= 13; }
+    if (ib.bic) { text(`BIC: ${ib.bic}`, margin, y, { size: 9, color: darkGray }); y -= 13; }
+    y -= 10;
+  }
+
+  // ── Footer note ──
+  if (company?.invoice_branding?.footer_text) {
+    text(company.invoice_branding.footer_text, margin, y, { size: 9, color: gray });
+    y -= 16;
+  }
+  if (invoice.notes) {
+    text(invoice.notes, margin, y, { size: 8, color: gray });
+  }
+
+  return await doc.save();
 }
 
 // ---------------------------------------------------------------------------
@@ -412,6 +642,44 @@ serve(async (req: Request) => {
       console.warn("[b2b-order-webhook] Could not log notification:", (notifErr as Error).message);
     }
 
+    // Generate PDF invoice attachment for order_confirmed
+    let pdfAttachment: { filename: string; content: string } | null = null;
+    if (event === "order_confirmed") {
+      try {
+        // Fetch the invoice created for this order
+        const { data: invoice } = await supabase
+          .from("invoices")
+          .select("*")
+          .eq("b2b_order_id", orderId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (invoice) {
+          // Fetch company info for PDF header
+          const { data: company } = await supabase
+            .from("companies")
+            .select("*")
+            .eq("organization_id", organizationId)
+            .limit(1)
+            .maybeSingle();
+
+          const pdfBytes = await generateInvoicePdf(invoice, company, storeConfig);
+          const pdfBase64 = base64Encode(pdfBytes);
+          const invoiceNum = invoice.invoice_number || "invoice";
+          pdfAttachment = {
+            filename: `${invoiceNum}.pdf`,
+            content: pdfBase64,
+          };
+          console.log("[b2b-order-webhook] PDF generated:", invoiceNum, pdfBytes.length, "bytes");
+        } else {
+          console.warn("[b2b-order-webhook] No invoice found for order", orderId);
+        }
+      } catch (pdfErr) {
+        console.error("[b2b-order-webhook] PDF generation failed:", (pdfErr as Error).message);
+      }
+    }
+
     // Send email via Resend
     let emailSent = false;
     if (!RESEND_API_KEY) {
@@ -419,18 +687,24 @@ serve(async (req: Request) => {
     } else {
       try {
         const fromName = storeConfig.storeName || "Wholesale Store";
+        const emailPayload: any = {
+          from: `${fromName} <noreply@notifications.isyncso.com>`,
+          to: [client.email],
+          subject,
+          html: emailWrapper(storeConfig, emailHtml),
+        };
+
+        if (pdfAttachment) {
+          emailPayload.attachments = [pdfAttachment];
+        }
+
         const resendRes = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${RESEND_API_KEY}`,
           },
-          body: JSON.stringify({
-            from: `${fromName} <noreply@notifications.isyncso.com>`,
-            to: [client.email],
-            subject,
-            html: emailWrapper(storeConfig, emailHtml),
-          }),
+          body: JSON.stringify(emailPayload),
         });
 
         if (!resendRes.ok) {
@@ -438,7 +712,7 @@ serve(async (req: Request) => {
           console.error("[b2b-order-webhook] Resend API error:", resendRes.status, errBody);
         } else {
           emailSent = true;
-          console.log("[b2b-order-webhook] Email sent to", client.email, "for event", event);
+          console.log("[b2b-order-webhook] Email sent to", client.email, "for event", event, pdfAttachment ? "(with PDF)" : "");
         }
       } catch (emailErr) {
         console.error("[b2b-order-webhook] Email send failed:", (emailErr as Error).message);
