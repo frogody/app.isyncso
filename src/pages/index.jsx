@@ -410,6 +410,7 @@ import RequestDemo from "./RequestDemo";
 
 import B2BStoreBuilder from "./B2BStoreBuilder";
 import StoreDashboard from "./StoreDashboard";
+import ProductSalesAnalytics from "./ProductSalesAnalytics";
 import NotFound from "./NotFound";
 
 // Providers needed for admin routes (since they don't use main Layout)
@@ -1363,6 +1364,7 @@ function PagesContent() {
                 <Route path="/AgentDetail" element={<AgentDetail />} />
 
                 <Route path="/storedashboard" element={<StoreDashboard />} />
+                <Route path="/ProductSalesAnalytics" element={<ProductSalesAnalytics />} />
                 <Route path="/b2b/dashboard" element={<B2BDashboard />} />
                 <Route path="/b2b/orders" element={<B2BOrdersManager />} />
                 <Route path="/b2b/orders/:orderId" element={<B2BOrderDetail />} />

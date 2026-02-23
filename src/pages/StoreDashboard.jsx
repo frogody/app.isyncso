@@ -208,6 +208,7 @@ function ChannelBar({ icon: Icon, name, connected, orderCount, revenue, maxOrder
 
 const QUICK_ACTIONS = {
   all: [
+    { label: 'Sales Analytics', description: 'Product sales & revenue', icon: TrendingUp, path: '/ProductSalesAnalytics' },
     { label: 'Edit B2B Store', description: 'Customize your storefront', icon: LayoutDashboard, path: '/b2bstorebuilder' },
     { label: 'B2B Orders', description: 'Manage wholesale orders', icon: Package, path: '/b2b/orders' },
     { label: 'Manage Clients', description: 'Clients, access & pricing rules', icon: UserCheck, path: '/b2b/clients' },
@@ -216,6 +217,7 @@ const QUICK_ACTIONS = {
     { label: 'Shipping Tasks', description: 'Fulfillment overview', icon: Truck, path: '/inventoryshipping' },
   ],
   b2b: [
+    { label: 'Sales Analytics', description: 'Product sales & revenue', icon: TrendingUp, path: '/ProductSalesAnalytics' },
     { label: 'B2B Orders', description: 'View and manage orders', icon: Package, path: '/b2b/orders' },
     { label: 'Edit Storefront', description: 'Customize your B2B store', icon: LayoutDashboard, path: '/b2bstorebuilder' },
     { label: 'Manage Clients', description: 'Access, invites & pricing rules', icon: UserCheck, path: '/b2b/clients' },
@@ -223,6 +225,7 @@ const QUICK_ACTIONS = {
     { label: 'Shipping Tasks', description: 'Fulfillment overview', icon: Truck, path: '/inventoryshipping' },
   ],
   bolcom: [
+    { label: 'Sales Analytics', description: 'Product sales & revenue', icon: TrendingUp, path: '/ProductSalesAnalytics' },
     { label: 'Sales Orders', description: 'View bol.com orders', icon: Package, path: '/Warehouse' },
     { label: 'Product Mappings', description: 'EAN / offer sync', icon: BarChart3, path: '/Settings?tab=integrations' },
     { label: 'Connection Settings', description: 'API credentials', icon: Settings, path: '/Settings?tab=integrations' },
@@ -230,6 +233,7 @@ const QUICK_ACTIONS = {
     { label: 'Shipping Tasks', description: 'Fulfillment overview', icon: Truck, path: '/inventoryshipping' },
   ],
   shopify: [
+    { label: 'Sales Analytics', description: 'Product sales & revenue', icon: TrendingUp, path: '/ProductSalesAnalytics' },
     { label: 'Sales Orders', description: 'View Shopify orders', icon: Package, path: '/Warehouse' },
     { label: 'Product Mappings', description: 'Variant sync', icon: BarChart3, path: '/Settings?tab=integrations' },
     { label: 'Connection Settings', description: 'Shopify credentials', icon: Settings, path: '/Settings?tab=integrations' },
