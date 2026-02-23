@@ -86,7 +86,8 @@ type BolcomAction =
   | "importProducts"
   | "fetchPricing"
   | "fetchStock"
-  | "fetchImages";
+  | "fetchImages"
+  | "fetchOrders";
 
 interface BolcomRequest {
   action: BolcomAction;
@@ -2045,6 +2046,340 @@ serve(async (req) => {
             remaining: Math.max(0, remaining),
           },
         };
+        break;
+      }
+
+      // ============================================
+      // fetchOrders — Sync bol.com orders into sales_orders
+      // Sequential approach with rate-limit aware pacing (max ~2 req/s)
+      // ============================================
+      case "fetchOrders": {
+        const tokenRes = await getBolToken(supabase, companyId);
+        if ("error" in tokenRes) { result = { success: false, error: tokenRes.error }; break; }
+
+        const t0 = Date.now();
+        const elapsed = () => Date.now() - t0;
+        const BUDGET_MS = 140_000; // 140s hard budget (Supabase allows 150s)
+        console.log(`[bolcom-api] fetchOrders: start for company ${companyId}`);
+
+        // Types
+        interface Addr {
+          firstName?: string; surname?: string; streetName?: string;
+          houseNumber?: string; houseNumberExtension?: string;
+          zipCode?: string; city?: string; countryCode?: string;
+          email?: string; deliveryPhoneNumber?: string;
+        }
+        interface OItem {
+          orderItemId: string; ean: string; quantity: number; unitPrice: number;
+          fulfilmentMethod?: string; fulfilmentStatus?: string;
+          offer?: { offerId?: string; reference?: string };
+          product?: { title?: string; ean?: string };
+        }
+        interface BolOrder {
+          orderId: string; dateTimeOrderPlaced: string;
+          orderItems: OItem[];
+          shipmentDetails?: Addr; billingDetails?: Addr;
+        }
+        interface SItem {
+          orderItemId: string; orderId: string; orderDate?: string;
+          ean: string; title?: string; quantity: number; offerPrice: number;
+          fulfilmentMethod?: string; offer?: { offerId?: string; reference?: string };
+        }
+        interface BolShipment {
+          shipmentId: number; shipmentDateTime: string;
+          shipmentItems: SItem[]; shipmentDetails?: Addr; billingDetails?: Addr;
+        }
+        interface SListItem { shipmentId: number; shipmentItems: Array<{ orderId: string }>; }
+        interface RItem { rmaId: string; orderId: string; ean: string; expectedQuantity: number; }
+        interface REntry { returnId: string; registrationDateTime: string; fulfilmentMethod: string; returnItems: RItem[]; }
+
+        interface OrderData {
+          orderId: string; orderDate: string;
+          items: Array<{ id: string; ean: string; title: string; qty: number; price: number; sku?: string; fm: string }>;
+          shipTo?: Addr; billTo?: Addr; fm: string; shippedAt?: string;
+        }
+
+        // Rate-limited sequential API call with 550ms spacing
+        let lastCallTime = 0;
+        const rateLimitedFetch = async <T>(endpoint: string): Promise<T | null> => {
+          if (elapsed() > BUDGET_MS) return null;
+          const wait = Math.max(0, 550 - (Date.now() - lastCallTime));
+          if (wait > 0) await new Promise(r => setTimeout(r, wait));
+          lastCallTime = Date.now();
+          try {
+            return await bolFetch<T>(tokenRes.token, endpoint, "GET", undefined, undefined, 1);
+          } catch { return null; }
+        };
+
+        // ── Phase 1: Discover order IDs (sequential, rate-limited) ──
+
+        const orderCache = new Map<string, BolOrder>();
+        const shipmentIds: number[] = [];
+        const returnData = new Map<string, { date: string; fm: string; items: RItem[] }>();
+        const allOrderIds = new Set<string>();
+
+        // 1a. Orders list (status=ALL) — up to 5 pages
+        for (let page = 1; page <= 5; page++) {
+          const res = await rateLimitedFetch<{ orders?: BolOrder[] }>(`/orders?status=ALL&page=${page}`);
+          if (!res?.orders?.length) break;
+          for (const o of res.orders) { allOrderIds.add(o.orderId); orderCache.set(o.orderId, o); }
+          if (res.orders.length < 50) break;
+        }
+        console.log(`[bolcom-api] fetchOrders: ${elapsed()}ms - ${allOrderIds.size} from orders list`);
+
+        // 1b. Shipments FBB — up to 5 pages
+        for (let page = 1; page <= 5; page++) {
+          if (elapsed() > BUDGET_MS) break;
+          const res = await rateLimitedFetch<{ shipments?: SListItem[] }>(`/shipments?page=${page}&fulfilment-method=FBB`);
+          if (!res?.shipments?.length) break;
+          for (const s of res.shipments) {
+            shipmentIds.push(s.shipmentId);
+            for (const item of (s.shipmentItems || [])) { if (item.orderId) allOrderIds.add(item.orderId); }
+          }
+          if (res.shipments.length < 50) break;
+        }
+        console.log(`[bolcom-api] fetchOrders: ${elapsed()}ms - ${shipmentIds.length} FBB shipments, ${allOrderIds.size} total orders`);
+
+        // 1c. Returns FBB (handled=true) — up to 5 pages (biggest source for FBB)
+        for (let page = 1; page <= 5; page++) {
+          if (elapsed() > BUDGET_MS) break;
+          const res = await rateLimitedFetch<{ returns?: REntry[] }>(`/returns?handled=true&fulfilment-method=FBB&page=${page}`);
+          if (!res?.returns?.length) break;
+          for (const ret of res.returns) {
+            for (const item of (ret.returnItems || [])) {
+              if (!item.orderId) continue;
+              allOrderIds.add(item.orderId);
+              if (!returnData.has(item.orderId)) {
+                returnData.set(item.orderId, { date: ret.registrationDateTime, fm: ret.fulfilmentMethod || 'FBB', items: [] });
+              }
+              const ex = returnData.get(item.orderId)!;
+              if (!ex.items.find(i => i.rmaId === item.rmaId)) ex.items.push(item);
+            }
+          }
+          if (res.returns.length < 50) break;
+        }
+
+        // 1d. Returns FBB (handled=false) — up to 3 pages
+        for (let page = 1; page <= 3; page++) {
+          if (elapsed() > BUDGET_MS) break;
+          const res = await rateLimitedFetch<{ returns?: REntry[] }>(`/returns?handled=false&fulfilment-method=FBB&page=${page}`);
+          if (!res?.returns?.length) break;
+          for (const ret of res.returns) {
+            for (const item of (ret.returnItems || [])) {
+              if (!item.orderId) continue;
+              allOrderIds.add(item.orderId);
+              if (!returnData.has(item.orderId)) {
+                returnData.set(item.orderId, { date: ret.registrationDateTime, fm: ret.fulfilmentMethod || 'FBB', items: [] });
+              }
+              const ex = returnData.get(item.orderId)!;
+              if (!ex.items.find(i => i.rmaId === item.rmaId)) ex.items.push(item);
+            }
+          }
+          if (res.returns.length < 50) break;
+        }
+        console.log(`[bolcom-api] fetchOrders: ${elapsed()}ms - ${allOrderIds.size} total unique orders discovered`);
+
+        if (allOrderIds.size === 0) {
+          result = { success: true, data: { ordersFound: 0, ordersSynced: 0, itemsSynced: 0, customersCreated: 0, elapsed: elapsed() } };
+          break;
+        }
+
+        // ── Phase 2: Filter already-synced ──
+
+        const allIds = Array.from(allOrderIds);
+        const existingSet = new Set<string>();
+        for (let i = 0; i < allIds.length; i += 200) {
+          const { data: rows } = await supabase.from("sales_orders").select("external_reference")
+            .eq("company_id", companyId).eq("source", "bolcom")
+            .in("external_reference", allIds.slice(i, i + 200));
+          for (const o of (rows || [])) existingSet.add((o as { external_reference: string }).external_reference);
+        }
+        const newIds = allIds.filter(id => !existingSet.has(id));
+        console.log(`[bolcom-api] fetchOrders: ${elapsed()}ms - ${existingSet.size} existing, ${newIds.length} new`);
+
+        if (newIds.length === 0) {
+          result = { success: true, data: { ordersFound: allIds.length, ordersSynced: 0, itemsSynced: 0, alreadySynced: existingSet.size, customersCreated: 0, elapsed: elapsed() } };
+          break;
+        }
+
+        // ── Phase 3: Build order data ──
+
+        const orderMap = new Map<string, OrderData>();
+        let fetchErrors = 0;
+
+        // 3a. Use cached order details from list
+        for (const oid of newIds) {
+          const c = orderCache.get(oid);
+          if (!c?.orderItems?.length) continue;
+          orderMap.set(oid, {
+            orderId: oid, orderDate: c.dateTimeOrderPlaced,
+            items: c.orderItems.map(oi => ({
+              id: oi.orderItemId, ean: oi.ean || oi.product?.ean || '',
+              title: oi.product?.title || `EAN: ${oi.ean}`,
+              qty: oi.quantity, price: oi.unitPrice || 0,
+              sku: oi.offer?.reference, fm: oi.fulfilmentMethod || 'FBB',
+            })),
+            shipTo: c.shipmentDetails, billTo: c.billingDetails,
+            fm: c.orderItems[0]?.fulfilmentMethod || 'FBB',
+          });
+        }
+
+        // 3b. Fetch remaining by ID (max 20 to stay in budget)
+        const miss1 = newIds.filter(id => !orderMap.has(id)).slice(0, 20);
+        for (const oid of miss1) {
+          if (elapsed() > BUDGET_MS - 20_000) break; // Keep 20s for DB ops
+          const o = await rateLimitedFetch<BolOrder>(`/orders/${oid}`);
+          if (o?.orderId && o?.orderItems?.length) {
+            orderMap.set(o.orderId, {
+              orderId: o.orderId, orderDate: o.dateTimeOrderPlaced,
+              items: o.orderItems.map(oi => ({
+                id: oi.orderItemId, ean: oi.ean || oi.product?.ean || '',
+                title: oi.product?.title || `EAN: ${oi.ean}`,
+                qty: oi.quantity, price: oi.unitPrice || 0,
+                sku: oi.offer?.reference, fm: oi.fulfilmentMethod || 'FBB',
+              })),
+              shipTo: o.shipmentDetails, billTo: o.billingDetails,
+              fm: o.orderItems[0]?.fulfilmentMethod || 'FBB',
+            });
+          } else { fetchErrors++; }
+        }
+        console.log(`[bolcom-api] fetchOrders: ${elapsed()}ms - ${orderMap.size} orders from cache+fetch`);
+
+        // 3c. Shipment details for remaining (max 15 shipments)
+        const miss2 = newIds.filter(id => !orderMap.has(id));
+        if (miss2.length > 0 && shipmentIds.length > 0) {
+          const miss2Set = new Set(miss2);
+          const toCheck = shipmentIds.slice(0, 15);
+          for (const sid of toCheck) {
+            if (elapsed() > BUDGET_MS - 15_000) break;
+            const s = await rateLimitedFetch<BolShipment>(`/shipments/${sid}`);
+            if (!s) continue;
+            for (const si of (s.shipmentItems || [])) {
+              if (!si.orderId || !miss2Set.has(si.orderId)) continue;
+              let od = orderMap.get(si.orderId);
+              if (!od) {
+                od = { orderId: si.orderId, orderDate: si.orderDate || s.shipmentDateTime, items: [],
+                  shipTo: s.shipmentDetails, billTo: s.billingDetails,
+                  fm: si.fulfilmentMethod || 'FBB', shippedAt: s.shipmentDateTime };
+                orderMap.set(si.orderId, od);
+              }
+              if (!od.items.find(e => e.id === si.orderItemId)) {
+                od.items.push({ id: si.orderItemId, ean: si.ean, title: si.title || `EAN: ${si.ean}`,
+                  qty: si.quantity, price: si.offerPrice || 0, sku: si.offer?.reference,
+                  fm: si.fulfilmentMethod || 'FBB' });
+              }
+            }
+          }
+        }
+
+        // 3d. Return-data fallback
+        const miss3 = newIds.filter(id => !orderMap.has(id));
+        if (miss3.length > 0) {
+          const eans = new Set<string>();
+          for (const id of miss3) { returnData.get(id)?.items.forEach(i => { if (i.ean) eans.add(i.ean); }); }
+          const pm = new Map<string, { p: number; n: string }>();
+          if (eans.size > 0) {
+            const arr = Array.from(eans);
+            for (let i = 0; i < arr.length; i += 100) {
+              const { data: prods } = await supabase.from("products").select("ean, base_price, name")
+                .eq("company_id", companyId).in("ean", arr.slice(i, i + 100));
+              for (const p of (prods || []) as Array<{ ean: string; base_price: number; name: string }>)
+                pm.set(p.ean, { p: p.base_price || 0, n: p.name });
+            }
+          }
+          for (const id of miss3) {
+            const rd = returnData.get(id);
+            if (!rd) continue;
+            orderMap.set(id, {
+              orderId: id, orderDate: rd.date, fm: rd.fm,
+              items: rd.items.map(ri => {
+                const prod = pm.get(ri.ean);
+                return { id: ri.rmaId, ean: ri.ean, title: prod?.n || `EAN: ${ri.ean}`,
+                  qty: ri.expectedQuantity, price: prod?.p || 0, fm: rd.fm };
+              }),
+            });
+          }
+        }
+        console.log(`[bolcom-api] fetchOrders: ${elapsed()}ms - ${orderMap.size} orders resolved (${fetchErrors} fetch errors)`);
+
+        // ── Phase 4: Insert into DB ──
+
+        let ordersSynced = 0, itemsSynced = 0, customersCreated = 0;
+
+        // Product lookup
+        const allEans = new Set<string>();
+        for (const [, o] of orderMap) o.items.forEach(i => { if (i.ean) allEans.add(i.ean); });
+        const eanProdMap = new Map<string, string>();
+        if (allEans.size > 0) {
+          const arr = Array.from(allEans);
+          for (let i = 0; i < arr.length; i += 100) {
+            const { data } = await supabase.from("products").select("id, ean").eq("company_id", companyId).in("ean", arr.slice(i, i + 100));
+            for (const p of (data || []) as Array<{ id: string; ean: string }>) eanProdMap.set(p.ean, p.id);
+          }
+        }
+
+        // Batch insert orders (10 at a time)
+        const entries = Array.from(orderMap.values());
+        for (let i = 0; i < entries.length; i += 10) {
+          if (elapsed() > BUDGET_MS) break;
+          const batch = entries.slice(i, i + 10);
+
+          // Skip customer creation for bol.com orders — bol.com handles the customer relationship
+
+          // Insert orders
+          const rows = batch.map(o => {
+            const s = o.shipTo; const b = o.billTo;
+            const sub = o.items.reduce((a, i) => a + i.price * i.qty, 0);
+            const nm = s ? `${s.firstName || ''} ${s.surname || ''}`.trim() : null;
+            return {
+              company_id: companyId, customer_id: null,
+              order_number: `BOL-${o.orderId}`, external_reference: o.orderId,
+              order_date: o.orderDate, status: 'delivered', source: 'bolcom',
+              shipping_name: nm,
+              shipping_address_line1: s ? `${s.streetName || ''} ${s.houseNumber || ''}${s.houseNumberExtension || ''}`.trim() : null,
+              shipping_city: s?.city || null, shipping_postal_code: s?.zipCode || null,
+              shipping_country: s?.countryCode || 'NL',
+              billing_name: b ? `${b.firstName || ''} ${b.surname || ''}`.trim() : null,
+              billing_address_line1: b ? `${b.streetName || ''} ${b.houseNumber || ''}${b.houseNumberExtension || ''}`.trim() : null,
+              billing_city: b?.city || null, billing_postal_code: b?.zipCode || null,
+              billing_country: b?.countryCode || 'NL',
+              billing_same_as_shipping: false, subtotal: sub, total: sub, currency: 'EUR',
+              payment_status: 'paid', shipped_at: o.shippedAt || null,
+              metadata: { bolcom_order_id: o.orderId, fulfilment_method: o.fm },
+            };
+          });
+
+          const { data: ins, error: err } = await supabase.from("sales_orders").insert(rows).select("id, external_reference");
+          if (err) { console.warn(`[bolcom-api] fetchOrders: insert fail: ${err.message}`); continue; }
+
+          const insMap = new Map((ins || []).map((r: { id: string; external_reference: string }) => [r.external_reference, r.id]));
+          ordersSynced += insMap.size;
+
+          // Insert items
+          const itemRows: Array<Record<string, unknown>> = [];
+          for (const o of batch) {
+            const soId = insMap.get(o.orderId);
+            if (!soId) continue;
+            o.items.forEach((it, idx) => {
+              itemRows.push({
+                sales_order_id: soId, product_id: eanProdMap.get(it.ean) || null,
+                description: it.title, sku: it.sku || null, ean: it.ean,
+                quantity: it.qty, unit_price: it.price,
+                line_total: it.price * it.qty, line_number: idx + 1,
+                tax_percent: 21, tax_amount: (it.price * it.qty) * 0.21 / 1.21,
+              });
+            });
+          }
+          if (itemRows.length > 0) {
+            const { error: ie } = await supabase.from("sales_order_items").insert(itemRows);
+            if (ie) console.warn(`[bolcom-api] fetchOrders: items fail: ${ie.message}`);
+            else itemsSynced += itemRows.length;
+          }
+        }
+
+        const totalElapsed = elapsed();
+        console.log(`[bolcom-api] fetchOrders done (${totalElapsed}ms): ${ordersSynced} orders, ${itemsSynced} items`);
+        result = { success: true, data: { ordersFound: allIds.length, ordersSynced, itemsSynced, customersCreated, alreadySynced: existingSet.size, fetchErrors, elapsed: totalElapsed } };
         break;
       }
 

@@ -250,6 +250,7 @@ export default function StoreDashboard() {
   const organizationId = user?.organization_id || user?.company_id;
 
   const [activeView, setActiveView] = useState(searchParams.get('view') || 'b2b');
+  const [selectedPeriod, setSelectedPeriod] = useState('30d');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -299,7 +300,13 @@ export default function StoreDashboard() {
 
     try {
       const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const periodStart = (() => {
+        if (selectedPeriod === '7d') return new Date(now.getTime() - 7 * 86400000);
+        if (selectedPeriod === '30d') return new Date(now.getTime() - 30 * 86400000);
+        if (selectedPeriod === '90d') return new Date(now.getTime() - 90 * 86400000);
+        if (selectedPeriod === 'all') return new Date('2020-01-01');
+        return new Date(now.getTime() - 30 * 86400000);
+      })().toISOString();
 
       const safe = (promise, label = '') =>
         promise
@@ -321,10 +328,10 @@ export default function StoreDashboard() {
         safe(supabase.from('shopify_credentials').select('id, shop_domain, shop_name, status').eq('company_id', companyId).eq('is_active', true).maybeSingle(), 'shopify'),
         safe(supabase.from('bolcom_credentials').select('id, environment').eq('company_id', companyId).eq('is_active', true).maybeSingle(), 'bolcom'),
         safe(supabase.from('portal_settings').select('id, store_subdomain, custom_domain').eq('organization_id', organizationId).eq('enable_wholesale', true).maybeSingle(), 'b2bConfig'),
-        safe(supabase.from('sales_orders').select('id, source, total, status, order_number, order_date, customer_id, customers(name, email)').eq('company_id', companyId).gte('order_date', startOfMonth), 'salesMonthly'),
+        safe(supabase.from('sales_orders').select('id, source, total, status, order_number, order_date, customer_id, customers(name, email)').eq('company_id', companyId).gte('order_date', periodStart), 'salesMonthly'),
         safe(supabase.from('sales_orders').select('id, source, status').eq('company_id', companyId).eq('status', 'pending'), 'salesPending'),
         safe(supabase.from('sales_orders').select('id, order_number, source, status, total, order_date, customer_id, customers(name, email)').eq('company_id', companyId).order('order_date', { ascending: false }).limit(20), 'salesRecent'),
-        safe(supabase.from('b2b_orders').select('id, total, status').eq('organization_id', organizationId).gte('created_at', startOfMonth), 'b2bMonthly'),
+        safe(supabase.from('b2b_orders').select('id, total, status').eq('organization_id', organizationId).gte('created_at', periodStart), 'b2bMonthly'),
         safe(supabase.from('b2b_orders').select('id, status').eq('organization_id', organizationId).eq('status', 'pending'), 'b2bPending'),
         safe(supabase.from('b2b_orders').select('id, order_number, status, total, currency, created_at, portal_clients(id, full_name, email)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(20), 'b2bRecent'),
         // B2B insight queries — scoped to this company/org
@@ -454,9 +461,57 @@ export default function StoreDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [companyId, organizationId]);
+  }, [companyId, organizationId, selectedPeriod]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Sync bol.com orders from the API
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState(null);
+  const bolcomSyncedRef = React.useRef(false);
+
+  const syncBolcomOrders = useCallback(async () => {
+    if (!companyId || syncing) return;
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bolcom-api`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ action: 'fetchOrders', companyId }),
+        }
+      );
+      const json = await resp.json();
+      if (json.success) {
+        setSyncResult(json.data);
+        // Refetch dashboard data to show new orders
+        if (json.data.ordersSynced > 0) {
+          await fetchData();
+        }
+      } else {
+        console.error('[StoreDashboard] bol.com sync error:', json.error);
+        setSyncResult({ error: json.error });
+      }
+    } catch (err) {
+      console.error('[StoreDashboard] bol.com sync error:', err);
+      setSyncResult({ error: err.message });
+    } finally {
+      setSyncing(false);
+    }
+  }, [companyId, syncing, fetchData]);
+
+  // Auto-sync bol.com orders on first load when connected
+  useEffect(() => {
+    if (!loading && channelData.bolcom.connected && !bolcomSyncedRef.current) {
+      bolcomSyncedRef.current = true;
+      syncBolcomOrders();
+    }
+  }, [loading, channelData.bolcom.connected, syncBolcomOrders]);
 
   // Sync activeView with URL
   const switchView = useCallback((view) => {
@@ -478,6 +533,17 @@ export default function StoreDashboard() {
 
   const channelConfig = CHANNELS[activeView] || CHANNELS.all;
   const quickActions = QUICK_ACTIONS[activeView] || QUICK_ACTIONS.all;
+
+  const PERIOD_OPTIONS = [
+    { key: '7d', label: '7d' },
+    { key: '30d', label: '30d' },
+    { key: '90d', label: '90d' },
+    { key: 'all', label: 'All' },
+  ];
+  const periodLabel = selectedPeriod === '7d' ? 'Last 7 Days'
+    : selectedPeriod === '30d' ? 'Last 30 Days'
+    : selectedPeriod === '90d' ? 'Last 90 Days'
+    : 'All Time';
 
   // ---------------------------------------------------------------------------
   // Loading
@@ -524,6 +590,22 @@ export default function StoreDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Period selector pills */}
+            <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-zinc-900/60 border border-zinc-800/40">
+              {PERIOD_OPTIONS.map((p) => (
+                <button
+                  key={p.key}
+                  onClick={() => setSelectedPeriod(p.key)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    selectedPeriod === p.key
+                      ? `${channelConfig.bg} ${channelConfig.text} border ${channelConfig.border}`
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 border border-transparent'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
             {storeUrl && activeView !== 'bolcom' && activeView !== 'shopify' && (
               <motion.a
                 whileHover={{ scale: 1.02 }}
@@ -599,7 +681,7 @@ export default function StoreDashboard() {
                     <TrendingUp className={`w-7 h-7 ${channelConfig.text}`} />
                   </div>
                   <p className="text-3xl font-bold text-white tabular-nums">{formatCurrency(viewData.revenue)}</p>
-                  <p className="text-sm text-zinc-400 mt-1">Revenue This Month</p>
+                  <p className="text-sm text-zinc-400 mt-1">Revenue &mdash; {periodLabel}</p>
                   <div className="flex items-center gap-1.5 mt-3">
                     <Zap className={`w-3.5 h-3.5 ${channelConfig.text}`} />
                     <span className={`text-xs ${channelConfig.text} font-medium`}>
@@ -892,7 +974,16 @@ export default function StoreDashboard() {
         {/* Channel-specific status — bolcom/shopify only */}
         {activeView !== 'all' && activeView !== 'b2b' && (
           <motion.div {...stagger(0.25)}>
-            <ChannelStatusCard channel={activeView} data={channelData[activeView]} config={channelConfig} formatCurrency={formatCurrency} navigate={navigate} />
+            <ChannelStatusCard
+              channel={activeView}
+              data={channelData[activeView]}
+              config={channelConfig}
+              formatCurrency={formatCurrency}
+              navigate={navigate}
+              syncing={syncing}
+              syncResult={syncResult}
+              onSync={syncBolcomOrders}
+            />
           </motion.div>
         )}
 
@@ -1112,7 +1203,7 @@ function ChannelCockpitCard({ channelKey, config, data, formatCurrency, formatDa
         <div className="mt-1">
           <p className="text-2xl font-bold text-white tabular-nums tracking-tight">{formatCurrency(data.revenue)}</p>
           <p className="text-[11px] text-zinc-400 mt-0.5">
-            {data.orders} order{data.orders !== 1 ? 's' : ''} this month
+            {data.orders} order{data.orders !== 1 ? 's' : ''}
             {avgOrder > 0 && <span className="text-zinc-500"> &middot; avg {formatCurrency(avgOrder)}</span>}
           </p>
         </div>
@@ -1147,7 +1238,7 @@ function ChannelCockpitCard({ channelKey, config, data, formatCurrency, formatDa
         ) : recentOrders.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-6 text-center">
             <Package className="w-5 h-5 text-zinc-600 mb-2" />
-            <p className="text-[11px] text-zinc-500">No orders this month</p>
+            <p className="text-[11px] text-zinc-500">No orders in this period</p>
           </div>
         ) : (
           <div className="space-y-0">
@@ -1215,7 +1306,7 @@ function ChannelCockpitCard({ channelKey, config, data, formatCurrency, formatDa
 // Channel Status Card — shown in single-channel views
 // ---------------------------------------------------------------------------
 
-function ChannelStatusCard({ channel, data, config, formatCurrency, navigate }) {
+function ChannelStatusCard({ channel, data, config, formatCurrency, navigate, syncing, syncResult, onSync }) {
   const ChannelIcon = config.icon;
 
   if (channel === 'b2b') {
@@ -1263,21 +1354,49 @@ function ChannelStatusCard({ channel, data, config, formatCurrency, navigate }) 
             <ChannelIcon className={`w-4 h-4 ${config.text}`} />
             bol.com Channel Status
           </h3>
-          {data.connected ? (
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-400">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Connected
-            </span>
-          ) : (
-            <button
-              onClick={() => navigate('/Settings?tab=integrations')}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              Connect bol.com
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {data.connected && (
+              <button
+                onClick={onSync}
+                disabled={syncing}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 text-xs font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+                {syncing ? 'Syncing...' : 'Sync Orders'}
+              </button>
+            )}
+            {data.connected ? (
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-400">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Connected
+              </span>
+            ) : (
+              <button
+                onClick={() => navigate('/Settings?tab=integrations')}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                Connect bol.com
+              </button>
+            )}
+          </div>
         </div>
+        {syncResult && !syncResult.error && (
+          <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-[12px] bg-blue-500/10 border border-blue-500/20">
+            <CheckCircle2 className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+            <span className="text-xs text-blue-300">
+              {syncResult.ordersSynced > 0
+                ? `Synced ${syncResult.ordersSynced} new orders (${syncResult.itemsSynced} items). ${syncResult.alreadySynced || 0} already up to date.`
+                : `All ${syncResult.alreadySynced || syncResult.ordersFound || 0} orders already synced.`}
+            </span>
+          </div>
+        )}
+        {syncResult?.error && (
+          <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-[12px] bg-red-500/10 border border-red-500/20">
+            <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+            <span className="text-xs text-red-300">Sync failed: {syncResult.error}</span>
+          </div>
+        )}
         {data.connected ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40">
