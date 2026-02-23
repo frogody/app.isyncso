@@ -20,7 +20,6 @@ import AdminDashboard from "./AdminDashboard";
 
 import AdminMigration from "./AdminMigration";
 
-import Analytics from "./Analytics";
 
 import AnalyticsDashboard from "./AnalyticsDashboard";
 
@@ -64,7 +63,6 @@ import CompliancePolicies from "./CompliancePolicies";
 
 import ComplianceRoadmap from "./ComplianceRoadmap";
 
-import ComponentShowcase from "./ComponentShowcase";
 
 import ComposioIntegrations from "./ComposioIntegrations";
 
@@ -142,7 +140,6 @@ import Home from "./Home";
 
 import Inbox from "./Inbox";
 
-import Insights from "./Insights";
 
 import Leaderboard from "./Leaderboard";
 
@@ -482,8 +479,6 @@ const PAGES = {
     
     AdminMigration: AdminMigration,
     
-    Analytics: Analytics,
-    
     AnalyticsDashboard: AnalyticsDashboard,
     
     Assignments: Assignments,
@@ -524,7 +519,6 @@ const PAGES = {
 
     ComplianceRoadmap: ComplianceRoadmap,
     
-    ComponentShowcase: ComponentShowcase,
 
     ComposioIntegrations: ComposioIntegrations,
 
@@ -589,8 +583,6 @@ const PAGES = {
     Home: Home,
     
     Inbox: Inbox,
-    
-    Insights: Insights,
     
     Leaderboard: Leaderboard,
 
@@ -1011,11 +1003,11 @@ function PagesContent() {
     const knownPrefixes = new Set([
       '', 'aiassistant', 'sync', 'aisysteminventory', 'authcallback', 'call', 'desktop-auth',
       'login', 'actions', 'activitytimeline', 'admindashboard', 'adminmigration',
-      'analytics', 'analyticsdashboard', 'assignments', 'backendsetup', 'backendstatus',
+      'analyticsdashboard', 'assignments', 'backendsetup', 'backendstatus',
       'crmdashboard', 'crmcontacts', 'crmpipeline', 'crmcampaigns', 'crmcompanyprofile',
       'crmcontactprofile', 'certificates', 'credits', 'companydashboard', 'companyinvite',
       'companyprofile', 'compliancecenter', 'compliancecontrols', 'complianceevidence',
-      'complianceframeworks', 'compliancepolicies', 'complianceroadmap', 'componentshowcase',
+      'complianceframeworks', 'compliancepolicies', 'complianceroadmap',
       'composiointegrations', 'settings', 'contacts', 'coursedetail', 'courseupgrader',
       'courses', 'dashboard', 'deals', 'documentgenerator', 'desktopactivity',
       'dailyjournal', 'privacyaiact', 'downloadapp', 'glossary', 'growth',
@@ -1025,7 +1017,7 @@ function PagesContent() {
       'growthnestrecommendations', 'growthworkspacesetup', 'growthresearchworkspace',
       'growthoutreachbuilder', 'growthcustomersignals', 'growthcampaignnests',
       'growthcampaignreview', 'growthopportunities', 'flowbuilder',
-      'home', 'inbox', 'insights', 'leaderboard', 'leads', 'learn', 'learnaitools',
+      'home', 'inbox', 'leaderboard', 'leads', 'learn', 'learnaitools',
       'learnassistant', 'learndashboard', 'lessonviewer', 'practicechallenges',
       'managecourses', 'teamlearningdashboard', 'managerdashboard', 'onboarding',
       'projects', 'recommendationsfeed', 'riskassessment', 'sentinel', 'sentineldashboard',
@@ -1095,8 +1087,6 @@ function PagesContent() {
                 
                 <Route path="/AdminMigration" element={<AdminMigration />} />
                 
-                <Route path="/Analytics" element={<Analytics />} />
-                
                 <Route path="/AnalyticsDashboard" element={<AnalyticsDashboard />} />
                 
                 <Route path="/Assignments" element={<Assignments />} />
@@ -1139,7 +1129,6 @@ function PagesContent() {
 
                 <Route path="/ComplianceRoadmap" element={<ComplianceRoadmap />} />
                 
-                <Route path="/ComponentShowcase" element={<ComponentShowcase />} />
 
                 <Route path="/ComposioIntegrations" element={<Navigate to="/Integrations" replace />} />
                 <Route path="/settings/integrations" element={<Navigate to="/Integrations" replace />} />
@@ -1240,8 +1229,6 @@ function PagesContent() {
                 <Route path="/Home" element={<Home />} />
                 
                 <Route path="/Inbox" element={<Inbox />} />
-                
-                <Route path="/Insights" element={<Insights />} />
                 
                 <Route path="/Leaderboard" element={<Leaderboard />} />
                 
