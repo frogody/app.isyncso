@@ -189,7 +189,7 @@ function ImageGallery({ images, activeIndex, onSelect }) {
             <button
               key={idx}
               onClick={() => onSelect(idx)}
-              className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden transition-all duration-300"
+              className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden transition-all duration-300"
               style={{
                 ...glassCardStyle,
                 border:
@@ -639,7 +639,7 @@ function RelatedProducts({ products, currentProduct, nav }) {
               className="cursor-pointer"
             >
               <div
-                className="aspect-square flex items-center justify-center overflow-hidden"
+                className="aspect-[4/3] flex items-center justify-center overflow-hidden rounded-t-2xl"
                 style={{
                   background:
                     'color-mix(in srgb, var(--ws-surface) 40%, transparent)',
@@ -659,7 +659,7 @@ function RelatedProducts({ products, currentProduct, nav }) {
                   />
                 )}
               </div>
-              <div className="p-4 flex flex-col gap-2">
+              <div className="p-4 flex flex-col gap-1.5">
                 <h3
                   className="text-sm font-semibold truncate"
                   style={{
@@ -669,17 +669,9 @@ function RelatedProducts({ products, currentProduct, nav }) {
                 >
                   {product.name}
                 </h3>
-                {product.sku && (
-                  <p
-                    className="text-[11px] font-medium uppercase tracking-wider"
-                    style={{ color: 'var(--ws-muted)' }}
-                  >
-                    SKU: {product.sku}
-                  </p>
-                )}
                 {price > 0 && (
                   <span
-                    className="text-base font-bold"
+                    className="text-lg font-bold"
                     style={gradientTextStyle()}
                   >
                     {formatCurrency(price)}
@@ -922,14 +914,13 @@ export default function PreviewProductDetailPage({
         {/* Breadcrumb */}
         <Breadcrumb items={breadcrumbItems} />
 
-        {/* Main layout: image (5col) + info (7col) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8">
-          {/* Image gallery -- 5 columns */}
+        {/* Main layout: image + info (equal halves) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
+          {/* Image gallery */}
           <motion.div
             variants={motionVariants.slideLeft}
             initial="hidden"
             animate="visible"
-            className="lg:col-span-5"
           >
             <div className="lg:sticky lg:top-4">
               <ImageGallery
@@ -940,12 +931,12 @@ export default function PreviewProductDetailPage({
             </div>
           </motion.div>
 
-          {/* Product info -- 7 columns */}
+          {/* Product info */}
           <motion.div
             variants={motionVariants.slideRight}
             initial="hidden"
             animate="visible"
-            className="lg:col-span-7 flex flex-col gap-3"
+            className="flex flex-col gap-5"
           >
             {/* Category + stock row */}
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -968,45 +959,45 @@ export default function PreviewProductDetailPage({
             </div>
 
             {/* Product name */}
-            <h1
-              className="text-xl sm:text-2xl font-bold tracking-tight leading-snug"
-              style={{
-                fontFamily: 'var(--ws-heading-font, var(--ws-font))',
-                ...gradientTextStyle(),
-              }}
-            >
-              {productName}
-            </h1>
-
-            {/* SKU */}
-            {showSKU && productSku && (
-              <p
-                className="text-[10px] font-semibold uppercase tracking-widest -mt-1"
-                style={{ color: 'var(--ws-muted)' }}
+            <div>
+              <h1
+                className="text-2xl sm:text-3xl font-bold tracking-tight leading-tight"
+                style={{
+                  fontFamily: 'var(--ws-heading-font, var(--ws-font))',
+                  ...gradientTextStyle(),
+                }}
               >
-                SKU: {productSku}
-              </p>
-            )}
+                {productName}
+              </h1>
+              {showSKU && productSku && (
+                <p
+                  className="text-[10px] font-semibold uppercase tracking-widest mt-1.5"
+                  style={{ color: 'var(--ws-muted)' }}
+                >
+                  SKU: {productSku}
+                </p>
+              )}
+            </div>
 
             {/* Price */}
             {basePrice > 0 && (
-              <div className="flex items-baseline gap-2">
+              <div className="flex items-baseline gap-2.5">
                 <span
-                  className="text-2xl font-bold"
+                  className="text-3xl font-bold"
                   style={gradientTextStyle()}
                 >
                   {formatCurrency(activeUnitPrice)}
                 </span>
                 <span
-                  className="text-xs font-medium"
+                  className="text-sm font-medium"
                   style={{ color: 'var(--ws-muted)' }}
                 >
                   per {productUnit === 'units' ? 'unit' : productUnit}
                 </span>
                 {activeUnitPrice < basePrice && (
                   <span
-                    className="text-xs line-through"
-                    style={{ color: 'var(--ws-muted)', opacity: 0.6 }}
+                    className="text-sm line-through"
+                    style={{ color: 'var(--ws-muted)', opacity: 0.5 }}
                   >
                     {formatCurrency(basePrice)}
                   </span>
@@ -1014,15 +1005,18 @@ export default function PreviewProductDetailPage({
               </div>
             )}
 
-            {/* Description - compact, max 3 lines */}
+            {/* Description */}
             <p
-              className="text-xs leading-relaxed line-clamp-3"
+              className="text-sm leading-relaxed"
               style={{ color: 'var(--ws-muted)' }}
             >
               {productDescription}
             </p>
 
-            {/* QUANTITY LADDER — prominent, above the fold */}
+            {/* Divider */}
+            <div style={{ borderTop: '1px solid var(--ws-border)' }} />
+
+            {/* VOLUME PRICING — prominent, above the fold */}
             {showBulkPricing && basePrice > 0 && bulkTiers.length > 0 && (
               <QuantityLadder
                 tiers={bulkTiers}
@@ -1035,11 +1029,11 @@ export default function PreviewProductDetailPage({
             {/* Pack size info */}
             {packSize && (
               <div
-                className="flex items-center gap-2 text-xs"
+                className="flex items-center gap-2 text-sm"
                 style={{ color: 'var(--ws-muted)' }}
               >
                 <BoxesIcon
-                  className="w-3.5 h-3.5"
+                  className="w-4 h-4"
                   style={{ color: 'var(--ws-primary)' }}
                 />
                 <span>Sold in cases of {packSize}</span>
@@ -1049,7 +1043,7 @@ export default function PreviewProductDetailPage({
             {/* MOQ notice */}
             {moq > 1 && (
               <div
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
+                className="flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm"
                 style={{
                   background:
                     'color-mix(in srgb, var(--ws-primary) 6%, transparent)',
@@ -1058,38 +1052,47 @@ export default function PreviewProductDetailPage({
                   color: 'var(--ws-primary)',
                 }}
               >
-                <Info className="w-3.5 h-3.5 flex-shrink-0" />
+                <Info className="w-4 h-4 flex-shrink-0" />
                 <span className="font-medium">
                   Minimum Order: {moq} {productUnit}
                 </span>
               </div>
             )}
 
-            {/* Quantity selector + line total */}
-            <div className="flex flex-col gap-1.5">
-              <label
-                className="text-[10px] font-semibold uppercase tracking-wider"
-                style={{ color: 'var(--ws-muted)' }}
-              >
-                Order Quantity
-              </label>
-              <div className="flex items-center gap-3 flex-wrap">
-                <QuantityInput
-                  value={quantity}
-                  onChange={setQuantity}
-                  min={moq}
-                  max={9999}
-                />
+            {/* Order section — visually grouped */}
+            <div
+              className="rounded-xl p-4 flex flex-col gap-4"
+              style={{
+                ...glassCardStyle,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              }}
+            >
+              {/* Quantity selector + line total */}
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex flex-col gap-1.5">
+                  <label
+                    className="text-[10px] font-semibold uppercase tracking-wider"
+                    style={{ color: 'var(--ws-muted)' }}
+                  >
+                    Order Quantity
+                  </label>
+                  <QuantityInput
+                    value={quantity}
+                    onChange={setQuantity}
+                    min={moq}
+                    max={9999}
+                  />
+                </div>
                 {basePrice > 0 && (
-                  <div className="flex flex-col">
+                  <div className="flex flex-col items-end">
                     <span
-                      className="text-[10px]"
+                      className="text-[10px] font-medium uppercase tracking-wider"
                       style={{ color: 'var(--ws-muted)' }}
                     >
                       Line total
                     </span>
                     <span
-                      className="text-base font-bold"
+                      className="text-2xl font-bold"
                       style={{ color: 'var(--ws-text)' }}
                     >
                       {formatCurrency(lineTotal)}
@@ -1097,35 +1100,36 @@ export default function PreviewProductDetailPage({
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* Add to Order button */}
-            <PrimaryButton
-              className="w-full"
-              icon={addedToOrder ? Check : ClipboardPlus}
-              onClick={handleAddToOrder}
-              disabled={!stockInfo.available}
-            >
-              {addedToOrder
-                ? 'Added to Order!'
-                : !stockInfo.available
-                  ? 'Out of Stock'
-                  : 'Add to Order'}
-            </PrimaryButton>
-
-            {/* Request Quote button */}
-            {showInquiryButton && (
-              <SecondaryButton
+              {/* Add to Order button */}
+              <PrimaryButton
                 className="w-full"
-                icon={MessageSquareQuote}
+                size="lg"
+                icon={addedToOrder ? Check : ClipboardPlus}
+                onClick={handleAddToOrder}
+                disabled={!stockInfo.available}
               >
-                Request Custom Quote
-              </SecondaryButton>
-            )}
+                {addedToOrder
+                  ? 'Added to Order!'
+                  : !stockInfo.available
+                    ? 'Out of Stock'
+                    : 'Add to Order'}
+              </PrimaryButton>
+
+              {/* Request Quote button */}
+              {showInquiryButton && (
+                <SecondaryButton
+                  className="w-full"
+                  icon={MessageSquareQuote}
+                >
+                  Request Custom Quote
+                </SecondaryButton>
+              )}
+            </div>
 
             {/* Delivery estimate bar */}
             <div
-              className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl"
               style={{
                 ...glassCardStyle,
                 boxShadow: 'none',
@@ -1137,13 +1141,13 @@ export default function PreviewProductDetailPage({
               />
               <div className="flex flex-col">
                 <span
-                  className="text-xs font-medium"
+                  className="text-sm font-medium"
                   style={{ color: 'var(--ws-text)' }}
                 >
                   Est. delivery: 3-5 business days
                 </span>
                 <span
-                  className="text-[10px]"
+                  className="text-xs"
                   style={{ color: 'var(--ws-muted)' }}
                 >
                   Free shipping on orders over EUR 500
@@ -1160,13 +1164,12 @@ export default function PreviewProductDetailPage({
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="mt-8"
+            className="mt-10"
           >
             <SpecificationsTable specs={specifications} />
           </motion.div>
         )}
 
-        {/* Full Bulk pricing table (below fold, detailed view) */}
         {/* Related products */}
         {showRelatedProducts && products.length > 1 && (
           <div className="mt-12">
