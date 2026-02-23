@@ -13,6 +13,11 @@ import {
   ImageOff,
   Truck,
   CreditCard,
+  Calendar,
+  Mail,
+  Bell,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useWholesale } from '../WholesaleProvider';
 import { supabase } from '@/api/supabaseClient';
@@ -30,6 +35,20 @@ const eurFormatter = new Intl.NumberFormat('nl-NL', {
 });
 
 const BTW_RATE = 0.21;
+
+/**
+ * Calculate minimum delivery date (3 business days from now).
+ */
+function getMinDeliveryDate() {
+  const date = new Date();
+  let businessDays = 0;
+  while (businessDays < 3) {
+    date.setDate(date.getDate() + 1);
+    const day = date.getDay();
+    if (day !== 0 && day !== 6) businessDays++;
+  }
+  return date.toISOString().split('T')[0];
+}
 
 /**
  * Step indicator displayed at the top of the checkout flow.
@@ -134,9 +153,9 @@ function FormField({ label, name, value, onChange, type = 'text', required = fal
 }
 
 /**
- * Step 1: Shipping Address Form
+ * Step 1: Shipping Address Form with Delivery Date Picker
  */
-function ShippingStep({ address, setAddress, onNext }) {
+function ShippingStep({ address, setAddress, deliveryDate, setDeliveryDate, deliveryNotes, setDeliveryNotes, onNext }) {
   const handleChange = useCallback(
     (e) => {
       const { name, value } = e.target;
@@ -164,6 +183,8 @@ function ShippingStep({ address, setAddress, onNext }) {
     },
     [isValid, onNext],
   );
+
+  const minDate = useMemo(() => getMinDeliveryDate(), []);
 
   return (
     <form onSubmit={handleSubmit}>
@@ -249,6 +270,76 @@ function ShippingStep({ address, setAddress, onNext }) {
             placeholder="+31 6 12345678"
             autoComplete="tel"
           />
+        </div>
+      </div>
+
+      {/* Delivery Date Picker */}
+      <div
+        className="rounded-xl p-5 mt-5"
+        style={{
+          backgroundColor: 'var(--ws-surface)',
+          border: '1px solid var(--ws-border)',
+        }}
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <Calendar className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
+          <h2
+            className="text-base font-semibold"
+            style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
+          >
+            Preferred Delivery Date
+          </h2>
+          <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>(optional)</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="deliveryDate"
+              className="text-xs font-medium"
+              style={{ color: 'var(--ws-muted)' }}
+            >
+              Delivery Date
+            </label>
+            <input
+              id="deliveryDate"
+              type="date"
+              min={minDate}
+              value={deliveryDate}
+              onChange={(e) => setDeliveryDate(e.target.value)}
+              className="px-3 py-2.5 rounded-lg text-sm outline-none transition-colors focus:ring-1"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                color: 'var(--ws-text)',
+                border: '1px solid var(--ws-border, rgba(255,255,255,0.1))',
+                '--tw-ring-color': 'var(--ws-primary)',
+                colorScheme: 'dark',
+              }}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="deliveryNotes"
+              className="text-xs font-medium"
+              style={{ color: 'var(--ws-muted)' }}
+            >
+              Delivery Notes
+            </label>
+            <textarea
+              id="deliveryNotes"
+              value={deliveryNotes}
+              onChange={(e) => setDeliveryNotes(e.target.value)}
+              placeholder="e.g. Deliver to loading dock, call before delivery..."
+              rows={2}
+              className="px-3 py-2.5 rounded-lg text-sm outline-none resize-none transition-colors focus:ring-1"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                color: 'var(--ws-text)',
+                border: '1px solid var(--ws-border, rgba(255,255,255,0.1))',
+                '--tw-ring-color': 'var(--ws-primary)',
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -341,9 +432,199 @@ function ReviewItem({ item }) {
 }
 
 /**
+ * Payment Terms Display card.
+ */
+function PaymentTermsCard({ client }) {
+  const paymentTerms = client?.payment_terms || client?.payment_term;
+  const displayTerms = paymentTerms || 'Payment on delivery';
+
+  return (
+    <div
+      className="rounded-xl p-5"
+      style={{
+        backgroundColor: 'var(--ws-surface)',
+        border: '1px solid var(--ws-border)',
+      }}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <CreditCard className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
+        <h2
+          className="text-base font-semibold"
+          style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
+        >
+          Payment Terms
+        </h2>
+      </div>
+      <div
+        className="flex items-center gap-3 px-3.5 py-3 rounded-lg"
+        style={{ backgroundColor: 'rgba(255, 255, 255, 0.03)' }}
+      >
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)' }}
+        >
+          <CreditCard className="w-4 h-4" style={{ color: 'var(--ws-primary)' }} />
+        </div>
+        <div>
+          <p className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>
+            {paymentTerms ? `Your payment terms: ${paymentTerms}` : 'Payment on delivery'}
+          </p>
+          <p className="text-[11px]" style={{ color: 'var(--ws-muted)' }}>
+            {paymentTerms
+              ? 'Invoice will be sent after order processing'
+              : 'Payment will be collected upon delivery'
+            }
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Persistent Order Summary Sidebar - visible on desktop, collapsible on mobile.
+ */
+function OrderSummarySidebar({ items, isCollapsedOnMobile }) {
+  const [mobileExpanded, setMobileExpanded] = useState(false);
+
+  const subtotal = useMemo(
+    () => items.reduce((sum, item) => sum + (Number(item.price) || 0) * item.quantity, 0),
+    [items],
+  );
+  const tax = subtotal * BTW_RATE;
+  const total = subtotal + tax;
+
+  const content = (
+    <>
+      <div className="flex items-center gap-2 mb-4">
+        <Package className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
+        >
+          Order Summary ({items.length} {items.length === 1 ? 'item' : 'items'})
+        </h3>
+      </div>
+
+      {/* Item list */}
+      <div className="space-y-0 max-h-[300px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+        {items.map((item) => {
+          const lineTotal = (Number(item.price) || 0) * item.quantity;
+          return (
+            <div
+              key={item.productId ?? item.id}
+              className="flex items-center justify-between py-2"
+              style={{ borderBottom: '1px solid var(--ws-border, rgba(255,255,255,0.04))' }}
+            >
+              <div className="flex-1 min-w-0 pr-3">
+                <p className="text-xs font-medium truncate" style={{ color: 'var(--ws-text)' }}>
+                  {item.name}
+                </p>
+                <p className="text-[10px]" style={{ color: 'var(--ws-muted)' }}>
+                  x{item.quantity}
+                </p>
+              </div>
+              <span className="text-xs font-semibold flex-shrink-0" style={{ color: 'var(--ws-text)' }}>
+                {eurFormatter.format(lineTotal)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Totals */}
+      <div className="mt-3 pt-3 space-y-2" style={{ borderTop: '1px solid var(--ws-border, rgba(255,255,255,0.08))' }}>
+        <div className="flex items-center justify-between">
+          <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>Subtotal</span>
+          <span className="text-xs font-medium" style={{ color: 'var(--ws-text)' }}>
+            {eurFormatter.format(subtotal)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>VAT (21%)</span>
+          <span className="text-xs font-medium" style={{ color: 'var(--ws-text)' }}>
+            {eurFormatter.format(tax)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>Shipping</span>
+          <span className="text-xs font-medium" style={{ color: 'var(--ws-text)' }}>
+            {subtotal >= 500 ? 'Free' : 'Calculated at shipment'}
+          </span>
+        </div>
+        <div
+          className="flex items-center justify-between pt-2"
+          style={{ borderTop: '1px solid var(--ws-border, rgba(255,255,255,0.08))' }}
+        >
+          <span className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>Total</span>
+          <span className="text-base font-bold" style={{ color: 'var(--ws-primary)' }}>
+            {eurFormatter.format(total)}
+          </span>
+        </div>
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop: sticky sidebar */}
+      <div
+        className="hidden lg:block rounded-xl p-5 sticky top-6"
+        style={{
+          backgroundColor: 'var(--ws-surface)',
+          border: '1px solid var(--ws-border)',
+        }}
+      >
+        {content}
+      </div>
+
+      {/* Mobile: collapsible section */}
+      <div
+        className="lg:hidden rounded-xl overflow-hidden mb-5"
+        style={{
+          backgroundColor: 'var(--ws-surface)',
+          border: '1px solid var(--ws-border)',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setMobileExpanded((prev) => !prev)}
+          className="w-full flex items-center justify-between px-5 py-3.5"
+        >
+          <div className="flex items-center gap-2">
+            <Package className="w-4 h-4" style={{ color: 'var(--ws-primary)' }} />
+            <span className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>
+              Order Summary
+            </span>
+            <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>
+              ({items.length} {items.length === 1 ? 'item' : 'items'})
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold" style={{ color: 'var(--ws-primary)' }}>
+              {eurFormatter.format(subtotal + tax)}
+            </span>
+            {mobileExpanded ? (
+              <ChevronUp className="w-4 h-4" style={{ color: 'var(--ws-muted)' }} />
+            ) : (
+              <ChevronDown className="w-4 h-4" style={{ color: 'var(--ws-muted)' }} />
+            )}
+          </div>
+        </button>
+        {mobileExpanded && (
+          <div className="px-5 pb-4">
+            {content}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+/**
  * Step 2: Order Review
  */
-function ReviewStep({ items, address, orderNotes, setOrderNotes, onBack, onSubmit, submitting }) {
+function ReviewStep({ items, address, deliveryDate, deliveryNotes, orderNotes, setOrderNotes, client, onBack, onSubmit, submitting }) {
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + (Number(item.price) || 0) * item.quantity, 0),
     [items],
@@ -352,170 +633,227 @@ function ReviewStep({ items, address, orderNotes, setOrderNotes, onBack, onSubmi
   const total = subtotal + tax;
 
   return (
-    <div className="space-y-5">
-      {/* Order items */}
-      <div
-        className="rounded-xl p-5"
-        style={{
-          backgroundColor: 'var(--ws-surface)',
-          border: '1px solid var(--ws-border)',
-        }}
-      >
-        <div className="flex items-center gap-2 mb-4">
-          <Package className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
-          <h2
-            className="text-base font-semibold"
-            style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
-          >
-            Order Items ({items.length})
-          </h2>
-        </div>
+    <div className="flex flex-col lg:flex-row gap-6">
+      {/* Left column: review content */}
+      <div className="flex-1 lg:w-2/3 space-y-5">
+        {/* Mobile order summary (collapsible) */}
+        <OrderSummarySidebar items={items} />
 
-        <div>
-          {items.map((item) => (
-            <ReviewItem key={item.productId ?? item.id} item={item} />
-          ))}
-        </div>
-
-        {/* Totals */}
-        <div className="mt-4 pt-3 space-y-2" style={{ borderTop: '1px solid var(--ws-border, rgba(255,255,255,0.08))' }}>
-          <div className="flex items-center justify-between">
-            <span className="text-sm" style={{ color: 'var(--ws-muted)' }}>Subtotal</span>
-            <span className="text-sm font-medium" style={{ color: 'var(--ws-text)' }}>
-              {eurFormatter.format(subtotal)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm" style={{ color: 'var(--ws-muted)' }}>VAT (21%)</span>
-            <span className="text-sm font-medium" style={{ color: 'var(--ws-text)' }}>
-              {eurFormatter.format(tax)}
-            </span>
-          </div>
-          <div
-            className="flex items-center justify-between pt-2"
-            style={{ borderTop: '1px solid var(--ws-border, rgba(255,255,255,0.08))' }}
-          >
-            <span className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>Total</span>
-            <span className="text-lg font-bold" style={{ color: 'var(--ws-primary)' }}>
-              {eurFormatter.format(total)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Shipping address preview */}
-      <div
-        className="rounded-xl p-5"
-        style={{
-          backgroundColor: 'var(--ws-surface)',
-          border: '1px solid var(--ws-border)',
-        }}
-      >
-        <div className="flex items-center gap-2 mb-3">
-          <Truck className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
-          <h2
-            className="text-base font-semibold"
-            style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
-          >
-            Shipping Address
-          </h2>
-        </div>
-        <div className="text-sm leading-relaxed" style={{ color: 'var(--ws-muted)' }}>
-          <p style={{ color: 'var(--ws-text)' }}>{address.name}</p>
-          {address.company && <p>{address.company}</p>}
-          <p>{address.street}</p>
-          <p>{address.postal} {address.city}</p>
-          <p>{address.country}</p>
-          {address.phone && <p>{address.phone}</p>}
-        </div>
-      </div>
-
-      {/* Order notes */}
-      <div
-        className="rounded-xl p-5"
-        style={{
-          backgroundColor: 'var(--ws-surface)',
-          border: '1px solid var(--ws-border)',
-        }}
-      >
-        <div className="flex items-center gap-2 mb-3">
-          <ClipboardList className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
-          <h2
-            className="text-base font-semibold"
-            style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
-          >
-            Order Notes
-          </h2>
-        </div>
-        <textarea
-          value={orderNotes}
-          onChange={(e) => setOrderNotes(e.target.value)}
-          placeholder="Add any special instructions or notes for this order..."
-          rows={3}
-          className="w-full px-3 py-2.5 rounded-lg text-sm outline-none resize-none transition-colors focus:ring-1"
+        {/* Order items */}
+        <div
+          className="rounded-xl p-5"
           style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.04)',
-            color: 'var(--ws-text)',
-            border: '1px solid var(--ws-border, rgba(255,255,255,0.1))',
-            '--tw-ring-color': 'var(--ws-primary)',
-          }}
-        />
-      </div>
-
-      {/* Navigation buttons */}
-      <div className="flex items-center justify-between pt-2">
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={submitting}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-white/[0.04] disabled:opacity-40"
-          style={{ color: 'var(--ws-muted)' }}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
-
-        <button
-          type="button"
-          onClick={onSubmit}
-          disabled={submitting}
-          className={`
-            inline-flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold
-            transition-all duration-200
-            ${submitting ? 'opacity-70 cursor-not-allowed' : 'hover:opacity-90 cursor-pointer'}
-          `}
-          style={{
-            backgroundColor: 'var(--ws-primary)',
-            color: 'var(--ws-bg, #000)',
+            backgroundColor: 'var(--ws-surface)',
+            border: '1px solid var(--ws-border)',
           }}
         >
-          {submitting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Placing Order...
-            </>
-          ) : (
-            <>
-              <CreditCard className="w-4 h-4" />
-              Place Order
-            </>
+          <div className="flex items-center gap-2 mb-4">
+            <Package className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
+            <h2
+              className="text-base font-semibold"
+              style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
+            >
+              Order Items ({items.length})
+            </h2>
+          </div>
+
+          <div>
+            {items.map((item) => (
+              <ReviewItem key={item.productId ?? item.id} item={item} />
+            ))}
+          </div>
+
+          {/* Totals (shown inline for desktop without sidebar overlap) */}
+          <div className="mt-4 pt-3 space-y-2 lg:hidden" style={{ borderTop: '1px solid var(--ws-border, rgba(255,255,255,0.08))' }}>
+            <div className="flex items-center justify-between">
+              <span className="text-sm" style={{ color: 'var(--ws-muted)' }}>Subtotal</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--ws-text)' }}>
+                {eurFormatter.format(subtotal)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm" style={{ color: 'var(--ws-muted)' }}>VAT (21%)</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--ws-text)' }}>
+                {eurFormatter.format(tax)}
+              </span>
+            </div>
+            <div
+              className="flex items-center justify-between pt-2"
+              style={{ borderTop: '1px solid var(--ws-border, rgba(255,255,255,0.08))' }}
+            >
+              <span className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>Total</span>
+              <span className="text-lg font-bold" style={{ color: 'var(--ws-primary)' }}>
+                {eurFormatter.format(total)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Shipping address preview */}
+        <div
+          className="rounded-xl p-5"
+          style={{
+            backgroundColor: 'var(--ws-surface)',
+            border: '1px solid var(--ws-border)',
+          }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Truck className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
+            <h2
+              className="text-base font-semibold"
+              style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
+            >
+              Shipping Address
+            </h2>
+          </div>
+          <div className="text-sm leading-relaxed" style={{ color: 'var(--ws-muted)' }}>
+            <p style={{ color: 'var(--ws-text)' }}>{address.name}</p>
+            {address.company && <p>{address.company}</p>}
+            <p>{address.street}</p>
+            <p>{address.postal} {address.city}</p>
+            <p>{address.country}</p>
+            {address.phone && <p>{address.phone}</p>}
+          </div>
+
+          {/* Delivery date & notes if provided */}
+          {(deliveryDate || deliveryNotes) && (
+            <div
+              className="mt-3 pt-3"
+              style={{ borderTop: '1px solid var(--ws-border, rgba(255,255,255,0.06))' }}
+            >
+              {deliveryDate && (
+                <div className="flex items-center gap-2 mb-1">
+                  <Calendar className="w-3.5 h-3.5" style={{ color: 'var(--ws-primary)' }} />
+                  <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>
+                    Preferred delivery:{' '}
+                    <span style={{ color: 'var(--ws-text)' }}>
+                      {new Date(deliveryDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </span>
+                  </span>
+                </div>
+              )}
+              {deliveryNotes && (
+                <p className="text-xs mt-1" style={{ color: 'var(--ws-muted)' }}>
+                  Delivery notes: {deliveryNotes}
+                </p>
+              )}
+            </div>
           )}
-        </button>
+        </div>
+
+        {/* Payment terms */}
+        <PaymentTermsCard client={client} />
+
+        {/* Order notes */}
+        <div
+          className="rounded-xl p-5"
+          style={{
+            backgroundColor: 'var(--ws-surface)',
+            border: '1px solid var(--ws-border)',
+          }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <ClipboardList className="w-5 h-5" style={{ color: 'var(--ws-primary)' }} />
+            <h2
+              className="text-base font-semibold"
+              style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
+            >
+              Order Notes
+            </h2>
+          </div>
+          <textarea
+            value={orderNotes}
+            onChange={(e) => setOrderNotes(e.target.value)}
+            placeholder="Add any special instructions or notes for this order..."
+            rows={3}
+            className="w-full px-3 py-2.5 rounded-lg text-sm outline-none resize-none transition-colors focus:ring-1"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+              color: 'var(--ws-text)',
+              border: '1px solid var(--ws-border, rgba(255,255,255,0.1))',
+              '--tw-ring-color': 'var(--ws-primary)',
+            }}
+          />
+        </div>
+
+        {/* Navigation buttons */}
+        <div className="flex items-center justify-between pt-2">
+          <button
+            type="button"
+            onClick={onBack}
+            disabled={submitting}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-white/[0.04] disabled:opacity-40"
+            style={{ color: 'var(--ws-muted)' }}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
+
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={submitting}
+            className={`
+              inline-flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold
+              transition-all duration-200
+              ${submitting ? 'opacity-70 cursor-not-allowed' : 'hover:opacity-90 cursor-pointer'}
+            `}
+            style={{
+              backgroundColor: 'var(--ws-primary)',
+              color: 'var(--ws-bg, #000)',
+            }}
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Placing Order...
+              </>
+            ) : (
+              <>
+                <CreditCard className="w-4 h-4" />
+                Place Order
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Right column: sticky summary sidebar (desktop only) */}
+      <div className="hidden lg:block lg:w-1/3">
+        <OrderSummarySidebar items={items} />
       </div>
     </div>
   );
 }
 
 /**
- * Step 3: Order Confirmation
+ * Step 3: Enhanced Order Confirmation
  */
 function ConfirmationStep({ orderId }) {
   const { org } = useParams();
-  const catalogPath = org ? `/${org}/catalog` : '/catalog';
-  const ordersPath = org ? `/${org}/orders` : '/orders';
+  const catalogPath = org ? `/portal/${org}/shop/catalog` : '/catalog';
+  const ordersPath = org ? `/portal/${org}/shop/orders` : '/orders';
+
+  const whatNextSteps = [
+    {
+      icon: Mail,
+      title: 'Order Confirmation Email',
+      description: 'You will receive a confirmation email with your order details shortly.',
+    },
+    {
+      icon: Package,
+      title: 'Processing Begins',
+      description: 'Our team will start preparing your order for shipment.',
+    },
+    {
+      icon: Bell,
+      title: 'Shipping Notification',
+      description: 'You will be notified when your order ships with tracking information.',
+    },
+  ];
 
   return (
-    <div className="flex flex-col items-center text-center py-8">
+    <div className="flex flex-col items-center text-center py-8 max-w-lg mx-auto">
       <div
         className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
         style={{ backgroundColor: 'rgba(34, 197, 94, 0.12)' }}
@@ -536,33 +874,77 @@ function ConfirmationStep({ orderId }) {
         Thank you for your order. We will process it and notify you once it ships.
       </p>
 
-      {/* Order number */}
+      {/* Order number prominently displayed */}
       {orderId && (
         <div
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg mt-2 mb-6"
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl mt-2 mb-6"
           style={{
             backgroundColor: 'rgba(255, 255, 255, 0.04)',
             border: '1px solid var(--ws-border)',
           }}
         >
           <span className="text-xs font-medium" style={{ color: 'var(--ws-muted)' }}>
-            Order Number:
+            Order Number
           </span>
           <span
-            className="text-sm font-bold font-mono tracking-wider"
+            className="text-lg font-bold font-mono tracking-wider"
             style={{ color: 'var(--ws-primary)' }}
           >
-            {orderId.substring(0, 8).toUpperCase()}
+            #{orderId.substring(0, 8).toUpperCase()}
           </span>
         </div>
       )}
 
+      {/* What's Next steps */}
+      <div
+        className="w-full rounded-xl p-5 mb-6 text-left"
+        style={{
+          backgroundColor: 'var(--ws-surface)',
+          border: '1px solid var(--ws-border)',
+        }}
+      >
+        <h3
+          className="text-sm font-semibold mb-4"
+          style={{ color: 'var(--ws-text)' }}
+        >
+          What happens next?
+        </h3>
+        <div className="space-y-4">
+          {whatNextSteps.map((step, idx) => {
+            const Icon = step.icon;
+            return (
+              <div key={idx} className="flex items-start gap-3">
+                <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold"
+                    style={{
+                      backgroundColor: 'var(--ws-primary)',
+                      color: 'var(--ws-bg, #000)',
+                    }}
+                  >
+                    {idx + 1}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium" style={{ color: 'var(--ws-text)' }}>
+                    {step.title}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--ws-muted)' }}>
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Action buttons */}
-      <div className="flex items-center gap-3 mt-4">
+      <div className="flex items-center gap-3">
         {orderId && (
           <Link
             to={`${ordersPath}/${orderId}`}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:opacity-90"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold transition-colors hover:opacity-90"
             style={{
               backgroundColor: 'var(--ws-primary)',
               color: 'var(--ws-bg, #000)',
@@ -575,7 +957,7 @@ function ConfirmationStep({ orderId }) {
 
         <Link
           to={catalogPath}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-white/[0.04]"
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-white/[0.04]"
           style={{
             color: 'var(--ws-muted)',
             border: '1px solid var(--ws-border)',
@@ -595,15 +977,18 @@ function ConfirmationStep({ orderId }) {
  * Multi-step checkout flow for the B2B wholesale storefront.
  *
  * Steps:
- *   1. Shipping Address - form with name, company, street, city, postal, country, phone
- *   2. Review Order    - order summary, address preview, notes textarea, "Place Order" button
- *   3. Confirmation    - success message with order number and navigation links
+ *   1. Shipping Address - form with name, company, street, city, postal, country, phone,
+ *      preferred delivery date, and delivery notes
+ *   2. Review Order    - two-column layout with persistent summary sidebar,
+ *      payment terms display, address preview, notes textarea
+ *   3. Confirmation    - enhanced success with order number, "What's Next" steps,
+ *      View Order and Continue Shopping buttons
  *
  * On submission, creates records in b2b_orders and b2b_order_items via Supabase,
  * then clears the cart.
  */
 export default function CheckoutPage() {
-  const { cartItems, clearCart, orgId, config } = useWholesale();
+  const { cartItems, clearCart, orgId, config, client } = useWholesale();
   const navigate = useNavigate();
   const { org } = useParams();
   const minOrderAmount = Number(config?.min_order_amount) || 0;
@@ -618,6 +1003,8 @@ export default function CheckoutPage() {
     country: 'Netherlands',
     phone: '',
   });
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [deliveryNotes, setDeliveryNotes] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState(null);
@@ -640,7 +1027,7 @@ export default function CheckoutPage() {
   // Redirect to cart if empty (except on confirmation step)
   useEffect(() => {
     if (normalizedItems.length === 0 && step < 3) {
-      navigate(org ? `/${org}/cart` : '/cart', { replace: true });
+      navigate(`/portal/${org}/shop/cart`, { replace: true });
     }
   }, [normalizedItems.length, step, navigate, org]);
 
@@ -680,18 +1067,26 @@ export default function CheckoutPage() {
       const taxAmount = subtotal * BTW_RATE;
       const totalAmount = subtotal + taxAmount;
 
+      // Build shipping address with delivery preferences
+      const fullShippingAddress = {
+        ...shippingAddress,
+        ...(deliveryDate ? { preferred_delivery_date: deliveryDate } : {}),
+        ...(deliveryNotes ? { delivery_notes: deliveryNotes } : {}),
+      };
+
       // Create the order
       const { data: orderData, error: orderError } = await supabase
         .from('b2b_orders')
         .insert({
           organization_id: organizationId,
+          company_id: config?.company_id || organizationId,
+          client_id: client?.id,
           status: 'pending',
-          shipping_address: shippingAddress,
-          notes: orderNotes || null,
+          shipping_address: fullShippingAddress,
+          client_notes: orderNotes || null,
           subtotal: subtotal,
           tax_amount: taxAmount,
-          total_amount: totalAmount,
-          item_count: normalizedItems.reduce((sum, i) => sum + i.quantity, 0),
+          total: totalAmount,
           currency: 'EUR',
         })
         .select('id')
@@ -713,7 +1108,6 @@ export default function CheckoutPage() {
         quantity: item.quantity,
         unit_price: Number(item.price) || 0,
         line_total: (Number(item.price) || 0) * item.quantity,
-        image_url: item.image || item.featured_image || null,
       }));
 
       const { error: itemsError } = await supabase
@@ -754,14 +1148,14 @@ export default function CheckoutPage() {
     } finally {
       setSubmitting(false);
     }
-  }, [orgId, org, subtotal, shippingAddress, orderNotes, normalizedItems, clearCart]);
+  }, [orgId, org, subtotal, shippingAddress, orderNotes, deliveryDate, deliveryNotes, normalizedItems, clearCart, belowMinimum, minOrderAmount, config, client]);
 
-  const catalogPath = org ? `/${org}/catalog` : '/catalog';
-  const cartPath = org ? `/${org}/cart` : '/cart';
+  const catalogPath = `/portal/${org}/shop/catalog`;
+  const cartPath = `/portal/${org}/shop/cart`;
 
   return (
     <div
-      className="w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+      className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
       style={{ backgroundColor: 'var(--ws-bg)' }}
     >
       {/* Back link */}
@@ -796,13 +1190,14 @@ export default function CheckoutPage() {
       {/* Error banner */}
       {error && (
         <div
-          className="rounded-lg px-4 py-3 mb-5 text-sm"
+          className="rounded-lg px-4 py-3 mb-5 text-sm flex items-center gap-2"
           style={{
             backgroundColor: 'rgba(239, 68, 68, 0.1)',
             color: '#f87171',
             border: '1px solid rgba(239, 68, 68, 0.25)',
           }}
         >
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
           {error}
         </div>
       )}
@@ -812,6 +1207,10 @@ export default function CheckoutPage() {
         <ShippingStep
           address={shippingAddress}
           setAddress={setShippingAddress}
+          deliveryDate={deliveryDate}
+          setDeliveryDate={setDeliveryDate}
+          deliveryNotes={deliveryNotes}
+          setDeliveryNotes={setDeliveryNotes}
           onNext={handleNextStep}
         />
       )}
@@ -820,8 +1219,11 @@ export default function CheckoutPage() {
         <ReviewStep
           items={normalizedItems}
           address={shippingAddress}
+          deliveryDate={deliveryDate}
+          deliveryNotes={deliveryNotes}
           orderNotes={orderNotes}
           setOrderNotes={setOrderNotes}
+          client={client}
           onBack={handlePrevStep}
           onSubmit={handlePlaceOrder}
           submitting={submitting}

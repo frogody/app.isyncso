@@ -81,7 +81,7 @@ export default function CartDrawer({ isOpen, onClose }) {
 
   const handleCheckout = useCallback(() => {
     onClose();
-    navigate(org ? `/${org}/checkout` : '/checkout');
+    navigate(`/portal/${org}/shop/checkout`);
   }, [onClose, navigate, org]);
 
   const handleBackdropClick = useCallback(
@@ -93,7 +93,7 @@ export default function CartDrawer({ isOpen, onClose }) {
     [onClose],
   );
 
-  const catalogPath = org ? `/${org}/catalog` : '/catalog';
+  const catalogPath = `/portal/${org}/shop/catalog`;
 
   return (
     <AnimatePresence>

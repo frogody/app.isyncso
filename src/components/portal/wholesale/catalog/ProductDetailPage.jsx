@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   ShoppingCart,
@@ -10,7 +10,17 @@ import {
   Check,
   X,
   Loader2,
+  Heart,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  Clock,
+  AlertTriangle,
+  RotateCcw,
+  Eye,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/api/supabaseClient';
 import { useWholesale } from '../WholesaleProvider';
 import StockIndicator from './StockIndicator';
@@ -112,6 +122,19 @@ function parseSpecifications(specs) {
     }));
   }
   return [];
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    return new Intl.DateTimeFormat('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }).format(new Date(dateStr));
+  } catch {
+    return dateStr;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -298,10 +321,112 @@ function InquiryModal({ product, onClose }) {
 }
 
 // ---------------------------------------------------------------------------
-// Image Gallery
+// Lightbox Overlay
 // ---------------------------------------------------------------------------
 
-function ImageGallery({ images, activeIndex, onSelect }) {
+function Lightbox({ images, activeIndex, onClose, onNavigate }) {
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      } else if (e.key === 'ArrowLeft') {
+        onNavigate((activeIndex - 1 + images.length) % images.length);
+      } else if (e.key === 'ArrowRight') {
+        onNavigate((activeIndex + 1) % images.length);
+      }
+    },
+    [activeIndex, images.length, onClose, onNavigate],
+  );
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [handleKeyDown]);
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-[100] flex items-center justify-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        {/* Dark backdrop */}
+        <motion.div
+          className="absolute inset-0 bg-black/90 backdrop-blur-md"
+          onClick={onClose}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        />
+
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+          aria-label="Close lightbox"
+        >
+          <X className="w-6 h-6 text-white" />
+        </button>
+
+        {/* Counter */}
+        <div className="absolute top-5 left-1/2 -translate-x-1/2 z-10 text-white/70 text-sm font-medium">
+          {activeIndex + 1} / {images.length}
+        </div>
+
+        {/* Previous button */}
+        {images.length > 1 && (
+          <button
+            onClick={() =>
+              onNavigate((activeIndex - 1 + images.length) % images.length)
+            }
+            className="absolute left-4 z-10 p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            aria-label="Previous image"
+          >
+            <ChevronLeft className="w-6 h-6 text-white" />
+          </button>
+        )}
+
+        {/* Next button */}
+        {images.length > 1 && (
+          <button
+            onClick={() =>
+              onNavigate((activeIndex + 1) % images.length)
+            }
+            className="absolute right-4 z-10 p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            aria-label="Next image"
+          >
+            <ChevronRight className="w-6 h-6 text-white" />
+          </button>
+        )}
+
+        {/* Main image */}
+        <motion.img
+          key={activeIndex}
+          src={images[activeIndex]}
+          alt={`Product image ${activeIndex + 1}`}
+          className="relative z-[1] max-w-[90vw] max-h-[85vh] object-contain rounded-lg select-none"
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.92 }}
+          transition={{ duration: 0.2 }}
+          draggable={false}
+        />
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Image Gallery (upgraded with lightbox trigger)
+// ---------------------------------------------------------------------------
+
+function ImageGallery({ images, activeIndex, onSelect, onOpenLightbox }) {
   if (images.length === 0) {
     return (
       <div
@@ -320,11 +445,12 @@ function ImageGallery({ images, activeIndex, onSelect }) {
     <div className="flex flex-col gap-3">
       {/* Main image */}
       <div
-        className="aspect-square rounded-xl overflow-hidden flex items-center justify-center"
+        className="aspect-square rounded-xl overflow-hidden flex items-center justify-center relative group cursor-pointer"
         style={{
           backgroundColor: 'var(--ws-surface)',
           border: '1px solid var(--ws-border)',
         }}
+        onClick={onOpenLightbox}
       >
         <img
           src={images[activeIndex] || images[0]}
@@ -336,12 +462,18 @@ function ImageGallery({ images, activeIndex, onSelect }) {
               '<div class="flex items-center justify-center w-full h-full"><svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--ws-muted)"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></div>';
           }}
         />
+        {/* Zoom overlay on hover */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors duration-200 rounded-xl">
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-3 rounded-full bg-black/50">
+            <ZoomIn className="w-6 h-6 text-white" />
+          </div>
+        </div>
       </div>
 
       {/* Thumbnail row */}
       {images.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {images.slice(0, 5).map((url, idx) => (
+          {images.slice(0, 8).map((url, idx) => (
             <button
               key={idx}
               onClick={() => onSelect(idx)}
@@ -438,13 +570,105 @@ function QuantitySelector({ value, onChange, min = 1, max = 9999 }) {
 }
 
 // ---------------------------------------------------------------------------
-// Specifications Table
+// Collapsible Specifications Table
 // ---------------------------------------------------------------------------
 
 function SpecificationsTable({ specs }) {
   const rows = useMemo(() => parseSpecifications(specs), [specs]);
+  const [expanded, setExpanded] = useState(true);
 
   if (rows.length === 0) return null;
+
+  return (
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{
+        backgroundColor: 'var(--ws-surface)',
+        border: '1px solid var(--ws-border)',
+      }}
+    >
+      <button
+        onClick={() => setExpanded((prev) => !prev)}
+        className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors hover:opacity-90"
+        style={{
+          borderBottom: expanded ? '1px solid var(--ws-border)' : 'none',
+        }}
+      >
+        <h3
+          className="text-base font-bold"
+          style={{
+            color: 'var(--ws-text)',
+            fontFamily: 'var(--ws-heading-font)',
+          }}
+        >
+          Specifications
+        </h3>
+        <ChevronDown
+          className="w-5 h-5 transition-transform duration-200"
+          style={{
+            color: 'var(--ws-muted)',
+            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+          }}
+        />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2">
+              {rows.map((row, i) => (
+                <div
+                  key={i}
+                  className="flex justify-between sm:contents px-5 py-3 text-sm"
+                  style={{
+                    backgroundColor: i % 2 === 0
+                      ? 'transparent'
+                      : 'rgba(255,255,255,0.02)',
+                  }}
+                >
+                  <span
+                    className="px-5 py-3 font-medium"
+                    style={{ color: 'var(--ws-muted)' }}
+                  >
+                    {row.key}
+                  </span>
+                  <span
+                    className="px-5 py-3"
+                    style={{ color: 'var(--ws-text)' }}
+                  >
+                    {row.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Enhanced Pricing Tiers Table
+// ---------------------------------------------------------------------------
+
+function EnhancedPricingTiersTable({ tiers, currentQuantity, currency, basePrice }) {
+  if (!tiers || tiers.length <= 1) return null;
+
+  const activeTierIndex = useMemo(() => {
+    for (let i = 0; i < tiers.length; i++) {
+      const min = tiers[i].min_quantity ?? 0;
+      const max = tiers[i].max_quantity ?? Infinity;
+      if (currentQuantity >= min && currentQuantity <= max) return i;
+    }
+    return -1;
+  }, [tiers, currentQuantity]);
 
   return (
     <div
@@ -462,31 +686,579 @@ function SpecificationsTable({ specs }) {
           borderBottom: '1px solid var(--ws-border)',
         }}
       >
-        Specifications
+        Volume Pricing
       </h3>
-      <table className="w-full text-sm">
-        <tbody>
-          {rows.map((row, i) => (
-            <tr
-              key={i}
+
+      {/* Desktop */}
+      <div className="hidden sm:block">
+        <table className="w-full text-sm">
+          <thead>
+            <tr style={{ borderBottom: '1px solid var(--ws-border)' }}>
+              <th
+                className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider"
+                style={{ color: 'var(--ws-muted)' }}
+              >
+                Quantity Range
+              </th>
+              <th
+                className="text-right px-5 py-3 text-xs font-semibold uppercase tracking-wider"
+                style={{ color: 'var(--ws-muted)' }}
+              >
+                Price Per Unit
+              </th>
+              <th
+                className="text-right px-5 py-3 text-xs font-semibold uppercase tracking-wider"
+                style={{ color: 'var(--ws-muted)' }}
+              >
+                Savings
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {tiers.map((tier, idx) => {
+              const isActive = idx === activeTierIndex;
+              const savings = basePrice > 0 && tier.unit_price < basePrice
+                ? ((1 - tier.unit_price / basePrice) * 100).toFixed(1)
+                : null;
+              const rangeLabel = (tier.max_quantity == null || tier.max_quantity === Infinity)
+                ? `${tier.min_quantity ?? 0}+`
+                : `${tier.min_quantity ?? 0} - ${tier.max_quantity}`;
+
+              return (
+                <tr
+                  key={idx}
+                  className="transition-colors duration-200"
+                  style={{
+                    backgroundColor: isActive
+                      ? 'rgba(var(--ws-primary-rgb, 6, 182, 212), 0.10)'
+                      : 'transparent',
+                    borderBottom: idx < tiers.length - 1 ? '1px solid var(--ws-border)' : 'none',
+                  }}
+                >
+                  <td className="px-5 py-3.5">
+                    <span
+                      className="font-medium"
+                      style={{ color: isActive ? 'var(--ws-primary)' : 'var(--ws-text)' }}
+                    >
+                      {rangeLabel} units
+                    </span>
+                    {isActive && (
+                      <span
+                        className="ml-2 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                        style={{
+                          backgroundColor: 'var(--ws-primary)',
+                          color: 'var(--ws-bg)',
+                        }}
+                      >
+                        Current
+                      </span>
+                    )}
+                  </td>
+                  <td
+                    className="px-5 py-3.5 text-right font-semibold"
+                    style={{ color: isActive ? 'var(--ws-primary)' : 'var(--ws-text)' }}
+                  >
+                    {formatCurrency(tier.unit_price, currency)}
+                  </td>
+                  <td className="px-5 py-3.5 text-right">
+                    {savings ? (
+                      <span className="text-sm font-semibold text-green-400">
+                        -{savings}%
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--ws-muted)' }}>&mdash;</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile */}
+      <div className="sm:hidden">
+        {tiers.map((tier, idx) => {
+          const isActive = idx === activeTierIndex;
+          const savings = basePrice > 0 && tier.unit_price < basePrice
+            ? ((1 - tier.unit_price / basePrice) * 100).toFixed(1)
+            : null;
+          const rangeLabel = (tier.max_quantity == null || tier.max_quantity === Infinity)
+            ? `${tier.min_quantity ?? 0}+`
+            : `${tier.min_quantity ?? 0} - ${tier.max_quantity}`;
+
+          return (
+            <div
+              key={idx}
+              className="px-4 py-3.5 flex items-center justify-between gap-3 transition-colors duration-200"
               style={{
-                borderBottom:
-                  i < rows.length - 1 ? '1px solid var(--ws-border)' : 'none',
+                backgroundColor: isActive
+                  ? 'rgba(var(--ws-primary-rgb, 6, 182, 212), 0.10)'
+                  : 'transparent',
+                borderBottom: idx < tiers.length - 1 ? '1px solid var(--ws-border)' : 'none',
               }}
             >
-              <td
-                className="px-5 py-3 font-medium whitespace-nowrap"
-                style={{ color: 'var(--ws-muted)', width: '40%' }}
+              <div className="flex flex-col gap-0.5">
+                <span
+                  className="text-sm font-medium"
+                  style={{ color: isActive ? 'var(--ws-primary)' : 'var(--ws-text)' }}
+                >
+                  {rangeLabel} units
+                </span>
+                {isActive && (
+                  <span
+                    className="self-start text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded mt-0.5"
+                    style={{ backgroundColor: 'var(--ws-primary)', color: 'var(--ws-bg)' }}
+                  >
+                    Current
+                  </span>
+                )}
+              </div>
+              <div className="text-right flex flex-col items-end gap-0.5">
+                <span
+                  className="text-sm font-semibold"
+                  style={{ color: isActive ? 'var(--ws-primary)' : 'var(--ws-text)' }}
+                >
+                  {formatCurrency(tier.unit_price, currency)}
+                </span>
+                {savings ? (
+                  <span className="text-xs font-semibold text-green-400">Save {savings}%</span>
+                ) : (
+                  <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>Base price</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Enhanced Stock + Availability Detail
+// ---------------------------------------------------------------------------
+
+function StockAvailabilityDetail({ product, inventory }) {
+  const available = useMemo(() => {
+    if (!inventory) return 0;
+    return Math.max(0, (inventory.quantity_on_hand ?? inventory.quantity ?? 0) - (inventory.quantity_reserved ?? 0));
+  }, [inventory]);
+
+  const restockDate = product?.restock_date || inventory?.expected_delivery_date || null;
+  const minOrderQty = product?.min_order_qty || product?.minimum_order_quantity || null;
+
+  const getStockBadge = () => {
+    if (available > 10) {
+      return {
+        label: 'In Stock',
+        dotColor: '#22c55e',
+        bgColor: 'rgba(34, 197, 94, 0.10)',
+        borderColor: 'rgba(34, 197, 94, 0.25)',
+        textColor: '#4ade80',
+      };
+    }
+    if (available > 0) {
+      return {
+        label: `Only ${available} left in stock`,
+        dotColor: '#f59e0b',
+        bgColor: 'rgba(245, 158, 11, 0.10)',
+        borderColor: 'rgba(245, 158, 11, 0.25)',
+        textColor: '#fbbf24',
+      };
+    }
+    return {
+      label: 'Out of Stock',
+      dotColor: '#ef4444',
+      bgColor: 'rgba(239, 68, 68, 0.10)',
+      borderColor: 'rgba(239, 68, 68, 0.25)',
+      textColor: '#f87171',
+    };
+  };
+
+  const badge = getStockBadge();
+
+  return (
+    <div className="flex flex-col gap-2">
+      {/* Main stock badge */}
+      <span
+        className="inline-flex items-center gap-1.5 rounded-full text-xs font-medium whitespace-nowrap self-start"
+        style={{
+          backgroundColor: badge.bgColor,
+          color: badge.textColor,
+          border: `1px solid ${badge.borderColor}`,
+          padding: '4px 12px',
+        }}
+      >
+        <span
+          className="flex-shrink-0 rounded-full"
+          style={{ width: '7px', height: '7px', backgroundColor: badge.dotColor }}
+        />
+        {badge.label}
+      </span>
+
+      {/* Restock date */}
+      {available === 0 && restockDate && (
+        <div
+          className="flex items-center gap-1.5 text-xs"
+          style={{ color: 'var(--ws-muted)' }}
+        >
+          <Clock className="w-3.5 h-3.5" />
+          <span>Expected back in stock: {formatDate(restockDate)}</span>
+        </div>
+      )}
+
+      {/* Minimum order quantity */}
+      {minOrderQty && minOrderQty > 1 && (
+        <div
+          className="flex items-center gap-1.5 text-xs"
+          style={{ color: 'var(--ws-muted)' }}
+        >
+          <AlertTriangle className="w-3.5 h-3.5" />
+          <span>Minimum order: {minOrderQty} units</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Related Products Row
+// ---------------------------------------------------------------------------
+
+function RelatedProducts({ product, currentProductId, orgId }) {
+  const [related, setRelated] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const categoryId = product?.category_id || product?.category;
+    if (!categoryId) return;
+
+    let cancelled = false;
+    const fetchRelated = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('id, name, price, unit_price, featured_image, sku, product_sales_channels!inner(channel)')
+          .eq('product_sales_channels.channel', 'b2b')
+          .eq('category_id', categoryId)
+          .neq('id', currentProductId)
+          .eq('is_active', true)
+          .limit(4);
+
+        if (!cancelled && !error && data) {
+          setRelated(data);
+        }
+      } catch {
+        // Silently fail
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchRelated();
+    return () => { cancelled = true; };
+  }, [product?.category_id, product?.category, currentProductId]);
+
+  if (loading || related.length === 0) return null;
+
+  return (
+    <div className="mt-12">
+      <h3
+        className="text-lg font-bold mb-6"
+        style={{
+          color: 'var(--ws-text)',
+          fontFamily: 'var(--ws-heading-font)',
+        }}
+      >
+        You May Also Like
+      </h3>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {related.map((item) => {
+          const itemPrice = item.price ?? item.unit_price ?? 0;
+          const detailUrl = orgId
+            ? `/portal/${orgId}/shop/product/${item.id}`
+            : `/shop/product/${item.id}`;
+
+          return (
+            <Link
+              key={item.id}
+              to={detailUrl}
+              className="group rounded-xl overflow-hidden transition-all duration-200 hover:scale-[1.02]"
+              style={{
+                backgroundColor: 'var(--ws-surface)',
+                border: '1px solid var(--ws-border)',
+              }}
+            >
+              <div
+                className="aspect-square flex items-center justify-center overflow-hidden"
+                style={{ backgroundColor: 'var(--ws-bg)' }}
               >
-                {row.key}
-              </td>
-              <td className="px-5 py-3" style={{ color: 'var(--ws-text)' }}>
-                {row.value}
-              </td>
+                {item.featured_image ? (
+                  <img
+                    src={item.featured_image}
+                    alt={item.name}
+                    className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-200"
+                  />
+                ) : (
+                  <Package className="w-12 h-12" style={{ color: 'var(--ws-muted)' }} />
+                )}
+              </div>
+              <div className="p-3 flex flex-col gap-1.5">
+                <p
+                  className="text-sm font-medium line-clamp-2 leading-snug"
+                  style={{ color: 'var(--ws-text)' }}
+                >
+                  {item.name}
+                </p>
+                <p
+                  className="text-sm font-bold"
+                  style={{ color: 'var(--ws-primary)' }}
+                >
+                  {formatCurrency(itemPrice)}
+                </p>
+                <span
+                  className="mt-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold rounded-lg py-1.5 transition-colors hover:opacity-90"
+                  style={{
+                    backgroundColor: 'rgba(var(--ws-primary-rgb, 6, 182, 212), 0.10)',
+                    color: 'var(--ws-primary)',
+                  }}
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  View
+                </span>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Client Order History for This Product
+// ---------------------------------------------------------------------------
+
+function OrderHistory({ productId, client, addToCart, images }) {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [reorderingId, setReorderingId] = useState(null);
+
+  useEffect(() => {
+    if (!client?.id || !productId) return;
+
+    let cancelled = false;
+    const fetchOrders = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('sales_order_items')
+          .select('quantity, unit_price, sales_order:sales_orders(id, order_number, status, created_at)')
+          .eq('product_id', productId)
+          .eq('sales_order.client_id', client.id)
+          .order('created_at', { ascending: false, foreignTable: 'sales_orders' })
+          .limit(5);
+
+        if (!cancelled && !error && data) {
+          // Filter out entries where the join failed (sales_order is null)
+          const validOrders = data.filter((item) => item.sales_order != null);
+          setOrders(validOrders);
+        }
+      } catch {
+        // Silently fail
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchOrders();
+    return () => { cancelled = true; };
+  }, [client?.id, productId]);
+
+  if (!client?.id || loading || orders.length === 0) return null;
+
+  const handleReorder = (order) => {
+    setReorderingId(order.sales_order?.id);
+    addToCart(
+      {
+        id: productId,
+        price: order.unit_price,
+        featured_image: images?.[0] || null,
+      },
+      order.quantity,
+    );
+    setTimeout(() => setReorderingId(null), 1500);
+  };
+
+  const getStatusBadge = (status) => {
+    const statusMap = {
+      completed: { bg: 'rgba(34, 197, 94, 0.10)', text: '#4ade80', border: 'rgba(34, 197, 94, 0.25)' },
+      delivered: { bg: 'rgba(34, 197, 94, 0.10)', text: '#4ade80', border: 'rgba(34, 197, 94, 0.25)' },
+      processing: { bg: 'rgba(59, 130, 246, 0.10)', text: '#60a5fa', border: 'rgba(59, 130, 246, 0.25)' },
+      pending: { bg: 'rgba(245, 158, 11, 0.10)', text: '#fbbf24', border: 'rgba(245, 158, 11, 0.25)' },
+      cancelled: { bg: 'rgba(239, 68, 68, 0.10)', text: '#f87171', border: 'rgba(239, 68, 68, 0.25)' },
+    };
+    const config = statusMap[status?.toLowerCase()] || statusMap.pending;
+    return config;
+  };
+
+  return (
+    <div
+      className="mt-12 rounded-xl overflow-hidden"
+      style={{
+        backgroundColor: 'var(--ws-surface)',
+        border: '1px solid var(--ws-border)',
+      }}
+    >
+      <h3
+        className="px-5 py-4 text-base font-bold"
+        style={{
+          color: 'var(--ws-text)',
+          fontFamily: 'var(--ws-heading-font)',
+          borderBottom: '1px solid var(--ws-border)',
+        }}
+      >
+        Your Previous Orders
+      </h3>
+
+      {/* Desktop table */}
+      <div className="hidden sm:block">
+        <table className="w-full text-sm">
+          <thead>
+            <tr style={{ borderBottom: '1px solid var(--ws-border)' }}>
+              {['Order Date', 'Order #', 'Qty', 'Price Paid', 'Status', ''].map((h, i) => (
+                <th
+                  key={i}
+                  className={`px-5 py-3 text-xs font-semibold uppercase tracking-wider ${i >= 2 ? 'text-right' : 'text-left'}`}
+                  style={{ color: 'var(--ws-muted)' }}
+                >
+                  {h}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {orders.map((item, idx) => {
+              const so = item.sales_order;
+              const statusCfg = getStatusBadge(so?.status);
+              const isReordering = reorderingId === so?.id;
+
+              return (
+                <tr
+                  key={idx}
+                  style={{
+                    borderBottom: idx < orders.length - 1 ? '1px solid var(--ws-border)' : 'none',
+                  }}
+                >
+                  <td className="px-5 py-3" style={{ color: 'var(--ws-text)' }}>
+                    {formatDate(so?.created_at)}
+                  </td>
+                  <td className="px-5 py-3 font-mono text-xs" style={{ color: 'var(--ws-muted)' }}>
+                    {so?.order_number || '--'}
+                  </td>
+                  <td className="px-5 py-3 text-right font-medium" style={{ color: 'var(--ws-text)' }}>
+                    {item.quantity}
+                  </td>
+                  <td className="px-5 py-3 text-right font-semibold" style={{ color: 'var(--ws-text)' }}>
+                    {formatCurrency(item.unit_price)}
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    <span
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
+                      style={{
+                        backgroundColor: statusCfg.bg,
+                        color: statusCfg.text,
+                        border: `1px solid ${statusCfg.border}`,
+                      }}
+                    >
+                      {so?.status || 'Unknown'}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    <button
+                      onClick={() => handleReorder(item)}
+                      disabled={isReordering}
+                      className="inline-flex items-center gap-1 text-xs font-semibold transition-colors hover:opacity-80 disabled:opacity-60"
+                      style={{ color: 'var(--ws-primary)' }}
+                    >
+                      {isReordering ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          Added
+                        </>
+                      ) : (
+                        <>
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          Reorder
+                        </>
+                      )}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile stacked */}
+      <div className="sm:hidden">
+        {orders.map((item, idx) => {
+          const so = item.sales_order;
+          const statusCfg = getStatusBadge(so?.status);
+          const isReordering = reorderingId === so?.id;
+
+          return (
+            <div
+              key={idx}
+              className="px-4 py-3.5 flex flex-col gap-2"
+              style={{
+                borderBottom: idx < orders.length - 1 ? '1px solid var(--ws-border)' : 'none',
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium" style={{ color: 'var(--ws-text)' }}>
+                  {formatDate(so?.created_at)}
+                </span>
+                <span
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
+                  style={{
+                    backgroundColor: statusCfg.bg,
+                    color: statusCfg.text,
+                    border: `1px solid ${statusCfg.border}`,
+                  }}
+                >
+                  {so?.status || 'Unknown'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs" style={{ color: 'var(--ws-muted)' }}>
+                <span>{so?.order_number}</span>
+                <span>Qty: {item.quantity} @ {formatCurrency(item.unit_price)}</span>
+              </div>
+              <button
+                onClick={() => handleReorder(item)}
+                disabled={isReordering}
+                className="self-start inline-flex items-center gap-1 text-xs font-semibold transition-colors hover:opacity-80 disabled:opacity-60 mt-1"
+                style={{ color: 'var(--ws-primary)' }}
+              >
+                {isReordering ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    Added to cart
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Reorder
+                  </>
+                )}
+              </button>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -584,7 +1356,7 @@ function NotFound({ navigate, orgId }) {
 export default function ProductDetailPage() {
   const { productId, org } = useParams();
   const navigate = useNavigate();
-  const { addToCart, orgId: ctxOrgId, client } = useWholesale();
+  const { addToCart, orgId: ctxOrgId, client, isFavorite, toggleFavorite } = useWholesale();
   const orgId = org || ctxOrgId;
 
   // State
@@ -596,6 +1368,7 @@ export default function ProductDetailPage() {
   const [showInquiry, setShowInquiry] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const [clientPrice, setClientPrice] = useState(null);
+  const [showLightbox, setShowLightbox] = useState(false);
 
   // Fetch product
   useEffect(() => {
@@ -726,6 +1499,18 @@ export default function ProductDetailPage() {
     }
   }, [navigate, orgId]);
 
+  const handleOpenLightbox = useCallback(() => {
+    if (images.length > 0) setShowLightbox(true);
+  }, [images.length]);
+
+  const handleCloseLightbox = useCallback(() => {
+    setShowLightbox(false);
+  }, []);
+
+  const handleLightboxNavigate = useCallback((idx) => {
+    setActiveImageIndex(idx);
+  }, []);
+
   // Render states
   if (loading) return <Skeleton />;
   if (error || !product) return <NotFound navigate={navigate} orgId={orgId} />;
@@ -754,11 +1539,12 @@ export default function ProductDetailPage() {
         {/* Top section: Image + Product Info                                */}
         {/* ---------------------------------------------------------------- */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-          {/* Image Gallery */}
+          {/* Image Gallery with Lightbox */}
           <ImageGallery
             images={images}
             activeIndex={activeImageIndex}
             onSelect={setActiveImageIndex}
+            onOpenLightbox={handleOpenLightbox}
           />
 
           {/* Product Info */}
@@ -836,16 +1622,8 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Stock indicator */}
-            {inventory && (
-              <div>
-                <StockIndicator
-                  quantityOnHand={inventory.quantity_on_hand ?? inventory.quantity ?? 0}
-                  quantityReserved={inventory.quantity_reserved ?? 0}
-                  expectedDeliveryDate={inventory.expected_delivery_date ?? null}
-                />
-              </div>
-            )}
+            {/* Enhanced Stock + Availability */}
+            <StockAvailabilityDetail product={product} inventory={inventory} />
 
             {/* Action buttons */}
             <div className="flex flex-col gap-3 pt-2">
@@ -881,6 +1659,33 @@ export default function ProductDetailPage() {
               >
                 <MessageSquare className="w-4 h-4" />
                 Request Quote
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  toggleFavorite(productId);
+                }}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-80"
+                style={{
+                  backgroundColor: 'transparent',
+                  color: isFavorite(productId)
+                    ? '#f43f5e'
+                    : 'var(--ws-text)',
+                  border: isFavorite(productId)
+                    ? '1px solid rgba(244, 63, 94, 0.4)'
+                    : '1px solid var(--ws-border)',
+                }}
+              >
+                <Heart
+                  className="w-4 h-4"
+                  style={{
+                    fill: isFavorite(productId) ? '#f43f5e' : 'none',
+                    color: isFavorite(productId) ? '#f43f5e' : 'currentColor',
+                  }}
+                />
+                {isFavorite(productId) ? 'Remove from Favorites' : 'Add to Favorites'}
               </button>
             </div>
           </div>
@@ -924,7 +1729,7 @@ export default function ProductDetailPage() {
         )}
 
         {/* ---------------------------------------------------------------- */}
-        {/* Specifications                                                   */}
+        {/* Specifications (collapsible)                                     */}
         {/* ---------------------------------------------------------------- */}
         {specifications && (
           <div className="mt-8">
@@ -933,9 +1738,23 @@ export default function ProductDetailPage() {
         )}
 
         {/* ---------------------------------------------------------------- */}
-        {/* Bulk Pricing Table                                               */}
+        {/* Enhanced Pricing Tiers Table                                     */}
         {/* ---------------------------------------------------------------- */}
-        {bulkTiers.length > 0 && (
+        {bulkTiers.length > 1 && (
+          <div className="mt-8">
+            <EnhancedPricingTiersTable
+              tiers={bulkTiers}
+              currentQuantity={quantity}
+              currency={currency}
+              basePrice={basePrice}
+            />
+          </div>
+        )}
+
+        {/* ---------------------------------------------------------------- */}
+        {/* Bulk Pricing Table (original, shown for single-tier)             */}
+        {/* ---------------------------------------------------------------- */}
+        {bulkTiers.length === 1 && (
           <div className="mt-8">
             <h3
               className="text-base font-bold mb-4"
@@ -953,11 +1772,40 @@ export default function ProductDetailPage() {
             />
           </div>
         )}
+
+        {/* ---------------------------------------------------------------- */}
+        {/* Client Order History                                             */}
+        {/* ---------------------------------------------------------------- */}
+        <OrderHistory
+          productId={productId}
+          client={client}
+          addToCart={addToCart}
+          images={images}
+        />
+
+        {/* ---------------------------------------------------------------- */}
+        {/* Related Products                                                 */}
+        {/* ---------------------------------------------------------------- */}
+        <RelatedProducts
+          product={product}
+          currentProductId={productId}
+          orgId={orgId}
+        />
       </div>
 
       {/* Inquiry Modal */}
       {showInquiry && (
         <InquiryModal product={product} onClose={() => setShowInquiry(false)} />
+      )}
+
+      {/* Lightbox Overlay */}
+      {showLightbox && images.length > 0 && (
+        <Lightbox
+          images={images}
+          activeIndex={activeImageIndex}
+          onClose={handleCloseLightbox}
+          onNavigate={handleLightboxNavigate}
+        />
       )}
     </div>
   );

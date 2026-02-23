@@ -46,6 +46,7 @@ import { executeResearchAction } from './tools/research.ts';
 import { executeComposioAction, COMPOSIO_ACTIONS } from './tools/composio.ts';
 import { executeTalentAction } from './tools/talent.ts';
 import { executePhoneAction, PHONE_ACTIONS } from './tools/phone.ts';
+import { executeB2BAction } from './tools/b2b.ts';
 import { ActionContext, ActionResult, ChainedAction, ActionChainResult } from './tools/types.ts';
 
 // Import new improvement modules
@@ -260,6 +261,21 @@ const SENTINEL_ACTIONS = [
   'register_ai_system',
   'list_ai_systems',
   'get_compliance_status',
+];
+
+const B2B_ACTIONS = [
+  'b2b_list_orders',
+  'b2b_get_order',
+  'b2b_update_order_status',
+  'b2b_get_store_stats',
+  'b2b_list_clients',
+  'b2b_get_client',
+  'b2b_list_price_lists',
+  'b2b_update_price_list',
+  'b2b_list_inquiries',
+  'b2b_respond_inquiry',
+  'b2b_send_order_message',
+  'b2b_create_announcement',
 ];
 
 const CREATE_ACTIONS = [
@@ -664,6 +680,10 @@ async function executeActionCore(
 
   if (PHONE_ACTIONS.includes(actionName)) {
     return executePhoneAction(ctx, actionName, data);
+  }
+
+  if (B2B_ACTIONS.includes(actionName)) {
+    return executeB2BAction(ctx, actionName, data);
   }
 
   // Unknown action
@@ -1357,6 +1377,20 @@ You: "Found it! Philips OneBlade 360 Face. What kind of images do you need - cle
 - **register_ai_system**: Register an AI system for compliance
 - **list_ai_systems**: List registered AI systems
 - **get_compliance_status**: Get EU AI Act compliance overview
+
+### B2B WHOLESALE STORE (12 actions)
+- **b2b_list_orders**: List B2B orders (status?, clientId?, limit?)
+- **b2b_get_order**: Get order details (orderId)
+- **b2b_update_order_status**: Update order status (orderId, status: pending/confirmed/processing/shipped/delivered/cancelled)
+- **b2b_get_store_stats**: Get B2B store stats — orders, revenue, clients (period?: week/month/quarter)
+- **b2b_list_clients**: List portal clients (search?, limit?)
+- **b2b_get_client**: Get client details + order count (clientId)
+- **b2b_list_price_lists**: List B2B price lists (limit?)
+- **b2b_update_price_list**: Update price list (priceListId, name?, description?, status?)
+- **b2b_list_inquiries**: List B2B inquiries (status?, limit?)
+- **b2b_respond_inquiry**: Respond to inquiry (inquiryId, response, status?)
+- **b2b_send_order_message**: Send message on order (orderId, message)
+- **b2b_create_announcement**: Create store announcement (storeId, title, content, type?, priority?)
 
 ### CREATE/AI GENERATION (2 actions)
 - **generate_image**: Generate an AI image (product, marketing, creative)
@@ -3340,6 +3374,7 @@ Examples of BAD voice responses:
           ...RESEARCH_ACTIONS,
           ...TALENT_ACTIONS,
           ...PHONE_ACTIONS,
+          ...B2B_ACTIONS,
         ];
 
         // Enrich system prompt with entity context

@@ -1,22 +1,22 @@
 import React, { useState, useCallback, useEffect, memo } from 'react';
-import { ShoppingCart, Check, Package, ImageOff, Loader2 } from 'lucide-react';
+import { ShoppingCart, Check, Package, ImageOff, Loader2, Heart, Eye } from 'lucide-react';
 
 /**
  * Stock status derived from inventory data.
- * Returns label, dot color class, and whether the product is purchasable.
+ * Returns label, sublabel, dot color, and whether the product is purchasable.
  */
 function getStockStatus(inventory) {
-  if (!inventory) return { label: 'Checking...', color: 'var(--ws-muted)', purchasable: false };
+  if (!inventory) return { label: 'Checking...', sublabel: null, color: 'var(--ws-muted)', purchasable: false };
 
   const available = (inventory.quantity_on_hand ?? 0) - (inventory.quantity_reserved ?? 0);
 
   if (available <= 0) {
-    return { label: 'Out of Stock', color: '#ef4444', purchasable: false };
+    return { label: 'Out of Stock', sublabel: null, color: '#ef4444', purchasable: false };
   }
   if (available <= 10) {
-    return { label: 'Limited Stock', color: '#f59e0b', purchasable: true };
+    return { label: 'Low Stock', sublabel: `${available} left`, color: '#f59e0b', purchasable: true };
   }
-  return { label: 'In Stock', color: '#22c55e', purchasable: true };
+  return { label: 'In Stock', sublabel: null, color: '#22c55e', purchasable: true };
 }
 
 /**
@@ -35,25 +35,54 @@ function formatPrice(pricing) {
 }
 
 /**
+ * Format a restock date for display.
+ */
+function formatRestockDate(dateStr) {
+  if (!dateStr) return null;
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return null;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch {
+    return null;
+  }
+}
+
+/**
  * StockIndicator
  *
- * Small dot + text showing stock availability.
+ * Dot + text showing stock availability with improved detail.
+ * Shows quantity for low stock, restock date for out of stock.
  */
-function StockIndicator({ inventory }) {
-  const { label, color } = getStockStatus(inventory);
+function StockIndicator({ inventory, product }) {
+  const { label, sublabel, color, purchasable } = getStockStatus(inventory);
+  const restockDate = !purchasable ? formatRestockDate(product?.restock_date) : null;
 
   return (
-    <div className="flex items-center gap-1.5">
-      <span
-        className="w-2 h-2 rounded-full flex-shrink-0"
-        style={{ backgroundColor: color }}
-      />
-      <span
-        className="text-xs font-medium"
-        style={{ color: 'var(--ws-muted)' }}
-      >
-        {label}
-      </span>
+    <div className="flex flex-col gap-0.5">
+      <div className="flex items-center gap-1.5">
+        <span
+          className="w-2 h-2 rounded-full flex-shrink-0"
+          style={{ backgroundColor: color }}
+        />
+        <span
+          className="text-xs font-medium"
+          style={{ color: 'var(--ws-muted)' }}
+        >
+          {label}
+          {sublabel && (
+            <span style={{ color }}> ({sublabel})</span>
+          )}
+        </span>
+      </div>
+      {restockDate && (
+        <span
+          className="text-[10px] ml-3.5"
+          style={{ color: 'var(--ws-muted)' }}
+        >
+          Restocking: {restockDate}
+        </span>
+      )}
     </div>
   );
 }
@@ -194,12 +223,89 @@ function ImagePlaceholder({ size }) {
 }
 
 /**
+ * FavoriteButton
+ *
+ * Heart icon toggle for favoriting a product.
+ * Prevents event bubbling to avoid triggering card navigation.
+ */
+function FavoriteButton({ isFavorite, onToggle, productId, className = '' }) {
+  const handleClick = useCallback(
+    (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      onToggle?.(productId);
+    },
+    [onToggle, productId],
+  );
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 ${className}`}
+      style={{
+        backgroundColor: isFavorite ? 'rgba(244, 63, 94, 0.15)' : 'rgba(0, 0, 0, 0.45)',
+        backdropFilter: 'blur(4px)',
+      }}
+      aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+    >
+      <Heart
+        className="w-4 h-4 transition-colors duration-200"
+        style={{
+          color: isFavorite ? '#f43f5e' : 'var(--ws-muted)',
+          fill: isFavorite ? '#f43f5e' : 'none',
+          opacity: isFavorite ? 1 : 0.6,
+        }}
+      />
+    </button>
+  );
+}
+
+/**
+ * QuickViewButton
+ *
+ * Eye icon button for opening the quick view modal.
+ * Prevents event bubbling to avoid triggering card navigation.
+ */
+function QuickViewButton({ onQuickView, product, className = '' }) {
+  const handleClick = useCallback(
+    (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      onQuickView?.(product);
+    },
+    [onQuickView, product],
+  );
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 ${className}`}
+      style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+        backdropFilter: 'blur(4px)',
+      }}
+      aria-label="Quick view"
+    >
+      <Eye
+        className="w-4 h-4 transition-colors duration-200"
+        style={{
+          color: 'var(--ws-muted)',
+          opacity: 0.6,
+        }}
+      />
+    </button>
+  );
+}
+
+/**
  * GridCard
  *
  * Vertical product card for grid layout.
  * Image on top, product info and actions below.
  */
-function GridCard({ product, pricing, inventory, stock, onAddToCart, onNavigate, compact, adding, added }) {
+function GridCard({ product, pricing, inventory, stock, onAddToCart, onNavigate, compact, adding, added, isFavorite, onToggleFavorite, onQuickView }) {
   return (
     <div
       onClick={() => onNavigate(product.id)}
@@ -240,6 +346,25 @@ function GridCard({ product, pricing, inventory, stock, onAddToCart, onNavigate,
             {product.category_name}
           </span>
         )}
+
+        {/* Top-right action buttons */}
+        <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5">
+          {onToggleFavorite && (
+            <FavoriteButton
+              isFavorite={isFavorite}
+              onToggle={onToggleFavorite}
+              productId={product.id}
+              className={isFavorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
+            />
+          )}
+          {onQuickView && (
+            <QuickViewButton
+              onQuickView={onQuickView}
+              product={product}
+              className="opacity-0 group-hover:opacity-100"
+            />
+          )}
+        </div>
       </div>
 
       {/* Details */}
@@ -267,7 +392,7 @@ function GridCard({ product, pricing, inventory, stock, onAddToCart, onNavigate,
 
         {/* Stock + Add to Cart */}
         <div className="flex items-center justify-between gap-3 mt-2">
-          <StockIndicator inventory={inventory} />
+          <StockIndicator inventory={inventory} product={product} />
         </div>
 
         <AddToCartButton
@@ -288,7 +413,7 @@ function GridCard({ product, pricing, inventory, stock, onAddToCart, onNavigate,
  * Horizontal product card for list layout.
  * Image left, info center, price and actions right.
  */
-function ListCard({ product, pricing, inventory, stock, onAddToCart, onNavigate, compact, adding, added }) {
+function ListCard({ product, pricing, inventory, stock, onAddToCart, onNavigate, compact, adding, added, isFavorite, onToggleFavorite, onQuickView }) {
   return (
     <div
       onClick={() => onNavigate(product.id)}
@@ -352,10 +477,29 @@ function ListCard({ product, pricing, inventory, stock, onAddToCart, onNavigate,
         )}
       </div>
 
+      {/* Action buttons: Quick View + Favorite */}
+      <div className="flex-shrink-0 flex items-center gap-1.5">
+        {onQuickView && (
+          <QuickViewButton
+            onQuickView={onQuickView}
+            product={product}
+            className={`opacity-0 group-hover:opacity-100`}
+          />
+        )}
+        {onToggleFavorite && (
+          <FavoriteButton
+            isFavorite={isFavorite}
+            onToggle={onToggleFavorite}
+            productId={product.id}
+            className={isFavorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
+          />
+        )}
+      </div>
+
       {/* Right: price, stock, add to cart */}
       <div className="flex-shrink-0 flex flex-col items-end gap-2">
         <PriceDisplay pricing={pricing} compact />
-        <StockIndicator inventory={inventory} />
+        <StockIndicator inventory={inventory} product={product} />
         <AddToCartButton
           disabled={!stock.purchasable}
           adding={adding}
@@ -383,6 +527,9 @@ const B2BProductCard = memo(function B2BProductCard({
   onNavigate,
   layout = 'grid',
   compact = false,
+  isFavorite = false,
+  onToggleFavorite,
+  onQuickView,
 }) {
   const [addingToCart, setAddingToCart] = useState(false);
   const [added, setAdded] = useState(false);
@@ -422,6 +569,9 @@ const B2BProductCard = memo(function B2BProductCard({
     compact,
     adding: addingToCart,
     added,
+    isFavorite,
+    onToggleFavorite,
+    onQuickView,
   };
 
   if (layout === 'list') {

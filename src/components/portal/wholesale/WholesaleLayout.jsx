@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useParams } from 'react-router-dom';
 import {
   Menu,
   X,
@@ -7,17 +7,25 @@ import {
   ShoppingCart,
   User,
   Send,
+  LayoutDashboard,
+  ClipboardList,
+  FileText,
 } from 'lucide-react';
 import { useWholesale } from './WholesaleProvider';
+import NotificationCenter from './notifications/NotificationCenter';
+import AnnouncementsBanner from './AnnouncementsBanner';
 
 // ---------------------------------------------------------------------------
 // Navigation Bar
 // ---------------------------------------------------------------------------
 
 function NavBar({ config }) {
-  const { cartCount } = useWholesale();
+  const { cartCount, isAuthenticated } = useWholesale();
+  const { org } = useParams();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const basePath = `/portal/${org}/shop`;
 
   const nav = config?.navigation ?? {};
   const items = nav.items ?? [];
@@ -29,20 +37,37 @@ function NavBar({ config }) {
   const companyName = config?.company?.name || config?.name || 'Store';
   const logoUrl = config?.company?.logo || config?.logo;
 
+  // Resolve a nav href to a full path. Config items may store relative
+  // paths like "/catalog" — prefix with basePath when they don't already
+  // include the portal prefix.
+  const resolveHref = useCallback(
+    (href) => {
+      if (!href || href === '#') return href;
+      if (href.startsWith('/portal/')) return href;
+      // Ensure single leading slash then prepend basePath
+      const clean = href.startsWith('/') ? href : `/${href}`;
+      return `${basePath}${clean}`;
+    },
+    [basePath],
+  );
+
   const isActive = useCallback(
     (href) => {
-      if (!href) return false;
-      if (href === '/' || href === '') return location.pathname === '/';
-      return location.pathname.startsWith(href);
+      if (!href || href === '#') return false;
+      const resolved = href.startsWith('/portal/') ? href : resolveHref(href);
+      if (resolved === basePath || resolved === `${basePath}/`) {
+        return location.pathname === basePath || location.pathname === `${basePath}/`;
+      }
+      return location.pathname.startsWith(resolved);
     },
-    [location.pathname],
+    [location.pathname, basePath, resolveHref],
   );
 
   const closeMobile = () => setMobileMenuOpen(false);
 
   // ---- Logo element ----
   const Logo = (
-    <Link to="/" className="flex items-center gap-2 shrink-0" onClick={closeMobile}>
+    <Link to={basePath} className="flex items-center gap-2 shrink-0" onClick={closeMobile}>
       {logoUrl ? (
         <img src={logoUrl} alt={companyName} className="h-8 w-auto" />
       ) : (
@@ -72,11 +97,12 @@ function NavBar({ config }) {
           {/* Desktop nav items */}
           <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
             {items.map((item) => {
+              const href = resolveHref(item.href);
               const active = isActive(item.href);
               return (
                 <Link
                   key={item.id}
-                  to={item.href || '#'}
+                  to={href || '#'}
                   className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
                     active
                       ? 'bg-white/[0.08]'
@@ -92,6 +118,36 @@ function NavBar({ config }) {
                 </Link>
               );
             })}
+
+            {isAuthenticated && (
+              <>
+                {[
+                  { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+                  { href: '/orders', label: 'Orders', Icon: ClipboardList },
+                  { href: '/templates', label: 'Templates', Icon: FileText },
+                ].map(({ href, label, Icon }) => {
+                  const resolved = resolveHref(href);
+                  const active = isActive(href);
+                  return (
+                    <Link
+                      key={href}
+                      to={resolved}
+                      className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                        active ? 'bg-white/[0.08]' : 'hover:bg-white/[0.04]'
+                      }`}
+                      style={{
+                        color: active
+                          ? 'var(--ws-primary)'
+                          : 'var(--ws-muted, rgba(255,255,255,0.6))',
+                      }}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      {label}
+                    </Link>
+                  );
+                })}
+              </>
+            )}
           </nav>
 
           {/* Right side icons */}
@@ -106,9 +162,11 @@ function NavBar({ config }) {
               </button>
             )}
 
+            {isAuthenticated && <NotificationCenter />}
+
             {showCart && (
               <Link
-                to="/cart"
+                to={`${basePath}/cart`}
                 className="relative p-2 rounded-lg transition-colors hover:bg-white/[0.06]"
                 style={{ color: 'var(--ws-muted, rgba(255,255,255,0.6))' }}
                 aria-label="Cart"
@@ -130,7 +188,7 @@ function NavBar({ config }) {
 
             {showAccount && (
               <Link
-                to="/account"
+                to={`${basePath}/account`}
                 className="p-2 rounded-lg transition-colors hover:bg-white/[0.06]"
                 style={{ color: 'var(--ws-muted, rgba(255,255,255,0.6))' }}
                 aria-label="Account"
@@ -167,11 +225,12 @@ function NavBar({ config }) {
         >
           <nav className="px-4 py-3 space-y-1">
             {items.map((item) => {
+              const href = resolveHref(item.href);
               const active = isActive(item.href);
               return (
                 <Link
                   key={item.id}
-                  to={item.href || '#'}
+                  to={href || '#'}
                   onClick={closeMobile}
                   className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     active ? 'bg-white/[0.08]' : 'hover:bg-white/[0.04]'
@@ -186,6 +245,41 @@ function NavBar({ config }) {
                 </Link>
               );
             })}
+
+            {isAuthenticated && (
+              <>
+                <div
+                  className="my-2 border-t"
+                  style={{ borderColor: 'var(--ws-border, rgba(255,255,255,0.08))' }}
+                />
+                {[
+                  { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+                  { href: '/orders', label: 'Orders', Icon: ClipboardList },
+                  { href: '/templates', label: 'Templates', Icon: FileText },
+                ].map(({ href, label, Icon }) => {
+                  const resolved = resolveHref(href);
+                  const active = isActive(href);
+                  return (
+                    <Link
+                      key={href}
+                      to={resolved}
+                      onClick={closeMobile}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                        active ? 'bg-white/[0.08]' : 'hover:bg-white/[0.04]'
+                      }`}
+                      style={{
+                        color: active
+                          ? 'var(--ws-primary)'
+                          : 'var(--ws-muted, rgba(255,255,255,0.6))',
+                      }}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {label}
+                    </Link>
+                  );
+                })}
+              </>
+            )}
           </nav>
         </div>
       )}
@@ -498,6 +592,7 @@ export default function WholesaleLayout({ children }) {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--ws-bg)' }}>
       <NavBar config={config} />
+      <AnnouncementsBanner />
 
       <main className="flex-1">
         {children || <Outlet />}

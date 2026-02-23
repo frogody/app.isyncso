@@ -16,6 +16,7 @@ import { useWholesale } from '../WholesaleProvider';
 import OrderStatusBadge from './OrderStatusBadge';
 import ReorderButton from './ReorderButton';
 import ShipmentTrackingMap from './ShipmentTrackingMap';
+import OrderMessages from './OrderMessages';
 
 /**
  * Format a number as EUR currency.
@@ -161,7 +162,7 @@ function StatusTimeline({ status }) {
 export default function OrderDetailPage() {
   const navigate = useNavigate();
   const { org, orderId } = useParams();
-  const { orgId, addToCart } = useWholesale();
+  const { orgId, addToCart, client } = useWholesale();
 
   const [order, setOrder] = useState(null);
   const [lineItems, setLineItems] = useState([]);
@@ -201,7 +202,7 @@ export default function OrderDetailPage() {
         const { data: itemsData, error: itemsError } = await supabase
           .from('b2b_order_items')
           .select('*, products(*)')
-          .eq('order_id', orderId)
+          .eq('b2b_order_id', orderId)
           .order('created_at', { ascending: true });
 
         if (cancelled) return;
@@ -602,6 +603,15 @@ export default function OrderDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* Order Messages */}
+          {client?.id && (
+            <OrderMessages
+              orderId={orderId}
+              clientId={client.id}
+              clientName={client.company_name || client.name}
+            />
+          )}
 
           {/* Shipping address */}
           {shippingAddress && (

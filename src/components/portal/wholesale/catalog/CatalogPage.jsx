@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Search, Grid3X3, List, ChevronLeft, ChevronRight, Package } from 'lucide-react';
+import { Search, Grid3X3, List, ChevronLeft, ChevronRight, Package, Heart, X, ShoppingCart, Minus, Plus, ExternalLink } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '@/api/supabaseClient';
 import { useWholesale } from '../WholesaleProvider';
 import B2BProductCard from './B2BProductCard';
@@ -12,6 +13,8 @@ import { getBulkClientPrices } from '@/lib/db/queries/b2b';
 // ---------------------------------------------------------------------------
 
 const PRODUCTS_PER_PAGE = 12;
+const SEARCH_DEBOUNCE_MS = 300;
+const MAX_RECENTLY_VIEWED = 10;
 
 const SORT_OPTIONS = [
   { value: 'name_asc', label: 'Name A-Z' },
@@ -20,6 +23,38 @@ const SORT_OPTIONS = [
   { value: 'price_desc', label: 'Price: High to Low' },
   { value: 'newest', label: 'Newest First' },
 ];
+
+// ---------------------------------------------------------------------------
+// Recently Viewed helpers (sessionStorage)
+// ---------------------------------------------------------------------------
+
+function getRecentlyViewedKey(orgId) {
+  return `b2b_recently_viewed_${orgId || 'default'}`;
+}
+
+function getRecentlyViewedIds(orgId) {
+  try {
+    const raw = sessionStorage.getItem(getRecentlyViewedKey(orgId));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function addRecentlyViewed(orgId, productId) {
+  try {
+    const ids = getRecentlyViewedIds(orgId);
+    const filtered = ids.filter((id) => id !== productId);
+    filtered.unshift(productId);
+    const trimmed = filtered.slice(0, MAX_RECENTLY_VIEWED);
+    sessionStorage.setItem(getRecentlyViewedKey(orgId), JSON.stringify(trimmed));
+    return trimmed;
+  } catch {
+    return [];
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Skeleton Grid
@@ -183,13 +218,393 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
 }
 
 // ---------------------------------------------------------------------------
+// Recently Viewed Strip
+// ---------------------------------------------------------------------------
+
+function RecentlyViewedStrip({ products, onNavigate }) {
+  if (!products || products.length === 0) return null;
+
+  const formatPrice = (product) => {
+    const price = product.b2b_price ?? product.wholesale_price ?? product.price;
+    if (price == null) return null;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 2,
+    }).format(price);
+  };
+
+  return (
+    <div
+      className="mb-6 rounded-xl p-3"
+      style={{
+        backgroundColor: 'var(--ws-surface)',
+        border: '1px solid var(--ws-border)',
+      }}
+    >
+      <p
+        className="text-xs font-semibold uppercase tracking-wider mb-2.5 px-1"
+        style={{ color: 'var(--ws-muted)' }}
+      >
+        Recently Viewed
+      </p>
+      <div className="overflow-x-auto flex gap-3 pb-1" style={{ scrollbarWidth: 'thin' }}>
+        {products.map((product) => (
+          <button
+            key={product.id}
+            onClick={() => onNavigate(product.id)}
+            className="flex-shrink-0 flex items-center gap-2.5 rounded-lg p-2 transition-all duration-150 hover:opacity-80 cursor-pointer"
+            style={{
+              backgroundColor: 'var(--ws-bg)',
+              border: '1px solid var(--ws-border)',
+              minWidth: '180px',
+              maxWidth: '220px',
+            }}
+          >
+            <div
+              className="flex-shrink-0 w-12 h-12 rounded-md overflow-hidden flex items-center justify-center"
+              style={{ backgroundColor: 'var(--ws-surface)' }}
+            >
+              {product.featured_image ? (
+                <img
+                  src={product.featured_image}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <Package className="w-5 h-5" style={{ color: 'var(--ws-muted)', opacity: 0.4 }} />
+              )}
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p
+                className="text-xs font-medium truncate leading-snug"
+                style={{ color: 'var(--ws-text)' }}
+              >
+                {product.name}
+              </p>
+              {formatPrice(product) && (
+                <p
+                  className="text-[11px] font-semibold mt-0.5"
+                  style={{ color: 'var(--ws-primary)' }}
+                >
+                  {formatPrice(product)}
+                </p>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Quick View Modal
+// ---------------------------------------------------------------------------
+
+function QuickViewModal({ product, pricing, inventory, onClose, onAddToCart, onNavigate, orgSlug }) {
+  const [quantity, setQuantity] = useState(1);
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+
+  // Reset added state after 2 seconds
+  useEffect(() => {
+    if (!added) return;
+    const timer = setTimeout(() => setAdded(false), 2000);
+    return () => clearTimeout(timer);
+  }, [added]);
+
+  // Derive stock status
+  const available = inventory
+    ? (inventory.quantity_on_hand ?? 0) - (inventory.quantity_reserved ?? 0)
+    : 0;
+
+  const stockStatus = !inventory
+    ? { label: 'Checking...', color: 'var(--ws-muted)', purchasable: false }
+    : available <= 0
+      ? { label: 'Out of Stock', color: '#ef4444', purchasable: false }
+      : available <= 10
+        ? { label: `Low Stock (${available} left)`, color: '#f59e0b', purchasable: true }
+        : { label: 'In Stock', color: '#22c55e', purchasable: true };
+
+  const formatPrice = (p) => {
+    const unitPrice = p?.unit_price;
+    if (unitPrice == null) return null;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 2,
+    }).format(unitPrice);
+  };
+
+  const price = formatPrice(pricing);
+
+  const handleAddToCart = useCallback(async () => {
+    if (!stockStatus.purchasable || adding || added) return;
+    setAdding(true);
+    try {
+      await Promise.resolve(onAddToCart(product.id, quantity));
+      setAdded(true);
+    } catch {
+      // parent handles toast
+    } finally {
+      setAdding(false);
+    }
+  }, [product.id, quantity, onAddToCart, stockStatus.purchasable, adding, added]);
+
+  const handleViewDetails = useCallback(() => {
+    onClose();
+    onNavigate(product.id);
+  }, [onClose, onNavigate, product.id]);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+
+  const description = product.description
+    ? product.description.length > 200
+      ? product.description.slice(0, 200) + '...'
+      : product.description
+    : null;
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      {/* Backdrop */}
+      <motion.div
+        className="absolute inset-0"
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}
+        onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      />
+
+      {/* Modal */}
+      <motion.div
+        className="relative w-full max-w-2xl rounded-2xl overflow-hidden"
+        style={{
+          backgroundColor: 'var(--ws-surface)',
+          border: '1px solid var(--ws-border)',
+        }}
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 z-10 flex items-center justify-center w-8 h-8 rounded-full transition-colors duration-150"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            color: 'var(--ws-text)',
+            backdropFilter: 'blur(4px)',
+          }}
+          aria-label="Close quick view"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        <div className="flex flex-col sm:flex-row">
+          {/* Image */}
+          <div
+            className="sm:w-1/2 aspect-square flex items-center justify-center"
+            style={{ backgroundColor: 'var(--ws-bg)' }}
+          >
+            {product.featured_image ? (
+              <img
+                src={product.featured_image}
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-2">
+                <Package className="w-16 h-16" style={{ color: 'var(--ws-muted)', opacity: 0.3 }} />
+                <span className="text-xs" style={{ color: 'var(--ws-muted)', opacity: 0.3 }}>
+                  No image
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Info */}
+          <div className="sm:w-1/2 p-5 flex flex-col gap-3">
+            {/* SKU */}
+            {product.sku && (
+              <p
+                className="text-[11px] font-medium uppercase tracking-wider"
+                style={{ color: 'var(--ws-muted)' }}
+              >
+                {product.sku}
+              </p>
+            )}
+
+            {/* Name */}
+            <h2
+              className="text-lg font-bold leading-snug"
+              style={{ color: 'var(--ws-text)', fontFamily: 'var(--ws-heading-font)' }}
+            >
+              {product.name}
+            </h2>
+
+            {/* Price */}
+            {price && (
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-bold" style={{ color: 'var(--ws-primary)' }}>
+                  {price}
+                </span>
+                {pricing?.discount_percent > 0 && (
+                  <span
+                    className="text-xs font-medium px-1.5 py-0.5 rounded"
+                    style={{
+                      backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                      color: '#22c55e',
+                    }}
+                  >
+                    -{pricing.discount_percent}%
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Stock */}
+            <div className="flex items-center gap-1.5">
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: stockStatus.color }}
+              />
+              <span className="text-xs font-medium" style={{ color: stockStatus.color }}>
+                {stockStatus.label}
+              </span>
+            </div>
+            {!stockStatus.purchasable && product.restock_date && (
+              <p className="text-xs" style={{ color: 'var(--ws-muted)' }}>
+                Restocking: {new Date(product.restock_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </p>
+            )}
+
+            {/* Description */}
+            {description && (
+              <p
+                className="text-sm leading-relaxed"
+                style={{ color: 'var(--ws-muted)' }}
+              >
+                {description}
+              </p>
+            )}
+
+            {/* Spacer */}
+            <div className="flex-1" />
+
+            {/* Quantity selector + Add to Cart */}
+            <div className="flex items-center gap-3 mt-2">
+              <div
+                className="flex items-center rounded-lg overflow-hidden"
+                style={{ border: '1px solid var(--ws-border)' }}
+              >
+                <button
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  disabled={quantity <= 1}
+                  className="flex items-center justify-center w-9 h-9 transition-colors duration-150 disabled:opacity-30"
+                  style={{
+                    backgroundColor: 'var(--ws-bg)',
+                    color: 'var(--ws-text)',
+                  }}
+                  aria-label="Decrease quantity"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <span
+                  className="flex items-center justify-center w-10 h-9 text-sm font-semibold"
+                  style={{
+                    backgroundColor: 'var(--ws-bg)',
+                    color: 'var(--ws-text)',
+                    borderLeft: '1px solid var(--ws-border)',
+                    borderRight: '1px solid var(--ws-border)',
+                  }}
+                >
+                  {quantity}
+                </span>
+                <button
+                  onClick={() => setQuantity((q) => q + 1)}
+                  className="flex items-center justify-center w-9 h-9 transition-colors duration-150"
+                  style={{
+                    backgroundColor: 'var(--ws-bg)',
+                    color: 'var(--ws-text)',
+                  }}
+                  aria-label="Increase quantity"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <button
+                onClick={handleAddToCart}
+                disabled={!stockStatus.purchasable || adding}
+                className={`
+                  flex-1 flex items-center justify-center gap-2 rounded-lg text-sm font-semibold py-2.5 px-4
+                  transition-all duration-200
+                  ${(!stockStatus.purchasable || adding) ? 'opacity-40 cursor-not-allowed' : 'hover:opacity-90 cursor-pointer'}
+                `}
+                style={{
+                  backgroundColor: added ? '#22c55e' : 'var(--ws-primary)',
+                  color: 'var(--ws-bg, #000)',
+                }}
+              >
+                {added ? (
+                  <>
+                    <span>Added!</span>
+                  </>
+                ) : adding ? (
+                  <>
+                    <span>Adding...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="w-4 h-4" />
+                    <span>Add to Cart</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* View Full Details link */}
+            <button
+              onClick={handleViewDetails}
+              className="flex items-center justify-center gap-1.5 text-sm font-medium py-2 transition-colors duration-150 hover:opacity-80 cursor-pointer"
+              style={{ color: 'var(--ws-primary)' }}
+            >
+              <span>View Full Details</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // CatalogPage
 // ---------------------------------------------------------------------------
 
 export default function CatalogPage() {
   const navigate = useNavigate();
   const { org: orgSlug } = useParams();
-  const { config, addToCart, orgId, client } = useWholesale();
+  const { config, addToCart, orgId, client, isFavorite, toggleFavorite } = useWholesale();
 
   // Data state
   const [products, setProducts] = useState([]);
@@ -200,14 +615,48 @@ export default function CatalogPage() {
   const [clientPrices, setClientPrices] = useState({});
 
   // Filter / view state
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [sortBy, setSortBy] = useState('name_asc');
   const [layout, setLayout] = useState('grid');
   const [page, setPage] = useState(1);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
+  // Quick view modal state
+  const [quickViewProduct, setQuickViewProduct] = useState(null);
+
+  // Recently viewed state
+  const [recentlyViewedIds, setRecentlyViewedIds] = useState([]);
 
   // Resolve organization ID -- orgSlug from URL params is the org ID in this project
   const organizationId = orgId || orgSlug;
+
+  // ---------------------------------------------------------------------------
+  // Search Debounce (300ms)
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Reset page when debounced search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  // ---------------------------------------------------------------------------
+  // Load recently viewed IDs from sessionStorage on mount
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!organizationId) return;
+    setRecentlyViewedIds(getRecentlyViewedIds(organizationId));
+  }, [organizationId]);
 
   // ---------------------------------------------------------------------------
   // Fetch products
@@ -336,15 +785,32 @@ export default function CatalogPage() {
   }, [categories, products]);
 
   // ---------------------------------------------------------------------------
+  // Derived: recently viewed products (resolved from IDs + loaded products)
+  // ---------------------------------------------------------------------------
+
+  const recentlyViewedProducts = useMemo(() => {
+    if (recentlyViewedIds.length === 0 || products.length === 0) return [];
+    const productMap = new Map(products.map((p) => [p.id, p]));
+    return recentlyViewedIds
+      .map((id) => productMap.get(id))
+      .filter(Boolean);
+  }, [recentlyViewedIds, products]);
+
+  // ---------------------------------------------------------------------------
   // Derived: filtered and sorted products
   // ---------------------------------------------------------------------------
 
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
-    // Search filter
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
+    // Favorites filter
+    if (showFavoritesOnly) {
+      result = result.filter((p) => isFavorite(p.id));
+    }
+
+    // Search filter -- use debounced search
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase().trim();
       result = result.filter(
         (p) =>
           (p.name && p.name.toLowerCase().includes(q)) ||
@@ -381,7 +847,7 @@ export default function CatalogPage() {
     });
 
     return result;
-  }, [products, searchQuery, selectedCategories, sortBy]);
+  }, [products, debouncedSearch, selectedCategories, sortBy, showFavoritesOnly, isFavorite]);
 
   // ---------------------------------------------------------------------------
   // Pagination
@@ -405,9 +871,12 @@ export default function CatalogPage() {
 
   const handleNavigate = useCallback(
     (productId) => {
+      // Add to recently viewed before navigating
+      const updated = addRecentlyViewed(organizationId, productId);
+      setRecentlyViewedIds(updated);
       navigate(`/portal/${orgSlug}/shop/product/${productId}`);
     },
-    [navigate, orgSlug],
+    [navigate, orgSlug, organizationId],
   );
 
   const handleAddToCart = useCallback(
@@ -421,14 +890,15 @@ export default function CatalogPage() {
   );
 
   const handleClearFilters = useCallback(() => {
-    setSearchQuery('');
+    setSearchInput('');
+    setDebouncedSearch('');
     setSelectedCategories([]);
+    setShowFavoritesOnly(false);
     setPage(1);
   }, []);
 
   const handleSearchChange = useCallback((e) => {
-    setSearchQuery(e.target.value);
-    setPage(1);
+    setSearchInput(e.target.value);
   }, []);
 
   const handleCategoryChange = useCallback((next) => {
@@ -443,6 +913,14 @@ export default function CatalogPage() {
   const handlePageChange = useCallback((newPage) => {
     setPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const handleQuickView = useCallback((product) => {
+    setQuickViewProduct(product);
+  }, []);
+
+  const handleCloseQuickView = useCallback(() => {
+    setQuickViewProduct(null);
   }, []);
 
   // Helpers for B2BProductCard props
@@ -463,7 +941,7 @@ export default function CatalogPage() {
     return product.inventory?.[0] || null;
   }, []);
 
-  const hasFilters = searchQuery.trim() !== '' || selectedCategories.length > 0;
+  const hasFilters = debouncedSearch.trim() !== '' || selectedCategories.length > 0 || showFavoritesOnly;
 
   // ---------------------------------------------------------------------------
   // Render
@@ -484,7 +962,7 @@ export default function CatalogPage() {
           />
           <input
             type="text"
-            value={searchQuery}
+            value={searchInput}
             onChange={handleSearchChange}
             placeholder="Search products..."
             className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm outline-none transition-colors duration-150"
@@ -515,6 +993,33 @@ export default function CatalogPage() {
               </option>
             ))}
           </select>
+
+          {/* Favorites toggle */}
+          <button
+            onClick={() => {
+              setShowFavoritesOnly((prev) => !prev);
+              setPage(1);
+            }}
+            className="flex items-center justify-center w-10 h-10 rounded-lg transition-colors duration-150"
+            style={{
+              backgroundColor: showFavoritesOnly
+                ? 'var(--ws-primary)'
+                : 'var(--ws-surface)',
+              color: showFavoritesOnly ? 'var(--ws-bg)' : 'var(--ws-muted)',
+              border: showFavoritesOnly
+                ? '1px solid var(--ws-primary)'
+                : '1px solid var(--ws-border)',
+            }}
+            aria-label={showFavoritesOnly ? 'Show all products' : 'Show favorites only'}
+            title={showFavoritesOnly ? 'Show all products' : 'Show favorites only'}
+          >
+            <Heart
+              className="w-4 h-4"
+              style={{
+                fill: showFavoritesOnly ? 'currentColor' : 'none',
+              }}
+            />
+          </button>
 
           {/* Layout toggle */}
           <div
@@ -567,6 +1072,14 @@ export default function CatalogPage() {
         </div>
       )}
 
+      {/* ---- Recently Viewed Strip ---- */}
+      {!loading && (
+        <RecentlyViewedStrip
+          products={recentlyViewedProducts}
+          onNavigate={handleNavigate}
+        />
+      )}
+
       {/* ---- Results count ---- */}
       {!loading && filteredProducts.length > 0 && (
         <p
@@ -594,6 +1107,9 @@ export default function CatalogPage() {
               onAddToCart={handleAddToCart}
               onNavigate={handleNavigate}
               layout="grid"
+              isFavorite={isFavorite(product.id)}
+              onToggleFavorite={toggleFavorite}
+              onQuickView={handleQuickView}
             />
           ))}
         </div>
@@ -608,6 +1124,9 @@ export default function CatalogPage() {
               onAddToCart={handleAddToCart}
               onNavigate={handleNavigate}
               layout="list"
+              isFavorite={isFavorite(product.id)}
+              onToggleFavorite={toggleFavorite}
+              onQuickView={handleQuickView}
             />
           ))}
         </div>
@@ -621,6 +1140,21 @@ export default function CatalogPage() {
           onPageChange={handlePageChange}
         />
       )}
+
+      {/* ---- Quick View Modal ---- */}
+      <AnimatePresence>
+        {quickViewProduct && (
+          <QuickViewModal
+            product={quickViewProduct}
+            pricing={getPricing(quickViewProduct)}
+            inventory={getInventory(quickViewProduct)}
+            onClose={handleCloseQuickView}
+            onAddToCart={handleAddToCart}
+            onNavigate={handleNavigate}
+            orgSlug={orgSlug}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

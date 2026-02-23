@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
+import { useNavigate, useParams } from 'react-router-dom';
 import { ShoppingBag, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/api/supabaseClient';
@@ -400,8 +400,10 @@ const CARD_COMPONENTS = {
 /* ------------------------------------------------------------------ */
 
 export default function FeaturedProductsRenderer({ section, theme }) {
-  const { addToCart, orgId, companyId: ctxCompanyId, goToProduct } = useWholesale();
-  const resolvedCompanyId = ctxCompanyId || orgId;
+  const { addToCart, orgId } = useWholesale();
+  const { org } = useParams();
+  const navigate = useNavigate();
+  const resolvedCompanyId = orgId;
 
   const {
     heading = '',
@@ -476,7 +478,10 @@ export default function FeaturedProductsRenderer({ section, theme }) {
   const gridClasses = getGridClasses(columns);
 
   const handleNavigate = (productId) => {
-    goToProduct?.(productId);
+    const resolvedOrg = org || orgId;
+    if (resolvedOrg && productId) {
+      navigate(`/portal/${resolvedOrg}/shop/product/${productId}`);
+    }
   };
 
   const handleAddToCart = (product) => {

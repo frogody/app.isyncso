@@ -1,6 +1,6 @@
 import React, { useMemo, memo } from 'react';
 import { ShoppingBag, ArrowRight, ShoppingCart } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 
 const BTW_RATE = 0.21;
 
@@ -27,6 +27,8 @@ function formatCurrency(value) {
  *   onCheckout - () => void  callback for the checkout button
  */
 const CartSummary = memo(function CartSummary({ items = [], onCheckout }) {
+  const { org } = useParams();
+  const catalogPath = `/portal/${org}/shop/catalog`;
   const subtotal = useMemo(() => {
     return items.reduce((sum, item) => {
       return sum + (Number(item.price) || 0) * (item.quantity || 0);
@@ -76,7 +78,7 @@ const CartSummary = memo(function CartSummary({ items = [], onCheckout }) {
           Add products from the catalog to get started.
         </p>
         <Link
-          to="/catalog"
+          to={catalogPath}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors hover:opacity-90"
           style={{
             backgroundColor: 'var(--ws-primary)',
@@ -208,7 +210,7 @@ const CartSummary = memo(function CartSummary({ items = [], onCheckout }) {
 
         {/* Continue shopping link */}
         <Link
-          to="/catalog"
+          to={catalogPath}
           className="flex items-center justify-center gap-1.5 w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-white/[0.04]"
           style={{ color: 'var(--ws-muted)' }}
         >

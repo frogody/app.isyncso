@@ -437,6 +437,8 @@ import WholesaleOrders from "./portal/WholesaleOrders";
 import WholesaleOrderDetail from "./portal/WholesaleOrderDetail";
 import WholesaleInquiries from "./portal/WholesaleInquiries";
 import WholesaleAccount from "./portal/WholesaleAccount";
+import WholesaleTemplates from "./portal/WholesaleTemplates";
+import WholesaleDashboard from "./portal/WholesaleDashboard";
 
 import B2BOrderDetail from "@/components/b2b-admin/B2BOrderDetail";
 import B2BCatalogManager from "@/components/b2b-admin/B2BCatalogManager";
@@ -933,6 +935,8 @@ function PagesContent() {
                     <Route path="/portal/:org/shop/orders/:orderId" element={<WholesaleOrderDetail />} />
                     <Route path="/portal/:org/shop/inquiries" element={<WholesaleInquiries />} />
                     <Route path="/portal/:org/shop/account" element={<WholesaleAccount />} />
+                    <Route path="/portal/:org/shop/templates" element={<WholesaleTemplates />} />
+                    <Route path="/portal/:org/shop/dashboard" element={<WholesaleDashboard />} />
 
                     {/* Organization-scoped routes */}
                     <Route path="/portal/:org/login" element={<ClientLogin />} />

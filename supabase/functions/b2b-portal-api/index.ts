@@ -215,6 +215,596 @@ serve(async (req: Request) => {
     }
 
     // -----------------------------------------------------------------------
+    // ACTION: getFavorites — fetch client's favorite products
+    // -----------------------------------------------------------------------
+    if (action === "getFavorites") {
+      const { clientId } = body;
+      if (!clientId) {
+        return jsonResponse({ error: "Missing clientId" }, 400);
+      }
+
+      const { data, error } = await supabase
+        .from("client_favorites")
+        .select(`
+          id,
+          product_id,
+          created_at,
+          products (id, name, featured_image, status),
+          physical_products (base_price, currency)
+        `)
+        .eq("client_id", clientId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("[b2b-portal-api] getFavorites error:", error.message);
+        return jsonResponse({ error: error.message }, 500);
+      }
+
+      return jsonResponse({ success: true, favorites: data || [] });
+    }
+
+    // -----------------------------------------------------------------------
+    // ACTION: toggleFavorite — add or remove a favorite product
+    // -----------------------------------------------------------------------
+    if (action === "toggleFavorite") {
+      const { clientId, productId } = body;
+      if (!clientId || !productId) {
+        return jsonResponse({ error: "Missing clientId or productId" }, 400);
+      }
+
+      // Check if favorite already exists
+      const { data: existing, error: checkErr } = await supabase
+        .from("client_favorites")
+        .select("id")
+        .eq("client_id", clientId)
+        .eq("product_id", productId)
+        .maybeSingle();
+
+      if (checkErr) {
+        console.error("[b2b-portal-api] toggleFavorite check error:", checkErr.message);
+        return jsonResponse({ error: checkErr.message }, 500);
+      }
+
+      if (existing) {
+        // Remove favorite
+        const { error: deleteErr } = await supabase
+          .from("client_favorites")
+          .delete()
+          .eq("id", existing.id);
+
+        if (deleteErr) {
+          console.error("[b2b-portal-api] toggleFavorite delete error:", deleteErr.message);
+          return jsonResponse({ error: deleteErr.message }, 500);
+        }
+
+        return jsonResponse({ success: true, removed: true });
+      } else {
+        // Add favorite
+        const { error: insertErr } = await supabase
+          .from("client_favorites")
+          .insert({ client_id: clientId, product_id: productId });
+
+        if (insertErr) {
+          console.error("[b2b-portal-api] toggleFavorite insert error:", insertErr.message);
+          return jsonResponse({ error: insertErr.message }, 500);
+        }
+
+        return jsonResponse({ success: true, added: true });
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // ACTION: checkFavorite — check if a product is favorited
+    // -----------------------------------------------------------------------
+    if (action === "checkFavorite") {
+      const { clientId, productId } = body;
+      if (!clientId || !productId) {
+        return jsonResponse({ error: "Missing clientId or productId" }, 400);
+      }
+
+      const { data, error } = await supabase
+        .from("client_favorites")
+        .select("id")
+        .eq("client_id", clientId)
+        .eq("product_id", productId)
+        .maybeSingle();
+
+      if (error) {
+        console.error("[b2b-portal-api] checkFavorite error:", error.message);
+        return jsonResponse({ error: error.message }, 500);
+      }
+
+      return jsonResponse({ success: true, isFavorite: !!data });
+    }
+
+    // -----------------------------------------------------------------------
+    // ACTION: getTemplates — fetch client's order templates
+    // -----------------------------------------------------------------------
+    if (action === "getTemplates") {
+      const { clientId } = body;
+      if (!clientId) {
+        return jsonResponse({ error: "Missing clientId" }, 400);
+      }
+
+      const { data, error } = await supabase
+        .from("client_order_templates")
+        .select("*")
+        .eq("client_id", clientId)
+        .order("last_used_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("[b2b-portal-api] getTemplates error:", error.message);
+        return jsonResponse({ error: error.message }, 500);
+      }
+
+      return jsonResponse({ success: true, templates: data || [] });
+    }
+
+    // -----------------------------------------------------------------------
+    // ACTION: createTemplate — create a new order template
+    // -----------------------------------------------------------------------
+    if (action === "createTemplate") {
+      const { clientId, name, items } = body;
+      if (!clientId || !name || !items) {
+        return jsonResponse({ error: "Missing clientId, name, or items" }, 400);
+      }
+
+      const { data, error } = await supabase
+        .from("client_order_templates")
+        .insert({
+          client_id: clientId,
+          name,
+          items,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("[b2b-portal-api] createTemplate error:", error.message);
+        return jsonResponse({ error: error.message }, 500);
+      }
+
+      return jsonResponse({ success: true, template: data });
+    }
+
+    // -----------------------------------------------------------------------
+    // ACTION: updateTemplate — update an existing order template
+    // -----------------------------------------------------------------------
+    if (action === "updateTemplate") {
+      const { templateId, clientId, name, items } = body;
+      if (!templateId || !clientId) {
+        return jsonResponse({ error: "Missing templateId or clientId" }, 400);
+      }
+
+      const updateData: Record<string, unknown> = {};
+      if (name !== undefined) updateData.name = name;
+      if (items !== undefined) updateData.items = items;
+
+      if (Object.keys(updateData).length === 0) {
+        return jsonResponse({ error: "No fields to update" }, 400);
+      }
+
+      const { data, error } = await supabase
+        .from("client_order_templates")
+        .update(updateData)
+        .eq("id", templateId)
+        .eq("client_id", clientId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("[b2b-portal-api] updateTemplate error:", error.message);
+        return jsonResponse({ error: error.message }, 500);
+      }
+
+      return jsonResponse({ success: true, template: data });
+    }
+
+    // -----------------------------------------------------------------------
+    // ACTION: deleteTemplate — delete an order template
+    // -----------------------------------------------------------------------
+    if (action === "deleteTemplate") {
+      const { templateId, clientId } = body;
+      if (!templateId || !clientId) {
+        return jsonResponse({ error: "Missing templateId or clientId" }, 400);
+      }
+
+      const { error } = await supabase
+        .from("client_order_templates")
+        .delete()
+        .eq("id", templateId)
+        .eq("client_id", clientId);
+
+      if (error) {
+        console.error("[b2b-portal-api] deleteTemplate error:", error.message);
+        return jsonResponse({ error: error.message }, 500);
+      }
+
+      return jsonResponse({ success: true, deleted: true });
+    }
+
+    // -----------------------------------------------------------------------
+    // ACTION: getNotifications — fetch client notifications
+    // -----------------------------------------------------------------------
+    if (action === "getNotifications") {
+      const { clientId, limit = 50 } = body;
+      if (!clientId) {
+        return jsonResponse({ error: "Missing clientId" }, 400);
+      }
+
+      const { data, error } = await supabase
+        .from("client_notifications")
+        .select("*")
+        .eq("client_id", clientId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error("[b2b-portal-api] getNotifications error:", error.message);
+        return jsonResponse({ error: error.message }, 500);
+      }
+
+      return jsonResponse({ success: true, notifications: data || [] });
+    }
+
+    // -----------------------------------------------------------------------
+    // ACTION: markNotificationRead — mark a single notification as read
+    // -----------------------------------------------------------------------
+    if (action === "markNotificationRead") {
+      const { notificationId, clientId } = body;
+      if (!notificationId || !clientId) {
+        return jsonResponse({ error: "Missing notificationId or clientId" }, 400);
+      }
+
+      const { data, error } = await supabase
+        .from("client_notifications")
+        .update({ read_at: new Date().toISOString() })
+        .eq("id", notificationId)
+        .eq("client_id", clientId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("[b2b-portal-api] markNotificationRead error:", error.message);
+        return jsonResponse({ error: error.message }, 500);
+      }
+
+      return jsonResponse({ success: true, notification: data });
+    }
+
+    // -----------------------------------------------------------------------
+    // ACTION: getOrderMessages — fetch messages for an order
+    // -----------------------------------------------------------------------
+    if (action === "getOrderMessages") {
+      const { orderId, clientId } = body;
+      if (!orderId || !clientId) {
+        return jsonResponse({ error: "Missing orderId or clientId" }, 400);
+      }
+
+      // Verify the order belongs to this client
+      const { data: order, error: orderErr } = await supabase
+        .from("b2b_orders")
+        .select("id")
+        .eq("id", orderId)
+        .eq("client_id", clientId)
+        .maybeSingle();
+
+      if (orderErr) {
+        console.error("[b2b-portal-api] getOrderMessages order check error:", orderErr.message);
+        return jsonResponse({ error: orderErr.message }, 500);
+      }
+
+      if (!order) {
+        return jsonResponse({ error: "Order not found or does not belong to this client" }, 404);
+      }
+
+      // Fetch messages
+      const { data: messages, error: msgErr } = await supabase
+        .from("b2b_order_messages")
+        .select("*")
+        .eq("order_id", orderId)
+        .order("created_at", { ascending: true });
+
+      if (msgErr) {
+        console.error("[b2b-portal-api] getOrderMessages error:", msgErr.message);
+        return jsonResponse({ error: msgErr.message }, 500);
+      }
+
+      return jsonResponse({ success: true, messages: messages || [] });
+    }
+
+    // -----------------------------------------------------------------------
+    // ACTION: sendOrderMessage — send a message on an order
+    // -----------------------------------------------------------------------
+    if (action === "sendOrderMessage") {
+      const { orderId, clientId, message, senderType = "client" } = body;
+      if (!orderId || !clientId || !message) {
+        return jsonResponse({ error: "Missing orderId, clientId, or message" }, 400);
+      }
+
+      // Verify the order belongs to this client
+      const { data: order, error: orderErr } = await supabase
+        .from("b2b_orders")
+        .select("id")
+        .eq("id", orderId)
+        .eq("client_id", clientId)
+        .maybeSingle();
+
+      if (orderErr) {
+        console.error("[b2b-portal-api] sendOrderMessage order check error:", orderErr.message);
+        return jsonResponse({ error: orderErr.message }, 500);
+      }
+
+      if (!order) {
+        return jsonResponse({ error: "Order not found or does not belong to this client" }, 404);
+      }
+
+      // Insert the message
+      const { data: newMessage, error: insertErr } = await supabase
+        .from("b2b_order_messages")
+        .insert({
+          order_id: orderId,
+          sender_type: senderType,
+          sender_id: clientId,
+          message,
+        })
+        .select()
+        .single();
+
+      if (insertErr) {
+        console.error("[b2b-portal-api] sendOrderMessage insert error:", insertErr.message);
+        return jsonResponse({ error: insertErr.message }, 500);
+      }
+
+      return jsonResponse({ success: true, message: newMessage });
+    }
+
+    // -----------------------------------------------------------------------
+    // ACTION: markMessagesRead — mark merchant messages as read for an order
+    // -----------------------------------------------------------------------
+    if (action === "markMessagesRead") {
+      const { orderId, clientId } = body;
+      if (!orderId || !clientId) {
+        return jsonResponse({ error: "Missing orderId or clientId" }, 400);
+      }
+
+      // Verify the order belongs to this client
+      const { data: order, error: orderErr } = await supabase
+        .from("b2b_orders")
+        .select("id")
+        .eq("id", orderId)
+        .eq("client_id", clientId)
+        .maybeSingle();
+
+      if (orderErr) {
+        console.error("[b2b-portal-api] markMessagesRead order check error:", orderErr.message);
+        return jsonResponse({ error: orderErr.message }, 500);
+      }
+
+      if (!order) {
+        return jsonResponse({ error: "Order not found or does not belong to this client" }, 404);
+      }
+
+      // Mark all merchant messages as read
+      const { data: updated, error: updateErr } = await supabase
+        .from("b2b_order_messages")
+        .update({ read_at: new Date().toISOString() })
+        .eq("order_id", orderId)
+        .eq("sender_type", "merchant")
+        .is("read_at", null)
+        .select();
+
+      if (updateErr) {
+        console.error("[b2b-portal-api] markMessagesRead error:", updateErr.message);
+        return jsonResponse({ error: updateErr.message }, 500);
+      }
+
+      return jsonResponse({ success: true, markedCount: (updated || []).length });
+    }
+
+    // -----------------------------------------------------------------------
+    // ACTION: getAnnouncements — fetch active store announcements
+    // -----------------------------------------------------------------------
+    if (action === "getAnnouncements") {
+      const { storeId } = body;
+      if (!storeId) {
+        return jsonResponse({ error: "Missing storeId" }, 400);
+      }
+
+      const now = new Date().toISOString();
+
+      const { data, error } = await supabase
+        .from("store_announcements")
+        .select("*")
+        .eq("store_id", storeId)
+        .eq("active", true)
+        .or(`starts_at.is.null,starts_at.lte.${now}`)
+        .or(`ends_at.is.null,ends_at.gte.${now}`)
+        .order("priority", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("[b2b-portal-api] getAnnouncements error:", error.message);
+        return jsonResponse({ error: error.message }, 500);
+      }
+
+      return jsonResponse({ success: true, announcements: data || [] });
+    }
+
+    // -----------------------------------------------------------------------
+    // ACTION: cancelOrder — cancel a pending order and release inventory
+    // -----------------------------------------------------------------------
+    if (action === "cancelOrder") {
+      const { orderId, clientId, reason } = body;
+      if (!orderId || !clientId) {
+        return jsonResponse({ error: "Missing orderId or clientId" }, 400);
+      }
+
+      // Verify the order belongs to client AND is still pending
+      const { data: order, error: orderErr } = await supabase
+        .from("b2b_orders")
+        .select("id, status, b2b_order_items (*)")
+        .eq("id", orderId)
+        .eq("client_id", clientId)
+        .single();
+
+      if (orderErr || !order) {
+        console.error("[b2b-portal-api] cancelOrder order check error:", orderErr?.message);
+        return jsonResponse({ error: "Order not found or does not belong to this client" }, 404);
+      }
+
+      if (order.status !== "pending") {
+        return jsonResponse({ error: `Cannot cancel order with status '${order.status}'. Only pending orders can be cancelled.` }, 400);
+      }
+
+      // Update order status to cancelled
+      const updateData: Record<string, unknown> = { status: "cancelled" };
+      if (reason) {
+        updateData.notes = reason;
+      }
+
+      const { error: updateErr } = await supabase
+        .from("b2b_orders")
+        .update(updateData)
+        .eq("id", orderId);
+
+      if (updateErr) {
+        console.error("[b2b-portal-api] cancelOrder update error:", updateErr.message);
+        return jsonResponse({ error: updateErr.message }, 500);
+      }
+
+      // Release reserved inventory for each item
+      const items = order.b2b_order_items || [];
+      const inventoryErrors: string[] = [];
+
+      for (const item of items) {
+        if (!item.product_id) continue;
+        try {
+          const { data: product } = await supabase
+            .from("products")
+            .select("reserved_quantity")
+            .eq("id", item.product_id)
+            .single();
+
+          if (product) {
+            const newReserved = Math.max(0, (product.reserved_quantity || 0) - (item.quantity || 1));
+            await supabase
+              .from("products")
+              .update({ reserved_quantity: newReserved })
+              .eq("id", item.product_id);
+          }
+        } catch (err: any) {
+          console.warn(`[b2b-portal-api] Inventory release failed for ${item.product_id}:`, err?.message);
+          inventoryErrors.push(`${item.product_name || item.product_id}: ${err?.message}`);
+        }
+      }
+
+      return jsonResponse({
+        success: true,
+        cancelled: true,
+        inventoryErrors: inventoryErrors.length > 0 ? inventoryErrors : undefined,
+      });
+    }
+
+    // -----------------------------------------------------------------------
+    // ACTION: getDashboardData — fetch aggregated dashboard stats
+    // -----------------------------------------------------------------------
+    if (action === "getDashboardData") {
+      const { clientId } = body;
+      if (!clientId) {
+        return jsonResponse({ error: "Missing clientId" }, 400);
+      }
+
+      // Run all queries in parallel for performance
+      const [
+        totalOrdersRes,
+        pendingOrdersRes,
+        completedOrdersRes,
+        favoriteCountRes,
+        unreadNotificationsRes,
+        recentOrdersRes,
+      ] = await Promise.all([
+        // Total orders
+        supabase
+          .from("b2b_orders")
+          .select("id", { count: "exact", head: true })
+          .eq("client_id", clientId),
+
+        // Pending orders
+        supabase
+          .from("b2b_orders")
+          .select("id", { count: "exact", head: true })
+          .eq("client_id", clientId)
+          .eq("status", "pending"),
+
+        // Completed orders (for totalSpent calculation)
+        supabase
+          .from("b2b_orders")
+          .select("total")
+          .eq("client_id", clientId)
+          .in("status", ["confirmed", "shipped", "delivered"]),
+
+        // Favorite count
+        supabase
+          .from("client_favorites")
+          .select("id", { count: "exact", head: true })
+          .eq("client_id", clientId),
+
+        // Unread notifications
+        supabase
+          .from("client_notifications")
+          .select("id", { count: "exact", head: true })
+          .eq("client_id", clientId)
+          .is("read_at", null),
+
+        // Recent orders (last 5)
+        supabase
+          .from("b2b_orders")
+          .select("id, order_number, status, total, created_at")
+          .eq("client_id", clientId)
+          .order("created_at", { ascending: false })
+          .limit(5),
+      ]);
+
+      // Calculate total spent from completed orders
+      let totalSpent = 0;
+      if (completedOrdersRes.data) {
+        totalSpent = completedOrdersRes.data.reduce(
+          (sum: number, order: { total: number | string | null }) =>
+            sum + (Number(order.total) || 0),
+          0
+        );
+      }
+
+      // Check for any errors
+      const queryErrors: string[] = [];
+      if (totalOrdersRes.error) queryErrors.push(`totalOrders: ${totalOrdersRes.error.message}`);
+      if (pendingOrdersRes.error) queryErrors.push(`pendingOrders: ${pendingOrdersRes.error.message}`);
+      if (completedOrdersRes.error) queryErrors.push(`totalSpent: ${completedOrdersRes.error.message}`);
+      if (favoriteCountRes.error) queryErrors.push(`favoriteCount: ${favoriteCountRes.error.message}`);
+      if (unreadNotificationsRes.error) queryErrors.push(`unreadNotifications: ${unreadNotificationsRes.error.message}`);
+      if (recentOrdersRes.error) queryErrors.push(`recentOrders: ${recentOrdersRes.error.message}`);
+
+      if (queryErrors.length > 0) {
+        console.error("[b2b-portal-api] getDashboardData errors:", queryErrors);
+      }
+
+      return jsonResponse({
+        success: true,
+        dashboard: {
+          totalOrders: totalOrdersRes.count ?? 0,
+          pendingOrders: pendingOrdersRes.count ?? 0,
+          totalSpent,
+          favoriteCount: favoriteCountRes.count ?? 0,
+          unreadNotifications: unreadNotificationsRes.count ?? 0,
+          recentOrders: recentOrdersRes.data || [],
+        },
+        errors: queryErrors.length > 0 ? queryErrors : undefined,
+      });
+    }
+
+    // -----------------------------------------------------------------------
     // Unknown action
     // -----------------------------------------------------------------------
     return jsonResponse({ error: `Unknown action: ${action}` }, 400);

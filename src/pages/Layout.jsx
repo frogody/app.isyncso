@@ -552,6 +552,24 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
     };
   }
 
+  // B2B STORE routes
+  if (path.startsWith('/storedashboard') || path.startsWith('/b2bstorebuilder') || path.startsWith('/b2b')) {
+    return {
+      title: 'B2B STORE',
+      color: 'cyan',
+      items: [
+        { label: 'Dashboard', path: createPageUrl('StoreDashboard'), icon: LayoutDashboard },
+        { label: 'Store Builder', path: createPageUrl('B2BStoreBuilder'), icon: Palette },
+        { label: 'Orders', path: '/b2b/orders', icon: Receipt },
+        { label: 'Price Lists', path: '/b2b/price-lists', icon: Percent },
+        { label: 'Client Groups', path: '/b2b/client-groups', icon: Users },
+        { label: 'Catalog', path: '/b2b/catalog', icon: Package },
+        { label: 'Inquiries', path: '/b2b/inquiries', icon: MessageSquare },
+        { label: 'Clients', path: '/b2b/clients', icon: UserCheck },
+      ]
+    };
+  }
+
   // SYNC routes
   if ((path.startsWith('/sync') && !path.startsWith('/syncstudio')) || path.startsWith('/aiassistant') || path.startsWith('/actions') ||
       path.startsWith('/activity') || path.startsWith('/desktop') || path.startsWith('/dailyjournal')) {

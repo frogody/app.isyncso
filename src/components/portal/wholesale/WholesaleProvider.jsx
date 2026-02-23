@@ -71,6 +71,18 @@ function saveCartToStorage(orgId, items) {
   }
 }
 
+const PORTAL_API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/b2b-portal-api`;
+
+async function portalApi(action, data = {}) {
+  const res = await fetch(PORTAL_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...data }),
+  });
+  if (!res.ok) throw new Error(`Portal API error: ${res.status}`);
+  return res.json();
+}
+
 /**
  * WholesaleProvider
  *
@@ -191,6 +203,170 @@ export function WholesaleProvider({ children }) {
     setCartItems([]);
   }, []);
 
+  // ── Favorites ──────────────────────────────────────────────────────────────
+  const [favorites, setFavorites] = useState([]);
+  const [favoritesLoading, setFavoritesLoading] = useState(false);
+
+  const fetchFavorites = useCallback(async () => {
+    if (!client?.id) return;
+    setFavoritesLoading(true);
+    try {
+      const res = await portalApi('getFavorites', { clientId: client.id });
+      if (res.success) setFavorites(res.favorites || []);
+    } catch (err) {
+      console.error('[WholesaleProvider] fetchFavorites error:', err);
+    } finally {
+      setFavoritesLoading(false);
+    }
+  }, [client?.id]);
+
+  const toggleFavorite = useCallback(async (productId) => {
+    if (!client?.id) return;
+    try {
+      const res = await portalApi('toggleFavorite', { clientId: client.id, productId });
+      if (res.success) {
+        if (res.removed) {
+          setFavorites(prev => prev.filter(f => f.product_id !== productId));
+        } else {
+          // Re-fetch to get full product data
+          fetchFavorites();
+        }
+      }
+      return res;
+    } catch (err) {
+      console.error('[WholesaleProvider] toggleFavorite error:', err);
+    }
+  }, [client?.id, fetchFavorites]);
+
+  const isFavorite = useCallback((productId) => {
+    return favorites.some(f => f.product_id === productId);
+  }, [favorites]);
+
+  // ── Notifications ──────────────────────────────────────────────────────────
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+
+  const fetchNotifications = useCallback(async () => {
+    if (!client?.id) return;
+    setNotificationsLoading(true);
+    try {
+      const res = await portalApi('getNotifications', { clientId: client.id, limit: 50 });
+      if (res.success) {
+        setNotifications(res.notifications || []);
+        setUnreadCount((res.notifications || []).filter(n => !n.read_at).length);
+      }
+    } catch (err) {
+      console.error('[WholesaleProvider] fetchNotifications error:', err);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }, [client?.id]);
+
+  const markNotificationRead = useCallback(async (notificationId) => {
+    if (!client?.id) return;
+    try {
+      await portalApi('markNotificationRead', { notificationId, clientId: client.id });
+      setNotifications(prev => prev.map(n =>
+        n.id === notificationId ? { ...n, read_at: new Date().toISOString() } : n
+      ));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('[WholesaleProvider] markNotificationRead error:', err);
+    }
+  }, [client?.id]);
+
+  // ── Templates ──────────────────────────────────────────────────────────────
+  const [templates, setTemplates] = useState([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+
+  const fetchTemplates = useCallback(async () => {
+    if (!client?.id) return;
+    setTemplatesLoading(true);
+    try {
+      const res = await portalApi('getTemplates', { clientId: client.id });
+      if (res.success) setTemplates(res.templates || []);
+    } catch (err) {
+      console.error('[WholesaleProvider] fetchTemplates error:', err);
+    } finally {
+      setTemplatesLoading(false);
+    }
+  }, [client?.id]);
+
+  const createTemplate = useCallback(async (name, items) => {
+    if (!client?.id) return;
+    try {
+      const res = await portalApi('createTemplate', { clientId: client.id, name, items });
+      if (res.success) {
+        setTemplates(prev => [res.template, ...prev]);
+      }
+      return res;
+    } catch (err) {
+      console.error('[WholesaleProvider] createTemplate error:', err);
+    }
+  }, [client?.id]);
+
+  const deleteTemplate = useCallback(async (templateId) => {
+    if (!client?.id) return;
+    try {
+      const res = await portalApi('deleteTemplate', { templateId, clientId: client.id });
+      if (res.success) {
+        setTemplates(prev => prev.filter(t => t.id !== templateId));
+      }
+      return res;
+    } catch (err) {
+      console.error('[WholesaleProvider] deleteTemplate error:', err);
+    }
+  }, [client?.id]);
+
+  // ── Dashboard Data ─────────────────────────────────────────────────────────
+  const [dashboardData, setDashboardData] = useState(null);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+
+  const fetchDashboardData = useCallback(async () => {
+    if (!client?.id) return;
+    setDashboardLoading(true);
+    try {
+      const res = await portalApi('getDashboardData', { clientId: client.id });
+      if (res.success) setDashboardData(res.dashboard);
+    } catch (err) {
+      console.error('[WholesaleProvider] fetchDashboardData error:', err);
+    } finally {
+      setDashboardLoading(false);
+    }
+  }, [client?.id]);
+
+  // ── Announcements ──────────────────────────────────────────────────────────
+  const [announcements, setAnnouncements] = useState([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+
+  const fetchAnnouncements = useCallback(async () => {
+    if (!org) return;
+    setAnnouncementsLoading(true);
+    try {
+      const res = await portalApi('getAnnouncements', { storeId: org });
+      if (res.success) setAnnouncements(res.announcements || []);
+    } catch (err) {
+      console.error('[WholesaleProvider] fetchAnnouncements error:', err);
+    } finally {
+      setAnnouncementsLoading(false);
+    }
+  }, [org]);
+
+  // Fetch favorites, notifications, templates when client is authenticated
+  useEffect(() => {
+    if (client?.id && isAuthenticated) {
+      fetchFavorites();
+      fetchNotifications();
+      fetchTemplates();
+    }
+  }, [client?.id, isAuthenticated, fetchFavorites, fetchNotifications, fetchTemplates]);
+
+  // Fetch announcements for any visitor (no auth required)
+  useEffect(() => {
+    if (org) fetchAnnouncements();
+  }, [org, fetchAnnouncements]);
+
   const cartTotal = useMemo(() => {
     return cartItems.reduce((sum, item) => {
       const price = Number(item.price) || 0;
@@ -232,6 +408,40 @@ export function WholesaleProvider({ children }) {
       clearCart,
       cartTotal,
       cartCount,
+
+      // Favorites
+      favorites,
+      favoritesLoading,
+      fetchFavorites,
+      toggleFavorite,
+      isFavorite,
+
+      // Notifications
+      notifications,
+      unreadCount,
+      notificationsLoading,
+      fetchNotifications,
+      markNotificationRead,
+
+      // Templates
+      templates,
+      templatesLoading,
+      fetchTemplates,
+      createTemplate,
+      deleteTemplate,
+
+      // Dashboard
+      dashboardData,
+      dashboardLoading,
+      fetchDashboardData,
+
+      // Announcements
+      announcements,
+      announcementsLoading,
+      fetchAnnouncements,
+
+      // API helper
+      portalApi,
     }),
     [
       config,
@@ -250,6 +460,27 @@ export function WholesaleProvider({ children }) {
       clearCart,
       cartTotal,
       cartCount,
+      favorites,
+      favoritesLoading,
+      fetchFavorites,
+      toggleFavorite,
+      isFavorite,
+      notifications,
+      unreadCount,
+      notificationsLoading,
+      fetchNotifications,
+      markNotificationRead,
+      templates,
+      templatesLoading,
+      fetchTemplates,
+      createTemplate,
+      deleteTemplate,
+      dashboardData,
+      dashboardLoading,
+      fetchDashboardData,
+      announcements,
+      announcementsLoading,
+      fetchAnnouncements,
     ]
   );
 

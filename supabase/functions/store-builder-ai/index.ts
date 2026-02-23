@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -613,6 +614,35 @@ serve(async (req: Request) => {
     const { prompt, currentConfig, businessContext, history, jsonRetry, previousResponse } =
       await req.json();
 
+    // Extract user context from Authorization header for credit deduction
+    const authHeader = req.headers.get("Authorization");
+    let userId: string | null = null;
+    let companyId: string | null = null;
+
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.slice(7);
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      // Decode JWT to get user ID
+      try {
+        const { data: { user } } = await supabase.auth.getUser(token);
+        if (user) {
+          userId = user.id;
+          // Get company_id from users table
+          const { data: userData } = await supabase
+            .from("users")
+            .select("company_id")
+            .eq("id", user.id)
+            .single();
+          companyId = userData?.company_id || null;
+        }
+      } catch (e) {
+        console.warn("[store-builder-ai] Could not extract user from token:", e);
+      }
+    }
+
     if (!prompt || typeof prompt !== "string") {
       return errorResponse(400, "Missing or invalid 'prompt' field.");
     }
@@ -668,6 +698,31 @@ serve(async (req: Request) => {
       const retryJson = await retryResponse.json();
       const retryText =
         retryJson.choices?.[0]?.message?.content || "";
+
+      // Deduct credit for retry
+      if (userId && companyId) {
+        try {
+          const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+          const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+          const creditSupabase = createClient(supabaseUrl, supabaseKey);
+
+          await creditSupabase.from("credit_transactions").insert({
+            company_id: companyId,
+            user_id: userId,
+            amount: -1,
+            type: "ai_store_builder_retry",
+            description: `Store Builder AI retry: ${prompt.substring(0, 100)}`,
+            metadata: { model: "moonshotai/Kimi-K2-Instruct-0905", retry: true },
+          });
+
+          await creditSupabase.rpc("decrement_credits", {
+            p_company_id: companyId,
+            p_amount: 1,
+          });
+        } catch (creditErr) {
+          console.warn("[store-builder-ai] Retry credit deduction failed:", creditErr);
+        }
+      }
 
       return new Response(retryText, {
         status: 200,
@@ -725,6 +780,38 @@ serve(async (req: Request) => {
     const textStream = togetherResponse.body.pipeThrough(
       createSSEToTextTransform()
     );
+
+    // Deduct AI credits for store builder usage
+    if (userId && companyId) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const creditSupabase = createClient(supabaseUrl, supabaseKey);
+
+        const creditCost = jsonRetry ? 1 : 2; // Retry costs less
+
+        // Log the credit usage
+        await creditSupabase.from("credit_transactions").insert({
+          company_id: companyId,
+          user_id: userId,
+          amount: -creditCost,
+          type: "ai_store_builder",
+          description: `Store Builder AI: ${prompt.substring(0, 100)}`,
+          metadata: { model: "moonshotai/Kimi-K2-Instruct-0905", streaming: !jsonRetry },
+        });
+
+        // Decrement company credits
+        await creditSupabase.rpc("decrement_credits", {
+          p_company_id: companyId,
+          p_amount: creditCost,
+        });
+
+        console.log(`[store-builder-ai] Deducted ${creditCost} credits for user ${userId}`);
+      } catch (creditErr) {
+        // Don't fail the request if credit deduction fails
+        console.warn("[store-builder-ai] Credit deduction failed:", creditErr);
+      }
+    }
 
     return new Response(textStream, {
       status: 200,
