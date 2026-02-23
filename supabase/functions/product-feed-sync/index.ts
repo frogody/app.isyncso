@@ -26,15 +26,46 @@ const corsHeaders = {
 // Types
 // ============================================================
 
-interface TransformationRule {
-  id: string;
-  type: "value_map" | "calculation" | "static" | "exclude";
+// Section within a rule (compound sections allow multiple IF→THEN per rule)
+interface RuleSection {
+  id?: string;
   source_field: string;
-  condition: "equals" | "not_equals" | "contains" | "not_empty" | "empty" | "greater_than" | "less_than";
+  condition: string;
   condition_value?: string;
-  target_field: string;
+  target_field?: string;
   target_value?: string | number;
   expression?: string;
+  replacements?: Array<{ find: string; replace: string }>;
+  adjustment_type?: "multiply" | "add_percent" | "subtract_percent" | "add_fixed" | "subtract_fixed" | "round_up";
+  adjustment_value?: string;
+}
+
+// New section-based rule format (backward-compatible with legacy flat rules)
+interface TransformationRule {
+  id: string;
+  name?: string;
+  type: "value_map" | "find_replace" | "calculation" | "static" | "exclude" | "price_adjustment";
+  is_active?: boolean;
+  sections?: RuleSection[];
+  options?: { case_sensitive?: boolean; use_regex?: boolean };
+  // Legacy flat fields (migrated to sections at runtime)
+  source_field?: string;
+  condition?: string;
+  condition_value?: string;
+  target_field?: string;
+  target_value?: string | number;
+  expression?: string;
+  priority: number;
+}
+
+// Category mapping rule
+interface CategoryMapping {
+  id: string;
+  source_field: string;
+  condition: string;
+  match_value: string;
+  bol_category: string;
+  custom_category?: string;
   priority: number;
 }
 
@@ -51,6 +82,8 @@ interface FeedConfig {
   auto_push_offers: boolean;
   field_mapping: Record<string, string>;
   transformation_rules: TransformationRule[];
+  category_mappings: CategoryMapping[];
+  master_rule_group_id: string | null;
   bolcom_defaults: Record<string, string>;
   last_sync_at: string | null;
 }
@@ -168,17 +201,50 @@ function lineToRow(line: string, headers: string[], delimiter: string): Record<s
 }
 
 // ============================================================
-// Rules Engine
+// Rules Engine (v2 — section-based, with find_replace, price_adjustment, regex)
 // ============================================================
 
-function matchesCondition(value: string, condition: string | undefined, conditionValue: string | undefined): boolean {
+// Migrate legacy flat rule to section-based format
+function migrateRule(rule: TransformationRule): TransformationRule {
+  if (rule.sections && rule.sections.length > 0) return rule;
+  return {
+    ...rule,
+    is_active: rule.is_active !== false,
+    sections: [{
+      source_field: rule.source_field || "",
+      condition: rule.condition || "equals",
+      condition_value: rule.condition_value || "",
+      target_field: rule.target_field || "",
+      target_value: rule.target_value ?? "",
+      expression: rule.expression || "",
+    }],
+    options: rule.options || { case_sensitive: false, use_regex: false },
+  };
+}
+
+function matchesCondition(
+  value: string,
+  condition: string | undefined,
+  conditionValue: string | undefined,
+  options?: { case_sensitive?: boolean; use_regex?: boolean }
+): boolean {
   const v = (value ?? "").toString();
   const cv = (conditionValue ?? "").toString();
+  const caseSensitive = options?.case_sensitive || false;
+
+  const lv = caseSensitive ? v : v.toLowerCase();
+  const lcv = caseSensitive ? cv : cv.toLowerCase();
 
   switch (condition) {
-    case "equals": return v.toLowerCase() === cv.toLowerCase();
-    case "not_equals": return v.toLowerCase() !== cv.toLowerCase();
-    case "contains": return v.toLowerCase().includes(cv.toLowerCase());
+    case "equals": return lv === lcv;
+    case "not_equals": return lv !== lcv;
+    case "contains": return lv.includes(lcv);
+    case "not_contains": return !lv.includes(lcv);
+    case "starts_with": return lv.startsWith(lcv);
+    case "ends_with": return lv.endsWith(lcv);
+    case "matches_regex":
+      try { return new RegExp(cv, caseSensitive ? "" : "i").test(v); }
+      catch { return false; }
     case "not_empty": return v.trim().length > 0;
     case "empty": return v.trim().length === 0;
     case "greater_than": return parseFloat(v) > parseFloat(cv);
@@ -200,6 +266,41 @@ function evaluateExpression(expr: string, row: Record<string, any>): number {
   return Function(`"use strict"; return (${evalExpr})`)() as number;
 }
 
+function applyPriceAdjustment(currentPrice: number, section: RuleSection): number {
+  const adjustVal = parseFloat(String(section.adjustment_value ?? "0").replace(",", ".")) || 0;
+  switch (section.adjustment_type) {
+    case "multiply": return currentPrice * adjustVal;
+    case "add_percent": return currentPrice * (1 + adjustVal / 100);
+    case "subtract_percent": return currentPrice * (1 - adjustVal / 100);
+    case "add_fixed": return currentPrice + adjustVal;
+    case "subtract_fixed": return currentPrice - adjustVal;
+    case "round_up": return Math.ceil(currentPrice);
+    default: return currentPrice;
+  }
+}
+
+function applyFindReplace(
+  value: string,
+  replacements: Array<{ find: string; replace: string }>,
+  options?: { case_sensitive?: boolean; use_regex?: boolean }
+): string {
+  let result = value;
+  for (const pair of replacements) {
+    if (!pair.find) continue;
+    if (options?.use_regex) {
+      try {
+        const re = new RegExp(pair.find, options.case_sensitive ? "g" : "gi");
+        result = result.replace(re, pair.replace || "");
+      } catch { /* skip bad regex */ }
+    } else {
+      const escaped = pair.find.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const flags = options?.case_sensitive ? "g" : "gi";
+      result = result.replace(new RegExp(escaped, flags), pair.replace || "");
+    }
+  }
+  return result;
+}
+
 function applyRules(
   row: Record<string, string>,
   rules: TransformationRule[]
@@ -208,39 +309,107 @@ function applyRules(
   let excluded = false;
   let excludeReason: string | undefined;
 
-  const sorted = [...rules].sort((a, b) => a.priority - b.priority);
+  // Migrate and sort rules
+  const migrated = rules.map(migrateRule);
+  const sorted = [...migrated].sort((a, b) => a.priority - b.priority);
 
   for (const rule of sorted) {
     if (excluded) break;
+    if (rule.is_active === false) continue;
 
-    const sourceValue = (result[rule.source_field] ?? "").toString();
+    const sections = rule.sections || [];
+    const options = rule.options || {};
 
-    if (rule.type !== "static" && !matchesCondition(sourceValue, rule.condition, rule.condition_value)) {
-      continue;
-    }
+    for (const section of sections) {
+      if (excluded) break;
 
-    switch (rule.type) {
-      case "value_map":
-        result[rule.target_field] = rule.target_value;
-        break;
-      case "calculation":
-        try {
-          result[rule.target_field] = evaluateExpression(rule.expression!, result);
-        } catch (e) {
-          console.warn(`[FeedSync] Calculation error for rule ${rule.id}:`, e);
+      const sourceValue = (result[section.source_field] ?? "").toString();
+      const isStatic = rule.type === "static";
+      const conditionMet = isStatic || matchesCondition(sourceValue, section.condition, section.condition_value, options);
+
+      if (!conditionMet) continue;
+
+      switch (rule.type) {
+        case "value_map":
+          if (section.target_field) result[section.target_field] = section.target_value;
+          break;
+
+        case "find_replace":
+          if (section.replacements && section.replacements.length > 0) {
+            const targetField = section.target_field || section.source_field;
+            const fieldValue = (result[targetField] ?? sourceValue).toString();
+            result[targetField] = applyFindReplace(fieldValue, section.replacements, options);
+          }
+          break;
+
+        case "calculation":
+          if (section.expression && section.target_field) {
+            try {
+              result[section.target_field] = evaluateExpression(section.expression, result);
+            } catch (e) {
+              console.warn(`[FeedSync] Calculation error for rule ${rule.id}:`, e);
+            }
+          }
+          break;
+
+        case "static":
+          if (section.target_field) result[section.target_field] = section.target_value;
+          break;
+
+        case "exclude":
+          excluded = true;
+          excludeReason = `${section.source_field} ${section.condition} "${section.condition_value}"`;
+          break;
+
+        case "price_adjustment": {
+          const priceField = section.target_field || "price";
+          const currentPrice = parseFloat(String(result[priceField] ?? result.price ?? result.retail_price ?? "0").replace(",", ".")) || 0;
+          result[priceField] = applyPriceAdjustment(currentPrice, section);
+          break;
         }
-        break;
-      case "static":
-        result[rule.target_field] = rule.target_value;
-        break;
-      case "exclude":
-        excluded = true;
-        excludeReason = `${rule.source_field} ${rule.condition} "${rule.condition_value}"`;
-        break;
+      }
     }
   }
 
   return { transformed: result, excluded, excludeReason };
+}
+
+// Apply category mappings
+function applyCategoryMappings(
+  row: Record<string, any>,
+  mappings: CategoryMapping[]
+): Record<string, any> {
+  if (!mappings || mappings.length === 0) return row;
+
+  const sorted = [...mappings].sort((a, b) => a.priority - b.priority);
+
+  for (const mapping of sorted) {
+    const val = (row[mapping.source_field] ?? "").toString().toLowerCase();
+    const cv = (mapping.match_value ?? "").toLowerCase();
+    let matches = false;
+
+    switch (mapping.condition) {
+      case "contains": matches = val.includes(cv); break;
+      case "equals": matches = val === cv; break;
+      case "starts_with": matches = val.startsWith(cv); break;
+      case "ends_with": matches = val.endsWith(cv); break;
+      case "matches_regex":
+        try { matches = new RegExp(cv, "i").test(val); }
+        catch { matches = false; }
+        break;
+      default: matches = val.includes(cv);
+    }
+
+    if (matches) {
+      const catLabel = mapping.bol_category === "custom"
+        ? mapping.custom_category || ""
+        : mapping.bol_category || "";
+      if (catLabel) row.category = catLabel;
+      break; // first match wins
+    }
+  }
+
+  return row;
 }
 
 // ============================================================
@@ -425,10 +594,30 @@ async function syncFeed(
 
   const companyId = feed.company_id;
   const fieldMapping: Record<string, string> = feed.field_mapping || {};
-  const rules: TransformationRule[] = feed.transformation_rules || [];
+  let rules: TransformationRule[] = feed.transformation_rules || [];
+  const categoryMappings: CategoryMapping[] = feed.category_mappings || [];
   const bolcomDefaults = feed.bolcom_defaults || {};
   const delimiter = feed.delimiter || ",";
   const hasHeader = feed.has_header_row !== false;
+
+  // Load master rules if linked — they execute BEFORE feed-specific rules
+  if (feed.master_rule_group_id) {
+    const { data: masterGroup } = await supabase
+      .from("product_feed_master_rules")
+      .select("rules, is_active")
+      .eq("id", feed.master_rule_group_id)
+      .single();
+
+    if (masterGroup?.is_active && masterGroup.rules?.length > 0) {
+      // Prepend master rules (lower priority = execute first)
+      const masterRules: TransformationRule[] = masterGroup.rules.map((r: any, i: number) => ({
+        ...r,
+        priority: -1000 + i, // ensure they run before feed rules
+      }));
+      rules = [...masterRules, ...rules];
+      console.log(`[FeedSync] Loaded ${masterRules.length} master rules from group ${feed.master_rule_group_id}`);
+    }
+  }
 
   // 2. Create sync log entry
   const { data: logEntry } = await supabase
@@ -527,6 +716,11 @@ async function syncFeed(
 
       // Apply transformation rules
       const { transformed, excluded, excludeReason } = applyRules(mapped, rules);
+
+      // Apply category mappings (after rules, before hash)
+      if (categoryMappings.length > 0) {
+        applyCategoryMappings(transformed, categoryMappings);
+      }
 
       if (excluded) {
         summary.excluded++;

@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/api/supabaseClient";
 import ProductFeedWizard from "./ProductFeedWizard";
+import { BookOpen } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -58,6 +59,17 @@ export default function ProductFeedSettings() {
   const [expandedFeed, setExpandedFeed] = useState(null);
   const [syncLogs, setSyncLogs] = useState({});
   const [syncingFeed, setSyncingFeed] = useState(null);
+  const [masterGroups, setMasterGroups] = useState([]);
+
+  const loadMasterGroups = useCallback(async () => {
+    if (!companyId) return;
+    const { data } = await supabase
+      .from("product_feed_master_rules")
+      .select("id, name")
+      .eq("company_id", companyId)
+      .order("name");
+    if (data) setMasterGroups(data);
+  }, [companyId]);
 
   const loadFeeds = useCallback(async () => {
     if (!companyId) return;
@@ -75,7 +87,8 @@ export default function ProductFeedSettings() {
 
   useEffect(() => {
     loadFeeds();
-  }, [loadFeeds]);
+    loadMasterGroups();
+  }, [loadFeeds, loadMasterGroups]);
 
   const loadSyncLogs = async (feedId) => {
     const { data } = await supabase
@@ -326,6 +339,37 @@ export default function ProductFeedSettings() {
                       <p className="text-zinc-300">{new Date(feed.created_at).toLocaleDateString()}</p>
                     </div>
                   </div>
+
+                  {/* Master Rule Group */}
+                  {masterGroups.length > 0 && (
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-zinc-700/30 bg-zinc-900/30">
+                      <BookOpen className="w-4 h-4 text-cyan-400 shrink-0" />
+                      <div className="flex-1">
+                        <label className="text-[11px] text-zinc-500 block mb-1">Master Rule Group</label>
+                        <select
+                          value={feed.master_rule_group_id || ""}
+                          onChange={async (e) => {
+                            const val = e.target.value || null;
+                            const { error } = await supabase
+                              .from("product_feeds")
+                              .update({ master_rule_group_id: val, updated_at: new Date().toISOString() })
+                              .eq("id", feed.id);
+                            if (error) toast.error("Failed to update");
+                            else {
+                              toast.success(val ? "Master rules linked" : "Master rules unlinked");
+                              loadFeeds();
+                            }
+                          }}
+                          className="w-full rounded-lg bg-zinc-800/60 border border-zinc-700/40 text-sm text-zinc-200 px-2.5 py-1.5"
+                        >
+                          <option value="">None (no master rules)</option>
+                          {masterGroups.map((g) => (
+                            <option key={g.id} value={g.id}>{g.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Sync History */}
                   <div>

@@ -41,6 +41,7 @@ import { SettingsPageTransition } from '@/components/settings/ui';
 import BolcomSettings from "@/components/settings/BolcomSettings";
 import ShopifySettings from "@/components/settings/ShopifySettings";
 import ProductFeedSettings from "@/components/settings/ProductFeedSettings";
+import FeedMasterRules from "@/components/settings/FeedMasterRules";
 import EmailPoolSettings from "@/pages/EmailPoolSettings";
 import BillingSettings from "@/pages/BillingSettings";
 
@@ -1512,7 +1513,14 @@ export default function Settings() {
                   </div>
                   {activeChannel === 'bolcom' && <BolcomSettings />}
                   {activeChannel === 'shopify' && <ShopifySettings />}
-                  {activeChannel === 'feeds' && <ProductFeedSettings />}
+                  {activeChannel === 'feeds' && (
+                    <div className="space-y-8">
+                      <ProductFeedSettings />
+                      <div className="border-t border-zinc-700/30 pt-6">
+                        <FeedMasterRules />
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               )}
 
