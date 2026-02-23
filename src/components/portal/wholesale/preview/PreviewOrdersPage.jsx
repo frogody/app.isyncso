@@ -44,6 +44,7 @@ import {
 } from './previewDesignSystem';
 import { useWholesale } from '../WholesaleProvider';
 import { getClientOrders } from '@/lib/db/queries/b2b';
+import ShipmentTrackingMap from '../orders/ShipmentTrackingMap';
 
 // ---------------------------------------------------------------------------
 // Status configuration
@@ -135,11 +136,14 @@ function normalizeOrder(dbOrder) {
     }
   }
 
-  // Build delivery address string from JSONB
+  // Build delivery address string from JSONB (handle field name variations)
   const addr = dbOrder.shipping_address || {};
-  const deliveryAddress = [addr.street, addr.city, addr.zip, addr.country]
-    .filter(Boolean)
-    .join(', ') || 'No address specified';
+  const deliveryAddress = [
+    addr.street || addr.line1 || addr.address,
+    [addr.zip || addr.postal_code, addr.city].filter(Boolean).join(' '),
+    addr.state || addr.province,
+    addr.country,
+  ].filter(Boolean).join(', ') || 'No address specified';
 
   return {
     id: dbOrder.order_number || dbOrder.id,
@@ -634,6 +638,11 @@ function OrderRow({ order, isExpanded, onToggle, nav, index }) {
                     </div>
                   )}
                 </div>
+
+                {/* Track & Trace Map — only when shipped or delivered */}
+                {(order.status === 'shipped' || order.status === 'in_transit' || order.status === 'delivered') && (
+                  <ShipmentTrackingMap orderId={order.dbId} />
+                )}
 
                 {/* Totals */}
                 <div
