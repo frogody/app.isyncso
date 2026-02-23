@@ -39,6 +39,7 @@ import {
   PlusCircle,
   Eye,
   Lock,
+  Award,
 } from 'lucide-react';
 
 import { ORDER_STATUS_COLORS, DEFAULT_STATUS_COLOR } from '@/components/b2b-admin/shared/b2bConstants';
@@ -209,16 +210,15 @@ const QUICK_ACTIONS = {
   all: [
     { label: 'Edit B2B Store', description: 'Customize your storefront', icon: LayoutDashboard, path: '/b2bstorebuilder', comingSoon: true },
     { label: 'B2B Orders', description: 'Manage wholesale orders', icon: Package, path: '/b2b/orders' },
-    { label: 'Price Lists', description: 'Manage client pricing', icon: Tag, path: '/b2b/price-lists' },
+    { label: 'Manage Clients', description: 'Clients, access & pricing rules', icon: UserCheck, path: '/b2b/clients' },
     { label: 'Product Catalog', description: 'Manage your products', icon: ShoppingBag, path: '/Products' },
     { label: 'Client Chat', description: 'Customer messages', icon: MessageSquare, path: '/b2b/chat' },
-    { label: 'Store Access', description: 'Control who can access your store', icon: Users, path: '/b2b/clients' },
+    { label: 'Shipping Tasks', description: 'Fulfillment overview', icon: Truck, path: '/inventoryshipping' },
   ],
   b2b: [
     { label: 'B2B Orders', description: 'View and manage orders', icon: Package, path: '/b2b/orders' },
     { label: 'Edit Storefront', description: 'Customize your B2B store', icon: LayoutDashboard, path: '/b2bstorebuilder', comingSoon: true },
-    { label: 'Manage Clients', description: 'Client access & invites', icon: UserCheck, path: '/b2b/clients' },
-    { label: 'Price Lists', description: 'Client-specific pricing', icon: Tag, path: '/b2b/price-lists' },
+    { label: 'Manage Clients', description: 'Access, invites & pricing rules', icon: UserCheck, path: '/b2b/clients' },
     { label: 'Client Chat', description: 'Customer messages', icon: MessageSquare, path: '/b2b/chat' },
     { label: 'Shipping Tasks', description: 'Fulfillment overview', icon: Truck, path: '/inventoryshipping' },
   ],
@@ -262,6 +262,9 @@ export default function StoreDashboard() {
   });
 
   const [storeUrl, setStoreUrl] = useState(null);
+  const [b2bInsights, setB2bInsights] = useState({
+    invoices: [], invoiceStats: {}, topProducts: [], clients: [], clientStats: {},
+  });
 
   // Derived data based on active view
   const viewData = useMemo(() => {
@@ -313,6 +316,7 @@ export default function StoreDashboard() {
         shopifyCreds, bolcomCreds, b2bConfig,
         salesMonthly, salesPending, salesRecent,
         b2bMonthly, b2bPending, b2bRecent,
+        b2bInvoices, b2bTopItems, portalClients,
       ] = await Promise.all([
         safe(supabase.from('shopify_credentials').select('id, shop_domain, shop_name, status').eq('company_id', companyId).eq('is_active', true).maybeSingle(), 'shopify'),
         safe(supabase.from('bolcom_credentials').select('id, environment').eq('company_id', companyId).eq('is_active', true).maybeSingle(), 'bolcom'),
@@ -323,6 +327,10 @@ export default function StoreDashboard() {
         safe(supabase.from('b2b_orders').select('id, total, status').eq('organization_id', organizationId).gte('created_at', startOfMonth), 'b2bMonthly'),
         safe(supabase.from('b2b_orders').select('id, status').eq('organization_id', organizationId).eq('status', 'pending'), 'b2bPending'),
         safe(supabase.from('b2b_orders').select('id, order_number, status, total, currency, created_at, portal_clients(id, full_name, email)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(20), 'b2bRecent'),
+        // B2B insight queries
+        safe(supabase.from('invoices').select('id, invoice_number, status, total, due_date, amount_paid, balance_due, b2b_order_id, created_at').not('b2b_order_id', 'is', null).order('created_at', { ascending: false }), 'b2bInvoices'),
+        safe(supabase.from('b2b_order_items').select('product_name, sku, quantity, unit_price, line_total, b2b_order_id').order('line_total', { ascending: false }).limit(30), 'b2bTopItems'),
+        safe(supabase.from('portal_clients').select('id, full_name, email, status, last_login_at, created_at, company_name').eq('organization_id', organizationId), 'portalClients'),
       ]);
 
       const shopifyConnected = !!shopifyCreds.data;
@@ -407,6 +415,39 @@ export default function StoreDashboard() {
           recentOrders: salesRecentRows.filter(r => isManualSource(r.source)).map(formatSalesOrder),
         },
       });
+
+      // Process B2B insight data
+      const invoiceRows = b2bInvoices.data || [];
+      const itemRows = b2bTopItems.data || [];
+      const clientRows = portalClients.data || [];
+
+      // Aggregate top products by name
+      const productMap = {};
+      itemRows.forEach(item => {
+        const key = item.product_name || item.sku || 'Unknown';
+        if (!productMap[key]) productMap[key] = { name: key, sku: item.sku, totalQty: 0, totalRevenue: 0 };
+        productMap[key].totalQty += item.quantity || 0;
+        productMap[key].totalRevenue += parseFloat(String(item.line_total)) || 0;
+      });
+      const topProducts = Object.values(productMap).sort((a, b) => b.totalRevenue - a.totalRevenue).slice(0, 5);
+
+      // Invoice stats
+      const invStats = {
+        total: invoiceRows.reduce((s, i) => s + (parseFloat(String(i.total)) || 0), 0),
+        paid: invoiceRows.filter(i => i.status === 'paid').reduce((s, i) => s + (parseFloat(String(i.total)) || 0), 0),
+        outstanding: invoiceRows.filter(i => i.status === 'pending' || i.status === 'sent').reduce((s, i) => s + (parseFloat(String(i.balance_due || i.total)) || 0), 0),
+        overdue: invoiceRows.filter(i => (i.status === 'pending' || i.status === 'sent') && i.due_date && new Date(i.due_date) < now).length,
+        count: invoiceRows.length,
+      };
+
+      // Client stats
+      const clStats = {
+        total: clientRows.length,
+        active: clientRows.filter(c => c.status === 'active').length,
+        invited: clientRows.filter(c => c.status === 'invited').length,
+      };
+
+      setB2bInsights({ invoices: invoiceRows, invoiceStats: invStats, topProducts, clients: clientRows, clientStats: clStats });
     } catch (err) {
       console.error('[StoreDashboard] fetch error:', err);
       setError(err.message || 'Failed to load dashboard data');
@@ -572,7 +613,9 @@ export default function StoreDashboard() {
                 <div className="flex-1 grid grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-800/20">
                   {[
                     { icon: ShoppingCart, label: 'Orders', value: viewData.orders },
-                    { icon: Clock, label: 'Pending', value: viewData.pending, sub: viewData.pending > 0 ? 'Require attention' : 'All clear' },
+                    activeView === 'b2b'
+                      ? { icon: Users, label: 'Active Clients', value: b2bInsights.clientStats?.active || 0, sub: `${b2bInsights.clientStats?.total || 0} total clients` }
+                      : { icon: Clock, label: 'Pending', value: viewData.pending, sub: viewData.pending > 0 ? 'Require attention' : 'All clear' },
                     activeView === 'all'
                       ? { icon: Radio, label: 'Channels', value: `${viewData.activeChannels}/3`, sub: 'Connected' }
                       : { icon: DollarSign, label: 'Avg. Order', value: viewData.orders > 0 ? formatCurrency(viewData.revenue / viewData.orders) : '€0', sub: 'Per order' },
@@ -608,7 +651,7 @@ export default function StoreDashboard() {
                 storeUrl={storeUrl}
                 kpis={[
                   { label: 'Orders', value: channelData.b2b.orders },
-                  { label: 'Pending', value: channelData.b2b.pending, alert: channelData.b2b.pending > 0 },
+                  { label: 'Clients', value: b2bInsights.clientStats?.active || 0 },
                   { label: 'Revenue', value: formatCurrency(channelData.b2b.revenue) },
                 ]}
                 actions={[
@@ -667,8 +710,187 @@ export default function StoreDashboard() {
           </div>
         )}
 
-        {/* Channel-specific status — only on single-channel views */}
-        {activeView !== 'all' && (
+        {/* B2B: Insight cards row */}
+        {activeView === 'b2b' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Top Products */}
+            <motion.div {...stagger(0.2)}>
+              <GlassCard padding="none" className="overflow-hidden h-full">
+                <div className="px-5 py-3.5 border-b border-zinc-800/40 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-cyan-400" />
+                    Top Products
+                  </h3>
+                  <span className="text-[10px] text-zinc-500 font-medium">By revenue</span>
+                </div>
+                <div className="p-4 space-y-3">
+                  {b2bInsights.topProducts.map((product, i) => {
+                    const maxRev = b2bInsights.topProducts[0]?.totalRevenue || 1;
+                    const pct = (product.totalRevenue / maxRev) * 100;
+                    return (
+                      <motion.div
+                        key={product.name}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 + i * 0.06 }}
+                        className="space-y-1.5"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 min-w-0">
+                            {i === 0 && <Award className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
+                            <span className="text-xs font-medium text-zinc-200 truncate">{product.name}</span>
+                          </div>
+                          <span className="text-xs font-bold text-white tabular-nums ml-2 flex-shrink-0">{formatCurrency(product.totalRevenue)}</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-zinc-800/50 overflow-hidden">
+                          <motion.div
+                            className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${pct}%` }}
+                            transition={{ duration: 0.5, delay: 0.35 + i * 0.06, ease: 'easeOut' }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-zinc-500">{product.totalQty} units sold</p>
+                      </motion.div>
+                    );
+                  })}
+                  {b2bInsights.topProducts.length === 0 && (
+                    <div className="text-center py-6">
+                      <Package className="w-5 h-5 text-zinc-600 mx-auto mb-2" />
+                      <p className="text-xs text-zinc-500">No product data yet</p>
+                    </div>
+                  )}
+                </div>
+              </GlassCard>
+            </motion.div>
+
+            {/* Invoice Health */}
+            <motion.div {...stagger(0.25)}>
+              <GlassCard padding="none" className="overflow-hidden h-full">
+                <div className="px-5 py-3.5 border-b border-zinc-800/40">
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-cyan-400" />
+                    Invoice Health
+                  </h3>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-zinc-400">Outstanding</span>
+                    <span className="text-sm font-bold text-white tabular-nums">{formatCurrency(b2bInsights.invoiceStats?.outstanding || 0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-zinc-400">Collected</span>
+                    <span className="text-sm font-bold text-cyan-400 tabular-nums">{formatCurrency(b2bInsights.invoiceStats?.paid || 0)}</span>
+                  </div>
+                  {(b2bInsights.invoiceStats?.overdue || 0) > 0 && (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-[12px] bg-red-500/10 border border-red-500/20">
+                      <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                      <span className="text-xs text-red-400 font-medium">{b2bInsights.invoiceStats.overdue} overdue</span>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-zinc-800/40 space-y-2">
+                    {[
+                      { label: 'Paid', count: b2bInsights.invoices.filter(i => i.status === 'paid').length, color: 'bg-cyan-500' },
+                      { label: 'Pending', count: b2bInsights.invoices.filter(i => i.status === 'pending' || i.status === 'sent').length, color: 'bg-amber-500' },
+                      { label: 'Draft', count: b2bInsights.invoices.filter(i => i.status === 'draft').length, color: 'bg-zinc-600' },
+                    ].filter(s => s.count > 0).map((segment, i) => (
+                      <motion.div
+                        key={segment.label}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.35 + i * 0.05 }}
+                        className="flex items-center gap-3"
+                      >
+                        <div className="flex items-center gap-1.5 w-16">
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${segment.color}`} />
+                          <span className="text-[10px] text-zinc-400">{segment.label}</span>
+                        </div>
+                        <div className="flex-1 h-1.5 rounded-full bg-zinc-800/50 overflow-hidden">
+                          <motion.div
+                            className={`h-full rounded-full ${segment.color}`}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(segment.count / Math.max(b2bInsights.invoices.length, 1)) * 100}%` }}
+                            transition={{ duration: 0.5, delay: 0.4 + i * 0.05, ease: 'easeOut' }}
+                          />
+                        </div>
+                        <span className="text-xs font-bold text-white w-6 text-right tabular-nums">{segment.count}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                  {b2bInsights.invoices.length === 0 && (
+                    <div className="text-center py-4">
+                      <p className="text-xs text-zinc-500">No invoices yet</p>
+                    </div>
+                  )}
+                </div>
+              </GlassCard>
+            </motion.div>
+
+            {/* Portal Clients */}
+            <motion.div {...stagger(0.3)}>
+              <GlassCard padding="none" className="overflow-hidden h-full">
+                <div className="px-5 py-3.5 border-b border-zinc-800/40 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <Users className="w-4 h-4 text-cyan-400" />
+                    Portal Clients
+                  </h3>
+                  <button
+                    onClick={() => navigate('/b2b/clients')}
+                    className="text-[10px] text-cyan-400 hover:opacity-80 flex items-center gap-1 font-medium"
+                  >
+                    Manage <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="p-4">
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40 text-center">
+                      <p className="text-lg font-bold text-white tabular-nums">{b2bInsights.clientStats?.active || 0}</p>
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Active</p>
+                    </div>
+                    <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40 text-center">
+                      <p className="text-lg font-bold text-cyan-400 tabular-nums">{b2bInsights.clientStats?.invited || 0}</p>
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Invited</p>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    {b2bInsights.clients.slice(0, 5).map((client, i) => (
+                      <motion.div
+                        key={client.id}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 + i * 0.04 }}
+                        className="flex items-center justify-between py-1.5 px-1 rounded-lg hover:bg-zinc-800/20 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${client.status === 'active' ? 'bg-cyan-400' : 'bg-zinc-600'}`} />
+                          <span className="text-xs text-zinc-200 truncate">{client.full_name || client.email}</span>
+                        </div>
+                        {client.company_name && (
+                          <span className="text-[10px] text-zinc-500 flex-shrink-0 ml-2 truncate max-w-[80px]">{client.company_name}</span>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                  {b2bInsights.clients.length === 0 && (
+                    <div className="text-center py-4">
+                      <UserCheck className="w-5 h-5 text-zinc-600 mx-auto mb-2" />
+                      <p className="text-xs text-zinc-500">No clients yet</p>
+                      <button
+                        onClick={() => navigate('/b2b/clients')}
+                        className="mt-2 text-[11px] text-cyan-400 hover:text-cyan-300 font-medium"
+                      >
+                        Invite your first client
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </GlassCard>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Channel-specific status — bolcom/shopify only */}
+        {activeView !== 'all' && activeView !== 'b2b' && (
           <motion.div {...stagger(0.25)}>
             <ChannelStatusCard channel={activeView} data={channelData[activeView]} config={channelConfig} formatCurrency={formatCurrency} navigate={navigate} />
           </motion.div>
