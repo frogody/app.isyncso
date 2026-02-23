@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, cloneElement } from "react";
-import { db } from "@/api/supabaseClient";
+import { db, supabase } from "@/api/supabaseClient";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useUser, useTeamAccess } from "@/components/context/UserContext";
 import { usePermissions } from "@/components/context/PermissionContext";
-import { Plus, LayoutGrid, Users, TrendingUp, Award, Target, BookOpen, Briefcase, Shield, Euro, AlertTriangle, FileCheck, Activity, PieChart } from "lucide-react";
+import { Plus, LayoutGrid, Users, TrendingUp, Award, Target, BookOpen, Briefcase, Shield, Euro, AlertTriangle, FileCheck, Activity, PieChart, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +31,10 @@ import {
   RaiseInvestorsWidget, RaiseMeetingsWidget
 } from "@/components/dashboard/widgets/RaiseWidgets";
 import { RecentActionsWidget, QuickActionsWidget } from "@/components/dashboard/widgets/CoreWidgets";
+import {
+  CommerceBToBOverviewWidget, CommerceOrdersWidget, CommerceRevenueWidget,
+  CommerceProductsWidget, CommerceOutstandingWidget
+} from "@/components/dashboard/widgets/CommerceWidgets";
 
 // Widget size configuration
 const WIDGET_CONFIG = {
@@ -66,6 +70,12 @@ const WIDGET_CONFIG = {
   raise_committed: { size: 'small', app: 'raise' },
   raise_investors: { size: 'small', app: 'raise' },
   raise_meetings: { size: 'small', app: 'raise' },
+  // Commerce widgets
+  commerce_b2b_overview: { size: 'large', app: 'commerce' },
+  commerce_orders: { size: 'small', app: 'commerce' },
+  commerce_revenue: { size: 'small', app: 'commerce' },
+  commerce_products: { size: 'small', app: 'commerce' },
+  commerce_outstanding: { size: 'small', app: 'commerce' },
   // Core widgets (no app requirement)
   actions_recent: { size: 'medium', app: null },
   quick_actions: { size: 'medium', app: null },
@@ -76,7 +86,7 @@ export default function Dashboard() {
   const { effectiveApps } = useTeamAccess();
   const { isManager, isAdmin, hierarchyLevel, isLoading: permLoading } = usePermissions();
   const [dataLoading, setDataLoading] = useState(true);
-  const [enabledApps, setEnabledApps] = useState(['learn', 'growth', 'sentinel']);
+  const [enabledApps, setEnabledApps] = useState(['learn', 'growth', 'sentinel', 'finance', 'commerce']);
   const [enabledWidgets, setEnabledWidgets] = useState([]);
   const [viewMode, setViewMode] = useState('personal'); // 'personal' or 'team'
   const [teamData, setTeamData] = useState(null);
@@ -123,6 +133,15 @@ export default function Dashboard() {
     committedAmount: 0,
     investorMeetings: 0,
     upcomingMeetings: 0,
+    // Commerce / B2B
+    b2bOrders: [],
+    b2bOrderCount: 0,
+    b2bActiveOrders: 0,
+    b2bRevenue: 0,
+    b2bOutstanding: 0,
+    b2bUnpaidCount: 0,
+    productCount: 0,
+    productDraftCount: 0,
     // Core
     recentActions: [],
   });
@@ -134,15 +153,24 @@ export default function Dashboard() {
       // Load user config first - RLS handles filtering
       const configs = await db.entities.UserAppConfig.list({ limit: 10 }).catch(() => []);
       const defaultWidgets = [
-        'learn_progress', 'learn_stats', 'learn_streak', 'learn_xp',
+        'commerce_b2b_overview', 'commerce_orders', 'commerce_revenue', 'commerce_products', 'commerce_outstanding',
+        'finance_overview', 'finance_revenue', 'finance_expenses', 'finance_pending', 'finance_mrr',
         'growth_pipeline', 'growth_stats', 'growth_deals',
         'sentinel_compliance', 'sentinel_systems',
+        'learn_progress', 'learn_stats', 'learn_streak', 'learn_xp',
         'actions_recent', 'quick_actions'
       ];
 
       if (configs.length > 0) {
-        setEnabledApps(configs[0].enabled_apps || ['learn', 'growth', 'sentinel']);
-        setEnabledWidgets(configs[0].dashboard_widgets || defaultWidgets);
+        const savedApps = configs[0].enabled_apps || ['learn', 'growth', 'sentinel'];
+        // Always include finance and commerce
+        const appsWithDefaults = [...new Set([...savedApps, 'finance', 'commerce'])];
+        setEnabledApps(appsWithDefaults);
+        // Merge saved widgets with any new commerce/finance widgets not yet saved
+        const savedWidgets = configs[0].dashboard_widgets || defaultWidgets;
+        const commerceFinanceDefaults = defaultWidgets.filter(w => w.startsWith('commerce_') || w.startsWith('finance_'));
+        const mergedWidgets = [...new Set([...commerceFinanceDefaults, ...savedWidgets])];
+        setEnabledWidgets(mergedWidgets);
       } else {
         setEnabledWidgets(defaultWidgets);
       }
@@ -153,7 +181,8 @@ export default function Dashboard() {
         activitiesResult, gamificationResult, userSkillsResult,
         signalsResult, campaignsResult, certificatesResult,
         invoicesResult, expensesResult, subscriptionsResult,
-        raiseCampaignsResult, investorsResult
+        raiseCampaignsResult, investorsResult,
+        b2bOrdersResult, productsResult
       ] = await Promise.allSettled([
         db.entities.Course.list({ limit: 50 }).catch(() => []),
         db.entities.UserProgress.list({ limit: 100 }).catch(() => []),
@@ -173,7 +202,10 @@ export default function Dashboard() {
         db.entities.Subscription?.list?.({ limit: 20 }).catch(() => []) || Promise.resolve([]),
         // Raise data
         db.entities.RaiseCampaign?.list?.({ limit: 1 }).catch(() => []) || Promise.resolve([]),
-        db.entities.Investor?.list?.({ limit: 50 }).catch(() => []) || Promise.resolve([])
+        db.entities.Investor?.list?.({ limit: 50 }).catch(() => []) || Promise.resolve([]),
+        // B2B Commerce data (direct queries for reliability)
+        supabase.from('b2b_orders').select('id, order_number, status, total, payment_status, created_at').eq('organization_id', user.organization_id).order('created_at', { ascending: false }).limit(20).then(r => r.data || []).catch(() => []),
+        supabase.from('products').select('id, status').eq('company_id', user.company_id).limit(5000).then(r => r.data || []).catch(() => []),
       ]);
 
       // Process Learn data
@@ -239,6 +271,18 @@ export default function Dashboard() {
       const investorMeetings = investors.filter(i => i.status === 'meeting_scheduled').length;
       const upcomingMeetings = investorMeetings; // Simplified
 
+      // Process B2B Commerce data
+      const b2bOrders = b2bOrdersResult.status === 'fulfilled' ? b2bOrdersResult.value : [];
+      const b2bOrderCount = b2bOrders.length;
+      const b2bActiveOrders = b2bOrders.filter(o => ['pending', 'pending_review', 'confirmed', 'processing'].includes(o.status)).length;
+      const b2bRevenue = b2bOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+      const b2bOutstanding = b2bOrders.filter(o => o.payment_status === 'pending').reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+      const b2bUnpaidCount = b2bOrders.filter(o => o.payment_status === 'pending').length;
+
+      const allProducts = productsResult.status === 'fulfilled' ? productsResult.value : [];
+      const productCount = allProducts.filter(p => p.status === 'published').length;
+      const productDraftCount = allProducts.filter(p => p.status === 'draft').length;
+
       // Core data
       const recentActions = actionsData.status === 'fulfilled' ? actionsData.value : [];
 
@@ -285,6 +329,15 @@ export default function Dashboard() {
         committedAmount,
         investorMeetings,
         upcomingMeetings,
+        // Commerce / B2B
+        b2bOrders,
+        b2bOrderCount,
+        b2bActiveOrders,
+        b2bRevenue,
+        b2bOutstanding,
+        b2bUnpaidCount,
+        productCount,
+        productDraftCount,
         // Core
         recentActions,
       });
@@ -311,7 +364,9 @@ export default function Dashboard() {
         systemsResult,
         actionsResult,
         invoicesResult,
-        expensesResult
+        expensesResult,
+        teamB2bResult,
+        teamProductsResult
       ] = await Promise.allSettled([
         db.entities.User?.list?.({ limit: 100 }).catch(() => []),
         db.entities.UserProgress?.list?.({ limit: 500 }).catch(() => []),
@@ -320,7 +375,9 @@ export default function Dashboard() {
         db.entities.AISystem?.list?.({ limit: 100 }).catch(() => []),
         db.entities.ActionLog?.list?.({ limit: 100 }).catch(() => []),
         db.entities.Invoice?.list?.({ limit: 100 }).catch(() => []),
-        db.entities.Expense?.list?.({ limit: 100 }).catch(() => [])
+        db.entities.Expense?.list?.({ limit: 100 }).catch(() => []),
+        supabase.from('b2b_orders').select('id, total, status, payment_status').eq('organization_id', user.organization_id).limit(100).then(r => r.data || []).catch(() => []),
+        supabase.from('products').select('id, status').eq('company_id', user.company_id).limit(5000).then(r => r.data || []).catch(() => []),
       ]);
 
       const allUsers = usersResult.status === 'fulfilled' ? usersResult.value : [];
@@ -369,6 +426,14 @@ export default function Dashboard() {
       // Actions this week
       const recentActions = allActions.filter(a => new Date(a.created_at) > weekAgo).length;
 
+      // COMMERCE stats
+      const teamB2bOrders = teamB2bResult.status === 'fulfilled' ? teamB2bResult.value : [];
+      const b2bTotalRevenue = teamB2bOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+      const b2bOrderCount = teamB2bOrders.length;
+      const b2bOutstanding = teamB2bOrders.filter(o => o.payment_status === 'pending').reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+      const teamProducts = teamProductsResult.status === 'fulfilled' ? teamProductsResult.value : [];
+      const publishedProducts = teamProducts.filter(p => p.status === 'published').length;
+
       setTeamData({
         // Team overview
         memberCount: teamMembers.length,
@@ -393,6 +458,12 @@ export default function Dashboard() {
         revenue: totalRevenue,
         pendingInvoices,
         monthlyExpenses,
+
+        // Commerce
+        b2bRevenue: b2bTotalRevenue,
+        b2bOrders: b2bOrderCount,
+        b2bOutstanding,
+        productCount: publishedProducts,
 
         // Activity
         actionsThisWeek: recentActions
@@ -487,7 +558,9 @@ export default function Dashboard() {
 
   // Helper to check enabled — must be in user prefs AND licensed
   const isWidgetEnabled = (widgetId) => enabledWidgets.includes(widgetId);
-  const isAppEnabled = (appId) => !appId || (enabledApps.includes(appId) && effectiveApps.includes(appId));
+  // Commerce and Finance are always available (core business data, not separate licensed apps)
+  const alwaysEnabledApps = ['commerce', 'finance'];
+  const isAppEnabled = (appId) => !appId || alwaysEnabledApps.includes(appId) || (enabledApps.includes(appId) && effectiveApps.includes(appId));
 
   // Build widget components map
   const getWidgetComponent = (widgetId) => {
@@ -525,6 +598,12 @@ export default function Dashboard() {
       case 'raise_committed': return <RaiseCommittedWidget committedAmount={d.committedAmount} targetAmount={d.raiseCampaign?.target_amount || 0} />;
       case 'raise_investors': return <RaiseInvestorsWidget investorCount={d.investors?.length || 0} interestedCount={d.investors?.filter(i => ['interested', 'meeting_scheduled', 'in_dd'].includes(i.status)).length || 0} />;
       case 'raise_meetings': return <RaiseMeetingsWidget meetingCount={d.investorMeetings} upcomingCount={d.upcomingMeetings} />;
+      // Commerce
+      case 'commerce_b2b_overview': return <CommerceBToBOverviewWidget orders={d.b2bOrders} totalRevenue={d.b2bRevenue} totalOutstanding={d.b2bOutstanding} productCount={d.productCount} />;
+      case 'commerce_orders': return <CommerceOrdersWidget orderCount={d.b2bOrderCount} activeCount={d.b2bActiveOrders} />;
+      case 'commerce_revenue': return <CommerceRevenueWidget totalRevenue={d.b2bRevenue} />;
+      case 'commerce_products': return <CommerceProductsWidget productCount={d.productCount} draftCount={d.productDraftCount} />;
+      case 'commerce_outstanding': return <CommerceOutstandingWidget outstandingAmount={d.b2bOutstanding} unpaidCount={d.b2bUnpaidCount} />;
       // Core
       case 'actions_recent': return <RecentActionsWidget actions={d.recentActions} />;
       case 'quick_actions': return <QuickActionsWidget enabledApps={enabledApps.filter(a => effectiveApps.includes(a))} />;
@@ -804,7 +883,7 @@ export default function Dashboard() {
                     <CardContent className="p-4">
                       <div className="grid grid-cols-3 gap-3">
                         <div className="space-y-1">
-                          <p className="text-lg font-bold text-white">${(teamData.revenue / 1000).toFixed(0)}k</p>
+                          <p className="text-lg font-bold text-white">{'\u20AC'}{((teamData.revenue || 0) / 1000).toFixed(0)}k</p>
                           <p className="text-xs text-zinc-400">Revenue</p>
                         </div>
                         <div className="space-y-1">
@@ -812,7 +891,7 @@ export default function Dashboard() {
                           <p className="text-xs text-zinc-400">Pending</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-lg font-bold text-white">${(teamData.monthlyExpenses / 1000).toFixed(1)}k</p>
+                          <p className="text-lg font-bold text-white">{'\u20AC'}{((teamData.monthlyExpenses || 0) / 1000).toFixed(1)}k</p>
                           <p className="text-xs text-zinc-400">Expenses</p>
                         </div>
                       </div>
@@ -824,6 +903,41 @@ export default function Dashboard() {
                     </CardContent>
                   </Card>
                   )}
+
+                  {/* COMMERCE Module Card */}
+                  <Card className="bg-zinc-900/50 border-zinc-800">
+                    <CardHeader className="border-b border-zinc-800 py-3">
+                      <CardTitle className="text-white flex items-center gap-2 text-base">
+                        <ShoppingCart className="w-5 h-5 text-cyan-400" />
+                        Commerce
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-4 gap-3">
+                        <div className="space-y-1">
+                          <p className="text-lg font-bold text-cyan-400">{'\u20AC'}{((teamData.b2bRevenue || 0) / 1000).toFixed(0)}k</p>
+                          <p className="text-xs text-zinc-400">B2B Revenue</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-lg font-bold text-white">{teamData.b2bOrders || 0}</p>
+                          <p className="text-xs text-zinc-400">Orders</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-lg font-bold text-amber-400">{'\u20AC'}{((teamData.b2bOutstanding || 0) / 1000).toFixed(0)}k</p>
+                          <p className="text-xs text-zinc-400">Outstanding</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-lg font-bold text-blue-400">{(teamData.productCount || 0).toLocaleString()}</p>
+                          <p className="text-xs text-zinc-400">Products</p>
+                        </div>
+                      </div>
+                      <Link to={createPageUrl("InventoryShipping")} className="mt-4 block">
+                        <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
+                          View Commerce
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
                 </div>
 
                 {/* Quick Actions for Managers */}
@@ -864,6 +978,12 @@ export default function Dashboard() {
                         <Button variant="outline" size="sm" className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white text-xs">
                           <Euro className="w-4 h-4 mr-1.5" />
                           Finance
+                        </Button>
+                      </Link>
+                      <Link to={createPageUrl("InventoryShipping")}>
+                        <Button variant="outline" size="sm" className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white text-xs">
+                          <ShoppingCart className="w-4 h-4 mr-1.5" />
+                          Commerce
                         </Button>
                       </Link>
                       <Link to={createPageUrl("AnalyticsDashboard")}>
