@@ -940,11 +940,12 @@ function RelatedProducts({ product, currentProductId, orgId }) {
       try {
         const { data, error } = await supabase
           .from('products')
-          .select('id, name, price, unit_price, featured_image, sku, product_sales_channels!inner(channel)')
+          .select('id, name, price, unit_price, featured_image, sku, product_sales_channels!inner(channel, is_active)')
           .eq('product_sales_channels.channel', 'b2b')
+          .eq('product_sales_channels.is_active', true)
           .eq('category_id', categoryId)
           .neq('id', currentProductId)
-          .eq('is_active', true)
+          .eq('status', 'published')
           .limit(4);
 
         if (!cancelled && !error && data) {

@@ -672,9 +672,10 @@ export default function CatalogPage() {
       try {
         const { data, error } = await supabase
           .from('products')
-          .select('*, physical_products(*), inventory(*), product_sales_channels!inner(channel)')
+          .select('*, physical_products(*), inventory(*), product_sales_channels!inner(channel, is_active)')
           .eq('product_sales_channels.channel', 'b2b')
-          .eq('is_active', true)
+          .eq('product_sales_channels.is_active', true)
+          .eq('status', 'published')
           .eq('company_id', organizationId);
 
         if (cancelled) return;
