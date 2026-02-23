@@ -289,8 +289,17 @@ function orderConfirmedEmail(
 }
 
 // ---------------------------------------------------------------------------
-// PDF Invoice Generator
+// PDF Invoice Generator — Premium Brand-Aware Design
 // ---------------------------------------------------------------------------
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const h = hex.replace("#", "");
+  return {
+    r: parseInt(h.substring(0, 2), 16) / 255,
+    g: parseInt(h.substring(2, 4), 16) / 255,
+    b: parseInt(h.substring(4, 6), 16) / 255,
+  };
+}
 
 async function generateInvoicePdf(invoice: any, company: any, storeConfig: StoreConfig): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
@@ -300,198 +309,362 @@ async function generateInvoicePdf(invoice: any, company: any, storeConfig: Store
   const fontRegular = await doc.embedFont(StandardFonts.Helvetica);
   const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
 
-  const black = rgb(0.1, 0.1, 0.1);
-  const gray = rgb(0.45, 0.45, 0.45);
-  const darkGray = rgb(0.25, 0.25, 0.25);
-  const accent = rgb(0.024, 0.714, 0.831); // cyan-500
-  const lightBg = rgb(0.96, 0.96, 0.97);
-  const lineColor = rgb(0.88, 0.88, 0.9);
+  // ── Brand colors from platform settings ──
+  const brandPrimary = hexToRgb(
+    company?.invoice_branding?.color_override_primary || storeConfig.primaryColor || "#06b6d4"
+  );
+  const brandAccent = hexToRgb(
+    company?.invoice_branding?.color_override_accent || storeConfig.primaryColor || "#06b6d4"
+  );
+  const primary = rgb(brandPrimary.r, brandPrimary.g, brandPrimary.b);
+  const primaryLight = rgb(brandPrimary.r, brandPrimary.g, brandPrimary.b); // used with opacity via rectangles
 
-  const margin = 50;
-  let y = height - margin;
+  const nearBlack = rgb(0.08, 0.08, 0.1);
+  const dark = rgb(0.15, 0.15, 0.18);
+  const medGray = rgb(0.42, 0.42, 0.46);
+  const lightGray = rgb(0.62, 0.62, 0.66);
+  const veryLightBg = rgb(0.975, 0.975, 0.98);
+  const tableBg = rgb(0.965, 0.968, 0.975);
+  const lineColor = rgb(0.90, 0.90, 0.92);
+  const white = rgb(1, 1, 1);
 
-  // Helper: draw text
-  const text = (str: string, x: number, yp: number, opts: { font?: any; size?: number; color?: any } = {}) => {
-    page.drawText(str || "", {
-      x,
-      y: yp,
-      font: opts.font || fontRegular,
-      size: opts.size || 10,
-      color: opts.color || black,
-    });
-  };
+  const ML = 52; // left margin
+  const MR = 52; // right margin
+  const contentW = width - ML - MR;
+  let y = height;
 
-  // Helper: right-aligned text
-  const textRight = (str: string, yp: number, opts: { font?: any; size?: number; color?: any } = {}) => {
+  // ── Drawing helpers ──
+  const txt = (str: string, x: number, yp: number, opts: { font?: any; size?: number; color?: any; maxWidth?: number } = {}) => {
+    let s = str || "";
     const f = opts.font || fontRegular;
-    const s = opts.size || 10;
-    const w = f.widthOfTextAtSize(str || "", s);
-    text(str, width - margin - w, yp, opts);
+    const sz = opts.size || 9.5;
+    if (opts.maxWidth && f.widthOfTextAtSize(s, sz) > opts.maxWidth) {
+      while (s.length > 3 && f.widthOfTextAtSize(s + "...", sz) > opts.maxWidth) s = s.slice(0, -1);
+      s = s.trimEnd() + "...";
+    }
+    page.drawText(s, { x, y: yp, font: f, size: sz, color: opts.color || nearBlack });
   };
 
-  // Helper: horizontal line
-  const hline = (yp: number) => {
-    page.drawLine({
-      start: { x: margin, y: yp },
-      end: { x: width - margin, y: yp },
-      thickness: 0.5,
-      color: lineColor,
-    });
+  const txtRight = (str: string, rightEdge: number, yp: number, opts: { font?: any; size?: number; color?: any } = {}) => {
+    const f = opts.font || fontRegular;
+    const sz = opts.size || 9.5;
+    const w = f.widthOfTextAtSize(str || "", sz);
+    txt(str, rightEdge - w, yp, opts);
   };
 
-  // ── Company header ──
+  const txtCenter = (str: string, centerX: number, yp: number, opts: { font?: any; size?: number; color?: any } = {}) => {
+    const f = opts.font || fontRegular;
+    const sz = opts.size || 9.5;
+    const w = f.widthOfTextAtSize(str || "", sz);
+    txt(str, centerX - w / 2, yp, opts);
+  };
+
+  const drawRect = (x: number, yp: number, w: number, h: number, color: any, borderRadius?: number) => {
+    if (borderRadius) {
+      // Simulate rounded rect with overlapping rectangles + circles
+      const r = Math.min(borderRadius, h / 2, w / 2);
+      page.drawRectangle({ x: x + r, y: yp, width: w - 2 * r, height: h, color });
+      page.drawRectangle({ x, y: yp + r, width: w, height: h - 2 * r, color });
+      page.drawCircle({ x: x + r, y: yp + r, size: r, color });
+      page.drawCircle({ x: x + w - r, y: yp + r, size: r, color });
+      page.drawCircle({ x: x + r, y: yp + h - r, size: r, color });
+      page.drawCircle({ x: x + w - r, y: yp + h - r, size: r, color });
+    } else {
+      page.drawRectangle({ x, y: yp, width: w, height: h, color });
+    }
+  };
+
+  const hLine = (yp: number, x1 = ML, x2 = width - MR, thickness = 0.5, color = lineColor) => {
+    page.drawLine({ start: { x: x1, y: yp }, end: { x: x2, y: yp }, thickness, color });
+  };
+
+  const rightX = width - MR;
+  const ib = company?.invoice_branding || {};
   const companyName = company?.name || storeConfig.storeName || "Wholesale Store";
-  text(companyName, margin, y, { font: fontBold, size: 18, color: black });
-  y -= 18;
 
-  if (company?.invoice_branding?.company_address) {
-    text(company.invoice_branding.company_address, margin, y, { size: 9, color: gray });
-    y -= 13;
-  }
-  const contactParts: string[] = [];
-  if (company?.invoice_branding?.company_email) contactParts.push(company.invoice_branding.company_email);
-  if (company?.invoice_branding?.company_phone) contactParts.push(company.invoice_branding.company_phone);
-  if (contactParts.length) {
-    text(contactParts.join("  |  "), margin, y, { size: 9, color: gray });
-    y -= 13;
-  }
-  if (company?.invoice_branding?.company_vat) {
-    text(`VAT: ${company.invoice_branding.company_vat}`, margin, y, { size: 9, color: gray });
-    y -= 13;
+  // ══════════════════════════════════════════════════════════════════════════
+  // TOP ACCENT BAR — full-width brand color strip
+  // ══════════════════════════════════════════════════════════════════════════
+  drawRect(0, height - 6, width, 6, primary);
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // HEADER SECTION — Logo/Company left, INVOICE badge right
+  // ══════════════════════════════════════════════════════════════════════════
+  y = height - 52;
+
+  // Try to embed company logo
+  let logoEmbedded = false;
+  const logoUrl = storeConfig.logoUrl || company?.logo_url;
+  if (logoUrl) {
+    try {
+      const logoRes = await fetch(logoUrl);
+      if (logoRes.ok) {
+        const logoBytes = new Uint8Array(await logoRes.arrayBuffer());
+        const contentType = logoRes.headers.get("content-type") || "";
+        let logoImage;
+        if (contentType.includes("png") || logoUrl.toLowerCase().includes(".png")) {
+          logoImage = await doc.embedPng(logoBytes);
+        } else {
+          logoImage = await doc.embedJpg(logoBytes);
+        }
+        const logoDims = logoImage.scale(1);
+        const maxH = 36;
+        const maxW = 140;
+        const scale = Math.min(maxH / logoDims.height, maxW / logoDims.width, 1);
+        page.drawImage(logoImage, {
+          x: ML,
+          y: y - logoDims.height * scale + 10,
+          width: logoDims.width * scale,
+          height: logoDims.height * scale,
+        });
+        logoEmbedded = true;
+      }
+    } catch (e) {
+      console.warn("[PDF] Logo embed failed:", (e as Error).message);
+    }
   }
 
-  // ── INVOICE title ──
-  y -= 10;
-  textRight("INVOICE", y + 12, { font: fontBold, size: 24, color: accent });
+  if (!logoEmbedded) {
+    txt(companyName, ML, y, { font: fontBold, size: 20, color: nearBlack });
+  }
+
+  // INVOICE badge on top-right — rounded pill with brand color
+  const badgeText = "INVOICE";
+  const badgeW = 120;
+  const badgeH = 32;
+  const badgeX = rightX - badgeW;
+  const badgeY = y - 8;
+  drawRect(badgeX, badgeY, badgeW, badgeH, primary, 6);
+  txtCenter(badgeText, badgeX + badgeW / 2, badgeY + 10, { font: fontBold, size: 14, color: white });
+
+  // ── Company details row below logo ──
   y -= 30;
-  hline(y);
-  y -= 20;
-
-  // ── Invoice details (left) + Bill To (right) ──
-  const detailsX = margin;
-  const billToX = width / 2 + 20;
-
-  text("Invoice Number", detailsX, y, { font: fontBold, size: 8, color: gray });
-  text(invoice.invoice_number || "—", detailsX, y - 14, { font: fontBold, size: 11, color: black });
-
-  text("Bill To", billToX, y, { font: fontBold, size: 8, color: gray });
-  text(invoice.client_name || "Client", billToX, y - 14, { font: fontBold, size: 11, color: black });
-
-  y -= 32;
-
-  text("Invoice Date", detailsX, y, { font: fontBold, size: 8, color: gray });
-  text(formatDate(invoice.created_at || new Date().toISOString()), detailsX, y - 14, { size: 10 });
-
-  if (invoice.client_email) {
-    text(invoice.client_email, billToX, y, { size: 9, color: gray });
+  const companyLine1: string[] = [];
+  if (ib.company_address) companyLine1.push(ib.company_address);
+  if (companyLine1.length) {
+    txt(companyLine1.join(""), ML, y, { size: 8.5, color: medGray });
+    y -= 13;
+  }
+  const companyLine2: string[] = [];
+  if (ib.company_email) companyLine2.push(ib.company_email);
+  if (ib.company_phone) companyLine2.push(ib.company_phone);
+  if (ib.company_vat) companyLine2.push(`VAT ${ib.company_vat}`);
+  if (companyLine2.length) {
+    txt(companyLine2.join("   ·   "), ML, y, { size: 8, color: lightGray });
+    y -= 10;
   }
 
-  y -= 32;
+  // ══════════════════════════════════════════════════════════════════════════
+  // DIVIDER
+  // ══════════════════════════════════════════════════════════════════════════
+  y -= 12;
+  hLine(y, ML, rightX, 1.2, primary);
+  y -= 24;
 
-  text("Due Date", detailsX, y, { font: fontBold, size: 8, color: gray });
-  text(formatDate(invoice.due_date), detailsX, y - 14, { size: 10 });
+  // ══════════════════════════════════════════════════════════════════════════
+  // INFO CARDS — Two-column grid: Invoice Details (left) + Bill To (right)
+  // ══════════════════════════════════════════════════════════════════════════
+  const cardW = (contentW - 20) / 2;
+  const cardH = 90;
+  const cardLeftX = ML;
+  const cardRightX = ML + cardW + 20;
 
-  text("Payment Terms", billToX, y, { font: fontBold, size: 8, color: gray });
-  text(`Net ${invoice.payment_terms_days || 30} days`, billToX, y - 14, { size: 10 });
+  // Left card background
+  drawRect(cardLeftX, y - cardH, cardW, cardH, veryLightBg, 8);
+  // Right card background
+  drawRect(cardRightX, y - cardH, cardW, cardH, veryLightBg, 8);
 
-  y -= 40;
-  hline(y);
-  y -= 8;
+  // Left card — Invoice Details
+  const cardPad = 14;
+  let cy = y - cardPad;
+  txt("INVOICE DETAILS", cardLeftX + cardPad, cy, { font: fontBold, size: 7.5, color: primary });
+  cy -= 18;
+  txt("Invoice No.", cardLeftX + cardPad, cy, { size: 7.5, color: lightGray });
+  txt(invoice.invoice_number || "—", cardLeftX + cardPad + 70, cy, { font: fontBold, size: 9, color: nearBlack });
+  cy -= 15;
+  txt("Issue Date", cardLeftX + cardPad, cy, { size: 7.5, color: lightGray });
+  txt(formatDate(invoice.created_at || new Date().toISOString()), cardLeftX + cardPad + 70, cy, { size: 9, color: nearBlack });
+  cy -= 15;
+  txt("Due Date", cardLeftX + cardPad, cy, { size: 7.5, color: lightGray });
+  txt(formatDate(invoice.due_date), cardLeftX + cardPad + 70, cy, { font: fontBold, size: 9, color: nearBlack });
+  cy -= 15;
+  txt("Terms", cardLeftX + cardPad, cy, { size: 7.5, color: lightGray });
+  txt(`Net ${invoice.payment_terms_days || 30} days`, cardLeftX + cardPad + 70, cy, { size: 9, color: nearBlack });
 
-  // ── Line items table header ──
-  const colProduct = margin;
-  const colQty = 340;
-  const colPrice = 410;
-  const colTotal = width - margin;
+  // Right card — Bill To
+  cy = y - cardPad;
+  txt("BILL TO", cardRightX + cardPad, cy, { font: fontBold, size: 7.5, color: primary });
+  cy -= 18;
+  txt(invoice.client_name || "Client", cardRightX + cardPad, cy, { font: fontBold, size: 10.5, color: nearBlack });
+  cy -= 15;
+  if (invoice.client_email) {
+    txt(invoice.client_email, cardRightX + cardPad, cy, { size: 9, color: medGray });
+    cy -= 14;
+  }
+  if (invoice.client_address) {
+    const addrStr = typeof invoice.client_address === "string"
+      ? invoice.client_address
+      : [invoice.client_address.street, invoice.client_address.city, invoice.client_address.postal_code, invoice.client_address.country]
+          .filter(Boolean).join(", ");
+    if (addrStr) {
+      txt(addrStr, cardRightX + cardPad, cy, { size: 8.5, color: medGray, maxWidth: cardW - 2 * cardPad });
+      cy -= 14;
+    }
+  }
 
-  // Header background
-  page.drawRectangle({ x: margin - 5, y: y - 4, width: width - 2 * margin + 10, height: 18, color: lightBg });
+  y -= cardH + 28;
 
-  text("ITEM", colProduct, y, { font: fontBold, size: 8, color: gray });
-  text("QTY", colQty, y, { font: fontBold, size: 8, color: gray });
-  text("UNIT PRICE", colPrice, y, { font: fontBold, size: 8, color: gray });
-  textRight("TOTAL", y, { font: fontBold, size: 8, color: gray });
+  // ══════════════════════════════════════════════════════════════════════════
+  // LINE ITEMS TABLE — Professional striped table
+  // ══════════════════════════════════════════════════════════════════════════
+  const colX = {
+    item: ML + 12,
+    qty: ML + contentW * 0.58,
+    price: ML + contentW * 0.72,
+    total: rightX - 12,
+  };
 
-  y -= 20;
+  // Table header with brand-color background
+  const headerH = 28;
+  drawRect(ML, y - headerH, contentW, headerH, primary, 6);
+  const headerY = y - headerH + 9;
+  txt("DESCRIPTION", colX.item, headerY, { font: fontBold, size: 8, color: white });
+  txtCenter("QTY", colX.qty, headerY, { font: fontBold, size: 8, color: white });
+  txtCenter("UNIT PRICE", colX.price + 20, headerY, { font: fontBold, size: 8, color: white });
+  txtRight("AMOUNT", colX.total, headerY, { font: fontBold, size: 8, color: white });
+  y -= headerH;
 
-  // ── Line items ──
+  // Line items
   const lineItems = invoice.items || [];
-  for (const item of lineItems) {
+  for (let i = 0; i < lineItems.length; i++) {
+    const item = lineItems[i];
     const qty = item.quantity || 1;
     const unitPrice = Number(item.unit_price) || 0;
     const lineTotal = Number(item.total) || qty * unitPrice;
+    const rowH = 30;
 
-    // Truncate long product names
-    let productName = item.name || "Product";
-    if (productName.length > 45) productName = productName.substring(0, 42) + "...";
+    // Alternating row background
+    if (i % 2 === 0) {
+      drawRect(ML, y - rowH, contentW, rowH, tableBg);
+    }
 
-    text(productName, colProduct, y, { size: 10, color: darkGray });
-    text(String(qty), colQty, y, { size: 10 });
-    text(formatCurrency(unitPrice), colPrice, y, { size: 10 });
-    textRight(formatCurrency(lineTotal), y, { size: 10 });
+    const rowY = y - rowH + 10;
+    txt(item.name || "Product", colX.item, rowY, { size: 9.5, color: dark, maxWidth: contentW * 0.48 });
+    txtCenter(String(qty), colX.qty, rowY, { size: 9.5, color: nearBlack });
+    txtCenter(formatCurrency(unitPrice), colX.price + 20, rowY, { size: 9.5, color: medGray });
+    txtRight(formatCurrency(lineTotal), colX.total, rowY, { font: fontBold, size: 9.5, color: nearBlack });
 
-    y -= 18;
-    hline(y + 6);
+    y -= rowH;
   }
 
-  y -= 10;
+  // Bottom border of table
+  hLine(y, ML, rightX, 0.5, lineColor);
+  y -= 24;
 
-  // ── Summary ──
-  const summaryX = colPrice;
+  // ══════════════════════════════════════════════════════════════════════════
+  // TOTALS SECTION — Right-aligned summary block
+  // ══════════════════════════════════════════════════════════════════════════
   const subtotal = Number(invoice.subtotal) || 0;
   const discount = Number(invoice.discount_amount) || 0;
   const taxRate = Number(invoice.tax_rate) || 0;
   const taxAmount = Number(invoice.tax_amount) || 0;
   const total = Number(invoice.total) || 0;
 
-  text("Subtotal", summaryX, y, { size: 10, color: gray });
-  textRight(formatCurrency(subtotal), y, { size: 10 });
+  const summaryW = 220;
+  const summaryX = rightX - summaryW;
+  const labelX = summaryX + 8;
+  const valX = rightX - 8;
+
+  // Summary rows
+  txt("Subtotal", labelX, y, { size: 9.5, color: medGray });
+  txtRight(formatCurrency(subtotal), valX, y, { size: 9.5, color: nearBlack });
   y -= 18;
 
   if (discount > 0) {
-    text("Discount", summaryX, y, { size: 10, color: gray });
-    textRight(`-${formatCurrency(discount)}`, y, { size: 10, color: rgb(0.9, 0.2, 0.2) });
+    txt("Discount", labelX, y, { size: 9.5, color: medGray });
+    txtRight(`-${formatCurrency(discount)}`, valX, y, { size: 9.5, color: rgb(0.2, 0.75, 0.35) });
     y -= 18;
   }
 
   if (taxRate > 0) {
-    text(`Tax (${taxRate}%)`, summaryX, y, { size: 10, color: gray });
-    textRight(formatCurrency(taxAmount), y, { size: 10 });
+    txt(`VAT (${taxRate}%)`, labelX, y, { size: 9.5, color: medGray });
+    txtRight(formatCurrency(taxAmount), valX, y, { size: 9.5, color: nearBlack });
     y -= 18;
   }
 
+  // Divider above total
   y -= 4;
-  hline(y + 10);
-  y -= 8;
+  hLine(y + 10, summaryX, rightX, 0.8, lineColor);
+  y -= 6;
 
-  // Total row - bold + accent
-  page.drawRectangle({ x: summaryX - 10, y: y - 6, width: width - margin - summaryX + 10, height: 24, color: rgb(0.024, 0.714, 0.831, 0.08) });
-  text("Total", summaryX, y, { font: fontBold, size: 12, color: black });
-  textRight(formatCurrency(total), y, { font: fontBold, size: 14, color: accent });
+  // TOTAL — highlighted block with brand color
+  const totalBlockH = 36;
+  drawRect(summaryX, y - totalBlockH + 12, summaryW, totalBlockH, primary, 6);
+  const totalY = y - totalBlockH + 22;
+  txt("TOTAL DUE", labelX, totalY, { font: fontBold, size: 10, color: white });
+  txtRight(formatCurrency(total), valX, totalY, { font: fontBold, size: 14, color: white });
 
-  y -= 40;
+  y -= totalBlockH + 20;
 
-  // ── Bank details ──
-  if (company?.invoice_branding?.show_bank_details) {
-    const ib = company.invoice_branding;
-    hline(y + 10);
-    y -= 10;
-    text("BANK DETAILS", margin, y, { font: fontBold, size: 8, color: gray });
-    y -= 16;
-    if (ib.bank_name) { text(`Bank: ${ib.bank_name}`, margin, y, { size: 9, color: darkGray }); y -= 13; }
-    if (ib.iban) { text(`IBAN: ${ib.iban}`, margin, y, { size: 9, color: darkGray }); y -= 13; }
-    if (ib.bic) { text(`BIC: ${ib.bic}`, margin, y, { size: 9, color: darkGray }); y -= 13; }
-    y -= 10;
+  // ══════════════════════════════════════════════════════════════════════════
+  // PAYMENT INFO — Bank details in a styled card
+  // ══════════════════════════════════════════════════════════════════════════
+  if (ib.show_bank_details && (ib.iban || ib.bank_name)) {
+    const bankCardH = 68;
+    drawRect(ML, y - bankCardH, contentW, bankCardH, veryLightBg, 8);
+
+    // Accent left border (4px wide strip)
+    drawRect(ML, y - bankCardH, 4, bankCardH, primary, 2);
+
+    const bankPad = 18;
+    let by = y - 14;
+    txt("PAYMENT INFORMATION", ML + bankPad, by, { font: fontBold, size: 7.5, color: primary });
+    by -= 18;
+
+    const col1 = ML + bankPad;
+    const col2 = ML + bankPad + 180;
+
+    if (ib.bank_name) {
+      txt("Bank", col1, by, { size: 7.5, color: lightGray });
+      txt(ib.bank_name, col1 + 45, by, { size: 9, color: nearBlack });
+    }
+    if (ib.bic) {
+      txt("BIC/SWIFT", col2, by, { size: 7.5, color: lightGray });
+      txt(ib.bic || "—", col2 + 60, by, { size: 9, color: nearBlack });
+    }
+    by -= 16;
+    if (ib.iban) {
+      txt("IBAN", col1, by, { size: 7.5, color: lightGray });
+      txt(ib.iban, col1 + 45, by, { font: fontBold, size: 9.5, color: nearBlack });
+    }
+
+    y -= bankCardH + 16;
   }
 
-  // ── Footer note ──
-  if (company?.invoice_branding?.footer_text) {
-    text(company.invoice_branding.footer_text, margin, y, { size: 9, color: gray });
-    y -= 16;
-  }
+  // ══════════════════════════════════════════════════════════════════════════
+  // NOTES
+  // ══════════════════════════════════════════════════════════════════════════
   if (invoice.notes) {
-    text(invoice.notes, margin, y, { size: 8, color: gray });
+    txt("NOTES", ML, y, { font: fontBold, size: 7.5, color: lightGray });
+    y -= 14;
+    txt(invoice.notes, ML, y, { size: 8.5, color: medGray, maxWidth: contentW });
+    y -= 20;
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // FOOTER — Centered thank-you + brand accent bar
+  // ══════════════════════════════════════════════════════════════════════════
+  const footerText = ib.footer_text || "Thank you for your business!";
+  const footerY = 52;
+
+  // Thin accent line above footer
+  hLine(footerY + 20, ML, rightX, 0.5, lineColor);
+
+  txtCenter(footerText, width / 2, footerY, { font: fontBold, size: 9, color: medGray });
+  txtCenter(`${companyName}  ·  ${ib.company_email || ""}  ·  ${ib.company_phone || ""}`, width / 2, footerY - 14, { size: 7.5, color: lightGray });
+
+  // Bottom accent bar
+  drawRect(0, 0, width, 4, primary);
 
   return await doc.save();
 }
