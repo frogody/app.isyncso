@@ -423,6 +423,120 @@ function SearchAndDateFilter({ searchQuery, onSearchChange, dateFrom, dateTo, on
 }
 
 // ---------------------------------------------------------------------------
+// OrderProgressBar — compact lifecycle stepper shown on every order
+// ---------------------------------------------------------------------------
+
+const ORDER_STAGES = [
+  { key: 'pending', label: 'Placed', shortLabel: 'Placed' },
+  { key: 'confirmed', label: 'Confirmed', shortLabel: 'Confirmed' },
+  { key: 'processing', label: 'Packing', shortLabel: 'Packing' },
+  { key: 'shipped', label: 'Shipped', shortLabel: 'Shipped' },
+  { key: 'delivered', label: 'Delivered', shortLabel: 'Delivered' },
+];
+
+function OrderProgressBar({ status }) {
+  const normalised = (status || '').toLowerCase().trim();
+
+  // Cancelled orders get a single-line indicator
+  if (normalised === 'cancelled') {
+    return (
+      <div className="flex items-center gap-2 px-5 pl-6 pb-3">
+        <div className="flex-1 h-1 rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.2)' }}>
+          <div className="h-full rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.6)', width: '100%' }} />
+        </div>
+        <span className="text-[10px] font-semibold" style={{ color: 'rgba(239,68,68,0.7)' }}>Cancelled</span>
+      </div>
+    );
+  }
+
+  const currentIdx = ORDER_STAGES.findIndex((s) => s.key === normalised);
+  const activeIdx = currentIdx >= 0 ? currentIdx : 0;
+
+  return (
+    <div className="px-5 pl-6 pb-3.5 pt-0.5">
+      {/* Track + dots */}
+      <div className="relative flex items-center w-full">
+        {/* Background track */}
+        <div
+          className="absolute inset-x-0 h-[3px] rounded-full"
+          style={{ backgroundColor: 'color-mix(in srgb, var(--ws-border) 60%, transparent)' }}
+        />
+
+        {/* Filled track */}
+        <div
+          className="absolute left-0 h-[3px] rounded-full transition-all duration-700 ease-out"
+          style={{
+            width: `${(activeIdx / (ORDER_STAGES.length - 1)) * 100}%`,
+            background: `linear-gradient(90deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 80%, #7c3aed))`,
+          }}
+        />
+
+        {/* Stage dots + labels */}
+        <div className="relative flex items-center justify-between w-full">
+          {ORDER_STAGES.map((stage, idx) => {
+            const isCompleted = idx <= activeIdx;
+            const isCurrent = idx === activeIdx;
+
+            return (
+              <div key={stage.key} className="flex flex-col items-center" style={{ zIndex: 2 }}>
+                {/* Dot */}
+                <div
+                  className="relative flex items-center justify-center transition-all duration-300"
+                  style={{
+                    width: isCurrent ? 14 : 10,
+                    height: isCurrent ? 14 : 10,
+                    borderRadius: '50%',
+                    backgroundColor: isCompleted ? 'var(--ws-primary)' : 'var(--ws-surface, #18181b)',
+                    border: isCompleted ? '2px solid var(--ws-primary)' : '2px solid color-mix(in srgb, var(--ws-border) 80%, transparent)',
+                    boxShadow: isCurrent ? '0 0 0 3px color-mix(in srgb, var(--ws-primary) 20%, transparent)' : 'none',
+                  }}
+                >
+                  {/* Inner check for completed */}
+                  {isCompleted && idx < activeIdx && (
+                    <div
+                      className="rounded-full"
+                      style={{
+                        width: 4,
+                        height: 4,
+                        backgroundColor: 'var(--ws-bg, #000)',
+                      }}
+                    />
+                  )}
+                  {/* Pulse ring for current */}
+                  {isCurrent && (
+                    <div
+                      className="absolute inset-0 rounded-full animate-ping"
+                      style={{
+                        backgroundColor: 'var(--ws-primary)',
+                        opacity: 0.2,
+                        animationDuration: '2s',
+                      }}
+                    />
+                  )}
+                </div>
+
+                {/* Label */}
+                <span
+                  className="text-[9px] sm:text-[10px] font-medium mt-1.5 whitespace-nowrap select-none"
+                  style={{
+                    color: isCompleted
+                      ? 'var(--ws-text)'
+                      : 'color-mix(in srgb, var(--ws-muted) 60%, transparent)',
+                    fontWeight: isCurrent ? 700 : 500,
+                  }}
+                >
+                  {stage.shortLabel}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // OrderItemRow (inside expanded detail)
 // ---------------------------------------------------------------------------
 
@@ -561,6 +675,9 @@ function OrderRow({ order, isExpanded, onToggle, nav, index }) {
             <ChevronDown className="w-4 h-4" style={{ color: 'var(--ws-muted)' }} />
           </motion.div>
         </button>
+
+        {/* Order Progress Bar — always visible */}
+        <OrderProgressBar status={order.status} />
 
         {/* Expandable detail section */}
         <AnimatePresence initial={false}>

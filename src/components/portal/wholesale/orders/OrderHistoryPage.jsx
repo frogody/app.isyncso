@@ -15,6 +15,95 @@ import OrderStatusBadge from './OrderStatusBadge';
 
 const PAGE_SIZE = 10;
 
+// ---------------------------------------------------------------------------
+// Order Progress Stages
+// ---------------------------------------------------------------------------
+
+const ORDER_STAGES = [
+  { key: 'pending', label: 'Placed' },
+  { key: 'confirmed', label: 'Confirmed' },
+  { key: 'processing', label: 'Packing' },
+  { key: 'shipped', label: 'Shipped' },
+  { key: 'delivered', label: 'Delivered' },
+];
+
+function OrderProgressBar({ status }) {
+  const normalised = (status || '').toLowerCase().trim();
+
+  if (normalised === 'cancelled') {
+    return (
+      <div className="flex items-center gap-2 mt-2">
+        <div className="flex-1 h-1 rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.15)' }}>
+          <div className="h-full rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.5)', width: '100%' }} />
+        </div>
+        <span className="text-[10px] font-semibold" style={{ color: 'rgba(239,68,68,0.6)' }}>Cancelled</span>
+      </div>
+    );
+  }
+
+  const currentIdx = ORDER_STAGES.findIndex((s) => s.key === normalised);
+  const activeIdx = currentIdx >= 0 ? currentIdx : 0;
+
+  return (
+    <div className="mt-2.5 mb-0.5">
+      <div className="relative flex items-center w-full">
+        {/* Background track */}
+        <div
+          className="absolute inset-x-0 h-[3px] rounded-full"
+          style={{ backgroundColor: 'var(--ws-border, rgba(255,255,255,0.08))' }}
+        />
+        {/* Filled track */}
+        <div
+          className="absolute left-0 h-[3px] rounded-full transition-all duration-500 ease-out"
+          style={{
+            width: `${(activeIdx / (ORDER_STAGES.length - 1)) * 100}%`,
+            backgroundColor: 'var(--ws-primary, #06b6d4)',
+          }}
+        />
+        {/* Dots + labels */}
+        <div className="relative flex items-center justify-between w-full">
+          {ORDER_STAGES.map((stage, idx) => {
+            const isCompleted = idx <= activeIdx;
+            const isCurrent = idx === activeIdx;
+            return (
+              <div key={stage.key} className="flex flex-col items-center" style={{ zIndex: 2 }}>
+                <div
+                  className="transition-all duration-300"
+                  style={{
+                    width: isCurrent ? 12 : 8,
+                    height: isCurrent ? 12 : 8,
+                    borderRadius: '50%',
+                    backgroundColor: isCompleted
+                      ? 'var(--ws-primary, #06b6d4)'
+                      : 'var(--ws-surface, #18181b)',
+                    border: isCompleted
+                      ? '2px solid var(--ws-primary, #06b6d4)'
+                      : '2px solid var(--ws-border, rgba(255,255,255,0.08))',
+                    boxShadow: isCurrent
+                      ? '0 0 0 3px rgba(6, 182, 212, 0.15)'
+                      : 'none',
+                  }}
+                />
+                <span
+                  className="text-[9px] font-medium mt-1 whitespace-nowrap"
+                  style={{
+                    color: isCompleted
+                      ? 'var(--ws-text, #fff)'
+                      : 'var(--ws-muted, rgba(255,255,255,0.3))',
+                    fontWeight: isCurrent ? 700 : 500,
+                  }}
+                >
+                  {stage.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All Orders' },
   { value: 'pending', label: 'Pending' },
@@ -356,6 +445,11 @@ export default function OrderHistoryPage() {
                   >
                     {formatCurrency(order.total)}
                   </span>
+                </div>
+
+                {/* Order Progress Bar */}
+                <div className="col-span-full px-0 pt-1 pb-0.5">
+                  <OrderProgressBar status={order.status} />
                 </div>
               </div>
             ))}
