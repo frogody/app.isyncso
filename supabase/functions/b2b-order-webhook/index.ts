@@ -392,12 +392,15 @@ async function generateInvoicePdf(invoice: any, company: any, storeConfig: Store
   // ══════════════════════════════════════════════════════════════════════════
   y = height - 52;
 
-  // Try to embed company logo
+  // Try to embed company logo from all sources
   let logoEmbedded = false;
-  const logoUrl = storeConfig.logoUrl || company?.logo_url;
-  if (logoUrl) {
+  const logoUrl = storeConfig.logoUrl || company?.logo_url || "";
+  console.log("[PDF] Logo URL resolved:", logoUrl || "(none)");
+
+  if (logoUrl && !logoUrl.toLowerCase().endsWith(".svg")) {
     try {
       const logoRes = await fetch(logoUrl);
+      console.log("[PDF] Logo fetch status:", logoRes.status, logoRes.headers.get("content-type"));
       if (logoRes.ok) {
         const logoBytes = new Uint8Array(await logoRes.arrayBuffer());
         const contentType = logoRes.headers.get("content-type") || "";
@@ -408,16 +411,19 @@ async function generateInvoicePdf(invoice: any, company: any, storeConfig: Store
           logoImage = await doc.embedJpg(logoBytes);
         }
         const logoDims = logoImage.scale(1);
-        const maxH = 36;
-        const maxW = 140;
+        const maxH = 38;
+        const maxW = 160;
         const scale = Math.min(maxH / logoDims.height, maxW / logoDims.width, 1);
+        const imgW = logoDims.width * scale;
+        const imgH = logoDims.height * scale;
         page.drawImage(logoImage, {
           x: ML,
-          y: y - logoDims.height * scale + 10,
-          width: logoDims.width * scale,
-          height: logoDims.height * scale,
+          y: y - imgH + 12,
+          width: imgW,
+          height: imgH,
         });
         logoEmbedded = true;
+        console.log("[PDF] Logo embedded:", imgW.toFixed(0), "x", imgH.toFixed(0));
       }
     } catch (e) {
       console.warn("[PDF] Logo embed failed:", (e as Error).message);
@@ -739,21 +745,27 @@ serve(async (req: Request) => {
       );
     }
 
-    // Fetch store config for branding
+    // Fetch store config + portal logo for branding
     let storeConfig = getDefaultConfig();
     const { data: portalSettings } = await supabase
       .from("portal_settings")
-      .select("store_config")
+      .select("store_config, logo_url")
       .eq("organization_id", organizationId)
       .single();
 
     if (portalSettings?.store_config) {
       const sc = portalSettings.store_config;
       const theme = sc.theme || {};
+      // Resolve logo from all possible locations (wizard meta, portal column, company field)
+      const logoUrl = sc._wizardMeta?.logoUrl
+        || portalSettings.logo_url
+        || sc.company?.logo
+        || sc.logo
+        || "";
       storeConfig = {
-        storeName: sc.company?.name || sc.name || storeConfig.storeName,
+        storeName: sc.navigation?.companyName || sc.company?.name || sc.name || storeConfig.storeName,
         primaryColor: theme.primaryColor || storeConfig.primaryColor,
-        logoUrl: sc.company?.logo || sc.logo || "",
+        logoUrl,
         bgColor: theme.backgroundColor || storeConfig.bgColor,
         textColor: theme.textColor || storeConfig.textColor,
         mutedColor: theme.mutedTextColor || storeConfig.mutedColor,
