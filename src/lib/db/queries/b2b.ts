@@ -569,23 +569,47 @@ export async function createB2BOrder(order: {
   has_preorder_items?: boolean;
   po_number?: string;
 }): Promise<B2BOrder> {
+  // Debug: check auth state
+  const { data: sessionData } = await supabase.auth.getSession();
+  console.log('[createB2BOrder:DEBUG] Auth session:', {
+    hasSession: !!sessionData?.session,
+    userId: sessionData?.session?.user?.id,
+    email: sessionData?.session?.user?.email,
+    expiresAt: sessionData?.session?.expires_at,
+  });
+  console.log('[createB2BOrder:DEBUG] Insert payload:', JSON.stringify({ ...order, order_number: '' }));
+
   const { data, error } = await supabase
     .from('b2b_orders')
     .insert({ ...order, order_number: '' }) // trigger generates order_number + po_number
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('[createB2BOrder:DEBUG] INSERT FAILED:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    });
+    throw error;
+  }
+  console.log('[createB2BOrder:DEBUG] INSERT SUCCESS:', { id: data?.id, order_number: data?.order_number });
   return data;
 }
 
 export async function createB2BOrderItems(items: Omit<B2BOrderItem, 'id' | 'created_at'>[]): Promise<B2BOrderItem[]> {
+  console.log('[createB2BOrderItems:DEBUG] Inserting', items.length, 'items');
   const { data, error } = await supabase
     .from('b2b_order_items')
     .insert(items)
     .select();
 
-  if (error) throw error;
+  if (error) {
+    console.error('[createB2BOrderItems:DEBUG] INSERT FAILED:', error);
+    throw error;
+  }
+  console.log('[createB2BOrderItems:DEBUG] INSERT SUCCESS:', data?.length, 'items');
   return data || [];
 }
 
