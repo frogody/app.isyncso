@@ -295,6 +295,9 @@ verify_jwt = false
 [functions.b2b-checkout-otp]
 verify_jwt = false
 
+[functions.b2b-create-order]
+verify_jwt = false
+
 [functions.aftership-register]
 verify_jwt = false
 
