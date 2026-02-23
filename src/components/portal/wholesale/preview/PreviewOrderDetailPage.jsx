@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Package, MapPin, Loader2 } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Loader2, ReceiptText, Calendar, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
 import {
   GlassCard,
@@ -39,6 +39,7 @@ export default function PreviewOrderDetailPage({ config, nav, pageData }) {
 
   const [order, setOrder] = useState(null);
   const [items, setItems] = useState([]);
+  const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -64,6 +65,17 @@ export default function PreviewOrderDetailPage({ config, nav, pageData }) {
             .order('created_at', { ascending: true });
 
           setItems(itemsData || []);
+
+          // Fetch linked invoice
+          const { data: invoiceData } = await supabase
+            .from('invoices')
+            .select('id, invoice_number, status, total, due_date, amount_paid, balance_due, pdf_url')
+            .eq('b2b_order_id', orderId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          setInvoice(invoiceData);
         }
       } catch (err) {
         console.error('[PreviewOrderDetailPage] Error:', err);
@@ -254,6 +266,65 @@ export default function PreviewOrderDetailPage({ config, nav, pageData }) {
                 </span>
               </div>
             </div>
+          </GlassCard>
+
+          {/* Invoice & Payment */}
+          <GlassCard className="p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <ReceiptText className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--ws-primary)' }} />
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--ws-text)' }}>
+                Invoice & Payment
+              </h3>
+            </div>
+            {invoice ? (() => {
+              const isOverdue = invoice.status === 'pending' && invoice.due_date && new Date(invoice.due_date) < new Date();
+              const effectiveStatus = isOverdue ? 'overdue' : invoice.status;
+              const statusTheme = effectiveStatus === 'paid' ? 'success' : effectiveStatus === 'overdue' ? 'error' : 'warning';
+              const statusLabel = effectiveStatus === 'paid' ? 'Paid' : effectiveStatus === 'overdue' ? 'Overdue' : 'Pending';
+              const balanceDue = Number(invoice.balance_due) || (Number(invoice.total) - (Number(invoice.amount_paid) || 0));
+
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono" style={{ color: 'var(--ws-muted)' }}>{invoice.invoice_number}</span>
+                    <StatusBadge status={statusTheme} label={statusLabel} size="xs" />
+                  </div>
+                  {invoice.due_date && (
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-3 h-3" style={{ color: isOverdue ? 'rgba(239,68,68,0.8)' : 'var(--ws-muted)' }} />
+                      <span className="text-xs" style={{ color: isOverdue ? 'rgba(239,68,68,0.8)' : 'var(--ws-muted)' }}>
+                        Due: {new Date(invoice.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                  )}
+                  {effectiveStatus !== 'paid' && balanceDue > 0 && (
+                    <div className="flex items-center justify-between pt-2" style={{ borderTop: '1px solid var(--ws-border)' }}>
+                      <span className="text-xs" style={{ color: 'var(--ws-muted)' }}>Balance Due</span>
+                      <span className="text-sm font-bold" style={gradientTextStyle()}>
+                        {formatCurrency(balanceDue)}
+                      </span>
+                    </div>
+                  )}
+                  {isOverdue && (
+                    <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-md" style={{ backgroundColor: 'rgba(239,68,68,0.1)' }}>
+                      <AlertTriangle className="w-3 h-3" style={{ color: 'rgba(239,68,68,0.8)' }} />
+                      <span className="text-[10px] font-medium" style={{ color: 'rgba(239,68,68,0.8)' }}>Payment overdue</span>
+                    </div>
+                  )}
+                  <SecondaryButton
+                    size="sm"
+                    className="w-full mt-1"
+                    onClick={() => nav?.goToInvoiceDetail?.(invoice.id)}
+                  >
+                    View Invoice
+                  </SecondaryButton>
+                </div>
+              );
+            })() : (
+              <p className="text-xs" style={{ color: 'var(--ws-muted)' }}>
+                Invoice not yet generated for this order.
+              </p>
+            )}
           </GlassCard>
 
           {/* Shipping address */}

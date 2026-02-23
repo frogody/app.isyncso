@@ -43,6 +43,8 @@ import PreviewOrderDetailPage from '@/components/portal/wholesale/preview/Previe
 import PreviewAccountPage from '@/components/portal/wholesale/preview/PreviewAccountPage';
 import PreviewInquiriesPage from '@/components/portal/wholesale/preview/PreviewInquiriesPage';
 import PreviewSettingsPage from '@/components/portal/wholesale/preview/PreviewSettingsPage';
+import PreviewInvoicesPage from '@/components/portal/wholesale/preview/PreviewInvoicesPage';
+import PreviewInvoiceDetailPage from '@/components/portal/wholesale/preview/PreviewInvoiceDetailPage';
 import StoreHomePage from '@/components/portal/wholesale/preview/StoreHomePage';
 
 // ---------------------------------------------------------------------------
@@ -292,6 +294,7 @@ function PublicNavBar({ config, currentPage, onNavigate, onOpenSearch, onOpenCar
   const NAV_LINKS = [
     { id: 'catalog', label: 'Catalog' },
     { id: 'orders', label: 'Orders' },
+    { id: 'invoices', label: 'Invoices' },
     { id: 'account', label: 'Account' },
   ];
 
@@ -1152,6 +1155,10 @@ export default function PublicStorefront({ subdomain }) {
             <PreviewOrdersPage config={config} nav={nav} />
           ) : currentPage === 'order-detail' ? (
             <PreviewOrderDetailPage config={config} nav={nav} pageData={pageData} />
+          ) : currentPage === 'invoices' ? (
+            <PreviewInvoicesPage config={config} nav={nav} />
+          ) : currentPage === 'invoice-detail' ? (
+            <PreviewInvoiceDetailPage config={config} nav={nav} pageData={pageData} />
           ) : currentPage === 'account' ? (
             <PreviewAccountPage config={config} nav={nav} />
           ) : currentPage === 'inquiries' ? (
