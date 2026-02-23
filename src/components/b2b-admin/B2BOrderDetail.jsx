@@ -740,8 +740,8 @@ export default function B2BOrderDetail() {
   // -----------------------------------------------------------------------
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
+      <div className="min-h-screen bg-zinc-950 px-4 lg:px-6 py-4">
+        <div className="w-full space-y-6">
           <div className="h-8 w-32 bg-zinc-800 rounded-lg animate-pulse" />
           <div className="h-24 bg-zinc-900/60 rounded-2xl border border-zinc-800 animate-pulse" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -764,8 +764,8 @@ export default function B2BOrderDetail() {
   // -----------------------------------------------------------------------
   if (error && !order) {
     return (
-      <div className="min-h-screen bg-zinc-950 p-6">
-        <div className="max-w-6xl mx-auto">
+      <div className="min-h-screen bg-zinc-950 px-4 lg:px-6 py-4">
+        <div className="w-full">
           <button
             onClick={() => navigate(-1)}
             className="inline-flex items-center gap-2 text-zinc-400 hover:text-white mb-6 transition-colors text-sm"
@@ -790,8 +790,8 @@ export default function B2BOrderDetail() {
   const client = order.portal_clients;
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-zinc-950 px-4 lg:px-6 py-4">
+      <div className="w-full space-y-6">
         {/* Back button */}
         <button
           onClick={() => navigate(-1)}

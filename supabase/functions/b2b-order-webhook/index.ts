@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -410,6 +412,39 @@ serve(async (req: Request) => {
       console.warn("[b2b-order-webhook] Could not log notification:", (notifErr as Error).message);
     }
 
+    // Send email via Resend
+    let emailSent = false;
+    if (!RESEND_API_KEY) {
+      console.warn("[b2b-order-webhook] RESEND_API_KEY not set, skipping email send");
+    } else {
+      try {
+        const fromName = storeConfig.storeName || "Wholesale Store";
+        const resendRes = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${RESEND_API_KEY}`,
+          },
+          body: JSON.stringify({
+            from: `${fromName} <noreply@notifications.isyncso.com>`,
+            to: [client.email],
+            subject,
+            html: emailWrapper(storeConfig, emailHtml),
+          }),
+        });
+
+        if (!resendRes.ok) {
+          const errBody = await resendRes.text();
+          console.error("[b2b-order-webhook] Resend API error:", resendRes.status, errBody);
+        } else {
+          emailSent = true;
+          console.log("[b2b-order-webhook] Email sent to", client.email, "for event", event);
+        }
+      } catch (emailErr) {
+        console.error("[b2b-order-webhook] Email send failed:", (emailErr as Error).message);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -418,6 +453,7 @@ serve(async (req: Request) => {
         recipientEmail: client.email,
         subject,
         notificationLogged,
+        emailSent,
       }),
       { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
     );
