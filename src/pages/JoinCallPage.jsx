@@ -4,14 +4,12 @@ import { motion } from 'framer-motion';
 import { Video, Users, Clock, Loader2, AlertCircle, Copy, Check, LogIn } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
-import { useVideoCall } from '@/components/inbox/video';
 import { toast } from 'sonner';
 
 export default function JoinCallPage() {
   const { joinCode } = useParams();
   const navigate = useNavigate();
   const { user } = useUser();
-  const videoCall = useVideoCall(user?.id, user?.company_id, user?.full_name);
 
   const [call, setCall] = useState(null);
   const [status, setStatus] = useState('loading'); // loading | found | ended | not_found
@@ -47,20 +45,17 @@ export default function JoinCallPage() {
     fetchCall();
   }, [joinCode]);
 
-  const handleJoin = useCallback(async () => {
+  const handleJoin = useCallback(() => {
     if (!user) {
       navigate(`/Login?redirect=/call/${joinCode}`);
       return;
     }
 
+    // Navigate to Inbox with the call param — Inbox's auto-join will handle joining
+    // (joining here would create a hook instance that gets destroyed on navigate)
     setJoining(true);
-    try {
-      await videoCall.joinCall(joinCode);
-      navigate('/Inbox?tab=calls');
-    } catch (err) {
-      setJoining(false);
-    }
-  }, [user, joinCode, videoCall.joinCall, navigate]);
+    navigate(`/Inbox?tab=calls&call=${joinCode}`);
+  }, [user, joinCode, navigate]);
 
   const handleCopy = useCallback(() => {
     const url = call?.join_url || `${window.location.origin}/call/${joinCode}`;

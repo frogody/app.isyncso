@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 
 const InviteMembersPanel = memo(function InviteMembersPanel({
   companyId,
+  organizationId,
   userId,
   userName,
   callId,
@@ -75,6 +76,7 @@ const InviteMembersPanel = memo(function InviteMembersPanel({
       try {
         const { error } = await supabase.from('user_notifications').insert({
           user_id: member.id,
+          organization_id: organizationId || null,
           type: 'call_invite',
           title: `${userName || 'Someone'} invited you to a call`,
           message: callTitle || 'Meeting',
@@ -101,7 +103,7 @@ const InviteMembersPanel = memo(function InviteMembersPanel({
         setSendingId(null);
       }
     },
-    [userId, userName, callId, joinCode, joinUrl, callTitle]
+    [userId, userName, organizationId, callId, joinCode, joinUrl, callTitle]
   );
 
   // Copy join link

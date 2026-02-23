@@ -404,6 +404,7 @@ const VideoCallRoom = memo(function VideoCallRoom({
             {showInvite && (
               <InviteMembersPanel
                 companyId={call?.company_id}
+                organizationId={user?.organization_id}
                 userId={userId}
                 userName={user?.full_name}
                 callId={callId}
