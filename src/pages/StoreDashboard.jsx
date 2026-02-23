@@ -327,9 +327,9 @@ export default function StoreDashboard() {
         safe(supabase.from('b2b_orders').select('id, total, status').eq('organization_id', organizationId).gte('created_at', startOfMonth), 'b2bMonthly'),
         safe(supabase.from('b2b_orders').select('id, status').eq('organization_id', organizationId).eq('status', 'pending'), 'b2bPending'),
         safe(supabase.from('b2b_orders').select('id, order_number, status, total, currency, created_at, portal_clients(id, full_name, email)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(20), 'b2bRecent'),
-        // B2B insight queries
-        safe(supabase.from('invoices').select('id, invoice_number, status, total, due_date, amount_paid, balance_due, b2b_order_id, created_at').not('b2b_order_id', 'is', null).order('created_at', { ascending: false }), 'b2bInvoices'),
-        safe(supabase.from('b2b_order_items').select('product_name, sku, quantity, unit_price, line_total, b2b_order_id').order('line_total', { ascending: false }).limit(30), 'b2bTopItems'),
+        // B2B insight queries — scoped to this company/org
+        safe(supabase.from('invoices').select('id, invoice_number, status, total, due_date, amount_paid, balance_due, b2b_order_id, created_at').eq('company_id', companyId).not('b2b_order_id', 'is', null).order('created_at', { ascending: false }), 'b2bInvoices'),
+        safe(supabase.from('b2b_order_items').select('product_name, sku, quantity, unit_price, line_total, b2b_order_id, b2b_orders!inner(organization_id)').eq('b2b_orders.organization_id', organizationId).order('line_total', { ascending: false }).limit(30), 'b2bTopItems'),
         safe(supabase.from('portal_clients').select('id, full_name, email, status, last_login_at, created_at, company_name').eq('organization_id', organizationId), 'portalClients'),
       ]);
 

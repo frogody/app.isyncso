@@ -137,45 +137,57 @@ export async function processOrderConfirmed(
   const client = (order as any).portal_clients || {};
   const errors: string[] = [];
 
-  // 1. Create invoice
+  // 1. Create invoice (with deduplication guard)
   try {
-    const subtotal = Number(order.subtotal) || 0;
-    const taxAmount = Number(order.tax_amount) || 0;
-    const total = Number(order.total) || 0;
-    const paymentDays = (order as any).payment_terms_days || 30;
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + paymentDays);
+    // Check if invoice already exists for this order
+    const { data: existingInv } = await supabase
+      .from('invoices')
+      .select('id, invoice_number')
+      .eq('b2b_order_id', orderId)
+      .limit(1);
 
-    const lineItems = items.map((it: any) => ({
-      name: it.product_name || 'Product',
-      quantity: it.quantity || 1,
-      unit_price: Number(it.unit_price) || 0,
-      total: Number(it.line_total) || (Number(it.unit_price) || 0) * (it.quantity || 1),
-    }));
-
-    const { error: invErr } = await supabase.from('invoices').insert({
-      company_id: companyId || organizationId,
-      user_id: userId || null,
-      invoice_type: 'customer',
-      b2b_order_id: orderId,
-      client_name: client.company_name || client.full_name || 'B2B Client',
-      client_email: client.email || '',
-      client_address: order.billing_address || null,
-      items: lineItems,
-      subtotal,
-      tax_rate: 21,
-      tax_amount: taxAmount,
-      total,
-      status: 'pending',
-      due_date: dueDate.toISOString().split('T')[0],
-      notes: `Auto-generated from B2B order ${(order as any).order_number || orderId.slice(0, 8)}`,
-    });
-
-    if (invErr) {
-      console.warn('[processOrderConfirmed] Invoice creation failed:', invErr.message);
-      errors.push(`Invoice: ${invErr.message}`);
+    if (existingInv && existingInv.length > 0) {
+      console.log(`[processOrderConfirmed] Invoice ${existingInv[0].invoice_number} already exists for order ${orderId}, skipping`);
     } else {
-      console.log('[processOrderConfirmed] Invoice created for order', (order as any).order_number);
+      const subtotal = Number(order.subtotal) || 0;
+      const taxAmount = Number(order.tax_amount) || 0;
+      const total = Number(order.total) || 0;
+      const paymentDays = (order as any).payment_terms_days || 30;
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + paymentDays);
+
+      const lineItems = items.map((it: any) => ({
+        name: it.product_name || 'Product',
+        quantity: it.quantity || 1,
+        unit_price: Number(it.unit_price) || 0,
+        total: Number(it.line_total) || (Number(it.unit_price) || 0) * (it.quantity || 1),
+      }));
+
+      const { error: invErr } = await supabase.from('invoices').insert({
+        company_id: companyId || organizationId,
+        user_id: userId || null,
+        invoice_type: 'customer',
+        b2b_order_id: orderId,
+        client_name: client.company_name || client.full_name || 'B2B Client',
+        client_email: client.email || '',
+        client_address: order.billing_address || null,
+        items: lineItems,
+        subtotal,
+        tax_rate: 21,
+        tax_amount: taxAmount,
+        total,
+        balance_due: total,
+        status: 'pending',
+        due_date: dueDate.toISOString().split('T')[0],
+        notes: `Auto-generated from B2B order ${(order as any).order_number || orderId.slice(0, 8)}`,
+      });
+
+      if (invErr) {
+        console.warn('[processOrderConfirmed] Invoice creation failed:', invErr.message);
+        errors.push(`Invoice: ${invErr.message}`);
+      } else {
+        console.log('[processOrderConfirmed] Invoice created for order', (order as any).order_number);
+      }
     }
   } catch (err: any) {
     console.warn('[processOrderConfirmed] Invoice creation error:', err?.message);
