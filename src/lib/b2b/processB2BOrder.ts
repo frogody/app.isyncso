@@ -2,8 +2,8 @@
 // processB2BOrder.ts -- Order lifecycle automation for B2B wholesale.
 //
 // Three entry points:
-//   processOrderPlaced    → reserve inventory, create invoice, notify, email
-//   processOrderConfirmed → create shipping task, notify, email
+//   processOrderPlaced    → reserve inventory, notify, email
+//   processOrderConfirmed → create invoice, create shipping task, notify, email
 //   processOrderShipped   → update order, update shipping task, email
 //
 // All functions are non-blocking: errors are caught so the primary action
@@ -78,46 +78,7 @@ export async function processOrderPlaced(orderId: string, organizationId: string
     }
   }
 
-  // 2. Create invoice
-  try {
-    const subtotal = Number(order.subtotal) || 0;
-    const taxAmount = Number(order.tax_amount) || 0;
-    const total = Number(order.total) || 0;
-    const paymentDays = (order as any).payment_terms_days || 30;
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + paymentDays);
-
-    // Get the authenticated user ID (required by invoices.user_id NOT NULL)
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-
-    const lineItems = items.map((it: any) => ({
-      name: it.product_name || 'Product',
-      quantity: it.quantity || 1,
-      unit_price: Number(it.unit_price) || 0,
-      total: Number(it.line_total) || (Number(it.unit_price) || 0) * (it.quantity || 1),
-    }));
-
-    await supabase.from('invoices').insert({
-      company_id: organizationId,
-      user_id: authUser?.id || null,
-      invoice_type: 'customer',
-      b2b_order_id: orderId,
-      client_name: client.company_name || client.full_name || 'B2B Client',
-      client_email: client.email || '',
-      client_address: order.billing_address || null,
-      items: lineItems,
-      subtotal,
-      tax_rate: 21,
-      tax_amount: taxAmount,
-      total,
-      status: 'pending',
-      due_date: dueDate.toISOString().split('T')[0],
-      notes: `Auto-generated from B2B order ${(order as any).order_number || orderId.slice(0, 8)}`,
-    });
-  } catch (err: any) {
-    console.warn('[processOrderPlaced] Invoice creation failed:', err?.message);
-    errors.push(`Invoice: ${err?.message}`);
-  }
+  // 2. (Invoice creation moved to processOrderConfirmed — merchant must confirm first)
 
   // 3. Create merchant notification
   try {
@@ -156,14 +117,61 @@ export async function processOrderConfirmed(
   orderId: string,
   organizationId: string,
   userId?: string,
+  companyId?: string,
 ) {
   const order = await getB2BOrder(orderId);
   if (!order) throw new Error(`Order ${orderId} not found`);
 
+  const items = (order as any).b2b_order_items || [];
   const client = (order as any).portal_clients || {};
   const errors: string[] = [];
 
-  // 1. Create shipping task
+  // 1. Create invoice
+  try {
+    const subtotal = Number(order.subtotal) || 0;
+    const taxAmount = Number(order.tax_amount) || 0;
+    const total = Number(order.total) || 0;
+    const paymentDays = (order as any).payment_terms_days || 30;
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + paymentDays);
+
+    const lineItems = items.map((it: any) => ({
+      name: it.product_name || 'Product',
+      quantity: it.quantity || 1,
+      unit_price: Number(it.unit_price) || 0,
+      total: Number(it.line_total) || (Number(it.unit_price) || 0) * (it.quantity || 1),
+    }));
+
+    const { error: invErr } = await supabase.from('invoices').insert({
+      company_id: companyId || organizationId,
+      user_id: userId || null,
+      invoice_type: 'customer',
+      b2b_order_id: orderId,
+      client_name: client.company_name || client.full_name || 'B2B Client',
+      client_email: client.email || '',
+      client_address: order.billing_address || null,
+      items: lineItems,
+      subtotal,
+      tax_rate: 21,
+      tax_amount: taxAmount,
+      total,
+      status: 'pending',
+      due_date: dueDate.toISOString().split('T')[0],
+      notes: `Auto-generated from B2B order ${(order as any).order_number || orderId.slice(0, 8)}`,
+    });
+
+    if (invErr) {
+      console.warn('[processOrderConfirmed] Invoice creation failed:', invErr.message);
+      errors.push(`Invoice: ${invErr.message}`);
+    } else {
+      console.log('[processOrderConfirmed] Invoice created for order', (order as any).order_number);
+    }
+  } catch (err: any) {
+    console.warn('[processOrderConfirmed] Invoice creation error:', err?.message);
+    errors.push(`Invoice: ${err?.message}`);
+  }
+
+  // 2. Create shipping task
   try {
     await createShippingTask({
       company_id: organizationId,
@@ -179,7 +187,7 @@ export async function processOrderConfirmed(
     errors.push(`ShippingTask: ${err?.message}`);
   }
 
-  // 2. Notification
+  // 3. Notification
   try {
     const orderNum = (order as any).order_number || `#${orderId.slice(0, 8)}`;
     await createNotification({
@@ -197,8 +205,8 @@ export async function processOrderConfirmed(
     errors.push(`Notification: ${err?.message}`);
   }
 
-  // 3. Webhook email
-  await callWebhook('order_status_changed', orderId, organizationId);
+  // 4. Webhook email (sends invoice confirmation to client)
+  await callWebhook('order_confirmed', orderId, organizationId);
 
   if (errors.length > 0) {
     console.warn('[processOrderConfirmed] Completed with partial errors:', errors);

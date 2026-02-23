@@ -40,6 +40,7 @@ import {
 
 import { ORDER_STATUS_COLORS, DEFAULT_STATUS_COLOR } from './shared/b2bConstants';
 import { processOrderConfirmed, processOrderShipped } from '@/lib/b2b/processB2BOrder';
+import ConfirmDialog from './shared/ConfirmDialog';
 
 const STATUS_STEPS = [
   { key: 'pending', label: 'Pending', icon: Clock },
@@ -517,6 +518,7 @@ export default function B2BOrderDetail() {
   const [actionLoading, setActionLoading] = useState(null);
   const [addingNote, setAddingNote] = useState(false);
   const [updatingTracking, setUpdatingTracking] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // -----------------------------------------------------------------------
   // Fetch order data
@@ -603,7 +605,7 @@ export default function B2BOrderDetail() {
         // Run automation for specific transitions
         try {
           if (newStatus === 'confirmed') {
-            await processOrderConfirmed(order.id, organizationId, user?.id);
+            await processOrderConfirmed(order.id, organizationId, user?.id, user?.company_id);
           }
         } catch (autoErr) {
           console.warn('[B2BOrderDetail] automation error:', autoErr);
@@ -825,7 +827,13 @@ export default function B2BOrderDetail() {
               {statusActions.map((action) => (
                 <button
                   key={action.status}
-                  onClick={() => updateStatus(action.status)}
+                  onClick={() => {
+                    if (action.status === 'confirmed') {
+                      setShowConfirmDialog(true);
+                    } else {
+                      updateStatus(action.status);
+                    }
+                  }}
                   disabled={!!actionLoading}
                   className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50 ${
                     action.danger
@@ -875,6 +883,19 @@ export default function B2BOrderDetail() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showConfirmDialog}
+        onOpenChange={(open) => { if (!open) setShowConfirmDialog(false); }}
+        title="Confirm this order?"
+        description="An invoice will be generated and sent to the client. A shipping task will be created for fulfillment."
+        confirmLabel="Confirm & Send Invoice"
+        variant="default"
+        onConfirm={() => {
+          setShowConfirmDialog(false);
+          updateStatus('confirmed');
+        }}
+      />
     </div>
   );
 }

@@ -179,6 +179,91 @@ function orderShippedEmail(config: StoreConfig, order: Record<string, unknown>):
   `);
 }
 
+function orderConfirmedEmail(
+  config: StoreConfig,
+  order: Record<string, unknown>,
+  items: Record<string, unknown>[],
+): string {
+  const orderNumber = (order.order_number as string) || `#${(order.id as string)?.slice(0, 8)}`;
+  const poNumber = (order.po_number as string) || null;
+  const paymentDays = (order.payment_terms_days as number) || 30;
+  const dueDate = new Date();
+  dueDate.setDate(dueDate.getDate() + paymentDays);
+  const dueDateStr = formatDate(dueDate.toISOString());
+
+  const subtotal = Number(order.subtotal || 0);
+  const taxAmount = Number(order.tax_amount || 0);
+  const discountAmount = Number(order.discount_amount || 0);
+  const total = Number(order.total || 0);
+
+  const itemsHtml = items.map((item) => `
+    <tr>
+      <td style="padding:8px 0;color:${config.textColor};font-size:14px;border-bottom:1px solid ${config.borderColor};">${item.product_name || item.name || "Item"}</td>
+      <td style="padding:8px 0;color:${config.mutedColor};font-size:14px;text-align:center;border-bottom:1px solid ${config.borderColor};">${item.quantity || 1}</td>
+      <td style="padding:8px 0;color:${config.mutedColor};font-size:14px;text-align:right;border-bottom:1px solid ${config.borderColor};">${formatCurrency(Number(item.unit_price || 0))}</td>
+      <td style="padding:8px 0;color:${config.textColor};font-size:14px;text-align:right;border-bottom:1px solid ${config.borderColor};">${formatCurrency(Number(item.line_total || item.total || 0))}</td>
+    </tr>`).join("");
+
+  return emailWrapper(config, `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:${config.textColor};">Order Confirmed</h1>
+    <p style="margin:0 0 24px;font-size:14px;color:${config.mutedColor};">Your order has been confirmed and an invoice has been generated. Please find the details below.</p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <tr>
+        <td style="padding:12px 16px;background-color:${config.bgColor};border-radius:8px;">
+          <p style="margin:0;font-size:12px;color:${config.mutedColor};text-transform:uppercase;letter-spacing:0.05em;">Order Number</p>
+          <p style="margin:4px 0 0;font-size:16px;font-weight:600;color:${config.primaryColor};">${orderNumber}</p>
+        </td>
+        <td style="width:16px;"></td>
+        <td style="padding:12px 16px;background-color:${config.bgColor};border-radius:8px;">
+          <p style="margin:0;font-size:12px;color:${config.mutedColor};text-transform:uppercase;letter-spacing:0.05em;">${poNumber ? 'PO Number' : 'Date'}</p>
+          <p style="margin:4px 0 0;font-size:16px;font-weight:600;color:${config.textColor};">${poNumber || formatDate(order.created_at as string)}</p>
+        </td>
+      </tr>
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <th style="padding:8px 0;font-size:11px;font-weight:600;color:${config.mutedColor};text-transform:uppercase;letter-spacing:0.05em;text-align:left;border-bottom:1px solid ${config.borderColor};">Item</th>
+        <th style="padding:8px 0;font-size:11px;font-weight:600;color:${config.mutedColor};text-transform:uppercase;letter-spacing:0.05em;text-align:center;border-bottom:1px solid ${config.borderColor};">Qty</th>
+        <th style="padding:8px 0;font-size:11px;font-weight:600;color:${config.mutedColor};text-transform:uppercase;letter-spacing:0.05em;text-align:right;border-bottom:1px solid ${config.borderColor};">Unit Price</th>
+        <th style="padding:8px 0;font-size:11px;font-weight:600;color:${config.mutedColor};text-transform:uppercase;letter-spacing:0.05em;text-align:right;border-bottom:1px solid ${config.borderColor};">Total</th>
+      </tr>
+      ${itemsHtml}
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;">
+      <tr>
+        <td style="padding:4px 0;font-size:14px;color:${config.mutedColor};">Subtotal</td>
+        <td style="padding:4px 0;font-size:14px;color:${config.textColor};text-align:right;">${formatCurrency(subtotal)}</td>
+      </tr>
+      ${discountAmount > 0 ? `<tr>
+        <td style="padding:4px 0;font-size:14px;color:${config.mutedColor};">Discount</td>
+        <td style="padding:4px 0;font-size:14px;color:#22c55e;text-align:right;">-${formatCurrency(discountAmount)}</td>
+      </tr>` : ''}
+      <tr>
+        <td style="padding:4px 0;font-size:14px;color:${config.mutedColor};">Tax (21%)</td>
+        <td style="padding:4px 0;font-size:14px;color:${config.textColor};text-align:right;">${formatCurrency(taxAmount)}</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 0 4px;font-size:16px;font-weight:700;color:${config.textColor};border-top:1px solid ${config.borderColor};">Total</td>
+        <td style="padding:12px 0 4px;font-size:16px;font-weight:700;color:${config.primaryColor};text-align:right;border-top:1px solid ${config.borderColor};">${formatCurrency(total)}</td>
+      </tr>
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;">
+      <tr>
+        <td style="padding:16px;background-color:${config.bgColor};border-radius:8px;">
+          <p style="margin:0;font-size:12px;color:${config.mutedColor};text-transform:uppercase;letter-spacing:0.05em;">Payment Terms</p>
+          <p style="margin:4px 0 0;font-size:14px;color:${config.textColor};">Net ${paymentDays} days &mdash; due by <strong>${dueDateStr}</strong></p>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin:24px 0 0;font-size:13px;color:${config.mutedColor};">Thank you for your order. We will notify you when your order has been shipped.</p>
+  `);
+}
+
 // ---------------------------------------------------------------------------
 // Main handler
 // ---------------------------------------------------------------------------
@@ -280,6 +365,10 @@ serve(async (req: Request) => {
       case "order_created":
         subject = `Order Confirmation - ${order.order_number || orderId.slice(0, 8)}`;
         emailHtml = orderCreatedEmail(storeConfig, order, items || []);
+        break;
+      case "order_confirmed":
+        subject = `Order Confirmed — Invoice for ${order.order_number || orderId.slice(0, 8)}`;
+        emailHtml = orderConfirmedEmail(storeConfig, order, items || []);
         break;
       case "order_status_changed":
         subject = `Order Update - ${order.order_number || orderId.slice(0, 8)} is now ${order.status}`;

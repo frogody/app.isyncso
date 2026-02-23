@@ -71,6 +71,7 @@ export default function B2BOrdersManager() {
   // Action loading
   const [actionLoading, setActionLoading] = useState(null);
   const [rejectConfirm, setRejectConfirm] = useState(null);
+  const [confirmOrderId, setConfirmOrderId] = useState(null);
 
   const fetchOrders = useCallback(async () => {
     if (!organizationId) return;
@@ -171,9 +172,9 @@ export default function B2BOrdersManager() {
 
       if (upErr) throw upErr;
 
-      // Run automation (shipping task, notification, email)
+      // Run automation (invoice, shipping task, notification, email)
       try {
-        await processOrderConfirmed(orderId, organizationId, user?.id);
+        await processOrderConfirmed(orderId, organizationId, user?.id, user?.company_id);
       } catch (autoErr) {
         console.warn('[B2BOrdersManager] automation error:', autoErr);
       }
@@ -415,7 +416,7 @@ export default function B2BOrdersManager() {
                       {isPending && (
                         <>
                           <button
-                            onClick={() => handleApprove(order.id)}
+                            onClick={() => setConfirmOrderId(order.id)}
                             disabled={isActioning}
                             className="p-1.5 rounded-lg text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors disabled:opacity-50"
                             title="Approve order"
@@ -484,6 +485,20 @@ export default function B2BOrdersManager() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!confirmOrderId}
+        onOpenChange={(open) => { if (!open) setConfirmOrderId(null); }}
+        title="Confirm this order?"
+        description="An invoice will be generated and sent to the client. A shipping task will be created for fulfillment."
+        confirmLabel="Confirm & Send Invoice"
+        variant="default"
+        onConfirm={() => {
+          const id = confirmOrderId;
+          setConfirmOrderId(null);
+          handleApprove(id);
+        }}
+      />
 
       <ConfirmDialog
         open={!!rejectConfirm}

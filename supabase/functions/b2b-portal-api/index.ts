@@ -152,50 +152,7 @@ serve(async (req: Request) => {
         }
       }
 
-      // 2. Create invoice
-      try {
-        const subtotal = Number(order.subtotal) || 0;
-        const taxAmount = Number(order.tax_amount) || 0;
-        const total = Number(order.total) || 0;
-        const paymentDays = order.payment_terms_days || 30;
-        const dueDate = new Date();
-        dueDate.setDate(dueDate.getDate() + paymentDays);
-
-        const lineItems = items.map((it: any) => ({
-          name: it.product_name || "Product",
-          quantity: it.quantity || 1,
-          unit_price: Number(it.unit_price) || 0,
-          total: Number(it.line_total) || (Number(it.unit_price) || 0) * (it.quantity || 1),
-        }));
-
-        const { error: invErr } = await supabase.from("invoices").insert({
-          company_id: companyId,
-          user_id: adminUserId,
-          invoice_type: "customer",
-          b2b_order_id: orderId,
-          client_name: client.company_name || client.full_name || "B2B Client",
-          client_email: client.email || "",
-          client_address: order.billing_address || null,
-          items: lineItems,
-          subtotal,
-          tax_rate: 21,
-          tax_amount: taxAmount,
-          total,
-          status: "pending",
-          due_date: dueDate.toISOString().split("T")[0],
-          notes: `Auto-generated from B2B order ${order.order_number || orderId.slice(0, 8)}`,
-        });
-
-        if (invErr) {
-          console.warn("[b2b-portal-api] Invoice creation failed:", invErr.message);
-          errors.push(`Invoice: ${invErr.message}`);
-        } else {
-          console.log("[b2b-portal-api] Invoice created for order", order.order_number);
-        }
-      } catch (err: any) {
-        console.warn("[b2b-portal-api] Invoice creation error:", err?.message);
-        errors.push(`Invoice: ${err?.message}`);
-      }
+      // 2. (Invoice creation moved to merchant confirmation — processOrderConfirmed)
 
       // 3. Create merchant notification
       try {
