@@ -20,7 +20,7 @@ import {
   CheckCircle, Globe, Linkedin, Clock, Target, Shield, Loader2,
   ChevronRight, Award, Zap, LogOut, MapPin, Calendar, Cpu,
   Euro, Phone, Twitter, Facebook, TrendingUp, BarChart3, Plug,
-  UserCog, ExternalLink, ShoppingBag, Store, Radio, CreditCard
+  UserCog, ExternalLink, ShoppingBag, Store, Radio, CreditCard, Rss
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,6 +40,7 @@ import { useTheme } from '@/contexts/GlobalThemeContext';
 import { SettingsPageTransition } from '@/components/settings/ui';
 import BolcomSettings from "@/components/settings/BolcomSettings";
 import ShopifySettings from "@/components/settings/ShopifySettings";
+import ProductFeedSettings from "@/components/settings/ProductFeedSettings";
 import EmailPoolSettings from "@/pages/EmailPoolSettings";
 import BillingSettings from "@/pages/BillingSettings";
 
@@ -1492,6 +1493,7 @@ export default function Settings() {
                     {[
                       { id: 'bolcom', label: 'bol.com', icon: ShoppingBag },
                       { id: 'shopify', label: 'Shopify', icon: Store },
+                      { id: 'feeds', label: 'Product Feeds', icon: Rss },
                     ].map(ch => (
                       <button
                         key={ch.id}
@@ -1510,6 +1512,7 @@ export default function Settings() {
                   </div>
                   {activeChannel === 'bolcom' && <BolcomSettings />}
                   {activeChannel === 'shopify' && <ShopifySettings />}
+                  {activeChannel === 'feeds' && <ProductFeedSettings />}
                 </motion.div>
               )}
 

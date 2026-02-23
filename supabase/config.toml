@@ -309,3 +309,6 @@ verify_jwt = false
 
 [functions.tracking-checkpoint-manual]
 verify_jwt = false
+
+[functions.product-feed-sync]
+verify_jwt = false
