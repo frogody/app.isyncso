@@ -987,6 +987,22 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
   // Get team-based app access
   const { effectiveApps, hasTeams, isLoading: teamLoading } = useTeamAccess();
 
+  // Platform owner check — restricts certain apps (e.g. Reach) to platform_admins only
+  const [isPlatformOwner, setIsPlatformOwner] = React.useState(false);
+  React.useEffect(() => {
+    if (!me?.id) { setIsPlatformOwner(false); return; }
+    supabase
+      .from('platform_admins')
+      .select('id')
+      .eq('user_id', me.id)
+      .eq('is_active', true)
+      .maybeSingle()
+      .then(({ data }) => setIsPlatformOwner(!!data));
+  }, [me?.id]);
+
+  // Apps restricted to platform owners only
+  const PLATFORM_OWNER_ONLY_APPS = ['reach'];
+
   React.useEffect(() => {
     let isMounted = true;
     (async () => {
@@ -1052,10 +1068,15 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
       appsToShow = [];
     }
 
+    // Filter out platform-owner-only apps for regular users
+    if (!isPlatformOwner) {
+      appsToShow = appsToShow.filter(appId => !PLATFORM_OWNER_ONLY_APPS.includes(appId));
+    }
+
     return appsToShow
       .map(appId => ENGINE_ITEMS_CONFIG[appId])
       .filter(Boolean);
-  }, [effectiveApps, teamLoading]);
+  }, [effectiveApps, teamLoading, isPlatformOwner]);
 
   // Report visible engine IDs to parent for submenu positioning
   const visibleEngineIds = useMemo(() => engineItems.map(e => e.id), [engineItems]);

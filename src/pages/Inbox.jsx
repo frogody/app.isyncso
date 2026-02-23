@@ -68,6 +68,19 @@ export default function InboxPage() {
   const { user } = useUser();
   const { isAdmin } = usePermissions();
 
+  // Platform owner check — only platform_admins see ALL support channels
+  const [isPlatformOwner, setIsPlatformOwner] = useState(false);
+  useEffect(() => {
+    if (!user?.id) { setIsPlatformOwner(false); return; }
+    supabase
+      .from('platform_admins')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .maybeSingle()
+      .then(({ data }) => setIsPlatformOwner(!!data));
+  }, [user?.id]);
+
   // ========================================
   // COMMUNICATION HUB TAB STATE
   // ========================================
@@ -386,10 +399,10 @@ export default function InboxPage() {
     ensureSupportChannel();
   }, [channelsLoading, user, realtimeSupportChannels]);
 
-  // For admins: load ALL support channels (not just their own)
+  // For platform owners: load ALL support channels (not just their own)
   const [allSupportChannels, setAllSupportChannels] = useState([]);
   useEffect(() => {
-    if (!isAdmin || !user) return;
+    if (!isPlatformOwner || !user) return;
     const loadAllSupport = async () => {
       try {
         const { data } = await supabase
@@ -426,13 +439,13 @@ export default function InboxPage() {
       }).subscribe();
 
     return () => { supabase.removeChannel(sub); };
-  }, [isAdmin, user]);
+  }, [isPlatformOwner, user]);
 
-  // Merge support channels: admins see all, regular users see their own
+  // Merge support channels: platform owners see all, regular users see their own
   const supportChannels = useMemo(() => {
-    if (isAdmin) return allSupportChannels;
+    if (isPlatformOwner) return allSupportChannels;
     return realtimeSupportChannels;
-  }, [isAdmin, allSupportChannels, realtimeSupportChannels]);
+  }, [isPlatformOwner, allSupportChannels, realtimeSupportChannels]);
 
   // Resolve support channel names for admins (show the user's name, not "Support - X")
   const resolvedSupportChannels = useMemo(() => {
