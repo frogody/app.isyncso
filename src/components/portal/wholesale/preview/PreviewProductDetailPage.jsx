@@ -148,7 +148,7 @@ function ImageGallery({ images, activeIndex, onSelect }) {
   if (images.length === 0) {
     return (
       <div
-        className="aspect-[4/3] rounded-xl flex items-center justify-center"
+        className="aspect-square rounded-xl flex items-center justify-center"
         style={{
           ...glassCardStyle,
           boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
@@ -166,7 +166,7 @@ function ImageGallery({ images, activeIndex, onSelect }) {
     <div className="flex flex-col gap-2">
       {/* Main image */}
       <div
-        className="aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center"
+        className="aspect-square rounded-xl overflow-hidden flex items-center justify-center"
         style={{
           ...glassCardStyle,
           boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
@@ -639,7 +639,7 @@ function RelatedProducts({ products, currentProduct, nav }) {
               className="cursor-pointer"
             >
               <div
-                className="aspect-[4/3] flex items-center justify-center overflow-hidden"
+                className="aspect-square flex items-center justify-center overflow-hidden"
                 style={{
                   background:
                     'color-mix(in srgb, var(--ws-surface) 40%, transparent)',
