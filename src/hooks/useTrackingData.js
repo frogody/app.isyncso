@@ -2,13 +2,16 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/api/supabaseClient';
 
 /**
- * Hook to fetch tracking data for a B2B order, with Realtime subscription
- * for live checkpoint updates.
+ * Hook to fetch tracking data with Realtime subscription for live checkpoint updates.
  *
- * @param {{ orderId: string }} params
+ * Accepts either:
+ * - `orderId` — looks up shipping_task by b2b_order_id to find tracking_job_id
+ * - `trackingJobId` — directly fetches the tracking job (used by warehouse)
+ *
+ * @param {{ orderId?: string, trackingJobId?: string }} params
  * @returns {{ trackingJob, checkpoints, isLoading, error, refetch }}
  */
-export default function useTrackingData({ orderId }) {
+export default function useTrackingData({ orderId, trackingJobId } = {}) {
   const [trackingJob, setTrackingJob] = useState(null);
   const [checkpoints, setCheckpoints] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -16,7 +19,7 @@ export default function useTrackingData({ orderId }) {
   const channelRef = useRef(null);
 
   const fetchData = useCallback(async () => {
-    if (!orderId) {
+    if (!orderId && !trackingJobId) {
       setIsLoading(false);
       return;
     }
@@ -25,25 +28,28 @@ export default function useTrackingData({ orderId }) {
       setIsLoading(true);
       setError(null);
 
-      // 1. Get shipping_task for this order → tracking_job_id
-      const { data: shippingTask, error: stErr } = await supabase
-        .from('shipping_tasks')
-        .select('tracking_job_id')
-        .eq('b2b_order_id', orderId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      let jobId = trackingJobId;
 
-      if (stErr) throw stErr;
+      // If no direct trackingJobId, look it up via shipping_tasks
+      if (!jobId && orderId) {
+        const { data: shippingTask, error: stErr } = await supabase
+          .from('shipping_tasks')
+          .select('tracking_job_id')
+          .eq('b2b_order_id', orderId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      if (!shippingTask?.tracking_job_id) {
+        if (stErr) throw stErr;
+        jobId = shippingTask?.tracking_job_id;
+      }
+
+      if (!jobId) {
         setTrackingJob(null);
         setCheckpoints([]);
         setIsLoading(false);
         return;
       }
-
-      const jobId = shippingTask.tracking_job_id;
 
       // 2. Get tracking_jobs row
       const { data: job, error: jobErr } = await supabase
@@ -69,7 +75,7 @@ export default function useTrackingData({ orderId }) {
     } finally {
       setIsLoading(false);
     }
-  }, [orderId]);
+  }, [orderId, trackingJobId]);
 
   // Initial fetch
   useEffect(() => {

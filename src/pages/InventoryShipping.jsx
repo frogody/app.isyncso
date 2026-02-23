@@ -39,6 +39,7 @@ import {
   listTrackingJobs,
 } from "@/lib/db/queries";
 import { completeShipping } from "@/lib/services/inventory-service";
+import TrackingMapDrawer from "@/components/shipping/TrackingMapDrawer";
 
 const STATUS_STYLES = {
   pending: {
@@ -275,7 +276,7 @@ function getOrderInfo(task) {
 }
 
 // Shipping task card
-function ShippingTaskCard({ task, onShip, t }) {
+function ShippingTaskCard({ task, onShip, onTrack, t }) {
   if (!task) return null;
 
   const status = getStatusStyle(task.status);
@@ -349,6 +350,17 @@ function ShippingTaskCard({ task, onShip, t }) {
                   onClick={() => window.open(task.tracking_url, "_blank")}
                 >
                   <ExternalLink className="w-3 h-3" />
+                </Button>
+              )}
+              {task.tracking_job_id && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-[11px] text-cyan-400 hover:bg-cyan-500/10"
+                  onClick={() => onTrack?.(task)}
+                >
+                  <MapPin className="w-3 h-3 mr-1" />
+                  Track
                 </Button>
               )}
             </div>
@@ -426,6 +438,7 @@ export default function InventoryShipping({ embedded = false }) {
   const [search, setSearch] = useState("");
   const [selectedTask, setSelectedTask] = useState(null);
   const [showShipModal, setShowShipModal] = useState(false);
+  const [trackingTask, setTrackingTask] = useState(null);
 
   const companyId = user?.company_id;
 
@@ -608,6 +621,7 @@ export default function InventoryShipping({ embedded = false }) {
                   key={task.id}
                   task={task}
                   onShip={openShipModal}
+                  onTrack={setTrackingTask}
                   t={t}
                 />
               ))}
@@ -624,6 +638,13 @@ export default function InventoryShipping({ embedded = false }) {
             }}
             onShip={handleShip}
             t={t}
+          />
+
+          {/* Tracking map drawer */}
+          <TrackingMapDrawer
+            task={trackingTask}
+            isOpen={!!trackingTask}
+            onClose={() => setTrackingTask(null)}
           />
         </div>
   );

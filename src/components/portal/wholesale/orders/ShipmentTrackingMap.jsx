@@ -26,8 +26,8 @@ function getBounds(points) {
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
-export default function ShipmentTrackingMap({ orderId }) {
-  const { trackingJob, checkpoints, isLoading, error } = useTrackingData({ orderId });
+export default function ShipmentTrackingMap({ orderId, trackingJobId }) {
+  const { trackingJob, checkpoints, isLoading, error } = useTrackingData({ orderId, trackingJobId });
   const [selectedCheckpoint, setSelectedCheckpoint] = useState(null);
   const mapRef = useRef(null);
 
