@@ -423,7 +423,7 @@ export default function PreviewInvoicesPage({ config, nav }) {
         const { data, error } = await supabase
           .from('invoices')
           .select(
-            'id, invoice_number, status, subtotal, tax_amount, total, due_date, amount_paid, balance_due, created_at, pdf_url, notes, items, b2b_order_id, b2b_orders!inner(id, order_number, client_id)',
+            'id, invoice_number, status, subtotal, tax_amount, total, due_date, amount_paid, balance_due, created_at, notes, items, b2b_order_id, b2b_orders!inner(id, order_number, client_id)',
           )
           .eq('b2b_orders.client_id', client.id)
           .order('created_at', { ascending: false });

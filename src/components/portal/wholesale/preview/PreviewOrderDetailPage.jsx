@@ -69,7 +69,7 @@ export default function PreviewOrderDetailPage({ config, nav, pageData }) {
           // Fetch linked invoice
           const { data: invoiceData } = await supabase
             .from('invoices')
-            .select('id, invoice_number, status, total, due_date, amount_paid, balance_due, pdf_url')
+            .select('id, invoice_number, status, total, due_date, amount_paid, balance_due')
             .eq('b2b_order_id', orderId)
             .order('created_at', { ascending: false })
             .limit(1)
