@@ -162,7 +162,8 @@ function StatusTimeline({ status }) {
 export default function OrderDetailPage() {
   const navigate = useNavigate();
   const { org, orderId } = useParams();
-  const { orgId, addToCart, client } = useWholesale();
+  const { orgId, organizationId, addToCart, client } = useWholesale();
+  const resolvedOrgId = organizationId || orgId;
 
   const [order, setOrder] = useState(null);
   const [lineItems, setLineItems] = useState([]);
@@ -185,7 +186,7 @@ export default function OrderDetailPage() {
           .from('b2b_orders')
           .select('*')
           .eq('id', orderId)
-          .eq('organization_id', orgId)
+          .eq('organization_id', resolvedOrgId)
           .single();
 
         if (cancelled) return;

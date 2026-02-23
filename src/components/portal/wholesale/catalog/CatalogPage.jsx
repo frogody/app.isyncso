@@ -604,7 +604,7 @@ function QuickViewModal({ product, pricing, inventory, onClose, onAddToCart, onN
 export default function CatalogPage() {
   const navigate = useNavigate();
   const { org: orgSlug } = useParams();
-  const { config, addToCart, orgId, client, isFavorite, toggleFavorite } = useWholesale();
+  const { config, addToCart, orgId, organizationId: resolvedOrgUUID, client, isFavorite, toggleFavorite } = useWholesale();
 
   // Data state
   const [products, setProducts] = useState([]);
@@ -629,8 +629,8 @@ export default function CatalogPage() {
   // Recently viewed state
   const [recentlyViewedIds, setRecentlyViewedIds] = useState([]);
 
-  // Resolve organization ID -- orgSlug from URL params is the org ID in this project
-  const organizationId = orgId || orgSlug;
+  // Resolve organization ID — use the UUID resolved by WholesaleProvider
+  const organizationId = resolvedOrgUUID || orgId || orgSlug;
 
   // ---------------------------------------------------------------------------
   // Search Debounce (300ms)

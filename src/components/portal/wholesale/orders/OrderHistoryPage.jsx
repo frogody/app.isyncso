@@ -385,7 +385,8 @@ function exportOrdersCSV(orders) {
 export default function OrderHistoryPage() {
   const navigate = useNavigate();
   const { org } = useParams();
-  const { orgId, addToCart, client } = useWholesale();
+  const { orgId, organizationId, addToCart, client } = useWholesale();
+  const resolvedOrgId = organizationId || orgId;
 
   const [orders, setOrders] = useState([]);
   const [allOrders, setAllOrders] = useState([]); // For analytics (all orders, no pagination)
@@ -415,7 +416,7 @@ export default function OrderHistoryPage() {
       const { data, error } = await supabase
         .from('b2b_orders')
         .select('id, status, total, created_at')
-        .eq('organization_id', orgId)
+        .eq('organization_id', resolvedOrgId)
         .order('created_at', { ascending: false });
 
       if (!error && data) {
@@ -442,7 +443,7 @@ export default function OrderHistoryPage() {
       let query = supabase
         .from('b2b_orders')
         .select('*', { count: 'exact' })
-        .eq('organization_id', orgId)
+        .eq('organization_id', resolvedOrgId)
         .order('created_at', { ascending: false })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
@@ -587,7 +588,7 @@ export default function OrderHistoryPage() {
         .from('b2b_orders')
         .update({ status: 'cancelled' })
         .eq('id', cancelOrderId)
-        .eq('organization_id', orgId);
+        .eq('organization_id', resolvedOrgId);
 
       if (error) throw error;
 

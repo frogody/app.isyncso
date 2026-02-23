@@ -98,6 +98,7 @@ export function WholesaleProvider({ children }) {
   const [storePublished, setStorePublished] = useState(false);
   const [configLoading, setConfigLoading] = useState(true);
   const [configError, setConfigError] = useState(null);
+  const [organizationId, setOrganizationId] = useState(null);
   const [cartItems, setCartItems] = useState(() => loadCartFromStorage(org));
 
   // Fetch store config from portal_settings
@@ -115,10 +116,37 @@ export function WholesaleProvider({ children }) {
       setConfigError(null);
 
       try {
+        // org is a slug from the URL (e.g. "blinq-recruitment").
+        // portal_settings.organization_id is a UUID, so resolve slug → UUID first.
+        let orgUUID = org;
+
+        // If org is not a valid UUID, look it up via the organizations table
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(org)) {
+          const { data: orgRow, error: orgErr } = await supabase
+            .from('organizations')
+            .select('id')
+            .eq('slug', org)
+            .single();
+
+          if (orgErr || !orgRow) {
+            if (!cancelled) {
+              setConfigError('Organization not found');
+              setConfig(getDefaultConfig());
+              setStorePublished(false);
+              setConfigLoading(false);
+            }
+            return;
+          }
+          orgUUID = orgRow.id;
+        }
+
+        if (!cancelled) setOrganizationId(orgUUID);
+
         const { data, error } = await supabase
           .from('portal_settings')
           .select('store_config, store_published, organization_id')
-          .eq('organization_id', org)
+          .eq('organization_id', orgUUID)
           .single();
 
         if (cancelled) return;
@@ -391,6 +419,7 @@ export function WholesaleProvider({ children }) {
 
       // Organization
       orgId: org || null,
+      organizationId: organizationId || null,
 
       // Client (B2B portal auth)
       client: client || null,
@@ -449,6 +478,7 @@ export function WholesaleProvider({ children }) {
       configLoading,
       configError,
       org,
+      organizationId,
       client,
       clientLoading,
       isAuthenticated,

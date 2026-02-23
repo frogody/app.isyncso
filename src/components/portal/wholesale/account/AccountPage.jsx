@@ -353,7 +353,7 @@ function OrderStatistics({ orgId }) {
         const { data: orders, error } = await supabase
           .from('b2b_orders')
           .select('id, total, items, items_count, created_at')
-          .eq('organization_id', orgId);
+          .eq('organization_id', resolvedOrgId);
 
         if (error) throw error;
 
@@ -482,7 +482,8 @@ const NOTIFICATION_CATEGORIES = [
 
 export default function AccountPage() {
   const { org } = useParams();
-  const { orgId, client: wholesaleClient } = useWholesale();
+  const { orgId, organizationId, client: wholesaleClient } = useWholesale();
+  const resolvedOrgId = organizationId || orgId;
 
   // Full client data (more fields than what WholesaleProvider gives us)
   const [client, setClient] = useState(null);
@@ -535,7 +536,7 @@ export default function AccountPage() {
       const { data, error } = await supabase
         .from('portal_clients')
         .select('*')
-        .eq('organization_id', orgId)
+        .eq('organization_id', resolvedOrgId)
         .single();
       if (error) throw error;
       if (data) {
@@ -584,7 +585,7 @@ export default function AccountPage() {
       const { data, error } = await supabase
         .from('b2b_client_addresses')
         .select('*')
-        .eq('organization_id', orgId)
+        .eq('organization_id', resolvedOrgId)
         .order('created_at', { ascending: true });
       if (error) throw error;
       setAddresses(data || []);
@@ -613,7 +614,7 @@ export default function AccountPage() {
           email: profile.email,
           phone: profile.phone,
         })
-        .eq('organization_id', orgId);
+        .eq('organization_id', resolvedOrgId);
       if (error) throw error;
       showToast('Profile updated successfully');
       // Refresh client
@@ -637,7 +638,7 @@ export default function AccountPage() {
       const { error } = await supabase
         .from('portal_clients')
         .update(updatePayload)
-        .eq('organization_id', orgId);
+        .eq('organization_id', resolvedOrgId);
       if (error) throw error;
       showToast('Company info updated');
       fetchProfile();
@@ -700,7 +701,7 @@ export default function AccountPage() {
       await supabase
         .from('b2b_client_addresses')
         .update({ is_default: false })
-        .eq('organization_id', orgId);
+        .eq('organization_id', resolvedOrgId);
 
       // Then set the new default
       const { error } = await supabase
@@ -753,7 +754,7 @@ export default function AccountPage() {
       const { error } = await supabase
         .from('portal_clients')
         .update({ notification_preferences: notifPrefs })
-        .eq('organization_id', orgId);
+        .eq('organization_id', resolvedOrgId);
       if (error) throw error;
       showToast('Notification preferences saved');
     } catch (err) {

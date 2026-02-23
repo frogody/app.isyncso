@@ -988,7 +988,7 @@ function ConfirmationStep({ orderId }) {
  * then clears the cart.
  */
 export default function CheckoutPage() {
-  const { cartItems, clearCart, orgId, config, client } = useWholesale();
+  const { cartItems, clearCart, orgId, organizationId, config, client } = useWholesale();
   const navigate = useNavigate();
   const { org } = useParams();
   const minOrderAmount = Number(config?.min_order_amount) || 0;
@@ -1061,7 +1061,7 @@ export default function CheckoutPage() {
     setError(null);
 
     try {
-      const organizationId = orgId || org;
+      const resolvedOrgId = organizationId || orgId || org;
 
       // Calculate totals
       const taxAmount = subtotal * BTW_RATE;
@@ -1078,8 +1078,8 @@ export default function CheckoutPage() {
       const { data: orderData, error: orderError } = await supabase
         .from('b2b_orders')
         .insert({
-          organization_id: organizationId,
-          company_id: config?.company_id || organizationId,
+          organization_id: resolvedOrgId,
+          company_id: config?.company_id || resolvedOrgId,
           client_id: client?.id,
           status: 'pending',
           shipping_address: fullShippingAddress,
@@ -1128,7 +1128,7 @@ export default function CheckoutPage() {
           normalizedItems.map((item) =>
             reserveB2BInventory(
               item.productId ?? item.id,
-              organizationId,
+              resolvedOrgId,
               item.quantity,
             )
           )
@@ -1148,7 +1148,7 @@ export default function CheckoutPage() {
     } finally {
       setSubmitting(false);
     }
-  }, [orgId, org, subtotal, shippingAddress, orderNotes, deliveryDate, deliveryNotes, normalizedItems, clearCart, belowMinimum, minOrderAmount, config, client]);
+  }, [orgId, organizationId, org, subtotal, shippingAddress, orderNotes, deliveryDate, deliveryNotes, normalizedItems, clearCart, belowMinimum, minOrderAmount, config, client]);
 
   const catalogPath = `/portal/${org}/shop/catalog`;
   const cartPath = `/portal/${org}/shop/cart`;
