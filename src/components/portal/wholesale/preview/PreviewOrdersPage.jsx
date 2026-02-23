@@ -6,6 +6,7 @@ import {
   ChevronUp,
   Clock,
   Truck,
+  Check,
   CheckCircle,
   AlertCircle,
   RefreshCw,
@@ -427,24 +428,23 @@ function SearchAndDateFilter({ searchQuery, onSearchChange, dateFrom, dateTo, on
 // ---------------------------------------------------------------------------
 
 const ORDER_STAGES = [
-  { key: 'pending', label: 'Placed', shortLabel: 'Placed' },
-  { key: 'confirmed', label: 'Confirmed', shortLabel: 'Confirmed' },
-  { key: 'processing', label: 'Packing', shortLabel: 'Packing' },
-  { key: 'shipped', label: 'Shipped', shortLabel: 'Shipped' },
-  { key: 'delivered', label: 'Delivered', shortLabel: 'Delivered' },
+  { key: 'pending', label: 'Placed' },
+  { key: 'confirmed', label: 'Confirmed' },
+  { key: 'processing', label: 'Packing' },
+  { key: 'shipped', label: 'Shipped' },
+  { key: 'delivered', label: 'Delivered' },
 ];
 
 function OrderProgressBar({ status }) {
   const normalised = (status || '').toLowerCase().trim();
 
-  // Cancelled orders get a single-line indicator
   if (normalised === 'cancelled') {
     return (
-      <div className="flex items-center gap-2 px-5 pl-6 pb-3">
-        <div className="flex-1 h-1 rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.2)' }}>
-          <div className="h-full rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.6)', width: '100%' }} />
-        </div>
-        <span className="text-[10px] font-semibold" style={{ color: 'rgba(239,68,68,0.7)' }}>Cancelled</span>
+      <div className="flex items-center justify-center gap-2 py-2 px-6">
+        <AlertCircle className="w-3 h-3 flex-shrink-0" style={{ color: 'rgba(239,68,68,0.6)' }} />
+        <span className="text-[10px] font-semibold tracking-wide" style={{ color: 'rgba(239,68,68,0.6)' }}>
+          ORDER CANCELLED
+        </span>
       </div>
     );
   }
@@ -453,81 +453,98 @@ function OrderProgressBar({ status }) {
   const activeIdx = currentIdx >= 0 ? currentIdx : 0;
 
   return (
-    <div className="px-5 pl-6 pb-3.5 pt-0.5">
-      {/* Track + dots */}
-      <div className="relative flex items-center w-full">
-        {/* Background track */}
-        <div
-          className="absolute inset-x-0 h-[3px] rounded-full"
-          style={{ backgroundColor: 'color-mix(in srgb, var(--ws-border) 60%, transparent)' }}
-        />
-
-        {/* Filled track */}
-        <div
-          className="absolute left-0 h-[3px] rounded-full transition-all duration-700 ease-out"
-          style={{
-            width: `${(activeIdx / (ORDER_STAGES.length - 1)) * 100}%`,
-            background: `linear-gradient(90deg, var(--ws-primary), color-mix(in srgb, var(--ws-primary) 80%, #7c3aed))`,
-          }}
-        />
-
-        {/* Stage dots + labels */}
-        <div className="relative flex items-center justify-between w-full">
+    <div className="px-5 pl-6 pb-3 pt-1">
+      <div className="max-w-md">
+        {/* Steps row — each step is a dot + label, connected by lines */}
+        <div className="flex items-center">
           {ORDER_STAGES.map((stage, idx) => {
-            const isCompleted = idx <= activeIdx;
+            const isDone = idx < activeIdx;
             const isCurrent = idx === activeIdx;
+            const isActive = idx <= activeIdx;
+            const isLast = idx === ORDER_STAGES.length - 1;
 
             return (
-              <div key={stage.key} className="flex flex-col items-center" style={{ zIndex: 2 }}>
-                {/* Dot */}
-                <div
-                  className="relative flex items-center justify-center transition-all duration-300"
-                  style={{
-                    width: isCurrent ? 14 : 10,
-                    height: isCurrent ? 14 : 10,
-                    borderRadius: '50%',
-                    backgroundColor: isCompleted ? 'var(--ws-primary)' : 'var(--ws-surface, #18181b)',
-                    border: isCompleted ? '2px solid var(--ws-primary)' : '2px solid color-mix(in srgb, var(--ws-border) 80%, transparent)',
-                    boxShadow: isCurrent ? '0 0 0 3px color-mix(in srgb, var(--ws-primary) 20%, transparent)' : 'none',
-                  }}
-                >
-                  {/* Inner check for completed */}
-                  {isCompleted && idx < activeIdx && (
-                    <div
-                      className="rounded-full"
-                      style={{
-                        width: 4,
-                        height: 4,
-                        backgroundColor: 'var(--ws-bg, #000)',
-                      }}
-                    />
-                  )}
-                  {/* Pulse ring for current */}
-                  {isCurrent && (
-                    <div
-                      className="absolute inset-0 rounded-full animate-ping"
-                      style={{
-                        backgroundColor: 'var(--ws-primary)',
-                        opacity: 0.2,
-                        animationDuration: '2s',
-                      }}
-                    />
-                  )}
+              <React.Fragment key={stage.key}>
+                {/* Step dot + label */}
+                <div className="flex flex-col items-center flex-shrink-0" style={{ width: 52 }}>
+                  <div
+                    className="flex items-center justify-center rounded-full transition-all duration-300"
+                    style={{
+                      width: isCurrent ? 18 : 14,
+                      height: isCurrent ? 18 : 14,
+                      backgroundColor: isActive
+                        ? 'var(--ws-primary, #06b6d4)'
+                        : 'transparent',
+                      border: isActive
+                        ? 'none'
+                        : '2px solid color-mix(in srgb, var(--ws-muted) 25%, transparent)',
+                      boxShadow: isCurrent
+                        ? '0 0 0 4px color-mix(in srgb, var(--ws-primary) 15%, transparent)'
+                        : 'none',
+                    }}
+                  >
+                    {isDone && (
+                      <Check
+                        className="flex-shrink-0"
+                        style={{
+                          width: 9,
+                          height: 9,
+                          color: 'var(--ws-bg, #000)',
+                          strokeWidth: 3,
+                        }}
+                      />
+                    )}
+                    {isCurrent && (
+                      <div
+                        className="rounded-full"
+                        style={{
+                          width: 6,
+                          height: 6,
+                          backgroundColor: 'var(--ws-bg, #000)',
+                        }}
+                      />
+                    )}
+                  </div>
+                  <span
+                    className="text-[9px] mt-1 whitespace-nowrap select-none leading-none"
+                    style={{
+                      color: isCurrent
+                        ? 'var(--ws-text)'
+                        : isActive
+                          ? 'var(--ws-muted)'
+                          : 'color-mix(in srgb, var(--ws-muted) 40%, transparent)',
+                      fontWeight: isCurrent ? 700 : 500,
+                    }}
+                  >
+                    {stage.label}
+                  </span>
                 </div>
 
-                {/* Label */}
-                <span
-                  className="text-[9px] sm:text-[10px] font-medium mt-1.5 whitespace-nowrap select-none"
-                  style={{
-                    color: isCompleted
-                      ? 'var(--ws-text)'
-                      : 'color-mix(in srgb, var(--ws-muted) 60%, transparent)',
-                    fontWeight: isCurrent ? 700 : 500,
-                  }}
-                >
-                  {stage.shortLabel}
-                </span>
-              </div>
+                {/* Connector line */}
+                {!isLast && (
+                  <div className="flex-1 h-[2px] -mx-0.5 rounded-full" style={{ minWidth: 12 }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: idx < activeIdx ? '100%' : '0%',
+                        backgroundColor: 'var(--ws-primary, #06b6d4)',
+                        backgroundImage: idx < activeIdx
+                          ? 'none'
+                          : `repeating-linear-gradient(90deg, color-mix(in srgb, var(--ws-muted) 20%, transparent) 0, color-mix(in srgb, var(--ws-muted) 20%, transparent) 100%)`,
+                      }}
+                    />
+                    {/* Background track for incomplete segments */}
+                    {idx >= activeIdx && (
+                      <div
+                        className="h-[2px] rounded-full -mt-[2px]"
+                        style={{
+                          backgroundColor: 'color-mix(in srgb, var(--ws-muted) 15%, transparent)',
+                        }}
+                      />
+                    )}
+                  </div>
+                )}
+              </React.Fragment>
             );
           })}
         </div>

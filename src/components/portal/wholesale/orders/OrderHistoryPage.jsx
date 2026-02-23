@@ -8,6 +8,8 @@ import {
   ShoppingBag,
   ArrowRight,
   Loader2,
+  Check,
+  AlertCircle,
 } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
 import { useWholesale } from '../WholesaleProvider';
@@ -32,11 +34,11 @@ function OrderProgressBar({ status }) {
 
   if (normalised === 'cancelled') {
     return (
-      <div className="flex items-center gap-2 mt-2">
-        <div className="flex-1 h-1 rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.15)' }}>
-          <div className="h-full rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.5)', width: '100%' }} />
-        </div>
-        <span className="text-[10px] font-semibold" style={{ color: 'rgba(239,68,68,0.6)' }}>Cancelled</span>
+      <div className="flex items-center justify-center gap-2 py-1 mt-2">
+        <AlertCircle className="w-3 h-3 flex-shrink-0" style={{ color: 'rgba(239,68,68,0.6)' }} />
+        <span className="text-[10px] font-semibold tracking-wide" style={{ color: 'rgba(239,68,68,0.6)' }}>
+          ORDER CANCELLED
+        </span>
       </div>
     );
   }
@@ -46,56 +48,76 @@ function OrderProgressBar({ status }) {
 
   return (
     <div className="mt-2.5 mb-0.5">
-      <div className="relative flex items-center w-full">
-        {/* Background track */}
-        <div
-          className="absolute inset-x-0 h-[3px] rounded-full"
-          style={{ backgroundColor: 'var(--ws-border, rgba(255,255,255,0.08))' }}
-        />
-        {/* Filled track */}
-        <div
-          className="absolute left-0 h-[3px] rounded-full transition-all duration-500 ease-out"
-          style={{
-            width: `${(activeIdx / (ORDER_STAGES.length - 1)) * 100}%`,
-            backgroundColor: 'var(--ws-primary, #06b6d4)',
-          }}
-        />
-        {/* Dots + labels */}
-        <div className="relative flex items-center justify-between w-full">
+      <div className="max-w-md">
+        <div className="flex items-center">
           {ORDER_STAGES.map((stage, idx) => {
-            const isCompleted = idx <= activeIdx;
+            const isDone = idx < activeIdx;
             const isCurrent = idx === activeIdx;
+            const isActive = idx <= activeIdx;
+            const isLast = idx === ORDER_STAGES.length - 1;
+
             return (
-              <div key={stage.key} className="flex flex-col items-center" style={{ zIndex: 2 }}>
-                <div
-                  className="transition-all duration-300"
-                  style={{
-                    width: isCurrent ? 12 : 8,
-                    height: isCurrent ? 12 : 8,
-                    borderRadius: '50%',
-                    backgroundColor: isCompleted
-                      ? 'var(--ws-primary, #06b6d4)'
-                      : 'var(--ws-surface, #18181b)',
-                    border: isCompleted
-                      ? '2px solid var(--ws-primary, #06b6d4)'
-                      : '2px solid var(--ws-border, rgba(255,255,255,0.08))',
-                    boxShadow: isCurrent
-                      ? '0 0 0 3px rgba(6, 182, 212, 0.15)'
-                      : 'none',
-                  }}
-                />
-                <span
-                  className="text-[9px] font-medium mt-1 whitespace-nowrap"
-                  style={{
-                    color: isCompleted
-                      ? 'var(--ws-text, #fff)'
-                      : 'var(--ws-muted, rgba(255,255,255,0.3))',
-                    fontWeight: isCurrent ? 700 : 500,
-                  }}
-                >
-                  {stage.label}
-                </span>
-              </div>
+              <React.Fragment key={stage.key}>
+                <div className="flex flex-col items-center flex-shrink-0" style={{ width: 52 }}>
+                  <div
+                    className="flex items-center justify-center rounded-full transition-all duration-300"
+                    style={{
+                      width: isCurrent ? 18 : 14,
+                      height: isCurrent ? 18 : 14,
+                      backgroundColor: isActive
+                        ? 'var(--ws-primary, #06b6d4)'
+                        : 'transparent',
+                      border: isActive
+                        ? 'none'
+                        : '2px solid var(--ws-muted, rgba(255,255,255,0.15))',
+                      boxShadow: isCurrent
+                        ? '0 0 0 4px rgba(6, 182, 212, 0.15)'
+                        : 'none',
+                    }}
+                  >
+                    {isDone && (
+                      <Check
+                        className="flex-shrink-0"
+                        style={{ width: 9, height: 9, color: 'var(--ws-bg, #000)', strokeWidth: 3 }}
+                      />
+                    )}
+                    {isCurrent && (
+                      <div className="rounded-full" style={{ width: 6, height: 6, backgroundColor: 'var(--ws-bg, #000)' }} />
+                    )}
+                  </div>
+                  <span
+                    className="text-[9px] mt-1 whitespace-nowrap select-none leading-none"
+                    style={{
+                      color: isCurrent
+                        ? 'var(--ws-text, #fff)'
+                        : isActive
+                          ? 'var(--ws-muted, rgba(255,255,255,0.5))'
+                          : 'var(--ws-muted, rgba(255,255,255,0.2))',
+                      fontWeight: isCurrent ? 700 : 500,
+                    }}
+                  >
+                    {stage.label}
+                  </span>
+                </div>
+
+                {!isLast && (
+                  <div className="flex-1 h-[2px] -mx-0.5 rounded-full" style={{ minWidth: 12 }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: idx < activeIdx ? '100%' : '0%',
+                        backgroundColor: 'var(--ws-primary, #06b6d4)',
+                      }}
+                    />
+                    {idx >= activeIdx && (
+                      <div
+                        className="h-[2px] rounded-full -mt-[2px]"
+                        style={{ backgroundColor: 'var(--ws-muted, rgba(255,255,255,0.1))' }}
+                      />
+                    )}
+                  </div>
+                )}
+              </React.Fragment>
             );
           })}
         </div>
