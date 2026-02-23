@@ -154,7 +154,6 @@ export default function Dashboard() {
       const configs = await db.entities.UserAppConfig.list({ limit: 10 }).catch(() => []);
       const defaultWidgets = [
         'commerce_b2b_overview', 'commerce_orders', 'commerce_revenue', 'commerce_products', 'commerce_outstanding',
-        'finance_overview', 'finance_revenue', 'finance_expenses', 'finance_pending', 'finance_mrr',
         'growth_pipeline', 'growth_stats', 'growth_deals',
         'sentinel_compliance', 'sentinel_systems',
         'learn_progress', 'learn_stats', 'learn_streak', 'learn_xp',
@@ -163,13 +162,13 @@ export default function Dashboard() {
 
       if (configs.length > 0) {
         const savedApps = configs[0].enabled_apps || ['learn', 'growth', 'sentinel'];
-        // Always include finance and commerce
-        const appsWithDefaults = [...new Set([...savedApps, 'finance', 'commerce'])];
+        // Always include commerce
+        const appsWithDefaults = [...new Set([...savedApps, 'commerce'])];
         setEnabledApps(appsWithDefaults);
-        // Merge saved widgets with any new commerce/finance widgets not yet saved
-        const savedWidgets = configs[0].dashboard_widgets || defaultWidgets;
-        const commerceFinanceDefaults = defaultWidgets.filter(w => w.startsWith('commerce_') || w.startsWith('finance_'));
-        const mergedWidgets = [...new Set([...commerceFinanceDefaults, ...savedWidgets])];
+        // Merge saved widgets with any new commerce widgets not yet saved
+        const savedWidgets = (configs[0].dashboard_widgets || defaultWidgets).filter(w => !w.startsWith('finance_'));
+        const commerceDefaults = defaultWidgets.filter(w => w.startsWith('commerce_'));
+        const mergedWidgets = [...new Set([...commerceDefaults, ...savedWidgets])];
         setEnabledWidgets(mergedWidgets);
       } else {
         setEnabledWidgets(defaultWidgets);
