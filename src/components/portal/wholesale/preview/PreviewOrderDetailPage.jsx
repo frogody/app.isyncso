@@ -77,7 +77,7 @@ export default function PreviewOrderDetailPage({ config, nav, pageData }) {
 
   if (loading) {
     return (
-      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-center min-h-[400px]">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--ws-primary)' }} />
       </div>
     );
@@ -85,7 +85,7 @@ export default function PreviewOrderDetailPage({ config, nav, pageData }) {
 
   if (!order) {
     return (
-      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Breadcrumb
           items={[
             { label: 'Home', onClick: () => nav?.goToHome?.() },
@@ -115,7 +115,7 @@ export default function PreviewOrderDetailPage({ config, nav, pageData }) {
   const total = Number(order.total) || 0;
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ color: 'var(--ws-text)' }}>
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ color: 'var(--ws-text)' }}>
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
@@ -151,15 +151,10 @@ export default function PreviewOrderDetailPage({ config, nav, pageData }) {
         </div>
       </div>
 
-      {/* Track & Trace Map — full-width breakout */}
+      {/* Track & Trace Map */}
       {(order.status === 'shipped' || order.status === 'in_transit' || order.status === 'delivered') && (
-        <div
-          className="relative mb-8"
-          style={{ width: '100vw', left: '50%', transform: 'translateX(-50%)' }}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <ShipmentTrackingMap orderId={orderId} />
-          </div>
+        <div className="mb-8">
+          <ShipmentTrackingMap orderId={orderId} />
         </div>
       )}
 
