@@ -44,7 +44,6 @@ import {
 } from './previewDesignSystem';
 import { useWholesale } from '../WholesaleProvider';
 import { getClientOrders } from '@/lib/db/queries/b2b';
-import ShipmentTrackingMap from '../orders/ShipmentTrackingMap';
 
 // ---------------------------------------------------------------------------
 // Status configuration
@@ -639,11 +638,6 @@ function OrderRow({ order, isExpanded, onToggle, nav, index }) {
                   )}
                 </div>
 
-                {/* Track & Trace Map — only when shipped or delivered */}
-                {(order.status === 'shipped' || order.status === 'in_transit' || order.status === 'delivered') && (
-                  <ShipmentTrackingMap orderId={order.dbId} />
-                )}
-
                 {/* Totals */}
                 <div
                   className="pt-4 space-y-2"
@@ -691,13 +685,13 @@ function OrderRow({ order, isExpanded, onToggle, nav, index }) {
                       Download Invoice
                     </SecondaryButton>
                   )}
-                  {(order.status === 'shipped' || order.status === 'in_transit') && order.trackingNumber && (
+                  {(order.status === 'shipped' || order.status === 'in_transit' || order.status === 'delivered') && (
                     <SecondaryButton
                       size="sm"
                       icon={Truck}
-                      onClick={() => window.open(`https://track.example.com/${order.trackingNumber}`, '_blank')}
+                      onClick={() => nav?.goToOrderDetail?.(order.dbId)}
                     >
-                      Track Delivery
+                      Track Shipment
                     </SecondaryButton>
                   )}
                   <PrimaryButton
