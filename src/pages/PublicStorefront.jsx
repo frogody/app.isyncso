@@ -39,6 +39,7 @@ import PreviewProductDetailPage from '@/components/portal/wholesale/preview/Prev
 import PreviewCartPage from '@/components/portal/wholesale/preview/PreviewCartPage';
 import PreviewCheckoutPage from '@/components/portal/wholesale/preview/PreviewCheckoutPage';
 import PreviewOrdersPage from '@/components/portal/wholesale/preview/PreviewOrdersPage';
+import PreviewOrderDetailPage from '@/components/portal/wholesale/preview/PreviewOrderDetailPage';
 import PreviewAccountPage from '@/components/portal/wholesale/preview/PreviewAccountPage';
 import PreviewInquiriesPage from '@/components/portal/wholesale/preview/PreviewInquiriesPage';
 import PreviewSettingsPage from '@/components/portal/wholesale/preview/PreviewSettingsPage';
@@ -1149,6 +1150,8 @@ export default function PublicStorefront({ subdomain }) {
             <PreviewCheckoutPage config={config} cart={cart} nav={nav} />
           ) : currentPage === 'orders' ? (
             <PreviewOrdersPage config={config} nav={nav} />
+          ) : currentPage === 'order-detail' ? (
+            <PreviewOrderDetailPage config={config} nav={nav} pageData={pageData} />
           ) : currentPage === 'account' ? (
             <PreviewAccountPage config={config} nav={nav} />
           ) : currentPage === 'inquiries' ? (
