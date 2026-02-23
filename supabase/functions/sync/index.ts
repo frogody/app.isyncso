@@ -47,6 +47,7 @@ import { executeComposioAction, COMPOSIO_ACTIONS } from './tools/composio.ts';
 import { executeTalentAction } from './tools/talent.ts';
 import { executePhoneAction, PHONE_ACTIONS } from './tools/phone.ts';
 import { executeB2BAction } from './tools/b2b.ts';
+import { executeJournalAction } from './tools/journal.ts';
 import { ActionContext, ActionResult, ChainedAction, ActionChainResult } from './tools/types.ts';
 
 // Import new improvement modules
@@ -276,6 +277,11 @@ const B2B_ACTIONS = [
   'b2b_respond_inquiry',
   'b2b_send_order_message',
   'b2b_create_announcement',
+];
+
+const JOURNAL_ACTIONS = [
+  'generate_journal',
+  'list_journals',
 ];
 
 const CREATE_ACTIONS = [
@@ -684,6 +690,10 @@ async function executeActionCore(
 
   if (B2B_ACTIONS.includes(actionName)) {
     return executeB2BAction(ctx, actionName, data);
+  }
+
+  if (JOURNAL_ACTIONS.includes(actionName)) {
+    return executeJournalAction(ctx, actionName, data);
   }
 
   // Unknown action
@@ -1391,6 +1401,15 @@ You: "Found it! Philips OneBlade 360 Face. What kind of images do you need - cle
 - **b2b_respond_inquiry**: Respond to inquiry (inquiryId, response, status?)
 - **b2b_send_order_message**: Send message on order (orderId, message)
 - **b2b_create_announcement**: Create store announcement (storeId, title, content, type?, priority?)
+
+### DAILY JOURNAL (2 actions)
+- **generate_journal**: Generate or regenerate a daily journal for any date (date?: "today", "yesterday", "3 days ago", "2026-02-20"). Regenerating overwrites the existing journal for that date with fresh AI insights.
+- **list_journals**: List recent daily journals (limit?, days?)
+
+Examples:
+- "Generate my journal for yesterday" → [ACTION]{"action": "generate_journal", "data": {"date": "yesterday"}}[/ACTION]
+- "Regenerate my journal from last Friday" → [ACTION]{"action": "generate_journal", "data": {"date": "2026-02-20"}}[/ACTION]
+- "Show my recent journals" → [ACTION]{"action": "list_journals", "data": {"limit": 7}}[/ACTION]
 
 ### CREATE/AI GENERATION (2 actions)
 - **generate_image**: Generate an AI image (product, marketing, creative)

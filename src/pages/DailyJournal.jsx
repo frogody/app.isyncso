@@ -400,11 +400,27 @@ export default function DailyJournal() {
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-zinc-100">
-                      {Math.round((selectedJournal.productivity_score || 0) * 100)}%
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => generateJournal(new Date(selectedJournal.journal_date + 'T12:00:00'))}
+                      disabled={generatingJournal}
+                      className="text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+                      title="Regenerate this journal with fresh AI insights"
+                    >
+                      {generatingJournal ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                    </Button>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-zinc-100">
+                        {Math.round((selectedJournal.productivity_score || 0) * 100)}%
+                      </div>
+                      <div className="text-xs text-zinc-500">Productivity</div>
                     </div>
-                    <div className="text-xs text-zinc-500">Productivity</div>
                   </div>
                 </div>
 
