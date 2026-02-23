@@ -22,10 +22,10 @@ export default function useRealtimeTranscription() {
   const recorderRef = useRef(null);
   const audioContextRef = useRef(null);
   const mixedStreamRef = useRef(null);
-  const chunksRef = useRef([]);
   const intervalRef = useRef(null);
   const fullTranscriptRef = useRef('');
   const isListeningRef = useRef(false);
+  const mimeTypeRef = useRef('audio/webm');
 
   /**
    * Mix local + remote audio streams into a single stream for recording.
@@ -117,14 +117,56 @@ export default function useRealtimeTranscription() {
   }, []);
 
   /**
-   * Process buffered audio chunks and send for transcription.
+   * Start a fresh MediaRecorder that records for CHUNK_INTERVAL_MS then stops.
+   * Stopping produces a complete WebM file with proper headers that Groq can parse.
+   * After each stop, we send the blob and immediately start a new recorder.
    */
-  const processChunks = useCallback(() => {
-    if (chunksRef.current.length === 0) return;
+  const startRecorderCycle = useCallback(() => {
+    const stream = mixedStreamRef.current;
+    if (!stream || !isListeningRef.current) return;
 
-    const blob = new Blob(chunksRef.current, { type: 'audio/webm;codecs=opus' });
-    chunksRef.current = [];
-    sendChunk(blob);
+    const recorder = new MediaRecorder(stream, {
+      mimeType: mimeTypeRef.current,
+      audioBitsPerSecond: 64000,
+    });
+
+    const chunks = [];
+
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) {
+        chunks.push(e.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      // Build a complete WebM blob from this recording cycle
+      if (chunks.length > 0) {
+        const blob = new Blob(chunks, { type: mimeTypeRef.current });
+        sendChunk(blob);
+      }
+      // Start a new cycle if still listening
+      if (isListeningRef.current) {
+        startRecorderCycle();
+      }
+    };
+
+    recorder.onerror = (e) => {
+      console.error('[transcription] Recorder error:', e);
+      // Try to restart
+      if (isListeningRef.current) {
+        setTimeout(startRecorderCycle, 1000);
+      }
+    };
+
+    recorder.start();
+    recorderRef.current = recorder;
+
+    // Stop after CHUNK_INTERVAL_MS to produce a complete file
+    intervalRef.current = setTimeout(() => {
+      if (recorder.state === 'recording') {
+        recorder.stop();
+      }
+    }, CHUNK_INTERVAL_MS);
   }, [sendChunk]);
 
   /**
@@ -148,41 +190,21 @@ export default function useRealtimeTranscription() {
           return;
         }
 
-        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        mimeTypeRef.current = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
           ? 'audio/webm;codecs=opus'
           : 'audio/webm';
 
-        const recorder = new MediaRecorder(mixedStream, {
-          mimeType,
-          audioBitsPerSecond: 64000,
-        });
-
-        recorder.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) {
-            chunksRef.current.push(e.data);
-          }
-        };
-
-        recorder.onerror = (e) => {
-          console.error('[transcription] Recorder error:', e);
-          setError('Recording error');
-        };
-
-        // Start recording — request data every second for responsive chunks
-        recorder.start(1000);
-        recorderRef.current = recorder;
-
-        // Process and send chunks every CHUNK_INTERVAL_MS
-        intervalRef.current = setInterval(processChunks, CHUNK_INTERVAL_MS);
-
         isListeningRef.current = true;
         setIsListening(true);
+
+        // Start the first recording cycle
+        startRecorderCycle();
       } catch (err) {
         console.error('[transcription] Failed to start:', err);
         setError(err.message || 'Failed to start transcription');
       }
     },
-    [createMixedStream, processChunks]
+    [createMixedStream, startRecorderCycle]
   );
 
   /**
@@ -191,21 +213,19 @@ export default function useRealtimeTranscription() {
   const stopListening = useCallback(() => {
     if (!isListeningRef.current) return;
 
-    // Stop the interval
+    // Mark as not listening first so onstop doesn't restart the cycle
+    isListeningRef.current = false;
+
+    // Clear the pending stop timeout
     if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+      clearTimeout(intervalRef.current);
       intervalRef.current = null;
     }
 
-    // Stop the recorder
+    // Stop the recorder (onstop will send the final chunk)
     if (recorderRef.current && recorderRef.current.state !== 'inactive') {
       recorderRef.current.stop();
       recorderRef.current = null;
-    }
-
-    // Process remaining chunks
-    if (chunksRef.current.length > 0) {
-      processChunks();
     }
 
     // Close audio context
@@ -215,9 +235,8 @@ export default function useRealtimeTranscription() {
     }
 
     mixedStreamRef.current = null;
-    isListeningRef.current = false;
     setIsListening(false);
-  }, [processChunks]);
+  }, []);
 
   /**
    * Get the full accumulated transcript as a single string.
@@ -238,14 +257,13 @@ export default function useRealtimeTranscription() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (isListeningRef.current) {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        if (recorderRef.current && recorderRef.current.state !== 'inactive') {
-          recorderRef.current.stop();
-        }
-        if (audioContextRef.current) {
-          audioContextRef.current.close().catch(() => {});
-        }
+      isListeningRef.current = false;
+      if (intervalRef.current) clearTimeout(intervalRef.current);
+      if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+        try { recorderRef.current.stop(); } catch {}
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {});
       }
     };
   }, []);
