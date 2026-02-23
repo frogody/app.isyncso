@@ -48,7 +48,7 @@ import {
 } from './previewDesignSystem';
 import { useWholesale } from '../WholesaleProvider';
 // Order creation moved to b2b-create-order edge function (service_role, bypasses RLS)
-import { processOrderPlaced } from '@/lib/b2b/processB2BOrder';
+// Post-order automation moved to b2b-portal-api edge function
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -1570,8 +1570,12 @@ export default function PreviewCheckoutPage({ config, cart, nav }) {
       const order = data.order;
       console.log('[Checkout] Order created:', { id: order.id, order_number: order.order_number, po_number: order.po_number });
 
-      // Fire-and-forget: automation runs in background (inventory, invoice, notification, email)
-      processOrderPlaced(order.id, orgId).catch((automationErr) => {
+      // Fire-and-forget: automation via edge function (inventory, invoice, notification, email)
+      fetch(`${SUPABASE_URL}/functions/v1/b2b-portal-api`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'processOrderPlaced', orderId: order.id, organizationId: orgId }),
+      }).catch((automationErr) => {
         console.warn('[Checkout] Automation partial failure:', automationErr);
       });
 

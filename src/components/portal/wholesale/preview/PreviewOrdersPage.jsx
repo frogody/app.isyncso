@@ -43,7 +43,9 @@ import {
   formatCurrency,
 } from './previewDesignSystem';
 import { useWholesale } from '../WholesaleProvider';
-import { getClientOrders } from '@/lib/db/queries/b2b';
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // ---------------------------------------------------------------------------
 // Status configuration
@@ -741,9 +743,15 @@ export default function PreviewOrdersPage({ config, nav }) {
       setLoading(true);
       setFetchError(null);
       try {
-        const dbOrders = await getClientOrders(client.id, 100);
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/b2b-portal-api`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ action: 'getOrders', clientId: client.id, limit: 100 }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || 'Failed to fetch orders');
         if (cancelled) return;
-        setOrders(dbOrders.map(normalizeOrder));
+        setOrders((data.orders || []).map(normalizeOrder));
       } catch (err) {
         console.error('[PreviewOrdersPage] Failed to fetch orders:', err);
         if (!cancelled) setFetchError(err.message);
