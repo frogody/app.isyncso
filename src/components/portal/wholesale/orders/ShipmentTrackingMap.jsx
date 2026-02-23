@@ -231,7 +231,7 @@ export default function ShipmentTrackingMap({ orderId }) {
       <div className={`flex flex-col ${showMap ? 'lg:flex-row' : ''}`}>
         {/* Map */}
         {showMap && (
-          <div className="relative flex-1 h-[300px] lg:h-[380px]">
+          <div className="relative flex-1 h-[300px] lg:h-[420px]">
             <Map
               ref={mapRef}
               initialViewState={{
@@ -349,8 +349,8 @@ export default function ShipmentTrackingMap({ orderId }) {
         {/* Sidebar: Checkpoint list */}
         <div
           className={`
-            ${showMap ? 'lg:w-[280px] lg:border-l' : 'w-full'}
-            max-h-[380px] overflow-y-auto
+            ${showMap ? 'lg:w-[320px] lg:border-l' : 'w-full'}
+            max-h-[420px] overflow-y-auto
           `}
           style={{ borderColor: 'var(--ws-border)' }}
         >

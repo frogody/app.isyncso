@@ -151,10 +151,15 @@ export default function PreviewOrderDetailPage({ config, nav, pageData }) {
         </div>
       </div>
 
-      {/* Track & Trace Map */}
+      {/* Track & Trace Map — full-width breakout */}
       {(order.status === 'shipped' || order.status === 'in_transit' || order.status === 'delivered') && (
-        <div className="mb-8">
-          <ShipmentTrackingMap orderId={orderId} />
+        <div
+          className="relative mb-8"
+          style={{ width: '100vw', left: '50%', transform: 'translateX(-50%)' }}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <ShipmentTrackingMap orderId={orderId} />
+          </div>
         </div>
       )}
 
