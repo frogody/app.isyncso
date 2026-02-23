@@ -105,9 +105,62 @@ export default function ShipmentTrackingMap({ orderId }) {
 
   if (error) {
     console.error('[ShipmentTrackingMap] Error loading tracking data:', error);
-    return null;
+    return (
+      <div
+        className="rounded-xl p-6"
+        style={{
+          backgroundColor: 'var(--ws-surface)',
+          border: '1px solid var(--ws-border)',
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(239,68,68,0.1)' }}
+          >
+            <Truck className="w-4 h-4" style={{ color: 'rgba(239,68,68,0.8)' }} />
+          </div>
+          <div>
+            <p className="text-sm font-medium" style={{ color: 'var(--ws-text)' }}>
+              Tracking Unavailable
+            </p>
+            <p className="text-xs" style={{ color: 'var(--ws-text-muted)' }}>
+              Unable to load shipment tracking data. Please try again later.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
-  if (!trackingJob) return null;
+
+  if (!trackingJob) {
+    return (
+      <div
+        className="rounded-xl p-6"
+        style={{
+          backgroundColor: 'var(--ws-surface)',
+          border: '1px solid var(--ws-border)',
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(34,211,238,0.1)' }}
+          >
+            <Truck className="w-4 h-4" style={{ color: 'var(--ws-primary)' }} />
+          </div>
+          <div>
+            <p className="text-sm font-medium" style={{ color: 'var(--ws-text)' }}>
+              Tracking Pending
+            </p>
+            <p className="text-xs" style={{ color: 'var(--ws-text-muted)' }}>
+              Tracking data is being set up. It will appear here once available.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (checkpoints.length === 0) {
     return (
