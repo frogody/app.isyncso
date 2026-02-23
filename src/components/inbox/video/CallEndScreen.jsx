@@ -3,16 +3,15 @@
  *
  * When a call ends, SYNC analyzes the full transcript via Groq LLM and presents:
  *   - Executive summary
- *   - Action items with assignees & priorities
+ *   - Action items with one-click "Create Task" buttons
  *   - Decisions made
  *   - Key discussion points
- *   - Follow-up suggestions
+ *   - Follow-up suggestions with context-aware action buttons
  *   - Overall sentiment
- *
- * Users can create tasks, copy the summary, or dismiss.
+ *   - "Approve All" to execute every pending item at once
  */
 
-import React, { memo, useState, useEffect, useCallback } from 'react';
+import React, { memo, useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Brain,
@@ -33,12 +32,29 @@ import {
   ThumbsDown,
   Minus,
   Sparkles,
+  Zap,
+  Check,
+  RotateCcw,
+  Send,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/api/supabaseClient';
+import { useWrapUpActions } from '@/hooks/useWrapUpActions';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// ---------------------------------------------------------------------------
+// Infer execution_type for older responses without it
+// ---------------------------------------------------------------------------
+function inferExecutionType(followUpType) {
+  switch (followUpType) {
+    case 'email': return 'auto_email';
+    case 'meeting': return 'auto_calendar';
+    case 'task': return 'auto_task';
+    case 'update':
+    default: return 'manual_task';
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Priority badge
@@ -100,6 +116,66 @@ const FollowUpIcon = memo(function FollowUpIcon({ type }) {
 });
 
 // ---------------------------------------------------------------------------
+// ActionButton — per-item action button with state transitions
+// ---------------------------------------------------------------------------
+const ActionButton = memo(function ActionButton({
+  status = 'idle',
+  label,
+  icon: Icon,
+  onClick,
+  disabled = false,
+  disabledTooltip,
+}) {
+  if (status === 'done') {
+    return (
+      <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 border border-emerald-500/30 rounded-lg text-xs font-medium text-emerald-400">
+        <Check className="w-3.5 h-3.5" />
+        Done
+      </span>
+    );
+  }
+
+  if (status === 'executing') {
+    return (
+      <span className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/20 rounded-lg text-xs font-medium text-cyan-400">
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        Working...
+      </span>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <button
+        onClick={onClick}
+        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 border border-red-500/25 rounded-lg text-xs font-medium text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
+        title="Retry"
+      >
+        <RotateCcw className="w-3.5 h-3.5" />
+        Retry
+      </button>
+    );
+  }
+
+  // idle
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+        disabled
+          ? 'bg-zinc-800/40 border border-zinc-700/30 text-zinc-600 cursor-not-allowed'
+          : 'bg-cyan-500/10 border border-cyan-500/25 text-cyan-400 hover:bg-cyan-500/20 cursor-pointer'
+      }`}
+      title={disabled && disabledTooltip ? disabledTooltip : label}
+    >
+      {Icon && <Icon className="w-3.5 h-3.5" />}
+      {label}
+    </button>
+  );
+});
+
+// ---------------------------------------------------------------------------
 // Main CallEndScreen component
 // ---------------------------------------------------------------------------
 const CallEndScreen = memo(function CallEndScreen({
@@ -109,18 +185,33 @@ const CallEndScreen = memo(function CallEndScreen({
   transcript,
   callId,
   onDismiss,
-  onCreateTask,
+  userId,
 }) {
   const [wrapup, setWrapup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [approvingAll, setApprovingAll] = useState(false);
+
+  const {
+    actionStates,
+    hasEmailConnection,
+    hasCalendarConnection,
+    connectionsLoaded,
+    executeCreateTask,
+    executeAddToCalendar,
+    executeSendEmail,
+    executeApproveAll,
+  } = useWrapUpActions(userId, callTitle, participants);
+
+  // Is transcript too short for meaningful wrap-up?
+  const isShortCall = !transcript || transcript.trim().length < 20;
 
   // Fetch the AI wrap-up on mount
   useEffect(() => {
     let cancelled = false;
 
     async function fetchWrapUp() {
-      if (!transcript || transcript.trim().length < 20) {
+      if (isShortCall) {
         setWrapup({
           summary: 'Call was too short to generate a meaningful wrap-up.',
           action_items: [],
@@ -182,7 +273,7 @@ const CallEndScreen = memo(function CallEndScreen({
 
     fetchWrapUp();
     return () => { cancelled = true; };
-  }, [transcript, callTitle, callDuration, participants, callId]);
+  }, [transcript, callTitle, callDuration, participants, callId, isShortCall]);
 
   // Copy summary to clipboard
   const handleCopySummary = useCallback(() => {
@@ -232,18 +323,79 @@ const CallEndScreen = memo(function CallEndScreen({
     });
   }, [wrapup, callTitle]);
 
-  // Create a task from an action item
-  const handleCreateTask = useCallback((item) => {
-    if (onCreateTask) {
-      onCreateTask({
-        title: item.text,
-        assignee: item.assignee,
-        priority: item.priority,
-        due_hint: item.due_hint,
-      });
-      toast.success(`Task created: ${item.text.slice(0, 40)}...`);
+  // Count pending (non-done) actionable items
+  const pendingCount = useMemo(() => {
+    if (!wrapup) return 0;
+    let count = 0;
+    (wrapup.action_items || []).forEach((_, i) => {
+      if (actionStates[`action-${i}`]?.status !== 'done') count++;
+    });
+    (wrapup.follow_ups || []).forEach((_, i) => {
+      if (actionStates[`followup-${i}`]?.status !== 'done') count++;
+    });
+    return count;
+  }, [wrapup, actionStates]);
+
+  const allApproved = wrapup && pendingCount === 0 &&
+    ((wrapup.action_items?.length || 0) + (wrapup.follow_ups?.length || 0)) > 0;
+
+  // Approve All handler
+  const handleApproveAll = useCallback(async () => {
+    if (!wrapup || approvingAll) return;
+    setApprovingAll(true);
+    try {
+      await executeApproveAll(wrapup.action_items, wrapup.follow_ups);
+    } finally {
+      setApprovingAll(false);
     }
-  }, [onCreateTask]);
+  }, [wrapup, approvingAll, executeApproveAll]);
+
+  // Get follow-up action button config
+  const getFollowUpAction = useCallback((followUp, index) => {
+    const key = `followup-${index}`;
+    const state = actionStates[key]?.status || 'idle';
+    const execType = followUp.execution_type || inferExecutionType(followUp.type);
+
+    if (execType === 'auto_email') {
+      const hasTo = !!followUp.email_details?.to;
+      return {
+        label: 'Send Email',
+        icon: Send,
+        disabled: !hasEmailConnection || !hasTo,
+        disabledTooltip: !hasEmailConnection
+          ? 'Connect Gmail or Outlook in Settings'
+          : 'No recipient email identified',
+        onClick: () => executeSendEmail(key, followUp.email_details || {}),
+        status: state,
+      };
+    }
+
+    if (execType === 'auto_calendar') {
+      return {
+        label: 'Add to Calendar',
+        icon: CalendarPlus,
+        disabled: !hasCalendarConnection,
+        disabledTooltip: 'Connect Google Calendar or Outlook in Settings',
+        onClick: () => executeAddToCalendar(key, followUp.meeting_details || { title: followUp.text }),
+        status: state,
+      };
+    }
+
+    // auto_task / manual_task
+    return {
+      label: 'Add to Tasks',
+      icon: ListTodo,
+      disabled: false,
+      disabledTooltip: '',
+      onClick: () => executeCreateTask(key, { text: followUp.text, priority: 'medium' }),
+      status: state,
+    };
+  }, [actionStates, hasEmailConnection, hasCalendarConnection, executeCreateTask, executeAddToCalendar, executeSendEmail]);
+
+  // Show action buttons? Only when not a short call and has items
+  const hasActionableItems = wrapup &&
+    ((wrapup.action_items?.length || 0) + (wrapup.follow_ups?.length || 0)) > 0 &&
+    !isShortCall;
 
   return (
     <motion.div
@@ -375,37 +527,38 @@ const CallEndScreen = memo(function CallEndScreen({
                   </h2>
                 </div>
                 <div className="space-y-2">
-                  {wrapup.action_items.map((item, i) => (
-                    <div
-                      key={i}
-                      className="flex items-start gap-3 p-3 bg-white/[0.03] rounded-xl hover:bg-white/[0.05] transition-colors group"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-zinc-200">{item.text}</p>
-                        <div className="flex items-center gap-2 mt-1.5 text-xs text-zinc-500">
-                          <span>{item.assignee || 'Unassigned'}</span>
-                          {item.due_hint && (
-                            <>
-                              <span className="text-zinc-700">·</span>
-                              <span>{item.due_hint}</span>
-                            </>
-                          )}
+                  {wrapup.action_items.map((item, i) => {
+                    const key = `action-${i}`;
+                    const state = actionStates[key]?.status || 'idle';
+                    return (
+                      <div
+                        key={i}
+                        className="flex items-start gap-3 p-3 bg-white/[0.03] rounded-xl hover:bg-white/[0.05] transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-zinc-200">{item.text}</p>
+                          <div className="flex items-center gap-2 mt-1.5 text-xs text-zinc-500">
+                            <span>{item.assignee || 'Unassigned'}</span>
+                            {item.due_hint && (
+                              <>
+                                <span className="text-zinc-700">·</span>
+                                <span>{item.due_hint}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <PriorityBadge priority={item.priority} />
+                          <ActionButton
+                            status={state}
+                            label="Create Task"
+                            icon={ListTodo}
+                            onClick={() => executeCreateTask(key, item)}
+                          />
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <PriorityBadge priority={item.priority} />
-                        {onCreateTask && (
-                          <button
-                            onClick={() => handleCreateTask(item)}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-cyan-500/20 rounded-lg text-zinc-500 hover:text-cyan-400 transition-all cursor-pointer"
-                            title="Create task"
-                          >
-                            <ListTodo className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -464,19 +617,32 @@ const CallEndScreen = memo(function CallEndScreen({
                     </h2>
                   </div>
                   <div className="space-y-2">
-                    {wrapup.follow_ups.map((followUp, i) => (
-                      <div key={i} className="flex items-start gap-2.5 p-3 bg-white/[0.03] rounded-xl">
-                        <div className="w-7 h-7 rounded-lg bg-cyan-500/10 flex items-center justify-center flex-shrink-0 text-cyan-400">
-                          <FollowUpIcon type={followUp.type} />
+                    {wrapup.follow_ups.map((followUp, i) => {
+                      const action = getFollowUpAction(followUp, i);
+                      return (
+                        <div key={i} className="flex items-start gap-2.5 p-3 bg-white/[0.03] rounded-xl">
+                          <div className="w-7 h-7 rounded-lg bg-cyan-500/10 flex items-center justify-center flex-shrink-0 text-cyan-400">
+                            <FollowUpIcon type={followUp.type} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-zinc-200">{followUp.text}</p>
+                            <span className="text-[10px] font-medium uppercase text-zinc-500 mt-0.5">
+                              {followUp.type || 'task'}
+                            </span>
+                          </div>
+                          <div className="flex-shrink-0">
+                            <ActionButton
+                              status={action.status}
+                              label={action.label}
+                              icon={action.icon}
+                              onClick={action.onClick}
+                              disabled={action.disabled}
+                              disabledTooltip={action.disabledTooltip}
+                            />
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-zinc-200">{followUp.text}</p>
-                          <span className="text-[10px] font-medium uppercase text-zinc-500 mt-0.5">
-                            {followUp.type || 'task'}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -489,15 +655,41 @@ const CallEndScreen = memo(function CallEndScreen({
                 className="flex items-center gap-2 px-4 py-2.5 bg-zinc-800/60 border border-zinc-700/50 rounded-xl text-sm text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
               >
                 <Copy className="w-4 h-4" />
-                Copy Full Summary
+                Copy Summary
               </button>
-              <button
-                onClick={onDismiss}
-                className="flex items-center gap-2 px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer"
-              >
-                Done
-                <ArrowRight className="w-4 h-4" />
-              </button>
+
+              <div className="flex items-center gap-3">
+                {/* Approve All button — only show when there are actionable items */}
+                {hasActionableItems && (
+                  allApproved ? (
+                    <span className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-sm font-semibold text-emerald-400">
+                      <Check className="w-4 h-4" />
+                      All Approved
+                    </span>
+                  ) : (
+                    <button
+                      onClick={handleApproveAll}
+                      disabled={approvingAll}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-cyan-500/15 border border-cyan-500/30 hover:bg-cyan-500/25 rounded-xl text-sm font-semibold text-cyan-400 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {approvingAll ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Zap className="w-4 h-4" />
+                      )}
+                      {approvingAll ? 'Approving...' : `Approve All (${pendingCount})`}
+                    </button>
+                  )
+                )}
+
+                <button
+                  onClick={onDismiss}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer"
+                >
+                  Done
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

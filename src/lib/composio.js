@@ -637,6 +637,31 @@ export const ToolHelpers = {
   },
 
   /**
+   * Outlook: Email
+   */
+  outlook: {
+    sendEmail: (to, subject, body) => ({
+      toolSlug: 'OUTLOOK_SEND_EMAIL',
+      arguments: { recipient_email: to, subject, body },
+    }),
+  },
+
+  /**
+   * Outlook Calendar: Calendar operations
+   */
+  outlookCalendar: {
+    createEvent: (subject, start, end, attendees = []) => ({
+      toolSlug: 'OUTLOOKCALENDAR_CREATE_CALENDAR_EVENT',
+      arguments: {
+        subject,
+        start_date_time: start,
+        end_date_time: end,
+        attendees,
+      },
+    }),
+  },
+
+  /**
    * Microsoft Teams: Team collaboration
    */
   microsoftTeams: {

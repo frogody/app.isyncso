@@ -1729,6 +1729,7 @@ export default function InboxPage() {
             participants={callEndData.participants}
             transcript={callEndData.transcript}
             callId={callEndData.callId}
+            userId={user?.id}
             onDismiss={() => setCallEndData(null)}
           />
         )}

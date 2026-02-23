@@ -83,7 +83,8 @@ Return valid JSON matching this exact schema:
       "text": "description of the action",
       "assignee": "person's name or 'Unassigned'",
       "due_hint": "suggested timeframe like 'by Friday' or 'next week'",
-      "priority": "high" | "medium" | "low"
+      "priority": "high" | "medium" | "low",
+      "execution_type": "auto_task"
     }
   ],
   "decisions": [
@@ -96,7 +97,10 @@ Return valid JSON matching this exact schema:
   "follow_ups": [
     {
       "text": "suggested follow-up action",
-      "type": "email" | "meeting" | "task" | "update"
+      "type": "email" | "meeting" | "task" | "update",
+      "execution_type": "auto_email" | "auto_calendar" | "auto_task" | "manual_task",
+      "email_details": { "to": "recipient email if known", "subject": "email subject", "body_hint": "brief body suggestion" },
+      "meeting_details": { "title": "meeting title", "duration_minutes": 30, "suggested_attendees": ["name1"], "suggested_timeframe": "next week" }
     }
   ],
   "sentiment": {
@@ -110,7 +114,10 @@ Rules:
 - Keep action items specific and actionable.
 - If no decisions were made, return empty array.
 - Maximum 8 action items, 5 decisions, 6 key points, 4 follow-ups.
-- Be concise — single sentence per item.`,
+- Be concise — single sentence per item.
+- All action_items get execution_type "auto_task" (they are always trackable as tasks).
+- For follow_ups: if type is "email" and a recipient is identifiable, set execution_type to "auto_email" and populate email_details (omit email_details otherwise). If type is "meeting" and attendees are identifiable, set execution_type to "auto_calendar" and populate meeting_details (omit meeting_details otherwise). If type is "task", set execution_type to "auto_task". If type is "update" or unclear, set execution_type to "manual_task".
+- Only include email_details for auto_email items. Only include meeting_details for auto_calendar items.`,
             },
             {
               role: "user",
