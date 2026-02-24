@@ -93,7 +93,7 @@ const usesPipeline = (type) => PIPELINE_TYPES.includes(type);
 // Relationship labels per non-pipeline contact type
 const RELATIONSHIP_LABELS = {
   partner: ['Carrier', 'Fulfillment/3PL', 'Technology', 'Marketing', 'Reseller', 'Integration', 'Consulting'],
-  supplier: ['Raw Materials', 'Packaging', 'Components', 'Services', 'Equipment', 'Logistics'],
+  supplier: ['Wholesale', 'Distributor', 'Manufacturer', 'Dropship', 'Packaging', 'Services', 'Logistics'],
   customer: ['Retail', 'Wholesale', 'Direct', 'Enterprise', 'Marketplace'],
   company: ['Distributor', 'Manufacturer', 'Retailer', 'Agency'],
   recruitment_client: ['Retained', 'Contingency', 'RPO'],
