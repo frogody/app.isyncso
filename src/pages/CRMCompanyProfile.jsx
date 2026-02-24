@@ -199,6 +199,7 @@ export default function CRMCompanyProfile() {
 
   const [company, setCompany] = useState(null);
   const [contacts, setContacts] = useState([]);
+  const [businessDetails, setBusinessDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [contactSearch, setContactSearch] = useState('');
@@ -239,6 +240,22 @@ export default function CRMCompanyProfile() {
 
       if (error) throw error;
       setContacts(data || []);
+
+      // Extract business details from the source prospect (the company-entity record)
+      if (data && data.length > 0) {
+        const sourceProspect = data.find(p =>
+          p.vat_number || p.billing_address || p.location_country
+        ) || data[0];
+        if (sourceProspect.vat_number || sourceProspect.billing_address || sourceProspect.location_country || sourceProspect.source || sourceProspect.contact_type) {
+          setBusinessDetails({
+            vat_number: sourceProspect.vat_number,
+            billing_address: sourceProspect.billing_address,
+            location_country: sourceProspect.location_country,
+            source: sourceProspect.source,
+            contact_type: sourceProspect.contact_type,
+          });
+        }
+      }
     } catch (err) {
       console.error('Error fetching contacts:', err);
     }
@@ -596,6 +613,29 @@ export default function CRMCompanyProfile() {
                           </div>
                         </div>
                       )}
+                    </div>
+                  </SectionCard>
+                )}
+
+                {/* Business Details (from linked prospect) */}
+                {businessDetails && (businessDetails.vat_number || businessDetails.billing_address || businessDetails.location_country) && (
+                  <SectionCard icon={Briefcase} title="Business Details" crt={crt}>
+                    <div className="space-y-1">
+                      <InfoRow icon={Award} label="VAT Number" value={businessDetails.vat_number} crt={crt} />
+                      <InfoRow icon={MapPin} label="Country" value={businessDetails.location_country} crt={crt} />
+                      {businessDetails.billing_address && (
+                        <div className={`flex items-start gap-2 sm:gap-3 py-2.5 sm:py-3 border-b ${crt('border-slate-100', 'border-white/[0.04]')} last:border-0`}>
+                          <div className={`p-1.5 sm:p-2 rounded-lg ${crt('bg-slate-100', 'bg-white/[0.04]')} flex-shrink-0 mt-0.5`}>
+                            <Building className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${crt('text-slate-400', 'text-white/40')}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-[10px] sm:text-xs ${crt('text-slate-400', 'text-white/40')}`}>Billing Address</p>
+                            <p className={`text-xs sm:text-sm ${crt('text-slate-900', 'text-white')} whitespace-pre-line`}>{businessDetails.billing_address}</p>
+                          </div>
+                        </div>
+                      )}
+                      <InfoRow icon={Target} label="Contact Type" value={businessDetails.contact_type ? businessDetails.contact_type.charAt(0).toUpperCase() + businessDetails.contact_type.slice(1) : null} crt={crt} />
+                      <InfoRow icon={Sparkles} label="Source" value={businessDetails.source} crt={crt} />
                     </div>
                   </SectionCard>
                 )}

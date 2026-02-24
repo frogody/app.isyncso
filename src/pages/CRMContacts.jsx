@@ -90,6 +90,19 @@ const PIPELINE_STAGES = [
 const PIPELINE_TYPES = ['lead', 'prospect', 'target', 'contact'];
 const usesPipeline = (type) => PIPELINE_TYPES.includes(type);
 
+// Entity detection: company vs person
+const ALWAYS_COMPANY_TYPES = ['company', 'supplier'];
+const ALWAYS_PERSON_TYPES = ['lead', 'prospect', 'target', 'contact', 'candidate', 'recruitment_client'];
+const isCompanyEntity = (contact) => {
+  if (ALWAYS_COMPANY_TYPES.includes(contact.contact_type)) return true;
+  if (ALWAYS_PERSON_TYPES.includes(contact.contact_type)) return false;
+  // Auto-detect for customer/partner: company if name matches company_name or no real person name
+  const name = (contact.name || '').trim();
+  const company = (contact.company_name || '').trim();
+  if (!name || (company && name === company)) return true;
+  return false;
+};
+
 // Relationship labels per non-pipeline contact type
 const RELATIONSHIP_LABELS = {
   partner: ['Carrier', 'Fulfillment/3PL', 'Technology', 'Marketing', 'Reseller', 'Integration', 'Consulting'],
@@ -205,10 +218,14 @@ function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className={`w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500/20 to-cyan-400/10 flex items-center justify-center flex-shrink-0 ring-2 ${crt('ring-slate-200', 'ring-zinc-800')}`}>
-            <span className="text-cyan-400/80 font-semibold">
-              {contact.name?.charAt(0)?.toUpperCase() || "?"}
-            </span>
+          <div className={`w-11 h-11 rounded-full ${isCompanyEntity(contact) ? 'bg-gradient-to-br from-blue-500/20 to-blue-400/10' : 'bg-gradient-to-br from-cyan-500/20 to-cyan-400/10'} flex items-center justify-center flex-shrink-0 ring-2 ${crt('ring-slate-200', 'ring-zinc-800')}`}>
+            {isCompanyEntity(contact) ? (
+              <Building2 className="w-5 h-5 text-blue-400/80" />
+            ) : (
+              <span className="text-cyan-400/80 font-semibold">
+                {contact.name?.charAt(0)?.toUpperCase() || "?"}
+              </span>
+            )}
           </div>
           <div>
             <h4 className={`font-medium ${crt('text-slate-900', 'text-white')} group-hover:text-cyan-400 transition-colors`}>
@@ -1275,9 +1292,45 @@ export default function CRMContacts() {
     }
   };
 
-  const handleViewContact = (contact) => {
-    // Navigate to full-page profile instead of sheet
-    navigate(createPageUrl('CRMContactProfile') + `?id=${contact.id}`);
+  const handleViewContact = async (contact) => {
+    if (!isCompanyEntity(contact)) {
+      navigate(createPageUrl('CRMContactProfile') + `?id=${contact.id}`);
+      return;
+    }
+
+    // Company entity — route to CRMCompanyProfile
+    if (contact.crm_company_id) {
+      navigate(createPageUrl('CRMCompanyProfile') + `?id=${contact.crm_company_id}`);
+      return;
+    }
+
+    // No crm_company_id yet — create one via RPC
+    try {
+      const { data: companyId, error } = await supabase.rpc('find_or_create_crm_company', {
+        p_organization_id: user.organization_id,
+        p_owner_id: user.id,
+        p_name: contact.company_name || contact.name,
+        p_domain: contact.website ? contact.website.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '') : null,
+        p_linkedin_url: contact.linkedin_url || null,
+        p_industry: contact.industry || null,
+        p_company_size: contact.company_size || null,
+      });
+
+      if (error) throw error;
+
+      // Link the prospect to the new company
+      await supabase.from('prospects').update({ crm_company_id: companyId }).eq('id', contact.id);
+
+      // Update local state so re-clicking doesn't re-create
+      setContacts(prev => prev.map(c => c.id === contact.id ? { ...c, crm_company_id: companyId } : c));
+
+      navigate(createPageUrl('CRMCompanyProfile') + `?id=${companyId}`);
+    } catch (err) {
+      console.error('Error creating company record:', err);
+      toast.error('Failed to open company profile');
+      // Fallback to contact profile
+      navigate(createPageUrl('CRMContactProfile') + `?id=${contact.id}`);
+    }
   };
 
   const handleBulkDelete = async () => {
@@ -1688,8 +1741,12 @@ export default function CRMContacts() {
                         </td>
                         <td className="py-1 px-2">
                           <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => handleViewContact(contact)}>
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-500/15 to-cyan-400/10 flex items-center justify-center flex-shrink-0">
-                              <span className="text-cyan-400/80 text-[9px] font-medium">{contact.name?.charAt(0)?.toUpperCase()}</span>
+                            <div className={`w-6 h-6 rounded-full ${isCompanyEntity(contact) ? 'bg-gradient-to-br from-blue-500/15 to-blue-400/10' : 'bg-gradient-to-br from-cyan-500/15 to-cyan-400/10'} flex items-center justify-center flex-shrink-0`}>
+                              {isCompanyEntity(contact) ? (
+                                <Building2 className="w-3 h-3 text-blue-400/80" />
+                              ) : (
+                                <span className="text-cyan-400/80 text-[9px] font-medium">{contact.name?.charAt(0)?.toUpperCase()}</span>
+                              )}
                             </div>
                             <div className="min-w-0">
                               <div className={`font-medium ${crt('text-slate-900', 'text-white')} hover:text-cyan-400 transition-colors text-xs truncate max-w-[120px]`}>{contact.name}</div>
