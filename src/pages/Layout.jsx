@@ -493,7 +493,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   }
 
   // PRODUCTS routes
-  if (path.startsWith('/products') || path.startsWith('/productdetail') || path.startsWith('/inventory') || path.startsWith('/stockpurchases') || path.startsWith('/warehouse')) {
+  if (path.startsWith('/products') || path.startsWith('/productdetail') || path.startsWith('/productdatahealth') || path.startsWith('/inventory') || path.startsWith('/stockpurchases') || path.startsWith('/warehouse')) {
     const { digitalEnabled = true, physicalEnabled = true, serviceEnabled = true } = productsSettings;
 
     // Build items list based on settings
@@ -503,6 +503,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
 
     // Inventory management items (only for physical products)
     if (physicalEnabled) {
+      items.push({ label: 'Data Health', path: createPageUrl('ProductDataHealth'), icon: ShieldAlert });
       items.push({ label: 'Warehouse', path: createPageUrl('Warehouse'), icon: Boxes });
       items.push({ label: 'Returns', path: createPageUrl('InventoryReturns'), icon: RotateCcw });
       items.push({ label: 'Stock Purchases', path: createPageUrl('StockPurchases'), icon: Receipt });

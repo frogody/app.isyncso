@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Cloud, Box, Briefcase, Package, Plus, Search, Grid3X3, List, Table2,
@@ -52,6 +53,8 @@ export default function ProductTypeContent({ productType = 'all' }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [detailsMap, setDetailsMap] = useState({});
+  const [globalStockStats, setGlobalStockStats] = useState(null);
+  const [missingDataCount, setMissingDataCount] = useState(null);
   const [categories, setCategories] = useState([]);
   const [suppliers, setSuppliers] = useState({});
 
@@ -105,6 +108,105 @@ export default function ProductTypeContent({ productType = 'all' }) {
       setCurrentPage(1);
     }
   }, [debouncedSearch, statusFilter, categoryFilter, channelFilter, stockFilter, pricingFilter, typeFilter, useServerSidePagination]);
+
+  // ---- Load global stock stats for physical products (all, not just current page) ----
+  useEffect(() => {
+    if (!user?.company_id || (productType !== 'physical' && productType !== 'all')) return;
+
+    const loadGlobalStockStats = async () => {
+      try {
+        // Fetch all physical_products inventory for this company
+        const { data: allPhysical, error } = await supabase
+          .from('physical_products')
+          .select('product_id, inventory')
+          .eq('company_id', user.company_id);
+
+        if (error) {
+          // Fallback: join through products table if physical_products doesn't have company_id
+          const { data: productIds } = await supabase
+            .from('products')
+            .select('id')
+            .eq('company_id', user.company_id)
+            .eq('type', 'physical')
+            .range(0, 49999);
+
+          if (!productIds?.length) {
+            setGlobalStockStats({ in_stock: 0, low_stock: 0, out_of_stock: 0 });
+            return;
+          }
+
+          const ids = productIds.map(p => p.id);
+          // Fetch in batches of 500 to avoid URL length limits
+          const allInventory = [];
+          for (let i = 0; i < ids.length; i += 500) {
+            const batch = ids.slice(i, i + 500);
+            const { data: batchData } = await supabase
+              .from('physical_products')
+              .select('product_id, inventory')
+              .in('product_id', batch);
+            if (batchData) allInventory.push(...batchData);
+          }
+
+          const counts = { in_stock: 0, low_stock: 0, out_of_stock: 0 };
+          allInventory.forEach(pp => {
+            counts[getStockStatus(pp.inventory)]++;
+          });
+          setGlobalStockStats(counts);
+          return;
+        }
+
+        const counts = { in_stock: 0, low_stock: 0, out_of_stock: 0 };
+        (allPhysical || []).forEach(pp => {
+          counts[getStockStatus(pp.inventory)]++;
+        });
+        setGlobalStockStats(counts);
+      } catch (e) {
+        console.error('Failed to load global stock stats:', e);
+      }
+    };
+
+    loadGlobalStockStats();
+  }, [user?.company_id, productType]);
+
+  // ---- Count products missing critical data (for stats bar notice) ----
+  useEffect(() => {
+    if (!user?.company_id || (productType !== 'physical' && productType !== 'all')) return;
+
+    const countMissingData = async () => {
+      try {
+        // Count products missing EAN, image, category, or price (the critical ones)
+        const [missingEan, missingImage, missingCategory] = await Promise.all([
+          supabase
+            .from('products')
+            .select('id', { count: 'exact', head: true })
+            .eq('company_id', user.company_id)
+            .eq('type', 'physical')
+            .or('ean.is.null,ean.eq.'),
+          supabase
+            .from('products')
+            .select('id', { count: 'exact', head: true })
+            .eq('company_id', user.company_id)
+            .eq('type', 'physical')
+            .is('featured_image', null),
+          supabase
+            .from('products')
+            .select('id', { count: 'exact', head: true })
+            .eq('company_id', user.company_id)
+            .eq('type', 'physical')
+            .or('category.is.null,category.eq.'),
+        ]);
+
+        // Take the max as a rough "products with issues" count
+        const counts = [missingEan.count || 0, missingImage.count || 0, missingCategory.count || 0];
+        const maxMissing = Math.max(...counts);
+        setMissingDataCount(maxMissing);
+      } catch (e) {
+        console.error('Failed to count missing data:', e);
+      }
+    };
+
+    countMissingData();
+  }, [user?.company_id, productType]);
 
   // ---- Handlers ----
 
@@ -418,6 +520,7 @@ export default function ProductTypeContent({ productType = 'all' }) {
         setDetailsMap({});
         setChannelsMap({});
       }
+
     } catch (error) {
       console.error('Failed to load products:', error);
     } finally {
@@ -599,6 +702,13 @@ export default function ProductTypeContent({ productType = 'all' }) {
     }
 
     if (productType === 'physical') {
+      // Use global stats (all products) when available, otherwise fall back to page-level
+      if (globalStockStats) {
+        return {
+          total: totalCount,
+          ...globalStockStats,
+        };
+      }
       const stockCounts = { in_stock: 0, low_stock: 0, out_of_stock: 0 };
       products.forEach(p => {
         const pp = detailsMap[p.id];
@@ -623,7 +733,7 @@ export default function ProductTypeContent({ productType = 'all' }) {
       physical: typeCounts.physical,
       service: typeCounts.service,
     };
-  }, [products, detailsMap, totalCount, productType]);
+  }, [products, detailsMap, totalCount, productType, globalStockStats]);
 
   const totalPages = useServerSidePagination ? Math.ceil(totalCount / PAGE_SIZE) : 0;
 
@@ -711,7 +821,8 @@ export default function ProductTypeContent({ productType = 'all' }) {
   return (
     <div className="space-y-4">
       {/* Stats Bar */}
-      <div className={`flex items-center gap-6 p-3 rounded-xl ${t('bg-white shadow-sm border border-slate-200', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
+      <div className={`flex items-center justify-between p-3 rounded-xl ${t('bg-white shadow-sm border border-slate-200', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
+        <div className="flex items-center gap-6">
         <div className="flex items-center gap-2">
           <span className={`text-lg font-bold ${t('text-slate-900', 'text-white')}`}>{stats.total}</span>
           <span className={`text-sm ${t('text-slate-500', 'text-zinc-500')}`}>total</span>
@@ -787,6 +898,17 @@ export default function ProductTypeContent({ productType = 'all' }) {
               <span className={`text-sm ${t('text-slate-500', 'text-zinc-500')}`}>service</span>
             </div>
           </>
+        )}
+        </div>
+
+        {/* Missing data notice */}
+        {(productType === 'physical' || productType === 'all') && missingDataCount > 0 && (
+          <Link to={createPageUrl('ProductDataHealth')} className="flex items-center gap-2 group">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+            <span className={`text-xs ${t('text-slate-500 group-hover:text-slate-700', 'text-zinc-500 group-hover:text-zinc-300')} transition-colors`}>
+              <span className="font-semibold text-amber-400">{missingDataCount}</span> products missing critical info
+            </span>
+          </Link>
         )}
       </div>
 

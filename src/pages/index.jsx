@@ -302,6 +302,8 @@ import ProductsServices from "./ProductsServices";
 
 import ProductDetail from "./ProductDetail";
 
+import ProductDataHealth from "./ProductDataHealth";
+
 import Create from "./Create";
 
 import CreateBranding from "./CreateBranding";
@@ -730,6 +732,8 @@ const PAGES = {
     ProductsServices: ProductsServices,
 
     ProductDetail: ProductDetail,
+
+    ProductDataHealth: ProductDataHealth,
 
     Create: Create,
 
@@ -1387,6 +1391,8 @@ function PagesContent() {
                 <Route path="/ProductsServices" element={<Navigate to="/Products?tab=service" replace />} />
 
                 <Route path="/ProductDetail" element={<ProductDetail />} />
+
+                <Route path="/ProductDataHealth" element={<ProductDataHealth />} />
 
                 <Route path="/Create" element={<Create />} />
 
