@@ -118,10 +118,10 @@ export default function FinanceDashboard() {
         // Bills due in next 7 days
         Promise.resolve(db.entities.Bill?.list?.({ limit: 10 })).catch(() => []),
         // Live invoice data (total, paid, outstanding)
-        supabase.from('invoices').select('id, status, total, amount_paid, balance_due, due_date, created_at').eq('company_id', companyId)
+        supabase.from('invoices').select('id, status, total, amount_paid, balance_due, due_date, created_at').eq('company_id', companyId).range(0, 9999)
           .then(r => r, () => ({ data: [] })),
         // Live expense data
-        supabase.from('expenses').select('id, amount, status, date, category, description, created_at').eq('company_id', companyId)
+        supabase.from('expenses').select('id, amount, status, date, category, description, created_at').eq('company_id', companyId).range(0, 9999)
           .then(r => r, () => ({ data: [] })),
         // Recent invoices for activity feed
         supabase.from('invoices').select('id, invoice_number, status, total, due_date, created_at').eq('company_id', companyId)

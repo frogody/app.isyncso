@@ -137,7 +137,8 @@ export default function ProductSalesAnalytics() {
         .select('id, total, source, status')
         .eq('company_id', companyId)
         .gte('order_date', start)
-        .neq('status', 'cancelled');
+        .neq('status', 'cancelled')
+        .range(0, 49999);
 
       // Fetch order items joined with order metadata (for per-product breakdown)
       const itemsPromise = supabase
@@ -148,7 +149,8 @@ export default function ProductSalesAnalytics() {
         `)
         .eq('sales_orders.company_id', companyId)
         .gte('sales_orders.order_date', start)
-        .neq('sales_orders.status', 'cancelled');
+        .neq('sales_orders.status', 'cancelled')
+        .range(0, 49999);
 
       const [ordersRes, itemsRes] = await Promise.all([ordersPromise, itemsPromise]);
       if (ordersRes.error) throw ordersRes.error;

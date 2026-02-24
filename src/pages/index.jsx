@@ -273,6 +273,7 @@ import FinanceRecurringInvoices from "./FinanceRecurringInvoices";
 import FinanceCreditNotes from "./FinanceCreditNotes";
 import FinanceBankAccounts from "./FinanceBankAccounts";
 import FinanceBankReconciliation from "./FinanceBankReconciliation";
+import FinanceBolcomPayouts from "./FinanceBolcomPayouts";
 import FinanceSmartImport from "./FinanceSmartImport";
 
 import Raise from "./Raise";
@@ -701,6 +702,7 @@ const PAGES = {
     FinanceCreditNotes: FinanceCreditNotes,
     FinanceBankAccounts: FinanceBankAccounts,
     FinanceBankReconciliation: FinanceBankReconciliation,
+    FinanceBolcomPayouts: FinanceBolcomPayouts,
     FinanceSmartImport: FinanceSmartImport,
 
     Raise: Raise,
@@ -1033,7 +1035,7 @@ function PagesContent() {
       'financereportbs', 'financereporttb', 'financereportaging', 'financereportcashflow',
       'financereports', 'financetaxrates', 'financebtwaangifte', 'financerecurringinvoices',
       'financecreditnotes', 'financebankaccounts', 'financebankreconciliation',
-      'financesmartimport',
+      'financebolcompayouts', 'financesmartimport',
       'raise', 'raiseinvestors', 'raisepitchdecks', 'raisedataroom', 'raisecampaigns',
       'raiseenrich', 'teammanagement', 'agentdetail',
       'storedashboard', 'b2b', 'marketplace',
@@ -1346,6 +1348,7 @@ function PagesContent() {
                 <Route path="/FinanceCreditNotes" element={<FinanceErrorWrapper><FinanceCreditNotes /></FinanceErrorWrapper>} />
                 <Route path="/FinanceBankAccounts" element={<FinanceErrorWrapper><FinanceBankAccounts /></FinanceErrorWrapper>} />
                 <Route path="/FinanceBankReconciliation" element={<FinanceErrorWrapper><FinanceBankReconciliation /></FinanceErrorWrapper>} />
+                <Route path="/FinanceBolcomPayouts" element={<FinanceErrorWrapper><FinanceBolcomPayouts /></FinanceErrorWrapper>} />
                 <Route path="/FinanceSmartImport" element={<FinanceErrorWrapper><FinanceSmartImport /></FinanceErrorWrapper>} />
 
                 <Route path="/Raise" element={<Raise />} />

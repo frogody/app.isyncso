@@ -267,6 +267,7 @@ export default function StoreDashboard() {
   });
 
   const [storeUrl, setStoreUrl] = useState(null);
+  const [payoutsData, setPayoutsData] = useState([]);
   const [b2bInsights, setB2bInsights] = useState({
     invoices: [], invoiceStats: {}, topProducts: [], clients: [], clientStats: {},
   });
@@ -328,20 +329,23 @@ export default function StoreDashboard() {
         salesMonthly, salesPending, salesRecent,
         b2bMonthly, b2bPending, b2bRecent,
         b2bInvoices, b2bTopItems, portalClients,
+        bolcomPayouts,
       ] = await Promise.all([
         safe(supabase.from('shopify_credentials').select('id, shop_domain, shop_name, status').eq('company_id', companyId).eq('is_active', true).maybeSingle(), 'shopify'),
         safe(supabase.from('bolcom_credentials').select('id, environment').eq('company_id', companyId).eq('is_active', true).maybeSingle(), 'bolcom'),
         safe(supabase.from('portal_settings').select('id, store_subdomain, custom_domain').eq('organization_id', organizationId).eq('enable_wholesale', true).maybeSingle(), 'b2bConfig'),
-        safe(supabase.from('sales_orders').select('id, source, total, status, order_number, order_date, customer_id, customers(name, email)').eq('company_id', companyId).gte('order_date', periodStart).range(0, 9999), 'salesMonthly'),
-        safe(supabase.from('sales_orders').select('id, source, status').eq('company_id', companyId).eq('status', 'pending').range(0, 9999), 'salesPending'),
+        safe(supabase.from('sales_orders').select('id, source, total, status, order_number, order_date, customer_id, customers(name, email)').eq('company_id', companyId).gte('order_date', periodStart).range(0, 49999), 'salesMonthly'),
+        safe(supabase.from('sales_orders').select('id, source, status').eq('company_id', companyId).eq('status', 'pending').range(0, 49999), 'salesPending'),
         safe(supabase.from('sales_orders').select('id, order_number, source, status, total, order_date, customer_id, customers(name, email)').eq('company_id', companyId).order('order_date', { ascending: false }).limit(20), 'salesRecent'),
-        safe(supabase.from('b2b_orders').select('id, total, status').eq('organization_id', organizationId).gte('created_at', periodStart), 'b2bMonthly'),
-        safe(supabase.from('b2b_orders').select('id, status').eq('organization_id', organizationId).eq('status', 'pending'), 'b2bPending'),
+        safe(supabase.from('b2b_orders').select('id, total, status').eq('organization_id', organizationId).gte('created_at', periodStart).range(0, 49999), 'b2bMonthly'),
+        safe(supabase.from('b2b_orders').select('id, status').eq('organization_id', organizationId).eq('status', 'pending').range(0, 49999), 'b2bPending'),
         safe(supabase.from('b2b_orders').select('id, order_number, status, total, currency, created_at, portal_clients(id, full_name, email)').eq('organization_id', organizationId).order('created_at', { ascending: false }).limit(20), 'b2bRecent'),
         // B2B insight queries — scoped to this company/org
-        safe(supabase.from('invoices').select('id, invoice_number, status, total, due_date, amount_paid, balance_due, b2b_order_id, created_at').eq('company_id', companyId).not('b2b_order_id', 'is', null).order('created_at', { ascending: false }), 'b2bInvoices'),
+        safe(supabase.from('invoices').select('id, invoice_number, status, total, due_date, amount_paid, balance_due, b2b_order_id, created_at').eq('company_id', companyId).not('b2b_order_id', 'is', null).order('created_at', { ascending: false }).range(0, 9999), 'b2bInvoices'),
         safe(supabase.from('b2b_order_items').select('product_name, sku, quantity, unit_price, line_total, b2b_order_id, b2b_orders!inner(organization_id)').eq('b2b_orders.organization_id', organizationId).order('line_total', { ascending: false }).limit(30), 'b2bTopItems'),
         safe(supabase.from('portal_clients').select('id, full_name, email, status, last_login_at, created_at, company_name').eq('organization_id', organizationId), 'portalClients'),
+        // bol.com payout summaries
+        safe(supabase.from('bolcom_payouts').select('id, invoice_number, period_start, period_end, gross_sales, corrections, commissions, shipping_costs, pickpack_costs, storage_costs, other_costs, net_payout').eq('company_id', companyId).order('period_start', { ascending: false }), 'bolcomPayouts'),
       ]);
 
       const shopifyConnected = !!shopifyCreds.data;
@@ -459,6 +463,9 @@ export default function StoreDashboard() {
       };
 
       setB2bInsights({ invoices: invoiceRows, invoiceStats: invStats, topProducts, clients: clientRows, clientStats: clStats });
+
+      // bol.com payouts
+      setPayoutsData(bolcomPayouts.data || []);
     } catch (err) {
       console.error('[StoreDashboard] fetch error:', err);
       setError(err.message || 'Failed to load dashboard data');
@@ -999,6 +1006,7 @@ export default function StoreDashboard() {
               syncResult={syncResult}
               onSync={syncBolcomOrders}
               periodLabel={periodLabel}
+              payoutsData={payoutsData}
             />
           </motion.div>
         )}
@@ -1322,7 +1330,7 @@ function ChannelCockpitCard({ channelKey, config, data, formatCurrency, formatDa
 // Channel Status Card — shown in single-channel views
 // ---------------------------------------------------------------------------
 
-function ChannelStatusCard({ channel, data, config, formatCurrency, navigate, syncing, syncResult, onSync, periodLabel }) {
+function ChannelStatusCard({ channel, data, config, formatCurrency, navigate, syncing, syncResult, onSync, periodLabel, payoutsData = [] }) {
   const ChannelIcon = config.icon;
 
   if (channel === 'b2b') {
@@ -1414,24 +1422,106 @@ function ChannelStatusCard({ channel, data, config, formatCurrency, navigate, sy
           </div>
         )}
         {data.connected ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40">
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Orders</p>
-              <p className="text-lg font-bold text-white tabular-nums">{data.orders}</p>
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Orders</p>
+                <p className="text-lg font-bold text-white tabular-nums">{data.orders}</p>
+              </div>
+              <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Revenue</p>
+                <p className="text-lg font-bold text-white tabular-nums">{formatCurrency(data.revenue)}</p>
+              </div>
+              <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Pending</p>
+                <p className="text-lg font-bold text-white tabular-nums">{data.pending}</p>
+              </div>
+              <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Avg. Order Value</p>
+                <p className="text-lg font-bold text-white tabular-nums">{data.orders > 0 ? formatCurrency(data.revenue / data.orders) : '€0'}</p>
+              </div>
             </div>
-            <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40">
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Revenue</p>
-              <p className="text-lg font-bold text-white tabular-nums">{formatCurrency(data.revenue)}</p>
-            </div>
-            <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40">
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Pending</p>
-              <p className="text-lg font-bold text-white tabular-nums">{data.pending}</p>
-            </div>
-            <div className="p-3 rounded-[14px] bg-zinc-800/30 border border-zinc-800/40">
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Avg. Order Value</p>
-              <p className="text-lg font-bold text-white tabular-nums">{data.orders > 0 ? formatCurrency(data.revenue / data.orders) : '€0'}</p>
-            </div>
-          </div>
+
+            {/* bol.com Payouts Summary */}
+            {payoutsData.length > 0 && (() => {
+              const totGross = payoutsData.reduce((s, p) => s + (parseFloat(String(p.gross_sales)) || 0), 0);
+              const totComm = payoutsData.reduce((s, p) => s + (parseFloat(String(p.commissions)) || 0), 0);
+              const totShip = payoutsData.reduce((s, p) => s + (parseFloat(String(p.shipping_costs)) || 0), 0);
+              const totPick = payoutsData.reduce((s, p) => s + (parseFloat(String(p.pickpack_costs)) || 0), 0);
+              const totStore = payoutsData.reduce((s, p) => s + (parseFloat(String(p.storage_costs)) || 0), 0);
+              const totNet = payoutsData.reduce((s, p) => s + (parseFloat(String(p.net_payout)) || 0), 0);
+              const commPct = totGross > 0 ? ((totComm / totGross) * 100).toFixed(1) : '0';
+              return (
+                <div className="mt-4 pt-4 border-t border-zinc-800/40">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-blue-400" />
+                      Payouts ({payoutsData.length} invoices)
+                    </h4>
+                    <button
+                      onClick={() => navigate('/FinanceBolcomPayouts')}
+                      className="text-[10px] text-blue-400 hover:opacity-80 flex items-center gap-1 font-medium"
+                    >
+                      View Details <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                  {/* Payout KPIs */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+                    <div className="p-3 rounded-[14px] bg-blue-500/5 border border-blue-500/15">
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Gross Sales</p>
+                      <p className="text-lg font-bold text-white tabular-nums">{formatCurrency(totGross)}</p>
+                    </div>
+                    <div className="p-3 rounded-[14px] bg-blue-500/5 border border-blue-500/15">
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Commissions</p>
+                      <p className="text-lg font-bold text-blue-400 tabular-nums">{formatCurrency(totComm)}</p>
+                      <p className="text-[10px] text-zinc-600 mt-0.5">{commPct}% of gross</p>
+                    </div>
+                    <div className="p-3 rounded-[14px] bg-blue-500/5 border border-blue-500/15">
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Costs</p>
+                      <p className="text-lg font-bold text-zinc-300 tabular-nums">{formatCurrency(totShip + totPick + totStore)}</p>
+                      <p className="text-[10px] text-zinc-600 mt-0.5">Ship + Pick&Pack + Storage</p>
+                    </div>
+                    <div className="p-3 rounded-[14px] bg-blue-500/5 border border-blue-500/15">
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Net Payout</p>
+                      <p className="text-lg font-bold text-cyan-400 tabular-nums">{formatCurrency(totNet)}</p>
+                    </div>
+                  </div>
+                  {/* Per-invoice rows */}
+                  <div className="space-y-1.5">
+                    {payoutsData.map((p) => {
+                      const gross = parseFloat(String(p.gross_sales)) || 0;
+                      const comm = parseFloat(String(p.commissions)) || 0;
+                      const net = parseFloat(String(p.net_payout)) || 0;
+                      const pStart = p.period_start ? new Date(p.period_start).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
+                      const pEnd = p.period_end ? new Date(p.period_end).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+                      return (
+                        <div key={p.id} className="flex items-center justify-between py-2 px-3 rounded-[12px] bg-zinc-800/20 hover:bg-zinc-800/30 transition-colors">
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium text-zinc-200">Invoice {p.invoice_number}</p>
+                            <p className="text-[10px] text-zinc-500">{pStart} - {pEnd}</p>
+                          </div>
+                          <div className="flex items-center gap-4 text-right shrink-0">
+                            <div>
+                              <p className="text-xs font-bold text-white tabular-nums">{formatCurrency(gross)}</p>
+                              <p className="text-[10px] text-zinc-500">gross</p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-blue-400 tabular-nums">-{formatCurrency(comm)}</p>
+                              <p className="text-[10px] text-zinc-500">comm.</p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-cyan-400 tabular-nums">{formatCurrency(net)}</p>
+                              <p className="text-[10px] text-zinc-500">net</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+          </>
         ) : (
           <div className="py-8 text-center">
             <div className="w-12 h-12 rounded-[20px] bg-blue-500/10 flex items-center justify-center mx-auto mb-4">

@@ -485,6 +485,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Credit Notes', path: createPageUrl('FinanceCreditNotes'), icon: ReceiptText },
         { label: 'Bank Accounts', path: createPageUrl('FinanceBankAccounts'), icon: Landmark },
         { label: 'Reconciliation', path: createPageUrl('FinanceBankReconciliation'), icon: Landmark },
+        { label: 'bol.com Payouts', path: createPageUrl('FinanceBolcomPayouts'), icon: Globe },
         { label: 'Smart Import', path: createPageUrl('FinanceSmartImport'), icon: Upload },
         { label: 'Reports', path: createPageUrl('FinanceReports'), icon: BarChart3 },
       ]

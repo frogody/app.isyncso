@@ -103,7 +103,8 @@ export default function FinanceBankReconciliation({ embedded = false }) {
         .from('bank_transactions')
         .select('*')
         .eq('bank_account_id', selectedAccountId)
-        .order('transaction_date', { ascending: false });
+        .order('transaction_date', { ascending: false })
+        .range(0, 9999);
 
       if (txnError) throw txnError;
       setBankTransactions(txns || []);
@@ -117,7 +118,8 @@ export default function FinanceBankReconciliation({ embedded = false }) {
           .eq('account_id', bankAccount.account_id)
           .eq('journal_entries.company_id', companyId)
           .eq('journal_entries.is_posted', true)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .range(0, 9999);
 
         if (lineError) throw lineError;
 

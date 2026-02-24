@@ -2461,7 +2461,7 @@ serve(async (req) => {
           .eq("company_id", companyId)
           .eq("source", "bolcom")
           .eq("total", 0)
-          .range(0, 2999);
+          .range(0, 49999);
 
         if (zErr || !zeroOrders?.length) {
           result = { success: true, data: { message: "No zero-total orders to repair", count: 0 } };
@@ -2567,7 +2567,7 @@ serve(async (req) => {
           .eq("company_id", companyId)
           .eq("source", "bolcom")
           .is("order_date", null)
-          .limit(100);
+          .limit(5000);
 
         let dateFixed = 0;
         if (nullDateOrders?.length) {
@@ -2886,7 +2886,7 @@ serve(async (req) => {
             .select("external_reference")
             .eq("company_id", companyId).eq("source", "bolcom")
             .like("external_reference", "HIST-%")
-            .limit(5000);
+            .limit(50000);
           for (const r of (rows || []) as Array<{ external_reference: string }>) existingHist.add(r.external_reference);
         }
 
