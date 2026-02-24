@@ -853,9 +853,16 @@ export default function CRMContacts() {
 
   const loadContacts = async () => {
     if (!user?.id) return;
+    const orgId = user.organization_id || user.company_id;
+    if (!orgId) return;
     try {
-      // Use owner_id which is the actual column name in the prospects table
-      const prospects = await db.entities.Prospect.filter({ owner_id: user.id });
+      // Load ALL prospects for the organization (CRM is company-wide, not per-user)
+      const { data: prospects, error: prospectError } = await supabase
+        .from('prospects')
+        .select('*')
+        .eq('organization_id', orgId)
+        .order('updated_date', { ascending: false });
+      if (prospectError) throw prospectError;
       const contactList = prospects.map(p => ({
         id: p.id,
         name: [p.first_name, p.last_name].filter(Boolean).join(' ') || p.company || "Unknown",
