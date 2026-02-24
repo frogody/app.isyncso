@@ -186,6 +186,7 @@ export default function FinanceSmartImport() {
   // Extraction results
   const [extraction, setExtraction] = useState(null);
   const [vendorMatch, setVendorMatch] = useState(null);
+  const [prospectMatch, setProspectMatch] = useState(null);
   const [taxClassification, setTaxClassification] = useState(null);
   const [currencyConversion, setCurrencyConversion] = useState(null);
   const [recurring, setRecurring] = useState(null);
@@ -322,6 +323,7 @@ export default function FinanceSmartImport() {
       setCurrentStep('done');
       setExtraction(result.extraction);
       setVendorMatch(result.vendor_match);
+      setProspectMatch(result.prospect_match || null);
       setTaxClassification(result.tax_classification);
       setCurrencyConversion(result.currency_conversion);
       setRecurring(result.recurring);
@@ -368,6 +370,18 @@ export default function FinanceSmartImport() {
           id: `temp_${i}`,
         }))
       );
+
+      // CRM → Invoice enrichment: fill empty fields from matched CRM prospect
+      if (result.prospect_match?.prospect_data) {
+        const pd = result.prospect_match.prospect_data;
+        setFormData(prev => ({
+          ...prev,
+          vendor_email: prev.vendor_email || pd.email || '',
+          vendor_country: prev.vendor_country || pd.location_country || '',
+          vendor_vat: prev.vendor_vat || pd.vat_number || '',
+          vendor_address: prev.vendor_address || pd.billing_address || '',
+        }));
+      }
 
       toast.success('Invoice analyzed successfully!');
     } catch (error) {
@@ -482,6 +496,7 @@ export default function FinanceSmartImport() {
           .insert({
             company_id: companyId,
             user_id: user.id,
+            contact_id: prospectMatch?.id || null,
             client_name: formData.vendor_name,
             client_email: formData.vendor_email || null,
             client_address: formData.vendor_address ? { line1: formData.vendor_address } : null,
@@ -507,6 +522,22 @@ export default function FinanceSmartImport() {
           .single();
 
         if (invErr) throw new Error(`Failed to create sales invoice: ${invErr.message}`);
+
+        // Bidirectional enrichment: update CRM prospect with invoice data it was missing
+        if (prospectMatch?.id && prospectMatch.match_type !== 'new') {
+          const enrichUpdates = {};
+          if (formData.vendor_vat && !prospectMatch.prospect_data?.vat_number)
+            enrichUpdates.vat_number = formData.vendor_vat;
+          if (formData.vendor_email && !prospectMatch.prospect_data?.email)
+            enrichUpdates.email = formData.vendor_email;
+          if (formData.vendor_country && !prospectMatch.prospect_data?.location_country)
+            enrichUpdates.location_country = formData.vendor_country;
+          if (formData.vendor_address)
+            enrichUpdates.billing_address = formData.vendor_address;
+          if (Object.keys(enrichUpdates).length > 0) {
+            await supabase.from('prospects').update(enrichUpdates).eq('id', prospectMatch.id);
+          }
+        }
 
         toast.success(`Sales invoice ${newInvoice?.invoice_number || ''} created as draft!`);
         resetState();
@@ -701,6 +732,7 @@ export default function FinanceSmartImport() {
     setFileName('');
     setExtraction(null);
     setVendorMatch(null);
+    setProspectMatch(null);
     setTaxClassification(null);
     setCurrencyConversion(null);
     setRecurring(null);
@@ -930,15 +962,63 @@ export default function FinanceSmartImport() {
                         </Badge>
                       )}
                     </CardTitle>
-                    {vendorMatch && (
-                      <Badge variant="outline" className={`text-xs ${
-                        vendorMatch.match_type === 'new' ? 'border-yellow-500/50 text-yellow-400' :
-                        'border-emerald-500/50 text-emerald-400'
-                      }`}>
-                        {vendorMatch.match_type === 'new' ? 'New vendor' :
-                         vendorMatch.match_type === 'exact_vat' ? 'Matched (VAT)' :
-                         'Matched (name)'}
-                      </Badge>
+                    {documentType === 'sales_invoice' ? (
+                      prospectMatch && (
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={`text-xs ${
+                            prospectMatch.match_type === 'new' ? 'border-yellow-500/50 text-yellow-400' :
+                            'border-cyan-500/50 text-cyan-400'
+                          }`}>
+                            {prospectMatch.match_type === 'new' ? 'New customer (CRM)' :
+                             prospectMatch.match_type === 'exact_vat' ? 'CRM match (VAT)' :
+                             prospectMatch.match_type === 'exact_email' ? 'CRM match (email)' :
+                             'CRM match (name)'}
+                          </Badge>
+                          {prospectMatch.alternatives?.length > 0 && (
+                            <select
+                              className="text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 rounded px-1.5 py-0.5 max-w-[180px]"
+                              value={prospectMatch.id}
+                              onChange={(e) => {
+                                const alt = prospectMatch.alternatives.find(a => a.id === e.target.value);
+                                if (alt) {
+                                  setProspectMatch(prev => ({
+                                    ...prev,
+                                    id: alt.id,
+                                    match_type: alt.match_type,
+                                    prospect_data: { ...prev.prospect_data, company: alt.company, email: alt.email, location_country: alt.location_country },
+                                    alternatives: [
+                                      { id: prev.id, company: prev.prospect_data?.company, email: prev.prospect_data?.email, location_country: prev.prospect_data?.location_country, match_type: prev.match_type },
+                                      ...prev.alternatives.filter(a => a.id !== alt.id),
+                                    ],
+                                  }));
+                                  // Re-fill form from selected alternative
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    vendor_email: alt.email || prev.vendor_email,
+                                    vendor_country: alt.location_country || prev.vendor_country,
+                                  }));
+                                }
+                              }}
+                            >
+                              <option value={prospectMatch.id}>{prospectMatch.prospect_data?.company || 'Best match'}</option>
+                              {prospectMatch.alternatives.map(alt => (
+                                <option key={alt.id} value={alt.id}>{alt.company}{alt.email ? ` (${alt.email})` : ''}</option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      )
+                    ) : (
+                      vendorMatch && (
+                        <Badge variant="outline" className={`text-xs ${
+                          vendorMatch.match_type === 'new' ? 'border-yellow-500/50 text-yellow-400' :
+                          'border-emerald-500/50 text-emerald-400'
+                        }`}>
+                          {vendorMatch.match_type === 'new' ? 'New vendor' :
+                           vendorMatch.match_type === 'exact_vat' ? 'Matched (VAT)' :
+                           'Matched (name)'}
+                        </Badge>
+                      )
                     )}
                   </div>
                 </CardHeader>

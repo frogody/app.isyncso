@@ -1366,6 +1366,208 @@ async function matchOrCreateVendor(
   return { id: newVendor.id, match_type: "new", confidence: 1.0 };
 }
 
+// ─── Prospect Matching (for sales invoices → CRM) ────────────────────────────
+
+interface ProspectMatchResult {
+  id: string;
+  match_type: "exact_vat" | "exact_email" | "fuzzy_name" | "partial_name" | "new";
+  confidence: number;
+  prospect_data: {
+    company: string | null;
+    email: string | null;
+    location_country: string | null;
+    vat_number: string | null;
+    billing_address: string | null;
+  };
+  alternatives?: Array<{
+    id: string;
+    company: string | null;
+    email: string | null;
+    location_country: string | null;
+    match_type: string;
+  }>;
+}
+
+async function matchOrCreateProspect(
+  supabase: any,
+  companyId: string,
+  buyerData: { name?: string; vat_number?: string; email?: string; address?: string; country?: string },
+  userId: string
+): Promise<ProspectMatchResult> {
+  const prospectFields = "id, company, email, location_country, vat_number, billing_address";
+
+  // Tier 1: Exact VAT match
+  if (buyerData.vat_number) {
+    const { data: vatMatch } = await supabase
+      .from("prospects")
+      .select(prospectFields)
+      .eq("organization_id", companyId)
+      .eq("vat_number", buyerData.vat_number)
+      .limit(1)
+      .maybeSingle();
+
+    if (vatMatch) {
+      console.log(`[PROSPECT] Exact VAT match: ${vatMatch.company}`);
+      return {
+        id: vatMatch.id,
+        match_type: "exact_vat",
+        confidence: 0.99,
+        prospect_data: {
+          company: vatMatch.company,
+          email: vatMatch.email,
+          location_country: vatMatch.location_country,
+          vat_number: vatMatch.vat_number,
+          billing_address: vatMatch.billing_address,
+        },
+      };
+    }
+  }
+
+  // Tier 2: Exact email match
+  if (buyerData.email) {
+    const { data: emailMatch } = await supabase
+      .from("prospects")
+      .select(prospectFields)
+      .eq("organization_id", companyId)
+      .eq("email", buyerData.email.toLowerCase())
+      .limit(1)
+      .maybeSingle();
+
+    if (emailMatch) {
+      console.log(`[PROSPECT] Exact email match: ${emailMatch.company}`);
+      return {
+        id: emailMatch.id,
+        match_type: "exact_email",
+        confidence: 0.95,
+        prospect_data: {
+          company: emailMatch.company,
+          email: emailMatch.email,
+          location_country: emailMatch.location_country,
+          vat_number: emailMatch.vat_number,
+          billing_address: emailMatch.billing_address,
+        },
+      };
+    }
+  }
+
+  // Tier 3: Fuzzy company name match
+  if (buyerData.name) {
+    const { data: nameMatches } = await supabase
+      .from("prospects")
+      .select(prospectFields)
+      .eq("organization_id", companyId)
+      .ilike("company", `%${buyerData.name}%`)
+      .order("updated_date", { ascending: false })
+      .limit(5);
+
+    if (nameMatches && nameMatches.length > 0) {
+      const best = nameMatches[0];
+      const alternatives = nameMatches.length > 1
+        ? nameMatches.slice(1).map((m: any) => ({
+            id: m.id,
+            company: m.company,
+            email: m.email,
+            location_country: m.location_country,
+            match_type: "fuzzy_name",
+          }))
+        : undefined;
+
+      console.log(`[PROSPECT] Fuzzy name match: ${best.company} (${nameMatches.length} candidates)`);
+      return {
+        id: best.id,
+        match_type: "fuzzy_name",
+        confidence: 0.85,
+        prospect_data: {
+          company: best.company,
+          email: best.email,
+          location_country: best.location_country,
+          vat_number: best.vat_number,
+          billing_address: best.billing_address,
+        },
+        alternatives,
+      };
+    }
+
+    // Tier 4: First-word match
+    const firstWord = buyerData.name.split(/\s+/)[0];
+    if (firstWord && firstWord.length > 2) {
+      const { data: partialMatches } = await supabase
+        .from("prospects")
+        .select(prospectFields)
+        .eq("organization_id", companyId)
+        .ilike("company", `%${firstWord}%`)
+        .order("updated_date", { ascending: false })
+        .limit(5);
+
+      if (partialMatches && partialMatches.length > 0) {
+        const best = partialMatches[0];
+        const alternatives = partialMatches.length > 1
+          ? partialMatches.slice(1).map((m: any) => ({
+              id: m.id,
+              company: m.company,
+              email: m.email,
+              location_country: m.location_country,
+              match_type: "partial_name",
+            }))
+          : undefined;
+
+        console.log(`[PROSPECT] Partial name match: ${best.company}`);
+        return {
+          id: best.id,
+          match_type: "partial_name",
+          confidence: 0.7,
+          prospect_data: {
+            company: best.company,
+            email: best.email,
+            location_country: best.location_country,
+            vat_number: best.vat_number,
+            billing_address: best.billing_address,
+          },
+          alternatives,
+        };
+      }
+    }
+  }
+
+  // Tier 5: Create new prospect as customer
+  console.log(`[PROSPECT] Creating new CRM customer: ${buyerData.name}`);
+  const { data: newProspect, error } = await supabase
+    .from("prospects")
+    .insert({
+      organization_id: companyId,
+      company: buyerData.name || "Unknown Customer",
+      email: buyerData.email || null,
+      vat_number: buyerData.vat_number || null,
+      billing_address: buyerData.address || null,
+      billing_country: buyerData.country || null,
+      location_country: buyerData.country || null,
+      contact_type: "customer",
+      source: "smart_import",
+      stage: "customer",
+      owner_id: userId,
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    console.error(`[PROSPECT] Failed to create: ${error.message}`);
+    throw new Error(`Failed to create CRM prospect: ${error.message}`);
+  }
+
+  return {
+    id: newProspect.id,
+    match_type: "new",
+    confidence: 1.0,
+    prospect_data: {
+      company: buyerData.name || null,
+      email: buyerData.email || null,
+      location_country: buyerData.country || null,
+      vat_number: buyerData.vat_number || null,
+      billing_address: buyerData.address || null,
+    },
+  };
+}
+
 // ─── Tax Rate Lookup ──────────────────────────────────────────────────────────
 
 async function lookupTaxRate(
@@ -1484,12 +1686,30 @@ Deno.serve(async (req) => {
 
     console.log(`[SMART-IMPORT] Extraction done — vendor: ${data.vendor.name}, total: ${data.invoice.total}, category: ${data.classification.expense_category}, gl: ${data.classification.gl_code}`);
 
-    // Step 7: Vendor matching
+    // Step 7: Vendor matching (purchase-side) or Prospect matching (sales-side)
     let vendorMatch: { id: string; match_type: string; confidence: number } | null = null;
-    try {
-      vendorMatch = await matchOrCreateVendor(supabase, companyId, data.vendor);
-    } catch (e) {
-      console.warn("[SMART-IMPORT] Vendor matching failed:", e);
+    let prospectMatch: ProspectMatchResult | null = null;
+
+    if (docType.type === "sales_invoice") {
+      // Sales invoice → match/create CRM prospect for the buyer
+      try {
+        prospectMatch = await matchOrCreateProspect(supabase, companyId, {
+          name: data.vendor.name,         // After identity swap, vendor = the buyer/customer
+          vat_number: data.vendor.vat_number,
+          email: data.vendor.email,
+          address: data.vendor.address,
+          country: data.vendor.country,
+        }, userId);
+      } catch (e) {
+        console.warn("[SMART-IMPORT] Prospect matching failed:", e);
+      }
+    } else {
+      // Purchase doc → match/create vendor
+      try {
+        vendorMatch = await matchOrCreateVendor(supabase, companyId, data.vendor);
+      } catch (e) {
+        console.warn("[SMART-IMPORT] Vendor matching failed:", e);
+      }
     }
 
     // Step 8: Tax rate lookup
@@ -1564,6 +1784,7 @@ Deno.serve(async (req) => {
       tax_decision: taxDecision,
       confidence: data.confidence,
       vendor_match: vendorMatch,
+      prospect_match: prospectMatch,
       tax_classification: {
         rate_id: taxRateResult.rate_id,
         rate: taxRateResult.rate,
