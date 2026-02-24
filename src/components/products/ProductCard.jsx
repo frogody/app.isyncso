@@ -55,7 +55,7 @@ const TYPE_ICONS = {
 const CHANNEL_COLORS = {
   b2b: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30', label: 'B2B' },
   b2c: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/30', label: 'B2C' },
-  bolcom: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30', label: 'bol.com' },
+  bolcom: { bg: 'bg-[#0000A4]/20', text: 'text-[#5B5BFF]', border: 'border-[#0000A4]/30', label: 'bol.com' },
   shopify: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/30', label: 'Shopify' },
 };
 
@@ -148,7 +148,7 @@ export function ProductGridCard({
               {isPhysical && (details?.inventory?.fulfilment_method || details?.pricing?.fulfilment_method) && (() => {
                 const fm = details?.inventory?.fulfilment_method || details?.pricing?.fulfilment_method;
                 return fm === 'FBB' ? (
-                  <Badge className="bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs">
+                  <Badge className="bg-[#0000A4]/20 text-[#5B5BFF] border border-[#0000A4]/30 text-xs">
                     <Truck className="w-3 h-3 mr-1" /> bol.com Warehouse
                   </Badge>
                 ) : null;
@@ -357,7 +357,7 @@ export function ProductListRow({
               {isPhysical && (details?.inventory?.fulfilment_method || details?.pricing?.fulfilment_method) && (() => {
                 const fm = details?.inventory?.fulfilment_method || details?.pricing?.fulfilment_method;
                 return fm === 'FBB' ? (
-                  <Badge className="bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs">
+                  <Badge className="bg-[#0000A4]/20 text-[#5B5BFF] border border-[#0000A4]/30 text-xs">
                     <Truck className="w-3 h-3 mr-1" /> bol.com Warehouse
                   </Badge>
                 ) : null;
@@ -734,7 +734,7 @@ export function ProductTableView({
                           {(() => {
                             const fm = details?.inventory?.fulfilment_method || details?.pricing?.fulfilment_method;
                             return fm === 'FBB' ? (
-                              <span className="text-[10px] text-orange-400 flex items-center gap-0.5">
+                              <span className="text-[10px] text-[#5B5BFF] flex items-center gap-0.5">
                                 <Truck className="w-2.5 h-2.5" /> bol.com
                               </span>
                             ) : null;
