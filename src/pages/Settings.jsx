@@ -106,7 +106,11 @@ export default function Settings() {
     funding_stage: "",
     funding_data: null,
     data_completeness: 0,
-    tech_stack_count: 0
+    tech_stack_count: 0,
+    // Identity fields for smart invoice import
+    vat_number: "",
+    kvk_number: "",
+    legal_address: ""
   });
 
   const [invitations, setInvitations] = useState([]);
@@ -195,7 +199,11 @@ export default function Settings() {
           funding_stage: company.funding_stage || "",
           funding_data: company.funding_data || null,
           data_completeness: company.data_completeness || 0,
-          tech_stack_count: company.tech_stack_count || (Array.isArray(company.tech_stack) ? company.tech_stack.length : 0)
+          tech_stack_count: company.tech_stack_count || (Array.isArray(company.tech_stack) ? company.tech_stack.length : 0),
+          // Identity fields
+          vat_number: company.vat_number || "",
+          kvk_number: company.kvk_number || "",
+          legal_address: company.legal_address || ""
         });
 
         if (user.company_id) {
@@ -318,6 +326,9 @@ export default function Settings() {
         hq_country: companyData.hq_country,
         phone: companyData.phone,
         email: companyData.email,
+        vat_number: companyData.vat_number,
+        kvk_number: companyData.kvk_number,
+        legal_address: companyData.legal_address,
       };
 
       if (company?.id) {
@@ -1240,6 +1251,28 @@ export default function Settings() {
                           <Mail className="w-3 h-3" /> Email
                         </Label>
                         <Input value={companyData.email} onChange={(e) => setCompanyData({...companyData, email: e.target.value})} placeholder="info@company.com" className={`mt-1 ${st('bg-white border-slate-200', 'bg-zinc-800/50 border-zinc-700')} h-9 text-sm`} />
+                      </div>
+                    </div>
+
+                    {/* Legal / Identity Fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      <div>
+                        <Label className={`${st('text-slate-500', 'text-zinc-400')} text-xs flex items-center gap-1`}>
+                          <FileText className="w-3 h-3" /> VAT Number
+                        </Label>
+                        <Input value={companyData.vat_number} onChange={(e) => setCompanyData({...companyData, vat_number: e.target.value})} placeholder="NL001234567B01" className={`mt-1 ${st('bg-white border-slate-200', 'bg-zinc-800/50 border-zinc-700')} h-9 text-sm`} />
+                      </div>
+                      <div>
+                        <Label className={`${st('text-slate-500', 'text-zinc-400')} text-xs flex items-center gap-1`}>
+                          <Shield className="w-3 h-3" /> KVK Number
+                        </Label>
+                        <Input value={companyData.kvk_number} onChange={(e) => setCompanyData({...companyData, kvk_number: e.target.value})} placeholder="12345678" className={`mt-1 ${st('bg-white border-slate-200', 'bg-zinc-800/50 border-zinc-700')} h-9 text-sm`} />
+                      </div>
+                      <div>
+                        <Label className={`${st('text-slate-500', 'text-zinc-400')} text-xs flex items-center gap-1`}>
+                          <MapPin className="w-3 h-3" /> Legal Address
+                        </Label>
+                        <Input value={companyData.legal_address} onChange={(e) => setCompanyData({...companyData, legal_address: e.target.value})} placeholder="Keizersgracht 1, 1015 AA Amsterdam" className={`mt-1 ${st('bg-white border-slate-200', 'bg-zinc-800/50 border-zinc-700')} h-9 text-sm`} />
                       </div>
                     </div>
 

@@ -171,7 +171,7 @@ function ProcessingPipeline({ currentStep, error }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function FinanceSmartImport() {
-  const { user } = useUser();
+  const { user, company } = useUser();
   const { theme, ft } = useTheme();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -293,6 +293,14 @@ export default function FinanceSmartImport() {
         fileName: file.name,
         companyId,
         userId: user.id,
+        myCompany: {
+          name: company?.name || '',
+          vat: company?.vat_number || company?.invoice_branding?.company_vat || '',
+          email: company?.invoice_branding?.company_email || company?.email || '',
+          address: company?.legal_address || company?.invoice_branding?.company_address || '',
+          iban: company?.invoice_branding?.iban || '',
+          kvk: company?.kvk_number || '',
+        },
       };
 
       const response = await fetch(`${SUPABASE_URL}/functions/v1/smart-import-invoice`, {

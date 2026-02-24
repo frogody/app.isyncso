@@ -15,6 +15,14 @@ interface SmartImportRequest {
   companyId: string;
   userId: string;
   paymentDate?: string;
+  myCompany?: {
+    name?: string;
+    vat?: string;
+    email?: string;
+    address?: string;
+    iban?: string;
+    kvk?: string;
+  };
 }
 
 /** Flat shape returned by the LLM — pure extraction, no classification */
@@ -193,11 +201,28 @@ async function callLLM(
   apiKey: string,
   apiUrl: string,
   model: string,
-  pdfText: string
+  pdfText: string,
+  myCompany?: SmartImportRequest["myCompany"]
 ): Promise<{ success: boolean; data?: FlatExtraction; error?: string; usage?: any; provider: string }> {
   const provider = apiUrl.includes("together") ? "together" : "groq";
   try {
     console.log(`[EXTRACT] Calling ${provider} (${model}), text length: ${pdfText.length}`);
+
+    // Build prompt with optional company identity block
+    let prompt = EXTRACTION_PROMPT;
+    if (myCompany?.name) {
+      const identityLines = [`\n\nYOUR COMPANY (the company using this system — this is NOT the supplier):`];
+      identityLines.push(`Name: "${myCompany.name}"`);
+      if (myCompany.vat) identityLines.push(`VAT: "${myCompany.vat}"`);
+      if (myCompany.email) identityLines.push(`Email: "${myCompany.email}"`);
+      if (myCompany.address) identityLines.push(`Address: "${myCompany.address}"`);
+      if (myCompany.iban) identityLines.push(`IBAN: "${myCompany.iban}"`);
+      if (myCompany.kvk) identityLines.push(`KVK: "${myCompany.kvk}"`);
+      identityLines.push(`\nRULE: If you see this company on the invoice, it is NOT the supplier/vendor.`);
+      identityLines.push(`The supplier is the OTHER company. Put the other company in supplier_name/supplier_* fields.`);
+      prompt += identityLines.join("\n");
+      console.log(`[EXTRACT] Injected company identity: "${myCompany.name}"`);
+    }
 
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -209,7 +234,7 @@ async function callLLM(
         model,
         messages: [
           { role: "system", content: "You are a data extraction tool. Output ONLY valid JSON, no explanation." },
-          { role: "user", content: EXTRACTION_PROMPT + `\n\nHere is the invoice text:\n\n${pdfText}` },
+          { role: "user", content: prompt + `\n\nHere is the invoice text:\n\n${pdfText}` },
         ],
         max_tokens: 4096,
         temperature: 0,
@@ -233,7 +258,7 @@ async function callLLM(
       return { success: false, error: "Could not parse AI response — invalid JSON", provider };
     }
 
-    const data = sanitizeExtraction(parsed, pdfText);
+    const data = sanitizeExtraction(parsed, pdfText, myCompany);
 
     console.log(`[EXTRACT] Parsed — supplier: ${data.supplier_name}, total: ${data.total}, confidence: ${data.confidence}`);
     return { success: true, data, usage: apiResponse.usage, provider };
@@ -246,7 +271,8 @@ async function callLLM(
 
 async function extractFromText(
   groqApiKey: string,
-  pdfText: string
+  pdfText: string,
+  myCompany?: SmartImportRequest["myCompany"]
 ): Promise<{ success: boolean; data?: FlatExtraction; error?: string; usage?: any; provider?: string }> {
   const MAX_RETRIES = 2;
 
@@ -261,7 +287,8 @@ async function extractFromText(
       groqApiKey,
       "https://api.groq.com/openai/v1/chat/completions",
       "llama-3.3-70b-versatile",
-      pdfText
+      pdfText,
+      myCompany
     );
 
     if (result.success) return result;
@@ -281,7 +308,8 @@ async function extractFromText(
       togetherKey,
       "https://api.together.xyz/v1/chat/completions",
       "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-      pdfText
+      pdfText,
+      myCompany
     );
     if (result.success) return result;
     return { success: false, error: `All providers failed. Last: ${result.error}` };
@@ -342,7 +370,7 @@ function parseJSONResponse(content: string): FlatExtraction | null {
 
 // ─── Post-Extraction Sanitization ─────────────────────────────────────────────
 
-function sanitizeExtraction(data: FlatExtraction, pdfText: string): FlatExtraction {
+function sanitizeExtraction(data: FlatExtraction, pdfText: string, myCompany?: SmartImportRequest["myCompany"]): FlatExtraction {
   const toNum = (v: any): number | null => {
     if (v === null || v === undefined) return null;
     if (typeof v === "number") return v;
@@ -392,6 +420,80 @@ function sanitizeExtraction(data: FlatExtraction, pdfText: string): FlatExtracti
     if (sClean === bClean) {
       console.log(`[SANITIZE] supplier_vat matches buyer_vat (${sClean}), nulling supplier_vat`);
       data.supplier_vat = null;
+    }
+  }
+
+  // ── Identity-based swap: if supplier matches user's own company, swap ──────
+  const strip = (s: string) => s.replace(/[\s.\-]/g, "").toUpperCase();
+
+  if (myCompany?.name && data.supplier_name && data.buyer_name) {
+    const myName = myCompany.name.toLowerCase().trim();
+    const supplierName = data.supplier_name.toLowerCase().trim();
+
+    const isMyCompany =
+      supplierName === myName ||
+      supplierName.includes(myName) || myName.includes(supplierName) ||
+      (myCompany.vat && data.supplier_vat &&
+        strip(myCompany.vat) === strip(data.supplier_vat)) ||
+      (myCompany.email && data.supplier_email &&
+        data.supplier_email.toLowerCase() === myCompany.email.toLowerCase()) ||
+      (myCompany.iban && data.supplier_iban &&
+        strip(myCompany.iban) === strip(data.supplier_iban));
+
+    if (isMyCompany) {
+      console.log(`[SANITIZE] Identity match: supplier "${data.supplier_name}" is user's own company "${myCompany.name}" — swapping with buyer "${data.buyer_name}"`);
+
+      const oldSupplier = {
+        name: data.supplier_name,
+        address: data.supplier_address,
+        country: data.supplier_country,
+        vat: data.supplier_vat,
+        kvk: data.supplier_kvk,
+        email: data.supplier_email,
+        phone: data.supplier_phone,
+        website: data.supplier_website,
+        iban: data.supplier_iban,
+      };
+
+      // The real supplier is what the LLM put as buyer
+      data.supplier_name = data.buyer_name;
+      data.buyer_name = oldSupplier.name;
+      data.buyer_vat = oldSupplier.vat || data.buyer_vat;
+
+      // Clear supplier fields — we don't have the real supplier's details yet
+      data.supplier_vat = null;
+      data.supplier_kvk = null;
+      data.supplier_iban = null;
+      data.supplier_address = null;
+      data.supplier_country = null;
+      data.supplier_email = null;
+      data.supplier_phone = null;
+      data.supplier_website = null;
+
+      // Try to recover real supplier details from PDF text
+      const pdfLower = pdfText.toLowerCase();
+      const realNameLower = data.supplier_name!.toLowerCase();
+      const nameIdx = pdfLower.indexOf(realNameLower);
+      if (nameIdx !== -1) {
+        const afterName = pdfText.substring(nameIdx + data.supplier_name!.length, nameIdx + data.supplier_name!.length + 500).trim();
+
+        const emailMatch = afterName.match(/[\w.+-]+@[\w.-]+\.\w{2,}/);
+        if (emailMatch) data.supplier_email = emailMatch[0];
+
+        const phoneMatch = afterName.match(/(?:\+\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}/);
+        if (phoneMatch) data.supplier_phone = phoneMatch[0];
+
+        const webMatch = afterName.match(/(?:www\.[\w.-]+\.\w{2,}|https?:\/\/[\w.-]+\.\w{2,})/i);
+        if (webMatch) data.supplier_website = webMatch[0];
+
+        const ibanMatch = afterName.match(/[A-Z]{2}\d{2}[A-Z0-9]{4,30}/);
+        if (ibanMatch) data.supplier_iban = ibanMatch[0];
+
+        const vatMatch = afterName.match(/[A-Z]{2}\d{8,12}[A-Z]?\d{0,2}/);
+        if (vatMatch) data.supplier_vat = vatMatch[0];
+      }
+
+      console.log(`[SANITIZE] After identity swap — supplier: ${data.supplier_name}, buyer: ${data.buyer_name}`);
     }
   }
 
@@ -1306,7 +1408,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const body: SmartImportRequest = await req.json();
-    const { pdfText, fileName, companyId, userId, paymentDate } = body;
+    const { pdfText, fileName, companyId, userId, paymentDate, myCompany } = body;
 
     if (!pdfText || !companyId || !userId) {
       return new Response(
@@ -1315,10 +1417,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`[SMART-IMPORT] Processing "${fileName}" for company ${companyId}`);
+    console.log(`[SMART-IMPORT] Processing "${fileName}" for company ${companyId}${myCompany?.name ? ` (identity: ${myCompany.name})` : ""}`);
 
     // Step 1: LLM extraction (70B model)
-    const extraction = await extractFromText(groqApiKey, pdfText);
+    const extraction = await extractFromText(groqApiKey, pdfText, myCompany);
     if (!extraction.success || !extraction.data) {
       return new Response(
         JSON.stringify({ success: false, error: extraction.error || "Extraction failed" }),
