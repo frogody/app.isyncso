@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/api/supabaseClient';
-import { Percent, Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, Calendar, FileText, Check, X, Sun, Moon, MoreVertical, AlertCircle, Calculator } from 'lucide-react';
+import { Percent, Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, Calendar, FileText, MoreVertical, AlertCircle, Calculator } from 'lucide-react';
 import FinanceBTWAangifte from './FinanceBTWAangifte';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { usePermissions } from '@/components/context/PermissionContext';
 import { useUser } from '@/components/context/UserContext';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
@@ -37,14 +36,10 @@ export default function FinanceTaxRates({ embedded = false }) {
   const [deleteRateDialogOpen, setDeleteRateDialogOpen] = useState(false);
   const [rateToDelete, setRateToDelete] = useState(null);
 
-  // Tax Periods state
+  // Tax Periods state (read-only overview from BTW Aangifte)
   const [taxPeriods, setTaxPeriods] = useState([]);
   const [loadingPeriods, setLoadingPeriods] = useState(true);
   const [periodSearch, setPeriodSearch] = useState('');
-  const [periodModalOpen, setPeriodModalOpen] = useState(false);
-  const [editingPeriod, setEditingPeriod] = useState(null);
-  const [periodForm, setPeriodForm] = useState({ period_name: '', start_date: '', end_date: '', status: 'open', tax_collected: '', tax_paid: '', notes: '' });
-  const [savingPeriod, setSavingPeriod] = useState(false);
   const [deletePeriodDialogOpen, setDeletePeriodDialogOpen] = useState(false);
   const [periodToDelete, setPeriodToDelete] = useState(null);
 
@@ -69,7 +64,7 @@ export default function FinanceTaxRates({ embedded = false }) {
     }
   };
 
-  // ── Load Tax Periods ────────────────────────────────────────────────
+  // ── Load Tax Periods (with BTW calculation for each) ────────────────
   const loadTaxPeriods = async () => {
     if (!companyId) return;
     setLoadingPeriods(true);
@@ -81,7 +76,25 @@ export default function FinanceTaxRates({ embedded = false }) {
         .order('start_date', { ascending: false });
 
       if (error) throw error;
-      setTaxPeriods(data || []);
+
+      // Compute BTW for each period to get tax_collected (5a) and tax_paid (5b)
+      const enriched = await Promise.all((data || []).map(async (period) => {
+        try {
+          const { data: btwData } = await supabase.rpc('compute_btw_aangifte', {
+            p_company_id: companyId,
+            p_start_date: period.start_date,
+            p_end_date: period.end_date,
+          });
+          const btw5a = btwData?.['5a']?.btw || 0;
+          const btw5b = btwData?.['5b']?.btw || 0;
+          const btw5c = btw5a - btw5b;
+          return { ...period, tax_collected: btw5a, tax_paid: btw5b, net_tax: btw5c };
+        } catch {
+          return { ...period, tax_collected: 0, tax_paid: 0, net_tax: 0 };
+        }
+      }));
+
+      setTaxPeriods(enriched);
     } catch (err) {
       console.error('Error loading tax periods:', err);
       toast.error('Failed to load tax periods');
@@ -251,75 +264,7 @@ export default function FinanceTaxRates({ embedded = false }) {
     }
   };
 
-  // ── Tax Period CRUD ─────────────────────────────────────────────────
-  const openCreatePeriod = () => {
-    setEditingPeriod(null);
-    setPeriodForm({ period_name: '', start_date: '', end_date: '', status: 'open', tax_collected: '', tax_paid: '', notes: '' });
-    setPeriodModalOpen(true);
-  };
-
-  const openEditPeriod = (period) => {
-    setEditingPeriod(period);
-    setPeriodForm({
-      period_name: period.period_name || '',
-      start_date: period.start_date || '',
-      end_date: period.end_date || '',
-      status: period.status || 'open',
-      tax_collected: period.tax_collected !== null && period.tax_collected !== undefined ? String(period.tax_collected) : '',
-      tax_paid: period.tax_paid !== null && period.tax_paid !== undefined ? String(period.tax_paid) : '',
-      notes: period.notes || '',
-    });
-    setPeriodModalOpen(true);
-  };
-
-  const handleSavePeriod = async () => {
-    if (!periodForm.period_name.trim()) {
-      toast.error('Period name is required');
-      return;
-    }
-    if (!periodForm.start_date || !periodForm.end_date) {
-      toast.error('Start and end dates are required');
-      return;
-    }
-
-    setSavingPeriod(true);
-    try {
-      const payload = {
-        company_id: companyId,
-        period_name: periodForm.period_name.trim(),
-        start_date: periodForm.start_date,
-        end_date: periodForm.end_date,
-        status: periodForm.status,
-        tax_collected: periodForm.tax_collected !== '' ? Number(periodForm.tax_collected) : 0,
-        tax_paid: periodForm.tax_paid !== '' ? Number(periodForm.tax_paid) : 0,
-        notes: periodForm.notes.trim() || null,
-      };
-
-      if (editingPeriod) {
-        const { error } = await supabase
-          .from('tax_periods')
-          .update(payload)
-          .eq('id', editingPeriod.id);
-        if (error) throw error;
-        toast.success('Tax period updated');
-      } else {
-        const { error } = await supabase
-          .from('tax_periods')
-          .insert(payload);
-        if (error) throw error;
-        toast.success('Tax period created');
-      }
-
-      setPeriodModalOpen(false);
-      await loadTaxPeriods();
-    } catch (err) {
-      console.error('Error saving tax period:', err);
-      toast.error('Failed to save tax period');
-    } finally {
-      setSavingPeriod(false);
-    }
-  };
-
+  // ── Tax Period Actions (read-only, managed from BTW Aangifte) ───────
   const handleDeletePeriod = async () => {
     if (!periodToDelete) return;
     try {
@@ -519,11 +464,19 @@ export default function FinanceTaxRates({ embedded = false }) {
     </div>
   );
 
-  // ── Render: Tax Periods Tab ─────────────────────────────────────────
+  // ── Render: Tax Periods Tab (read-only overview from BTW Aangifte) ──
   const renderTaxPeriodsTab = () => (
     <div className="space-y-6">
-      {/* Actions Row */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      {/* Info banner */}
+      <div className={`flex items-center gap-3 rounded-xl px-4 py-3 ${ft('bg-blue-50 border border-blue-200', 'bg-blue-500/10 border border-blue-500/20')}`}>
+        <Calculator className="w-5 h-5 text-blue-400 shrink-0" />
+        <p className={`text-sm ${ft('text-blue-700', 'text-blue-300')}`}>
+          Tax periods are automatically created when you select a quarter in the <button onClick={() => setActiveTab('btw')} className="underline font-medium hover:opacity-80">BTW Aangifte</button> tab. Tax Collected = BTW verschuldigd (5a), Tax Paid = Voorbelasting (5b).
+        </p>
+      </div>
+
+      {/* Search */}
+      {taxPeriods.length > 4 && (
         <div className="relative w-full sm:w-72">
           <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${ft('text-slate-400', 'text-zinc-500')}`} />
           <Input
@@ -533,11 +486,7 @@ export default function FinanceTaxRates({ embedded = false }) {
             className={`pl-10 ${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
           />
         </div>
-        <Button onClick={openCreatePeriod} className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Tax Period
-        </Button>
-      </div>
+      )}
 
       {/* Tax Periods Table */}
       <Card className={`${ft('bg-white border-slate-200', 'bg-white/[0.02] border-white/[0.06]')} border rounded-xl overflow-hidden`}>
@@ -545,45 +494,43 @@ export default function FinanceTaxRates({ embedded = false }) {
           <table className="w-full">
             <thead>
               <tr className={ft('bg-slate-50 border-b border-slate-200', 'bg-white/[0.02] border-b border-white/[0.06]')}>
-                <th className={`text-left text-xs font-medium uppercase tracking-wider px-5 py-3 ${ft('text-slate-500', 'text-zinc-400')}`}>Period Name</th>
-                <th className={`text-left text-xs font-medium uppercase tracking-wider px-5 py-3 ${ft('text-slate-500', 'text-zinc-400')}`}>Start Date</th>
-                <th className={`text-left text-xs font-medium uppercase tracking-wider px-5 py-3 ${ft('text-slate-500', 'text-zinc-400')}`}>End Date</th>
+                <th className={`text-left text-xs font-medium uppercase tracking-wider px-5 py-3 ${ft('text-slate-500', 'text-zinc-400')}`}>Period</th>
+                <th className={`text-left text-xs font-medium uppercase tracking-wider px-5 py-3 ${ft('text-slate-500', 'text-zinc-400')}`}>Date Range</th>
                 <th className={`text-center text-xs font-medium uppercase tracking-wider px-5 py-3 ${ft('text-slate-500', 'text-zinc-400')}`}>Status</th>
-                <th className={`text-right text-xs font-medium uppercase tracking-wider px-5 py-3 ${ft('text-slate-500', 'text-zinc-400')}`}>Tax Collected</th>
-                <th className={`text-right text-xs font-medium uppercase tracking-wider px-5 py-3 ${ft('text-slate-500', 'text-zinc-400')}`}>Tax Paid</th>
-                <th className={`text-right text-xs font-medium uppercase tracking-wider px-5 py-3 ${ft('text-slate-500', 'text-zinc-400')}`}>Net Tax</th>
+                <th className={`text-right text-xs font-medium uppercase tracking-wider px-5 py-3 ${ft('text-slate-500', 'text-zinc-400')}`}>BTW Verschuldigd (5a)</th>
+                <th className={`text-right text-xs font-medium uppercase tracking-wider px-5 py-3 ${ft('text-slate-500', 'text-zinc-400')}`}>Voorbelasting (5b)</th>
+                <th className={`text-right text-xs font-medium uppercase tracking-wider px-5 py-3 ${ft('text-slate-500', 'text-zinc-400')}`}>Te betalen / ontvangen</th>
                 <th className={`text-right text-xs font-medium uppercase tracking-wider px-5 py-3 ${ft('text-slate-500', 'text-zinc-400')}`}>Actions</th>
               </tr>
             </thead>
             <tbody className={`divide-y ${ft('divide-slate-100', 'divide-white/[0.04]')}`}>
               {loadingPeriods ? (
                 <tr>
-                  <td colSpan={8} className={`px-5 py-10 text-center ${ft('text-slate-400', 'text-zinc-500')}`}>
+                  <td colSpan={7} className={`px-5 py-10 text-center ${ft('text-slate-400', 'text-zinc-500')}`}>
                     Loading tax periods...
                   </td>
                 </tr>
               ) : filteredPeriods.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className={`px-5 py-10 text-center ${ft('text-slate-400', 'text-zinc-500')}`}>
+                  <td colSpan={7} className={`px-5 py-10 text-center ${ft('text-slate-400', 'text-zinc-500')}`}>
                     <Calendar className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                    <p>No tax periods found</p>
-                    <p className="text-sm mt-1">Add a tax period to start tracking your VAT filings</p>
+                    <p>No tax periods yet</p>
+                    <p className="text-sm mt-1">Go to the <button onClick={() => setActiveTab('btw')} className="text-blue-400 underline hover:opacity-80">BTW Aangifte</button> tab and select a quarter to create your first period.</p>
                   </td>
                 </tr>
               ) : filteredPeriods.map((period) => {
-                const netTax = calcNetTax(period.tax_collected, period.tax_paid);
+                const netTax = period.net_tax ?? calcNetTax(period.tax_collected, period.tax_paid);
                 return (
-                  <tr key={period.id} className={`${ft('hover:bg-slate-50', 'hover:bg-white/[0.03]')} transition-colors`}>
+                  <tr key={period.id} className={`${ft('hover:bg-slate-50', 'hover:bg-white/[0.03]')} transition-colors cursor-pointer`} onClick={() => { setActiveTab('btw'); }}>
                     <td className={`px-5 py-3.5 ${ft('text-slate-900', 'text-white')} font-medium`}>{period.period_name}</td>
-                    <td className={`px-5 py-3.5 ${ft('text-slate-500', 'text-zinc-400')} text-sm`}>{period.start_date}</td>
-                    <td className={`px-5 py-3.5 ${ft('text-slate-500', 'text-zinc-400')} text-sm`}>{period.end_date}</td>
+                    <td className={`px-5 py-3.5 ${ft('text-slate-500', 'text-zinc-400')} text-sm`}>{period.start_date} &rarr; {period.end_date}</td>
                     <td className="px-5 py-3.5 text-center">{getStatusBadge(period.status)}</td>
                     <td className={`px-5 py-3.5 text-right ${ft('text-slate-900', 'text-white')}`}>{formatCurrency(period.tax_collected)}</td>
                     <td className={`px-5 py-3.5 text-right ${ft('text-slate-900', 'text-white')}`}>{formatCurrency(period.tax_paid)}</td>
-                    <td className={`px-5 py-3.5 text-right font-medium ${netTax >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {formatCurrency(netTax)}
+                    <td className={`px-5 py-3.5 text-right font-medium ${netTax >= 0 ? 'text-red-400' : 'text-green-400'}`}>
+                      {netTax >= 0 ? formatCurrency(netTax) : `${formatCurrency(Math.abs(netTax))} terug`}
                     </td>
-                    <td className="px-5 py-3.5 text-right">
+                    <td className="px-5 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className={ft('hover:bg-slate-100', 'hover:bg-white/[0.06]')}>
@@ -591,14 +538,14 @@ export default function FinanceTaxRates({ embedded = false }) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className={ft('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}>
-                          <DropdownMenuItem onClick={() => openEditPeriod(period)} className={ft('text-slate-700 hover:bg-slate-50', 'text-zinc-300 hover:bg-white/[0.06]')}>
-                            <Edit2 className="w-4 h-4 mr-2" />
-                            Edit
+                          <DropdownMenuItem onClick={() => setActiveTab('btw')} className={ft('text-slate-700 hover:bg-slate-50', 'text-zinc-300 hover:bg-white/[0.06]')}>
+                            <Calculator className="w-4 h-4 mr-2" />
+                            View BTW Aangifte
                           </DropdownMenuItem>
                           {period.status === 'open' && (
                             <DropdownMenuItem onClick={() => handleFilePeriod(period)} className="text-green-400 hover:bg-green-500/10">
                               <FileText className="w-4 h-4 mr-2" />
-                              File Period
+                              Mark as Filed
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuSeparator className={ft('bg-slate-100', 'bg-zinc-700')} />
@@ -747,118 +694,6 @@ export default function FinanceTaxRates({ embedded = false }) {
               </Button>
               <Button onClick={handleSaveRate} disabled={savingRate} className="bg-blue-600 hover:bg-blue-700">
                 {savingRate ? 'Saving...' : editingRate ? 'Update' : 'Create'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* ── Tax Period Modal ────────────────────────────────────────── */}
-        <Dialog open={periodModalOpen} onOpenChange={setPeriodModalOpen}>
-          <DialogContent className={`${ft('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')} sm:max-w-lg`}>
-            <DialogHeader>
-              <DialogTitle className={ft('text-slate-900', 'text-white')}>
-                {editingPeriod ? 'Edit Tax Period' : 'Create Tax Period'}
-              </DialogTitle>
-              <DialogDescription className={ft('text-slate-500', 'text-zinc-400')}>
-                {editingPeriod ? 'Update the tax period details below.' : 'Add a new tax filing period.'}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label className={ft('text-slate-700', 'text-zinc-300')}>Period Name</Label>
-                <Input
-                  placeholder="e.g. Q1 2026"
-                  value={periodForm.period_name}
-                  onChange={(e) => setPeriodForm({ ...periodForm, period_name: e.target.value })}
-                  className={ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className={ft('text-slate-700', 'text-zinc-300')}>Start Date</Label>
-                  <Input
-                    type="date"
-                    value={periodForm.start_date}
-                    onChange={(e) => setPeriodForm({ ...periodForm, start_date: e.target.value })}
-                    className={ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className={ft('text-slate-700', 'text-zinc-300')}>End Date</Label>
-                  <Input
-                    type="date"
-                    value={periodForm.end_date}
-                    onChange={(e) => setPeriodForm({ ...periodForm, end_date: e.target.value })}
-                    className={ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className={ft('text-slate-700', 'text-zinc-300')}>Status</Label>
-                <select
-                  value={periodForm.status}
-                  onChange={(e) => setPeriodForm({ ...periodForm, status: e.target.value })}
-                  className={`w-full rounded-md px-3 py-2 text-sm ${ft('bg-slate-100 border border-slate-200 text-slate-900', 'bg-zinc-800 border border-zinc-700 text-white')} focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                >
-                  <option value="open">Open</option>
-                  <option value="filed">Filed</option>
-                  <option value="closed">Closed</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className={ft('text-slate-700', 'text-zinc-300')}>Tax Collected</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={periodForm.tax_collected}
-                    onChange={(e) => setPeriodForm({ ...periodForm, tax_collected: e.target.value })}
-                    className={ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className={ft('text-slate-700', 'text-zinc-300')}>Tax Paid</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={periodForm.tax_paid}
-                    onChange={(e) => setPeriodForm({ ...periodForm, tax_paid: e.target.value })}
-                    className={ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}
-                  />
-                </div>
-              </div>
-              {/* Net Tax Display */}
-              <div className={`rounded-lg p-3 ${ft('bg-slate-50 border border-slate-200', 'bg-zinc-800/50 border border-zinc-700')}`}>
-                <div className="flex items-center justify-between">
-                  <span className={`text-sm font-medium ${ft('text-slate-600', 'text-zinc-400')}`}>Net Tax</span>
-                  <span className={`text-lg font-bold ${
-                    calcNetTax(periodForm.tax_collected, periodForm.tax_paid) >= 0 ? 'text-green-400' : 'text-red-400'
-                  }`}>
-                    {formatCurrency(calcNetTax(periodForm.tax_collected, periodForm.tax_paid))}
-                  </span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className={ft('text-slate-700', 'text-zinc-300')}>Notes</Label>
-                <Textarea
-                  placeholder="Optional notes about this period..."
-                  value={periodForm.notes}
-                  onChange={(e) => setPeriodForm({ ...periodForm, notes: e.target.value })}
-                  className={ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}
-                  rows={3}
-                />
-              </div>
-            </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setPeriodModalOpen(false)} className={ft('border-slate-200 text-slate-700', 'border-zinc-700 text-zinc-300')}>
-                Cancel
-              </Button>
-              <Button onClick={handleSavePeriod} disabled={savingPeriod} className="bg-blue-600 hover:bg-blue-700">
-                {savingPeriod ? 'Saving...' : editingPeriod ? 'Update' : 'Create'}
               </Button>
             </DialogFooter>
           </DialogContent>

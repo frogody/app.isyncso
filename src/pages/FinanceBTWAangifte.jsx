@@ -232,31 +232,24 @@ export default function FinanceBTWAangifte({ embedded = false }) {
     const quarter = quarterOptions.find(q => q.value === quarterValue);
     if (!quarter || !companyId) return;
 
-    // Check if tax_period exists, create if not
+    // Upsert: create if not exists, fetch if exists (unique on company_id + period_name)
     let period = periods.find(p => p.period_name === quarter.value);
     if (!period) {
       try {
         const { data, error } = await supabase
           .from('tax_periods')
-          .insert({
+          .upsert({
             company_id: companyId,
             period_name: quarter.value,
             start_date: quarter.startDate,
             end_date: quarter.endDate,
             status: 'open',
-          })
+          }, { onConflict: 'company_id,period_name' })
           .select()
           .single();
-        if (error && error.message?.includes('duplicate')) {
-          // Already exists, reload and find it
-          await loadPeriods();
-          period = (await supabase.from('tax_periods').select('*').eq('company_id', companyId).eq('period_name', quarter.value).single()).data;
-        } else if (error) {
-          throw error;
-        } else {
-          period = data;
-          await loadPeriods();
-        }
+        if (error) throw error;
+        period = data;
+        await loadPeriods();
       } catch (err) {
         toast.error('Kon periode niet aanmaken');
         return;
