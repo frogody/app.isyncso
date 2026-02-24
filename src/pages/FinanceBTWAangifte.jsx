@@ -190,7 +190,7 @@ export default function FinanceBTWAangifte({ embedded = false }) {
       for (const qm of QUARTER_MONTHS) {
         const startDate = `${year}-${String(qm.startMonth + 1).padStart(2, '0')}-01`;
         const endDate = new Date(year, qm.endMonth + 1, 0); // last day of end month
-        const endStr = endDate.toISOString().split('T')[0];
+        const endStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
         const name = `Q${qm.q} ${year}`;
         const deadlineStr = qm.q === 4
           ? `31 jan ${year + 1}`
