@@ -107,6 +107,7 @@ const EXPENSE_CATEGORIES = [
 const DOC_TYPES = [
   { value: 'expense', label: 'Expense', icon: CreditCard },
   { value: 'bill', label: 'Bill (AP)', icon: Receipt },
+  { value: 'sales_invoice', label: 'Sales Invoice (AR)', icon: Receipt },
   { value: 'credit_note', label: 'Credit Note', icon: FileText },
   { value: 'proforma', label: 'Proforma', icon: FileUp },
 ];
@@ -425,12 +426,18 @@ export default function FinanceSmartImport() {
             company_id: companyId,
             vendor_id: vendorId,
             bill_number: billNumber,
-            issued_date: formData.invoice_date,
+            bill_date: formData.invoice_date,
+            vendor_invoice_number: formData.invoice_number || null,
             due_date: formData.due_date || formData.invoice_date,
             status: 'pending',
+            subtotal: formData.subtotal || 0,
+            tax_amount: taxAmount,
+            total_amount: amount,
             amount: amount,
             balance_due: amount,
+            currency: formData.currency || 'EUR',
             notes: formData.notes || null,
+            created_by: user.id,
             // BTW classification
             tax_mechanism: taxDecision?.mechanism || 'standard_btw',
             self_assess_rate: taxDecision?.self_assess_rate || 0,
@@ -442,9 +449,62 @@ export default function FinanceSmartImport() {
 
         if (billErr) throw new Error(`Failed to create bill: ${billErr.message}`);
 
+        // Create bill line items
+        if (newBill && lineItems.length > 0) {
+          const billLineItems = lineItems.map((li, idx) => ({
+            bill_id: newBill.id,
+            description: li.description,
+            quantity: li.quantity || 1,
+            unit_price: li.unit_price || 0,
+            amount: li.line_total || ((li.quantity || 1) * (li.unit_price || 0)),
+            tax_rate: li.tax_rate_percent || 0,
+            tax_amount: ((li.line_total || 0) * (li.tax_rate_percent || 0)) / 100,
+          }));
+          const { error: liErr } = await supabase.from('bill_line_items').insert(billLineItems);
+          if (liErr) console.warn('Bill line items error:', liErr);
+        }
+
         toast.success('Bill created successfully!');
         resetState();
         navigate(createPageUrl('FinanceBills'));
+        return;
+
+      } else if (documentType === 'sales_invoice') {
+        // Save as sales invoice (Accounts Receivable)
+        const { data: newInvoice, error: invErr } = await supabase
+          .from('invoices')
+          .insert({
+            company_id: companyId,
+            user_id: user.id,
+            client_name: formData.vendor_name,
+            client_email: formData.vendor_email || null,
+            client_address: formData.vendor_address ? { line1: formData.vendor_address } : null,
+            client_country: formData.vendor_country || 'NL',
+            subtotal: formData.subtotal || 0,
+            tax_rate: formData.tax_rate || 21,
+            tax_amount: taxAmount,
+            total: amount,
+            status: 'draft',
+            invoice_type: 'customer',
+            due_date: formData.due_date || null,
+            description: formData.notes || '',
+            items: lineItems.map(li => ({
+              description: li.description,
+              quantity: li.quantity || 1,
+              unit_price: li.unit_price || 0,
+              name: li.description,
+            })),
+            btw_rubric: taxDecision?.btw_rubric || null,
+            tax_mechanism: taxDecision?.mechanism || 'standard_btw',
+          })
+          .select('id, invoice_number')
+          .single();
+
+        if (invErr) throw new Error(`Failed to create sales invoice: ${invErr.message}`);
+
+        toast.success(`Sales invoice ${newInvoice?.invoice_number || ''} created as draft!`);
+        resetState();
+        navigate(createPageUrl('FinanceInvoices'));
         return;
 
       } else if (documentType === 'credit_note') {
@@ -857,7 +917,7 @@ export default function FinanceSmartImport() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Building className="w-4 h-4 text-cyan-400" /> Vendor / Supplier
+                      <Building className="w-4 h-4 text-cyan-400" /> {documentType === 'sales_invoice' ? 'Customer / Buyer' : 'Vendor / Supplier'}
                       {formData.vendor_country && (
                         <Badge variant="outline" className="text-xs border-zinc-600 text-zinc-300 ml-1">
                           <Flag className="w-3 h-3 mr-1" /> {formData.vendor_country}

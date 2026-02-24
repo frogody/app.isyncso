@@ -134,7 +134,7 @@ interface TaxDecision {
   btw_rubric: string | null;
 }
 
-type DocumentType = "expense" | "bill" | "credit_note" | "proforma";
+type DocumentType = "expense" | "bill" | "credit_note" | "proforma" | "sales_invoice";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -938,9 +938,10 @@ function determineTaxDecision(
 
 // ─── Document Type Classification (Phase 2C) ─────────────────────────────────
 
-function classifyDocumentType(flat: FlatExtraction): { type: DocumentType; confidence: number } {
+function classifyDocumentType(flat: FlatExtraction, myCompany?: SmartImportRequest["myCompany"]): { type: DocumentType; confidence: number } {
   const label = (flat.document_label || "").toLowerCase();
   const total = flat.total ?? 0;
+  const strip = (s: string) => s.replace(/[\s.\-]/g, "").toUpperCase();
 
   // Credit note detection
   if (
@@ -953,6 +954,18 @@ function classifyDocumentType(flat: FlatExtraction): { type: DocumentType; confi
   // Proforma detection
   if (/pro\s*forma|proforma/i.test(label)) {
     return { type: "proforma", confidence: 0.90 };
+  }
+
+  // Sales invoice detection: supplier matches user's own company
+  if (myCompany?.name && flat.supplier_name) {
+    const myName = myCompany.name.toLowerCase().trim();
+    const supplierName = flat.supplier_name.toLowerCase().trim();
+    const isMySalesInvoice =
+      supplierName.includes(myName) || myName.includes(supplierName) ||
+      (myCompany.vat && flat.supplier_vat && strip(myCompany.vat) === strip(flat.supplier_vat));
+    if (isMySalesInvoice) {
+      return { type: "sales_invoice", confidence: 0.90 };
+    }
   }
 
   // Bill detection (has due date or payment terms)
@@ -1445,7 +1458,7 @@ Deno.serve(async (req) => {
     console.log(`[SMART-IMPORT] Tax: ${taxDecision.mechanism} (rate: ${taxDecision.rate}%, self-assess: ${taxDecision.self_assess_rate}%)`);
 
     // Step 5: Document type classification
-    const docType = classifyDocumentType(flat);
+    const docType = classifyDocumentType(flat, myCompany);
     console.log(`[SMART-IMPORT] Doc type: ${docType.type} (confidence: ${docType.confidence})`);
 
     // Step 6: Build nested result
