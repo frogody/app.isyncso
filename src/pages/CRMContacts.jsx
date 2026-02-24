@@ -86,6 +86,10 @@ const PIPELINE_STAGES = [
   { id: "lost", label: "Lost", color: "bg-zinc-700", textColor: "text-zinc-500", bgColor: "bg-zinc-500/10", borderColor: "border-zinc-600/30" },
 ];
 
+// Contact types that use the sales pipeline stages
+const PIPELINE_TYPES = ['lead', 'prospect', 'target', 'contact'];
+const usesPipeline = (type) => PIPELINE_TYPES.includes(type);
+
 const CONTACT_SOURCES = [
   { id: "website", label: "Website" },
   { id: "referral", label: "Referral" },
@@ -222,9 +226,15 @@ function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange
 
       {/* Stage Badge */}
       <div className="flex items-center justify-between mb-3">
-        <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor}`}>
-          {stageConfig.label}
-        </Badge>
+        {usesPipeline(contact.contact_type) ? (
+          <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor}`}>
+            {stageConfig.label}
+          </Badge>
+        ) : (
+          <span className={`text-xs ${crt('text-slate-400', 'text-zinc-500')}`}>
+            {CONTACT_TYPES.find(t => t.id === contact.contact_type)?.label || contact.contact_type}
+          </span>
+        )}
         <LeadScoreIndicator score={contact.score || 50} crt={crt} />
       </div>
 
@@ -446,10 +456,16 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className={`p-3 ${crt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg text-center`}>
-            <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>Stage</div>
-            <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor}`}>
-              {stageConfig.label}
-            </Badge>
+            <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>{usesPipeline(contact?.contact_type) ? 'Stage' : 'Type'}</div>
+            {usesPipeline(contact?.contact_type) ? (
+              <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor}`}>
+                {stageConfig.label}
+              </Badge>
+            ) : (
+              <span className={`text-sm font-medium ${crt('text-slate-700', 'text-zinc-300')}`}>
+                {CONTACT_TYPES.find(t => t.id === contact?.contact_type)?.label || contact?.contact_type}
+              </span>
+            )}
           </div>
           <div className={`p-3 ${crt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg text-center`}>
             <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>Score</div>
@@ -1309,6 +1325,10 @@ export default function CRMContacts() {
 
   const handleTabChange = (tabId) => {
     setSearchParams(tabId === 'all' ? {} : { tab: tabId }, { replace: true });
+    // Reset stage filter when switching to a non-pipeline tab
+    if (!usesPipeline(tabId) && tabId !== 'all') {
+      setStageFilter('all');
+    }
   };
 
   return (
@@ -1377,8 +1397,8 @@ export default function CRMContacts() {
 
           <Button onClick={() => {
             setEditingContact(null);
-            const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'contact';
-            setFormData({ ...emptyContact, contact_type: preselectedType });
+            const preselectedType = selectedContactType !== 'all' ? selectedContactType : 'contact';
+            setFormData({ ...emptyContact, contact_type: preselectedType, stage: usesPipeline(preselectedType) ? 'new' : null });
             setShowModal(true);
           }} className="bg-cyan-600/80 hover:bg-cyan-600 text-white">
             <Plus className="w-4 h-4 mr-1" /> Add Contact
@@ -1499,6 +1519,7 @@ export default function CRMContacts() {
 
           {/* Filters - horizontal scroll on mobile */}
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 sm:overflow-visible sm:flex-wrap scrollbar-hide">
+            {(selectedContactType === 'all' || usesPipeline(selectedContactType)) && (
             <Select value={stageFilter} onValueChange={setStageFilter}>
               <SelectTrigger className={`w-[130px] sm:w-40 ${crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')} flex-shrink-0 h-10`}>
                 <SelectValue placeholder="Stage" />
@@ -1508,6 +1529,7 @@ export default function CRMContacts() {
                 {PIPELINE_STAGES.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
               </SelectContent>
             </Select>
+            )}
             <Select value={sourceFilter} onValueChange={setSourceFilter}>
               <SelectTrigger className={`w-[130px] sm:w-40 ${crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')} flex-shrink-0 h-10`}>
                 <SelectValue placeholder="Source" />
@@ -1548,7 +1570,7 @@ export default function CRMContacts() {
         </div>
 
         {/* Content Views */}
-        {viewMode === "pipeline" ? (
+        {viewMode === "pipeline" && (selectedContactType === 'all' || usesPipeline(selectedContactType)) ? (
           <DragDropContext onDragEnd={handleDragEnd}>
             <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 -mx-3 px-3 sm:-mx-4 sm:px-4 md:mx-0 md:px-0 snap-x snap-mandatory scrollbar-hide">
               {PIPELINE_STAGES.map(stage => (
@@ -1564,7 +1586,7 @@ export default function CRMContacts() {
               ))}
             </div>
           </DragDropContext>
-        ) : viewMode === "grid" ? (
+        ) : viewMode === "grid" || (viewMode === "pipeline" && !usesPipeline(selectedContactType)) ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {paginatedContacts.map(contact => (
               <ContactCard
@@ -1583,8 +1605,8 @@ export default function CRMContacts() {
                 <p className={`${crt('text-slate-400', 'text-zinc-500')} mb-6`}>Try adjusting your filters or add a new contact</p>
                 <Button onClick={() => {
                   setEditingContact(null);
-                  const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'contact';
-                  setFormData({ ...emptyContact, contact_type: preselectedType });
+                  const preselectedType = selectedContactType !== 'all' ? selectedContactType : 'contact';
+                  setFormData({ ...emptyContact, contact_type: preselectedType, stage: usesPipeline(preselectedType) ? 'new' : null });
                   setShowModal(true);
                 }} className="bg-cyan-600/80 hover:bg-cyan-600 text-white">
                   <Plus className="w-4 h-4 mr-1" /> Add Contact
@@ -1670,9 +1692,13 @@ export default function CRMContacts() {
                           {contact.job_title && <div className={`text-[10px] ${crt('text-slate-400', 'text-zinc-500')} truncate max-w-[120px]`}>{contact.job_title}</div>}
                         </td>
                         <td className="py-1 px-2">
-                          <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor} text-[10px] py-px px-1.5 whitespace-nowrap`}>
-                            {stageConfig.label}
-                          </Badge>
+                          {usesPipeline(contact.contact_type) ? (
+                            <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor} text-[10px] py-px px-1.5 whitespace-nowrap`}>
+                              {stageConfig.label}
+                            </Badge>
+                          ) : (
+                            <span className={`text-[10px] ${crt('text-slate-400', 'text-zinc-600')}`}>—</span>
+                          )}
                         </td>
                         <td className="py-1 px-2 hidden md:table-cell">
                           <LeadScoreIndicator score={contact.score || 50} size="xs" />
@@ -1817,7 +1843,14 @@ export default function CRMContacts() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Contact Type</label>
-                <Select value={formData.contact_type} onValueChange={(v) => setFormData(prev => ({ ...prev, contact_type: v }))}>
+                <Select value={formData.contact_type} onValueChange={(v) => {
+                  const shouldHaveStage = usesPipeline(v);
+                  setFormData(prev => ({
+                    ...prev,
+                    contact_type: v,
+                    stage: shouldHaveStage ? (prev.stage || 'new') : null,
+                  }));
+                }}>
                   <SelectTrigger className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}>
                     <SelectValue />
                   </SelectTrigger>
@@ -1828,9 +1861,10 @@ export default function CRMContacts() {
                   </SelectContent>
                 </Select>
               </div>
+              {usesPipeline(formData.contact_type) && (
               <div>
                 <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Stage</label>
-                <Select value={formData.stage} onValueChange={(v) => setFormData(prev => ({ ...prev, stage: v }))}>
+                <Select value={formData.stage || 'new'} onValueChange={(v) => setFormData(prev => ({ ...prev, stage: v }))}>
                   <SelectTrigger className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}>
                     <SelectValue />
                   </SelectTrigger>
@@ -1839,6 +1873,7 @@ export default function CRMContacts() {
                   </SelectContent>
                 </Select>
               </div>
+              )}
             </div>
 
             <div className="grid grid-cols-3 gap-4">
