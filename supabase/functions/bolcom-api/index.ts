@@ -2060,7 +2060,8 @@ serve(async (req) => {
 
         const t0 = Date.now();
         const elapsed = () => Date.now() - t0;
-        const BUDGET_MS = 140_000; // 140s hard budget (Supabase allows 150s)
+        const BUDGET_MS = 130_000; // 130s hard budget (Supabase allows 150s, keep 20s safety margin)
+        const DISCOVERY_BUDGET_MS = 80_000; // 80s for discovery, leaving 50s for fetching details + DB insertion
         console.log(`[bolcom-api] fetchOrders: start for company ${companyId}`);
 
         // Types
@@ -2100,16 +2101,46 @@ serve(async (req) => {
           shipTo?: Addr; billTo?: Addr; fm: string; shippedAt?: string;
         }
 
-        // Rate-limited sequential API call with 550ms spacing
+        // Rate-limited sequential API call with adaptive spacing
+        // bol.com allows ~25-50 req/min per endpoint; start fast, slow down on 429
         let lastCallTime = 0;
+        let apiCallCount = 0;
+        let callSpacing = 1200; // Start at 1.2s spacing (~50 req/min)
         const rateLimitedFetch = async <T>(endpoint: string): Promise<T | null> => {
-          if (elapsed() > BUDGET_MS) return null;
-          const wait = Math.max(0, 550 - (Date.now() - lastCallTime));
+          if (elapsed() > BUDGET_MS) { console.log(`[bolcom-api] BUDGET EXCEEDED at ${elapsed()}ms, skipping ${endpoint}`); return null; }
+          const wait = Math.max(0, callSpacing - (Date.now() - lastCallTime));
           if (wait > 0) await new Promise(r => setTimeout(r, wait));
           lastCallTime = Date.now();
-          try {
-            return await bolFetch<T>(tokenRes.token, endpoint, "GET", undefined, undefined, 1);
-          } catch { return null; }
+          apiCallCount++;
+          // Direct fetch to handle 429 gracefully without bolFetch's long retry waits
+          const url = `${BOL_API_BASE}${endpoint}`;
+          const contentType = "application/vnd.retailer.v10+json";
+          for (let attempt = 0; attempt < 3; attempt++) {
+            if (elapsed() > BUDGET_MS) return null;
+            try {
+              const resp = await fetch(url, {
+                method: "GET",
+                headers: { "Authorization": `Bearer ${tokenRes.token}`, "Content-Type": contentType, "Accept": contentType },
+              });
+              if (resp.status === 429) {
+                const retryAfter = Math.min(parseInt(resp.headers.get("Retry-After") || "5", 10), 15);
+                callSpacing = Math.min(callSpacing * 1.5, 5000); // Slow down, max 5s spacing
+                console.warn(`[bolcom-api] 429 on ${endpoint}, retry after ${retryAfter}s (spacing now ${callSpacing}ms)`);
+                await new Promise(r => setTimeout(r, retryAfter * 1000));
+                continue;
+              }
+              if (resp.status === 401) { console.error(`[bolcom-api] 401 on ${endpoint}`); return null; }
+              if (!resp.ok) { console.warn(`[bolcom-api] ${resp.status} on ${endpoint}`); return null; }
+              if (resp.status === 204) return {} as T;
+              return (await resp.json()) as T;
+            } catch (err: unknown) {
+              const msg = err instanceof Error ? err.message : String(err);
+              console.warn(`[bolcom-api] API call #${apiCallCount} error on ${endpoint}: ${msg}`);
+              if (attempt < 2) { await new Promise(r => setTimeout(r, 2000)); continue; }
+              return null;
+            }
+          }
+          return null;
         };
 
         // ── Phase 1: Discover order IDs (sequential, rate-limited) ──
@@ -2119,70 +2150,84 @@ serve(async (req) => {
         const returnData = new Map<string, { date: string; fm: string; items: RItem[] }>();
         const allOrderIds = new Set<string>();
 
-        // 1a. Orders list (status=ALL) — paginate until empty or budget exhausted
-        for (let page = 1; page <= 100; page++) {
-          if (elapsed() > BUDGET_MS) break;
-          const res = await rateLimitedFetch<{ orders?: BolOrder[] }>(`/orders?status=ALL&page=${page}`);
-          if (!res?.orders?.length) break;
-          for (const o of res.orders) { allOrderIds.add(o.orderId); orderCache.set(o.orderId, o); }
-          if (res.orders.length < 50) break;
-        }
-        console.log(`[bolcom-api] fetchOrders: ${elapsed()}ms - ${allOrderIds.size} from orders list`);
-
-        // 1b. Shipments FBB — paginate until empty or budget exhausted
-        for (let page = 1; page <= 50; page++) {
-          if (elapsed() > BUDGET_MS) break;
-          const res = await rateLimitedFetch<{ shipments?: SListItem[] }>(`/shipments?page=${page}&fulfilment-method=FBB`);
-          if (!res?.shipments?.length) break;
-          for (const s of res.shipments) {
-            shipmentIds.push(s.shipmentId);
-            for (const item of (s.shipmentItems || [])) { if (item.orderId) allOrderIds.add(item.orderId); }
+        // 1a. Orders list — both FBB and FBR with full 3-month window
+        // Use fulfilment-method filter separately to maximize coverage
+        let ordersListPages = 0;
+        for (const fm of ['FBB', 'FBR']) {
+          for (let page = 1; page <= 100; page++) {
+            if (elapsed() > DISCOVERY_BUDGET_MS) { console.log(`[bolcom-api] 1a-${fm}: discovery budget exhausted at page ${page}`); break; }
+            const res = await rateLimitedFetch<{ orders?: BolOrder[] }>(`/orders?status=ALL&fulfilment-method=${fm}&page=${page}`);
+            if (!res) { console.log(`[bolcom-api] 1a-${fm}: null response at page ${page}, elapsed=${elapsed()}ms`); break; }
+            if (!res.orders?.length) { console.log(`[bolcom-api] 1a-${fm}: empty orders at page ${page}, keys=${Object.keys(res).join(',')}, elapsed=${elapsed()}ms`); break; }
+            ordersListPages++;
+            const sizeBefore = allOrderIds.size;
+            for (const o of res.orders) { allOrderIds.add(o.orderId); orderCache.set(o.orderId, o); }
+            if (page <= 3 || page % 10 === 0) console.log(`[bolcom-api] 1a-${fm}: page ${page} → ${res.orders.length} orders (total unique: ${allOrderIds.size}, new: ${allOrderIds.size - sizeBefore})`);
+            if (res.orders.length < 50) break;
           }
-          if (res.shipments.length < 50) break;
         }
-        console.log(`[bolcom-api] fetchOrders: ${elapsed()}ms - ${shipmentIds.length} FBB shipments, ${allOrderIds.size} total orders`);
+        console.log(`[bolcom-api] fetchOrders: ${elapsed()}ms - ${allOrderIds.size} from ${ordersListPages} pages of orders list (FBB+FBR)`);
 
-        // 1c. Returns FBB (handled=true) — paginate until empty or budget exhausted
-        for (let page = 1; page <= 50; page++) {
-          if (elapsed() > BUDGET_MS) break;
-          const res = await rateLimitedFetch<{ returns?: REntry[] }>(`/returns?handled=true&fulfilment-method=FBB&page=${page}`);
-          if (!res?.returns?.length) break;
-          for (const ret of res.returns) {
-            for (const item of (ret.returnItems || [])) {
-              if (!item.orderId) continue;
-              allOrderIds.add(item.orderId);
-              if (!returnData.has(item.orderId)) {
-                returnData.set(item.orderId, { date: ret.registrationDateTime, fm: ret.fulfilmentMethod || 'FBB', items: [] });
-              }
-              const ex = returnData.get(item.orderId)!;
-              if (!ex.items.find(i => i.rmaId === item.rmaId)) ex.items.push(item);
+        // 1b. Shipments — both FBB and FBR, paginate until empty or discovery budget exhausted
+        for (const fm of ['FBB', 'FBR']) {
+          for (let page = 1; page <= 100; page++) {
+            if (elapsed() > DISCOVERY_BUDGET_MS) break;
+            const res = await rateLimitedFetch<{ shipments?: SListItem[] }>(`/shipments?page=${page}&fulfilment-method=${fm}`);
+            if (!res?.shipments?.length) break;
+            for (const s of res.shipments) {
+              shipmentIds.push(s.shipmentId);
+              for (const item of (s.shipmentItems || [])) { if (item.orderId) allOrderIds.add(item.orderId); }
             }
+            if (res.shipments.length < 50) break;
           }
-          if (res.returns.length < 50) break;
+        }
+        console.log(`[bolcom-api] fetchOrders: ${elapsed()}ms - ${shipmentIds.length} shipments (FBB+FBR), ${allOrderIds.size} total orders`);
+
+        // 1c. Returns (handled=true) — both FBB and FBR
+        for (const fm of ['FBB', 'FBR']) {
+          for (let page = 1; page <= 50; page++) {
+            if (elapsed() > DISCOVERY_BUDGET_MS) break;
+            const res = await rateLimitedFetch<{ returns?: REntry[] }>(`/returns?handled=true&fulfilment-method=${fm}&page=${page}`);
+            if (!res?.returns?.length) break;
+            for (const ret of res.returns) {
+              for (const item of (ret.returnItems || [])) {
+                if (!item.orderId) continue;
+                allOrderIds.add(item.orderId);
+                if (!returnData.has(item.orderId)) {
+                  returnData.set(item.orderId, { date: ret.registrationDateTime, fm: ret.fulfilmentMethod || fm, items: [] });
+                }
+                const ex = returnData.get(item.orderId)!;
+                if (!ex.items.find(i => i.rmaId === item.rmaId)) ex.items.push(item);
+              }
+            }
+            if (res.returns.length < 50) break;
+          }
         }
 
-        // 1d. Returns FBB (handled=false) — paginate until empty or budget exhausted
-        for (let page = 1; page <= 50; page++) {
-          if (elapsed() > BUDGET_MS) break;
-          const res = await rateLimitedFetch<{ returns?: REntry[] }>(`/returns?handled=false&fulfilment-method=FBB&page=${page}`);
-          if (!res?.returns?.length) break;
-          for (const ret of res.returns) {
-            for (const item of (ret.returnItems || [])) {
-              if (!item.orderId) continue;
-              allOrderIds.add(item.orderId);
-              if (!returnData.has(item.orderId)) {
-                returnData.set(item.orderId, { date: ret.registrationDateTime, fm: ret.fulfilmentMethod || 'FBB', items: [] });
+        // 1d. Returns (handled=false) — both FBB and FBR
+        for (const fm of ['FBB', 'FBR']) {
+          for (let page = 1; page <= 50; page++) {
+            if (elapsed() > DISCOVERY_BUDGET_MS) break;
+            const res = await rateLimitedFetch<{ returns?: REntry[] }>(`/returns?handled=false&fulfilment-method=${fm}&page=${page}`);
+            if (!res?.returns?.length) break;
+            for (const ret of res.returns) {
+              for (const item of (ret.returnItems || [])) {
+                if (!item.orderId) continue;
+                allOrderIds.add(item.orderId);
+                if (!returnData.has(item.orderId)) {
+                  returnData.set(item.orderId, { date: ret.registrationDateTime, fm: ret.fulfilmentMethod || fm, items: [] });
+                }
+                const ex = returnData.get(item.orderId)!;
+                if (!ex.items.find(i => i.rmaId === item.rmaId)) ex.items.push(item);
               }
-              const ex = returnData.get(item.orderId)!;
-              if (!ex.items.find(i => i.rmaId === item.rmaId)) ex.items.push(item);
             }
+            if (res.returns.length < 50) break;
           }
-          if (res.returns.length < 50) break;
         }
         console.log(`[bolcom-api] fetchOrders: ${elapsed()}ms - ${allOrderIds.size} total unique orders discovered`);
 
         if (allOrderIds.size === 0) {
-          result = { success: true, data: { ordersFound: 0, ordersSynced: 0, itemsSynced: 0, customersCreated: 0, elapsed: elapsed() } };
+          result = { success: true, data: { ordersFound: 0, ordersSynced: 0, itemsSynced: 0, customersCreated: 0, elapsed: elapsed(), apiCalls: apiCallCount, ordersListPages, debug: 'no_order_ids_discovered' } };
           break;
         }
 
