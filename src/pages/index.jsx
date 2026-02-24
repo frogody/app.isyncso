@@ -1043,7 +1043,7 @@ function PagesContent() {
       'raise', 'raiseinvestors', 'raisepitchdecks', 'raisedataroom', 'raisecampaigns',
       'raiseenrich', 'teammanagement', 'agentdetail',
       'storedashboard', 'b2b', 'marketplace',
-      'products', 'productsdigital', 'productsphysical', 'productsservices', 'productdetail', 'productsalesanalytics',
+      'products', 'productsdigital', 'productsphysical', 'productsservices', 'productdetail', 'productdatahealth', 'productsalesanalytics',
       'create', 'createbranding', 'createimages', 'createvideos', 'createlibrary',
       'contentcalendar', 'syncstudiohome', 'syncstudio', 'syncstudioimport',
       'syncstudiodashboard', 'syncstudiophotoshoot', 'syncstudioresults', 'syncstudioreturn',
