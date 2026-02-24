@@ -332,10 +332,24 @@ export default function BolcomSettings() {
     setCsvResult(null);
     try {
       const text = await csvFile.text();
-      const res = await callBolcomApi("importOrders", { companyId, csvData: text });
+      // Detect analytics format vs order-level format by checking headers
+      const firstLine = text.split("\n")[0].toLowerCase();
+      const isAnalytics = firstLine.includes("bestellingen") && firstLine.includes("ean") && firstLine.includes("klantbezoeken");
+
+      // Extract period from filename (bolcom_ID_YYYY-MM-DD_YYYY-MM-DD.csv)
+      const dateMatch = csvFile.name.match(/(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})/);
+      const periodStart = dateMatch ? dateMatch[1] : "2025-11-01";
+      const periodEnd = dateMatch ? dateMatch[2] : "2026-02-24";
+
+      const action = isAnalytics ? "importAnalytics" : "importOrders";
+      const params = isAnalytics
+        ? { companyId, csvData: text, periodStart, periodEnd }
+        : { companyId, csvData: text };
+
+      const res = await callBolcomApi(action, params);
       if (!res.success) throw new Error(res.error);
       setCsvResult(res.data);
-      toast.success(`Imported ${res.data.imported} orders (${res.data.skipped} duplicates skipped)`);
+      toast.success(`Imported ${res.data.imported} orders (${res.data.skipped} skipped)`);
     } catch (err) {
       toast.error(err.message || "CSV import failed");
       setCsvResult({ error: err.message });

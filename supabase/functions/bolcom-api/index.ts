@@ -2790,6 +2790,189 @@ serve(async (req) => {
         break;
       }
 
+      // ================================================================
+      // IMPORT ANALYTICS — create order records from bol.com product analytics CSV
+      // ================================================================
+      case "importAnalytics": {
+        const csvData = body.csvData as string;
+        const periodStart = body.periodStart as string || "2025-11-01";
+        const periodEnd = body.periodEnd as string || "2026-02-24";
+        if (!csvData) { result = { success: false, error: "csvData is required" }; break; }
+
+        const lines = csvData.split("\n").map(l => l.trim()).filter(Boolean);
+        if (lines.length < 2) { result = { success: false, error: "CSV needs header + data rows" }; break; }
+
+        const delimiter = lines[0].includes(";") ? ";" : ",";
+        const parseRow = (line: string): string[] => {
+          const res: string[] = [];
+          let cur = "", inQ = false;
+          for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') { inQ = !inQ; continue; }
+            if (ch === delimiter && !inQ) { res.push(cur.trim()); cur = ""; continue; }
+            cur += ch;
+          }
+          res.push(cur.trim());
+          return res;
+        };
+
+        const headers = parseRow(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9_()]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, ""));
+
+        // Find columns: EAN, Titel, Prijs, Bestellingen (Totaal)
+        const findCol = (needles: string[]): number => {
+          for (const n of needles) {
+            const idx = headers.findIndex(h => h.includes(n));
+            if (idx >= 0) return idx;
+          }
+          return -1;
+        };
+
+        const colEan = findCol(["ean"]);
+        const colTitle = findCol(["titel", "title"]);
+        const colPrice = findCol(["prijs", "price"]);
+        const colOrders = findCol(["bestellingen_(totaal)", "bestellingen_totaal", "orders_total"]);
+        const colSales = findCol(["verkopen_(totaal)", "verkopen_totaal", "sales_total"]);
+
+        if (colEan < 0 || colOrders < 0) {
+          result = { success: false, error: `Could not find EAN or Bestellingen columns. Headers: ${headers.join(", ")}` };
+          break;
+        }
+
+        // Parse product rows
+        interface ProdRow { ean: string; title: string; price: number; orders: number; sales: number; }
+        const products: ProdRow[] = [];
+        let totalOrders = 0;
+        for (let i = 1; i < lines.length; i++) {
+          const vals = parseRow(lines[i]);
+          const ean = vals[colEan]?.trim();
+          const ordersVal = parseInt(vals[colOrders]) || 0;
+          if (!ean || ordersVal <= 0) continue;
+          let priceStr = colPrice >= 0 ? (vals[colPrice] || "0") : "0";
+          priceStr = priceStr.replace(/[€\s]/g, "").replace(",", ".");
+          products.push({
+            ean,
+            title: colTitle >= 0 ? (vals[colTitle] || `EAN: ${ean}`) : `EAN: ${ean}`,
+            price: parseFloat(priceStr) || 0,
+            orders: ordersVal,
+            sales: colSales >= 0 ? (parseInt(vals[colSales]) || ordersVal) : ordersVal,
+          });
+          totalOrders += ordersVal;
+        }
+        console.log(`[bolcom-api] importAnalytics: ${products.length} products with ${totalOrders} total orders`);
+
+        // Count existing orders per EAN for this company in the period
+        const eanList = products.map(p => p.ean);
+        const existingByEan = new Map<string, number>();
+        for (let i = 0; i < eanList.length; i += 100) {
+          const batch = eanList.slice(i, i + 100);
+          const { data: items } = await supabase
+            .from("sales_order_items")
+            .select("ean, sales_order_id, sales_orders!inner(company_id, source, order_date)")
+            .eq("sales_orders.company_id", companyId)
+            .eq("sales_orders.source", "bolcom")
+            .gte("sales_orders.order_date", periodStart)
+            .in("ean", batch);
+          for (const item of (items || []) as Array<{ ean: string }>) {
+            existingByEan.set(item.ean, (existingByEan.get(item.ean) || 0) + 1);
+          }
+        }
+
+        // Check which HIST records already exist
+        const existingHist = new Set<string>();
+        for (let i = 0; i < eanList.length; i += 200) {
+          const refs = eanList.slice(i, i + 200).flatMap(e => Array.from({ length: 100 }, (_, j) => `HIST-${e}-${j + 1}`));
+          // Only check first few per EAN
+          const { data: rows } = await supabase.from("sales_orders")
+            .select("external_reference")
+            .eq("company_id", companyId).eq("source", "bolcom")
+            .like("external_reference", "HIST-%")
+            .limit(5000);
+          for (const r of (rows || []) as Array<{ external_reference: string }>) existingHist.add(r.external_reference);
+        }
+
+        // Product lookup
+        const eanProdMap = new Map<string, string>();
+        for (let i = 0; i < eanList.length; i += 100) {
+          const { data } = await supabase.from("products").select("id, ean").eq("company_id", companyId).in("ean", eanList.slice(i, i + 100));
+          for (const p of (data || []) as Array<{ id: string; ean: string }>) eanProdMap.set(p.ean, p.id);
+        }
+
+        // Generate date spread across the period
+        const startMs = new Date(periodStart).getTime();
+        const endMs = new Date(periodEnd).getTime();
+        const spanMs = endMs - startMs;
+
+        // Build order records — only for the gap between CSV total and existing DB count
+        let imported = 0, skipped = 0, itemsCreated = 0;
+        let orderIdx = 0;
+        const totalToCreate = products.reduce((acc, p) => {
+          const existing = existingByEan.get(p.ean) || 0;
+          return acc + Math.max(0, p.orders - existing);
+        }, 0);
+
+        for (const prod of products) {
+          const existingCount = existingByEan.get(prod.ean) || 0;
+          const toCreate = Math.max(0, prod.orders - existingCount);
+          if (toCreate <= 0) { skipped += prod.orders; continue; }
+
+          // Create orders in batches of 10
+          for (let batch = 0; batch < toCreate; batch += 10) {
+            const batchSize = Math.min(10, toCreate - batch);
+            const orderRows = [];
+            const batchRefs: string[] = [];
+
+            for (let j = 0; j < batchSize; j++) {
+              const idx = existingCount + batch + j + 1;
+              const ref = `HIST-${prod.ean}-${idx}`;
+              if (existingHist.has(ref)) { skipped++; continue; }
+              // Spread date across period
+              const dateFrac = totalToCreate > 1 ? orderIdx / totalToCreate : 0.5;
+              const orderDate = new Date(startMs + dateFrac * spanMs).toISOString();
+              orderIdx++;
+
+              orderRows.push({
+                company_id: companyId, customer_id: null,
+                order_number: `BOL-HIST-${prod.ean.slice(-6)}-${idx}`,
+                external_reference: ref,
+                order_date: orderDate, status: "delivered", source: "bolcom",
+                subtotal: prod.price, total: prod.price, currency: "EUR",
+                payment_status: "paid", billing_same_as_shipping: true,
+                metadata: { import_source: "analytics_csv", ean: prod.ean, period: `${periodStart}_${periodEnd}` },
+              });
+              batchRefs.push(ref);
+            }
+
+            if (orderRows.length === 0) continue;
+
+            const { data: ins, error: err } = await supabase.from("sales_orders").insert(orderRows).select("id, external_reference");
+            if (err) { console.warn(`[bolcom-api] importAnalytics: batch fail: ${err.message}`); continue; }
+
+            const insMap = new Map((ins || []).map((r: { id: string; external_reference: string }) => [r.external_reference, r.id]));
+            imported += insMap.size;
+
+            // Insert items
+            const itemRows: Array<Record<string, unknown>> = [];
+            for (const [ref, soId] of insMap) {
+              itemRows.push({
+                sales_order_id: soId, product_id: eanProdMap.get(prod.ean) || null,
+                description: prod.title, ean: prod.ean,
+                quantity: 1, unit_price: prod.price,
+                line_total: prod.price, line_number: 1,
+                tax_percent: 21, tax_amount: prod.price * 0.21 / 1.21,
+              });
+            }
+            if (itemRows.length > 0) {
+              const { error: ie } = await supabase.from("sales_order_items").insert(itemRows);
+              if (!ie) itemsCreated += itemRows.length;
+            }
+          }
+        }
+
+        console.log(`[bolcom-api] importAnalytics done: ${imported} orders created, ${skipped} skipped, ${totalOrders} total in CSV`);
+        result = { success: true, data: { imported, itemsCreated, skipped, totalInCsv: totalOrders, totalProducts: products.length, periodStart, periodEnd } };
+        break;
+      }
+
       default:
         result = { success: false, error: `Unknown action: ${action}` };
     }
