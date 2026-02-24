@@ -1392,7 +1392,7 @@ function PagesContent() {
 
                 <Route path="/ProductDetail" element={<ProductDetail />} />
 
-                <Route path="/ProductDataHealth" element={<ProductDataHealth />} />
+                <Route path="/productdatahealth" element={<ProductDataHealth />} />
 
                 <Route path="/Create" element={<Create />} />
 
