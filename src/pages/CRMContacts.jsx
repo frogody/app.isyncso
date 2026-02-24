@@ -235,11 +235,13 @@ function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange
             {CONTACT_TYPES.find(t => t.id === contact.contact_type)?.label || contact.contact_type}
           </span>
         )}
-        <LeadScoreIndicator score={contact.score || 50} crt={crt} />
+        {usesPipeline(contact.contact_type) && (
+          <LeadScoreIndicator score={contact.score || 50} crt={crt} />
+        )}
       </div>
 
       {/* Deal Value */}
-      {contact.deal_value && (
+      {usesPipeline(contact.contact_type) && contact.deal_value && (
         <div className="flex items-center justify-between text-sm mb-3">
           <span className={crt('text-slate-400', 'text-zinc-500')}>Deal Value</span>
           <span className="font-semibold text-cyan-400/80">€{parseFloat(contact.deal_value).toLocaleString()}</span>
@@ -338,7 +340,7 @@ function PipelineCard({ contact, index, onEdit, onDelete, crt: crtProp }) {
               </DropdownMenu>
             </div>
 
-            {contact.deal_value && (
+            {usesPipeline(contact.contact_type) && contact.deal_value && (
               <div className="flex items-center gap-1 text-sm font-medium text-cyan-400/80 ml-6 mb-2">
                 <Euro className="w-3.5 h-3.5" />
                 {parseFloat(contact.deal_value).toLocaleString()}
@@ -350,7 +352,9 @@ function PipelineCard({ contact, index, onEdit, onDelete, crt: crtProp }) {
                 {contact.email && <Mail className={`w-3 h-3 ${crt('text-slate-500', 'text-zinc-600')}`} />}
                 {contact.phone && <Phone className={`w-3 h-3 ${crt('text-slate-500', 'text-zinc-600')}`} />}
               </div>
-              <LeadScoreIndicator score={contact.score || 50} crt={crt} />
+              {usesPipeline(contact.contact_type) && (
+                <LeadScoreIndicator score={contact.score || 50} crt={crt} />
+              )}
             </div>
           </div>
         </motion.div>
@@ -467,16 +471,20 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
               </span>
             )}
           </div>
+          {usesPipeline(contact?.contact_type) && (
           <div className={`p-3 ${crt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg text-center`}>
             <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>Score</div>
             <LeadScoreIndicator score={contact.score || 50} crt={crt} />
           </div>
+          )}
+          {usesPipeline(contact?.contact_type) && (
           <div className={`p-3 ${crt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg text-center`}>
             <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>Deal Value</div>
             <div className={`text-lg font-bold ${crt('text-slate-900', 'text-white')}`}>
               €{parseFloat(contact.deal_value || 0).toLocaleString()}
             </div>
           </div>
+          )}
         </div>
 
         {/* Quick Actions */}
@@ -1701,12 +1709,20 @@ export default function CRMContacts() {
                           )}
                         </td>
                         <td className="py-1 px-2 hidden md:table-cell">
-                          <LeadScoreIndicator score={contact.score || 50} size="xs" />
+                          {usesPipeline(contact.contact_type) ? (
+                            <LeadScoreIndicator score={contact.score || 50} size="xs" />
+                          ) : (
+                            <span className={`text-[10px] ${crt('text-slate-400', 'text-zinc-600')}`}>—</span>
+                          )}
                         </td>
                         <td className="py-1 px-2">
-                          <span className={`font-medium ${crt('text-slate-900', 'text-white')} text-xs whitespace-nowrap`}>
-                            {contact.deal_value ? `€${parseFloat(contact.deal_value).toLocaleString()}` : "-"}
-                          </span>
+                          {usesPipeline(contact.contact_type) ? (
+                            <span className={`font-medium ${crt('text-slate-900', 'text-white')} text-xs whitespace-nowrap`}>
+                              {contact.deal_value ? `€${parseFloat(contact.deal_value).toLocaleString()}` : "-"}
+                            </span>
+                          ) : (
+                            <span className={`text-[10px] ${crt('text-slate-400', 'text-zinc-600')}`}>—</span>
+                          )}
                         </td>
                         <td className="py-1 px-2 hidden lg:table-cell">
                           <span className={`text-[11px] ${crt('text-slate-500', 'text-zinc-400')} capitalize whitespace-nowrap`}>{contact.source?.replace(/_/g, ' ') || "-"}</span>
@@ -1876,7 +1892,7 @@ export default function CRMContacts() {
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className={`grid ${usesPipeline(formData.contact_type) ? 'grid-cols-3' : 'grid-cols-2'} gap-4`}>
               <div>
                 <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Source</label>
                 <Select value={formData.source} onValueChange={(v) => setFormData(prev => ({ ...prev, source: v }))}>
@@ -1888,6 +1904,7 @@ export default function CRMContacts() {
                   </SelectContent>
                 </Select>
               </div>
+              {usesPipeline(formData.contact_type) && (
               <div>
                 <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Lead Score</label>
                 <Input
@@ -1899,8 +1916,19 @@ export default function CRMContacts() {
                   className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                 />
               </div>
+              )}
+              <div>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Location</label>
+                <Input
+                  placeholder="New York, NY"
+                  value={formData.location}
+                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
+                />
+              </div>
             </div>
 
+            {usesPipeline(formData.contact_type) && (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Deal Value ($)</label>
@@ -1912,16 +1940,8 @@ export default function CRMContacts() {
                   className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                 />
               </div>
-              <div>
-                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Location</label>
-                <Input
-                  placeholder="New York, NY"
-                  value={formData.location}
-                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
-                />
-              </div>
             </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
