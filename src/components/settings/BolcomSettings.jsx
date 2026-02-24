@@ -15,8 +15,9 @@ import { toast } from "sonner";
 import {
   ShoppingBag, Key, RefreshCw, Check, X, AlertTriangle,
   Loader2, Eye, EyeOff, ArrowRightLeft, Package, Truck,
-  Download, ChevronDown, ChevronUp,
+  Download, ChevronDown, ChevronUp, Upload, FileSpreadsheet,
 } from "lucide-react";
+import Papa from "papaparse";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -85,6 +86,12 @@ export default function BolcomSettings() {
   const [repHistory, setRepHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+
+  // CSV import
+  const [csvFile, setCsvFile] = useState(null);
+  const [csvPreview, setCsvPreview] = useState(null);
+  const [importingCsv, setImportingCsv] = useState(false);
+  const [csvResult, setCsvResult] = useState(null);
 
   // Check if credentials exist
   useEffect(() => {
@@ -299,6 +306,44 @@ export default function BolcomSettings() {
     }
   };
 
+  // CSV file handling
+  const handleCsvFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCsvFile(file);
+    setCsvResult(null);
+    Papa.parse(file, {
+      header: true,
+      preview: 5,
+      skipEmptyLines: true,
+      complete: (results) => {
+        setCsvPreview({ headers: results.meta.fields || [], rows: results.data });
+      },
+      error: () => {
+        toast.error("Failed to parse CSV file");
+        setCsvFile(null);
+      },
+    });
+  };
+
+  const handleCsvImport = async () => {
+    if (!csvFile || !companyId) return;
+    setImportingCsv(true);
+    setCsvResult(null);
+    try {
+      const text = await csvFile.text();
+      const res = await callBolcomApi("importOrders", { companyId, csvData: text });
+      if (!res.success) throw new Error(res.error);
+      setCsvResult(res.data);
+      toast.success(`Imported ${res.data.imported} orders (${res.data.skipped} duplicates skipped)`);
+    } catch (err) {
+      toast.error(err.message || "CSV import failed");
+      setCsvResult({ error: err.message });
+    } finally {
+      setImportingCsv(false);
+    }
+  };
+
   const cardClass = `rounded-xl p-5 ${t("bg-white border border-gray-200", "bg-zinc-900/60 border border-zinc-800")}`;
   const labelClass = `block text-sm font-medium mb-1 ${t("text-gray-700", "text-zinc-300")}`;
   const mutedClass = t("text-gray-500", "text-zinc-500");
@@ -402,6 +447,97 @@ export default function BolcomSettings() {
           )}
         </div>
       </div>
+
+      {/* Import Historical Orders (CSV) */}
+      {hasCreds && (
+        <div className={cardClass}>
+          <h3 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${t("text-gray-900", "text-white")}`}>
+            <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
+            Import Historical Orders
+          </h3>
+          <p className={`text-sm mb-4 ${mutedClass}`}>
+            Upload a CSV export from your bol.com seller dashboard to import historical orders beyond the 3-month API limit.
+          </p>
+
+          <div className="flex items-center gap-3 mb-3">
+            <label className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer text-sm ${t("border-gray-300 hover:bg-gray-50 text-gray-700", "border-zinc-700 hover:bg-zinc-800 text-zinc-300")}`}>
+              <Upload className="w-3.5 h-3.5" />
+              {csvFile ? csvFile.name : "Choose CSV file"}
+              <input type="file" accept=".csv,.txt,.tsv" className="hidden" onChange={handleCsvFileChange} />
+            </label>
+            {csvFile && (
+              <Button
+                onClick={handleCsvImport}
+                disabled={importingCsv}
+                size="sm"
+                className="bg-cyan-600 hover:bg-cyan-700 text-white gap-1"
+              >
+                {importingCsv ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                {importingCsv ? "Importing..." : "Import Orders"}
+              </Button>
+            )}
+            {csvFile && !importingCsv && (
+              <button onClick={() => { setCsvFile(null); setCsvPreview(null); setCsvResult(null); }} className={`text-xs ${mutedClass} hover:text-red-400`}>Clear</button>
+            )}
+          </div>
+
+          {/* CSV Preview */}
+          {csvPreview && !csvResult && (
+            <div className={`rounded-lg overflow-hidden border ${t("border-gray-200", "border-zinc-800")}`}>
+              <div className={`px-3 py-1.5 text-xs font-medium ${t("bg-gray-50 text-gray-600", "bg-zinc-800/80 text-zinc-400")}`}>
+                Preview — {csvPreview.headers.length} columns, showing first {csvPreview.rows.length} rows
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className={t("bg-gray-50", "bg-zinc-900/50")}>
+                      {csvPreview.headers.map((h, i) => (
+                        <th key={i} className={`px-2 py-1 text-left font-medium ${mutedClass}`}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {csvPreview.rows.map((row, i) => (
+                      <tr key={i} className={t("border-t border-gray-100", "border-t border-zinc-800/50")}>
+                        {csvPreview.headers.map((h, j) => (
+                          <td key={j} className={`px-2 py-1 ${t("text-gray-700", "text-zinc-300")} max-w-[200px] truncate`}>{row[h]}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Import Results */}
+          {csvResult && !csvResult.error && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
+              <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                <p className="text-2xl font-bold text-cyan-400">{csvResult.imported}</p>
+                <p className={`text-xs ${mutedClass}`}>Imported</p>
+              </div>
+              <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{csvResult.skipped}</p>
+                <p className={`text-xs ${mutedClass}`}>Duplicates Skipped</p>
+              </div>
+              <div className={`p-3 rounded-lg text-center ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{csvResult.itemsImported || 0}</p>
+                <p className={`text-xs ${mutedClass}`}>Items</p>
+              </div>
+              <div className={`p-3 rounded-lg text-center ${csvResult.insertErrors > 0 ? "bg-red-500/10" : t("bg-gray-50", "bg-zinc-800/50")}`}>
+                <p className={`text-2xl font-bold ${csvResult.insertErrors > 0 ? "text-red-400" : t("text-gray-900", "text-white")}`}>{csvResult.insertErrors || 0}</p>
+                <p className={`text-xs ${mutedClass}`}>Errors</p>
+              </div>
+            </div>
+          )}
+          {csvResult?.error && (
+            <div className="mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400">
+              {csvResult.error}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 2. Import Products */}
       {hasCreds && connectionStatus === "connected" && (

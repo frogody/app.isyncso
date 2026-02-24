@@ -2586,6 +2586,210 @@ serve(async (req) => {
         break;
       }
 
+      // ================================================================
+      // IMPORT ORDERS — bulk import from CSV data
+      // ================================================================
+      case "importOrders": {
+        const csvData = body.csvData as string;
+        if (!csvData || typeof csvData !== "string") {
+          result = { success: false, error: "csvData (string) is required" };
+          break;
+        }
+
+        // Parse CSV lines
+        const lines = csvData.split("\n").map(l => l.trim()).filter(Boolean);
+        if (lines.length < 2) {
+          result = { success: false, error: "CSV must have a header row and at least one data row" };
+          break;
+        }
+
+        // Parse header — support semicolon and comma delimiters
+        const delimiter = lines[0].includes(";") ? ";" : ",";
+        const parseRow = (line: string): string[] => {
+          const result: string[] = [];
+          let current = "";
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') { inQuotes = !inQuotes; continue; }
+            if (ch === delimiter && !inQuotes) { result.push(current.trim()); current = ""; continue; }
+            current += ch;
+          }
+          result.push(current.trim());
+          return result;
+        };
+
+        const headers = parseRow(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, ""));
+
+        // Column mapping — support Dutch, English, and generic column names
+        const colMap: Record<string, string[]> = {
+          orderId:     ["bestelnummer", "order_id", "orderid", "order_number", "ordernumber", "bestelling", "bestel_nummer"],
+          orderDate:   ["besteldatum", "order_date", "orderdate", "date", "datum", "order_placed"],
+          ean:         ["ean", "ean_code", "ean13", "barcode", "product_ean"],
+          productName: ["artikelnaam", "product_name", "productname", "titel", "title", "article_name", "omschrijving", "description", "product"],
+          quantity:    ["aantal", "quantity", "qty", "hoeveelheid", "aantallen"],
+          price:       ["prijs", "price", "unit_price", "unitprice", "stuksprijs", "verkoopprijs", "bedrag", "amount"],
+          status:      ["status", "order_status", "orderstatus", "bestelstatus"],
+          total:       ["totaal", "total", "order_total", "totaalprijs", "total_price"],
+        };
+
+        const findCol = (key: string): number => {
+          const aliases = colMap[key] || [];
+          for (const alias of aliases) {
+            const idx = headers.indexOf(alias);
+            if (idx >= 0) return idx;
+          }
+          return -1;
+        };
+
+        const col = {
+          orderId: findCol("orderId"),
+          orderDate: findCol("orderDate"),
+          ean: findCol("ean"),
+          productName: findCol("productName"),
+          quantity: findCol("quantity"),
+          price: findCol("price"),
+          status: findCol("status"),
+          total: findCol("total"),
+        };
+
+        if (col.orderId < 0) {
+          result = { success: false, error: `Could not find order ID column. Headers found: ${headers.join(", ")}. Expected one of: ${colMap.orderId.join(", ")}` };
+          break;
+        }
+
+        // Parse rows and group by orderId
+        const orderGroups = new Map<string, Array<{ ean: string; name: string; qty: number; price: number; date: string; status: string; total: number }>>();
+        let parseErrors = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+          const vals = parseRow(lines[i]);
+          const oid = vals[col.orderId]?.trim();
+          if (!oid) { parseErrors++; continue; }
+
+          const row = {
+            ean: col.ean >= 0 ? (vals[col.ean] || "").trim() : "",
+            name: col.productName >= 0 ? (vals[col.productName] || "").trim() : `Order ${oid} item`,
+            qty: col.quantity >= 0 ? parseInt(vals[col.quantity]) || 1 : 1,
+            price: col.price >= 0 ? parseFloat(vals[col.price]?.replace(",", ".")) || 0 : 0,
+            date: col.orderDate >= 0 ? (vals[col.orderDate] || "").trim() : "",
+            status: col.status >= 0 ? (vals[col.status] || "").trim().toLowerCase() : "delivered",
+            total: col.total >= 0 ? parseFloat(vals[col.total]?.replace(",", ".")) || 0 : 0,
+          };
+
+          if (!orderGroups.has(oid)) orderGroups.set(oid, []);
+          orderGroups.get(oid)!.push(row);
+        }
+
+        console.log(`[bolcom-api] importOrders: parsed ${orderGroups.size} unique orders from ${lines.length - 1} CSV rows (${parseErrors} parse errors)`);
+
+        // Check existing orders for deduplication
+        const allOids = Array.from(orderGroups.keys());
+        const existingIds = new Set<string>();
+        for (let i = 0; i < allOids.length; i += 200) {
+          const { data: rows } = await supabase.from("sales_orders").select("external_reference")
+            .eq("company_id", companyId).eq("source", "bolcom")
+            .in("external_reference", allOids.slice(i, i + 200));
+          for (const r of (rows || [])) existingIds.add((r as { external_reference: string }).external_reference);
+        }
+
+        const newOids = allOids.filter(id => !existingIds.has(id));
+        console.log(`[bolcom-api] importOrders: ${existingIds.size} already exist, ${newOids.length} new to import`);
+
+        if (newOids.length === 0) {
+          result = { success: true, data: { imported: 0, skipped: existingIds.size, totalParsed: orderGroups.size, parseErrors } };
+          break;
+        }
+
+        // Product lookup for EAN matching
+        const allEans = new Set<string>();
+        for (const oid of newOids) {
+          for (const item of orderGroups.get(oid)!) {
+            if (item.ean) allEans.add(item.ean);
+          }
+        }
+        const eanProdMap = new Map<string, string>();
+        if (allEans.size > 0) {
+          const arr = Array.from(allEans);
+          for (let i = 0; i < arr.length; i += 100) {
+            const { data } = await supabase.from("products").select("id, ean").eq("company_id", companyId).in("ean", arr.slice(i, i + 100));
+            for (const p of (data || []) as Array<{ id: string; ean: string }>) eanProdMap.set(p.ean, p.id);
+          }
+        }
+
+        // Parse date helper
+        const parseDate = (d: string): string | null => {
+          if (!d) return null;
+          // Try ISO format
+          const iso = new Date(d);
+          if (!isNaN(iso.getTime())) return iso.toISOString();
+          // Try DD-MM-YYYY or DD/MM/YYYY
+          const m = d.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+          if (m) { const dt = new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1])); if (!isNaN(dt.getTime())) return dt.toISOString(); }
+          // Try YYYY-MM-DD
+          const m2 = d.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+          if (m2) { const dt = new Date(parseInt(m2[1]), parseInt(m2[2]) - 1, parseInt(m2[3])); if (!isNaN(dt.getTime())) return dt.toISOString(); }
+          return null;
+        };
+
+        // Batch insert (10 at a time)
+        let imported = 0, itemsImported = 0, insertErrors = 0;
+
+        for (let i = 0; i < newOids.length; i += 10) {
+          const batch = newOids.slice(i, i + 10);
+          const orderRows = batch.map(oid => {
+            const items = orderGroups.get(oid)!;
+            const firstItem = items[0];
+            const sub = items.reduce((a, it) => a + it.price * it.qty, 0);
+            const orderTotal = firstItem.total > 0 ? firstItem.total : sub;
+            const statusMap: Record<string, string> = { geannuleerd: "cancelled", cancelled: "cancelled", verzonden: "shipped", shipped: "shipped", afgeleverd: "delivered", delivered: "delivered" };
+            const mappedStatus = statusMap[firstItem.status] || "delivered";
+            return {
+              company_id: companyId, customer_id: null,
+              order_number: `BOL-${oid}`, external_reference: oid,
+              order_date: parseDate(firstItem.date) || new Date().toISOString(),
+              status: mappedStatus, source: "bolcom",
+              subtotal: sub, total: orderTotal, currency: "EUR",
+              payment_status: mappedStatus === "cancelled" ? "pending" : "paid",
+              billing_same_as_shipping: true,
+              metadata: { bolcom_order_id: oid, import_source: "csv" },
+            };
+          });
+
+          const { data: ins, error: err } = await supabase.from("sales_orders").insert(orderRows).select("id, external_reference");
+          if (err) { console.warn(`[bolcom-api] importOrders batch fail: ${err.message}`); insertErrors += batch.length; continue; }
+
+          const insMap = new Map((ins || []).map((r: { id: string; external_reference: string }) => [r.external_reference, r.id]));
+          imported += insMap.size;
+
+          // Insert items
+          const itemRows: Array<Record<string, unknown>> = [];
+          for (const oid of batch) {
+            const soId = insMap.get(oid);
+            if (!soId) continue;
+            const items = orderGroups.get(oid)!;
+            items.forEach((it, idx) => {
+              itemRows.push({
+                sales_order_id: soId, product_id: eanProdMap.get(it.ean) || null,
+                description: it.name, ean: it.ean || null,
+                quantity: it.qty, unit_price: it.price,
+                line_total: it.price * it.qty, line_number: idx + 1,
+                tax_percent: 21, tax_amount: (it.price * it.qty) * 0.21 / 1.21,
+              });
+            });
+          }
+          if (itemRows.length > 0) {
+            const { error: ie } = await supabase.from("sales_order_items").insert(itemRows);
+            if (ie) console.warn(`[bolcom-api] importOrders items fail: ${ie.message}`);
+            else itemsImported += itemRows.length;
+          }
+        }
+
+        console.log(`[bolcom-api] importOrders done: ${imported} orders, ${itemsImported} items, ${insertErrors} errors`);
+        result = { success: true, data: { imported, itemsImported, skipped: existingIds.size, totalParsed: orderGroups.size, parseErrors, insertErrors } };
+        break;
+      }
+
       default:
         result = { success: false, error: `Unknown action: ${action}` };
     }
