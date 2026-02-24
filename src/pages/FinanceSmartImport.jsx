@@ -386,9 +386,10 @@ export default function FinanceSmartImport() {
 
     setSaving(true);
     try {
-      // 1. Create/update vendor
+      // 1. Create/update vendor (only for purchase-side documents, NOT sales invoices)
       let vendorId = vendorMatch?.id || null;
-      if (!vendorId && formData.vendor_name) {
+      const isPurchaseDoc = documentType !== 'sales_invoice' && documentType !== 'credit_note';
+      if (isPurchaseDoc && !vendorId && formData.vendor_name) {
         const { data: newVendor, error: vErr } = await supabase
           .from('vendors')
           .insert({
