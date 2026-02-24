@@ -1183,6 +1183,11 @@ export default function FinanceInvoices() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className={`${ft('text-slate-600', 'text-zinc-300')} text-xs`}>Tax Rate (BTW %)</Label>
+                    {(formData.tax_mechanism === 'intracommunity' || formData.tax_mechanism === 'export') ? (
+                      <div className={`w-full mt-1 ${ft('bg-slate-100 border-slate-200 text-slate-500', 'bg-zinc-800 border border-zinc-700 text-zinc-400')} rounded-md px-3 py-2 text-sm`}>
+                        0% — {formData.tax_mechanism === 'intracommunity' ? 'EU verlegd' : 'Export'}
+                      </div>
+                    ) : (
                     <select
                       value={formData.tax_rate}
                       onChange={(e) => setFormData(prev => ({ ...prev, tax_rate: parseFloat(e.target.value) }))}
@@ -1200,6 +1205,7 @@ export default function FinanceInvoices() {
                         </>
                       )}
                     </select>
+                    )}
                   </div>
                   <div>
                     <Label className={`${ft('text-slate-400', 'text-zinc-500')} text-xs`}>Total Override</Label>
