@@ -575,7 +575,7 @@ export function ProductTableView({
               </>
             ) : (
               <>
-                <TableHead className="text-zinc-500 text-xs font-medium w-[120px]">SKU</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[140px]">EAN</TableHead>
                 <TableHead className="text-zinc-500 text-xs font-medium w-[100px] text-center">Price</TableHead>
                 <TableHead className="text-zinc-500 text-xs font-medium w-[100px] text-center">Stock</TableHead>
                 <TableHead className="text-zinc-500 text-xs font-medium w-[100px] text-center hidden lg:table-cell">Status</TableHead>
@@ -685,16 +685,16 @@ export function ProductTableView({
                   </>
                 ) : (
                   <>
-                    {/* SKU */}
+                    {/* EAN */}
                     <TableCell className="py-2">
                       {editMode ? (
                         <EditCell
-                          value={getEditValue(product.id, 'sku', details?.sku || '')}
-                          onChange={(v) => onFieldChange?.(product.id, 'sku', v)}
-                          placeholder="SKU"
+                          value={getEditValue(product.id, 'ean', product.ean || details?.barcode || '')}
+                          onChange={(v) => onFieldChange?.(product.id, 'ean', v)}
+                          placeholder="EAN"
                         />
                       ) : (
-                        <span className="text-[13px] text-zinc-400">{details?.sku || '—'}</span>
+                        <span className="text-[13px] text-zinc-400">{product.ean || details?.barcode || '—'}</span>
                       )}
                     </TableCell>
                     {/* Price */}
