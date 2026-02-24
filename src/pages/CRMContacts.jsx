@@ -90,6 +90,16 @@ const PIPELINE_STAGES = [
 const PIPELINE_TYPES = ['lead', 'prospect', 'target', 'contact'];
 const usesPipeline = (type) => PIPELINE_TYPES.includes(type);
 
+// Relationship labels per non-pipeline contact type
+const RELATIONSHIP_LABELS = {
+  partner: ['Carrier', 'Fulfillment/3PL', 'Technology', 'Marketing', 'Reseller', 'Integration', 'Consulting'],
+  supplier: ['Raw Materials', 'Packaging', 'Components', 'Services', 'Equipment', 'Logistics'],
+  customer: ['Retail', 'Wholesale', 'Direct', 'Enterprise', 'Marketplace'],
+  company: ['Distributor', 'Manufacturer', 'Retailer', 'Agency'],
+  recruitment_client: ['Retained', 'Contingency', 'RPO'],
+  candidate: ['Active', 'Passive', 'Referral'],
+};
+
 const CONTACT_SOURCES = [
   { id: "website", label: "Website" },
   { id: "referral", label: "Referral" },
@@ -122,6 +132,7 @@ const emptyContact = {
   twitter_url: "",
   deal_value: "",
   score: 50,
+  relationship_label: "",
   tags: [],
   notes: "",
   next_follow_up: null,
@@ -229,6 +240,10 @@ function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange
         {usesPipeline(contact.contact_type) ? (
           <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor}`}>
             {stageConfig.label}
+          </Badge>
+        ) : contact.relationship_label ? (
+          <Badge variant="outline" className="text-xs border-violet-500/30 bg-violet-500/10 text-violet-400">
+            {contact.relationship_label}
           </Badge>
         ) : (
           <span className={`text-xs ${crt('text-slate-400', 'text-zinc-500')}`}>
@@ -464,6 +479,10 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
             {usesPipeline(contact?.contact_type) ? (
               <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor}`}>
                 {stageConfig.label}
+              </Badge>
+            ) : contact?.relationship_label ? (
+              <Badge variant="outline" className="border-violet-500/30 bg-violet-500/10 text-violet-400">
+                {contact.relationship_label}
               </Badge>
             ) : (
               <span className={`text-sm font-medium ${crt('text-slate-700', 'text-zinc-300')}`}>
@@ -929,6 +948,7 @@ export default function CRMContacts() {
         total_revenue_generated: p.total_revenue_generated || 0,
         // Company linking
         crm_company_id: p.crm_company_id,
+        relationship_label: p.relationship_label || '',
       }));
       setContacts(contactList);
 
@@ -1097,6 +1117,7 @@ export default function CRMContacts() {
         stage: formData.stage || 'new',
         source: formData.source || null,
         contact_type: formData.contact_type || 'lead',
+        relationship_label: formData.relationship_label || null,
         linkedin_url: formData.linkedin_url || null,
         twitter_url: formData.twitter_url || null,
         website: formData.website || null,
@@ -1630,7 +1651,7 @@ export default function CRMContacts() {
                     </th>
                     <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap`}>Contact</th>
                     <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap hidden sm:table-cell`}>Company</th>
-                    <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap`}>Stage</th>
+                    <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap`}>{selectedContactType === 'all' || usesPipeline(selectedContactType) ? 'Stage' : 'Label'}</th>
                     <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap hidden md:table-cell`}>Score</th>
                     <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap`}>Value</th>
                     <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap hidden lg:table-cell`}>Source</th>
@@ -1682,6 +1703,10 @@ export default function CRMContacts() {
                           {usesPipeline(contact.contact_type) ? (
                             <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor} text-[10px] py-px px-1.5 whitespace-nowrap`}>
                               {stageConfig.label}
+                            </Badge>
+                          ) : contact.relationship_label ? (
+                            <Badge variant="outline" className="text-[10px] py-px px-1.5 whitespace-nowrap border-violet-500/30 bg-violet-500/10 text-violet-400">
+                              {contact.relationship_label}
                             </Badge>
                           ) : (
                             <span className={`text-[10px] ${crt('text-slate-400', 'text-zinc-600')}`}>—</span>
@@ -1870,6 +1895,23 @@ export default function CRMContacts() {
               </div>
               )}
             </div>
+
+            {!usesPipeline(formData.contact_type) && RELATIONSHIP_LABELS[formData.contact_type] && (
+            <div>
+              <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Label</label>
+              <Select value={formData.relationship_label || '_none'} onValueChange={(v) => setFormData(prev => ({ ...prev, relationship_label: v === '_none' ? '' : v }))}>
+                <SelectTrigger className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}>
+                  <SelectValue placeholder="Select a label..." />
+                </SelectTrigger>
+                <SelectContent className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
+                  <SelectItem value="_none">No label</SelectItem>
+                  {RELATIONSHIP_LABELS[formData.contact_type].map(label => (
+                    <SelectItem key={label} value={label}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            )}
 
             <div className={`grid ${usesPipeline(formData.contact_type) ? 'grid-cols-3' : 'grid-cols-2'} gap-4`}>
               <div>
