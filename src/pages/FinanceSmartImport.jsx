@@ -393,6 +393,67 @@ export default function FinanceSmartImport() {
     }
   };
 
+  // ─── Client-side prospect matching (when user switches doc type) ────────────
+
+  const matchProspectClientSide = async () => {
+    if (!companyId || !formData?.vendor_name) return;
+    const orgId = companyId;
+    const name = formData.vendor_name;
+    const vat = formData.vendor_vat;
+    const email = formData.vendor_email;
+    const fields = 'id, company, email, location_country, vat_number, billing_address';
+
+    try {
+      // Tier 1: VAT match
+      if (vat) {
+        const { data } = await supabase.from('prospects').select(fields)
+          .eq('organization_id', orgId).eq('vat_number', vat).limit(1).maybeSingle();
+        if (data) {
+          setProspectMatch({ id: data.id, match_type: 'exact_vat', confidence: 0.99, prospect_data: data });
+          return;
+        }
+      }
+      // Tier 2: Email match
+      if (email) {
+        const { data } = await supabase.from('prospects').select(fields)
+          .eq('organization_id', orgId).eq('email', email.toLowerCase()).limit(1).maybeSingle();
+        if (data) {
+          setProspectMatch({ id: data.id, match_type: 'exact_email', confidence: 0.95, prospect_data: data });
+          return;
+        }
+      }
+      // Tier 3: Fuzzy name match
+      if (name) {
+        const { data } = await supabase.from('prospects').select(fields)
+          .eq('organization_id', orgId).ilike('company', `%${name}%`)
+          .order('updated_date', { ascending: false }).limit(5);
+        if (data?.length > 0) {
+          const [best, ...rest] = data;
+          setProspectMatch({
+            id: best.id, match_type: 'fuzzy_name', confidence: 0.85, prospect_data: best,
+            alternatives: rest.length > 0 ? rest.map(m => ({ id: m.id, company: m.company, email: m.email, location_country: m.location_country, match_type: 'fuzzy_name' })) : undefined,
+          });
+          return;
+        }
+      }
+      // No match — will auto-create on save
+      setProspectMatch({ id: null, match_type: 'new', confidence: 1.0, prospect_data: { company: name, email, location_country: formData.vendor_country, vat_number: vat, billing_address: formData.vendor_address } });
+    } catch (err) {
+      console.warn('Client-side prospect matching failed:', err);
+      setProspectMatch(null);
+    }
+  };
+
+  // When user manually switches to sales_invoice and we don't have a prospect match yet, run client-side matching
+  useEffect(() => {
+    if (documentType === 'sales_invoice' && formData && !prospectMatch) {
+      matchProspectClientSide();
+    }
+    if (documentType !== 'sales_invoice') {
+      setProspectMatch(null);
+    }
+  }, [documentType]);
+
   // ─── Save & File (routed by document type) ─────────────────────────────────
 
   const handleSave = async () => {
@@ -486,6 +547,34 @@ export default function FinanceSmartImport() {
 
       } else if (documentType === 'sales_invoice') {
         // Save as sales invoice (Accounts Receivable)
+
+        // If prospect was matched client-side as "new" (no id yet), create it now
+        let contactId = prospectMatch?.id || null;
+        if (prospectMatch?.match_type === 'new' && !contactId && formData.vendor_name) {
+          try {
+            const { data: newProspect } = await supabase
+              .from('prospects')
+              .insert({
+                organization_id: companyId,
+                company: formData.vendor_name,
+                email: formData.vendor_email || null,
+                vat_number: formData.vendor_vat || null,
+                billing_address: formData.vendor_address || null,
+                billing_country: (formData.vendor_country || '').substring(0, 2) || null,
+                location_country: formData.vendor_country || null,
+                contact_type: 'customer',
+                source: 'smart_import',
+                stage: 'customer',
+                owner_id: user.id,
+              })
+              .select('id')
+              .single();
+            if (newProspect) contactId = newProspect.id;
+          } catch (err) {
+            console.warn('Failed to create CRM prospect:', err);
+          }
+        }
+
         // Use sales-side rubric (not purchase-side from taxDecision)
         const salesRules = determineTaxRulesForSale(
           formData.vendor_country || 'NL',
@@ -496,7 +585,7 @@ export default function FinanceSmartImport() {
           .insert({
             company_id: companyId,
             user_id: user.id,
-            contact_id: prospectMatch?.id || null,
+            contact_id: contactId,
             client_name: formData.vendor_name,
             client_email: formData.vendor_email || null,
             client_address: formData.vendor_address ? { line1: formData.vendor_address } : null,
