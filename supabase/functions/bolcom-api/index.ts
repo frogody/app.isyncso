@@ -2461,7 +2461,7 @@ serve(async (req) => {
           .eq("company_id", companyId)
           .eq("source", "bolcom")
           .eq("total", 0)
-          .limit(500);
+          .range(0, 2999);
 
         if (zErr || !zeroOrders?.length) {
           result = { success: true, data: { message: "No zero-total orders to repair", count: 0 } };
@@ -2471,13 +2471,33 @@ serve(async (req) => {
         console.log(`[bolcom-api] repairOrders: ${zeroOrders.length} zero-total orders to fix`);
 
         let lastCall = 0;
+        let repairSpacing = 1200;
         const rateLimitedFetchRepair = async <T>(path: string): Promise<T | null> => {
-          const wait = Math.max(0, 550 - (Date.now() - lastCall));
+          const wait = Math.max(0, repairSpacing - (Date.now() - lastCall));
           if (wait > 0) await new Promise(r => setTimeout(r, wait));
           lastCall = Date.now();
-          try {
-            return await bolFetch<T>(tokenRes.token, path, "GET", undefined, undefined, 1);
-          } catch { return null; }
+          const url = `${BOL_API_BASE}${path}`;
+          const contentType = "application/vnd.retailer.v10+json";
+          for (let attempt = 0; attempt < 3; attempt++) {
+            if (elapsed() > BUDGET_MS) return null;
+            try {
+              const resp = await fetch(url, {
+                method: "GET",
+                headers: { "Authorization": `Bearer ${tokenRes.token}`, "Content-Type": contentType, "Accept": contentType },
+              });
+              if (resp.status === 429) {
+                const retryAfter = Math.min(parseInt(resp.headers.get("Retry-After") || "5", 10), 15);
+                repairSpacing = Math.min(repairSpacing * 1.5, 5000);
+                console.warn(`[bolcom-api] repairOrders: 429, retry after ${retryAfter}s`);
+                await new Promise(r => setTimeout(r, retryAfter * 1000));
+                continue;
+              }
+              if (!resp.ok) return null;
+              if (resp.status === 204) return {} as T;
+              return (await resp.json()) as T;
+            } catch { if (attempt < 2) { await new Promise(r => setTimeout(r, 2000)); continue; } return null; }
+          }
+          return null;
         };
 
         let fixed = 0, skipped = 0, errors = 0;
