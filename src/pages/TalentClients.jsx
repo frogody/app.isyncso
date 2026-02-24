@@ -11,7 +11,7 @@ import {
   Plus, Building2, User, Euro, Mail, Phone, ExternalLink, Trash2,
   Search, Edit2, Eye, Loader2, MoreHorizontal, MapPin, Globe, Briefcase,
   Users, TrendingUp, Calendar, Filter, X, Grid3X3, List, ArrowUpDown, Sparkles,
-  ShieldAlert, Tag
+  ShieldAlert, Tag, Ban, ChevronRight, Linkedin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -241,6 +241,10 @@ export default function TalentClients() {
   const [searchQuery, setSearchQuery] = useState('');
   const [stageFilter, setStageFilter] = useState('all');
   const [reducedMotion] = useState(() => prefersReducedMotion());
+  const [excludedCount, setExcludedCount] = useState(0);
+  const [excludedCandidates, setExcludedCandidates] = useState([]);
+  const [showExcludedModal, setShowExcludedModal] = useState(false);
+  const [loadingExcluded, setLoadingExcluded] = useState(false);
 
   // Refs for anime.js animations
   const headerRef = useRef(null);
@@ -279,6 +283,17 @@ export default function TalentClients() {
       }
       setClients(data || []);
       console.log('Loaded', data?.length || 0, 'clients');
+
+      // Fetch excluded candidates count
+      const { count, error: countError } = await supabase
+        .from('candidates')
+        .select('*', { count: 'exact', head: true })
+        .eq('organization_id', user.organization_id)
+        .not('excluded_reason', 'is', null);
+
+      if (!countError) {
+        setExcludedCount(count || 0);
+      }
     } catch (error) {
       console.error('Failed to load clients:', error?.message || error);
       toast.error(error?.message || 'Failed to load recruitment clients');
@@ -388,6 +403,44 @@ export default function TalentClients() {
       toast.error(error?.message || 'Failed to save client');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const loadExcludedCandidates = async () => {
+    setLoadingExcluded(true);
+    try {
+      const { data, error } = await supabase
+        .from('candidates')
+        .select('id, first_name, last_name, job_title, company_name, linkedin_profile, excluded_reason, excluded_at, excluded_client_id')
+        .eq('organization_id', user.organization_id)
+        .not('excluded_reason', 'is', null)
+        .order('excluded_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch the client names for each excluded_client_id
+      const clientIds = [...new Set((data || []).map(c => c.excluded_client_id).filter(Boolean))];
+      let clientMap = {};
+      if (clientIds.length > 0) {
+        const { data: clientData } = await supabase
+          .from('prospects')
+          .select('id, company')
+          .in('id', clientIds);
+        if (clientData) {
+          clientMap = clientData.reduce((acc, c) => { acc[c.id] = c.company; return acc; }, {});
+        }
+      }
+
+      setExcludedCandidates((data || []).map(c => ({
+        ...c,
+        excluded_client_name: clientMap[c.excluded_client_id] || 'Unknown Client'
+      })));
+      setShowExcludedModal(true);
+    } catch (error) {
+      console.error('Failed to load excluded candidates:', error);
+      toast.error('Failed to load excluded candidates');
+    } finally {
+      setLoadingExcluded(false);
     }
   };
 
@@ -584,6 +637,28 @@ export default function TalentClients() {
             </div>
           ))}
         </div>
+
+        {/* Excluded Candidates Notice */}
+        {excludedCount > 0 && (
+          <button
+            onClick={loadExcludedCandidates}
+            disabled={loadingExcluded}
+            className="w-full flex items-center justify-between p-3 rounded-lg bg-red-500/5 border border-red-500/20 hover:bg-red-500/10 hover:border-red-500/30 transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                <Ban className="w-4 h-4 text-red-400" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-medium text-red-400">
+                  {loadingExcluded ? 'Loading...' : `${excludedCount} candidate${excludedCount !== 1 ? 's' : ''} ruled out`}
+                </p>
+                <p className="text-xs text-zinc-500">Blocked based on your existing clients</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-red-400/50 group-hover:text-red-400 transition-colors" />
+          </button>
+        )}
 
         {/* Filters and View Toggle */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
@@ -1049,6 +1124,81 @@ export default function TalentClients() {
           onClose={() => setShowQuickAddModal(false)}
           onSuccess={loadData}
         />
+
+        {/* Excluded Candidates Modal */}
+        <Dialog open={showExcludedModal} onOpenChange={setShowExcludedModal}>
+          <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl p-0 overflow-hidden max-h-[80vh]">
+            <div className="px-6 py-4 border-b border-zinc-800 bg-gradient-to-r from-red-500/10 to-red-600/10">
+              <DialogTitle className="text-base font-semibold text-white flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                  <Ban className="w-4 h-4 text-red-400" />
+                </div>
+                Ruled Out Candidates
+                <Badge className="ml-2 bg-red-500/20 text-red-400 border-0 text-xs">
+                  {excludedCandidates.length}
+                </Badge>
+              </DialogTitle>
+              <p className="text-xs text-zinc-500 mt-1 ml-10">
+                These candidates are blocked because they work for one of your clients
+              </p>
+            </div>
+
+            <div className="overflow-y-auto max-h-[calc(80vh-120px)]">
+              {excludedCandidates.length === 0 ? (
+                <div className="p-8 text-center">
+                  <p className="text-zinc-500">No excluded candidates found</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-zinc-800/50">
+                  {excludedCandidates.map((candidate) => (
+                    <div
+                      key={candidate.id}
+                      className="px-6 py-3 hover:bg-zinc-800/30 transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-white truncate">
+                              {[candidate.first_name, candidate.last_name].filter(Boolean).join(' ') || 'Unknown'}
+                            </p>
+                            {candidate.linkedin_profile && (
+                              <a
+                                href={candidate.linkedin_profile}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-400 hover:text-blue-300 flex-shrink-0"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Linkedin className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {candidate.job_title && (
+                              <span className="text-xs text-zinc-400 truncate">{candidate.job_title}</span>
+                            )}
+                            {candidate.job_title && candidate.company_name && (
+                              <span className="text-zinc-600">·</span>
+                            )}
+                            {candidate.company_name && (
+                              <span className="text-xs text-zinc-500 truncate">{candidate.company_name}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Badge className="bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] px-2 py-0.5">
+                            <ShieldAlert className="w-3 h-3 mr-1" />
+                            {candidate.excluded_client_name}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
