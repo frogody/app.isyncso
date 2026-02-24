@@ -125,10 +125,10 @@ export default function InboxPage() {
   // Callback for new message notifications
   const handleNewMessageNotification = useCallback((message) => {
     // Find channel info for the notification (use raw hook data, not resolved names)
-    const allChannels = [...realtimeChannels, ...realtimeDMs, ...realtimeSupportChannels];
-    const channel = allChannels.find(c => c.id === message.channel_id);
+    const allCh = [...realtimeChannels, ...realtimeDMs, ...allSupportChannels];
+    const channel = allCh.find(c => c.id === message.channel_id);
     notifyNewMessage(message, channel);
-  }, [realtimeChannels, realtimeDMs, realtimeSupportChannels, notifyNewMessage]);
+  }, [realtimeChannels, realtimeDMs, allSupportChannels, notifyNewMessage]);
 
   // Realtime messages subscription (changes when selectedChannel changes)
   const {
@@ -393,14 +393,21 @@ export default function InboxPage() {
     createDefaultChannels();
   }, [channelsLoading, realtimeChannels.length, user, rtCreateChannel]);
 
-  // Auto-create support channel for each user (once)
+  // Auto-create support channel for each user (once) — check DB directly
   const supportChannelCreatedRef = useRef(false);
   useEffect(() => {
     const ensureSupportChannel = async () => {
       if (channelsLoading || !user || supportChannelCreatedRef.current) return;
-      if (realtimeSupportChannels.some(c => c.user_id === user.id)) return;
       supportChannelCreatedRef.current = true;
       try {
+        // Check if this user already has a support channel
+        const { data: existing } = await supabase
+          .from('channels')
+          .select('id')
+          .eq('type', 'support')
+          .eq('user_id', user.id)
+          .limit(1);
+        if (existing && existing.length > 0) return;
         await supabase.from('channels').insert({
           name: `Support - ${user.full_name || user.email}`,
           type: 'support',
@@ -413,7 +420,7 @@ export default function InboxPage() {
       }
     };
     ensureSupportChannel();
-  }, [channelsLoading, user, realtimeSupportChannels]);
+  }, [channelsLoading, user]);
 
   // For platform owners: load ALL support channels (not just their own)
   const [allSupportChannels, setAllSupportChannels] = useState([]);
@@ -457,11 +464,11 @@ export default function InboxPage() {
     return () => { supabase.removeChannel(sub); };
   }, [isPlatformOwner, user]);
 
-  // Merge support channels: platform owners see all, regular users see their own
+  // Merge support channels: only platform owners see the support section
   const supportChannels = useMemo(() => {
     if (isPlatformOwner) return allSupportChannels;
-    return realtimeSupportChannels;
-  }, [isPlatformOwner, allSupportChannels, realtimeSupportChannels]);
+    return []; // Only platform owners (David & Gody) see support channels
+  }, [isPlatformOwner, allSupportChannels]);
 
   // Resolve support channel names for admins (show the user's name, not "Support - X")
   const resolvedSupportChannels = useMemo(() => {
