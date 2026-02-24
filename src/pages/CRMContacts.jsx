@@ -137,6 +137,10 @@ const emptyContact = {
   notes: "",
   next_follow_up: null,
   is_starred: false,
+  // Business detail fields
+  vat_number: "",
+  billing_address: "",
+  location_country: "",
   // Recruitment client fields
   is_recruitment_client: false,
   recruitment_fee_percentage: "",
@@ -946,6 +950,10 @@ export default function CRMContacts() {
         active_projects_count: p.active_projects_count || 0,
         total_placements: p.total_placements || 0,
         total_revenue_generated: p.total_revenue_generated || 0,
+        // Business detail fields
+        vat_number: p.vat_number || '',
+        billing_address: p.billing_address || '',
+        location_country: p.location_country || '',
         // Company linking
         crm_company_id: p.crm_company_id,
         relationship_label: p.relationship_label || '',
@@ -1130,6 +1138,10 @@ export default function CRMContacts() {
         notes: formData.notes || null,
         is_starred: formData.is_starred || false,
         next_follow_up: formData.next_follow_up || null,
+        // Business detail fields
+        vat_number: formData.vat_number || null,
+        billing_address: formData.billing_address || null,
+        location_country: formData.location_country || null,
         // Recruitment client fields
         is_recruitment_client: formData.contact_type === 'recruitment_client' ? true : (formData.is_recruitment_client || false),
         recruitment_fee_percentage: formData.recruitment_fee_percentage ? parseFloat(formData.recruitment_fee_percentage) : null,
@@ -1948,6 +1960,39 @@ export default function CRMContacts() {
                 />
               </div>
             </div>
+
+            {!usesPipeline(formData.contact_type) && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>VAT Number</label>
+                <Input
+                  placeholder="e.g. PT503638471"
+                  value={formData.vat_number}
+                  onChange={(e) => setFormData(prev => ({ ...prev, vat_number: e.target.value }))}
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
+                />
+              </div>
+              <div>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Country</label>
+                <Input
+                  placeholder="e.g. PT, DE, NL"
+                  value={formData.location_country}
+                  onChange={(e) => setFormData(prev => ({ ...prev, location_country: e.target.value }))}
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
+                />
+              </div>
+              <div className="col-span-2">
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Billing Address</label>
+                <Textarea
+                  placeholder="Full billing address"
+                  value={formData.billing_address}
+                  onChange={(e) => setFormData(prev => ({ ...prev, billing_address: e.target.value }))}
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
+                  rows={2}
+                />
+              </div>
+            </div>
+            )}
 
             {usesPipeline(formData.contact_type) && (
             <div className="grid grid-cols-2 gap-4">
