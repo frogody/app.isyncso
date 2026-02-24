@@ -88,20 +88,6 @@ export default function FinanceBTWAangifte({ embedded = false }) {
       .eq('company_id', companyId)
       .order('start_date', { ascending: false });
     setPeriods(data || []);
-
-    // Auto-select current quarter if exists
-    if (data?.length > 0) {
-      const now = new Date();
-      const currentPeriod = data.find(p => {
-        const start = new Date(p.start_date);
-        const end = new Date(p.end_date);
-        return now >= start && now <= end;
-      });
-      if (currentPeriod) {
-        setSelectedPeriodId(currentPeriod.id);
-        loadAangifte(currentPeriod.start_date, currentPeriod.end_date);
-      }
-    }
   }
 
   async function loadAangifte(startDate, endDate) {
@@ -187,50 +173,105 @@ export default function FinanceBTWAangifte({ embedded = false }) {
     }
   }
 
-  async function handleCreateQuarter() {
-    if (!companyId) return;
+  // ── Quarter definitions (NL BTW standard) ──────────────────────────────
+  const QUARTER_MONTHS = [
+    { q: 1, startMonth: 0, endMonth: 2, label: '1 jan – 31 mrt', deadline: '30 apr' },
+    { q: 2, startMonth: 3, endMonth: 5, label: '1 apr – 30 jun', deadline: '31 jul' },
+    { q: 3, startMonth: 6, endMonth: 8, label: '1 jul – 30 sep', deadline: '31 okt' },
+    { q: 4, startMonth: 9, endMonth: 11, label: '1 okt – 31 dec', deadlineLabel: '31 jan volgend jaar' },
+  ];
+
+  const quarterOptions = useMemo(() => {
     const now = new Date();
-    const q = Math.floor(now.getMonth() / 3);
-    const year = now.getFullYear();
-    const startMonth = q * 3;
-    const startDate = `${year}-${String(startMonth + 1).padStart(2, '0')}-01`;
-    const endMonth = startMonth + 3;
-    const endDate = endMonth > 11
-      ? `${year + 1}-01-01`
-      : `${year}-${String(endMonth + 1).padStart(2, '0')}-01`;
-    // Subtract one day from endDate to get last day of quarter
-    const end = new Date(endDate);
-    end.setDate(end.getDate() - 1);
-    const endStr = end.toISOString().split('T')[0];
-
-    const periodName = `Q${q + 1} ${year}`;
-
-    try {
-      const { data, error } = await supabase
-        .from('tax_periods')
-        .insert({
-          company_id: companyId,
-          period_name: periodName,
-          start_date: startDate,
-          end_date: endStr,
-          status: 'open',
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      toast.success(`Periode ${periodName} aangemaakt`);
-      await loadPeriods();
-      handlePeriodSelect(data.id);
-    } catch (err) {
-      if (err.message?.includes('duplicate')) {
-        toast.info('Dit kwartaal bestaat al');
-      } else {
-        toast.error('Kon periode niet aanmaken');
+    const thisYear = now.getFullYear();
+    const years = [thisYear, thisYear - 1];
+    const options = [];
+    for (const year of years) {
+      for (const qm of QUARTER_MONTHS) {
+        const startDate = `${year}-${String(qm.startMonth + 1).padStart(2, '0')}-01`;
+        const endDate = new Date(year, qm.endMonth + 1, 0); // last day of end month
+        const endStr = endDate.toISOString().split('T')[0];
+        const name = `Q${qm.q} ${year}`;
+        const deadlineStr = qm.q === 4
+          ? `31 jan ${year + 1}`
+          : qm.deadline + ` ${year}`;
+        // Check if this quarter is the current one
+        const isCurrent = year === thisYear && Math.floor(now.getMonth() / 3) + 1 === qm.q;
+        // Check if already exists in periods
+        const existing = periods.find(p => p.period_name === name);
+        options.push({
+          value: name,
+          label: `Q${qm.q} ${year} (${qm.label})`,
+          deadline: deadlineStr,
+          startDate,
+          endDate: endStr,
+          isCurrent,
+          existing,
+        });
       }
+    }
+    return options;
+  }, [periods]);
+
+  const [selectedQuarter, setSelectedQuarter] = useState('');
+  const [autoLoaded, setAutoLoaded] = useState(false);
+
+  // Auto-select and load current quarter on mount
+  useEffect(() => {
+    if (quarterOptions.length > 0 && !autoLoaded && companyId) {
+      const current = quarterOptions.find(q => q.isCurrent);
+      if (current) {
+        setAutoLoaded(true);
+        handleQuarterSelect(current.value);
+      }
+    }
+  }, [quarterOptions, companyId, autoLoaded]);
+
+  async function handleQuarterSelect(quarterValue) {
+    setSelectedQuarter(quarterValue);
+    const quarter = quarterOptions.find(q => q.value === quarterValue);
+    if (!quarter || !companyId) return;
+
+    // Check if tax_period exists, create if not
+    let period = periods.find(p => p.period_name === quarter.value);
+    if (!period) {
+      try {
+        const { data, error } = await supabase
+          .from('tax_periods')
+          .insert({
+            company_id: companyId,
+            period_name: quarter.value,
+            start_date: quarter.startDate,
+            end_date: quarter.endDate,
+            status: 'open',
+          })
+          .select()
+          .single();
+        if (error && error.message?.includes('duplicate')) {
+          // Already exists, reload and find it
+          await loadPeriods();
+          period = (await supabase.from('tax_periods').select('*').eq('company_id', companyId).eq('period_name', quarter.value).single()).data;
+        } else if (error) {
+          throw error;
+        } else {
+          period = data;
+          await loadPeriods();
+        }
+      } catch (err) {
+        toast.error('Kon periode niet aanmaken');
+        return;
+      }
+    }
+
+    if (period) {
+      setSelectedPeriodId(period.id);
+      setCustomRange({ start: quarter.startDate, end: quarter.endDate });
+      loadAangifte(quarter.startDate, quarter.endDate);
     }
   }
 
   const selectedPeriod = periods.find(p => p.id === selectedPeriodId);
+  const activeQuarterOption = quarterOptions.find(q => q.value === selectedQuarter);
 
   function getRubricValue(rubric, field) {
     if (!aangifte || !aangifte[rubric]) return 0;
@@ -243,42 +284,38 @@ export default function FinanceBTWAangifte({ embedded = false }) {
       <Card className={ft('bg-white border-gray-200', 'bg-zinc-900/50 border-zinc-800')}>
         <CardContent className="p-4">
           <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-blue-400" />
-              <span className={`text-sm font-medium ${ft('text-slate-700', 'text-zinc-300')}`}>
-                Periode
-              </span>
-            </div>
-
-            {/* Quick period buttons */}
-            <div className="flex gap-2 flex-wrap">
-              {periods.slice(0, 6).map(p => (
-                <button
-                  key={p.id}
-                  onClick={() => handlePeriodSelect(p.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
-                    selectedPeriodId === p.id
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : ft(
-                          'border-slate-200 text-slate-600 hover:bg-slate-100',
-                          'border-zinc-700 text-zinc-400 hover:bg-zinc-800'
-                        )
-                  }`}
-                >
-                  {p.period_name}
-                  {p.status === 'filed' && (
-                    <CheckCircle2 className="w-3 h-3 inline-block ml-1 text-green-400" />
-                  )}
-                </button>
-              ))}
-              <button
-                onClick={handleCreateQuarter}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-dashed ${
-                  ft('border-slate-300 text-slate-500 hover:bg-slate-100', 'border-zinc-600 text-zinc-500 hover:bg-zinc-800')
+            {/* Quarter Dropdown */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-blue-400" />
+                <span className={`text-sm font-medium ${ft('text-slate-700', 'text-zinc-300')}`}>
+                  Periode
+                </span>
+              </div>
+              <select
+                value={selectedQuarter}
+                onChange={(e) => handleQuarterSelect(e.target.value)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium border min-w-[280px] ${
+                  ft('bg-white border-slate-200 text-slate-800', 'bg-zinc-800 border-zinc-700 text-white')
                 }`}
               >
-                + Huidig kwartaal
-              </button>
+                <option value="">Selecteer kwartaal...</option>
+                {quarterOptions.map(q => (
+                  <option key={q.value} value={q.value}>
+                    {q.label}{q.existing?.status === 'filed' ? ' ✓' : ''}{q.isCurrent ? ' (huidig)' : ''}
+                  </option>
+                ))}
+              </select>
+              {activeQuarterOption && (
+                <span className={`text-xs ${ft('text-slate-500', 'text-zinc-500')}`}>
+                  Deadline: {activeQuarterOption.deadline}
+                </span>
+              )}
+              {selectedPeriod?.status === 'filed' && (
+                <Badge className="bg-green-500/10 text-green-400 border-green-500/30 text-xs">
+                  <CheckCircle2 className="w-3 h-3 mr-1" /> Ingediend
+                </Badge>
+              )}
             </div>
 
             {/* Custom date range */}
@@ -286,14 +323,14 @@ export default function FinanceBTWAangifte({ embedded = false }) {
               <input
                 type="date"
                 value={customRange.start}
-                onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
+                onChange={(e) => { setCustomRange(prev => ({ ...prev, start: e.target.value })); setSelectedQuarter(''); }}
                 className={`px-2 py-1 rounded text-xs ${ft('bg-slate-100 border-slate-200', 'bg-zinc-800 border-zinc-700')} border`}
               />
               <ArrowRight className="w-3 h-3 text-zinc-500" />
               <input
                 type="date"
                 value={customRange.end}
-                onChange={(e) => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
+                onChange={(e) => { setCustomRange(prev => ({ ...prev, end: e.target.value })); setSelectedQuarter(''); }}
                 className={`px-2 py-1 rounded text-xs ${ft('bg-slate-100 border-slate-200', 'bg-zinc-800 border-zinc-700')} border`}
               />
               <Button

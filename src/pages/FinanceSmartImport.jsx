@@ -29,7 +29,7 @@ import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransi
 import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 import { createPageUrl } from '@/utils';
 import CountrySelector from '@/components/finance/CountrySelector';
-import { determineTaxRulesForPurchase } from '@/lib/btwRules';
+import { determineTaxRulesForPurchase, determineTaxRulesForSale } from '@/lib/btwRules';
 
 // PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -471,6 +471,11 @@ export default function FinanceSmartImport() {
 
       } else if (documentType === 'sales_invoice') {
         // Save as sales invoice (Accounts Receivable)
+        // Use sales-side rubric (not purchase-side from taxDecision)
+        const salesRules = determineTaxRulesForSale(
+          formData.vendor_country || 'NL',
+          formData.tax_rate || 21
+        );
         const { data: newInvoice, error: invErr } = await supabase
           .from('invoices')
           .insert({
@@ -494,8 +499,8 @@ export default function FinanceSmartImport() {
               unit_price: li.unit_price || 0,
               name: li.description,
             })),
-            btw_rubric: taxDecision?.btw_rubric || null,
-            tax_mechanism: taxDecision?.mechanism || 'standard_btw',
+            btw_rubric: salesRules.rubric,
+            tax_mechanism: salesRules.mechanism,
           })
           .select('id, invoice_number')
           .single();
