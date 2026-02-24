@@ -982,27 +982,6 @@ export default function CRMContacts() {
   }, [contacts]);
 
   const filteredContacts = useMemo(() => {
-    // If supplier view is selected, show suppliers instead
-    if (selectedContactType === 'supplier') {
-      return (suppliers || []).map(s => ({
-        id: s.id,
-        name: s.name,
-        email: s.contact?.email,
-        phone: s.contact?.phone,
-        company_name: s.name,
-        website: s.website,
-        location: s.address?.country || '',
-        stage: 'won',
-        contact_type: 'supplier',
-        is_supplier: true,
-      })).filter(c => {
-        const matchesSearch = !searchQuery ||
-          c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          c.email?.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesSearch;
-      });
-    }
-
     return (contacts || []).filter(c => {
       const matchesSearch = !searchQuery ||
         c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
