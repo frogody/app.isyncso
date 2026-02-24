@@ -580,6 +580,13 @@ export default function FinanceSmartImport() {
           formData.vendor_country || 'NL',
           formData.tax_rate || 21
         );
+
+        // For intracommunity/export sales, effective tax is 0%
+        const isZeroTaxSale = salesRules.mechanism === 'intracommunity' || salesRules.mechanism === 'export';
+        const effectiveTaxRate = isZeroTaxSale ? 0 : (formData.tax_rate || 21);
+        const effectiveTaxAmount = isZeroTaxSale ? 0 : taxAmount;
+        const effectiveTotal = isZeroTaxSale ? (formData.subtotal || amount) : amount;
+
         const { data: newInvoice, error: invErr } = await supabase
           .from('invoices')
           .insert({
@@ -588,12 +595,13 @@ export default function FinanceSmartImport() {
             contact_id: contactId,
             client_name: formData.vendor_name,
             client_email: formData.vendor_email || null,
-            client_address: formData.vendor_address ? { line1: formData.vendor_address } : null,
+            client_address: formData.vendor_address || null,
             client_country: formData.vendor_country || 'NL',
+            client_vat: formData.vendor_vat || null,
             subtotal: formData.subtotal || 0,
-            tax_rate: formData.tax_rate || 21,
-            tax_amount: taxAmount,
-            total: amount,
+            tax_rate: effectiveTaxRate,
+            tax_amount: effectiveTaxAmount,
+            total: effectiveTotal,
             status: 'draft',
             invoice_type: 'customer',
             due_date: formData.due_date || null,
@@ -612,17 +620,13 @@ export default function FinanceSmartImport() {
 
         if (invErr) throw new Error(`Failed to create sales invoice: ${invErr.message}`);
 
-        // Bidirectional enrichment: update CRM prospect with invoice data it was missing
+        // Bidirectional enrichment: update CRM prospect with invoice data
         if (prospectMatch?.id && prospectMatch.match_type !== 'new') {
           const enrichUpdates = {};
-          if (formData.vendor_vat && !prospectMatch.prospect_data?.vat_number)
-            enrichUpdates.vat_number = formData.vendor_vat;
-          if (formData.vendor_email && !prospectMatch.prospect_data?.email)
-            enrichUpdates.email = formData.vendor_email;
-          if (formData.vendor_country && !prospectMatch.prospect_data?.location_country)
-            enrichUpdates.location_country = formData.vendor_country;
-          if (formData.vendor_address)
-            enrichUpdates.billing_address = formData.vendor_address;
+          if (formData.vendor_vat) enrichUpdates.vat_number = formData.vendor_vat;
+          if (formData.vendor_email) enrichUpdates.email = formData.vendor_email;
+          if (formData.vendor_country) enrichUpdates.location_country = formData.vendor_country;
+          if (formData.vendor_address) enrichUpdates.billing_address = formData.vendor_address;
           if (Object.keys(enrichUpdates).length > 0) {
             await supabase.from('prospects').update(enrichUpdates).eq('id', prospectMatch.id);
           }

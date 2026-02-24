@@ -6,7 +6,7 @@ import {
   Receipt, Plus, Search, Filter, Download, Send, Check, Clock, AlertCircle,
   FileText, MoreVertical, Eye, Edit2, Trash2, Mail, X, ChevronDown,
   ArrowUpDown, Calendar, Euro, Building2, User, Package, RefreshCw, Zap,
-  FileDown, Printer, Sun, Moon, Briefcase, Palette
+  FileDown, Printer, Sun, Moon, Briefcase, Palette, Info
 } from 'lucide-react';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
@@ -74,6 +74,7 @@ export default function FinanceInvoices() {
     client_name: '',
     client_email: '',
     client_address: '',
+    client_vat: '',
     total: '',
     due_date: '',
     description: '',
@@ -230,6 +231,7 @@ export default function FinanceInvoices() {
       client_name: '',
       client_email: '',
       client_address: '',
+      client_vat: '',
       total: '',
       due_date: '',
       description: '',
@@ -292,7 +294,9 @@ export default function FinanceInvoices() {
         const price = parseFloat(item.unit_price) || 0;
         return sum + (quantity * price);
       }, 0);
-      const taxRate = parseFloat(formData.tax_rate) || 0;
+      const mechanism = formData.tax_mechanism || 'standard_btw';
+      const isZeroTax = mechanism === 'intracommunity' || mechanism === 'export';
+      const taxRate = isZeroTax ? 0 : (parseFloat(formData.tax_rate) || 0);
       const taxAmount = subtotal * (taxRate / 100);
       const calculatedTotal = subtotal + taxAmount;
 
@@ -304,6 +308,7 @@ export default function FinanceInvoices() {
         client_name: formData.client_name,
         client_email: formData.client_email,
         client_address: formData.client_address,
+        client_vat: formData.client_vat || null,
         subtotal: subtotal,
         tax_rate: taxRate,
         tax_amount: taxAmount,
@@ -568,10 +573,19 @@ export default function FinanceInvoices() {
 
   const openEditModal = (invoice) => {
     setSelectedInvoice(invoice);
+
+    // Handle JSONB client_address (Smart Import saves as { line1: "..." })
+    const rawAddr = invoice.client_address;
+    const parsedAddr = typeof rawAddr === 'object' && rawAddr !== null
+      ? (rawAddr.line1 || rawAddr.address || '')
+      : (rawAddr || '');
+
     setFormData({
+      contact_id: invoice.contact_id || null,
       client_name: invoice.client_name || '',
       client_email: invoice.client_email || '',
-      client_address: invoice.client_address || '',
+      client_address: parsedAddr,
+      client_vat: invoice.client_vat || '',
       total: invoice.total?.toString() || '',
       due_date: invoice.due_date || '',
       description: invoice.description || '',
@@ -905,6 +919,14 @@ export default function FinanceInvoices() {
 
           <form onSubmit={handleCreateInvoice} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
+              {/* Invoice Number (read-only in edit mode) */}
+              {editMode && selectedInvoice?.invoice_number && (
+                <div className="col-span-2">
+                  <Label className={ft('text-slate-600', 'text-zinc-300')}>Invoice Number</Label>
+                  <Input value={selectedInvoice.invoice_number} readOnly disabled className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1 opacity-60`} />
+                </div>
+              )}
+
               {/* CRM Contact Selector */}
               <div className="col-span-2">
                 <Label className={ft('text-slate-600', 'text-zinc-300')}>Select from CRM</Label>
@@ -1122,8 +1144,13 @@ export default function FinanceInvoices() {
                     {/* Tax + Total from items */}
                     {(() => {
                       const sub = calculateTotal();
-                      const rate = parseFloat(formData.tax_rate) || 0;
+                      const mechanism = formData.tax_mechanism || 'standard_btw';
+                      const isZeroTax = mechanism === 'intracommunity' || mechanism === 'export';
+                      const rate = isZeroTax ? 0 : (parseFloat(formData.tax_rate) || 0);
                       const tax = sub * (rate / 100);
+                      const btwLabel = isZeroTax
+                        ? `0% — ${mechanism === 'intracommunity' ? 'EU verlegd' : 'Export'}`
+                        : `${rate}%`;
                       return (
                         <div className={`p-3 rounded-lg space-y-1.5 ${ft('bg-slate-50 border border-slate-200', 'bg-zinc-800/30 border border-white/5')}`}>
                           <div className="flex justify-between text-sm">
@@ -1131,7 +1158,7 @@ export default function FinanceInvoices() {
                             <span className={`tabular-nums ${ft('text-slate-700', 'text-zinc-300')}`}>€{sub.toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between text-sm">
-                            <span className={ft('text-slate-500', 'text-zinc-400')}>BTW ({rate}%)</span>
+                            <span className={ft('text-slate-500', 'text-zinc-400')}>BTW ({btwLabel})</span>
                             <span className={`tabular-nums ${ft('text-slate-700', 'text-zinc-300')}`}>€{tax.toFixed(2)}</span>
                           </div>
                           <div className={`flex justify-between text-sm font-bold pt-1.5 border-t ${ft('border-slate-200', 'border-zinc-700')}`}>
@@ -1186,6 +1213,23 @@ export default function FinanceInvoices() {
                     />
                   </div>
                 </div>
+
+                {/* Tax mechanism badge for non-standard BTW */}
+                {formData.tax_mechanism && formData.tax_mechanism !== 'standard_btw' && (
+                  <div className={`flex items-center gap-2 px-3 py-2 mt-2 rounded-lg border ${ft('bg-amber-50 border-amber-200', 'bg-amber-500/10 border-amber-500/20')}`}>
+                    <Info className={`w-4 h-4 flex-shrink-0 ${ft('text-amber-600', 'text-amber-400')}`} />
+                    <span className={`text-sm ${ft('text-amber-700', 'text-amber-400')}`}>
+                      {formData.tax_mechanism === 'intracommunity' ? 'EU intracommunity supply — BTW verlegd (0%)' :
+                       formData.tax_mechanism === 'export' ? 'Export outside EU — no BTW (0%)' :
+                       formData.tax_mechanism}
+                    </span>
+                    {formData.btw_rubric && (
+                      <Badge variant="outline" className={`text-xs ml-auto ${ft('border-amber-300 text-amber-700', 'border-amber-500/50 text-amber-400')}`}>
+                        Rubric {formData.btw_rubric}
+                      </Badge>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="col-span-2">
@@ -1238,10 +1282,15 @@ export default function FinanceInvoices() {
                   {selectedInvoice.status || 'draft'}
                 </Badge>
                 <div className="text-right">
-                  {selectedInvoice.subtotal > 0 && selectedInvoice.tax_amount > 0 ? (
+                  {selectedInvoice.subtotal > 0 ? (
                     <div className="space-y-0.5">
                       <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
-                        Subtotal: €{(selectedInvoice.subtotal || 0).toLocaleString()} + BTW {selectedInvoice.tax_rate || 21}%: €{(selectedInvoice.tax_amount || 0).toLocaleString()}
+                        Subtotal: €{(selectedInvoice.subtotal || 0).toLocaleString()}
+                        {(selectedInvoice.tax_mechanism === 'intracommunity' || selectedInvoice.tax_mechanism === 'export')
+                          ? ' — BTW 0% (verlegd)'
+                          : selectedInvoice.tax_amount > 0
+                            ? ` + BTW ${selectedInvoice.tax_rate || 21}%: €${(selectedInvoice.tax_amount || 0).toLocaleString()}`
+                            : ''}
                       </p>
                       <p className={`text-2xl font-bold ${ft('text-slate-900', 'text-white')}`}>
                         €{(selectedInvoice.total || 0).toLocaleString()}
@@ -1264,6 +1313,23 @@ export default function FinanceInvoices() {
                   <span className={ft('text-slate-500', 'text-zinc-400')}>Email</span>
                   <span className={ft('text-slate-900', 'text-white')}>{selectedInvoice.client_email || '-'}</span>
                 </div>
+                {selectedInvoice.client_vat && (
+                  <div className="flex justify-between">
+                    <span className={ft('text-slate-500', 'text-zinc-400')}>VAT Number</span>
+                    <span className={ft('text-slate-900', 'text-white')}>{selectedInvoice.client_vat}</span>
+                  </div>
+                )}
+                {selectedInvoice.tax_mechanism && selectedInvoice.tax_mechanism !== 'standard_btw' && (
+                  <div className="flex justify-between">
+                    <span className={ft('text-slate-500', 'text-zinc-400')}>Tax Treatment</span>
+                    <span className={ft('text-slate-900', 'text-white')}>
+                      {selectedInvoice.tax_mechanism === 'intracommunity' ? 'EU verlegd (0%)' :
+                       selectedInvoice.tax_mechanism === 'export' ? 'Export (0%)' :
+                       selectedInvoice.tax_mechanism}
+                      {selectedInvoice.btw_rubric && ` — ${selectedInvoice.btw_rubric}`}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className={ft('text-slate-500', 'text-zinc-400')}>Due Date</span>
                   <span className={ft('text-slate-900', 'text-white')}>
