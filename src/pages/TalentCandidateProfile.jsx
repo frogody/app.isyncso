@@ -57,6 +57,8 @@ import {
   X,
   BadgeCheck,
   Heart,
+  Lightbulb,
+  DollarSign,
 } from "lucide-react";
 import {
   Dialog,
@@ -325,7 +327,12 @@ export default function TalentCandidateProfile() {
         .eq("organization_id", user.organization_id)
         .single();
       if (error) throw error;
-      setCandidate(data);
+      // Normalize field names for CSV-imported candidates
+      setCandidate({
+        ...data,
+        age_group: data.age_group || data.estimated_age_range || null,
+        summary: data.summary || data.professional_summary || data.experience_report || null,
+      });
     } catch (err) {
       console.error("Error fetching candidate:", err);
       toast.error("Failed to load candidate");
@@ -971,15 +978,39 @@ export default function TalentCandidateProfile() {
                 <AnalysisCard
                   icon={Briefcase}
                   title="Job Satisfaction Analysis"
-                  content={candidate.job_satisfaction_analysis}
+                  content={candidate.job_satisfaction_analysis || candidate.job_satisfaction}
                   maxLength={400}
                 />
+                {candidate.job_satisfaction_reasoning && (
+                  <AnalysisCard
+                    icon={Lightbulb}
+                    title="Satisfaction Reasoning"
+                    content={candidate.job_satisfaction_reasoning}
+                    maxLength={400}
+                  />
+                )}
                 <AnalysisCard
                   icon={Award}
                   title="Experience Analysis"
-                  content={candidate.experience_analysis}
+                  content={candidate.experience_report || candidate.experience_analysis}
                   maxLength={400}
                 />
+                {candidate.market_position && (
+                  <AnalysisCard
+                    icon={DollarSign}
+                    title="Market Position"
+                    content={candidate.market_position}
+                    maxLength={400}
+                  />
+                )}
+                {candidate.salary_intelligence && (
+                  <AnalysisCard
+                    icon={Euro}
+                    title="Salary Intelligence"
+                    content={candidate.salary_intelligence}
+                    maxLength={400}
+                  />
+                )}
 
                 {/* Career Metrics */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

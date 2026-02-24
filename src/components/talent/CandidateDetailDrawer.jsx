@@ -45,6 +45,8 @@ import {
   CheckCircle2,
   Settings,
   BadgeCheck,
+  FileText,
+  DollarSign,
 } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
@@ -712,15 +714,39 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
         <AnalysisCard
           icon={Briefcase}
           title="Job Satisfaction Analysis"
-          content={candidate.job_satisfaction_analysis}
+          content={candidate.job_satisfaction_analysis || candidate.job_satisfaction}
           maxLength={300}
         />
+        {candidate.job_satisfaction_reasoning && (
+          <AnalysisCard
+            icon={Lightbulb}
+            title="Satisfaction Reasoning"
+            content={candidate.job_satisfaction_reasoning}
+            maxLength={300}
+          />
+        )}
         <AnalysisCard
           icon={Award}
           title="Experience Analysis"
-          content={candidate.experience_analysis}
+          content={candidate.experience_report || candidate.experience_analysis}
           maxLength={300}
         />
+        {candidate.market_position && (
+          <AnalysisCard
+            icon={DollarSign}
+            title="Market Position"
+            content={candidate.market_position}
+            maxLength={300}
+          />
+        )}
+        {candidate.salary_intelligence && (
+          <AnalysisCard
+            icon={Euro}
+            title="Salary Intelligence"
+            content={candidate.salary_intelligence}
+            maxLength={300}
+          />
+        )}
       </div>
     )}
 
@@ -1476,7 +1502,8 @@ export default function CandidateDetailDrawer({
         current_company: data.current_company || data.company_name || null,
         location: data.location || data.person_home_location || null,
         linkedin_url: data.linkedin_url || data.linkedin_profile || null,
-        summary: data.summary || data.professional_summary || null,
+        summary: data.summary || data.professional_summary || data.experience_report || null,
+        age_group: data.age_group || data.estimated_age_range || null,
 
         // Intelligence fields - timing_signals from intelligence_timing
         timing_signals: data.timing_signals || data.intelligence_timing || [],

@@ -161,10 +161,9 @@ export const usePanelPreferences = () => {
           .from('user_panel_preferences')
           .select('panel_config')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
-        if (fetchError && fetchError.code !== 'PGRST116') {
-          // PGRST116 = no rows returned (first time user)
+        if (fetchError) {
           console.error('Error fetching panel preferences:', fetchError);
           setError(fetchError);
         } else if (data?.panel_config) {
