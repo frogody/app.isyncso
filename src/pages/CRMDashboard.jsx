@@ -9,9 +9,13 @@ import {
   Users, Target, Euro, TrendingUp, Calendar, ArrowRight,
   UserCheck, Kanban, Megaphone, FileSpreadsheet,
   Building2, UserPlus, Star, Clock, ArrowUpRight,
-  ArrowDownRight, Activity, Loader2,
+  ArrowDownRight, Activity, Loader2, Globe, Briefcase,
+  MapPin, Truck, Handshake, ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const PIPELINE_TYPES = ['lead', 'prospect', 'target', 'contact'];
+const ALWAYS_COMPANY_TYPES = ['company', 'supplier'];
 
 const PIPELINE_STAGES = [
   { key: "new", label: "New", color: "bg-zinc-500" },
@@ -22,14 +26,17 @@ const PIPELINE_STAGES = [
   { key: "won", label: "Won", color: "bg-cyan-300" },
 ];
 
-const SOURCE_COLORS = {
-  website: "bg-cyan-500",
-  referral: "bg-blue-500",
-  linkedin: "bg-indigo-500",
-  cold_outreach: "bg-violet-500",
-  event: "bg-amber-500",
-  partner: "bg-emerald-500",
-  other: "bg-zinc-500",
+const TYPE_CONFIG = {
+  customer:           { label: "Customers",    icon: UserCheck, color: "text-cyan-400",   bg: "bg-cyan-500/15" },
+  supplier:           { label: "Suppliers",     icon: Truck,     color: "text-blue-400",   bg: "bg-blue-500/15" },
+  company:            { label: "Companies",     icon: Building2, color: "text-indigo-400", bg: "bg-indigo-500/15" },
+  partner:            { label: "Partners",      icon: Handshake, color: "text-violet-400", bg: "bg-violet-500/15" },
+  lead:               { label: "Leads",         icon: Target,    color: "text-cyan-400",   bg: "bg-cyan-500/15" },
+  prospect:           { label: "Prospects",     icon: TrendingUp,color: "text-cyan-400",   bg: "bg-cyan-500/15" },
+  candidate:          { label: "Candidates",    icon: Users,     color: "text-cyan-400",   bg: "bg-cyan-500/15" },
+  recruitment_client: { label: "Recruitment",   icon: Briefcase, color: "text-cyan-400",   bg: "bg-cyan-500/15" },
+  target:             { label: "Targets",       icon: Target,    color: "text-cyan-400",   bg: "bg-cyan-500/15" },
+  contact:            { label: "Contacts",      icon: Users,     color: "text-cyan-400",   bg: "bg-cyan-500/15" },
 };
 
 function formatRelativeTime(date) {
@@ -58,7 +65,6 @@ function StatSkeleton({ crt }) {
     <div className={`rounded-xl p-4 ${crt("bg-slate-50 border border-slate-200", "bg-zinc-900/60 border border-zinc-800/60")}`}>
       <div className="flex items-center justify-between mb-3">
         <div className={`w-8 h-8 rounded-lg animate-pulse ${crt("bg-slate-200", "bg-zinc-800")}`} />
-        <div className={`w-12 h-5 rounded-lg animate-pulse ${crt("bg-slate-200", "bg-zinc-800")}`} />
       </div>
       <div className={`h-7 w-20 rounded animate-pulse mb-1 ${crt("bg-slate-200", "bg-zinc-800")}`} />
       <div className={`h-3 w-28 rounded animate-pulse ${crt("bg-slate-100", "bg-zinc-800/60")}`} />
@@ -81,18 +87,26 @@ export default function CRMDashboard() {
   useEffect(() => {
     async function fetchData() {
       if (!user?.id) return;
-      const companyId = user.company_id;
-      if (!companyId) { setLoading(false); return; }
+      const orgId = user.organization_id || user.company_id;
+      if (!orgId) { setLoading(false); return; }
 
       try {
         setLoading(true);
         const { data, error } = await supabase
           .from("prospects")
-          .select("id, name, company_name, email, stage, contact_type, source, deal_value, score, created_at, updated_at, next_follow_up, is_starred")
-          .eq("company_id", companyId)
-          .order("updated_at", { ascending: false });
+          .select("*")
+          .eq("organization_id", orgId)
+          .order("updated_date", { ascending: false });
 
-        if (!error && data) setContacts(data);
+        if (!error && data) {
+          // Map to consistent field names (matching CRMContacts pattern)
+          const mapped = data.map(p => ({
+            ...p,
+            name: [p.first_name, p.last_name].filter(Boolean).join(' ') || p.company || "Unknown",
+            company_name: p.company,
+          }));
+          setContacts(mapped);
+        }
       } catch (err) {
         console.error("CRM Dashboard fetch error:", err);
       } finally {
@@ -100,38 +114,55 @@ export default function CRMDashboard() {
       }
     }
     fetchData();
-  }, [user?.id, user?.company_id]);
+  }, [user?.id, user?.organization_id, user?.company_id]);
 
+  // --- Computed stats ---
   const stats = useMemo(() => {
     const total = contacts.length;
-    const pipelineContacts = contacts.filter(c => c.stage && c.stage !== "won" && c.stage !== "lost");
-    const pipelineValue = pipelineContacts.reduce((sum, c) => sum + (parseFloat(c.deal_value) || 0), 0);
-    const wonDeals = contacts.filter(c => c.stage === "won");
-    const wonValue = wonDeals.reduce((sum, c) => sum + (parseFloat(c.deal_value) || 0), 0);
-    const dealsWithStage = contacts.filter(c => c.stage && c.stage !== "new");
-    const conversionRate = dealsWithStage.length > 0 ? Math.round((wonDeals.length / dealsWithStage.length) * 100) : 0;
-    return { total, pipelineValue, wonDeals: wonDeals.length, wonValue, conversionRate };
+    const companyEntities = contacts.filter(c => ALWAYS_COMPANY_TYPES.includes(c.contact_type));
+    const withVat = contacts.filter(c => c.vat_number);
+    const enriched = contacts.filter(c => c.linkedin_url || c.website || c.industry);
+    return { total, companies: companyEntities.length, withVat: withVat.length, enriched: enriched.length };
   }, [contacts]);
 
-  const stageCounts = useMemo(() => {
+  const typeCounts = useMemo(() => {
     const counts = {};
     contacts.forEach(c => {
+      const type = c.contact_type || "contact";
+      counts[type] = (counts[type] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1]);
+  }, [contacts]);
+
+  const countryCounts = useMemo(() => {
+    const counts = {};
+    contacts.forEach(c => {
+      const country = c.location_country;
+      if (country) counts[country] = (counts[country] || 0) + 1;
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  }, [contacts]);
+
+  const industryCounts = useMemo(() => {
+    const counts = {};
+    contacts.forEach(c => {
+      const industry = c.industry;
+      if (industry) counts[industry] = (counts[industry] || 0) + 1;
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  }, [contacts]);
+
+  // Pipeline stats (only for pipeline types)
+  const pipelineContacts = useMemo(() => contacts.filter(c => PIPELINE_TYPES.includes(c.contact_type)), [contacts]);
+  const stageCounts = useMemo(() => {
+    const counts = {};
+    pipelineContacts.forEach(c => {
       const stage = (c.stage || "new").toLowerCase();
       counts[stage] = (counts[stage] || 0) + 1;
     });
     return counts;
-  }, [contacts]);
-
-  const sourceCounts = useMemo(() => {
-    const counts = {};
-    contacts.forEach(c => {
-      const src = c.source || "other";
-      counts[src] = (counts[src] || 0) + 1;
-    });
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 7);
-  }, [contacts]);
+  }, [pipelineContacts]);
 
   const recentContacts = useMemo(() => contacts.slice(0, 8), [contacts]);
 
@@ -170,7 +201,7 @@ export default function CRMDashboard() {
           <div>
             <h1 className={`text-lg font-bold ${crt("text-slate-900", "text-white")}`}>CRM Dashboard</h1>
             <p className={`text-xs ${crt("text-slate-500", "text-zinc-400")}`}>
-              Overview of your contacts and pipeline
+              Overview of your contacts and relationships
             </p>
           </div>
           <div className="flex gap-2">
@@ -196,9 +227,9 @@ export default function CRMDashboard() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { icon: Users, label: "Total Contacts", value: stats.total, color: "text-cyan-400", bgColor: "bg-cyan-500/15" },
-            { icon: Euro, label: "Pipeline Value", value: formatCurrency(stats.pipelineValue), color: "text-cyan-400", bgColor: "bg-cyan-500/15" },
-            { icon: Target, label: "Won Deals", value: stats.wonDeals, sub: formatCurrency(stats.wonValue), color: "text-cyan-400", bgColor: "bg-cyan-500/15" },
-            { icon: TrendingUp, label: "Conversion Rate", value: `${stats.conversionRate}%`, color: "text-cyan-400", bgColor: "bg-cyan-500/15" },
+            { icon: Building2, label: "Companies", value: stats.companies, color: "text-blue-400", bgColor: "bg-blue-500/15" },
+            { icon: ShieldCheck, label: "With VAT", value: stats.withVat, color: "text-indigo-400", bgColor: "bg-indigo-500/15" },
+            { icon: Activity, label: "Enriched", value: stats.enriched, color: "text-cyan-400", bgColor: "bg-cyan-500/15" },
           ].map((stat, i) => (
             <div key={i} className={`rounded-xl p-4 ${crt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/60 border border-zinc-800/60")}`}>
               <div className="flex items-center justify-between mb-3">
@@ -207,20 +238,93 @@ export default function CRMDashboard() {
                 </div>
               </div>
               <div className={`text-xl font-bold ${crt("text-slate-900", "text-white")}`}>{stat.value}</div>
-              <div className={`text-xs ${crt("text-slate-500", "text-zinc-500")}`}>
-                {stat.label}
-                {stat.sub && <span className={`ml-1 ${stat.color}`}>{stat.sub}</span>}
-              </div>
+              <div className={`text-xs ${crt("text-slate-500", "text-zinc-500")}`}>{stat.label}</div>
             </div>
           ))}
         </div>
 
-        {/* Pipeline + Source Row */}
+        {/* Type Breakdown + Company Insights Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Pipeline Stages */}
+          {/* Contact Type Breakdown */}
           <div className={`rounded-xl p-5 ${crt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/60 border border-zinc-800/60")}`}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className={`text-sm font-semibold ${crt("text-slate-900", "text-white")}`}>Pipeline Stages</h2>
+              <h2 className={`text-sm font-semibold ${crt("text-slate-900", "text-white")}`}>Contacts by Type</h2>
+              <button onClick={() => navigate(createPageUrl("CRMContacts"))} className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+                View All <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+            <div className="space-y-2.5">
+              {typeCounts.map(([type, count]) => {
+                const config = TYPE_CONFIG[type] || TYPE_CONFIG.contact;
+                const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
+                const TypeIcon = config.icon;
+                return (
+                  <div key={type} className="flex items-center gap-3">
+                    <div className={`w-6 h-6 rounded flex items-center justify-center ${config.bg} flex-shrink-0`}>
+                      <TypeIcon className={`w-3 h-3 ${config.color}`} />
+                    </div>
+                    <span className={`text-xs w-20 truncate ${crt("text-slate-600", "text-zinc-400")}`}>{config.label}</span>
+                    <div className={`flex-1 h-2 rounded-full ${crt("bg-slate-100", "bg-zinc-800")}`}>
+                      <div className={`h-full rounded-full bg-cyan-500 transition-all duration-500`} style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className={`text-xs font-medium w-8 text-right ${crt("text-slate-700", "text-zinc-300")}`}>{count}</span>
+                  </div>
+                );
+              })}
+              {typeCounts.length === 0 && (
+                <p className={`text-xs ${crt("text-slate-400", "text-zinc-500")}`}>No contacts yet</p>
+              )}
+            </div>
+          </div>
+
+          {/* Company Insights */}
+          <div className="space-y-4">
+            {/* By Country */}
+            <div className={`rounded-xl p-5 ${crt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/60 border border-zinc-800/60")}`}>
+              <h2 className={`text-sm font-semibold mb-3 ${crt("text-slate-900", "text-white")}`}>
+                <Globe className="w-4 h-4 inline mr-1.5 text-cyan-400" />Countries
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {countryCounts.map(([country, count]) => (
+                  <span key={country} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${crt("bg-slate-100 text-slate-700", "bg-zinc-800 text-zinc-300")}`}>
+                    {country} <span className="text-cyan-400">{count}</span>
+                  </span>
+                ))}
+                {countryCounts.length === 0 && (
+                  <p className={`text-xs ${crt("text-slate-400", "text-zinc-500")}`}>No country data yet</p>
+                )}
+              </div>
+            </div>
+            {/* By Industry */}
+            <div className={`rounded-xl p-5 ${crt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/60 border border-zinc-800/60")}`}>
+              <h2 className={`text-sm font-semibold mb-3 ${crt("text-slate-900", "text-white")}`}>
+                <Briefcase className="w-4 h-4 inline mr-1.5 text-cyan-400" />Industries
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {industryCounts.map(([industry, count]) => (
+                  <span key={industry} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${crt("bg-slate-100 text-slate-700", "bg-zinc-800 text-zinc-300")}`}>
+                    {industry} <span className="text-cyan-400">{count}</span>
+                  </span>
+                ))}
+                {industryCounts.length === 0 && (
+                  <p className={`text-xs ${crt("text-slate-400", "text-zinc-500")}`}>No industry data yet</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Pipeline Summary + Recent Activity Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Pipeline Stages (compact, only for pipeline types) */}
+          <div className={`rounded-xl p-5 ${crt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/60 border border-zinc-800/60")}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className={`text-sm font-semibold ${crt("text-slate-900", "text-white")}`}>
+                Sales Pipeline
+                <span className={`ml-2 text-xs font-normal ${crt("text-slate-400", "text-zinc-500")}`}>
+                  {pipelineContacts.length} leads/prospects
+                </span>
+              </h2>
               <button onClick={() => navigate(createPageUrl("CRMPipeline"))} className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
                 View Pipeline <ArrowRight className="w-3 h-3" />
               </button>
@@ -242,34 +346,7 @@ export default function CRMDashboard() {
             </div>
           </div>
 
-          {/* Source Breakdown */}
-          <div className={`rounded-xl p-5 ${crt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/60 border border-zinc-800/60")}`}>
-            <h2 className={`text-sm font-semibold mb-4 ${crt("text-slate-900", "text-white")}`}>Source Breakdown</h2>
-            <div className="space-y-3">
-              {sourceCounts.map(([source, count]) => {
-                const pct = Math.round((count / contacts.length) * 100);
-                return (
-                  <div key={source} className="flex items-center gap-3">
-                    <span className={`text-xs w-24 truncate capitalize ${crt("text-slate-600", "text-zinc-400")}`}>
-                      {source.replace("_", " ")}
-                    </span>
-                    <div className={`flex-1 h-2 rounded-full ${crt("bg-slate-100", "bg-zinc-800")}`}>
-                      <div className={`h-full rounded-full ${SOURCE_COLORS[source] || "bg-zinc-500"} transition-all duration-500`} style={{ width: `${pct}%` }} />
-                    </div>
-                    <span className={`text-xs font-medium w-8 text-right ${crt("text-slate-700", "text-zinc-300")}`}>{count}</span>
-                  </div>
-                );
-              })}
-              {sourceCounts.length === 0 && (
-                <p className={`text-xs ${crt("text-slate-400", "text-zinc-500")}`}>No source data yet</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Recent + Follow-ups Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Recent Contacts */}
+          {/* Recent Activity */}
           <div className={`rounded-xl p-5 ${crt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/60 border border-zinc-800/60")}`}>
             <div className="flex items-center justify-between mb-4">
               <h2 className={`text-sm font-semibold ${crt("text-slate-900", "text-white")}`}>Recent Activity</h2>
@@ -278,42 +355,56 @@ export default function CRMDashboard() {
               </button>
             </div>
             <div className="space-y-2">
-              {recentContacts.map(contact => (
-                <button
-                  key={contact.id}
-                  onClick={() => navigate(createPageUrl("CRMContactProfile") + `?id=${contact.id}`)}
-                  className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-left ${crt("hover:bg-slate-50", "hover:bg-zinc-800/50")}`}
-                >
-                  <div className="w-8 h-8 rounded-full bg-cyan-600/20 flex items-center justify-center text-cyan-400 text-xs font-medium flex-shrink-0">
-                    {(contact.name || "?")[0]?.toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium truncate ${crt("text-slate-900", "text-white")}`}>{contact.name}</p>
-                    <p className={`text-xs truncate ${crt("text-slate-500", "text-zinc-500")}`}>{contact.company_name || contact.email}</p>
-                  </div>
-                  <span className={`text-xs flex-shrink-0 ${crt("text-slate-400", "text-zinc-500")}`}>
-                    {formatRelativeTime(contact.updated_at)}
-                  </span>
-                </button>
-              ))}
+              {recentContacts.map(contact => {
+                const config = TYPE_CONFIG[contact.contact_type] || TYPE_CONFIG.contact;
+                return (
+                  <button
+                    key={contact.id}
+                    onClick={() => navigate(createPageUrl("CRMContactProfile") + `?id=${contact.id}`)}
+                    className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-left ${crt("hover:bg-slate-50", "hover:bg-zinc-800/50")}`}
+                  >
+                    <div className={`w-8 h-8 rounded-full ${config.bg} flex items-center justify-center flex-shrink-0`}>
+                      {ALWAYS_COMPANY_TYPES.includes(contact.contact_type) ? (
+                        <Building2 className={`w-3.5 h-3.5 ${config.color}`} />
+                      ) : (
+                        <span className={`${config.color} text-xs font-medium`}>{(contact.name || "?")[0]?.toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium truncate ${crt("text-slate-900", "text-white")}`}>{contact.name}</p>
+                      <p className={`text-xs truncate ${crt("text-slate-500", "text-zinc-500")}`}>{contact.company_name || contact.email}</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded capitalize ${crt("bg-slate-100 text-slate-500", "bg-zinc-800 text-zinc-400")}`}>
+                        {contact.contact_type || "contact"}
+                      </span>
+                      <span className={`text-xs ${crt("text-slate-400", "text-zinc-500")}`}>
+                        {formatRelativeTime(contact.updated_date)}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
               {recentContacts.length === 0 && (
                 <p className={`text-xs text-center py-4 ${crt("text-slate-400", "text-zinc-500")}`}>No contacts yet</p>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Upcoming Follow-ups */}
+        {/* Follow-ups */}
+        {upcomingFollowUps.length > 0 && (
           <div className={`rounded-xl p-5 ${crt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/60 border border-zinc-800/60")}`}>
             <div className="flex items-center justify-between mb-4">
               <h2 className={`text-sm font-semibold ${crt("text-slate-900", "text-white")}`}>Upcoming Follow-ups</h2>
               <Clock className={`w-4 h-4 ${crt("text-slate-400", "text-zinc-500")}`} />
             </div>
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {upcomingFollowUps.map(contact => (
                 <button
                   key={contact.id}
                   onClick={() => navigate(createPageUrl("CRMContactProfile") + `?id=${contact.id}`)}
-                  className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-left ${crt("hover:bg-slate-50", "hover:bg-zinc-800/50")}`}
+                  className={`flex items-center gap-3 p-2 rounded-lg transition-colors text-left ${crt("hover:bg-slate-50", "hover:bg-zinc-800/50")}`}
                 >
                   <div className="w-8 h-8 rounded-full bg-cyan-600/20 flex items-center justify-center text-cyan-400 text-xs font-medium flex-shrink-0">
                     {(contact.name || "?")[0]?.toUpperCase()}
@@ -327,12 +418,9 @@ export default function CRMDashboard() {
                   </span>
                 </button>
               ))}
-              {upcomingFollowUps.length === 0 && (
-                <p className={`text-xs text-center py-4 ${crt("text-slate-400", "text-zinc-500")}`}>No follow-ups scheduled this week</p>
-              )}
             </div>
           </div>
-        </div>
+        )}
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
