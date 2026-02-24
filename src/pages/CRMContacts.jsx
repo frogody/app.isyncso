@@ -1822,7 +1822,7 @@ export default function CRMContacts() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
-                    {CONTACT_TYPES.filter(t => t.id !== 'all' && t.id !== 'supplier').map(t => (
+                    {CONTACT_TYPES.filter(t => t.id !== 'all').map(t => (
                       <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
                     ))}
                   </SelectContent>
