@@ -478,28 +478,39 @@ export default function StoreDashboard() {
     if (!companyId || syncing) return;
     setSyncing(true);
     setSyncResult(null);
+    let totalSynced = 0;
+    let round = 0;
+    const MAX_ROUNDS = 10; // Safety cap: max 10 consecutive sync rounds
     try {
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bolcom-api`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({ action: 'fetchOrders', companyId }),
+      let needsMore = true;
+      while (needsMore && round < MAX_ROUNDS) {
+        round++;
+        console.log(`[StoreDashboard] bol.com sync round ${round}...`);
+        const resp = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bolcom-api`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({ action: 'fetchOrders', companyId }),
+          }
+        );
+        const json = await resp.json();
+        if (json.success) {
+          totalSynced += json.data.ordersSynced || 0;
+          setSyncResult({ ...json.data, ordersSynced: totalSynced, round });
+          needsMore = json.data.needsMore && json.data.ordersSynced > 0;
+        } else {
+          console.error('[StoreDashboard] bol.com sync error:', json.error);
+          setSyncResult({ error: json.error });
+          needsMore = false;
         }
-      );
-      const json = await resp.json();
-      if (json.success) {
-        setSyncResult(json.data);
-        // Refetch dashboard data to show new orders
-        if (json.data.ordersSynced > 0) {
-          await fetchData();
-        }
-      } else {
-        console.error('[StoreDashboard] bol.com sync error:', json.error);
-        setSyncResult({ error: json.error });
+      }
+      // Refetch dashboard data to show new orders
+      if (totalSynced > 0) {
+        await fetchData();
       }
     } catch (err) {
       console.error('[StoreDashboard] bol.com sync error:', err);
