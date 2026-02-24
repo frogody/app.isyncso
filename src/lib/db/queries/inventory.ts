@@ -273,6 +273,22 @@ export async function scanBarcode(companyId: string, ean: string): Promise<ScanR
     }
   }
 
+  // 3. If not found by EAN or barcode, try matching by SKU (some labels use SKU barcodes)
+  if (!product) {
+    const { data, error } = await supabase
+      .from('products')
+      .select('id, name, sku, ean')
+      .eq('company_id', companyId)
+      .eq('sku', cleanEan)
+      .limit(1)
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    if (data) {
+      product = data;
+    }
+  }
+
   if (!product) {
     return { found: false };
   }

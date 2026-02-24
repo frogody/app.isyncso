@@ -53,6 +53,8 @@ function BarcodeScanner({ onScan, isActive }) {
   const inputRef = useRef(null);
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
+  const bufferRef = useRef(""); // Ref-based buffer for hardware scanner reliability
+  const lastKeystrokeRef = useRef(0);
   const [manualEntry, setManualEntry] = useState("");
   const [scanMode, setScanMode] = useState("manual"); // "manual" or "camera"
   const [isScanning, setIsScanning] = useState(false);
@@ -93,27 +95,18 @@ function BarcodeScanner({ onScan, isActive }) {
       html5QrCodeRef.current = html5QrCode;
 
       const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 150 },
+        fps: 15,
+        qrbox: { width: 300, height: 100 },
         aspectRatio: 1.777778,
+        // Focus on EAN/UPC barcode formats for warehouse receiving
         formatsToSupport: [
-          0,  // QR_CODE
-          1,  // AZTEC
-          2,  // CODABAR
-          3,  // CODE_39
-          4,  // CODE_93
-          5,  // CODE_128
-          6,  // DATA_MATRIX
-          7,  // MAXICODE
-          8,  // ITF
-          9,  // EAN_13
+          9,  // EAN_13 — primary product barcode format
           10, // EAN_8
-          11, // PDF_417
-          12, // RSS_14
-          13, // RSS_EXPANDED
           14, // UPC_A
           15, // UPC_E
-          16, // UPC_EAN_EXTENSION
+          5,  // CODE_128 — common in shipping labels
+          8,  // ITF — used on carton barcodes (ITF-14)
+          3,  // CODE_39
         ],
       };
 
@@ -181,17 +174,33 @@ function BarcodeScanner({ onScan, isActive }) {
 
   const handleManualSubmit = (e) => {
     e.preventDefault();
-    if (manualEntry.trim()) {
-      onScan(manualEntry.trim());
+    // Use ref buffer for hardware scanner reliability (state may lag behind fast input)
+    const value = (bufferRef.current || manualEntry).trim();
+    if (value) {
+      onScan(value);
       setManualEntry("");
+      bufferRef.current = "";
     }
   };
 
-  // Handle barcode scanner input (fast sequential keypresses from hardware scanner)
-  const handleKeyPress = useCallback((e) => {
-    if (e.key === "Enter" && manualEntry.trim()) {
-      onScan(manualEntry.trim());
-      setManualEntry("");
+  // Handle input changes — keep ref buffer in sync for hardware scanner
+  const handleInputChange = useCallback((e) => {
+    const val = e.target.value;
+    setManualEntry(val);
+    bufferRef.current = val;
+    lastKeystrokeRef.current = Date.now();
+  }, []);
+
+  // Handle Enter key from hardware scanner or keyboard
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const value = (bufferRef.current || manualEntry).trim();
+      if (value) {
+        onScan(value);
+        setManualEntry("");
+        bufferRef.current = "";
+      }
     }
   }, [manualEntry, onScan]);
 
@@ -319,8 +328,8 @@ function BarcodeScanner({ onScan, isActive }) {
               inputMode="numeric"
               placeholder="EAN / Barcode..."
               value={manualEntry}
-              onChange={(e) => setManualEntry(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
               className={`flex-1 ${t('bg-white border-gray-200', 'bg-zinc-900/50 border-white/10')}`}
               autoFocus={isActive && scanMode === "manual"}
             />
