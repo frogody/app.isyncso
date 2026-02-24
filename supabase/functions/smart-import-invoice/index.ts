@@ -477,6 +477,14 @@ function sanitizeExtraction(data: FlatExtraction, pdfText: string, myCompany?: S
       if (nameIdx !== -1) {
         const afterName = pdfText.substring(nameIdx + data.supplier_name!.length, nameIdx + data.supplier_name!.length + 500).trim();
 
+        // Recover address: grab lines between the name and the first non-address field
+        const addressLines = afterName.split(/\n/).slice(0, 3).map(l => l.trim()).filter(l =>
+          l && !/[\w.+-]+@/.test(l) && !/^(kvk|btw|bank|iban|bic)/i.test(l) && !/^(www\.|https?:)/i.test(l)
+        );
+        if (addressLines.length > 0) {
+          data.supplier_address = addressLines.join(", ");
+        }
+
         const emailMatch = afterName.match(/[\w.+-]+@[\w.-]+\.\w{2,}/);
         if (emailMatch) data.supplier_email = emailMatch[0];
 
@@ -789,16 +797,26 @@ function detectCountry(flat: FlatExtraction): CountryResult {
 
   // Priority 3: supplier_address regex
   if (flat.supplier_address) {
-    const addr = flat.supplier_address.toLowerCase();
+    const addr = flat.supplier_address;
+    const addrLower = addr.toLowerCase();
     // US state+ZIP pattern
-    if (/\b[a-z]{2}\s+\d{5}(-\d{4})?\b/.test(addr)) {
+    if (/\b[a-z]{2}\s+\d{5}(-\d{4})?\b/.test(addrLower)) {
       return { code: "US", isEU: false, isNL: false };
     }
     // Country names in address
     for (const [name, code] of Object.entries(EU_COUNTRY_NAMES)) {
-      if (addr.includes(name)) {
+      if (addrLower.includes(name)) {
         return { code, isEU: EU_COUNTRIES.includes(code), isNL: code === "NL" };
       }
+    }
+    // Postcode patterns (when no country name is present)
+    // NL: 4 digits + 2 uppercase letters (e.g. 3769AV, 1012 AB)
+    if (/\b\d{4}\s?[A-Z]{2}\b/.test(addr)) {
+      return { code: "NL", isEU: true, isNL: true };
+    }
+    // UK: e.g. SW1A 1AA, EC2R 8AH
+    if (/\b[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}\b/.test(addr)) {
+      return { code: "GB", isEU: false, isNL: false };
     }
   }
 
