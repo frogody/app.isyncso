@@ -151,10 +151,6 @@ export function ProductGridCard({
                   <Badge className="bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs">
                     <Truck className="w-3 h-3 mr-1" /> bol.com Warehouse
                   </Badge>
-                ) : fm === 'FBR' ? (
-                  <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs">
-                    <Package className="w-3 h-3 mr-1" /> Own Warehouse
-                  </Badge>
                 ) : null;
               })()}
 
@@ -363,10 +359,6 @@ export function ProductListRow({
                 return fm === 'FBB' ? (
                   <Badge className="bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs">
                     <Truck className="w-3 h-3 mr-1" /> bol.com Warehouse
-                  </Badge>
-                ) : fm === 'FBR' ? (
-                  <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs">
-                    <Package className="w-3 h-3 mr-1" /> Own Warehouse
                   </Badge>
                 ) : null;
               })()}
@@ -744,10 +736,6 @@ export function ProductTableView({
                             return fm === 'FBB' ? (
                               <span className="text-[10px] text-orange-400 flex items-center gap-0.5">
                                 <Truck className="w-2.5 h-2.5" /> bol.com
-                              </span>
-                            ) : fm === 'FBR' ? (
-                              <span className="text-[10px] text-blue-400 flex items-center gap-0.5">
-                                <Package className="w-2.5 h-2.5" /> own
                               </span>
                             ) : null;
                           })()}
