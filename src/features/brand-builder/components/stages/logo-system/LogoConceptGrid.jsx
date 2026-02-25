@@ -18,7 +18,10 @@ export default function LogoConceptGrid({
   aiLogosLoading = false,
   onGenerateAiLogos,
   onRegenerateAiLogo,
+  selectedAiLogoIndex = null,
+  onSelectAiLogo,
 }) {
+  const hasAiLogos = aiLogos.some(l => l?.url);
   return (
     <div className="space-y-8">
       <div>
@@ -76,6 +79,8 @@ export default function LogoConceptGrid({
                   logo={logo}
                   index={idx}
                   isLoading={logo.loading}
+                  selected={selectedAiLogoIndex === idx}
+                  onSelect={() => onSelectAiLogo?.(idx)}
                   onRegenerate={() => onRegenerateAiLogo(idx)}
                 />
               ))
@@ -84,38 +89,47 @@ export default function LogoConceptGrid({
         )}
       </section>
 
-      {/* Divider */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 h-px bg-white/10" />
-        <span className="text-[10px] text-zinc-600 uppercase tracking-wider">Algorithmic Concepts</span>
-        <div className="flex-1 h-px bg-white/10" />
-      </div>
+      {/* SVG Concept Grid — hidden when AI logos are available */}
+      {!hasAiLogos && (
+        <>
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-[10px] text-zinc-600 uppercase tracking-wider">Generated Concepts</span>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
 
-      {/* SVG Concept Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
-        {concepts.map((concept, idx) => (
-          <ConceptCard
-            key={idx}
-            concept={concept}
-            index={idx}
-            selected={selectedIndex === idx}
-            onSelect={() => onSelect(idx)}
-            onMoreLikeThis={() => onMoreLikeThis(idx)}
-            isLoadingMore={isLoadingMore}
-          />
-        ))}
-      </div>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
+            {concepts.map((concept, idx) => (
+              <ConceptCard
+                key={idx}
+                concept={concept}
+                index={idx}
+                selected={selectedIndex === idx}
+                onSelect={() => onSelect(idx)}
+                onMoreLikeThis={() => onMoreLikeThis(idx)}
+                isLoadingMore={isLoadingMore}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
-function AiLogoCard({ logo, index, isLoading, onRegenerate }) {
+function AiLogoCard({ logo, index, isLoading, selected, onSelect, onRegenerate }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      className="rounded-[20px] bg-white/[0.03] border border-white/10 overflow-hidden"
+      whileHover={{ scale: 1.01 }}
+      onClick={logo.url && !isLoading ? onSelect : undefined}
+      className={`relative rounded-[20px] overflow-hidden cursor-pointer transition-all duration-200 border-2 ${
+        selected
+          ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_24px_rgba(250,204,21,0.12)]'
+          : 'border-white/10 bg-white/[0.03] hover:border-white/20'
+      }`}
     >
       <ImageGenerationCard
         imageUrl={logo.url}
@@ -123,17 +137,24 @@ function AiLogoCard({ logo, index, isLoading, onRegenerate }) {
         error={logo.error}
         onRetry={onRegenerate}
         label={`AI Logo ${index + 1}`}
-        aspectRatio="4/3"
+        aspectRatio="1/1"
       />
       {logo.url && !isLoading && (
         <div className="px-4 py-3 border-t border-white/[0.06] flex items-center justify-between">
-          <span className="text-[10px] text-zinc-500">Concept {index + 1}</span>
+          <span className="text-[10px] text-zinc-500">
+            {['Symbol Mark', 'Lettermark', 'Wordmark'][index] || `Concept ${index + 1}`}
+          </span>
           <RegenerateButton
-            onClick={onRegenerate}
+            onClick={(e) => { e.stopPropagation(); onRegenerate(); }}
             isLoading={isLoading}
             label="Redo"
             size="sm"
           />
+        </div>
+      )}
+      {selected && (
+        <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-yellow-400 flex items-center justify-center">
+          <Check className="w-4 h-4 text-black" />
         </div>
       )}
     </motion.div>

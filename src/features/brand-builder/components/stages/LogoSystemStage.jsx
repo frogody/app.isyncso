@@ -60,6 +60,7 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
     return project?.brand_dna?._aiLogos || [];
   });
   const [aiLogosLoading, setAiLogosLoading] = useState(false);
+  const [selectedAiLogoIndex, setSelectedAiLogoIndex] = useState(null);
   const mountedRef = useRef(true);
   useEffect(() => () => { mountedRef.current = false; }, []);
 
@@ -83,7 +84,14 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
 
   const handleConceptSelect = useCallback((idx) => {
     setSelectedIndex(idx);
+    setSelectedAiLogoIndex(null); // Clear AI selection
   }, []);
+
+  const handleAiLogoSelect = useCallback((idx) => {
+    if (!aiLogos[idx]?.url) return;
+    setSelectedAiLogoIndex(idx);
+    setSelectedIndex(null); // Clear SVG selection
+  }, [aiLogos]);
 
   const handleMoreLikeThis = useCallback((idx) => {
     if (!concepts?.[idx]) return;
@@ -246,7 +254,31 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
         }
       });
     } else if (subStep === 2) {
-      // Concept selection → refinement
+      // AI logo selected → skip refinement, build simplified system
+      if (selectedAiLogoIndex != null && aiLogos[selectedAiLogoIndex]?.url) {
+        const aiLogo = aiLogos[selectedAiLogoIndex];
+        const system = {
+          concept: {
+            ai_image_url: aiLogo.url,
+            svg_source: null,
+            design_rationale: `AI-generated ${['symbol mark', 'lettermark', 'wordmark'][selectedAiLogoIndex] || 'logo'} concept`,
+            icon_keywords: brandDna?._iconKeywords || [],
+            style: 'ai-generated',
+          },
+          variations: [],
+          rules: {
+            clear_space: '2x logo height on all sides',
+            min_size: '24px',
+            backgrounds: ['white', 'light neutral', 'dark'],
+          },
+          grid: null,
+          exports: {},
+        };
+        setLogoSystem(system);
+        setSubStep(4); // Skip refinement, go to system preview
+        return;
+      }
+      // SVG concept selected → refinement
       if (selectedIndex == null || !concepts?.[selectedIndex]) return;
       setRefinedConcept(concepts[selectedIndex]);
       setSubStep(3);
@@ -318,7 +350,7 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
       return keywords.length >= 3;
     }
 
-    if (subStep === 2) return selectedIndex != null;
+    if (subStep === 2) return selectedIndex != null || selectedAiLogoIndex != null;
     if (subStep === 3) return refinedConcept != null;
     if (subStep === 4) return logoSystem != null;
 
@@ -327,10 +359,10 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
 
   const nextLabel = useMemo(() => {
     if (subStep === 1) return 'Generate Concepts';
-    if (subStep === 2) return 'Refine Logo';
+    if (subStep === 2) return selectedAiLogoIndex != null ? 'Use This Logo' : 'Refine Logo';
     if (subStep === 3) return 'View Full System';
     return 'Continue to Verbal Identity';
-  }, [subStep]);
+  }, [subStep, selectedAiLogoIndex]);
 
   // ── Loading overlay ────────────────────────────────────────────
   const loadingMessage = subStep === 1
@@ -389,6 +421,8 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
               aiLogosLoading={aiLogosLoading}
               onGenerateAiLogos={handleGenerateAiLogos}
               onRegenerateAiLogo={handleRegenerateAiLogo}
+              selectedAiLogoIndex={selectedAiLogoIndex}
+              onSelectAiLogo={handleAiLogoSelect}
             />
           )}
           {subStep === 3 && refinedConcept && (
