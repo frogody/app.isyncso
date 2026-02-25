@@ -86,16 +86,43 @@ export default function Onboarding() {
         return;
       }
 
-      // 1. Update user profile
+      // 1. Update user profile — CRITICAL: must succeed for guard to pass
+      let profileUpdated = false;
       try {
-        await db.auth.updateMe({
+        const result = await db.auth.updateMe({
           full_name: formData.fullName || user.full_name,
           job_title: formData.jobTitle,
           onboarding_completed: true
         });
+        profileUpdated = !!(result?.onboarding_completed);
+        console.log('[Onboarding] Profile update result:', { profileUpdated, result });
       } catch (e) {
-        console.warn('[Onboarding] Profile update warning:', e);
+        console.warn('[Onboarding] Profile update via updateMe failed, trying direct:', e);
       }
+
+      // Fallback: direct supabase update if updateMe failed
+      if (!profileUpdated) {
+        try {
+          const { data: directResult, error: directErr } = await supabase
+            .from('users')
+            .update({
+              full_name: formData.fullName || user.full_name,
+              job_title: formData.jobTitle,
+              onboarding_completed: true
+            })
+            .eq('id', user.id)
+            .select('onboarding_completed')
+            .single();
+          if (directErr) throw directErr;
+          profileUpdated = !!(directResult?.onboarding_completed);
+          console.log('[Onboarding] Direct update result:', { profileUpdated });
+        } catch (e2) {
+          console.error('[Onboarding] Direct profile update also failed:', e2);
+        }
+      }
+
+      // Belt-and-suspenders: set localStorage so guard doesn't loop
+      localStorage.setItem('onboarding_completed', 'true');
 
       // 2. Create or link company (skip for invited users)
       let companyId = null;
@@ -175,7 +202,6 @@ export default function Onboarding() {
           });
         }
 
-        // Also persist products_settings to localStorage if set
         if (persona.appConfigs?.products_settings) {
           localStorage.setItem('isyncso_products_settings', JSON.stringify(persona.appConfigs.products_settings));
           window.dispatchEvent(new CustomEvent('products-settings-changed', {
@@ -195,9 +221,8 @@ export default function Onboarding() {
         console.warn('[Onboarding] Credits error:', e);
       }
 
-      // 5. Fire-and-forget: background enrichment (don't block navigation)
-      if (!isInvitedUser && companyDomain) {
-        // Company research + Explorium enrichment — runs in background
+      // 5. Fire-and-forget: Explorium company intelligence + research
+      if (!isInvitedUser && companyDomain && companyId) {
         Promise.allSettled([
           db.functions.invoke('researchCompany', {
             company_name: formData.companyName,
@@ -205,55 +230,73 @@ export default function Onboarding() {
             domain: companyDomain,
             industry: 'Technology'
           }),
-          db.functions.invoke('enrichCompanyFromExplorium', {
-            domain: companyDomain
+          db.functions.invoke('generateCompanyIntelligence', {
+            companyName: formData.companyName,
+            companyDomain: companyDomain
           })
-        ]).then(async ([researchResult, exploriumResult]) => {
-          // Update company with enrichment data in background
-          if (companyId && exploriumResult.status === 'fulfilled' && exploriumResult.value?.data && !exploriumResult.value.data.error) {
-            const enrichment = exploriumResult.value.data;
+        ]).then(async ([researchResult, intelResult]) => {
+          // Normalize intelligence into company table columns
+          if (intelResult.status === 'fulfilled' && intelResult.value?.data?.intelligence) {
+            const intel = intelResult.value.data.intelligence;
+            const firmo = intel.firmographics || {};
+            const funding = intel.funding || {};
+            const tech = intel.technographics || {};
+            const social = intel.social_media || {};
+            const workforce = intel.workforce || {};
+
+            // Flatten tech stack into simple array
+            const flatTechStack = (tech.tech_stack || [])
+              .flatMap(cat => cat.technologies || []);
+            // Build tech categories object
+            const techCategories = {};
+            (tech.tech_stack || []).forEach(cat => {
+              if (cat.category && cat.technologies?.length) {
+                techCategories[cat.category] = cat.technologies;
+              }
+            });
+
             try {
               await db.entities.Company.update(companyId, {
-                name: enrichment.name || formData.companyName,
-                description: enrichment.description || null,
-                industry: enrichment.industry || null,
-                naics_code: enrichment.naics_code || null,
-                naics_description: enrichment.naics_description || null,
-                sic_code: enrichment.sic_code || null,
-                sic_description: enrichment.sic_description || null,
-                size_range: enrichment.size_range || null,
-                employee_count: enrichment.employee_count || null,
-                revenue_range: enrichment.revenue_range || null,
-                founded_year: enrichment.founded_year || null,
-                linkedin_url: enrichment.linkedin_url || null,
-                website_url: enrichment.website_url || null,
-                twitter_url: enrichment.twitter_url || null,
-                facebook_url: enrichment.facebook_url || null,
-                logo_url: enrichment.logo_url || null,
-                headquarters: enrichment.headquarters || null,
-                hq_city: enrichment.hq_city || null,
-                hq_state: enrichment.hq_state || null,
-                hq_country: enrichment.hq_country || null,
-                hq_postal_code: enrichment.hq_postal_code || null,
-                hq_address: enrichment.hq_address || null,
-                locations_count: enrichment.locations_count || null,
-                locations_distribution: enrichment.locations_distribution || [],
-                phone: enrichment.phone || null,
-                email: enrichment.email || null,
-                tech_stack: enrichment.tech_stack || [],
-                tech_categories: enrichment.tech_categories || [],
-                tech_stack_count: enrichment.tech_stack_count || 0,
-                funding_data: enrichment.funding_data || null,
-                total_funding: enrichment.total_funding || null,
-                funding_stage: enrichment.funding_stage || null,
-                last_funding_date: enrichment.last_funding_date || null,
-                firmographics: enrichment.firmographics || null,
-                technographics: enrichment.technographics || null,
-                funding_raw: enrichment.funding_raw || null,
+                name: firmo.company_name || formData.companyName,
+                description: firmo.description || null,
+                industry: firmo.industry || null,
+                naics_code: firmo.naics_code || null,
+                naics_description: firmo.naics_description || null,
+                sic_code: firmo.sic_code || null,
+                sic_description: firmo.sic_description || null,
+                size_range: firmo.employee_count_range || null,
+                employee_count: firmo.employee_count || workforce.total_employees || null,
+                revenue_range: firmo.revenue_range || null,
+                founded_year: firmo.founded_year || null,
+                linkedin_url: firmo.linkedin_url || social.linkedin_url || null,
+                website_url: firmo.website || formData.companyWebsite || null,
+                twitter_url: social.twitter_url || null,
+                facebook_url: social.facebook_url || null,
+                logo_url: firmo.logo_url || null,
+                headquarters: firmo.headquarters || null,
+                hq_city: firmo.city || null,
+                hq_state: firmo.state || null,
+                hq_country: firmo.country || null,
+                hq_postal_code: firmo.zip_code || null,
+                hq_address: firmo.street || null,
+                locations_count: firmo.locations_count || null,
+                tech_stack: flatTechStack.length > 0 ? flatTechStack : [],
+                tech_categories: Object.keys(techCategories).length > 0 ? techCategories : null,
+                tech_stack_count: flatTechStack.length || 0,
+                funding_data: funding.funding_rounds?.length ? funding : null,
+                total_funding: funding.total_funding || null,
+                funding_stage: funding.funding_stage || null,
+                last_funding_date: funding.last_funding_date || null,
+                firmographics: intel.firmographics || null,
+                technographics: intel.technographics || null,
+                funding_raw: intel.funding || null,
                 enriched_at: new Date().toISOString(),
                 enrichment_source: 'explorium',
-                data_completeness: enrichment.data_completeness || 0
+                data_completeness: intel.data_quality?.completeness
+                  ? Math.round((intel.data_quality.completeness / 8) * 100)
+                  : 0
               });
+              console.log('[Onboarding] Company enriched from Explorium intelligence');
             } catch (updateErr) {
               console.warn('[Onboarding] Background enrichment update failed:', updateErr);
             }
@@ -269,6 +312,8 @@ export default function Onboarding() {
 
     } catch (error) {
       console.error('[Onboarding] Final error:', error);
+      // Still set localStorage so user doesn't get stuck
+      localStorage.setItem('onboarding_completed', 'true');
       window.location.href = createPageUrl('Dashboard');
     }
   };

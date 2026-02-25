@@ -729,6 +729,10 @@ export default function AdminUsers() {
   const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
   const [userToDeactivate, setUserToDeactivate] = useState(null);
   const [isDeactivating, setIsDeactivating] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
 
   // Fetch users
   const fetchUsers = useCallback(async () => {
@@ -835,6 +839,28 @@ export default function AdminUsers() {
       toast.error(error.message || 'Failed to deactivate user');
     } finally {
       setIsDeactivating(false);
+    }
+  };
+
+  // Hard-delete user
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    setIsDeleting(true);
+    try {
+      await adminApi(`/users/${userToDelete.id}/hard-delete`, {
+        method: 'POST',
+        body: JSON.stringify({ confirm_email: deleteConfirmEmail }),
+      });
+      toast.success('User permanently deleted');
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
+      setDeleteConfirmEmail('');
+      fetchUsers();
+      fetchStats();
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete user');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -1129,6 +1155,22 @@ export default function AdminUsers() {
                                     </DropdownMenuItem>
                                   </>
                                 )}
+                                {canDeactivate && (
+                                  <>
+                                    <DropdownMenuSeparator className="bg-zinc-700" />
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setUserToDelete(user);
+                                        setDeleteConfirmEmail('');
+                                        setIsDeleteModalOpen(true);
+                                      }}
+                                      className="text-red-500 hover:text-red-400 focus:text-red-400 text-xs font-medium"
+                                    >
+                                      <X className="w-3 h-3 mr-1.5" />
+                                      Delete Permanently
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </td>
@@ -1231,6 +1273,77 @@ export default function AdminUsers() {
                 <>
                   <Trash2 className="w-4 h-4 mr-2" />
                   Deactivate
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hard Delete Confirmation Modal */}
+      <Dialog open={isDeleteModalOpen} onOpenChange={(open) => {
+        setIsDeleteModalOpen(open);
+        if (!open) { setUserToDelete(null); setDeleteConfirmEmail(''); }
+      }}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-500">
+              <AlertCircle className="w-5 h-5" />
+              Permanently Delete User
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400 space-y-2">
+              <p>
+                This will <span className="text-red-400 font-semibold">permanently delete</span>{' '}
+                <span className="text-white font-medium">
+                  {userToDelete?.full_name || userToDelete?.name || userToDelete?.email}
+                </span>{' '}
+                and all their data. This action cannot be undone.
+              </p>
+              <p className="text-xs text-zinc-500">
+                This removes their profile, app configs, roles, team memberships, SYNC sessions, integrations, credits, and authentication account.
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 mt-2">
+            <Label className="text-zinc-400 text-xs">
+              Type the user's email to confirm: <span className="text-red-400 font-mono">{userToDelete?.email}</span>
+            </Label>
+            <Input
+              value={deleteConfirmEmail}
+              onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+              placeholder="Type email address here..."
+              className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 text-sm"
+              autoComplete="off"
+            />
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setUserToDelete(null);
+                setDeleteConfirmEmail('');
+              }}
+              className="border-zinc-700 text-zinc-300"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeleteUser}
+              disabled={isDeleting || deleteConfirmEmail.toLowerCase() !== (userToDelete?.email || '').toLowerCase()}
+              className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-30"
+            >
+              {isDeleting ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <X className="w-4 h-4 mr-2" />
+                  Delete Forever
                 </>
               )}
             </Button>

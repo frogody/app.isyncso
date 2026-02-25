@@ -101,7 +101,10 @@ export default function OnboardingGuard({ children }) {
   }
 
   // User is authenticated - check onboarding status
-  const hasCompletedOnboarding = user?.job_title?.trim()?.length > 0 || user?.onboarding_completed === true;
+  // Check DB fields first, then localStorage as fallback (in case DB write was delayed)
+  const hasCompletedOnboarding = user?.job_title?.trim()?.length > 0
+    || user?.onboarding_completed === true
+    || localStorage.getItem('onboarding_completed') === 'true';
 
   // If user completed onboarding and tries to access onboarding page, redirect to Dashboard
   if (isOnOnboardingPage && hasCompletedOnboarding) {

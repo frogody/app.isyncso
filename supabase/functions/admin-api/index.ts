@@ -876,6 +876,141 @@ serve(async (req) => {
       );
     }
 
+    // POST /users/:id/hard-delete - Permanently delete user and all their data
+    if (path.match(/^\/users\/[a-f0-9-]+\/hard-delete$/) && method === "POST") {
+      // Only super_admin can hard-delete users
+      if (adminUser?.role !== "super_admin") {
+        return new Response(
+          JSON.stringify({ error: "Only super admins can permanently delete users" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const userId_param = path.split("/users/")[1].split("/hard-delete")[0];
+      const body = await req.json().catch(() => ({}));
+      const confirmEmail = body?.confirm_email;
+
+      // Get user data
+      const { data: userToDelete } = await supabaseAdmin
+        .from("users")
+        .select("*")
+        .or(`id.eq.${userId_param},auth_id.eq.${userId_param}`)
+        .single();
+
+      if (!userToDelete) {
+        return new Response(
+          JSON.stringify({ error: "User not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Safety: require email confirmation
+      if (!confirmEmail || confirmEmail.toLowerCase() !== userToDelete.email?.toLowerCase()) {
+        return new Response(
+          JSON.stringify({ error: "Email confirmation does not match. Deletion aborted." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Prevent deleting platform admins
+      const { data: isPlatformAdmin } = await supabaseAdmin
+        .from("platform_admins")
+        .select("id")
+        .eq("user_id", userToDelete.auth_id || userToDelete.id)
+        .single();
+
+      if (isPlatformAdmin) {
+        return new Response(
+          JSON.stringify({ error: "Cannot delete a platform admin. Remove admin status first." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const deletedTables: string[] = [];
+      const authId = userToDelete.auth_id || userToDelete.id;
+      const dbUserId = userToDelete.id;
+
+      // Delete from related tables (order matters for foreign keys)
+      const relatedTables = [
+        { table: "user_app_configs", column: "user_id" },
+        { table: "user_notifications", column: "user_id" },
+        { table: "user_panel_preferences", column: "user_id" },
+        { table: "rbac_user_roles", column: "user_id" },
+        { table: "team_members", column: "user_id" },
+        { table: "sync_sessions", column: "user_id" },
+        { table: "sync_memory_chunks", column: "user_id" },
+        { table: "sync_action_templates", column: "user_id" },
+        { table: "user_integrations", column: "user_id" },
+        { table: "composio_trigger_subscriptions", column: "user_id" },
+        { table: "composio_webhook_events", column: "user_id" },
+        { table: "credit_transactions", column: "user_id" },
+      ];
+
+      for (const { table, column } of relatedTables) {
+        try {
+          const { error } = await supabaseAdmin
+            .from(table)
+            .delete()
+            .eq(column, authId);
+          if (!error) deletedTables.push(table);
+          // Also try with dbUserId if different
+          if (dbUserId !== authId) {
+            await supabaseAdmin.from(table).delete().eq(column, dbUserId);
+          }
+        } catch (e) {
+          // Table might not exist or no rows — continue
+          console.warn(`[hard-delete] Skipped ${table}:`, e);
+        }
+      }
+
+      // Delete the user profile from users table
+      const { error: userDeleteError } = await supabaseAdmin
+        .from("users")
+        .delete()
+        .eq("id", dbUserId);
+
+      if (userDeleteError) {
+        console.error("[hard-delete] Failed to delete user row:", userDeleteError);
+        return new Response(
+          JSON.stringify({ error: "Failed to delete user profile: " + userDeleteError.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      deletedTables.push("users");
+
+      // Delete from Supabase Auth
+      try {
+        const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(authId);
+        if (authDeleteError) {
+          console.warn("[hard-delete] Auth user deletion warning:", authDeleteError);
+        } else {
+          deletedTables.push("auth.users");
+        }
+      } catch (authErr) {
+        console.warn("[hard-delete] Auth deletion failed:", authErr);
+      }
+
+      await createAuditLog(
+        userId!,
+        adminEmail,
+        "hard_delete",
+        "users",
+        userId_param,
+        userToDelete,
+        { deleted_tables: deletedTables },
+        ipAddress,
+        userAgent
+      );
+
+      return new Response(
+        JSON.stringify({
+          message: "User permanently deleted",
+          deleted_from: deletedTables,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // GET /companies - List all companies for filter dropdown
     if (path === "/companies" && method === "GET") {
       const { data, error } = await supabaseAdmin
