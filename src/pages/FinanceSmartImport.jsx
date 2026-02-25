@@ -1029,6 +1029,10 @@ export default function FinanceSmartImport() {
                   updateFormField('category', suggested);
                   toast.info(`Category updated to "${suggested}" based on vendor research`);
                 }}
+                onDocTypeSwitch={(newType) => {
+                  setDocumentType(newType);
+                  toast.info(`Switched to ${newType === 'expense' ? 'Expense' : 'Bill (AP)'}`);
+                }}
               />
 
               {/* Document Type Chips */}

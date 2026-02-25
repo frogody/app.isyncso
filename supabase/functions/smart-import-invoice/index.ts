@@ -838,7 +838,7 @@ function isReducedRateCategory(text: string): boolean {
 }
 
 function isLikelyService(text: string): boolean {
-  return /\b(subscription|abonnement|license|licentie|hosting|saas|cloud|platform|consult|advies|support|maintenance|onderhoud|service|dienst|plan\b|api|credits?\b|seats?\b|per\s*(month|year|maand|jaar))\b/i.test(text);
+  return /\b(subscription|abonnement|license|licentie|hosting|saas|cloud|platform|consult|advies|support|maintenance|onderhoud|service|dienst|plan\b|api|credits?\b|seats?\b|per\s*(month|year|maand|jaar)|membership|monthly|yearly|annually|annual|digital|online|streaming|software|download|app\b|tool)\b/i.test(text);
 }
 
 function determineTaxDecision(
@@ -1225,13 +1225,13 @@ async function getECBRate(
   supabase: any,
   currency: string,
   date: string
-): Promise<{ rate: number; source: string } | null> {
-  if (currency === "EUR") return { rate: 1, source: "identity" };
+): Promise<{ rate: number; source: string; rate_date?: string } | null> {
+  if (currency === "EUR") return { rate: 1, source: "identity", rate_date: date };
 
   // 1. Check cache
   const { data: cached } = await supabase
     .from("exchange_rates")
-    .select("rate, source")
+    .select("rate, source, rate_date")
     .eq("currency_from", currency)
     .eq("currency_to", "EUR")
     .eq("rate_date", date)
@@ -1239,10 +1239,31 @@ async function getECBRate(
 
   if (cached) {
     console.log(`[ECB] Cache hit: ${currency}/EUR on ${date} = ${cached.rate}`);
-    return { rate: Number(cached.rate), source: "cache" };
+    return { rate: Number(cached.rate), source: "cache", rate_date: cached.rate_date };
   }
 
-  // 2. Fetch from ECB SDMX CSV API
+  // 2. Primary: Frankfurter API (free, no key, uses ECB data, handles weekends)
+  try {
+    const url = `https://api.frankfurter.app/${date}?from=${currency}&to=EUR`;
+    const resp = await fetch(url);
+    if (resp.ok) {
+      const json = await resp.json();
+      const eurRate = json.rates?.EUR;
+      if (eurRate && eurRate > 0) {
+        const actualDate = json.date || date; // Frankfurter returns the actual business day used
+        await supabase.from("exchange_rates").upsert(
+          { currency_from: currency, currency_to: "EUR", rate: eurRate, rate_date: actualDate, source: "frankfurter_ecb" },
+          { onConflict: "currency_from,currency_to,rate_date" }
+        );
+        console.log(`[ECB] Frankfurter: ${currency}/EUR on ${actualDate} = ${eurRate}`);
+        return { rate: eurRate, source: "frankfurter_ecb", rate_date: actualDate };
+      }
+    }
+  } catch (e) {
+    console.warn("[ECB] Frankfurter API failed:", e);
+  }
+
+  // 3. Fallback: ECB SDMX CSV API (official, but no weekend handling)
   try {
     const url = `https://data-api.ecb.europa.eu/service/data/EXR/D.${currency}.EUR.SP00.A?format=csvdata&startPeriod=${date}&endPeriod=${date}`;
     const resp = await fetch(url);
@@ -1261,7 +1282,7 @@ async function getECBRate(
               { currency_from: currency, currency_to: "EUR", rate: invertedRate, rate_date: date, source: "ecb_sdmx" },
               { onConflict: "currency_from,currency_to,rate_date" }
             );
-            return { rate: invertedRate, source: "ecb_sdmx" };
+            return { rate: invertedRate, source: "ecb_sdmx", rate_date: date };
           }
         }
       }
@@ -1270,7 +1291,7 @@ async function getECBRate(
     console.warn("[ECB] SDMX API failed:", e);
   }
 
-  // 3. Fallback: ECB daily XML feed
+  // 4. Last resort: ECB daily XML feed (today's rate only)
   try {
     const xmlResp = await fetch("https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml");
     if (xmlResp.ok) {
@@ -1284,7 +1305,7 @@ async function getECBRate(
           { currency_from: currency, currency_to: "EUR", rate: invertedRate, rate_date: date, source: "ecb_daily_xml" },
           { onConflict: "currency_from,currency_to,rate_date" }
         );
-        return { rate: invertedRate, source: "ecb_daily_xml" };
+        return { rate: invertedRate, source: "ecb_daily_xml", rate_date: date };
       }
     }
   } catch (e) {

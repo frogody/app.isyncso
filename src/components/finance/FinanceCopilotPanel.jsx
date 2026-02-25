@@ -66,6 +66,7 @@ export default function FinanceCopilotPanel({
   fileName,
   user,
   onCategorySuggestion,
+  onDocTypeSwitch,
 }) {
   const { ft } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
@@ -272,6 +273,36 @@ export default function FinanceCopilotPanel({
                           <p className={`text-xs ${ft('text-gray-500', 'text-zinc-500')} italic`}>
                             {insights.docType.tip}
                           </p>
+                          {/* Smart hint: Bill → Expense if already paid */}
+                          {documentType === 'bill' && onDocTypeSwitch && (
+                            <div className={`flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-lg ${ft(
+                              'bg-cyan-50 border border-cyan-200/60',
+                              'bg-cyan-500/5 border border-cyan-500/15'
+                            )}`}>
+                              <span className={ft('text-gray-600', 'text-zinc-400')}>Already paid?</span>
+                              <button
+                                onClick={() => onDocTypeSwitch('expense')}
+                                className={`font-medium ${ft('text-cyan-700 hover:text-cyan-800', 'text-cyan-400 hover:text-cyan-300')} transition-colors underline underline-offset-2`}
+                              >
+                                Switch to Expense
+                              </button>
+                            </div>
+                          )}
+                          {/* Smart hint: Expense → Bill if not yet paid */}
+                          {documentType === 'expense' && onDocTypeSwitch && (
+                            <div className={`flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-lg ${ft(
+                              'bg-cyan-50 border border-cyan-200/60',
+                              'bg-cyan-500/5 border border-cyan-500/15'
+                            )}`}>
+                              <span className={ft('text-gray-600', 'text-zinc-400')}>Not paid yet?</span>
+                              <button
+                                onClick={() => onDocTypeSwitch('bill')}
+                                className={`font-medium ${ft('text-cyan-700 hover:text-cyan-800', 'text-cyan-400 hover:text-cyan-300')} transition-colors underline underline-offset-2`}
+                              >
+                                Switch to Bill
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </AccordionContent>
                     </AccordionItem>
