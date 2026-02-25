@@ -43,7 +43,7 @@ async function callVerbalIdentity(section, context) {
 export default function VerbalIdentityStage({ project, updateStageData, onNext }) {
   // ── State ──────────────────────────────────────────────────────
   const [subStep, setSubStep] = useState(() => {
-    return project?.brand_dna?._verbalSubStep || 1;
+    return project?.brand_dna?._verbalSubStep ?? 1;
   });
 
   const [voiceAttributes, setVoiceAttributes] = useState(() => {

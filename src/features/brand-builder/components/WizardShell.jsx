@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import WizardTopBar from './WizardTopBar';
 import WizardSidebar from './WizardSidebar';
@@ -66,6 +66,11 @@ export default function WizardShell({
   updateStageData,
 }) {
   const [navState, setNavState] = useState(null);
+
+  // Reset nav state when stage changes so stale data doesn't flash
+  useEffect(() => {
+    setNavState(null);
+  }, [currentStage]);
 
   const handleNavChange = useCallback((state) => {
     setNavState(state);

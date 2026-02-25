@@ -28,7 +28,7 @@ const MIN_GENERATE_MS = 1200;
 export default function TypographySystemStage({ project, updateStageData, onNext }) {
   // ── State ──────────────────────────────────────────────────────
   const [subStep, setSubStep] = useState(() => {
-    return project?.brand_dna?._typoSubStep || 1;
+    return project?.brand_dna?._typoSubStep ?? 1;
   });
 
   const [thisOrThatChoices, setThisOrThatChoices] = useState(() => {
@@ -52,6 +52,8 @@ export default function TypographySystemStage({ project, updateStageData, onNext
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   // ── Derived data ─────────────────────────────────────────────
   const brandDna = project?.brand_dna;
@@ -110,6 +112,7 @@ export default function TypographySystemStage({ project, updateStageData, onNext
           const remaining = Math.max(0, MIN_GENERATE_MS - elapsed);
 
           setTimeout(() => {
+            if (!mountedRef.current) return;
             setPairingCandidates(pairings);
             setIsGenerating(false);
             setSubStep(2);

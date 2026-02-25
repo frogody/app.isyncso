@@ -8,7 +8,7 @@
  * Sub-step 3: LogoRefinement (tabbed editor + live preview)
  * Sub-step 4: LogoSystemPreview (all variations + rules)
  */
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -30,7 +30,7 @@ const MIN_GENERATE_MS = 1500;
 export default function LogoSystemStage({ project, updateStageData, onNext }) {
   // ── State ──────────────────────────────────────────────────────
   const [subStep, setSubStep] = useState(() => {
-    return project?.brand_dna?._logoSubStep || 1;
+    return project?.brand_dna?._logoSubStep ?? 1;
   });
 
   const [concepts, setConcepts] = useState(() => {
@@ -55,6 +55,8 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   // ── Derived ────────────────────────────────────────────────────
   const brandDna = project?.brand_dna;
@@ -90,6 +92,7 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
         const remaining = Math.max(0, 800 - elapsed);
 
         setTimeout(() => {
+          if (!mountedRef.current) return;
           setConcepts(prev => [...(prev || []), ...variations]);
           setIsLoadingMore(false);
           toast.success('Generated 6 variations');
@@ -120,6 +123,7 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
           const remaining = Math.max(0, MIN_GENERATE_MS - elapsed);
 
           setTimeout(() => {
+            if (!mountedRef.current) return;
             setConcepts(generated);
             setIsGenerating(false);
             setSubStep(2);
@@ -164,6 +168,7 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
           const remaining = Math.max(0, 1000 - elapsed);
 
           setTimeout(() => {
+            if (!mountedRef.current) return;
             setLogoSystem(system);
             setIsGenerating(false);
             setSubStep(4);

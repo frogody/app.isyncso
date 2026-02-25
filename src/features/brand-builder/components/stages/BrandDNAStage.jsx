@@ -56,7 +56,7 @@ export default function BrandDNAStage({ project, updateStageData, onNext }) {
   });
 
   const [subStep, setSubStep] = useState(() => {
-    return project?.brand_dna?._subStep || project?.wizard_state?.brandDnaSubStep || 1;
+    return project?.brand_dna?._subStep ?? project?.wizard_state?.brandDnaSubStep ?? 1;
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -217,7 +217,7 @@ export default function BrandDNAStage({ project, updateStageData, onNext }) {
             <BrandDNAReview
               data={brandDna}
               onChange={handleChange}
-              onEditPersonality={() => setSubStep(2)}
+              onEditPersonality={() => advanceSubStep(2)}
             />
           )}
         </motion.div>

@@ -43,7 +43,7 @@ async function callVisualLanguage(section, context) {
 export default function VisualLanguageStage({ project, updateStageData, onNext }) {
   // ── State ──────────────────────────────────────────────────────
   const [subStep, setSubStep] = useState(() => {
-    return project?.brand_dna?._visualSubStep || 1;
+    return project?.brand_dna?._visualSubStep ?? 1;
   });
 
   const [photography, setPhotography] = useState(() => {

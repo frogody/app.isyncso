@@ -9,7 +9,7 @@
  *
  * Generates a multi-page PDF brand guidelines document using @react-pdf/renderer.
  */
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { supabase } from '@/api/supabaseClient';
@@ -39,6 +39,18 @@ export default function BrandBookStage({ project, updateStageData, onNext }) {
   const [brandBook, setBrandBook] = useState(project?.brand_book || null);
   const [pdfUrl, setPdfUrl] = useState(null);
   const [quickRefUrl, setQuickRefUrl] = useState(null);
+  const pdfUrlRef = useRef(null);
+  const quickRefUrlRef = useRef(null);
+
+  // Clean up blob URLs on unmount
+  useEffect(() => {
+    pdfUrlRef.current = pdfUrl;
+    quickRefUrlRef.current = quickRefUrl;
+  }, [pdfUrl, quickRefUrl]);
+  useEffect(() => () => {
+    if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
+    if (quickRefUrlRef.current) URL.revokeObjectURL(quickRefUrlRef.current);
+  }, []);
 
   // ── Generation pipeline ────────────────────────────────────────
   const startGeneration = useCallback(async () => {

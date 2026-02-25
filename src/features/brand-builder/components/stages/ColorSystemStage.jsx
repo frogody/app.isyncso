@@ -26,7 +26,7 @@ const MIN_GENERATE_MS = 1500; // polished delay
 export default function ColorSystemStage({ project, updateStageData, onNext }) {
   // ── State ──────────────────────────────────────────────────────
   const [subStep, setSubStep] = useState(() => {
-    return project?.brand_dna?._colorSubStep || 1;
+    return project?.brand_dna?._colorSubStep ?? 1;
   });
 
   const [candidates, setCandidates] = useState(() => {
@@ -49,6 +49,8 @@ export default function ColorSystemStage({ project, updateStageData, onNext }) {
   const [originalPalette, setOriginalPalette] = useState(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   // ── Auto-save color system ─────────────────────────────────────
   const saveFn = useCallback(
@@ -84,6 +86,7 @@ export default function ColorSystemStage({ project, updateStageData, onNext }) {
         const remaining = Math.max(0, MIN_GENERATE_MS - elapsed);
 
         setTimeout(() => {
+          if (!mountedRef.current) return;
           setCandidates(variants);
           setIsGenerating(false);
         }, remaining);
