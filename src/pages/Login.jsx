@@ -130,12 +130,11 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-[380px]">
         {/* Brand */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 mb-5 shadow-lg shadow-emerald-500/20">
-            <span className="text-xl font-bold text-white tracking-tight">iS</span>
-          </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
-            iSyncSO
-          </h1>
+          <img
+            src="/isyncso-logo.png"
+            alt="iSyncSO"
+            className="w-28 h-28 mx-auto mb-2 object-contain drop-shadow-[0_0_30px_rgba(16,185,129,0.15)]"
+          />
           <p className="text-sm text-zinc-500">
             AI-powered business operating system
           </p>

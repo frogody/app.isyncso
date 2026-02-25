@@ -141,9 +141,11 @@ export function WelcomeStep({ data, onChange, onNext }) {
   return (
     <motion.div {...fadeIn} className="space-y-5">
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/20 mb-1">
-          <User className="w-5 h-5 text-emerald-400" />
-        </div>
+        <img
+          src="/isyncso-logo.png"
+          alt="iSyncSO"
+          className="w-16 h-16 mx-auto mb-1 object-contain"
+        />
         <h2 className="text-xl font-semibold text-white">Welcome to iSyncSO</h2>
         <p className="text-zinc-500 text-xs max-w-sm mx-auto">
           Tell us about yourself so we can set up your workspace
