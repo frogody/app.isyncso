@@ -1585,8 +1585,12 @@ export default function Layout({ children, currentPageName }) {
     loadUserAppConfig();
 
     // Listen for config updates from AppsManagerModal or Onboarding
-    const handleConfigUpdate = () => {
-      loadUserAppConfig();
+    const handleConfigUpdate = (e) => {
+      if (e.detail?.enabled_apps) {
+        setEnabledApps(e.detail.enabled_apps);
+      } else {
+        loadUserAppConfig();
+      }
     };
 
     window.addEventListener('dashboard-config-updated', handleConfigUpdate);

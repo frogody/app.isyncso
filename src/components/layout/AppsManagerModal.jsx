@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/api/supabaseClient';
 import {
@@ -253,12 +253,11 @@ const COLOR_CLASSES = {
 export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embedded = false }) {
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [enabledApps, setEnabledApps] = useState(['learn', 'growth', 'sentinel']);
   const [enabledWidgets, setEnabledWidgets] = useState([]);
   const [selectedApp, setSelectedApp] = useState(null);
   const { effectiveApps = [] } = useTeamAccess();
-
+  const configRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -280,10 +279,11 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
       if (!user) return;
 
       const configs = await db.entities.UserAppConfig.filter({ user_id: user.id });
-      
+
       if (configs.length > 0) {
         const userConfig = configs[0];
         setConfig(userConfig);
+        configRef.current = userConfig;
         setEnabledApps(userConfig.enabled_apps || ['learn', 'growth', 'sentinel']);
         setEnabledWidgets(userConfig.dashboard_widgets || getDefaultWidgets());
       } else {
@@ -296,6 +296,7 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
         };
         const newConfig = await db.entities.UserAppConfig.create(defaultConfig);
         setConfig(newConfig);
+        configRef.current = newConfig;
         setEnabledApps(defaultConfig.enabled_apps);
         setEnabledWidgets(defaultWidgets);
       }
@@ -317,11 +318,35 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
 
   const isAppLicensed = (appId) => effectiveApps.length === 0 || effectiveApps.includes(appId);
 
+  // Persist config to DB and notify sidebar + dashboard instantly
+  const persistConfig = useCallback((newApps, newWidgets) => {
+    const currentConfig = configRef.current;
+    if (!currentConfig?.id) return;
+
+    // Fire event immediately so sidebar updates without waiting for DB
+    window.dispatchEvent(new CustomEvent('dashboard-config-updated', {
+      detail: { enabled_apps: newApps, dashboard_widgets: newWidgets }
+    }));
+
+    onConfigUpdate?.({ ...currentConfig, enabled_apps: newApps, dashboard_widgets: newWidgets });
+
+    // Persist to DB in background
+    db.entities.UserAppConfig.update(currentConfig.id, {
+      enabled_apps: newApps,
+      app_order: newApps,
+      dashboard_widgets: newWidgets
+    }).catch((err) => {
+      console.error('Failed to persist config:', err);
+      toast.error('Failed to save — changes may not persist');
+    });
+  }, [onConfigUpdate]);
+
   const toggleApp = (appId) => {
-    if (!isAppLicensed(appId)) {
-      toast.error('This app is not included in your current license');
-      return;
-    }
+    if (!isAppLicensed(appId)) return;
+
+    let newApps;
+    let newWidgets;
+
     setEnabledApps(prev => {
       if (prev.includes(appId)) {
         if (prev.length === 1) {
@@ -329,57 +354,40 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
           return prev;
         }
         const appWidgets = AVAILABLE_APPS.find(a => a.id === appId)?.widgets || [];
-        setEnabledWidgets(w => w.filter(id => !appWidgets.some(aw => aw.id === id)));
-        return prev.filter(id => id !== appId);
+        newWidgets = enabledWidgets.filter(id => !appWidgets.some(aw => aw.id === id));
+        setEnabledWidgets(newWidgets);
+        newApps = prev.filter(id => id !== appId);
       } else {
         const appWidgets = AVAILABLE_APPS.find(a => a.id === appId)?.widgets || [];
-        setEnabledWidgets(w => [...w, ...appWidgets.map(aw => aw.id)]);
-        return [...prev, appId];
+        newWidgets = [...enabledWidgets, ...appWidgets.map(aw => aw.id)];
+        setEnabledWidgets(newWidgets);
+        newApps = [...prev, appId];
       }
+      // Persist after computing new state
+      setTimeout(() => persistConfig(newApps, newWidgets), 0);
+      return newApps;
     });
   };
 
   const toggleWidget = (widgetId) => {
+    let newWidgets;
     setEnabledWidgets(prev => {
       if (prev.includes(widgetId)) {
-        return prev.filter(id => id !== widgetId);
+        newWidgets = prev.filter(id => id !== widgetId);
       } else {
-        return [...prev, widgetId];
+        newWidgets = [...prev, widgetId];
       }
+      setTimeout(() => persistConfig(enabledApps, newWidgets), 0);
+      return newWidgets;
     });
   };
 
-  const handleSave = async () => {
-    if (!config?.id) return;
-    
-    setSaving(true);
-    try {
-      const updatedConfig = {
-        enabled_apps: enabledApps,
-        app_order: enabledApps,
-        dashboard_widgets: enabledWidgets
-      };
-      
-      await db.entities.UserAppConfig.update(config.id, updatedConfig);
-      
-      if (onConfigUpdate) {
-        onConfigUpdate({ ...config, ...updatedConfig });
-      }
-      
-      // Notify Dashboard to reload
-      window.dispatchEvent(new CustomEvent('dashboard-config-updated'));
-      
-      toast.success('Configuration saved');
-      onClose();
-    } catch (error) {
-      console.error('Failed to save config:', error);
-      toast.error('Failed to save configuration');
-    } finally {
-      setSaving(false);
-    }
+  const handleRequestLicense = (appName) => {
+    toast.success(`License request for ${appName} sent to your admin`);
   };
 
   const selectedAppData = selectedApp ? AVAILABLE_APPS.find(a => a.id === selectedApp) : null;
+  const selectedAppLicensed = selectedAppData ? isAppLicensed(selectedAppData.id) : true;
 
   // Load config on mount for embedded mode
   useEffect(() => {
@@ -395,13 +403,13 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
           <div className="w-10 h-10 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
         </div>
       ) : (
-        <div className={`flex flex-col lg:flex-row ${embedded ? 'min-h-[500px]' : 'h-[calc(90vh-180px)] min-h-[400px]'}`}>
+        <div className={`flex flex-col lg:flex-row ${embedded ? 'min-h-[500px]' : 'h-[calc(90vh-120px)] min-h-[400px]'}`}>
             {/* Left Panel - Apps List */}
             <div className="lg:w-80 border-b lg:border-b-0 lg:border-r border-zinc-800 p-4 overflow-y-auto">
               <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 px-2">
                 Installed Apps
               </h3>
-              
+
               <div className="space-y-2">
                 {AVAILABLE_APPS.map((app) => {
                   const Icon = app.icon;
@@ -440,25 +448,31 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
                             <h4 className={`font-medium text-sm ${isEnabled && isLicensed ? 'text-zinc-100' : 'text-zinc-400'}`}>
                               {app.name}
                             </h4>
-                            {!isLicensed && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-zinc-700/50 text-zinc-400 flex items-center gap-1">
-                                <Lock className="w-2 h-2" />
-                                No License
-                              </span>
-                            )}
                           </div>
                           <p className="text-xs text-zinc-500 truncate">
                             {app.widgets.length} widget{app.widgets.length !== 1 ? 's' : ''}
                           </p>
                         </div>
 
-                        <Switch
-                          checked={isEnabled && isLicensed}
-                          onCheckedChange={() => toggleApp(app.id)}
-                          onClick={(e) => e.stopPropagation()}
-                          disabled={!isLicensed}
-                          className="data-[state=checked]:bg-cyan-600"
-                        />
+                        {isLicensed ? (
+                          <Switch
+                            checked={isEnabled}
+                            onCheckedChange={() => toggleApp(app.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="data-[state=checked]:bg-cyan-600"
+                          />
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRequestLicense(app.name);
+                            }}
+                            className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-zinc-700/60 text-zinc-300 hover:bg-zinc-600/60 hover:text-zinc-100 transition-colors flex items-center gap-1 flex-shrink-0"
+                          >
+                            <Lock className="w-2.5 h-2.5" />
+                            Request
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -466,41 +480,43 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
               </div>
 
               {/* Coming Soon */}
-              <div className="mt-4 pt-4 border-t border-zinc-800">
-                <p className="text-xs text-zinc-600 mb-3 px-2 uppercase tracking-wider flex items-center gap-2">
-                  <Clock className="w-3 h-3" />
-                  Coming Soon
-                </p>
-                <div className="space-y-2">
-                  {COMING_SOON_APPS.map((app) => {
-                    const Icon = app.icon;
-                    const colors = COLOR_CLASSES[app.color];
+              {COMING_SOON_APPS.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-zinc-800">
+                  <p className="text-xs text-zinc-600 mb-3 px-2 uppercase tracking-wider flex items-center gap-2">
+                    <Clock className="w-3 h-3" />
+                    Coming Soon
+                  </p>
+                  <div className="space-y-2">
+                    {COMING_SOON_APPS.map((app) => {
+                      const Icon = app.icon;
+                      const colors = COLOR_CLASSES[app.color];
 
-                    return (
-                      <div
-                        key={app.id}
-                        className="p-3 rounded-xl bg-zinc-800/20 border border-zinc-800/50 border-dashed opacity-60"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-lg ${colors.iconBg} border ${colors.border} flex items-center justify-center`}>
-                            <Icon className={`w-5 h-5 ${colors.text}`} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-medium text-sm text-zinc-400">{app.name}</h4>
-                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${colors.iconBg} ${colors.text} flex items-center gap-1`}>
-                                <Lock className="w-2 h-2" />
-                                Soon
-                              </span>
+                      return (
+                        <div
+                          key={app.id}
+                          className="p-3 rounded-xl bg-zinc-800/20 border border-zinc-800/50 border-dashed opacity-60"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-lg ${colors.iconBg} border ${colors.border} flex items-center justify-center`}>
+                              <Icon className={`w-5 h-5 ${colors.text}`} />
                             </div>
-                            <p className="text-xs text-zinc-600 truncate">{app.description}</p>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-medium text-sm text-zinc-400">{app.name}</h4>
+                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${colors.iconBg} ${colors.text} flex items-center gap-1`}>
+                                  <Lock className="w-2 h-2" />
+                                  Soon
+                                </span>
+                              </div>
+                              <p className="text-xs text-zinc-600 truncate">{app.description}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Right Panel - Widget Preview */}
@@ -520,12 +536,21 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
                       <h3 className="text-lg font-semibold text-zinc-100">{selectedAppData.name}</h3>
                       <p className="text-sm text-zinc-500">{selectedAppData.description}</p>
                     </div>
-                    <Switch
-                      checked={enabledApps.includes(selectedAppData.id) && isAppLicensed(selectedAppData.id)}
-                      onCheckedChange={() => toggleApp(selectedAppData.id)}
-                      disabled={!isAppLicensed(selectedAppData.id)}
-                      className="data-[state=checked]:bg-cyan-600"
-                    />
+                    {selectedAppLicensed ? (
+                      <Switch
+                        checked={enabledApps.includes(selectedAppData.id)}
+                        onCheckedChange={() => toggleApp(selectedAppData.id)}
+                        className="data-[state=checked]:bg-cyan-600"
+                      />
+                    ) : (
+                      <button
+                        onClick={() => handleRequestLicense(selectedAppData.name)}
+                        className="px-4 py-2 rounded-full text-xs font-medium bg-cyan-600/20 text-cyan-400 hover:bg-cyan-600/30 transition-colors flex items-center gap-1.5 border border-cyan-500/30"
+                      >
+                        <Lock className="w-3 h-3" />
+                        Request License
+                      </button>
+                    )}
                   </div>
 
                   {/* Purpose Section */}
@@ -546,100 +571,120 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
                     </div>
                   </div>
 
-                  {/* Dashboard Widgets Label */}
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-medium text-zinc-400 flex items-center gap-2">
-                      <LayoutGrid className="w-4 h-4" />
-                      Dashboard Widgets
-                    </h4>
-                    {selectedAppData.widgets.length > 0 && (
-                      <span className="text-xs text-zinc-600">
-                        {enabledWidgets.filter(w => selectedAppData.widgets.some(sw => sw.id === w)).length}/{selectedAppData.widgets.length} enabled
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Widget Grid - Scrollable */}
-                  {selectedAppData.widgets.length > 0 ? (
-                    <ScrollArea className="flex-1">
-                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 pb-4 pr-2">
-                      {selectedAppData.widgets.map((widget) => {
-                        const isWidgetEnabled = enabledWidgets.includes(widget.id);
-                        const colors = COLOR_CLASSES[selectedAppData.color];
-
-                        return (
-                          <div
-                            key={widget.id}
-                            className={widget.size === 'large' ? 'col-span-2' : ''}
-                          >
-                            <div
-                              className={`
-                                relative rounded-xl border-2 overflow-hidden transition-all cursor-pointer h-full
-                                ${isWidgetEnabled
-                                  ? `${colors.border} bg-gradient-to-b ${colors.gradient}`
-                                  : 'border-zinc-800 bg-zinc-800/30 opacity-60 hover:opacity-80'
-                                }
-                              `}
-                              onClick={() => toggleWidget(widget.id)}
-                            >
-                              {/* Preview Container */}
-                              <div className="p-3 h-28 overflow-hidden relative">
-                                <WidgetPreview
-                                  widgetId={widget.id}
-                                  appId={selectedAppData.id}
-                                  size={widget.size}
-                                />
-
-                                {/* Overlay gradient */}
-                                <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-zinc-900/90 to-transparent" />
-                              </div>
-
-                              {/* Widget Info */}
-                              <div className="p-2 pt-0 relative">
-                                <div className="flex items-center justify-between">
-                                  <div className="min-w-0 flex-1">
-                                    <h5 className="text-xs font-medium text-zinc-200 truncate">{widget.name}</h5>
-                                    <p className="text-[10px] text-zinc-500">{widget.size}</p>
-                                  </div>
-                                  <div className={`
-                                    w-6 h-6 rounded-lg flex items-center justify-center transition-colors flex-shrink-0 ml-2
-                                    ${isWidgetEnabled
-                                      ? `${colors.iconBg} ${colors.text}`
-                                      : 'bg-zinc-800 text-zinc-500'
-                                    }
-                                  `}>
-                                    {isWidgetEnabled ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Selection indicator */}
-                              {isWidgetEnabled && (
-                                <div className={`absolute top-2 right-2 w-4 h-4 rounded-full ${colors.iconBg} ${colors.border} border flex items-center justify-center`}>
-                                  <Check className={`w-2.5 h-2.5 ${colors.text}`} />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                      </div>
-                    </ScrollArea>
-                  ) : (
+                  {/* Unlicensed: locked state */}
+                  {!selectedAppLicensed ? (
                     <div className="flex-1 flex items-center justify-center">
-                      <div className={`text-center p-8 rounded-xl border border-dashed ${COLOR_CLASSES[selectedAppData.color].border} ${COLOR_CLASSES[selectedAppData.color].bg}`}>
-                        <Clock className={`w-8 h-8 mx-auto mb-3 ${COLOR_CLASSES[selectedAppData.color].text}`} />
-                        <h4 className="text-sm font-medium text-zinc-300 mb-1">Widgets Coming Soon</h4>
-                        <p className="text-xs text-zinc-500">Dashboard widgets for {selectedAppData.name} are in development</p>
+                      <div className="text-center p-8 rounded-xl border border-dashed border-zinc-700 bg-zinc-800/30">
+                        <Lock className="w-8 h-8 mx-auto mb-3 text-zinc-500" />
+                        <h4 className="text-sm font-medium text-zinc-300 mb-1">License Required</h4>
+                        <p className="text-xs text-zinc-500 mb-4">Request a license to enable {selectedAppData.name} and its dashboard widgets</p>
+                        <button
+                          onClick={() => handleRequestLicense(selectedAppData.name)}
+                          className="px-4 py-2 rounded-full text-xs font-medium bg-cyan-600/20 text-cyan-400 hover:bg-cyan-600/30 transition-colors inline-flex items-center gap-1.5 border border-cyan-500/30"
+                        >
+                          <Mail className="w-3 h-3" />
+                          Request License
+                        </button>
                       </div>
                     </div>
-                  )}
+                  ) : (
+                    <>
+                      {/* Dashboard Widgets Label */}
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-medium text-zinc-400 flex items-center gap-2">
+                          <LayoutGrid className="w-4 h-4" />
+                          Dashboard Widgets
+                        </h4>
+                        {selectedAppData.widgets.length > 0 && (
+                          <span className="text-xs text-zinc-600">
+                            {enabledWidgets.filter(w => selectedAppData.widgets.some(sw => sw.id === w)).length}/{selectedAppData.widgets.length} enabled
+                          </span>
+                        )}
+                      </div>
 
-                  {/* Description */}
-                  {selectedAppData.widgets.length > 0 && (
-                    <p className="text-xs text-zinc-600 mt-2">
-                      Click on a widget to toggle its visibility on your dashboard
-                    </p>
+                      {/* Widget Grid - Scrollable */}
+                      {selectedAppData.widgets.length > 0 ? (
+                        <ScrollArea className="flex-1">
+                          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 pb-4 pr-2">
+                          {selectedAppData.widgets.map((widget) => {
+                            const isWidgetEnabled = enabledWidgets.includes(widget.id);
+                            const colors = COLOR_CLASSES[selectedAppData.color];
+
+                            return (
+                              <div
+                                key={widget.id}
+                                className={widget.size === 'large' ? 'col-span-2' : ''}
+                              >
+                                <div
+                                  className={`
+                                    relative rounded-xl border-2 overflow-hidden transition-all cursor-pointer h-full
+                                    ${isWidgetEnabled
+                                      ? `${colors.border} bg-gradient-to-b ${colors.gradient}`
+                                      : 'border-zinc-800 bg-zinc-800/30 opacity-60 hover:opacity-80'
+                                    }
+                                  `}
+                                  onClick={() => toggleWidget(widget.id)}
+                                >
+                                  {/* Preview Container */}
+                                  <div className="p-3 h-28 overflow-hidden relative">
+                                    <WidgetPreview
+                                      widgetId={widget.id}
+                                      appId={selectedAppData.id}
+                                      size={widget.size}
+                                    />
+
+                                    {/* Overlay gradient */}
+                                    <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-zinc-900/90 to-transparent" />
+                                  </div>
+
+                                  {/* Widget Info */}
+                                  <div className="p-2 pt-0 relative">
+                                    <div className="flex items-center justify-between">
+                                      <div className="min-w-0 flex-1">
+                                        <h5 className="text-xs font-medium text-zinc-200 truncate">{widget.name}</h5>
+                                        <p className="text-[10px] text-zinc-500">{widget.size}</p>
+                                      </div>
+                                      <div className={`
+                                        w-6 h-6 rounded-lg flex items-center justify-center transition-colors flex-shrink-0 ml-2
+                                        ${isWidgetEnabled
+                                          ? `${colors.iconBg} ${colors.text}`
+                                          : 'bg-zinc-800 text-zinc-500'
+                                        }
+                                      `}>
+                                        {isWidgetEnabled ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Selection indicator */}
+                                  {isWidgetEnabled && (
+                                    <div className={`absolute top-2 right-2 w-4 h-4 rounded-full ${colors.iconBg} ${colors.border} border flex items-center justify-center`}>
+                                      <Check className={`w-2.5 h-2.5 ${colors.text}`} />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                          </div>
+                        </ScrollArea>
+                      ) : (
+                        <div className="flex-1 flex items-center justify-center">
+                          <div className={`text-center p-8 rounded-xl border border-dashed ${COLOR_CLASSES[selectedAppData.color].border} ${COLOR_CLASSES[selectedAppData.color].bg}`}>
+                            <Clock className={`w-8 h-8 mx-auto mb-3 ${COLOR_CLASSES[selectedAppData.color].text}`} />
+                            <h4 className="text-sm font-medium text-zinc-300 mb-1">Widgets Coming Soon</h4>
+                            <p className="text-xs text-zinc-500">Dashboard widgets for {selectedAppData.name} are in development</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Description */}
+                      {selectedAppData.widgets.length > 0 && (
+                        <p className="text-xs text-zinc-600 mt-2">
+                          Click on a widget to toggle its visibility on your dashboard
+                        </p>
+                      )}
+                    </>
                   )}
                 </>
               ) : (
@@ -656,26 +701,6 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
             </div>
           </div>
         )}
-
-        {/* Footer */}
-        <div className={`flex justify-end gap-3 p-4 border-t border-zinc-800 ${embedded ? '' : 'bg-zinc-900/80'}`}>
-          {!embedded && (
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="border-zinc-700 text-zinc-400"
-            >
-              Cancel
-            </Button>
-          )}
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-cyan-600 hover:bg-cyan-500 text-white px-6"
-          >
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </div>
       </>
     );
 
