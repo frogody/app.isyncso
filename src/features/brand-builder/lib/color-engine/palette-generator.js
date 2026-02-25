@@ -119,6 +119,17 @@ export function generatePaletteVariants(brandDna) {
 
   const variants = [];
 
+  // If user imported existing brand colors, seed a variant from the first one
+  const importedColors = brandDna.existing_assets?.extracted_colors || [];
+  if (importedColors.length > 0) {
+    const seedHSL = hexToHsl(importedColors[0]);
+    variants.push({
+      label: 'Your Brand Colors',
+      description: `Built from your existing primary color ${importedColors[0]}`,
+      palette: buildFullPalette(seedHSL, defaultHarmony, brandDna),
+    });
+  }
+
   // Variant 1: Direct personality mapping
   variants.push({
     label: 'Personality Core',
