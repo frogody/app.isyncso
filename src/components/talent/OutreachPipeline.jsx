@@ -221,9 +221,9 @@ export default function OutreachPipeline({ campaign, onUpdate }) {
     try {
       const { data, error } = await supabase
         .from("candidates")
-        .select("*")
+        .select("id, first_name, last_name, full_name, name, job_title, current_title, company_name, current_company, person_home_location, location, email, phone, skills, linkedin_profile, intelligence_score, intelligence_level, recommended_approach, outreach_hooks, best_outreach_angle, timing_signals, company_pain_points, key_insights, lateral_opportunities, intelligence_factors")
         .eq("organization_id", user.organization_id)
-        .order("name");
+        .order("first_name");
 
       if (error) throw error;
       setCandidates(data || []);
