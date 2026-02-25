@@ -232,27 +232,31 @@ const navigationItems = [
     title: "Dashboard",
     url: createPageUrl("Dashboard"),
     icon: LayoutDashboard,
-    permission: null, // Always visible
+    permission: null,
+    alwaysVisible: true,
   },
   {
     title: "CRM",
     url: createPageUrl("CRMDashboard"),
     icon: Contact,
-    permission: null, // Always visible - base environment
-    matchPatterns: ["/crm", "/contacts-import"], // For active state matching
+    permission: null,
+    matchPatterns: ["/crm", "/contacts-import"],
+    requiresAnyApp: ['growth', 'talent'], // Contacts are relevant for sales & recruiting
   },
   {
     title: "Projects",
     url: createPageUrl("Projects"),
     icon: FolderKanban,
-    permission: null, // Always visible - base environment
+    permission: null,
+    alwaysVisible: true,
   },
   {
     title: "Products",
     url: createPageUrl("Products"),
     icon: Package,
-    permission: null, // Always visible - core feature
-    matchPatterns: ["/product", "/inventory", "/stockpurchases", "/emailpoolsettings"], // Matches /products, /productdetail, /inventory*, /emailpool*, etc.
+    permission: null,
+    matchPatterns: ["/product", "/inventory", "/stockpurchases", "/emailpoolsettings"],
+    requiresAnyApp: ['products'],
   },
   {
     title: "B2B Store",
@@ -260,12 +264,14 @@ const navigationItems = [
     icon: Store,
     permission: "products.manage",
     matchPatterns: ["/storedashboard", "/b2bstorebuilder", "/b2b"],
+    requiresAnyApp: ['products'],
   },
   {
     title: "Inbox",
     url: createPageUrl("Inbox"),
     icon: Inbox,
-    permission: null, // Always visible - base environment
+    permission: null,
+    alwaysVisible: true,
   },
 ];
 
@@ -1021,23 +1027,26 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     return () => { isMounted = false; };
   }, []);
 
-  // Memoize filtered navigation items - show all items while loading
+  // Memoize filtered navigation items - filter by permissions AND enabled apps
   const filteredNavItems = useMemo(() => {
-    // While permissions are loading, show items without permission requirements
-    if (permLoading) {
-      return navigationItems.filter(item => !item.permission);
-    }
     return navigationItems.filter(item => {
-      // No permission required - always show
-      if (!item.permission) return true;
-      // Admin link - show for RBAC admins or users with admin.access
-      if (item.isAdmin) {
-        return isAdmin || hasPermission(item.permission);
+      // Permission check
+      if (item.permission) {
+        if (permLoading) return false;
+        if (item.isAdmin) {
+          if (!isAdmin && !hasPermission(item.permission)) return false;
+        } else {
+          if (!hasPermission(item.permission)) return false;
+        }
       }
-      // Check permission
-      return hasPermission(item.permission);
+      // App-gating: hide nav items when their required apps aren't enabled
+      if (item.requiresAnyApp && item.requiresAnyApp.length > 0) {
+        const hasRequiredApp = item.requiresAnyApp.some(appId => enabledApps.includes(appId));
+        if (!hasRequiredApp) return false;
+      }
+      return true;
     });
-  }, [hasPermission, permLoading, isAdmin]);
+  }, [hasPermission, permLoading, isAdmin, enabledApps]);
 
   // Memoize filtered bottom nav items (Settings, Admin)
   const filteredBottomNavItems = useMemo(() => {

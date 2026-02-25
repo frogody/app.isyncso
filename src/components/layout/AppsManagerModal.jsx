@@ -127,19 +127,44 @@ const AVAILABLE_APPS = [
       { icon: Target, text: 'Multi-stage outreach campaigns' },
       { icon: Zap, text: 'Targeted recruitment workflows' }
     ]
-  }
-];
-
-// Coming Soon apps
-const COMING_SOON_APPS = [
+  },
   {
     id: 'create',
     name: 'Create',
-    description: 'Content generation with company context',
+    description: 'AI content studio for images, video & more',
     icon: Palette,
-    color: 'cyan'
+    color: 'cyan',
+    defaultEnabled: false,
+    widgets: [],
+    widgetsComingSoon: true,
+    purpose: 'Generate images, videos, and branded content using AI with your company context.',
+    capabilities: [
+      { icon: Palette, text: 'AI image and product photography' },
+      { icon: Zap, text: 'Video and podcast generation' },
+      { icon: Target, text: 'Brand-consistent content creation' },
+      { icon: BookOpen, text: 'Content library and asset management' }
+    ]
+  },
+  {
+    id: 'products',
+    name: 'Products',
+    description: 'Inventory, catalog & e-commerce management',
+    icon: LayoutGrid,
+    color: 'teal',
+    defaultEnabled: false,
+    widgets: [],
+    widgetsComingSoon: true,
+    purpose: 'Manage your product catalog, inventory, receiving, shipping and stock tracking.',
+    capabilities: [
+      { icon: BarChart3, text: 'Real-time inventory management' },
+      { icon: FileText, text: 'Product catalog with variants' },
+      { icon: Zap, text: 'Purchase orders and receiving' },
+      { icon: Target, text: 'Multi-channel sales integration' }
+    ]
   }
 ];
+
+const COMING_SOON_APPS = [];
 
 const COLOR_CLASSES = {
   teal: {
