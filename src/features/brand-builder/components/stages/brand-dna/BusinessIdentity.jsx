@@ -66,10 +66,7 @@ export default function BusinessIdentity({ data, onChange }) {
     if (path === 'scratch') {
       onChange({ existing_assets: null });
     } else {
-      onChange({
-        existing_assets: existingAssets,
-        company_stage: 'rebrand',
-      });
+      onChange({ existing_assets: existingAssets });
     }
   };
 

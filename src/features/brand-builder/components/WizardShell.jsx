@@ -98,6 +98,7 @@ export default function WizardShell({
         onBack,
         onNext,
         isLastStage: currentStage === 8,
+        nextDisabled: true,  // disabled until stage reports its canProceed
       };
 
   return (

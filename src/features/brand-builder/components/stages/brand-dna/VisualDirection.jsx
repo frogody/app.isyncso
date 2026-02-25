@@ -24,7 +24,7 @@ export default function VisualDirection({ data, onChange }) {
       current.splice(idx, 1);
     } else {
       if (current.length >= 3) {
-        toast.error('Select 2-3 directions maximum');
+        toast.error('Select 2-3 directions maximum', { duration: 3000 });
         return;
       }
       current.push(cardId);
