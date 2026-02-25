@@ -29,6 +29,7 @@ import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransi
 import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 import { createPageUrl } from '@/utils';
 import CountrySelector from '@/components/finance/CountrySelector';
+import FinanceCopilotPanel from '@/components/finance/FinanceCopilotPanel';
 import { determineTaxRulesForPurchase, determineTaxRulesForSale } from '@/lib/btwRules';
 
 // PDF.js worker
@@ -1011,6 +1012,19 @@ export default function FinanceSmartImport() {
                   </div>
                 </div>
               )}
+
+              {/* AI Copilot Panel */}
+              <FinanceCopilotPanel
+                extraction={extraction}
+                taxDecision={taxDecision}
+                documentType={documentType}
+                recurring={recurring}
+                currencyConversion={currencyConversion}
+                vendorMatch={vendorMatch}
+                confidenceData={confidenceData}
+                formData={formData}
+                fileName={fileName}
+              />
 
               {/* Document Type Chips */}
               <div className="flex items-center gap-2">
