@@ -334,8 +334,20 @@ export default function Settings() {
       if (company?.id) {
         await updateCompany(editableFields);
         toast.success('Company profile updated!');
+      } else if (user?.company_id) {
+        // User has company_id but company wasn't loaded — update directly
+        await db.entities.Company.update(user.company_id, editableFields);
+        toast.success('Company profile updated!');
       } else {
-        const newCompany = await db.entities.Company.create(editableFields);
+        if (!user?.organization_id) {
+          toast.error('No organization found. Please contact support.');
+          return;
+        }
+        // Include organization_id for RLS policy compliance
+        const newCompany = await db.entities.Company.create({
+          ...editableFields,
+          organization_id: user.organization_id,
+        });
         await db.auth.updateMe({ company_id: newCompany.id });
         toast.success('Company profile created!');
         window.location.reload();
