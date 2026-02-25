@@ -411,7 +411,6 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Dashboard', path: createPageUrl('CRMDashboard'), icon: LayoutDashboard },
         { label: 'Contacts', path: createPageUrl('CRMContacts'), icon: Users, badge: stats.contacts },
         { label: 'Pipeline', path: createPageUrl('CRMPipeline'), icon: Kanban },
-        { label: 'Campaigns', path: createPageUrl('CRMCampaigns'), icon: Megaphone },
         { label: 'Import', path: createPageUrl('ContactsImport'), icon: FileSpreadsheet },
       ]
     };
