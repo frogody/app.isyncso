@@ -455,7 +455,11 @@ export default function FinanceSubscriptions({ embedded = false }) {
                               </p>
                               <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
                                 per {subscription.billing_cycle}
-                                {subscription.tax_rate > 0 && ` · ${subscription.tax_rate}% BTW`}
+                                {subscription.tax_rate > 0 && (
+                                  subscription.tax_mechanism?.includes('reverse_charge')
+                                    ? ` · ${subscription.tax_rate}% BTW (self-assessed)`
+                                    : ` · ${subscription.tax_rate}% BTW`
+                                )}
                               </p>
                             </div>
 

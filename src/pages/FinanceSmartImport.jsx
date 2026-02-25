@@ -758,7 +758,7 @@ export default function FinanceSmartImport() {
               : 'Posted to General Ledger';
             toast.success(msg);
           } else if (glResult?.error) {
-            toast.info(glResult.error);
+            toast.error('GL posting failed: ' + glResult.error);
           }
         } catch (glErr) {
           // Fallback to regular post_expense if post_expense_with_tax doesn't exist yet
@@ -766,7 +766,8 @@ export default function FinanceSmartImport() {
             const { data: glResult } = await supabase.rpc('post_expense', { p_expense_id: newExpense.id });
             if (glResult?.success) toast.success('Posted to General Ledger');
           } catch {
-            console.warn('GL posting (non-critical):', glErr);
+            toast.error('Could not post to General Ledger');
+            console.warn('GL posting error:', glErr);
           }
         }
       }
@@ -791,7 +792,9 @@ export default function FinanceSmartImport() {
               unit_price: li.unit_price,
               tax_rate_percent: li.tax_rate_percent,
             })),
-            tax_rate: formData.tax_rate,
+            tax_rate: formData.tax_rate || 0,
+            tax_mechanism: taxDecision?.mechanism || 'standard_btw',
+            self_assess_rate: taxDecision?.self_assess_rate || 0,
             frequency: formData.recurring_frequency || 'monthly',
             next_generate_date: nextDate,
             auto_send: false,
