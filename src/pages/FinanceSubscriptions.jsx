@@ -112,7 +112,10 @@ export default function FinanceSubscriptions({ embedded = false }) {
     active.forEach(sub => {
       const cycle = BILLING_CYCLES.find(c => c.value === sub.billing_cycle);
       if (cycle) {
-        monthlyTotal += ((sub.amount || 0) * cycle.multiplier) / 12;
+        const effectiveAmount = sub.amount_type === 'variable'
+          ? (sub.estimated_amount || sub.amount || 0)
+          : (sub.amount || 0);
+        monthlyTotal += (effectiveAmount * cycle.multiplier) / 12;
       }
     });
 
@@ -450,9 +453,19 @@ export default function FinanceSubscriptions({ embedded = false }) {
 
                           <div className="flex items-center gap-4">
                             <div className="text-right">
-                              <p className={`text-lg font-semibold ${ft('text-slate-900', 'text-white')}`}>
-                                {formatCurrency(subscription.amount)}
-                              </p>
+                              <div className="flex items-center justify-end gap-2">
+                                {subscription.amount_type === 'variable' && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                    Variable
+                                  </span>
+                                )}
+                                <p className={`text-lg font-semibold ${ft('text-slate-900', 'text-white')}`}>
+                                  {subscription.amount_type === 'variable'
+                                    ? `~${formatCurrency(subscription.estimated_amount || subscription.amount)}`
+                                    : formatCurrency(subscription.amount)
+                                  }
+                                </p>
+                              </div>
                               <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
                                 per {subscription.billing_cycle}
                                 {subscription.tax_rate > 0 && (

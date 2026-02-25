@@ -324,3 +324,9 @@ verify_jwt = false
 
 [functions.vendor-research]
 verify_jwt = false
+
+[functions.email-invoice-import]
+verify_jwt = false
+
+[functions.revolut-sync]
+verify_jwt = false

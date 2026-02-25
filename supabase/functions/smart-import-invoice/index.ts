@@ -1033,7 +1033,7 @@ function detectRecurringFromText(
   vendorName: string | null | undefined,
   lineItems: Array<{ description: string }>,
   invoiceText: string
-): { is_recurring: boolean; frequency: string | null } {
+): { is_recurring: boolean; frequency: string | null; amount_type: "fixed" | "variable" } {
   const text = [vendorName, ...lineItems.map((li) => li.description), invoiceText]
     .filter(Boolean)
     .join(" ")
@@ -1042,21 +1042,49 @@ function detectRecurringFromText(
   const recurringKeywords =
     /\b(subscri|plan\b|monthly plan|annual plan|yearly plan|quarterly plan|recurring|membership|licentie|abonnement|maandelijks|jaarlijks|per maand|per jaar|per kwartaal)\b/;
 
+  // Telecom/utility keywords that indicate recurring billing (Dutch invoices)
+  const utilityKeywords =
+    /\b(factuur.*periode|factuurdatum|klant.*nummer|klantnummer|contract.*nummer|contractnummer|vervaldatum|mobiel|telefoon|internet|tv\b|bundel|energie|gas\b|water\b|stroom|elektriciteit|huur|verzekering|premie)\b/;
+
+  // Known recurring vendor patterns (Dutch utilities/telecom)
+  const knownRecurringVendors =
+    /\b(vodafone|t-mobile|kpn|ziggo|tele2|odido|vattenfall|eneco|essent|greenchoice|budget.?energie|nn\b|aegon|centraal.?beheer|nationale.?nederlanden)\b/;
+
   // Date range pattern like "Feb 10–Mar 10" or "Jan 1 - Feb 1" = subscription period
   const dateRangePattern = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d{1,2}\s*[–—-]\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d{1,2}/i;
   const hasDateRange = dateRangePattern.test(text);
 
-  if (!recurringKeywords.test(text) && !hasDateRange) {
-    return { is_recurring: false, frequency: null };
+  const isRecurring = recurringKeywords.test(text) || utilityKeywords.test(text) || knownRecurringVendors.test(text) || hasDateRange;
+
+  if (!isRecurring) {
+    return { is_recurring: false, frequency: null, amount_type: "fixed" };
   }
 
+  // Determine frequency
+  let frequency = "monthly";
   if (/\b(annual|yearly|per year|per jaar|jaarlijks|jaarbasis)\b/.test(text))
-    return { is_recurring: true, frequency: "annual" };
-  if (/\b(quarterly|per quarter|per kwartaal|kwartaal)\b/.test(text))
-    return { is_recurring: true, frequency: "quarterly" };
-  if (/\b(weekly|per week|wekelijks)\b/.test(text))
-    return { is_recurring: true, frequency: "weekly" };
-  return { is_recurring: true, frequency: "monthly" };
+    frequency = "annual";
+  else if (/\b(quarterly|per quarter|per kwartaal|kwartaal)\b/.test(text))
+    frequency = "quarterly";
+  else if (/\b(weekly|per week|wekelijks)\b/.test(text))
+    frequency = "weekly";
+
+  // Determine if variable amount
+  const amountType = isLikelyVariable(vendorName, text) ? "variable" as const : "fixed" as const;
+
+  return { is_recurring: true, frequency, amount_type: amountType };
+}
+
+// ─── Variable Amount Detection ────────────────────────────────────────────────
+
+function isLikelyVariable(vendor: string | null | undefined, text: string): boolean {
+  const v = (vendor || "").toLowerCase();
+  const t = text.toLowerCase();
+  // Usage-based keywords in invoice text
+  if (/\b(verbruik|usage|data|belminuten|call minutes|variabel|variable|estimated|geschat|buitenbundel|roaming)\b/.test(t)) return true;
+  // Known variable-amount vendors (telecom, energy)
+  if (/\b(vodafone|kpn|ziggo|t-mobile|odido|tele2|vattenfall|eneco|essent|greenchoice|budget.?energie)\b/.test(v)) return true;
+  return false;
 }
 
 // ─── Confidence Scoring (Phase 2E) ───────────────────────────────────────────
@@ -1202,6 +1230,7 @@ function buildExtractionResult(
     classification: {
       is_recurring: recurringResult.is_recurring,
       recurring_frequency: recurringResult.frequency,
+      amount_type: recurringResult.amount_type || "fixed",
       expense_category: category,
       gl_code,
       is_reverse_charge:

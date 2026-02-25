@@ -203,10 +203,15 @@ export default function FinanceSmartImport() {
   // Tax rates from DB
   const [taxRates, setTaxRates] = useState([]);
 
+  // Email import inbox
+  const [emailImports, setEmailImports] = useState([]);
+  const [emailImportsLoading, setEmailImportsLoading] = useState(false);
+
   const companyId = user?.company_id || user?.organization_id;
 
   useEffect(() => {
     loadTaxRates();
+    loadEmailImports();
   }, [companyId]);
 
   const loadTaxRates = async () => {
@@ -218,6 +223,53 @@ export default function FinanceSmartImport() {
       .eq('is_active', true)
       .order('is_default', { ascending: false });
     if (data) setTaxRates(data);
+  };
+
+  const loadEmailImports = async () => {
+    if (!companyId) return;
+    setEmailImportsLoading(true);
+    try {
+      const { data } = await supabase
+        .from('email_invoice_imports')
+        .select('*')
+        .eq('company_id', companyId)
+        .in('status', ['pending', 'processing'])
+        .order('created_at', { ascending: false })
+        .limit(20);
+      setEmailImports(data || []);
+    } catch (e) {
+      console.warn('Failed to load email imports:', e);
+    } finally {
+      setEmailImportsLoading(false);
+    }
+  };
+
+  const handleReviewEmailImport = async (importItem) => {
+    if (!importItem.attachment_storage_path) {
+      toast.error('Attachment not available');
+      return;
+    }
+    try {
+      // Download file from storage and process it
+      const { data: fileData, error } = await supabase.storage
+        .from('attachments')
+        .download(importItem.attachment_storage_path);
+      if (error) throw error;
+
+      const file = new File([fileData], importItem.attachment_filename || 'invoice.pdf', {
+        type: 'application/pdf'
+      });
+      await processFile(file);
+
+      // Mark as processing
+      await supabase
+        .from('email_invoice_imports')
+        .update({ status: 'processing' })
+        .eq('id', importItem.id);
+    } catch (e) {
+      console.error('Failed to review email import:', e);
+      toast.error('Failed to load attachment');
+    }
   };
 
   // ─── Drop / File Select ───────────────────────────────────────────────────
@@ -844,23 +896,51 @@ export default function FinanceSmartImport() {
           console.warn('Recurring template (non-critical):', recErr);
         }
 
-        // Also create subscription tracker entry
+        // Also create or update subscription tracker entry
         try {
-          await supabase.from('subscriptions').insert({
-            user_id: user.id,
-            company_id: companyId,
-            name: formData.vendor_name,
-            provider: formData.vendor_name,
-            amount,
-            billing_cycle: formData.recurring_frequency || 'monthly',
-            category: formData.category || 'other',
-            next_billing_date: recurring?.suggested_next_date || nextDate,
-            tax_rate: formData.tax_rate || 21,
-            tax_amount: taxAmount,
-            tax_mechanism: taxDecision?.mechanism || 'standard_btw',
-            status: 'active',
-            description: `Auto-created from Smart Import${formData.invoice_number ? ': #' + formData.invoice_number : ''}`,
-          });
+          const amountType = extraction?.classification?.amount_type || 'fixed';
+
+          // Check if subscription already exists for this vendor
+          const { data: existingSub } = await supabase
+            .from('subscriptions')
+            .select('id, amount_history')
+            .eq('company_id', companyId)
+            .ilike('name', formData.vendor_name)
+            .eq('status', 'active')
+            .maybeSingle();
+
+          if (existingSub) {
+            // Update existing subscription with new amount
+            const history = [...(existingSub.amount_history || []), { date: formData.invoice_date, amount }];
+            const avg = history.reduce((sum, h) => sum + h.amount, 0) / history.length;
+            await supabase.from('subscriptions').update({
+              estimated_amount: Math.round(avg * 100) / 100,
+              amount,
+              amount_history: history.slice(-12),
+              next_billing_date: recurring?.suggested_next_date || nextDate,
+            }).eq('id', existingSub.id);
+            toast.success('Subscription updated with new amount');
+          } else {
+            // Create new subscription
+            await supabase.from('subscriptions').insert({
+              user_id: user.id,
+              company_id: companyId,
+              name: formData.vendor_name,
+              provider: formData.vendor_name,
+              amount,
+              amount_type: amountType,
+              estimated_amount: amountType === 'variable' ? amount : null,
+              amount_history: amountType === 'variable' ? [{ date: formData.invoice_date, amount }] : [],
+              billing_cycle: formData.recurring_frequency || 'monthly',
+              category: formData.category || 'other',
+              next_billing_date: recurring?.suggested_next_date || nextDate,
+              tax_rate: formData.tax_rate || 21,
+              tax_amount: taxAmount,
+              tax_mechanism: taxDecision?.mechanism || 'standard_btw',
+              status: 'active',
+              description: `Auto-created from Smart Import${formData.invoice_number ? ': #' + formData.invoice_number : ''}`,
+            });
+          }
         } catch (subErr) {
           console.warn('Subscription tracker (non-critical):', subErr);
         }
@@ -933,6 +1013,65 @@ export default function FinanceSmartImport() {
         />
 
         <div className="max-w-5xl mx-auto mt-6 space-y-6">
+          {/* ─── Email Import Inbox ──────────────────────────────────── */}
+          {emailImports.length > 0 && !showReview && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <Card className={ft('bg-white border-gray-200', 'bg-zinc-900/50 border-zinc-800')}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className={`text-sm font-medium flex items-center gap-2 ${ft('text-slate-700', 'text-zinc-300')}`}>
+                      <Receipt className="w-4 h-4 text-cyan-400" />
+                      Inbox ({emailImports.length} pending)
+                    </CardTitle>
+                    <Button variant="ghost" size="sm" onClick={loadEmailImports} className="text-xs">
+                      <RefreshCw className="w-3 h-3 mr-1" /> Refresh
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0 space-y-2">
+                  {emailImports.map((imp) => (
+                    <div
+                      key={imp.id}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${ft('bg-gray-50 border-gray-200', 'bg-zinc-800/50 border-zinc-700/50')}`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <FileText className="w-4 h-4 text-cyan-400 shrink-0" />
+                        <div className="min-w-0">
+                          <p className={`text-sm font-medium truncate ${ft('text-slate-900', 'text-white')}`}>
+                            {imp.attachment_filename || 'Unknown file'}
+                          </p>
+                          <p className={`text-xs truncate ${ft('text-slate-400', 'text-zinc-500')}`}>
+                            {imp.email_from?.split('<')[0]?.trim() || imp.email_from} · {imp.email_subject}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant="outline" className={
+                          imp.status === 'processing'
+                            ? 'border-cyan-500/30 text-cyan-400 bg-cyan-500/10'
+                            : 'border-zinc-600 text-zinc-400'
+                        }>
+                          {imp.status === 'processing' ? (
+                            <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Processing</>
+                          ) : 'Pending'}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleReviewEmailImport(imp)}
+                          disabled={imp.status === 'processing'}
+                          className="text-xs"
+                        >
+                          Review
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
           {/* ─── Drop Zone ──────────────────────────────────────────── */}
           {!showReview && (
             <motion.div

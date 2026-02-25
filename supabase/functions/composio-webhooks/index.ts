@@ -828,6 +828,49 @@ serve(async (req) => {
       }
     }
 
+    // ============================================
+    // EMAIL INVOICE IMPORT CHECK — detect invoice attachments
+    // ============================================
+    if (
+      (payload.trigger_slug === 'GMAIL_NEW_GMAIL_MESSAGE' ||
+       payload.trigger_slug === 'GMAIL_NEW_MESSAGE_RECEIVED') &&
+      payload.connected_account_id
+    ) {
+      // Check if any email_import_settings exist for this connected account
+      const { data: importSettings } = await supabase
+        .from('email_import_settings')
+        .select('id')
+        .eq('connected_account_id', payload.connected_account_id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (importSettings) {
+        const emailData = payload.data as Record<string, unknown>;
+        const hasAttachments = emailData.has_attachments ||
+          (emailData.attachments && (emailData.attachments as unknown[]).length > 0) ||
+          false;
+
+        if (hasAttachments) {
+          console.log(`[composio-webhooks] Invoice import: forwarding email with attachments to email-invoice-import`);
+          const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+          const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+          // Fire-and-forget call to email-invoice-import
+          fetch(`${supabaseUrl}/functions/v1/email-invoice-import`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              event: emailData,
+              connected_account_id: payload.connected_account_id,
+            }),
+          }).catch(err => console.error('[composio-webhooks] email-invoice-import call failed:', err));
+        }
+      }
+    }
+
     // Store raw event for audit trail
     const { data: eventRecord, error: storeError } = await supabase
       .from("composio_webhook_events")
