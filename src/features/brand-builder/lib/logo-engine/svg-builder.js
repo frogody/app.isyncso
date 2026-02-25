@@ -22,9 +22,8 @@ export function buildFontImport(fontFamily, googleFontsUrl) {
  */
 export function estimateTextWidth(text, fontSize, letterSpacing = 0) {
   const charWidth = fontSize * 0.55;
-  const spacingPx = typeof letterSpacing === 'string'
-    ? parseFloat(letterSpacing) * fontSize
-    : letterSpacing * fontSize;
+  const parsed = typeof letterSpacing === 'string' ? parseFloat(letterSpacing) : letterSpacing;
+  const spacingPx = (Number.isFinite(parsed) ? parsed : 0) * fontSize;
   return text.length * charWidth + Math.max(0, text.length - 1) * spacingPx;
 }
 

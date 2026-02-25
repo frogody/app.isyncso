@@ -64,7 +64,13 @@ export function scorePairing(headingFont, bodyFont) {
  * choices[2]: 'light' | 'bold'  (weight preference)
  */
 export function filterByChoices(choices) {
-  if (!choices || choices.length < 3) return FONT_CATALOG;
+  if (!choices || choices.length < 3) {
+    return {
+      headingPool: FONT_CATALOG.filter(f => f.role_suitability.heading >= 0.5),
+      bodyPool: FONT_CATALOG.filter(f => f.role_suitability.body >= 0.5),
+      weightPreference: 'bold',
+    };
+  }
 
   const [headingClass, subclass, weight] = choices;
 

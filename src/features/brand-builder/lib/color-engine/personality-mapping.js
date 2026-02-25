@@ -38,7 +38,7 @@ export const INDUSTRY_HUE_EXPECTATIONS = {
 // ── Core mapping ─────────────────────────────────────────────────
 
 export function personalityToBaseHSL(vector = [50, 50, 50, 50, 50]) {
-  const [temporal, energy, tone, market, density] = vector;
+  const [temporal = 50, energy = 50, tone = 50, market = 50, density = 50] = vector || [50, 50, 50, 50, 50];
 
   // Hue: warm (classic/serious) → cool (modern/playful)
   let h = lerp(15, 240, temporal / 100) + lerp(-20, 20, tone / 100);
