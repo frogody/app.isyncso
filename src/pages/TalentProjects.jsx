@@ -1357,14 +1357,13 @@ const RoleModal = ({ isOpen, onClose, role, projectId, onSave }) => {
   useEffect(() => {
     if (role) {
       // Map DB fields back to form fields
-      const salaryRange = [role.salary_min, role.salary_max].filter(Boolean).join('-') || '';
       setFormData({
         title: role.title || "",
         department: "",
-        location: role.location || "",
+        location: role.location_requirements || "",
         employment_type: role.employment_type || "full_time",
-        salary_range: salaryRange,
-        requirements: Array.isArray(role.requirements) ? role.requirements.join('\n') : "",
+        salary_range: role.salary_range || "",
+        requirements: Array.isArray(role.required_skills) ? role.required_skills.join('\n') : "",
         responsibilities: role.description || "",
         status: role.status === 'open' ? 'active' : (role.status || "active"),
       });
@@ -1858,26 +1857,24 @@ export default function TalentProjects() {
 
     try {
       // Map form fields to database columns
-      // DB schema: title, description, requirements (JSONB), responsibilities (JSONB),
-      // location, salary_min, salary_max, salary_currency, employment_type, remote_policy,
-      // status, project_id, organization_id
+      // DB schema: title, description, required_skills (ARRAY), preferred_skills (ARRAY),
+      // location_requirements, salary_range (text), employment_type, seniority_level,
+      // remote_policy, status, project_id, organization_id, source_url
       const roleData = {
         title: formData.title,
-        description: formData.responsibilities || null,
-        requirements: formData.requirements ? formData.requirements.split('\n').filter(s => s.trim()) : [],
-        location: formData.location || null,
+        description: formData.responsibilities || formData.description || null,
+        required_skills: formData.requirements
+          ? (typeof formData.requirements === 'string'
+              ? formData.requirements.split('\n').filter(s => s.trim())
+              : formData.requirements)
+          : [],
+        location_requirements: formData.location || null,
+        salary_range: formData.salary_range || null,
         employment_type: formData.employment_type || 'full_time',
         status: formData.status === 'active' ? 'open' : formData.status,
         organization_id: user.organization_id,
         project_id: finalProjectId,
       };
-
-      // Parse salary range if provided (e.g. "50000-80000" or "50000")
-      if (formData.salary_range) {
-        const parts = formData.salary_range.replace(/[^0-9\-]/g, '').split('-');
-        if (parts[0]) roleData.salary_min = parseInt(parts[0]);
-        if (parts[1]) roleData.salary_max = parseInt(parts[1]);
-      }
 
       console.log('[handleSaveRole] Saving role with data:', JSON.stringify(roleData, null, 2));
 
