@@ -30,6 +30,7 @@ import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 import { createPageUrl } from '@/utils';
 import CountrySelector from '@/components/finance/CountrySelector';
 import FinanceCopilotPanel from '@/components/finance/FinanceCopilotPanel';
+import EmailImportSettings from '@/components/finance/EmailImportSettings';
 import { determineTaxRulesForPurchase, determineTaxRulesForSale } from '@/lib/btwRules';
 
 // PDF.js worker
@@ -1727,6 +1728,10 @@ export default function FinanceSmartImport() {
                 </Button>
               </div>
             </motion.div>
+          )}
+          {/* ─── Email Import Settings (visible when idle) ────────── */}
+          {!showReview && !processing && (
+            <EmailImportSettings />
           )}
         </div>
       </div>

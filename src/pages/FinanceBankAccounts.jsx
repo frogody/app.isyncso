@@ -15,6 +15,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
+import RevolutConnectionSettings from '@/components/finance/RevolutConnectionSettings';
 
 // ── CSV Parser ──────────────────────────────────────────────────────────
 function parseCSV(text) {
@@ -871,6 +872,9 @@ export default function FinanceBankAccounts({ embedded = false }) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Revolut Business Sync */}
+        <RevolutConnectionSettings />
       </div>
     </FinancePageTransition>
   );
