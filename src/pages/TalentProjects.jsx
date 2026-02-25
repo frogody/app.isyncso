@@ -802,6 +802,7 @@ const itemVariants = {
 const StatusBadge = ({ status }) => {
   const styles = {
     active: { bg: "bg-red-500/20", text: "text-red-400", label: "Active" },
+    open: { bg: "bg-red-500/20", text: "text-red-400", label: "Active" },
     filled: { bg: "bg-red-600/20", text: "text-red-400", label: "Filled" },
     on_hold: { bg: "bg-red-800/30", text: "text-red-300", label: "On Hold" },
     cancelled: { bg: "bg-zinc-500/20", text: "text-zinc-400", label: "Cancelled" },

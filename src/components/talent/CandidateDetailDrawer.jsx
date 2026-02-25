@@ -1701,7 +1701,7 @@ export default function CandidateDetailDrawer({
     try {
       const { data, error } = await supabase
         .from("roles")
-        .select("*, project:project_id(id, title, client_name)")
+        .select("*, project:project_id(id, title, client_company)")
         .eq("organization_id", user.organization_id)
         .eq("status", "open")
         .order("created_date", { ascending: false });
@@ -1765,7 +1765,7 @@ export default function CandidateDetailDrawer({
             // Role context
             role_context: roleContext,
             role_title: role.title,
-            company_name: role.project?.client_name || "",
+            company_name: role.project?.client_company || "",
             // Settings
             stage: "initial",
             campaign_type: outreachChannel,
@@ -2487,10 +2487,10 @@ export default function CandidateDetailDrawer({
                                   <div className="flex-1 min-w-0">
                                     <h4 className={`font-semibold ${t("text-gray-900", "text-white")} truncate`}>{role.title}</h4>
                                     <div className={`flex items-center gap-2 text-xs ${t("text-gray-500", "text-zinc-400")} mt-1`}>
-                                      {role.project?.client_name && (
+                                      {role.project?.client_company && (
                                         <span className="flex items-center gap-1">
                                           <Building2 className="w-3 h-3" />
-                                          {role.project.client_name}
+                                          {role.project.client_company}
                                         </span>
                                       )}
                                       {role.project?.title && (
@@ -2796,7 +2796,7 @@ export default function CandidateDetailDrawer({
                 <div className="flex-1 min-w-0">
                   <p className={`font-medium text-sm ${t("text-gray-900", "text-white")}`}>{outreachPreview.candidateName}</p>
                   <p className={`text-xs ${t("text-gray-500", "text-zinc-400")}`}>
-                    For: {outreachPreview.role?.title} {outreachPreview.role?.project?.client_name ? `at ${outreachPreview.role.project.client_name}` : ""}
+                    For: {outreachPreview.role?.title} {outreachPreview.role?.project?.client_company ? `at ${outreachPreview.role.project.client_company}` : ""}
                   </p>
                 </div>
                 {outreachPreview.message?.personalization_score && (
