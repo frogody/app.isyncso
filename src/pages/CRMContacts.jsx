@@ -57,6 +57,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -1350,6 +1351,32 @@ export default function CRMContacts() {
     }
   };
 
+  const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
+  const [bulkMoveType, setBulkMoveType] = useState('supplier');
+  const [bulkMoveLabel, setBulkMoveLabel] = useState('');
+
+  const handleBulkMove = async () => {
+    if (selectedContacts.length === 0) return;
+    try {
+      const updateData = {
+        contact_type: bulkMoveType,
+        relationship_label: bulkMoveLabel || null,
+        stage: PIPELINE_TYPES.includes(bulkMoveType) ? 'new' : null,
+      };
+      await Promise.all(selectedContacts.map(id =>
+        supabase.from('prospects').update(updateData).eq('id', id)
+      ));
+      toast.success(`${selectedContacts.length} contacts moved to ${bulkMoveType}${bulkMoveLabel ? ` (${bulkMoveLabel})` : ''}`);
+      setSelectedContacts([]);
+      setBulkMoveOpen(false);
+      setBulkMoveLabel('');
+      loadContacts();
+    } catch (error) {
+      console.error("Bulk move failed:", error);
+      toast.error("Failed to move contacts");
+    }
+  };
+
   const handleExport = () => {
     const csv = [
       ["Name", "Email", "Phone", "Company", "Title", "Stage", "Score", "Deal Value", "Source"],
@@ -1633,6 +1660,45 @@ export default function CRMContacts() {
             {selectedContacts.length > 0 && (
               <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
                 <span className={`text-xs sm:text-sm ${crt('text-slate-500', 'text-zinc-400')} whitespace-nowrap`}>{selectedContacts.length} selected</span>
+                <Popover open={bulkMoveOpen} onOpenChange={setBulkMoveOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={`${crt('text-slate-500 border-slate-300 hover:bg-slate-100', 'text-zinc-400 border-zinc-600 hover:bg-zinc-800')} h-10`}>
+                      <ArrowRight className="w-4 h-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Move to</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className={`w-64 p-3 ${crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}`} align="end">
+                    <div className="space-y-3">
+                      <p className={`text-xs font-medium ${crt('text-slate-500', 'text-zinc-400')}`}>Move {selectedContacts.length} contacts to:</p>
+                      <Select value={bulkMoveType} onValueChange={(v) => { setBulkMoveType(v); setBulkMoveLabel(''); }}>
+                        <SelectTrigger className={`w-full ${crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
+                          {CONTACT_TYPES.filter(t => t.id !== 'all').map(t => (
+                            <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {RELATIONSHIP_LABELS[bulkMoveType] && (
+                        <Select value={bulkMoveLabel || '_none'} onValueChange={(v) => setBulkMoveLabel(v === '_none' ? '' : v)}>
+                          <SelectTrigger className={`w-full ${crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}`}>
+                            <SelectValue placeholder="Label (optional)" />
+                          </SelectTrigger>
+                          <SelectContent className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
+                            <SelectItem value="_none">No label</SelectItem>
+                            {RELATIONSHIP_LABELS[bulkMoveType].map(label => (
+                              <SelectItem key={label} value={label}>{label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <Button size="sm" className="w-full bg-cyan-600 hover:bg-cyan-700 text-white" onClick={handleBulkMove}>
+                        Move {selectedContacts.length} contacts
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <Button variant="outline" size="sm" onClick={handleBulkDelete} className={`${crt('text-slate-500 border-slate-300 hover:bg-slate-100', 'text-zinc-400 border-zinc-600 hover:bg-zinc-800')} h-10`}>
                   <Trash2 className="w-4 h-4 sm:mr-1" />
                   <span className="hidden sm:inline">Delete</span>
