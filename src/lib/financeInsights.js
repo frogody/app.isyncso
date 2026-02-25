@@ -3,6 +3,7 @@
 // No API calls — all client-side, deterministic, using existing extraction results.
 
 import { ALL_COUNTRIES, EU_COUNTRIES } from './btwRules';
+import { TAX_SOURCE_LINKS, RUBRIC_LINKS, FINANCE_GUIDE_LINKS } from './taxSourceLinks';
 
 const EU_CODES = new Set(EU_COUNTRIES.map(c => c.code));
 
@@ -31,8 +32,10 @@ const FREQUENCY_LABELS = {
 
 // ─── 1. Summary ─────────────────────────────────────────────────────────────
 
-export function generateSummary(extraction, documentType, recurring, currencyConversion) {
-  const vendor = extraction?.vendor?.name || 'an unknown vendor';
+export function generateSummary(extraction, documentType, recurring, currencyConversion, vendorDescription) {
+  const vendorRaw = extraction?.vendor?.name || 'an unknown vendor';
+  const vendorDesc = vendorDescription ? `, ${vendorDescription},` : '';
+  const vendor = vendorRaw + vendorDesc;
   const country = getCountryName(extraction?.vendor?.country);
   const total = extraction?.invoice?.total;
   const currency = extraction?.invoice?.currency || 'EUR';
@@ -139,6 +142,9 @@ export function generateTaxGuidance(taxDecision, extraction) {
   const total = parseFloat(extraction?.invoice?.total) || 0;
   const selfAssessAmt = self_assess_rate ? Math.round(total * (self_assess_rate / 100) * 100) / 100 : 0;
 
+  // Look up the rubric link (strip "Rubric " prefix if present)
+  const rubricKey = btw_rubric ? btw_rubric.replace(/^Rubric\s*/i, '').trim() : null;
+
   switch (mechanism) {
     case 'standard_btw':
       return {
@@ -149,6 +155,8 @@ export function generateTaxGuidance(taxDecision, extraction) {
         whatItMeans: "The VAT amount on this invoice is your input tax (voorbelasting). You can claim it back on your BTW return. No special action needed.",
         badge: btw_rubric ? `Rubric ${btw_rubric}` : null,
         selfAssessAmount: null,
+        sourceLink: TAX_SOURCE_LINKS.standard_btw,
+        rubricLink: rubricKey ? RUBRIC_LINKS[rubricKey] || null : null,
       };
 
     case 'reverse_charge_eu':
@@ -160,6 +168,8 @@ export function generateTaxGuidance(taxDecision, extraction) {
           : `You'll report the BTW on your return (box 4b) and immediately deduct it. Net effect: zero.`,
         badge: 'Rubric 4b',
         selfAssessAmount: selfAssessAmt,
+        sourceLink: TAX_SOURCE_LINKS.reverse_charge_eu,
+        rubricLink: RUBRIC_LINKS['4b'],
       };
 
     case 'reverse_charge_non_eu':
@@ -171,6 +181,8 @@ export function generateTaxGuidance(taxDecision, extraction) {
           : `You add the BTW yourself on your return (box 4a) and immediately deduct it. Net effect: zero.`,
         badge: 'Rubric 4a',
         selfAssessAmount: selfAssessAmt,
+        sourceLink: TAX_SOURCE_LINKS.reverse_charge_non_eu,
+        rubricLink: RUBRIC_LINKS['4a'],
       };
 
     case 'import_no_vat':
@@ -180,6 +192,8 @@ export function generateTaxGuidance(taxDecision, extraction) {
         whatItMeans: "You may receive a separate customs declaration with import VAT. Keep that document \u2014 you can claim the import VAT back on your BTW return.",
         badge: null,
         selfAssessAmount: null,
+        sourceLink: TAX_SOURCE_LINKS.import_no_vat,
+        rubricLink: null,
       };
 
     default:
@@ -189,6 +203,8 @@ export function generateTaxGuidance(taxDecision, extraction) {
         whatItMeans: 'Check with your accountant if you are unsure.',
         badge: btw_rubric ? `Rubric ${btw_rubric}` : null,
         selfAssessAmount: null,
+        sourceLink: TAX_SOURCE_LINKS[mechanism] || null,
+        rubricLink: rubricKey ? RUBRIC_LINKS[rubricKey] || null : null,
       };
   }
 }
@@ -279,6 +295,39 @@ export function generateCategoryInsight(category, vendorName, lineItems) {
     changeable: true,
     changeHint: 'You can change the category in the form above if this doesn\'t look right.',
   };
+}
+
+// ─── 4b. Suggest Category from Vendor Research Context ───────────────────────
+
+const CATEGORY_KEYWORDS = {
+  advertising: ['promotion', 'advertising', 'marketing', 'ads', 'campaign', 'seo', 'social media', 'branding'],
+  software: ['software', 'saas', 'app', 'platform', 'tool', 'subscription', 'api', 'automation'],
+  hosting: ['hosting', 'cloud', 'server', 'aws', 'azure', 'infrastructure', 'cdn', 'domain'],
+  telecom: ['telecom', 'phone', 'mobile', 'internet', 'broadband', 'voip', 'sms'],
+  travel: ['travel', 'flight', 'hotel', 'transport', 'airline', 'accommodation', 'booking'],
+  professional_services: ['consulting', 'legal', 'accounting', 'advisory', 'freelance', 'agency'],
+  office_supplies: ['office', 'supplies', 'furniture', 'equipment', 'stationery', 'printer'],
+  insurance: ['insurance', 'coverage', 'policy', 'underwriting'],
+  rent: ['rent', 'lease', 'workspace', 'coworking', 'office space'],
+  utilities: ['utility', 'energy', 'electricity', 'water', 'gas'],
+};
+
+export function suggestCategoryFromContext(tavilyAnswer) {
+  if (!tavilyAnswer) return null;
+  const lower = tavilyAnswer.toLowerCase();
+
+  let bestMatch = null;
+  let bestCount = 0;
+
+  for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+    const count = keywords.filter(kw => lower.includes(kw)).length;
+    if (count > bestCount) {
+      bestCount = count;
+      bestMatch = category;
+    }
+  }
+
+  return bestCount > 0 ? bestMatch : null;
 }
 
 // ─── 5. Next Steps / What Happens on Save ───────────────────────────────────

@@ -1024,6 +1024,11 @@ export default function FinanceSmartImport() {
                 confidenceData={confidenceData}
                 formData={formData}
                 fileName={fileName}
+                user={user}
+                onCategorySuggestion={(suggested) => {
+                  updateFormField('category', suggested);
+                  toast.info(`Category updated to "${suggested}" based on vendor research`);
+                }}
               />
 
               {/* Document Type Chips */}

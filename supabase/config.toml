@@ -321,3 +321,6 @@ verify_jwt = false
 
 [functions.generate-visual-language]
 verify_jwt = false
+
+[functions.vendor-research]
+verify_jwt = false
