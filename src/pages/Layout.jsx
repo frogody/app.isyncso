@@ -1061,21 +1061,22 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     });
   }, [hasPermission, permLoading, isAdmin]);
 
-  // Memoize engine items based on company licenses + team app access
-  // Having a valid license (via effectiveApps) is sufficient — no additional RBAC check needed
+  // Memoize engine items based on company licenses + workspace settings
+  // If licensing is active (effectiveApps non-empty), respect license restrictions
+  // If no licensing (effectiveApps empty), fall back to workspace-enabled apps
   // Base apps (Dashboard, CRM, Products, Projects, Inbox) are always in core nav
   const engineItems = useMemo(() => {
     let appsToShow;
 
-    if (effectiveApps.length > 0) {
-      // Apps from company licenses + team_app_access (via get_user_effective_apps)
-      appsToShow = effectiveApps;
-    } else if (!teamLoading) {
-      // No licensed or team apps — only base apps (handled in core nav)
-      appsToShow = [];
-    } else {
+    if (teamLoading) {
       // Still loading — show nothing to avoid flash
       appsToShow = [];
+    } else if (effectiveApps.length > 0) {
+      // Licensing active — only show licensed apps that user also enabled in workspace
+      appsToShow = effectiveApps.filter(appId => enabledApps.includes(appId));
+    } else {
+      // No licensing restrictions — show whatever user enabled in workspace settings
+      appsToShow = enabledApps.filter(appId => ENGINE_ITEMS_CONFIG[appId]);
     }
 
     // Filter out platform-owner-only apps for regular users
@@ -1086,7 +1087,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     return appsToShow
       .map(appId => ENGINE_ITEMS_CONFIG[appId])
       .filter(Boolean);
-  }, [effectiveApps, teamLoading, isPlatformOwner]);
+  }, [effectiveApps, enabledApps, teamLoading, isPlatformOwner]);
 
   // Report visible engine IDs to parent for submenu positioning
   const visibleEngineIds = useMemo(() => engineItems.map(e => e.id), [engineItems]);
