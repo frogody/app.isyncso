@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
-import { SyncStudioNav } from '@/components/sync-studio';
+// SyncStudioNav removed — sidebar handles navigation
 import { VIBES, VIBE_KEYS } from '@/components/sync-studio/VibeSelector';
 
 // ─── Animations ──────────────────────────────────────────────
@@ -189,13 +189,6 @@ export default function SyncStudioHome({ embedded = false }) {
       </div>
 
       <div className="relative z-10 w-full px-6 lg:px-10 pt-6 pb-24">
-        {/* Nav - hidden when embedded (parent provides StudioNav) */}
-        {!embedded && (
-          <div className="flex justify-center mb-10">
-            <SyncStudioNav />
-          </div>
-        )}
-
         {/* ════════════════════════════════════════════════════════ */}
         {/* HERO                                                     */}
         {/* ════════════════════════════════════════════════════════ */}

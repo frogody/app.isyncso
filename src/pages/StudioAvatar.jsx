@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { StudioNav } from '@/components/studio';
+
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
@@ -527,13 +527,6 @@ export default function StudioAvatar() {
 
   return (
     <div className="min-h-screen bg-[#09090b]">
-      {/* Sticky Nav */}
-      <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-        <div className="w-full px-4 lg:px-6 py-3 flex justify-center">
-          <StudioNav />
-        </div>
-      </div>
-
       <div className="w-full px-4 lg:px-6 py-6 pb-24 space-y-5">
         {/* ============ SECTION 1: My Avatars Gallery ============ */}
         <motion.section

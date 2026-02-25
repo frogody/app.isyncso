@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
-import { StudioNav } from '@/components/studio';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useUser } from '@/components/context/UserContext';
@@ -1112,13 +1112,6 @@ export default function StudioPodcast() {
 
   return (
     <div className="min-h-screen bg-[#09090b]">
-      {/* Nav */}
-      <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-        <div className="w-full px-4 lg:px-6 py-3 flex justify-center">
-          <StudioNav />
-        </div>
-      </div>
-
       {/* Content */}
       <div className="w-full px-4 lg:px-6 py-6 max-w-3xl mx-auto space-y-5">
         {/* Header */}

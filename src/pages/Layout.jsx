@@ -106,6 +106,10 @@ import {
   Upload,
   Store,
   Calculator,
+  Mic,
+  AudioLines,
+  Shirt,
+  LayoutTemplate,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -619,10 +623,16 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       color: 'yellow',
       agent: 'create',
       items: [
-        { label: 'Studio', path: createPageUrl('Create'), icon: LayoutDashboard },
+        { label: 'Dashboard', path: createPageUrl('Create'), icon: LayoutDashboard },
+        { label: 'Image', path: '/StudioImage', icon: Image },
+        { label: 'Photoshoot', path: '/StudioPhotoshoot', icon: Camera },
+        { label: 'Podcast', path: '/StudioPodcast', icon: Mic },
+        { label: 'Voice', path: '/StudioVoice', icon: AudioLines },
+        { label: 'Fashion', path: '/StudioFashionBooth', icon: Shirt },
+        { label: 'Templates', path: '/StudioTemplates', icon: LayoutTemplate },
+        { label: 'Library', path: createPageUrl('StudioLibrary'), icon: FolderOpen },
         { label: 'Calendar', path: createPageUrl('ContentCalendar'), icon: Calendar },
         { label: 'Branding', path: createPageUrl('CreateBranding'), icon: Palette },
-        { label: 'Library', path: createPageUrl('StudioLibrary'), icon: FolderOpen },
       ]
     };
   }

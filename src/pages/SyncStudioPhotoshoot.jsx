@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
-import { StudioNav } from '@/components/studio';
+// StudioNav removed — sidebar handles navigation
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxfntqleig.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
@@ -317,11 +317,6 @@ export default function SyncStudioPhotoshoot() {
   if (!jobId) {
     return (
       <div className="min-h-screen bg-[#09090b]">
-        <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-          <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
-            <StudioNav />
-          </div>
-        </div>
         <div className="min-h-[70vh] flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -354,11 +349,6 @@ export default function SyncStudioPhotoshoot() {
   if (stage === 'completed') {
     return (
       <div className="min-h-screen bg-[#09090b]">
-        <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-          <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
-            <StudioNav />
-          </div>
-        </div>
       <div className="min-h-[70vh] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -436,11 +426,6 @@ export default function SyncStudioPhotoshoot() {
   if (stage === 'cancelled') {
     return (
       <div className="min-h-screen bg-[#09090b]">
-        <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-          <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
-            <StudioNav />
-          </div>
-        </div>
       <div className="min-h-[70vh] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -502,11 +487,6 @@ export default function SyncStudioPhotoshoot() {
   if (stage === 'error') {
     return (
       <div className="min-h-screen bg-[#09090b]">
-        <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-          <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
-            <StudioNav />
-          </div>
-        </div>
       <div className="min-h-[70vh] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -552,12 +532,6 @@ export default function SyncStudioPhotoshoot() {
 
   return (
     <div className="min-h-screen bg-[#09090b]">
-      {/* Studio Nav */}
-      <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-        <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
-          <StudioNav />
-        </div>
-      </div>
 
       <div className="flex flex-col items-center p-4">
       <div className="max-w-2xl w-full my-8">

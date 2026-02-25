@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
-import { StudioNav } from '@/components/studio';
+// StudioNav removed — sidebar handles navigation
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -161,13 +161,6 @@ export default function SyncStudioReturn() {
   // -- Main --
   return (
     <div className="min-h-screen bg-[#09090b]">
-      {/* ─── Sticky Nav ────────────────────── */}
-      <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-        <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
-          <StudioNav />
-        </div>
-      </div>
-
       {/* ─── Stats Strip ───────────────────────────────────────── */}
       <div className="bg-zinc-900/40 border-b border-zinc-800/40">
         <div className="w-full px-4 lg:px-8 py-3 flex items-center justify-between flex-wrap gap-3">

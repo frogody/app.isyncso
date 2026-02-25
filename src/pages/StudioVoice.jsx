@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { StudioNav } from '@/components/studio';
+
 import { useUser } from '@/components/context/UserContext';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
@@ -737,13 +737,6 @@ export default function StudioVoice() {
 
   return (
     <div className="min-h-screen bg-[#09090b]">
-      {/* Sticky nav */}
-      <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-        <div className="w-full px-4 lg:px-6 py-3 flex justify-center">
-          <StudioNav />
-        </div>
-      </div>
-
       <div className="w-full px-4 lg:px-6 py-6 space-y-5">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">

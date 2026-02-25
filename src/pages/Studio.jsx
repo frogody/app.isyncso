@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Image, Film, Camera, Clapperboard, ArrowRight, Sparkles, Mic, AudioLines, UserCircle } from 'lucide-react';
-import { StudioNav } from '@/components/studio';
+// StudioNav removed — sidebar handles navigation
 
 const TOOLS = [
   {
@@ -75,13 +75,6 @@ export default function Studio() {
 
   return (
     <div className="min-h-screen bg-[#09090b]">
-      {/* Sticky nav */}
-      <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl border-b border-zinc-800/60">
-        <div className="w-full px-4 lg:px-8 py-3 flex justify-center">
-          <StudioNav />
-        </div>
-      </div>
-
       <div className="w-full px-4 lg:px-8 py-8">
         {/* Hero */}
         <div className="text-center mb-10">
