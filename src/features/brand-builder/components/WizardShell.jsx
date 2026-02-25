@@ -1,3 +1,4 @@
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import WizardTopBar from './WizardTopBar';
 import WizardSidebar from './WizardSidebar';
@@ -11,7 +12,46 @@ import VisualLanguageStage from './stages/VisualLanguageStage';
 import ApplicationsStage from './stages/ApplicationsStage';
 import BrandBookStage from './stages/BrandBookStage';
 
-const STAGE_PLACEHOLDERS = {};
+const STAGE_MAP = {
+  1: BrandDNAStage,
+  2: ColorSystemStage,
+  3: TypographySystemStage,
+  4: LogoSystemStage,
+  5: VerbalIdentityStage,
+  6: VisualLanguageStage,
+  7: ApplicationsStage,
+  8: BrandBookStage,
+};
+
+/**
+ * Isolated host for stage functions.
+ * Each stage uses React hooks internally — wrapping them here with a `key`
+ * prop ensures React unmounts/remounts when the stage changes, keeping
+ * the hook call order stable (fixes React Error #311).
+ */
+function StageHost({ stageFn, project, updateStageData, onNext, onNavChange }) {
+  const result = stageFn({ project, updateStageData, onNext });
+  const resultRef = useRef(result);
+  resultRef.current = result;
+
+  // Sync navigation-relevant state to parent.
+  // Functions are wrapped in ref-based closures so the parent always
+  // invokes the latest version without needing them as effect deps.
+  useEffect(() => {
+    onNavChange({
+      subStep: result.subStep,
+      subStepCount: result.subStepCount,
+      canProceed: result.canProceed,
+      nextLabel: result.nextLabel,
+      skipLabel: result.skipLabel,
+      goSubNext: (...args) => resultRef.current.goSubNext(...args),
+      goSubBack: (...args) => resultRef.current.goSubBack(...args),
+      onSkip: result.onSkip ? (...args) => resultRef.current.onSkip?.(...args) : null,
+    });
+  }, [result.subStep, result.subStepCount, result.canProceed, result.nextLabel, result.skipLabel, onNavChange]);
+
+  return result.content || null;
+}
 
 export default function WizardShell({
   project,
@@ -25,34 +65,28 @@ export default function WizardShell({
   onNameChange,
   updateStageData,
 }) {
-  // Stages return render objects with sub-step navigation
-  const stageResult =
-    currentStage === 1 ? BrandDNAStage({ project, updateStageData, onNext })
-    : currentStage === 2 ? ColorSystemStage({ project, updateStageData, onNext })
-    : currentStage === 3 ? TypographySystemStage({ project, updateStageData, onNext })
-    : currentStage === 4 ? LogoSystemStage({ project, updateStageData, onNext })
-    : currentStage === 5 ? VerbalIdentityStage({ project, updateStageData, onNext })
-    : currentStage === 6 ? VisualLanguageStage({ project, updateStageData, onNext })
-    : currentStage === 7 ? ApplicationsStage({ project, updateStageData, onNext })
-    : currentStage === 8 ? BrandBookStage({ project, updateStageData, onNext })
-    : null;
+  const [navState, setNavState] = useState(null);
 
-  const placeholder = STAGE_PLACEHOLDERS[currentStage];
+  const handleNavChange = useCallback((state) => {
+    setNavState(state);
+  }, []);
 
-  // Determine navigation props
-  const navProps = stageResult
+  const stageFn = STAGE_MAP[currentStage];
+
+  // Determine navigation props from the stage's reported state
+  const navProps = navState
     ? {
         currentStage,
-        onBack: stageResult.subStep > 1 ? stageResult.goSubBack : onBack,
-        onNext: stageResult.goSubNext,
+        onBack: navState.subStep > 1 ? navState.goSubBack : onBack,
+        onNext: navState.goSubNext,
         isLastStage: false,
-        nextLabel: stageResult.nextLabel,
-        nextDisabled: !stageResult.canProceed,
-        backDisabled: stageResult.subStep <= 1 && currentStage <= 1,
-        subStep: stageResult.subStep,
-        subStepCount: stageResult.subStepCount,
-        skipLabel: stageResult.skipLabel,
-        onSkip: stageResult.onSkip,
+        nextLabel: navState.nextLabel,
+        nextDisabled: !navState.canProceed,
+        backDisabled: navState.subStep <= 1 && currentStage <= 1,
+        subStep: navState.subStep,
+        subStepCount: navState.subStepCount,
+        skipLabel: navState.skipLabel,
+        onSkip: navState.onSkip,
       }
     : {
         currentStage,
@@ -87,19 +121,15 @@ export default function WizardShell({
               transition={{ duration: 0.2 }}
               className="p-8 max-w-4xl mx-auto"
             >
-              {stageResult ? (
-                stageResult.content
-              ) : placeholder ? (
-                <div className="flex flex-col items-center justify-center min-h-[400px] rounded-[20px] bg-zinc-900/60 backdrop-blur-xl border border-white/10 p-12">
-                  <div className="w-16 h-16 rounded-2xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center mb-6">
-                    <span className="text-2xl font-bold text-yellow-400">{currentStage}</span>
-                  </div>
-                  <h2 className="text-xl font-bold text-white mb-2">{placeholder.title}</h2>
-                  <p className="text-sm text-zinc-400 text-center max-w-md">{placeholder.description}</p>
-                  <div className="mt-8 px-4 py-2 rounded-full bg-zinc-800/60 border border-zinc-700/40 text-xs text-zinc-500">
-                    Coming soon
-                  </div>
-                </div>
+              {stageFn ? (
+                <StageHost
+                  key={currentStage}
+                  stageFn={stageFn}
+                  project={project}
+                  updateStageData={updateStageData}
+                  onNext={onNext}
+                  onNavChange={handleNavChange}
+                />
               ) : null}
             </motion.div>
           </AnimatePresence>
