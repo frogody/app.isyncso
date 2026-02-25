@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
+const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
 
 const SYSTEM_PROMPT = `You are a senior brand strategist at a top-tier agency. You create brand foundations that are specific, authentic, and actionable — never generic.
 
@@ -129,34 +129,33 @@ serve(async (req) => {
 
     for (const temp of temperatures) {
       try {
-        const response = await fetch('https://api.together.xyz/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${TOGETHER_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
-            messages: [
-              { role: 'system', content: SYSTEM_PROMPT },
-              { role: 'user', content: userPrompt },
-            ],
-            temperature: temp,
-            max_tokens: 3000,
-            response_format: { type: 'json_object' },
-          }),
-        });
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+              contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+              generationConfig: {
+                temperature: temp,
+                maxOutputTokens: 3000,
+                responseMimeType: 'application/json',
+              },
+            }),
+          }
+        );
 
         if (!response.ok) {
           const errText = await response.text();
-          console.error(`Together.ai error (temp=${temp}):`, errText);
+          console.error(`Gemini error (temp=${temp}):`, errText);
           continue;
         }
 
         const data = await response.json();
-        const content = data.choices?.[0]?.message?.content;
+        const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!content) {
-          console.error(`Empty response at temp=${temp}`);
+          console.error(`Empty Gemini response at temp=${temp}`);
           continue;
         }
 
