@@ -12,13 +12,14 @@ import { toast } from 'sonner';
 export default function BrandBuilderWizard() {
   const navigate = useNavigate();
   const { projectId } = useParams();
-  const { user, company } = useUser();
+  const { user, company, isLoading: userLoading } = useUser();
   const [creating, setCreating] = useState(false);
 
   // Create new project if projectId is 'new'
   useEffect(() => {
     if (projectId !== 'new') return;
     if (creating) return;
+    if (userLoading) return; // Wait for user context to finish loading
     if (!user?.id || !company?.id) return;
 
     setCreating(true);
@@ -32,7 +33,7 @@ export default function BrandBuilderWizard() {
         toast.error('Failed to create brand project');
         navigate('/CreateBranding', { replace: true });
       });
-  }, [projectId, user?.id, company?.id, creating, navigate]);
+  }, [projectId, user?.id, company?.id, userLoading, creating, navigate]);
 
   // Load existing project
   const { project, loading, error, updateStageData, updateWizardState, updateName } =
@@ -66,8 +67,24 @@ export default function BrandBuilderWizard() {
       .map(([id]) => Number(id));
   }, [project]);
 
-  // Loading state
+  // Loading state — creating new project
   if (projectId === 'new' || creating) {
+    // If user context finished loading but no user/company, redirect
+    if (!userLoading && (!user?.id || !company?.id) && !creating) {
+      return (
+        <div className="flex items-center justify-center h-screen bg-black">
+          <div className="flex flex-col items-center gap-4">
+            <p className="text-sm text-red-400">Please log in to create a brand project</p>
+            <button
+              onClick={() => navigate('/CreateBranding', { replace: true })}
+              className="text-sm text-zinc-400 hover:text-white underline"
+            >
+              Back to Branding
+            </button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="flex items-center justify-center h-screen bg-black">
         <div className="flex flex-col items-center gap-4">

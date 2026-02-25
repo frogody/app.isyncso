@@ -19,7 +19,10 @@ export function useBrandProject(projectId) {
   const [error, setError] = useState(null);
 
   const loadProject = useCallback(async () => {
-    if (!projectId || projectId === 'new') return;
+    if (!projectId || projectId === 'new') {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const data = await brandProjectService.get(projectId);
