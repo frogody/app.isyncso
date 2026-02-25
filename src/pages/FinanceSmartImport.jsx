@@ -482,6 +482,43 @@ export default function FinanceSmartImport() {
           .single();
         if (vErr) console.warn('Vendor create error:', vErr);
         else vendorId = newVendor?.id;
+
+        // Also create CRM supplier contact (so vendor appears in CRM → Suppliers tab)
+        try {
+          // Check if supplier already exists in CRM (by name or VAT)
+          let existingQuery = supabase
+            .from('prospects')
+            .select('id')
+            .eq('organization_id', companyId)
+            .eq('contact_type', 'supplier');
+
+          if (formData.vendor_vat) {
+            existingQuery = existingQuery.eq('vat_number', formData.vendor_vat);
+          } else {
+            existingQuery = existingQuery.ilike('company', formData.vendor_name);
+          }
+
+          const { data: existingSupplier } = await existingQuery.maybeSingle();
+
+          if (!existingSupplier) {
+            await supabase.from('prospects').insert({
+              organization_id: companyId,
+              company: formData.vendor_name,
+              email: formData.vendor_email || null,
+              website: formData.vendor_website || null,
+              contact_type: 'supplier',
+              source: 'smart_import',
+              stage: 'customer',
+              owner_id: user.id,
+              vat_number: formData.vendor_vat || null,
+              billing_address: formData.vendor_address || null,
+              location_country: formData.vendor_country || null,
+              notes: `Auto-created from invoice import${formData.invoice_number ? ' #' + formData.invoice_number : ''}`,
+            });
+          }
+        } catch (crmErr) {
+          console.warn('CRM supplier creation (non-critical):', crmErr);
+        }
       }
 
       // 2. Calculate EUR amount
