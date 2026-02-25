@@ -70,12 +70,12 @@ const WIDGET_CONFIG = {
   raise_committed: { size: 'small', app: 'raise' },
   raise_investors: { size: 'small', app: 'raise' },
   raise_meetings: { size: 'small', app: 'raise' },
-  // Commerce widgets
-  commerce_b2b_overview: { size: 'large', app: 'commerce' },
-  commerce_orders: { size: 'small', app: 'commerce' },
-  commerce_revenue: { size: 'small', app: 'commerce' },
-  commerce_products: { size: 'small', app: 'commerce' },
-  commerce_outstanding: { size: 'small', app: 'commerce' },
+  // Commerce widgets (mapped to 'products' app in workspace settings)
+  commerce_b2b_overview: { size: 'large', app: 'products' },
+  commerce_orders: { size: 'small', app: 'products' },
+  commerce_revenue: { size: 'small', app: 'products' },
+  commerce_products: { size: 'small', app: 'products' },
+  commerce_outstanding: { size: 'small', app: 'products' },
   // Core widgets (no app requirement)
   actions_recent: { size: 'medium', app: null },
   quick_actions: { size: 'medium', app: null },
@@ -86,7 +86,7 @@ export default function Dashboard() {
   const { effectiveApps } = useTeamAccess();
   const { isManager, isAdmin, hierarchyLevel, isLoading: permLoading } = usePermissions();
   const [dataLoading, setDataLoading] = useState(true);
-  const [enabledApps, setEnabledApps] = useState(['learn', 'growth', 'sentinel', 'finance', 'commerce']);
+  const [enabledApps, setEnabledApps] = useState(['learn', 'growth', 'sentinel', 'finance', 'products']);
   const [enabledWidgets, setEnabledWidgets] = useState([]);
   const [viewMode, setViewMode] = useState('personal'); // 'personal' or 'team'
   const [teamData, setTeamData] = useState(null);
@@ -161,15 +161,8 @@ export default function Dashboard() {
       ];
 
       if (configs.length > 0) {
-        const savedApps = configs[0].enabled_apps || ['learn', 'growth', 'sentinel'];
-        // Always include commerce
-        const appsWithDefaults = [...new Set([...savedApps, 'commerce'])];
-        setEnabledApps(appsWithDefaults);
-        // Merge saved widgets with any new commerce widgets not yet saved
-        const savedWidgets = (configs[0].dashboard_widgets || defaultWidgets).filter(w => !w.startsWith('finance_'));
-        const commerceDefaults = defaultWidgets.filter(w => w.startsWith('commerce_'));
-        const mergedWidgets = [...new Set([...commerceDefaults, ...savedWidgets])];
-        setEnabledWidgets(mergedWidgets);
+        setEnabledApps(configs[0].enabled_apps || ['learn', 'growth', 'sentinel']);
+        setEnabledWidgets(configs[0].dashboard_widgets || defaultWidgets);
       } else {
         setEnabledWidgets(defaultWidgets);
       }
@@ -556,9 +549,8 @@ export default function Dashboard() {
 
   // Helper to check enabled — must be in user prefs AND licensed
   const isWidgetEnabled = (widgetId) => enabledWidgets.includes(widgetId);
-  // Commerce and Finance are always available (core business data, not separate licensed apps)
-  const alwaysEnabledApps = ['commerce', 'finance'];
-  const isAppEnabled = (appId) => !appId || alwaysEnabledApps.includes(appId) || (enabledApps.includes(appId) && effectiveApps.includes(appId));
+  // App is enabled if: no app required (core widget), or user enabled it in workspace settings AND has license (or no licensing in place)
+  const isAppEnabled = (appId) => !appId || (enabledApps.includes(appId) && (effectiveApps.length === 0 || effectiveApps.includes(appId)));
 
   // Build widget components map
   const getWidgetComponent = (widgetId) => {

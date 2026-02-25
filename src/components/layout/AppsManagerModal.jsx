@@ -6,7 +6,8 @@ import {
   GraduationCap, Rocket, Shield, Sparkles, LayoutGrid, Eye, EyeOff,
   Users, Palette, TrendingUp, Clock, Lock, Zap, Target, BookOpen,
   Brain, Trophy, BarChart3, LineChart, Mail, Search, FileText,
-  Euro, Wallet, Receipt, CreditCard, PieChart
+  Euro, Wallet, Receipt, CreditCard, PieChart, Signal, ShoppingCart,
+  Package, Calendar, Megaphone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -22,6 +23,7 @@ import { SENTINEL_WIDGETS } from '@/components/dashboard/widgets/SentinelWidgets
 import { CORE_WIDGETS } from '@/components/dashboard/widgets/CoreWidgets';
 import { FINANCE_WIDGETS } from '@/components/dashboard/widgets/FinanceWidgets';
 import { RAISE_WIDGETS } from '@/components/dashboard/widgets/RaiseWidgets';
+import { COMMERCE_WIDGETS } from '@/components/dashboard/widgets/CommerceWidgets';
 
 // Merge core widgets into each app for visibility in previews
 const ALL_CORE_WIDGETS = CORE_WIDGETS;
@@ -148,18 +150,34 @@ const AVAILABLE_APPS = [
   {
     id: 'products',
     name: 'Products',
-    description: 'Inventory, catalog & e-commerce management',
-    icon: LayoutGrid,
+    description: 'Inventory, catalog, B2B commerce & shipping',
+    icon: Package,
     color: 'teal',
+    defaultEnabled: false,
+    widgets: COMMERCE_WIDGETS,
+    purpose: 'Manage your product catalog, inventory, B2B orders, receiving, shipping and stock tracking.',
+    capabilities: [
+      { icon: ShoppingCart, text: 'B2B commerce and order management' },
+      { icon: Package, text: 'Product catalog with variants' },
+      { icon: Zap, text: 'Purchase orders and receiving' },
+      { icon: Target, text: 'Multi-channel sales integration' }
+    ]
+  },
+  {
+    id: 'reach',
+    name: 'Reach',
+    description: 'Marketing automation & content hub',
+    icon: Signal,
+    color: 'violet',
     defaultEnabled: false,
     widgets: [],
     widgetsComingSoon: true,
-    purpose: 'Manage your product catalog, inventory, receiving, shipping and stock tracking.',
+    purpose: 'Plan, create, and distribute marketing campaigns across all channels with AI assistance.',
     capabilities: [
-      { icon: BarChart3, text: 'Real-time inventory management' },
-      { icon: FileText, text: 'Product catalog with variants' },
-      { icon: Zap, text: 'Purchase orders and receiving' },
-      { icon: Target, text: 'Multi-channel sales integration' }
+      { icon: Megaphone, text: 'Multi-channel campaign management' },
+      { icon: Search, text: 'SEO analysis and optimization' },
+      { icon: Calendar, text: 'Content calendar and scheduling' },
+      { icon: Palette, text: 'AI-powered copy studio' }
     ]
   }
 ];
